@@ -1,4 +1,6 @@
 import type { CardSectionId } from "@/types/card";
+import type { CustomSection } from "@/types/customSection";
+import type { EventDraft } from "@/types/event";
 
 export interface CardSectionMeta {
   label: string;
@@ -39,3 +41,25 @@ export const DEFAULT_SECTION_ORDER: readonly CardSectionId[] = [
   "venue",
   "message",
 ];
+
+/* ---------------------------------------------------------------------------
+   Content predicates.
+
+   Two callers have to agree exactly on whether a section puts anything on the
+   page: the section component, which returns null when it has nothing to show,
+   and CardCanvas, which decides where the dividers go. If those two drifted
+   apart the card would grow a divider beside a section that rendered nothing,
+   so both read the answer from here rather than each trimming their own copy.
+   --------------------------------------------------------------------------- */
+
+/** A custom section shows up once either of its two fields has content. */
+export function hasCustomContent(section: CustomSection): boolean {
+  return (
+    section.heading.trim().length > 0 || section.body.trim().length > 0
+  );
+}
+
+/** The message section hides itself when the host wrote no note. */
+export function hasMessage(draft: EventDraft): boolean {
+  return draft.message.trim().length > 0;
+}

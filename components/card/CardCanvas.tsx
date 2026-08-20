@@ -7,6 +7,7 @@ import DetailsSection from "@/components/card/sections/DetailsSection";
 import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
+import { hasCustomContent, hasMessage } from "@/lib/cardSections";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -63,18 +64,14 @@ function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
  */
 function blockRenders(block: CardBlock, draft: EventDraft): boolean {
   if (block.kind === "custom") {
-    return (
-      block.section.heading.trim().length > 0 ||
-      block.section.body.trim().length > 0
-    );
+    return hasCustomContent(block.section);
   }
 
   if (!block.enabled) {
     return false;
   }
 
-  /* The message section hides itself when the host wrote no note. */
-  return block.id !== "message" || draft.message.trim().length > 0;
+  return block.id !== "message" || hasMessage(draft);
 }
 
 function blockKey(block: CardBlock): string {
@@ -186,6 +183,13 @@ export default function CardCanvas({
 
       {/* Content rides above the decor layer. */}
       <div className="relative z-10">
+        {/*
+          Dividers are driven off `visible`, never off `config.blocks`: an
+          index > 0 test on the filtered list is what guarantees no divider can
+          appear before the first rendered section, after the last, or beside a
+          section that returned null. A section that hides itself is absent from
+          this list, so its divider is absent with it.
+        */}
         {visible.map((block, index) => (
           <Fragment key={blockKey(block)}>
             {index > 0 ? (

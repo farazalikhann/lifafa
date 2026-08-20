@@ -7,9 +7,16 @@ import type { PaletteId } from "@/types/style";
  * with no reflow. These sit on top of lib/themes.ts rather than replacing it —
  * the three original themes still exist and still resolve.
  *
- * Every palette below was measured, not eyeballed: textPrimary clears 4.5:1 and
- * textMuted clears 3:1 against BOTH background and surface. The tightest pair is
- * cream's textMuted at 3.65:1.
+ * Every palette below was measured, not eyeballed. Both text colours and the
+ * accent clear 4.5:1 against BOTH background and surface, and they still clear
+ * 4.5:1 against the worst case the decor layer can produce — a solid wash of the
+ * accent at DECOR_MAX_ALPHA (see components/card/decor/DecorLayer.tsx) lying
+ * between the text and the background. The tightest pair is cream's textMuted at
+ * 4.52:1 over decor, 5.66:1 flat.
+ *
+ * textMuted is held to 4.5:1 rather than 3:1 because every place that uses it
+ * renders small text — 0.6875rem uppercase and text-xs — which is not "large
+ * text" under WCAG and so gets no relaxed threshold.
  */
 export interface Palette {
   id: PaletteId;
@@ -36,9 +43,9 @@ export const PALETTES: readonly Palette[] = [
     label: "Cream",
     background: "#F7F1E8",
     surface: "#FFFCF6",
-    accent: "#B23E56",
+    accent: "#A4394F",
     textPrimary: "#2B1D1F",
-    textMuted: "#8B7A72",
+    textMuted: "#6C5C57",
   },
   {
     id: "forest",
@@ -54,9 +61,9 @@ export const PALETTES: readonly Palette[] = [
     label: "Blush",
     background: "#FBEEEA",
     surface: "#FFF7F4",
-    accent: "#B85C38",
+    accent: "#974B2E",
     textPrimary: "#3A2420",
-    textMuted: "#8A6A60",
+    textMuted: "#785A51",
   },
   {
     id: "midnight",
@@ -74,7 +81,7 @@ export const PALETTES: readonly Palette[] = [
     surface: "#F8F2E9",
     accent: "#6B4A2F",
     textPrimary: "#2E2418",
-    textMuted: "#7A6A55",
+    textMuted: "#655644",
   },
 ];
 

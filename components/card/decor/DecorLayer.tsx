@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactElement } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { Motif } from "@/lib/motifs";
 import type { DecorIntensity, DecorMotion } from "@/types/card";
 
@@ -64,6 +65,23 @@ const INTENSITY: Record<
   lively: { count: 24, opacityScale: 1.3, durationScale: 0.7 },
 };
 
+/**
+ * Hard ceiling on how opaque any one decor shape may be.
+ *
+ * The decor sits behind the card's text, so a shape that overlaps a glyph
+ * becomes part of that glyph's background. At full "lively" strength the old
+ * ceiling was 0.312, which pulled cream's muted text down to 2.3:1 — below the
+ * 4.5:1 small-text threshold. Every palette in lib/palettes.ts is measured
+ * against a solid wash of its own accent at this alpha, so this number and
+ * those colours have to move together.
+ *
+ * Intensity still reads as intensity: "lively" scatters 24 shapes at 0.7x the
+ * duration, "subtle" scatters 8 and stays well under the ceiling on its own.
+ */
+export const DECOR_MAX_ALPHA = 0.16;
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
 const KEYFRAME_NAME: Record<Exclude<DecorMotion, "none">, string> = {
   float: "lifafa-decor-float",
   fall: "lifafa-decor-fall",
@@ -75,8 +93,14 @@ const KEYFRAME_NAME: Record<Exclude<DecorMotion, "none">, string> = {
  *
  * Sits inside the canvas bounds only — an absolutely positioned layer, with the
  * shapes held in a sticky viewport-height band so they stay in view while the
- * guest scrolls without ever escaping the card. Hidden outright under reduced
- * motion, since inline animation styles would otherwise win over a class.
+ * guest scrolls without ever escaping the card.
+ *
+ * Under reduced motion the layer is removed twice over: `motion-reduce:hidden`
+ * covers the server render and the very first paint, and once the media query
+ * has been read on the client the component returns null so the shapes leave
+ * the DOM altogether rather than merely being display:none. Both are needed —
+ * the class alone leaves two dozen elements behind, and the query alone would
+ * let one animated frame through before hydration.
  *
  * The motif array is cycled across the fixed position table, so a scatter mixes
  * several different shapes rather than repeating one.
@@ -92,7 +116,10 @@ export default function DecorLayer({
   motifs: readonly Motif[];
   intensity: DecorIntensity;
 }): ReactElement | null {
-  if (motion === "none" || motifs.length === 0) {
+  /* Read before any early return — a hook may not sit behind a branch. */
+  const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+
+  if (prefersReducedMotion || motion === "none" || motifs.length === 0) {
     return null;
   }
 
@@ -135,7 +162,15 @@ export default function DecorLayer({
                 would otherwise override it, making the decor far too loud.
                 Nested opacity multiplies, which is what we want.
               */}
-              <span className="block" style={{ opacity: Math.min(1, shape.opacity * tier.opacityScale) }}>
+              <span
+                className="block"
+                style={{
+                  opacity: Math.min(
+                    DECOR_MAX_ALPHA,
+                    shape.opacity * tier.opacityScale,
+                  ),
+                }}
+              >
                 <MotifShape size={shape.size} />
               </span>
             </span>

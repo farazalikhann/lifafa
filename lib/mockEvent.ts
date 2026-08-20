@@ -1,0 +1,77 @@
+import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
+import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
+import {
+  DEFAULT_OCCASION_ID,
+  DEFAULT_TRADITION_ID,
+  getOccasion,
+} from "@/lib/occasions";
+import type { DecorIntensity, DecorMotion } from "@/types/card";
+import type { CardBlock } from "@/types/customSection";
+import type { EventDraft } from "@/types/event";
+import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { CardStyle } from "@/types/style";
+
+/**
+ * Everything a stored event will one day carry: the draft the host typed plus
+ * the design decisions they made around it.
+ *
+ * The card and the share image both need all of it — the image has to paint the
+ * event's own palette, not a generic one — so it lives in a single shape rather
+ * than being reassembled at each call site.
+ */
+export interface MockEvent {
+  /** Echoed back so a caller can tell which event it was handed. */
+  inviteCode: string;
+  draft: EventDraft;
+  occasionId: OccasionId;
+  traditionId: TraditionId;
+  decorMotion: DecorMotion;
+  decorIntensity: DecorIntensity;
+  style: CardStyle;
+  /** Ordered running order, exactly as CardCanvas expects it. */
+  blocks: readonly CardBlock[];
+}
+
+const OCCASION = getOccasion(DEFAULT_OCCASION_ID);
+
+const SAMPLE_DRAFT: EventDraft = {
+  hostNames: "",
+  eventTitle: "",
+  eventDate: "",
+  eventTime: "",
+  venueName: "",
+  venueAddress: "",
+  message: "",
+  themeId: OCCASION.defaultThemeId,
+};
+
+/**
+ * PLACEHOLDER LOOKUP.
+ *
+ * There is no database in this step, so every invite code resolves to the same
+ * sample invitation and the code itself is only echoed back. When events are
+ * stored this becomes the real read — an async fetch by invite code returning
+ * null for an unknown one — and both the invite page and the share image follow
+ * it there without changing shape.
+ */
+export function getMockEvent(inviteCode: string): MockEvent {
+  return {
+    inviteCode,
+    draft: SAMPLE_DRAFT,
+    occasionId: DEFAULT_OCCASION_ID,
+    traditionId: DEFAULT_TRADITION_ID,
+    decorMotion: OCCASION.defaultMotion,
+    decorIntensity: "normal",
+    style: {
+      fontPairId: DEFAULT_FONT_PAIR_ID,
+      paletteId: OCCASION.defaultPaletteId,
+      density: "comfortable",
+      accentOverride: null,
+    },
+    blocks: DEFAULT_SECTION_ORDER.map((id) => ({
+      kind: "builtin" as const,
+      id,
+      enabled: true,
+    })),
+  };
+}

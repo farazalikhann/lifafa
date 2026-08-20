@@ -4,8 +4,10 @@ import type { ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
 import {
   REVEAL_BASE,
+  SECTION_REVEAL_OPTIONS,
   lineDelay,
   mapsSearchUrl,
+  placeholderOpacity,
   resolve,
   revealClass,
 } from "@/lib/cardFormat";
@@ -21,7 +23,7 @@ export default function VenueSection({
   theme: Theme;
   minHeight: string;
 }): ReactElement {
-  const { ref, isInView } = useInView<HTMLElement>();
+  const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
   const venue = resolve(draft.venueName, "Venue name");
   const address = resolve(draft.venueAddress, "Venue address");
@@ -41,9 +43,9 @@ export default function VenueSection({
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
-          className="text-[1.25rem] leading-snug font-medium text-balance sm:text-[1.375rem]"
+          className="max-w-[22ch] text-[1.25rem] leading-snug font-medium break-words text-balance sm:text-[1.375rem]"
           style={{
-            opacity: venue.isPlaceholder ? 0.4 : 1,
+            opacity: placeholderOpacity(venue.isPlaceholder, "primary"),
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}
@@ -53,11 +55,19 @@ export default function VenueSection({
       </div>
 
       <div className={reveal} style={lineDelay(1)}>
+        {/*
+          A guest has to be able to read the address in full, so it is never
+          truncated. 34ch and text-pretty instead: a 200 character address runs
+          to six or seven even lines rather than the lopsided block balancing
+          produces, and `break-words` keeps a long unbroken token — a plus code,
+          a run-together landmark name — inside the card rather than clipped
+          against its edge.
+        */}
         <p
-          className="max-w-[26ch] text-xs leading-relaxed text-balance"
+          className="max-w-[34ch] text-xs leading-relaxed break-words text-pretty"
           style={{
             color: theme.textMuted,
-            opacity: address.isPlaceholder ? 0.55 : 1,
+            opacity: placeholderOpacity(address.isPlaceholder, "muted"),
           }}
         >
           {address.text}

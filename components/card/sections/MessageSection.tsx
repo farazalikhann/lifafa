@@ -2,7 +2,13 @@
 
 import type { ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
-import { REVEAL_BASE, lineDelay, revealClass } from "@/lib/cardFormat";
+import { hasMessage } from "@/lib/cardSections";
+import {
+  REVEAL_BASE,
+  SECTION_REVEAL_OPTIONS,
+  lineDelay,
+  revealClass,
+} from "@/lib/cardFormat";
 import type { Theme } from "@/lib/themes";
 import type { EventDraft } from "@/types/event";
 
@@ -10,6 +16,9 @@ import type { EventDraft } from "@/types/event";
  * Renders nothing at all when the host has not written a note. CardCanvas
  * filters this section out of the running order in that case, so its divider
  * disappears with it — the null return here is the belt to that braces.
+ *
+ * Both sides call `hasMessage`, so belt and braces cannot disagree about what
+ * counts as an empty note and leave a divider stranded beside nothing.
  */
 export default function MessageSection({
   draft,
@@ -20,12 +29,13 @@ export default function MessageSection({
   theme: Theme;
   minHeight: string;
 }): ReactElement | null {
-  const { ref, isInView } = useInView<HTMLElement>();
-  const message = draft.message.trim();
+  const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
-  if (message.length === 0) {
+  if (!hasMessage(draft)) {
     return null;
   }
+
+  const message = draft.message.trim();
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
@@ -48,7 +58,7 @@ export default function MessageSection({
 
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[28ch] text-sm leading-relaxed text-balance italic"
+          className="max-w-[32ch] text-sm leading-relaxed break-words text-pretty italic"
           style={{ color: theme.textMuted }}
         >
           {message}

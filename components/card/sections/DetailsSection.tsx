@@ -4,9 +4,11 @@ import type { ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
 import {
   REVEAL_BASE,
+  SECTION_REVEAL_OPTIONS,
   formatDateAndTime,
   formatWeekday,
   lineDelay,
+  placeholderOpacity,
   revealClass,
 } from "@/lib/cardFormat";
 import type { Theme } from "@/lib/themes";
@@ -21,7 +23,7 @@ export default function DetailsSection({
   theme: Theme;
   minHeight: string;
 }): ReactElement {
-  const { ref, isInView } = useInView<HTMLElement>();
+  const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
   const weekday = formatWeekday(draft.eventDate, draft.eventTime);
   const dateAndTime = formatDateAndTime(draft.eventDate, draft.eventTime);
@@ -41,7 +43,10 @@ export default function DetailsSection({
       <div className={reveal} style={lineDelay(0)}>
         <p
           className="text-[0.6875rem] tracking-[0.3em] uppercase"
-          style={{ color: theme.textMuted, opacity: hasDate ? 1 : 0.55 }}
+          style={{
+            color: theme.textMuted,
+            opacity: placeholderOpacity(!hasDate, "muted"),
+          }}
         >
           {weekday ?? "The day"}
         </p>
@@ -50,9 +55,9 @@ export default function DetailsSection({
       {/* The dominant line of this section. */}
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[16ch] text-[1.5rem] leading-[1.2] font-medium tracking-[0.02em] text-balance sm:text-[1.75rem]"
+          className="max-w-[16ch] text-[1.5rem] leading-[1.2] font-medium tracking-[0.02em] break-words text-balance sm:text-[1.75rem]"
           style={{
-            opacity: hasDate ? 1 : 0.4,
+            opacity: placeholderOpacity(!hasDate, "primary"),
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}

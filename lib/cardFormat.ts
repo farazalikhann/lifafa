@@ -172,8 +172,49 @@ export function mapsSearchUrl(venueName: string, venueAddress: string): string {
 }
 
 /* ---------------------------------------------------------------------------
+   Placeholder tone.
+
+   An empty draft has to look deliberate rather than broken, so a placeholder
+   keeps the exact spacing and type of the real line and differs only in
+   opacity. Two values, not one: text already drawn in textMuted starts dimmer
+   than textPrimary does, so applying the same multiplier to both would sink the
+   muted line out of sight.
+   --------------------------------------------------------------------------- */
+
+const PLACEHOLDER_OPACITY: Record<"primary" | "muted", number> = {
+  primary: 0.4,
+  muted: 0.55,
+};
+
+/**
+ * Opacity for one line of card text. Always returns a number — real content
+ * gets 1 — so a section never has to branch on the placeholder flag itself.
+ */
+export function placeholderOpacity(
+  isPlaceholder: boolean,
+  tone: "primary" | "muted",
+): number {
+  return isPlaceholder ? PLACEHOLDER_OPACITY[tone] : 1;
+}
+
+/* ---------------------------------------------------------------------------
    Reveal helpers. Sections drive these from their own useInView result.
    --------------------------------------------------------------------------- */
+
+/**
+ * Observer settings shared by every card section.
+ *
+ * threshold is 0 rather than a fraction of the element, because a section is
+ * as tall as its content: a long custom section can be several screens tall,
+ * and no fraction-of-element threshold it could satisfy is also a sensible
+ * trigger for a short one. A zero threshold with a bottom inset fires on the
+ * section's leading edge instead, which behaves identically whatever the
+ * section's height turns out to be.
+ */
+export const SECTION_REVEAL_OPTIONS: IntersectionObserverInit = {
+  threshold: 0,
+  rootMargin: "0px 0px -12% 0px",
+};
 
 export const REVEAL_BASE =
   "transition-[opacity,transform] duration-[600ms] ease-out motion-reduce:transition-none";
@@ -182,7 +223,14 @@ export function revealClass(isInView: boolean): string {
   return isInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0";
 }
 
-/** Staggers a section's own lines by roughly 80ms each. */
+/**
+ * Staggers a section's own lines by roughly 80ms each.
+ *
+ * The stagger is a transition delay, not an animation: once useInView latches
+ * the section revealed it never un-latches, so a guest who flicks past mid
+ * stagger still arrives at a fully visible section. Nothing here can leave a
+ * line stranded half revealed.
+ */
 export function lineDelay(index: number): { transitionDelay: string } {
   return { transitionDelay: `${index * 80}ms` };
 }
