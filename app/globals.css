@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------------------
+   Lifafa theme tokens.
+   Change a value here and the whole landing page follows — every component
+   reads these through Tailwind arbitrary values, e.g. bg-[var(--lifafa-ink)].
+   ------------------------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --lifafa-ink: #12100e;
+  --lifafa-ink-raised: #1a1714;
+  --lifafa-hairline: #2a2521;
+
+  /* Accents */
+  --lifafa-marigold: #e8a33d;
+  --lifafa-rose: #c4566b;
+
+  /* Type */
+  --lifafa-cream: #f7f1e8;
+  --lifafa-muted: #a1968a;
+}
+
+/* -------------------------------------------------------------------------
+   Keyframes. Consumed via arbitrary animation utilities in the components.
+   ------------------------------------------------------------------------- */
+@keyframes lifafa-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lifafa-cue {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(0, 10px, 0);
+    opacity: 1;
+  }
+}
+
+/* --- Idle motion for the story illustrations. Small amplitudes, slow loops. --- */
+
+/* Whole drawing breathing in place. */
+@keyframes lifafa-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+/* Card easing out of the envelope. */
+@keyframes lifafa-slip {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -7px, 0);
+  }
+}
+
+/* Sparkles and secondary details. */
+@keyframes lifafa-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Dots travelling along a dashed path — dash period is 10, so -40 loops seamlessly. */
+@keyframes lifafa-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* Scanner beam sweeping the QR code. */
+@keyframes lifafa-beam {
+  0%,
+  100% {
+    transform: translate3d(0, -16px, 0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(0, 16px, 0);
+    opacity: 1;
+  }
+}
+
+/* RSVP badges answering one after another. */
+@keyframes lifafa-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.07);
+    opacity: 1;
+  }
+}
+
+/* Headcount bars ticking up. */
+@keyframes lifafa-grow {
+  0%,
+  100% {
+    transform: scaleY(0.8);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}

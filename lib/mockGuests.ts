@@ -1,0 +1,143 @@
+import type { Guest } from "@/types/guest";
+
+/**
+ * PLACEHOLDER DATA ONLY.
+ *
+ * Hand-written sample guests so the dashboard has something to render while the
+ * UI is being built. There is no database in this step — nothing here is
+ * persisted, and this file should be deleted once real guest records are wired
+ * in. Every figure on the dashboard is derived from this array at render time,
+ * so editing a row here changes the whole page.
+ *
+ * Covers all four RSVP states, accompanyingCount from 0 to 4, and a mix of
+ * checked-in flags. Pending guests carry a null respondedAt, and nobody who
+ * declined is marked as checked in.
+ */
+export const MOCK_GUESTS: readonly Guest[] = [
+  {
+    id: "g-01",
+    name: "Aarav Sharma",
+    phone: "+91 98450 21174",
+    rsvp: "accepted",
+    accompanyingCount: 2,
+    respondedAt: "2026-11-02T09:14:00+05:30",
+    checkedIn: true,
+  },
+  {
+    id: "g-02",
+    name: "Meera Nair",
+    phone: "+91 99012 55803",
+    rsvp: "accepted",
+    accompanyingCount: 0,
+    respondedAt: "2026-11-02T11:47:00+05:30",
+    checkedIn: true,
+  },
+  {
+    id: "g-03",
+    name: "Rohan Iyer",
+    phone: "+91 98201 46620",
+    rsvp: "declined",
+    accompanyingCount: 0,
+    respondedAt: "2026-11-03T18:05:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-04",
+    name: "Priya Deshpande",
+    phone: "+91 97654 30918",
+    rsvp: "maybe",
+    accompanyingCount: 1,
+    respondedAt: "2026-11-04T08:22:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-05",
+    name: "Kabir Malhotra",
+    phone: "+91 98111 77342",
+    rsvp: "accepted",
+    accompanyingCount: 3,
+    respondedAt: "2026-11-04T20:36:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-06",
+    name: "Ananya Reddy",
+    phone: "+91 90003 61285",
+    rsvp: "pending",
+    accompanyingCount: 0,
+    respondedAt: null,
+    checkedIn: false,
+  },
+  {
+    id: "g-07",
+    name: "Vikram Singh",
+    phone: "+91 98730 12094",
+    rsvp: "accepted",
+    accompanyingCount: 1,
+    respondedAt: "2026-11-05T13:09:00+05:30",
+    checkedIn: true,
+  },
+  {
+    id: "g-08",
+    name: "Sneha Kulkarni",
+    phone: "+91 99226 40573",
+    rsvp: "declined",
+    accompanyingCount: 0,
+    respondedAt: "2026-11-05T16:41:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-09",
+    name: "Arjun Menon",
+    phone: "+91 98470 88251",
+    rsvp: "maybe",
+    accompanyingCount: 2,
+    respondedAt: "2026-11-06T10:18:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-10",
+    name: "Ishita Banerjee",
+    phone: "+91 98304 27766",
+    rsvp: "accepted",
+    accompanyingCount: 4,
+    respondedAt: "2026-11-06T21:53:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-11",
+    name: "Rahul Verma",
+    phone: "+91 99715 03348",
+    rsvp: "pending",
+    accompanyingCount: 0,
+    respondedAt: null,
+    checkedIn: false,
+  },
+  {
+    id: "g-12",
+    name: "Divya Pillai",
+    phone: "+91 94470 19632",
+    rsvp: "accepted",
+    accompanyingCount: 0,
+    respondedAt: "2026-11-07T07:30:00+05:30",
+    checkedIn: true,
+  },
+  {
+    id: "g-13",
+    name: "Karthik Subramanian",
+    phone: "+91 98840 65017",
+    rsvp: "maybe",
+    accompanyingCount: 0,
+    respondedAt: "2026-11-07T15:12:00+05:30",
+    checkedIn: false,
+  },
+  {
+    id: "g-14",
+    name: "Nisha Chatterjee",
+    phone: "+91 98315 74429",
+    rsvp: "accepted",
+    accompanyingCount: 2,
+    respondedAt: "2026-11-08T12:04:00+05:30",
+    checkedIn: false,
+  },
+];
