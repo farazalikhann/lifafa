@@ -35,13 +35,13 @@ export interface MockEvent {
 const OCCASION = getOccasion(DEFAULT_OCCASION_ID);
 
 const SAMPLE_DRAFT: EventDraft = {
-  hostNames: "",
-  eventTitle: "",
-  eventDate: "",
-  eventTime: "",
-  venueName: "",
-  venueAddress: "",
-  message: "",
+  hostNames: "Aarav and Meera",
+  eventTitle: "Wedding Reception",
+  eventDate: "2026-12-14",
+  eventTime: "19:00",
+  venueName: "The Grand Ballroom",
+  venueAddress: "12 MG Road, Bengaluru 560001",
+  message: "We would love to have you with us as we begin this chapter.",
   themeId: OCCASION.defaultThemeId,
 };
 
