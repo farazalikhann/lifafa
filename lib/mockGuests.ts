@@ -22,6 +22,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 2,
     respondedAt: "2026-11-02T09:14:00+05:30",
     checkedIn: true,
+    checkedInAt: "2026-12-14T19:12:00+05:30",
   },
   {
     id: "g-02",
@@ -31,6 +32,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: "2026-11-02T11:47:00+05:30",
     checkedIn: true,
+    checkedInAt: "2026-12-14T19:20:00+05:30",
   },
   {
     id: "g-03",
@@ -40,6 +42,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: "2026-11-03T18:05:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-04",
@@ -49,6 +52,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 1,
     respondedAt: "2026-11-04T08:22:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-05",
@@ -58,6 +62,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 3,
     respondedAt: "2026-11-04T20:36:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-06",
@@ -67,6 +72,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: null,
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-07",
@@ -76,6 +82,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 1,
     respondedAt: "2026-11-05T13:09:00+05:30",
     checkedIn: true,
+    checkedInAt: "2026-12-14T19:35:00+05:30",
   },
   {
     id: "g-08",
@@ -85,6 +92,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: "2026-11-05T16:41:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-09",
@@ -94,6 +102,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 2,
     respondedAt: "2026-11-06T10:18:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-10",
@@ -103,6 +112,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 4,
     respondedAt: "2026-11-06T21:53:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-11",
@@ -112,6 +122,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: null,
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-12",
@@ -121,6 +132,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: "2026-11-07T07:30:00+05:30",
     checkedIn: true,
+    checkedInAt: "2026-12-14T19:48:00+05:30",
   },
   {
     id: "g-13",
@@ -130,6 +142,7 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 0,
     respondedAt: "2026-11-07T15:12:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
   {
     id: "g-14",
@@ -139,5 +152,6 @@ export const MOCK_GUESTS: readonly Guest[] = [
     accompanyingCount: 2,
     respondedAt: "2026-11-08T12:04:00+05:30",
     checkedIn: false,
+    checkedInAt: null,
   },
 ];

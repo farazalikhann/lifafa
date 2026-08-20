@@ -4,9 +4,23 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import CardPreview from "@/components/create/CardPreview";
 import EventForm from "@/components/create/EventForm";
+import OccasionPicker from "@/components/create/OccasionPicker";
+import MotionPicker from "@/components/create/MotionPicker";
+import SectionManager from "@/components/create/SectionManager";
 import ThemePicker from "@/components/create/ThemePicker";
-import { DEFAULT_THEME_ID } from "@/lib/themes";
+import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
+import { getMotifs } from "@/lib/motifs";
+import {
+  DEFAULT_OCCASION_ID,
+  DEFAULT_TRADITION_ID,
+  getOccasion,
+} from "@/lib/occasions";
+import type { CardConfig, DecorIntensity, DecorMotion } from "@/types/card";
+import type { CardBlock } from "@/types/customSection";
 import type { EventDraft, ThemeId } from "@/types/event";
+import type { OccasionId, TraditionId } from "@/types/occasion";
+
+const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);
 
 const EMPTY_DRAFT: EventDraft = {
   hostNames: "",
@@ -16,11 +30,27 @@ const EMPTY_DRAFT: EventDraft = {
   venueName: "",
   venueAddress: "",
   message: "",
-  themeId: DEFAULT_THEME_ID,
+  themeId: DEFAULT_OCCASION.defaultThemeId,
 };
 
 export default function CreatePage() {
   const [draft, setDraft] = useState<EventDraft>(EMPTY_DRAFT);
+  const [occasionId, setOccasionId] = useState<OccasionId>(DEFAULT_OCCASION_ID);
+  const [traditionId, setTraditionId] =
+    useState<TraditionId>(DEFAULT_TRADITION_ID);
+  const [decorMotion, setDecorMotion] = useState<DecorMotion>(
+    DEFAULT_OCCASION.defaultMotion,
+  );
+  const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>("normal");
+
+  /* Every built in section starts enabled, in the registry order. */
+  const [blocks, setBlocks] = useState<readonly CardBlock[]>(() =>
+    DEFAULT_SECTION_ORDER.map((id) => ({
+      kind: "builtin" as const,
+      id,
+      enabled: true,
+    })),
+  );
 
   const handleChange = useCallback<
     <K extends keyof EventDraft>(field: K, value: EventDraft[K]) => void
@@ -31,6 +61,29 @@ export default function CreatePage() {
   const handleThemeSelect = useCallback((themeId: ThemeId) => {
     setDraft((previous) => ({ ...previous, themeId }));
   }, []);
+
+  /**
+   * An occasion click is the only thing that overwrites the theme and motion.
+   * Every other render leaves them alone, so a host who picks a theme after
+   * choosing an occasion keeps their choice.
+   */
+  const handleOccasionSelect = useCallback((id: OccasionId) => {
+    const occasion = getOccasion(id);
+    setOccasionId(id);
+    setDecorMotion(occasion.defaultMotion);
+    setDraft((previous) => ({ ...previous, themeId: occasion.defaultThemeId }));
+  }, []);
+
+  const config: CardConfig = {
+    themeId: draft.themeId,
+    blocks,
+    decorMotion,
+    decorIntensity,
+    occasionId,
+    traditionId,
+  };
+
+  const motifs = getMotifs(occasionId, traditionId);
 
   return (
     <div className="min-h-screen">
@@ -70,15 +123,28 @@ export default function CreatePage() {
         right ~55% while the form scrolls.
       */}
       <main className="mx-auto grid max-w-6xl gap-10 px-5 py-8 lg:grid-cols-[45fr_55fr] lg:items-start lg:gap-14 lg:px-8 lg:py-12">
-        <div className="order-2 lg:order-1">
+        <div className="order-2 flex flex-col gap-9 lg:order-1">
+          <OccasionPicker
+            occasionId={occasionId}
+            traditionId={traditionId}
+            onOccasionChange={handleOccasionSelect}
+            onTraditionChange={setTraditionId}
+          />
           <EventForm draft={draft} onChange={handleChange} />
+          <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
         </div>
 
         <div className="order-1 flex flex-col gap-6 lg:order-2 lg:sticky lg:top-24">
-          <CardPreview draft={draft} />
+          <CardPreview draft={draft} config={config} motifs={motifs} />
           <ThemePicker
             selectedId={draft.themeId}
             onSelect={handleThemeSelect}
+          />
+          <MotionPicker
+            motion={decorMotion}
+            intensity={decorIntensity}
+            onMotionChange={setDecorMotion}
+            onIntensityChange={setDecorIntensity}
           />
         </div>
       </main>
