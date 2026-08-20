@@ -50,8 +50,17 @@ export default function CoverSection({
     visit — it does not blink back on when the guest scrolls up to re-read the
     cover.
   */
-  const { ref: sentinelRef, isInView: hasScrolledPast } =
-    useInView<HTMLDivElement>(CUE_SENTINEL_OPTIONS);
+  const { ref: sentinelRef, isInView: hasScrolledPast } = useInView<HTMLDivElement>(
+    CUE_SENTINEL_OPTIONS,
+    /*
+      false, unlike every reveal on the card. A reveal defaults to visible so
+      that markup which never runs JavaScript is still readable; this observer
+      answers "has the guest scrolled past the cover yet?", and defaulting that
+      to yes would ship a server-rendered cue that was already retired before
+      the guest had done anything at all.
+    */
+    false,
+  );
 
   /*
     useInView reports "in view" outright under reduced motion — it never arms

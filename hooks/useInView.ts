@@ -31,20 +31,29 @@ const useIsomorphicLayoutEffect =
 /**
  * Reveal-on-scroll observer.
  *
- * `isInView` starts as `true` so server-rendered markup — and any client that
- * never runs the effect — shows its content. Once the observer is attached the
- * element drops to its hidden state and is revealed for good the first time it
- * intersects; the observer disconnects at that point and never reverses.
+ * `isInView` starts as `initialInView` so server-rendered markup — and any
+ * client that never runs the effect — has a sensible answer. Once the observer
+ * is attached the element drops to its hidden state and is revealed for good
+ * the first time it intersects; the observer disconnects at that point and
+ * never reverses.
  *
- * If the visitor prefers reduced motion, `isInView` stays `true` and no
+ * If the visitor prefers reduced motion, `isInView` is set to `true` and no
  * observer is created, so callers render the final state with no transform.
+ *
+ * `initialInView` defaults to `true`, which is what a reveal wants: content
+ * that never runs JavaScript must still be readable. A caller asking the
+ * opposite question — "has the guest scrolled as far as this marker yet?" —
+ * passes `false`, because the honest answer before the observer exists is no,
+ * and shipping `true` would mean the server rendered the after state of
+ * something the guest has not done.
  */
 export function useInView<T extends HTMLElement>(
   options?: IntersectionObserverInit,
+  initialInView: boolean = true,
 ): UseInViewResult<T> {
   const ref = useRef<T | null>(null);
   const hasRevealed = useRef<boolean>(false);
-  const [isInView, setIsInView] = useState<boolean>(true);
+  const [isInView, setIsInView] = useState<boolean>(initialInView);
 
   const { threshold, rootMargin, root } = {
     ...DEFAULT_OPTIONS,
