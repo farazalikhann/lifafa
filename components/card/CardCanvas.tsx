@@ -8,6 +8,7 @@ import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
 import { hasCustomContent, hasMessage } from "@/lib/cardSections";
+import { maxOverlayAlpha } from "@/lib/contrast";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -16,6 +17,12 @@ import type { CardConfig, CardSizing } from "@/types/card";
 import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
+
+/**
+ * The most opaque any decor shape is ever authored to be, and so the highest
+ * alpha worth testing for contrast. Mirrors OPACITY_AT_SMALLEST in DecorLayer.
+ */
+const DECOR_CEILING = 0.38;
 
 /**
  * Section min-height per sizing mode.
@@ -154,6 +161,26 @@ export default function CardCanvas({
     fontFamily: fontFamilyOf(fontPair.bodyVar, fontPair.bodyFallback),
   };
 
+  /*
+    How strong the decor is allowed to get on this particular card.
+
+    Measured rather than fixed, because the answer genuinely varies: the same
+    scatter that leaves midnight's muted text at 5.6:1 would take cream's below
+    3:1, and a host who picks their own accent moves the number again — which a
+    hardcoded ceiling could never follow. textMuted is what is measured because
+    it is the closest of the card's colours to its background, so whatever it
+    can carry, textPrimary can carry comfortably.
+
+    Cheap enough to sit in render: one scan of at most 76 steps of integer
+    arithmetic, with no allocation per step and no dependence on the clock.
+  */
+  const decorMaxAlpha = maxOverlayAlpha(
+    effectiveTheme.accent,
+    effectiveTheme.background,
+    effectiveTheme.textMuted,
+    DECOR_CEILING,
+  );
+
   /* Consumed by the sections through inheritance, so a change is instant. */
   const cssVariables = {
     "--card-heading": fontFamilyOf(
@@ -179,6 +206,7 @@ export default function CardCanvas({
         motion={config.decorMotion}
         motifs={motifs}
         intensity={config.decorIntensity}
+        maxAlpha={decorMaxAlpha}
       />
 
       {/* Content rides above the decor layer. */}

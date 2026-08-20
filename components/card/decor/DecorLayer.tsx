@@ -6,15 +6,18 @@ import type { Motif } from "@/lib/motifs";
 import type { DecorIntensity, DecorMotion } from "@/types/card";
 
 interface DecorShape {
-  /** Percentages within the layer, so the table is resolution independent. */
+  /**
+   * Percentages within the layer, so the table is resolution independent.
+   *
+   * Deliberately allowed outside 0-100: an ornament that runs off the edge and
+   * is clipped by the canvas reads as a border the card sits inside, where the
+   * same shape tucked fully into view reads as a sticker.
+   */
   left: number;
   top: number;
-  /** Rendered size in px. */
-  size: number;
   /** Seconds. */
   delay: number;
   duration: number;
-  opacity: number;
 }
 
 /**
@@ -23,62 +26,131 @@ interface DecorShape {
  * Math.random would produce different positions on the server and in the
  * browser, which React reports as a hydration mismatch. These values are hand
  * picked to look scattered while staying identical on both sides of the wire.
+ *
+ * Every third row is an edge row — eight of the twenty four, four down each
+ * side — so the ornament frames the column of text rather than settling evenly
+ * across it. Every third row is also what the shorter slices take, so the
+ * framing survives at every intensity instead of only appearing once the tail
+ * of the table is in play.
  */
 const SHAPES: readonly DecorShape[] = [
-  { left: 8, top: 12, size: 10, delay: 0, duration: 15, opacity: 0.18 },
-  { left: 22, top: 68, size: 7, delay: 2.4, duration: 18, opacity: 0.14 },
-  { left: 37, top: 30, size: 12, delay: 1.1, duration: 16, opacity: 0.2 },
-  { left: 54, top: 82, size: 8, delay: 4.2, duration: 19, opacity: 0.15 },
-  { left: 71, top: 18, size: 11, delay: 0.7, duration: 14, opacity: 0.22 },
-  { left: 86, top: 55, size: 9, delay: 3.3, duration: 17, opacity: 0.16 },
-  { left: 14, top: 44, size: 8, delay: 5.1, duration: 20, opacity: 0.13 },
-  { left: 63, top: 40, size: 6, delay: 2.9, duration: 15, opacity: 0.24 },
-  { left: 45, top: 8, size: 9, delay: 6.0, duration: 18, opacity: 0.17 },
-  { left: 92, top: 30, size: 7, delay: 1.8, duration: 16, opacity: 0.15 },
-  { left: 30, top: 92, size: 11, delay: 3.9, duration: 21, opacity: 0.19 },
-  { left: 78, top: 74, size: 8, delay: 5.6, duration: 17, opacity: 0.14 },
-  { left: 5, top: 78, size: 6, delay: 2.2, duration: 19, opacity: 0.21 },
-  { left: 58, top: 60, size: 10, delay: 6.8, duration: 15, opacity: 0.12 },
-  { left: 40, top: 50, size: 7, delay: 4.7, duration: 20, opacity: 0.18 },
-  { left: 88, top: 90, size: 9, delay: 0.4, duration: 16, opacity: 0.16 },
+  { left: -2, top: 14, delay: 0, duration: 15 } /* edge */,
+  { left: 34, top: 30, delay: 2.4, duration: 18 },
+  { left: 58, top: 62, delay: 1.1, duration: 16 },
+  { left: 90, top: 8, delay: 4.2, duration: 19 } /* edge */,
+  { left: 22, top: 74, delay: 0.7, duration: 14 },
+  { left: 66, top: 22, delay: 3.3, duration: 17 },
+  { left: 2, top: 52, delay: 5.1, duration: 20 } /* edge */,
+  { left: 46, top: 44, delay: 2.9, duration: 15 },
+  /* Rows 9-16 join at "normal". */
+  { left: 72, top: 84, delay: 6.0, duration: 18 },
+  { left: 92, top: 40, delay: 1.8, duration: 16 } /* edge */,
+  { left: 30, top: 18, delay: 3.9, duration: 21 },
+  { left: 54, top: 90, delay: 5.6, duration: 17 },
+  { left: -3, top: 82, delay: 2.2, duration: 19 } /* edge */,
+  { left: 40, top: 8, delay: 6.8, duration: 15 },
+  { left: 62, top: 48, delay: 4.7, duration: 20 },
+  { left: 89, top: 68, delay: 0.4, duration: 16 } /* edge */,
   /* Rows 17-24 only appear at "lively". */
-  { left: 18, top: 24, size: 9, delay: 7.4, duration: 17, opacity: 0.15 },
-  { left: 50, top: 70, size: 7, delay: 1.5, duration: 19, opacity: 0.2 },
-  { left: 68, top: 88, size: 10, delay: 5.9, duration: 15, opacity: 0.13 },
-  { left: 96, top: 66, size: 6, delay: 3.1, duration: 18, opacity: 0.17 },
-  { left: 26, top: 56, size: 8, delay: 7.9, duration: 16, opacity: 0.14 },
-  { left: 74, top: 34, size: 9, delay: 2.6, duration: 21, opacity: 0.19 },
-  { left: 10, top: 92, size: 7, delay: 4.4, duration: 17, opacity: 0.16 },
-  { left: 34, top: 14, size: 8, delay: 6.3, duration: 20, opacity: 0.12 },
+  { left: 18, top: 38, delay: 7.4, duration: 17 },
+  { left: 50, top: 66, delay: 1.5, duration: 19 },
+  { left: 3, top: 26, delay: 5.9, duration: 15 } /* edge */,
+  /*
+    Moved up and left off (76, 12): at 58px that row's box clipped the corner of
+    the (90, 8) edge shape on a 360px screen, and two motifs stacked behind one
+    glyph halve the contrast the ceiling was measured to protect.
+  */
+  { left: 70, top: 2, delay: 3.1, duration: 18 },
+  { left: 36, top: 58, delay: 7.9, duration: 16 },
+  { left: 93, top: 92, delay: 2.6, duration: 21 } /* edge */,
+  { left: 26, top: 96, delay: 4.4, duration: 17 },
+  { left: 68, top: 36, delay: 6.3, duration: 20 },
 ];
 
 /**
- * Intensity tiers. "lively" runs shorter durations as well as more shapes, so
- * the extra density reads as energy rather than clutter.
+ * Rendered sizes in px, cycled across the shape table.
+ *
+ * Eight entries against twenty four positions, so each size lands exactly three
+ * times. Eight is also coprime with the every-third-row edge stride, which is
+ * what stops the eight edge shapes from all coming out the same size.
+ */
+const SIZE_STEPS: readonly number[] = [26, 44, 18, 58, 32, 64, 22, 50];
+
+const SIZE_MIN = 18;
+const SIZE_MAX = 64;
+
+/**
+ * Rotations in degrees, cycled on their own stride.
+ *
+ * Seven entries, coprime with both the eight sizes and the three-row edge
+ * stride, so size and angle keep recombining across the table instead of
+ * locking into one repeating pair.
+ *
+ * Applied to the inner span rather than the animated one: an animation's
+ * transform replaces the element's own outright, so a rotation set on the
+ * animated span would vanish the moment the keyframes took over.
+ */
+const ROTATIONS: readonly number[] = [0, 22, -14, 38, -28, 10, -42];
+
+/**
+ * Opacity is derived from size, never authored per shape, and runs backwards:
+ * the smallest motif is the most opaque and the largest the faintest.
+ *
+ * A 64px motif covers roughly thirteen times the area of an 18px one, so
+ * matching their alphas would let the big shapes dominate the card and crowd
+ * the text they sit behind. Tying the two together is what lets the ornament
+ * grow without gaining weight.
+ */
+const OPACITY_AT_SMALLEST = 0.38;
+const OPACITY_AT_LARGEST = 0.18;
+
+/** Above this a shape is softened, so it reads as depth rather than as an icon. */
+const BLUR_MIN_SIZE = 48;
+const BLUR_RADIUS = "0.5px";
+
+/**
+ * Rounded to three places, which is finer than the eye can separate and keeps
+ * the value out of the markup as "0.2669565217391304" — the interpolation
+ * lands on repeating fractions, and every one of those digits would otherwise
+ * be shipped to the browser on every shape.
+ */
+function opacityForSize(size: number): number {
+  const span = SIZE_MAX - SIZE_MIN;
+  const t = Math.min(1, Math.max(0, (size - SIZE_MIN) / span));
+  const alpha =
+    OPACITY_AT_SMALLEST + t * (OPACITY_AT_LARGEST - OPACITY_AT_SMALLEST);
+
+  return Math.round(alpha * 1000) / 1000;
+}
+
+/**
+ * Intensity tiers.
+ *
+ * The three differ in how many shapes they scatter and how large those shapes
+ * may get, not in how loud each one is — total visual weight is the thing being
+ * held roughly level, and count multiplies it far faster than alpha does.
+ *
+ * "subtle" caps size rather than scaling it, so its shapes stay at or above the
+ * 18px floor where a motif's inner detail is still legible; a flat multiplier
+ * would have shrunk the small end back into the specks this table exists to fix.
+ * Its opacityScale then trims the extra alpha those smaller sizes earn.
+ *
+ * "lively" also runs shorter durations, so the extra density reads as energy
+ * rather than clutter.
  */
 const INTENSITY: Record<
   DecorIntensity,
-  { count: number; opacityScale: number; durationScale: number }
+  {
+    count: number;
+    sizeCap: number;
+    opacityScale: number;
+    durationScale: number;
+  }
 > = {
-  subtle: { count: 8, opacityScale: 0.6, durationScale: 1 },
-  normal: { count: 16, opacityScale: 1, durationScale: 1 },
-  lively: { count: 24, opacityScale: 1.3, durationScale: 0.7 },
+  subtle: { count: 8, sizeCap: 32, opacityScale: 0.8, durationScale: 1 },
+  normal: { count: 16, sizeCap: SIZE_MAX, opacityScale: 1, durationScale: 1 },
+  lively: { count: 24, sizeCap: SIZE_MAX, opacityScale: 1, durationScale: 0.7 },
 };
-
-/**
- * Hard ceiling on how opaque any one decor shape may be.
- *
- * The decor sits behind the card's text, so a shape that overlaps a glyph
- * becomes part of that glyph's background. At full "lively" strength the old
- * ceiling was 0.312, which pulled cream's muted text down to 2.3:1 — below the
- * 4.5:1 small-text threshold. Every palette in lib/palettes.ts is measured
- * against a solid wash of its own accent at this alpha, so this number and
- * those colours have to move together.
- *
- * Intensity still reads as intensity: "lively" scatters 24 shapes at 0.7x the
- * duration, "subtle" scatters 8 and stays well under the ceiling on its own.
- */
-export const DECOR_MAX_ALPHA = 0.16;
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -110,11 +182,23 @@ export default function DecorLayer({
   motion,
   motifs,
   intensity,
+  maxAlpha,
 }: {
   accent: string;
   motion: DecorMotion;
   motifs: readonly Motif[];
   intensity: DecorIntensity;
+  /**
+   * Ceiling on any one shape's opacity, measured by the canvas against the
+   * palette actually in use.
+   *
+   * The tables above are authored for what looks right; this is what the
+   * palette can carry before text sitting over a motif drops below 4.5:1, and
+   * those are not the same number on every palette — a bright gold on near
+   * black washes out far faster than a muted green does, and a host who
+   * overrides the accent moves the answer again.
+   */
+  maxAlpha: number;
 }): ReactElement | null {
   /* Read before any early return — a hook may not sit behind a branch. */
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -136,6 +220,17 @@ export default function DecorLayer({
         {shapes.map((shape, index) => {
           /* Cycle the motifs across the fixed positions. */
           const MotifShape = motifs[index % motifs.length];
+
+          const size = Math.min(
+            SIZE_STEPS[index % SIZE_STEPS.length],
+            tier.sizeCap,
+          );
+          const rotation = ROTATIONS[index % ROTATIONS.length];
+          const opacity =
+            Math.round(
+              Math.min(maxAlpha, opacityForSize(size) * tier.opacityScale) *
+                1000,
+            ) / 1000;
 
           const style: CSSProperties = {
             left: `${shape.left}%`,
@@ -161,17 +256,22 @@ export default function DecorLayer({
                 the float and fall keyframes animate opacity themselves and
                 would otherwise override it, making the decor far too loud.
                 Nested opacity multiplies, which is what we want.
+
+                Rotation and blur ride here for the same reason. Both are
+                static — nothing in the keyframes touches filter or this
+                element's transform — so the animation is still opacity and
+                transform only, on one element per shape.
               */}
               <span
                 className="block"
                 style={{
-                  opacity: Math.min(
-                    DECOR_MAX_ALPHA,
-                    shape.opacity * tier.opacityScale,
-                  ),
+                  opacity,
+                  transform: `rotate(${rotation}deg)`,
+                  filter:
+                    size >= BLUR_MIN_SIZE ? `blur(${BLUR_RADIUS})` : undefined,
                 }}
               >
-                <MotifShape size={shape.size} />
+                <MotifShape size={size} />
               </span>
             </span>
           );
