@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getMockEvent } from "@/lib/mockEvent";
 
 /**
@@ -27,7 +28,9 @@ export async function generateMetadata({
   const { inviteCode } = await params;
   const { draft } = getMockEvent(inviteCode);
 
-  const title = `${draft.eventTitle} — ${draft.hostNames}`;
+  /* Flattened from the same resolution the cover runs, so the chat thread and
+     the card it links to name the same people. */
+  const title = `${draft.eventTitle} — ${coverNameLine(resolveCoverNames(draft))}`;
 
   return {
     title,

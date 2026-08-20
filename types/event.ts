@@ -2,7 +2,27 @@
 export type ThemeId = "marigold" | "rose" | "emerald";
 
 export interface EventDraft {
-  /** e.g. "Aarav and Meera" */
+  /**
+   * The first person being celebrated, e.g. "Aarav".
+   *
+   * Empty until the host fills it in; the card only uses the two party fields
+   * when both carry something, and falls back to `hostNames` otherwise.
+   */
+  partyOneName: string;
+  /** The second person being celebrated, e.g. "Meera". */
+  partyTwoName: string;
+  /**
+   * The word set between the two names — "weds", "&", "and", or whatever short
+   * phrase the host types. Only read when both party names are filled in.
+   */
+  joinerWord: string;
+  /**
+   * One line the host writes themselves, e.g. "Aarav and Meera".
+   *
+   * Predates the two party fields and is now the fallback: whatever is here is
+   * shown whenever the pair is incomplete, so an older draft — or a host who
+   * would rather phrase the line their own way — still renders.
+   */
   hostNames: string;
   /** e.g. "Wedding Reception" */
   eventTitle: string;

@@ -4,6 +4,7 @@ import { use, useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getMotifs } from "@/lib/motifs";
 import { getMockEvent } from "@/lib/mockEvent";
 import { getPalette } from "@/lib/palettes";
@@ -59,7 +60,8 @@ export default function InvitePage({
         screen reader announces what the page is before the card starts.
       */}
       <h1 className="sr-only">
-        {event.draft.eventTitle} — {event.draft.hostNames}
+        {event.draft.eventTitle} —{" "}
+        {coverNameLine(resolveCoverNames(event.draft))}
       </h1>
 
       {/* No frame here — the card fills the phone screen. */}

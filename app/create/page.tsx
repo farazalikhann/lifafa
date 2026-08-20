@@ -10,6 +10,7 @@ import SectionManager from "@/components/create/SectionManager";
 import StylePanel from "@/components/create/StylePanel";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import {
@@ -26,6 +27,10 @@ import type { OccasionId, TraditionId } from "@/types/occasion";
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);
 
 const EMPTY_DRAFT: EventDraft = {
+  partyOneName: "",
+  partyTwoName: "",
+  /* The commonest joining word on the cards this is built for. */
+  joinerWord: "weds",
   hostNames: "",
   eventTitle: "",
   eventDate: "",
@@ -182,7 +187,8 @@ export default function CreatePage() {
           />
           <StylePanel
             style={style}
-            hostNames={draft.hostNames}
+            /* Resolved, so the specimen shows the same line the cover will. */
+            hostNames={coverNameLine(resolveCoverNames(draft))}
             paletteAccent={getPalette(style.paletteId).accent}
             onFontPairChange={setFontPair}
             onPaletteChange={setPalette}

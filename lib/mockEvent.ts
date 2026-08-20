@@ -35,6 +35,10 @@ export interface MockEvent {
 const OCCASION = getOccasion(DEFAULT_OCCASION_ID);
 
 const SAMPLE_DRAFT: EventDraft = {
+  partyOneName: "Aarav",
+  partyTwoName: "Meera",
+  joinerWord: "weds",
+  /* Kept as the fallback the two names above take precedence over. */
   hostNames: "Aarav and Meera",
   eventTitle: "Wedding Reception",
   eventDate: "2026-12-14",

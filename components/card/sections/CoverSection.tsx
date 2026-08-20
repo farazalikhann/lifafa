@@ -10,6 +10,7 @@ import {
   lineDelay,
   placeholderOpacity,
   resolve,
+  resolveCoverNames,
   revealClass,
 } from "@/lib/cardFormat";
 import type { Theme } from "@/lib/themes";
@@ -31,6 +32,39 @@ const CUE_SENTINEL_OPTIONS: IntersectionObserverInit = {
   threshold: 0,
   rootMargin: "0px 0px -70% 0px",
 };
+
+/**
+ * One name, set in the card's display face at the cover's hero size.
+ *
+ * Pulled out because the pair layout draws it twice and the single-line layout
+ * once, and the three have to be the same size to the pixel — a first name a
+ * shade larger than a second one would read as a ranking.
+ *
+ * `break-words` is the whole defence against a long unbroken token — the canvas
+ * clips its overflow, and at this size one 60 character word is nearly three
+ * times the width of the card. Everything else wraps at spaces inside the
+ * container's own width, so no max-width is needed.
+ */
+function HeroName({
+  text,
+  isPlaceholder,
+}: {
+  text: string;
+  isPlaceholder: boolean;
+}): ReactElement {
+  return (
+    <p
+      className="text-[2rem] leading-[1.05] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[2.25rem]"
+      style={{
+        opacity: placeholderOpacity(isPlaceholder, "primary"),
+        fontFamily: "var(--card-heading)",
+        fontWeight: "var(--card-heading-weight)" as unknown as number,
+      }}
+    >
+      {text}
+    </p>
+  );
+}
 
 export default function CoverSection({
   draft,
@@ -70,8 +104,15 @@ export default function CoverSection({
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const cueRetired = !prefersReducedMotion && hasScrolledPast;
 
-  const hosts = resolve(draft.hostNames, "Your names");
+  const names = resolveCoverNames(draft);
   const title = resolve(draft.eventTitle, "Event title");
+
+  /*
+    Where the stagger picks up after the names. A pair spends three steps, a
+    single line one, and everything below counts on from there — hard coding
+    the title at step 1 would have it arrive on top of the second name.
+  */
+  const stepAfterNames = names.kind === "pair" ? 3 : 1;
 
   /*
     Reveal lives on the wrapper, placeholder dimming on the text inside it.
@@ -90,26 +131,44 @@ export default function CoverSection({
         gap: `calc(1.5rem * var(--card-gap-scale, 1))`,
       }}
     >
-      <div className={reveal} style={lineDelay(0)}>
-        {/*
-          `break-words` is the whole defence against a long unbroken token —
-          the canvas clips its overflow, and at this size one 60 character word
-          is nearly three times the width of the card. Everything else wraps at
-          spaces inside the container's own width, so no max-width is needed.
-        */}
-        <p
-          className="text-[2rem] leading-[1.05] font-semibold tracking-[-0.015em] break-words text-balance sm:text-[2.25rem]"
-          style={{
-            opacity: placeholderOpacity(hosts.isPlaceholder, "primary"),
-            fontFamily: "var(--card-heading)",
-            fontWeight: "var(--card-heading-weight)" as unknown as number,
-          }}
-        >
-          {hosts.text}
-        </p>
-      </div>
+      {names.kind === "pair" ? (
+        /*
+          Three lines, one unit. The gap here is deliberately far tighter than
+          the section's own — the joining word belongs to the names, not to the
+          run of cover lines, and at the section's spacing it would read as a
+          third statement rather than as the hinge between two names.
+        */
+        <div className="flex flex-col items-center gap-1">
+          <div className={reveal} style={lineDelay(0)}>
+            <HeroName text={names.first} isPlaceholder={false} />
+          </div>
 
-      <div className={reveal} style={lineDelay(1)}>
+          <div className={reveal} style={lineDelay(1)}>
+            {/*
+              Set at roughly 45% of the hero size and in the accent, so it
+              carries the eye from one name to the other without competing
+              with either. Lower cased in CSS rather than on the value, so a
+              host who types "Weds" still gets the card's own voice back.
+            */}
+            <p
+              className="text-[0.9rem] leading-none tracking-[0.22em] break-words lowercase sm:text-[1rem]"
+              style={{ color: theme.accent }}
+            >
+              {names.joiner}
+            </p>
+          </div>
+
+          <div className={reveal} style={lineDelay(2)}>
+            <HeroName text={names.second} isPlaceholder={false} />
+          </div>
+        </div>
+      ) : (
+        <div className={reveal} style={lineDelay(0)}>
+          <HeroName text={names.text} isPlaceholder={names.isPlaceholder} />
+        </div>
+      )}
+
+      <div className={reveal} style={lineDelay(stepAfterNames)}>
         <p
           className="text-[0.6875rem] tracking-[0.28em] break-words uppercase text-balance"
           style={{
@@ -121,7 +180,7 @@ export default function CoverSection({
         </p>
       </div>
 
-      <div className={reveal} style={lineDelay(2)}>
+      <div className={reveal} style={lineDelay(stepAfterNames + 1)}>
         <CardFlourish accent={theme.accent} />
       </div>
 
@@ -145,7 +204,7 @@ export default function CoverSection({
         )}`}
         /* Transparent is not enough — a retired cue must also stop being read out. */
         aria-hidden={cueRetired}
-        style={cueRetired ? undefined : lineDelay(3)}
+        style={cueRetired ? undefined : lineDelay(stepAfterNames + 2)}
       >
         <span
           className="text-[0.625rem] tracking-[0.3em] uppercase"

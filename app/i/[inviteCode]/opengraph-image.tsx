@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
-import type { ReactElement } from "react";
-import { formatWhen } from "@/lib/cardFormat";
+import type { CSSProperties, ReactElement } from "react";
+import { formatWhen, resolveCoverNames } from "@/lib/cardFormat";
 import { getMockEvent } from "@/lib/mockEvent";
 import { getPalette } from "@/lib/palettes";
 
@@ -34,6 +34,25 @@ const FONT_STACK =
 /** Inset of the accent frame from the image edge. */
 const FRAME_INSET = 28;
 
+/** The cover's hero size at share-image scale, and the joiner's share of it. */
+const HERO_SIZE = 76;
+const JOINER_RATIO = 0.45;
+
+/**
+ * One name at hero size. A function rather than a constant because the colour
+ * comes from the event's own palette, and Satori needs the whole rule inline.
+ */
+function heroStyle(color: string): CSSProperties {
+  return {
+    display: "flex",
+    fontSize: HERO_SIZE,
+    lineHeight: 1.1,
+    fontWeight: 600,
+    letterSpacing: "-0.015em",
+    color,
+  };
+}
+
 export default function Image({
   params,
 }: {
@@ -44,7 +63,9 @@ export default function Image({
   const palette = getPalette(event.style.paletteId);
   const accent = event.style.accentOverride ?? palette.accent;
 
-  const { hostNames, eventTitle, eventDate, eventTime } = event.draft;
+  const { eventTitle, eventDate, eventTime } = event.draft;
+  /* The same resolution the card runs, so the unfurl cannot disagree with it. */
+  const names = resolveCoverNames(event.draft);
   const when = formatWhen(eventDate, eventTime);
 
   const content: ReactElement = (
@@ -84,18 +105,33 @@ export default function Image({
           textAlign: "center",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            fontSize: 76,
-            lineHeight: 1.1,
-            fontWeight: 600,
-            letterSpacing: "-0.015em",
-            color: palette.textPrimary,
-          }}
-        >
-          {hostNames}
-        </div>
+        {names.kind === "pair" ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <div style={heroStyle(palette.textPrimary)}>{names.first}</div>
+            <div
+              style={{
+                display: "flex",
+                /* Tight against both names, the way the card sets it. */
+                margin: "8px 0",
+                fontSize: Math.round(HERO_SIZE * JOINER_RATIO),
+                letterSpacing: "0.22em",
+                textTransform: "lowercase",
+                color: accent,
+              }}
+            >
+              {names.joiner}
+            </div>
+            <div style={heroStyle(palette.textPrimary)}>{names.second}</div>
+          </div>
+        ) : (
+          <div style={heroStyle(palette.textPrimary)}>{names.text}</div>
+        )}
 
         <div
           style={{

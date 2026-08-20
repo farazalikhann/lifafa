@@ -6,6 +6,8 @@
  * anywhere in the card tree without creating an import cycle.
  */
 
+import type { EventDraft } from "@/types/event";
+
 /**
  * Every date on the card is pinned to India, on both sides of the wire.
  *
@@ -65,6 +67,82 @@ export function resolve(value: string, placeholder: string): FieldValue {
   return trimmed.length > 0
     ? { text: trimmed, isPlaceholder: false }
     : { text: placeholder, isPlaceholder: true };
+}
+
+/* ---------------------------------------------------------------------------
+   Whose names go on the cover.
+
+   Two shapes, one resolution, because three places have to agree: the card,
+   the share image WhatsApp unfurls, and the page title. If any of them
+   resolved the names on its own, a guest could be shown one thing in the chat
+   thread and another after tapping through.
+   --------------------------------------------------------------------------- */
+
+/** The placeholder shown when the host has typed no names at all. */
+export const NAMES_PLACEHOLDER = "Your names";
+
+/** Used when both names are filled in but the joining word was left blank. */
+const JOINER_FALLBACK = "&";
+
+/**
+ * A cover name is either a pair set over three lines or a single written line.
+ * A discriminated union rather than an optional-fields object, so a caller
+ * that forgets the pair case does not compile.
+ */
+export type CoverNames =
+  | {
+      readonly kind: "pair";
+      readonly first: string;
+      readonly joiner: string;
+      readonly second: string;
+    }
+  | {
+      readonly kind: "line";
+      readonly text: string;
+      readonly isPlaceholder: boolean;
+    };
+
+/** The draft fields the cover name is built from. */
+export type CoverNameFields = Pick<
+  EventDraft,
+  "partyOneName" | "partyTwoName" | "joinerWord" | "hostNames"
+>;
+
+/**
+ * Resolves what the cover should call the people being celebrated.
+ *
+ * The pair wins only when *both* names are there: one name plus a joining word
+ * is a half-finished thought, and rendering "Aarav weds" would be worse than
+ * falling back. Everything else comes down to hostNames, then the placeholder.
+ */
+export function resolveCoverNames(draft: CoverNameFields): CoverNames {
+  const first = draft.partyOneName.trim();
+  const second = draft.partyTwoName.trim();
+
+  if (first.length > 0 && second.length > 0) {
+    const joiner = draft.joinerWord.trim();
+
+    return {
+      kind: "pair",
+      first,
+      joiner: joiner.length > 0 ? joiner : JOINER_FALLBACK,
+      second,
+    };
+  }
+
+  const line = resolve(draft.hostNames, NAMES_PLACEHOLDER);
+
+  return { kind: "line", text: line.text, isPlaceholder: line.isPlaceholder };
+}
+
+/**
+ * The same names flattened to one line, for places that cannot stack them —
+ * the document title, the share preview's alt text, a screen reader heading.
+ */
+export function coverNameLine(names: CoverNames): string {
+  return names.kind === "pair"
+    ? `${names.first} ${names.joiner} ${names.second}`
+    : names.text;
 }
 
 /**
