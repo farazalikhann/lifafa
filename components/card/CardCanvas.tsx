@@ -1,15 +1,18 @@
 "use client";
 
-import { Fragment, type ReactElement } from "react";
+import { Fragment, type CSSProperties, type ReactElement } from "react";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
 import DetailsSection from "@/components/card/sections/DetailsSection";
 import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
+import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
+import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
 import type { CardConfig, CardSizing } from "@/types/card";
+import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 
@@ -23,10 +26,33 @@ import type { EventDraft } from "@/types/event";
  */
 const PREVIEW_FRAME_HEIGHT = 620;
 
-const SECTION_MIN_HEIGHT: Record<CardSizing, string> = {
-  viewport: "80svh",
-  frame: `${Math.round(PREVIEW_FRAME_HEIGHT * 0.8)}px`,
+/**
+ * Density scales section height and the gaps between lines together.
+ *
+ * "comfortable" is 0.8 of the base, which is exactly the previous fixed
+ * behaviour, so an existing card is unchanged. The same scale is applied in
+ * both sizing modes, so the editor preview stays proportionally honest.
+ */
+const DENSITY_HEIGHT_SCALE: Record<CardDensity, number> = {
+  compact: 0.6,
+  comfortable: 0.8,
+  airy: 1,
 };
+
+/** 1 leaves every section's existing gap untouched. */
+const DENSITY_GAP_SCALE: Record<CardDensity, number> = {
+  compact: 0.6,
+  comfortable: 1,
+  airy: 1.4,
+};
+
+function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
+  const scale = DENSITY_HEIGHT_SCALE[density];
+
+  return sizing === "viewport"
+    ? `${Math.round(scale * 100)}svh`
+    : `${Math.round(PREVIEW_FRAME_HEIGHT * scale)}px`;
+}
 
 /**
  * Whether a block will actually put something on the page.
@@ -107,20 +133,52 @@ export default function CardCanvas({
   motifs: readonly Motif[];
   sizing: CardSizing;
 }): ReactElement {
-  const minHeight = SECTION_MIN_HEIGHT[sizing];
+  const { style } = config;
+  const minHeight = sectionMinHeight(sizing, style.density);
   const visible = config.blocks.filter((block) => blockRenders(block, draft));
+
+  /*
+    Colour resolution order: the host's accent override, then the selected
+    palette, then the theme as the last resort. Sections read colours from the
+    theme object they are handed, so composing one effective theme here is what
+    makes an override reach every divider, motif, scroll cue and accent line at
+    once.
+  */
+  const palette = getPalette(style.paletteId);
+  const fontPair = getFontPair(style.fontPairId);
+
+  const effectiveTheme: Theme = {
+    ...theme,
+    background: palette.background ?? theme.background,
+    surface: palette.surface ?? theme.surface,
+    accent: style.accentOverride ?? palette.accent ?? theme.accent,
+    textPrimary: palette.textPrimary ?? theme.textPrimary,
+    textMuted: palette.textMuted ?? theme.textMuted,
+    fontFamily: fontFamilyOf(fontPair.bodyVar, fontPair.bodyFallback),
+  };
+
+  /* Consumed by the sections through inheritance, so a change is instant. */
+  const cssVariables = {
+    "--card-heading": fontFamilyOf(
+      fontPair.headingVar,
+      fontPair.headingFallback,
+    ),
+    "--card-heading-weight": String(fontPair.headingWeight),
+    "--card-gap-scale": String(DENSITY_GAP_SCALE[style.density]),
+  } as CSSProperties;
 
   return (
     <div
       className="relative mx-auto w-full max-w-[420px] overflow-hidden"
       style={{
-        backgroundColor: theme.background,
-        color: theme.textPrimary,
-        fontFamily: theme.fontFamily,
+        ...cssVariables,
+        backgroundColor: effectiveTheme.background,
+        color: effectiveTheme.textPrimary,
+        fontFamily: effectiveTheme.fontFamily,
       }}
     >
       <DecorLayer
-        accent={theme.accent}
+        accent={effectiveTheme.accent}
         motion={config.decorMotion}
         motifs={motifs}
         intensity={config.decorIntensity}
@@ -132,10 +190,13 @@ export default function CardCanvas({
           <Fragment key={blockKey(block)}>
             {index > 0 ? (
               <div className="flex justify-center py-2">
-                <CardFlourish accent={theme.accent} className="opacity-50" />
+                <CardFlourish
+                  accent={effectiveTheme.accent}
+                  className="opacity-50"
+                />
               </div>
             ) : null}
-            {renderBlock(block, draft, theme, minHeight)}
+            {renderBlock(block, draft, effectiveTheme, minHeight)}
           </Fragment>
         ))}
       </div>

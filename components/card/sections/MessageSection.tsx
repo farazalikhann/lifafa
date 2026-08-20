@@ -32,8 +32,11 @@ export default function MessageSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center gap-5 px-7 py-16 text-center"
-      style={{ minHeight }}
+      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      style={{
+        minHeight,
+        gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
+      }}
     >
       <div className={reveal} style={lineDelay(0)}>
         <span

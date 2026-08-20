@@ -32,13 +32,20 @@ export default function CoverSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center gap-6 px-7 py-16 text-center"
-      style={{ minHeight }}
+      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      style={{
+        minHeight,
+        gap: `calc(1.5rem * var(--card-gap-scale, 1))`,
+      }}
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
           className="text-[2rem] leading-[1.05] font-semibold tracking-[-0.015em] text-balance sm:text-[2.25rem]"
-          style={{ opacity: hosts.isPlaceholder ? 0.4 : 1 }}
+          style={{
+            opacity: hosts.isPlaceholder ? 0.4 : 1,
+            fontFamily: "var(--card-heading)",
+            fontWeight: "var(--card-heading-weight)" as unknown as number,
+          }}
         >
           {hosts.text}
         </p>

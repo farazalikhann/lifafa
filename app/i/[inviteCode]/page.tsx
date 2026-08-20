@@ -11,6 +11,7 @@ import {
   getOccasion,
 } from "@/lib/occasions";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
+import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { getTheme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -62,6 +63,13 @@ export default function InvitePage({
     decorIntensity: "normal",
     occasionId: DEFAULT_OCCASION_ID,
     traditionId: DEFAULT_TRADITION_ID,
+    /* Hardcoded for this step; the style travels with the event later. */
+    style: {
+      fontPairId: DEFAULT_FONT_PAIR_ID,
+      paletteId: occasion.defaultPaletteId,
+      density: "comfortable",
+      accentOverride: null,
+    },
   };
   const motifs = getMotifs(config.occasionId, config.traditionId);
 

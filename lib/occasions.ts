@@ -1,6 +1,7 @@
 import type { DecorMotion } from "@/types/card";
 import type { ThemeId } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { PaletteId } from "@/types/style";
 
 export interface Occasion {
   id: OccasionId;
@@ -8,17 +9,19 @@ export interface Occasion {
   /** Applied on an explicit occasion click; the host can override afterwards. */
   defaultThemeId: ThemeId;
   defaultMotion: DecorMotion;
+  /** Palette applied on an occasion click; lib/themes.ts stays untouched. */
+  defaultPaletteId: PaletteId;
 }
 
 export const OCCASIONS: readonly Occasion[] = [
-  { id: "wedding", label: "Wedding", defaultThemeId: "marigold", defaultMotion: "fall" },
-  { id: "engagement", label: "Engagement", defaultThemeId: "rose", defaultMotion: "float" },
-  { id: "birthday", label: "Birthday", defaultThemeId: "marigold", defaultMotion: "float" },
-  { id: "babyShower", label: "Baby shower", defaultThemeId: "rose", defaultMotion: "float" },
-  { id: "housewarming", label: "Housewarming", defaultThemeId: "marigold", defaultMotion: "drift" },
-  { id: "anniversary", label: "Anniversary", defaultThemeId: "rose", defaultMotion: "fall" },
-  { id: "corporate", label: "Corporate", defaultThemeId: "emerald", defaultMotion: "drift" },
-  { id: "other", label: "Other", defaultThemeId: "marigold", defaultMotion: "none" },
+  { id: "wedding", label: "Wedding", defaultThemeId: "marigold", defaultMotion: "fall", defaultPaletteId: "ink" },
+  { id: "engagement", label: "Engagement", defaultThemeId: "rose", defaultMotion: "float", defaultPaletteId: "cream" },
+  { id: "birthday", label: "Birthday", defaultThemeId: "marigold", defaultMotion: "float", defaultPaletteId: "ink" },
+  { id: "babyShower", label: "Baby shower", defaultThemeId: "rose", defaultMotion: "float", defaultPaletteId: "blush" },
+  { id: "housewarming", label: "Housewarming", defaultThemeId: "marigold", defaultMotion: "drift", defaultPaletteId: "sand" },
+  { id: "anniversary", label: "Anniversary", defaultThemeId: "rose", defaultMotion: "fall", defaultPaletteId: "midnight" },
+  { id: "corporate", label: "Corporate", defaultThemeId: "emerald", defaultMotion: "drift", defaultPaletteId: "forest" },
+  { id: "other", label: "Other", defaultThemeId: "marigold", defaultMotion: "none", defaultPaletteId: "ink" },
 ];
 
 export interface Tradition {

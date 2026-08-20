@@ -33,13 +33,20 @@ export default function VenueSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center gap-4 px-7 py-16 text-center"
-      style={{ minHeight }}
+      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      style={{
+        minHeight,
+        gap: `calc(1rem * var(--card-gap-scale, 1))`,
+      }}
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
           className="text-[1.25rem] leading-snug font-medium text-balance sm:text-[1.375rem]"
-          style={{ opacity: venue.isPlaceholder ? 0.4 : 1 }}
+          style={{
+            opacity: venue.isPlaceholder ? 0.4 : 1,
+            fontFamily: "var(--card-heading)",
+            fontWeight: "var(--card-heading-weight)" as unknown as number,
+          }}
         >
           {venue.text}
         </p>

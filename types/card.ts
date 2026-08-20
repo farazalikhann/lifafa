@@ -1,6 +1,7 @@
 import type { CardBlock } from "@/types/customSection";
 import type { ThemeId } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { CardStyle } from "@/types/style";
 
 export type CardSectionId = "cover" | "details" | "venue" | "message";
 
@@ -26,4 +27,6 @@ export interface CardConfig {
   decorIntensity: DecorIntensity;
   occasionId: OccasionId;
   traditionId: TraditionId;
+  /** Host overrides for typography, colour and card length. */
+  style: CardStyle;
 }

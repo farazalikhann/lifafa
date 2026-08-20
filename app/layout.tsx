@@ -1,19 +1,60 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Inter } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  DM_Sans,
+  Fraunces,
+  Inter,
+  Lora,
+} from "next/font/google";
 import "./globals.css";
 
-const display = Fraunces({
+/*
+  Every face the card can use is loaded here, once, and exposed as a CSS
+  variable on <html>. Components never load fonts: next/font hashes and
+  self-hosts each face at build time, and loading one from a component would
+  lose the preload and risk a flash of fallback text.
+*/
+
+const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display",
 });
 
-const body = Inter({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
 });
+
+/* Not a variable font, so the two weights actually used are named. */
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  display: "swap",
+  variable: "--font-cormorant",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-lora",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-dm-sans",
+});
+
+const FONT_VARIABLES = [
+  fraunces.variable,
+  inter.variable,
+  cormorant.variable,
+  lora.variable,
+  dmSans.variable,
+].join(" ");
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://getlifafa.co.in"),
@@ -26,7 +67,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en-IN" className={`${display.variable} ${body.variable}`}>
+    <html lang="en-IN" className={FONT_VARIABLES}>
       <body className="bg-[var(--lifafa-ink)] font-[family-name:var(--font-sans)] text-[var(--lifafa-cream)] antialiased">
         {children}
       </body>

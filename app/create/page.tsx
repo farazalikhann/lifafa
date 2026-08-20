@@ -7,9 +7,12 @@ import EventForm from "@/components/create/EventForm";
 import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import SectionManager from "@/components/create/SectionManager";
+import StylePanel from "@/components/create/StylePanel";
 import ThemePicker from "@/components/create/ThemePicker";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
+import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { getMotifs } from "@/lib/motifs";
+import { getPalette } from "@/lib/palettes";
 import {
   DEFAULT_OCCASION_ID,
   DEFAULT_TRADITION_ID,
@@ -17,6 +20,7 @@ import {
 } from "@/lib/occasions";
 import type { CardConfig, DecorIntensity, DecorMotion } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
+import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
 import type { EventDraft, ThemeId } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
 
@@ -42,6 +46,12 @@ export default function CreatePage() {
     DEFAULT_OCCASION.defaultMotion,
   );
   const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>("normal");
+  const [style, setStyle] = useState<CardStyle>({
+    fontPairId: DEFAULT_FONT_PAIR_ID,
+    paletteId: DEFAULT_OCCASION.defaultPaletteId,
+    density: "comfortable",
+    accentOverride: null,
+  });
 
   /* Every built in section starts enabled, in the registry order. */
   const [blocks, setBlocks] = useState<readonly CardBlock[]>(() =>
@@ -72,6 +82,28 @@ export default function CreatePage() {
     setOccasionId(id);
     setDecorMotion(occasion.defaultMotion);
     setDraft((previous) => ({ ...previous, themeId: occasion.defaultThemeId }));
+    /* Palette follows the occasion; a custom accent is cleared with it. */
+    setStyle((previous) => ({
+      ...previous,
+      paletteId: occasion.defaultPaletteId,
+      accentOverride: null,
+    }));
+  }, []);
+
+  const setFontPair = useCallback((fontPairId: FontPairId) => {
+    setStyle((previous) => ({ ...previous, fontPairId }));
+  }, []);
+
+  const setPalette = useCallback((paletteId: PaletteId) => {
+    setStyle((previous) => ({ ...previous, paletteId }));
+  }, []);
+
+  const setDensity = useCallback((density: CardDensity) => {
+    setStyle((previous) => ({ ...previous, density }));
+  }, []);
+
+  const setAccent = useCallback((accentOverride: string | null) => {
+    setStyle((previous) => ({ ...previous, accentOverride }));
   }, []);
 
   const config: CardConfig = {
@@ -81,6 +113,7 @@ export default function CreatePage() {
     decorIntensity,
     occasionId,
     traditionId,
+    style,
   };
 
   const motifs = getMotifs(occasionId, traditionId);
@@ -145,6 +178,15 @@ export default function CreatePage() {
             intensity={decorIntensity}
             onMotionChange={setDecorMotion}
             onIntensityChange={setDecorIntensity}
+          />
+          <StylePanel
+            style={style}
+            hostNames={draft.hostNames}
+            paletteAccent={getPalette(style.paletteId).accent}
+            onFontPairChange={setFontPair}
+            onPaletteChange={setPalette}
+            onDensityChange={setDensity}
+            onAccentChange={setAccent}
           />
         </div>
       </main>

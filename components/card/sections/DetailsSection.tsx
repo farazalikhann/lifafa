@@ -32,8 +32,11 @@ export default function DetailsSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center gap-4 px-7 py-16 text-center"
-      style={{ minHeight }}
+      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      style={{
+        minHeight,
+        gap: `calc(1rem * var(--card-gap-scale, 1))`,
+      }}
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
@@ -48,7 +51,11 @@ export default function DetailsSection({
       <div className={reveal} style={lineDelay(1)}>
         <p
           className="max-w-[16ch] text-[1.5rem] leading-[1.2] font-medium tracking-[0.02em] text-balance sm:text-[1.75rem]"
-          style={{ opacity: hasDate ? 1 : 0.4 }}
+          style={{
+            opacity: hasDate ? 1 : 0.4,
+            fontFamily: "var(--card-heading)",
+            fontWeight: "var(--card-heading-weight)" as unknown as number,
+          }}
         >
           {dateAndTime ?? "Date and time"}
         </p>
