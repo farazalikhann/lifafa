@@ -21,6 +21,24 @@
 }
 
 /* -------------------------------------------------------------------------
+   Utilities.
+   ------------------------------------------------------------------------- */
+
+/*
+  Hides the scrollbar while leaving the element fully scrollable — wheel, touch
+  and keyboard all still work. Used by the phone frame on /create, where a
+  native scrollbar down the right edge breaks the illusion of a screen.
+*/
+.lifafa-no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge and IE */
+}
+
+.lifafa-no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, newer Edge */
+}
+
+/* -------------------------------------------------------------------------
    Keyframes. Consumed via arbitrary animation utilities in the components.
    ------------------------------------------------------------------------- */
 @keyframes lifafa-rise {

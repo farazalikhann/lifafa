@@ -5,34 +5,11 @@ import CardCanvas from "@/components/card/CardCanvas";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import { getMotifs } from "@/lib/motifs";
-import {
-  DEFAULT_OCCASION_ID,
-  DEFAULT_TRADITION_ID,
-  getOccasion,
-} from "@/lib/occasions";
-import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
-import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
+import { getMockEvent } from "@/lib/mockEvent";
+import { getPalette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
-import type { EventDraft } from "@/types/event";
 import type { RsvpSubmission } from "@/types/guest";
-
-/**
- * PLACEHOLDER EVENT.
- *
- * There is no database in this step, so every invite code renders the same
- * sample invitation. Looking the draft up by `inviteCode` comes later.
- */
-const SAMPLE_DRAFT: EventDraft = {
-  hostNames: "Aarav and Meera",
-  eventTitle: "Wedding Reception",
-  eventDate: "2026-12-14",
-  eventTime: "19:00",
-  venueName: "The Grand Ballroom",
-  venueAddress: "12 MG Road, Bengaluru 560001",
-  message: "We would love to have you with us as we begin this chapter.",
-  themeId: "marigold",
-};
 
 type InviteStage = "form" | "confirmed";
 
@@ -41,35 +18,29 @@ export default function InvitePage({
 }: {
   params: Promise<{ inviteCode: string }>;
 }): ReactElement {
-  /* Unwrapped so the route stays correct once this drives a real lookup. */
-  use(params);
+  const { inviteCode } = use(params);
 
   const [stage, setStage] = useState<InviteStage>("form");
   /** The whole submission is kept, so the form comes back filled in. */
   const [submitted, setSubmitted] = useState<RsvpSubmission | null>(null);
 
-  const theme = getTheme(SAMPLE_DRAFT.themeId);
+  /*
+    Same lookup the share image runs, so the card a guest opens and the preview
+    that got them here can never describe two different events.
+  */
+  const event = getMockEvent(inviteCode);
+  const theme = getTheme(event.draft.themeId);
+  /* Page background follows the palette, the same source the card resolves from. */
+  const palette = getPalette(event.style.paletteId);
 
-  /* Hardcoded for this step; these follow the event once it is stored. */
-  const occasion = getOccasion(DEFAULT_OCCASION_ID);
   const config: CardConfig = {
-    themeId: SAMPLE_DRAFT.themeId,
-    blocks: DEFAULT_SECTION_ORDER.map((id) => ({
-      kind: "builtin" as const,
-      id,
-      enabled: true,
-    })),
-    decorMotion: occasion.defaultMotion,
-    decorIntensity: "normal",
-    occasionId: DEFAULT_OCCASION_ID,
-    traditionId: DEFAULT_TRADITION_ID,
-    /* Hardcoded for this step; the style travels with the event later. */
-    style: {
-      fontPairId: DEFAULT_FONT_PAIR_ID,
-      paletteId: occasion.defaultPaletteId,
-      density: "comfortable",
-      accentOverride: null,
-    },
+    themeId: event.draft.themeId,
+    blocks: event.blocks,
+    decorMotion: event.decorMotion,
+    decorIntensity: event.decorIntensity,
+    occasionId: event.occasionId,
+    traditionId: event.traditionId,
+    style: event.style,
   };
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
@@ -79,10 +50,21 @@ export default function InvitePage({
   };
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: theme.background }}>
+    <main className="min-h-screen" style={{ backgroundColor: palette.background }}>
+      {/*
+        The card opens with host names set in display type, but they are a
+        design element rather than a document heading — promoting them to an h1
+        would put the page's typography and its outline in the same object and
+        let one drag the other around. This carries the outline instead, so a
+        screen reader announces what the page is before the card starts.
+      */}
+      <h1 className="sr-only">
+        {event.draft.eventTitle} — {event.draft.hostNames}
+      </h1>
+
       {/* No frame here — the card fills the phone screen. */}
       <CardCanvas
-        draft={SAMPLE_DRAFT}
+        draft={event.draft}
         theme={theme}
         config={config}
         motifs={motifs}

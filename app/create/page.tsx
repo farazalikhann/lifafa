@@ -8,7 +8,6 @@ import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import SectionManager from "@/components/create/SectionManager";
 import StylePanel from "@/components/create/StylePanel";
-import ThemePicker from "@/components/create/ThemePicker";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { getMotifs } from "@/lib/motifs";
@@ -21,7 +20,7 @@ import {
 import type { CardConfig, DecorIntensity, DecorMotion } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
-import type { EventDraft, ThemeId } from "@/types/event";
+import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);
@@ -66,10 +65,6 @@ export default function CreatePage() {
     <K extends keyof EventDraft>(field: K, value: EventDraft[K]) => void
   >((field, value) => {
     setDraft((previous) => ({ ...previous, [field]: value }));
-  }, []);
-
-  const handleThemeSelect = useCallback((themeId: ThemeId) => {
-    setDraft((previous) => ({ ...previous, themeId }));
   }, []);
 
   /**
@@ -156,6 +151,16 @@ export default function CreatePage() {
         right ~55% while the form scrolls.
       */}
       <main className="mx-auto grid max-w-6xl gap-10 px-5 py-8 lg:grid-cols-[45fr_55fr] lg:items-start lg:gap-14 lg:px-8 lg:py-12">
+        {/*
+          The editor's visible headings all describe one part of the card —
+          Occasion, Card sections, Style — and none of them names the page, so
+          without this the document outline starts at h2 and a screen reader
+          user arriving by heading has nothing that says where they are.
+          Off screen rather than drawn: the design's entry point is the card
+          itself, and a visible title would compete with it.
+        */}
+        <h1 className="sr-only">Create your invitation</h1>
+
         <div className="order-2 flex flex-col gap-9 lg:order-1">
           <OccasionPicker
             occasionId={occasionId}
@@ -169,10 +174,6 @@ export default function CreatePage() {
 
         <div className="order-1 flex flex-col gap-6 lg:order-2 lg:sticky lg:top-24">
           <CardPreview draft={draft} config={config} motifs={motifs} />
-          <ThemePicker
-            selectedId={draft.themeId}
-            onSelect={handleThemeSelect}
-          />
           <MotionPicker
             motion={decorMotion}
             intensity={decorIntensity}
