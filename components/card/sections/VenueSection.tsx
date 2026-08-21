@@ -18,10 +18,13 @@ export default function VenueSection({
   draft,
   theme,
   minHeight,
+  pad,
 }: {
   draft: EventDraft;
   theme: Theme;
   minHeight: string;
+  /** Content inset, top and bottom, in px — see CoverSection for what it is for. */
+  pad: number;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -35,9 +38,11 @@ export default function VenueSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center px-7 py-10 text-center"
+      className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
+        paddingTop: pad,
+        paddingBottom: pad,
         gap: `calc(1rem * var(--card-gap-scale, 1))`,
       }}
     >

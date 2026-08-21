@@ -37,7 +37,7 @@ import type { OrnamentId } from "@/types/ornament";
  * The most opaque any decor shape is ever authored to be, and so the highest
  * alpha worth testing for contrast. Mirrors OPACITY_AT_SMALLEST in DecorLayer.
  */
-const DECOR_CEILING = 0.38;
+const DECOR_CEILING = 0.22;
 
 /**
  * What Arabic script is set in.
@@ -162,22 +162,23 @@ const PREVIEW_FRAME_HEIGHT = 620;
  * Every tier is now well under a screen, which is the point. A section is a
  * centred group of three or four lines — measured on a 360x800 phone, the date
  * is 123px of content and the note 76px — and asking for 0.8 of the viewport
- * around that left over 450px of nothing, half a screen the guest had to scroll
- * through to reach the next line. "comfortable" is 0.45: enough that a section
- * still arrives as its own thing rather than as a paragraph in a list, little
- * enough that what is left over reads as margin rather than as a gap.
+ * The card is read one swipe at a time, and a swipe should deliver one thing:
+ * the names, or the date, or the venue. That only holds if a section is at
+ * least as tall as the screen it lands on. Cutting "comfortable" to 0.45 to
+ * close up the empty space put two sections on one screen and let their content
+ * collide, which is a worse failure than the slack it was fixing — so the
+ * default is back to a full viewport, and the emptiness is dealt with where it
+ * actually belongs, in the padding each section keeps around its own content.
  *
- * The same scale is applied in both sizing modes, so the editor preview stays
- * proportionally honest.
- *
- * These are minimums, and a section taller than its minimum simply keeps its
- * own `py-10`: the cover, at 364px of content and padding, is already past
- * this on a phone and so sits at an even 40px inset top and bottom.
+ * "compact" sits just under a screen for a host who wants a shorter card and
+ * accepts the next section peeking in; "airy" gives a section room past the
+ * screen it is read on. The same scale applies in both sizing modes, so the
+ * editor preview stays proportionally honest.
  */
 const DENSITY_HEIGHT_SCALE: Record<CardDensity, number> = {
-  compact: 0.34,
-  comfortable: 0.45,
-  airy: 0.58,
+  compact: 0.9,
+  comfortable: 1,
+  airy: 1.2,
 };
 
 /** 1 leaves every section's existing gap untouched. */
@@ -258,6 +259,7 @@ function renderBlock(
   draft: EventDraft,
   theme: Theme,
   minHeight: string,
+  pad: number,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -265,22 +267,47 @@ function renderBlock(
         section={block.section}
         theme={theme}
         minHeight={minHeight}
+        pad={pad}
       />
     );
   }
 
   switch (block.id) {
     case "cover":
-      return <CoverSection draft={draft} theme={theme} minHeight={minHeight} />;
+      return (
+        <CoverSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+        />
+      );
     case "details":
       return (
-        <DetailsSection draft={draft} theme={theme} minHeight={minHeight} />
+        <DetailsSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+        />
       );
     case "venue":
-      return <VenueSection draft={draft} theme={theme} minHeight={minHeight} />;
+      return (
+        <VenueSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+        />
+      );
     case "message":
       return (
-        <MessageSection draft={draft} theme={theme} minHeight={minHeight} />
+        <MessageSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+        />
       );
   }
 }
@@ -428,7 +455,26 @@ export default function CardCanvas({
     BLESSING_TOP_PAD is the floor: with nothing hanging, the blessing keeps its
     own comfortable inset instead of being pulled up to the card's edge.
   */
-  const blessingTopPad = Math.max(BLESSING_TOP_PAD, hangingDepth(ornaments));
+  const hangingBand = hangingDepth(ornaments);
+  const blessingTopPad = Math.max(BLESSING_TOP_PAD, hangingBand);
+
+  /*
+    What every section insets its content by, top and bottom alike.
+
+    THE BUG THIS FIXES. The hanging layer is pinned to the top of the screen, so
+    whichever section is filling the screen has the lanterns hanging directly
+    over its own first line. Only the cover was clearing them, which is why the
+    date rendered behind the string of lights and could not be read at all.
+    `hangingDepth` exists for precisely this and is now asked by every section
+    rather than by one of them.
+
+    Applied to the bottom as well as the top, and that symmetry is the point: a
+    section centres its content in whatever box the padding leaves, so equal
+    padding is what keeps the group optically centred instead of pushing it low
+    while clearing the band. Border-box sizing means neither inset adds to the
+    section's height — it stays exactly the viewport it is supposed to fill.
+  */
+  const sectionPad = Math.max(SECTION_TOP_PAD, hangingBand);
 
   /*
     The blessing's inset is now the same wherever the cover sits in the running
@@ -542,7 +588,13 @@ export default function CardCanvas({
           this list, so its divider is absent with it.
         */}
         {visible.map((block, index) => {
-          const section = renderBlock(block, draft, effectiveTheme, minHeight);
+          const section = renderBlock(
+            block,
+            draft,
+            effectiveTheme,
+            minHeight,
+            sectionPad,
+          );
 
           /*
             At most one panel per card, and only over a built-in section: the

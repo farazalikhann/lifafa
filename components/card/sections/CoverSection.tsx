@@ -70,10 +70,25 @@ export default function CoverSection({
   draft,
   theme,
   minHeight,
+  pad,
 }: {
   draft: EventDraft;
   theme: Theme;
   minHeight: string;
+  /**
+   * Inset for the section's content, top and bottom, in px.
+   *
+   * Not decoration: the hanging ornaments are pinned to the top of the screen,
+   * so whichever section is filling the screen has them over its own first
+   * line. The canvas resolves this from `hangingDepth` and hands every section
+   * the same number, so no section's content can begin inside the band.
+   *
+   * Applied to both edges so the content stays optically centred rather than
+   * being pushed low, and inline rather than as a class because it is a
+   * measurement the canvas computes, not a constant. Border-box sizing means it
+   * never adds to `minHeight` — the section still fills its viewport exactly.
+   */
+  pad: number;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -125,9 +140,11 @@ export default function CoverSection({
   return (
     <section
       ref={ref}
-      className="relative flex flex-col items-center justify-center px-7 py-10 text-center"
+      className="relative flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
+        paddingTop: pad,
+        paddingBottom: pad,
         gap: `calc(1.5rem * var(--card-gap-scale, 1))`,
       }}
     >

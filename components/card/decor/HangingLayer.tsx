@@ -28,10 +28,12 @@ const HANGABLE: readonly OrnamentId[] = [
  * A percentage of either would put the lanterns in a different place in each,
  * and the host would be shown a card their guests never receive.
  *
- * 380 leaves the deepest ornament's foot around 216px down at the sizes below,
- * which is what `hangingDepth` then clears the greeting past.
+ * 200 leaves the deepest ornament's foot around 99px down at the sizes below,
+ * which is what `hangingDepth` then clears every section's content past. The
+ * band was 380 while the ornaments were 2.5x; at 45% of that it has no business
+ * reserving most of a phone screen.
  */
-const BAND_HEIGHT = 380;
+const BAND_HEIGHT = 200;
 
 /**
  * rem to px, for turning `sizeRem` into the px `size` the ornaments take.
@@ -49,15 +51,17 @@ const ROOT_FONT_PX = 16;
  * which React reports as a hydration mismatch — the same reason DecorLayer's
  * scatter is a fixed table.
  *
- * SIZES. Every lantern and moon here is 2.5x what it used to be: at the old
- * sizes a lantern was a 58px speck on a phone and the jaali lattice that makes
- * it a lantern rather than a blob was not legible at all. Those sizes do not
- * fit the old positions — four lanterns at 2.5x are 262px of a 360px screen —
- * so the x values are re-authored around the new widths rather than kept and
- * left to collide. The five widest hang as one staggered row, in this order
- * across the card: lantern, lantern, moon, lantern, lantern, with a gap between
- * every pair of boxes at 360px. The small moon is the exception and clears its
- * neighbours vertically instead, tucked under the leftmost lantern's foot.
+ * SIZES. Every lantern and moon is 45% of what it was. The 2.5x before this
+ * overshot badly: a single lantern stood 144px tall on an 800px screen, the
+ * band reached 226px, and the whole group read as the subject of the card
+ * rather than as something hanging at the top of it. At 45% the largest lantern
+ * is 65px and the band ends at 106px — 13% of a 360x800 screen — which is what
+ * "framing the top edge" actually costs.
+ *
+ * The positions are re-authored with the sizes rather than kept, because the
+ * gaps that separated 2.5x boxes leave the small ones scattered. All six hang
+ * as one staggered row with a clear gap between every pair at 360px, in this
+ * order across the card: lantern, lantern, moon, moon, lantern, lantern.
  *
  * The depths still vary on purpose: a row of lamps at one offset reads as a
  * shelf, and the whole point of a lantern is that it is on a string of its own
@@ -65,52 +69,52 @@ const ROOT_FONT_PX = 16;
  */
 const HANGING: readonly HangingOrnament[] = [
   /*
-    The string of lights spans the full width, so it is drawn first, behind.
+    The string of lights spans the card, so it is drawn first, behind.
 
-    22.5rem is 360px — the width this row is laid out against, and this is the
-    one ornament here that could not take the 2.5x the rest did. It is already
-    a full-bleed span, so 2.5x would be 840px of wire on a 360px screen: the
-    hooks it is tied off on would hang somewhere outside the card entirely.
-    Widened to the card's own width instead, which is as large as it goes
-    without running past the edges.
+    The one ornament here that is not at 45%, and deliberately: it is a span
+    rather than a motif, tied off at both ends, and its height is a function of
+    its width — 21rem is 336px across and 84px deep at the reference width. At
+    45% it would be a 151px garland floating in the middle of the card with four
+    lanterns hanging off nothing on either side of it. Pulled in from 22.5rem so
+    both hooks sit inside a 360px card rather than flush against its edges.
   */
   {
     id: "hangingLights",
     xPercent: 50,
     topPercent: 0,
-    sizeRem: 22.5,
+    sizeRem: 21,
     delayMs: 0,
     swing: false,
   },
   {
     id: "lantern",
-    xPercent: 11.5,
-    topPercent: 2,
-    sizeRem: 9,
+    xPercent: 10,
+    topPercent: 4,
+    sizeRem: 4.05,
     delayMs: 0,
     swing: true,
   },
   {
     id: "lantern",
-    xPercent: 31,
-    topPercent: 20,
-    sizeRem: 7,
+    xPercent: 26,
+    topPercent: 19,
+    sizeRem: 3.15,
     delayMs: 900,
     swing: true,
   },
   {
     id: "lantern",
-    xPercent: 71.5,
-    topPercent: 25,
-    sizeRem: 6,
+    xPercent: 74,
+    topPercent: 26,
+    sizeRem: 2.7,
     delayMs: 1800,
     swing: true,
   },
   {
     id: "lantern",
-    xPercent: 89,
-    topPercent: 4,
-    sizeRem: 8,
+    xPercent: 90,
+    topPercent: 11,
+    sizeRem: 3.6,
     delayMs: 2600,
     swing: true,
   },
@@ -120,22 +124,21 @@ const HANGING: readonly HangingOrnament[] = [
   */
   {
     id: "crescentMoon",
-    xPercent: 51.5,
-    topPercent: 28,
-    sizeRem: 5.25,
+    xPercent: 50,
+    topPercent: 8,
+    sizeRem: 2.35,
     delayMs: 1300,
     swing: false,
   },
   /*
-    Under the leftmost lantern's foot rather than beside anything: once the
-    other five are placed there is no horizontal room left on a 360px card, so
-    this one is separated in the other axis.
+    At 45% there is room for all six in one row, so this one no longer has to
+    clear its neighbours vertically the way it did at 2.5x.
   */
   {
     id: "crescentMoon",
-    xPercent: 12,
-    topPercent: 41,
-    sizeRem: 3.75,
+    xPercent: 38,
+    topPercent: 36,
+    sizeRem: 1.7,
     delayMs: 2100,
     swing: false,
   },
@@ -154,11 +157,11 @@ const SWING_SECONDS: readonly number[] = [4.6, 5.3, 5.9, 4.9];
  * Slack added under the deepest ornament by hangingDepth.
  *
  * A swinging lantern's tassel travels a few px past where it hangs at rest —
- * 3 degrees across roughly 145px is about 8px at the sizes above — and a line
+ * 3 degrees across roughly 65px is about 3.4px at the sizes above — and a line
  * of text that only just clears a lantern standing still would be clipped by
  * one in motion.
  */
-const SWING_MARGIN = 10;
+const SWING_MARGIN = 6;
 
 /**
  * How far down the card the deepest enabled hanging ornament reaches, in px.
@@ -171,8 +174,10 @@ const SWING_MARGIN = 10;
  * pushes the greeting down with it, with nothing to keep in sync by hand.
  *
  * Now that the band is pinned to the top of the screen rather than to the top
- * of the card, this is a clearance every section needs and not only the first
- * one — the caller applies it wherever the greeting lands in the running order.
+ * of the card, this is a clearance EVERY section needs, not only the one the
+ * greeting is on. Any section can be the one filling the screen, and whichever
+ * one is has the lanterns directly over its own first line — which is how the
+ * date came to be rendered behind them. The caller applies this to all of them.
  */
 export function hangingDepth(
   enabledOrnaments: readonly OrnamentId[],

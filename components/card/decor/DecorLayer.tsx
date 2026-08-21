@@ -42,7 +42,7 @@ const SHAPES: readonly DecorShape[] = [
   { left: 66, top: 22, delay: 3.3, duration: 17 },
   { left: 2, top: 52, delay: 5.1, duration: 20 } /* edge */,
   { left: 46, top: 44, delay: 2.9, duration: 15 },
-  /* Rows 9-16 join at "normal". */
+  /* Rows 9-14 join at "normal"; 15 and 16 are only reached at "lively". */
   { left: 72, top: 84, delay: 6.0, duration: 18 },
   { left: 92, top: 40, delay: 1.8, duration: 16 } /* edge */,
   { left: 30, top: 18, delay: 3.9, duration: 21 },
@@ -51,7 +51,7 @@ const SHAPES: readonly DecorShape[] = [
   { left: 40, top: 8, delay: 6.8, duration: 15 },
   { left: 62, top: 48, delay: 4.7, duration: 20 },
   { left: 89, top: 68, delay: 0.4, duration: 16 } /* edge */,
-  /* Rows 17-24 only appear at "lively". */
+  /* Rows 17-24 are no longer reached at any intensity — see INTENSITY. */
   { left: 18, top: 38, delay: 7.4, duration: 17 },
   { left: 50, top: 66, delay: 1.5, duration: 19 },
   { left: 3, top: 26, delay: 5.9, duration: 15 } /* edge */,
@@ -70,14 +70,19 @@ const SHAPES: readonly DecorShape[] = [
 /**
  * Rendered sizes in px, cycled across the shape table.
  *
- * Eight entries against twenty four positions, so each size lands exactly three
- * times. Eight is also coprime with the every-third-row edge stride, which is
- * what stops the eight edge shapes from all coming out the same size.
+ * Eight entries, still coprime with the every-third-row edge stride, which is
+ * what stops the edge shapes from all coming out the same size.
+ *
+ * The top of the range is cut by a third — 64px down to 43px. A 64px motif on
+ * a 360px screen is a ninth of the card's width and stops being background:
+ * it reads as a picture the text happens to be sitting on. The floor stays at
+ * 18px, where a motif's inner detail is still legible, so what has changed is
+ * the spread rather than the whole scale.
  */
-const SIZE_STEPS: readonly number[] = [26, 44, 18, 58, 32, 64, 22, 50];
+const SIZE_STEPS: readonly number[] = [24, 34, 18, 40, 28, 43, 20, 37];
 
 const SIZE_MIN = 18;
-const SIZE_MAX = 64;
+const SIZE_MAX = 43;
 
 /**
  * Rotations in degrees, cycled on their own stride.
@@ -96,16 +101,20 @@ const ROTATIONS: readonly number[] = [0, 22, -14, 38, -28, 10, -42];
  * Opacity is derived from size, never authored per shape, and runs backwards:
  * the smallest motif is the most opaque and the largest the faintest.
  *
- * A 64px motif covers roughly thirteen times the area of an 18px one, so
- * matching their alphas would let the big shapes dominate the card and crowd
- * the text they sit behind. Tying the two together is what lets the ornament
- * grow without gaining weight.
+ * A 43px motif covers nearly six times the area of an 18px one, so matching
+ * their alphas would let the big shapes dominate the card and crowd the text
+ * they sit behind. Tying the two together is what lets the ornament grow
+ * without gaining weight.
+ *
+ * The whole range is pulled down — 0.38/0.18 to 0.22/0.10 — because at the old
+ * top end the scatter was competing with the names rather than sitting behind
+ * them. This is decor that has to survive being read straight through.
  */
-const OPACITY_AT_SMALLEST = 0.38;
-const OPACITY_AT_LARGEST = 0.18;
+const OPACITY_AT_SMALLEST = 0.22;
+const OPACITY_AT_LARGEST = 0.1;
 
 /** Above this a shape is softened, so it reads as depth rather than as an icon. */
-const BLUR_MIN_SIZE = 48;
+const BLUR_MIN_SIZE = 36;
 const BLUR_RADIUS = "0.5px";
 
 /**
@@ -147,9 +156,15 @@ const INTENSITY: Record<
     durationScale: number;
   }
 > = {
-  subtle: { count: 8, sizeCap: 32, opacityScale: 0.8, durationScale: 1 },
-  normal: { count: 16, sizeCap: SIZE_MAX, opacityScale: 1, durationScale: 1 },
-  lively: { count: 24, sizeCap: SIZE_MAX, opacityScale: 1, durationScale: 0.7 },
+  /*
+    Every count is down to roughly 60% of what it was — 8/16/24 to 5/10/14.
+    Density multiplies visual weight far faster than alpha does, so thinning the
+    scatter is what turns it back into texture; the alpha cut above is the
+    second half of the same fix, not a substitute for it.
+  */
+  subtle: { count: 5, sizeCap: 28, opacityScale: 0.8, durationScale: 1 },
+  normal: { count: 10, sizeCap: SIZE_MAX, opacityScale: 1, durationScale: 1 },
+  lively: { count: 14, sizeCap: SIZE_MAX, opacityScale: 1, durationScale: 0.7 },
 };
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";

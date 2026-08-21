@@ -24,10 +24,13 @@ export default function CustomSection({
   section,
   theme,
   minHeight,
+  pad,
 }: {
   section: CustomSectionData;
   theme: Theme;
   minHeight: string;
+  /** Content inset, top and bottom, in px — see CoverSection for what it is for. */
+  pad: number;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -43,9 +46,11 @@ export default function CustomSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center px-7 py-10 text-center"
+      className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
+        paddingTop: pad,
+        paddingBottom: pad,
         gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
       }}
     >
