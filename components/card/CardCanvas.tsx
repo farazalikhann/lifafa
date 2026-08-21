@@ -1,6 +1,9 @@
 "use client";
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
+import BorderFrame, {
+  borderClearance,
+} from "@/components/card/decor/BorderFrame";
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
 import HangingLayer, { hangingDepth } from "@/components/card/decor/HangingLayer";
@@ -51,6 +54,24 @@ const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
  * in px. Matches the cover's own `py-10` closely enough to read as one block.
  */
 const BLESSING_TOP_PAD = 40;
+
+/**
+ * The mosque arch's inset from the cover's edges when no border is drawn, in px.
+ *
+ * Exactly what `inset-x-4 top-5` used to say in Tailwind. Moved into numbers
+ * because the border frame can push it further in, and a value that is
+ * sometimes a class and sometimes a style is a value with two sources of truth.
+ */
+const ARCH_INSET_X = 16;
+const ARCH_INSET_TOP = 20;
+
+/**
+ * The top padding every section already carries, in px — its `py-10`.
+ *
+ * Subtracted from a border's top clearance so the card only pays for the part
+ * the sections were not going to clear on their own.
+ */
+const SECTION_TOP_PAD = 40;
 
 /**
  * One Arabic line with its transliteration and translation under it, or nothing
@@ -361,6 +382,41 @@ export default function CardCanvas({
   const useArch = ornaments.includes("mosqueArch");
 
   /*
+    Where the arch has to sit so it does not cross the border.
+
+    These are the only two things on the card drawn to its own edges, and at
+    360px they land on each other: the arch's jambs stand at 16px, inside every
+    border band, and its apex at 20px is straight through the garland. The arch
+    is the one that moves — a frame that dodged the contents of the card would
+    stop being a frame — so it is pushed in until it sits inside the border,
+    which is also the right reading of the two: the border is the card's edge
+    and the arch is a thing printed on the card.
+
+    Zero on a card with no border, so the arch keeps exactly the inset it had.
+  */
+  const clearance = borderClearance(config.borderStyle);
+  const archInsetX = Math.max(ARCH_INSET_X, clearance.x);
+  const archInsetTop = Math.max(ARCH_INSET_TOP, clearance.y);
+
+  /*
+    Room at the head of the card for a border that hangs into it.
+
+    Only the garland needs any: it is a 92px swag whose whole point is that it
+    dips in the middle, which is exactly where the cover sets the names, and at
+    360px the dip landed across the first line of them. The four framing styles
+    keep to a band shallower than a section's own padding and ask for nothing.
+
+    Applied once, to the head of the column, rather than to every section —
+    the same shape as the blessing's clearance above. Further down the card it
+    is not needed: a section centres its content, so by the time the guest is
+    reading the date it sits around 150px from the top of the screen, well below
+    anything the frame draws. Text passing under the swag mid-scroll is the same
+    accepted behaviour as text passing under the lanterns, and at half opacity
+    it reads as the ornament it is.
+  */
+  const contentTopInset = Math.max(0, clearance.y - SECTION_TOP_PAD);
+
+  /*
     Where the blessing can start without landing on a lantern.
 
     The hanging layer occupies the top of the card and the blessing heads the
@@ -460,8 +516,24 @@ export default function CardCanvas({
         />
       ) : null}
 
+      {/*
+        The border, over every other layer of decor and still under the text.
+
+        Last of the decor in the tree and `z-[6]` against the hanging layer's
+        `z-[5]`, because a frame is the outermost thing on a piece of
+        stationery: a lantern that swung across the border would read as being
+        outside the card. Independent of the tradition — no `isMuslim` gate
+        here, unlike the two layers above it — and it returns null on its own
+        when the style is "none".
+      */}
+      <BorderFrame
+        borderStyle={config.borderStyle}
+        accent={effectiveTheme.accent}
+        bandHeight={bandHeight}
+      />
+
       {/* Content rides above the decor layer. */}
-      <div className="relative z-10">
+      <div className="relative z-10" style={{ paddingTop: contentTopInset }}>
         {/*
           Dividers are driven off `visible`, never off `config.blocks`: an
           index > 0 test on the filtered list is what guarantees no divider can
@@ -600,7 +672,7 @@ export default function CardCanvas({
                 <div className="relative">
                   <MosqueArch
                     instanceId="cover-frame"
-                    className="pointer-events-none absolute inset-x-4 top-5 bottom-0"
+                    className="pointer-events-none absolute bottom-0"
                     preserveAspectRatio="none"
                     /*
                       Drawn at roughly 3.4x here, which would turn the authored
@@ -608,7 +680,13 @@ export default function CardCanvas({
                       the rest of the card's line work is set in.
                     */
                     strokeWidth={0.5}
-                    style={{ color: effectiveTheme.accent, opacity: 0.38 }}
+                    style={{
+                      color: effectiveTheme.accent,
+                      opacity: 0.38,
+                      left: archInsetX,
+                      right: archInsetX,
+                      top: archInsetTop,
+                    }}
                   />
                   <div className="relative">{covered}</div>
                 </div>

@@ -12,6 +12,24 @@ export type DecorMotion = "float" | "fall" | "drift" | "none";
 export type DecorIntensity = "subtle" | "normal" | "lively";
 
 /**
+ * The decorative frame drawn around the card's edges.
+ *
+ * Independent of `traditionId` on purpose, and the only decor on the card that
+ * is: an ornament pack says something about whose wedding this is, whereas a
+ * border is a piece of stationery. Every style is offered on every card.
+ *
+ * "none" is the default and is a real member rather than a null, so the card
+ * never has to distinguish "no border chosen" from "border turned off".
+ */
+export type CardBorderStyle =
+  | "none"
+  | "floralVine"
+  | "cornerSprigs"
+  | "geometricRule"
+  | "scallopedFrame"
+  | "hangingGarland";
+
+/**
  * Which section, if any, a guest has to scratch open before they can read it.
  *
  * At most one. Two scratch panels on a single card turn an ornament into a
@@ -49,6 +67,15 @@ export interface CardConfig {
   traditionId: TraditionId;
   /** Which section sits behind a scratch panel, if any. */
   scratchTarget: ScratchTarget;
+  /**
+   * The decorative frame around the card's edges.
+   *
+   * Sits on the config beside the other decor decisions rather than inside
+   * `style`, because it is a piece of the card's furniture the same way the
+   * motif scatter is — and like the scatter, it is drawn by the canvas rather
+   * than inherited by the sections.
+   */
+  borderStyle: CardBorderStyle;
   /** Host overrides for typography, colour and card length. */
   style: CardStyle;
   /**

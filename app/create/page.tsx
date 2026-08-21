@@ -20,6 +20,7 @@ import {
   getOccasion,
 } from "@/lib/occasions";
 import type {
+  CardBorderStyle,
   CardConfig,
   DecorIntensity,
   DecorMotion,
@@ -57,6 +58,8 @@ export default function CreatePage() {
     DEFAULT_OCCASION.defaultMotion,
   );
   const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>("normal");
+  /* Off by default: a border is an addition to the card, not a part of it. */
+  const [borderStyle, setBorderStyle] = useState<CardBorderStyle>("none");
   /* Off by default: a card that hides its own date has to be asked for. */
   const [scratchTarget, setScratchTarget] = useState<ScratchTarget>("none");
   /*
@@ -146,6 +149,7 @@ export default function CreatePage() {
     occasionId,
     traditionId,
     scratchTarget,
+    borderStyle,
     style,
     ornamentConfig,
     /* Nothing in the editor has been paid for — that is what /create is. */
@@ -229,11 +233,13 @@ export default function CreatePage() {
             hostNames={coverNameLine(resolveCoverNames(draft))}
             paletteAccent={getPalette(style.paletteId).accent}
             scratchTarget={scratchTarget}
+            borderStyle={borderStyle}
             onFontPairChange={setFontPair}
             onPaletteChange={setPalette}
             onDensityChange={setDensity}
             onAccentChange={setAccent}
             onScratchTargetChange={setScratchTarget}
+            onBorderStyleChange={setBorderStyle}
           />
         </div>
       </main>

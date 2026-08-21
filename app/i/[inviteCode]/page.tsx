@@ -43,6 +43,7 @@ export default function InvitePage({
     occasionId: event.occasionId,
     traditionId: event.traditionId,
     scratchTarget: event.scratchTarget,
+    borderStyle: event.borderStyle,
     style: event.style,
     ornamentConfig: event.ornamentConfig,
     /*

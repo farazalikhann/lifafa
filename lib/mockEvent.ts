@@ -6,7 +6,12 @@ import {
   getOccasion,
 } from "@/lib/occasions";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
-import type { DecorIntensity, DecorMotion, ScratchTarget } from "@/types/card";
+import type {
+  CardBorderStyle,
+  DecorIntensity,
+  DecorMotion,
+  ScratchTarget,
+} from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
@@ -30,6 +35,8 @@ export interface MockEvent {
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
   scratchTarget: ScratchTarget;
+  /** The decorative frame around the card's edges, if the host chose one. */
+  borderStyle: CardBorderStyle;
   style: CardStyle;
   /**
    * The Muslim ornament pack's choices.
@@ -83,6 +90,12 @@ export function getMockEvent(inviteCode: string): MockEvent {
       stored event will carry the host's own choice here.
     */
     scratchTarget: "date",
+    /*
+      The sample card carries one, for the same reason it carries a scratch
+      panel: opening an invite link should show the feature doing its job rather
+      than the default that switches it off.
+    */
+    borderStyle: "floralVine",
     /* The sample event chooses no tradition at all, so the pack stays off. */
     ornamentConfig: DEFAULT_ORNAMENT_CONFIG,
     style: {
