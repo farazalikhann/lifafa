@@ -6,6 +6,7 @@ import CardPreview from "@/components/create/CardPreview";
 import EventForm from "@/components/create/EventForm";
 import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
+import PreviewBar from "@/components/create/PreviewBar";
 import SectionManager from "@/components/create/SectionManager";
 import StylePanel from "@/components/create/StylePanel";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
@@ -195,7 +196,12 @@ export default function CreatePage() {
         sees. At lg the form takes the left ~45% and the preview sticks on the
         right ~55% while the form scrolls.
       */}
-      <main className="mx-auto grid max-w-6xl gap-10 px-5 py-8 lg:grid-cols-[45fr_55fr] lg:items-start lg:gap-14 lg:px-8 lg:py-12">
+      {/*
+        `pb-32` leaves room for the preview bar, which is fixed to the bottom of
+        the screen on a phone and would otherwise sit across the last control.
+        Dropped at lg, where there is no bar.
+      */}
+      <main className="mx-auto grid max-w-6xl gap-10 px-5 pt-8 pb-32 lg:grid-cols-[45fr_55fr] lg:items-start lg:gap-14 lg:px-8 lg:py-12">
         {/*
           The editor's visible headings all describe one part of the card —
           Occasion, Card sections, Style — and none of them names the page, so
@@ -221,7 +227,19 @@ export default function CreatePage() {
           `min-w-0` lets the column shrink to the space it actually has, which
           is what finally lets the specimens' own `truncate` do its job.
         */}
-        <div className="order-2 flex min-w-0 flex-col gap-9 lg:order-1">
+        {/*
+          The controls come first now, in source order and on the page.
+
+          They used to be `order-2`, which put the whole card above them on a
+          phone: every colour or font change meant scrolling several screens up
+          to see the result and several screens back down to make the next one.
+          The card is not above them any more — it is behind the bar pinned to
+          the bottom of the screen — so the top of the page belongs to the work.
+
+          At lg the source order does the same job the `order` utilities used to:
+          first child takes the left column, second the right.
+        */}
+        <div className="flex min-w-0 flex-col gap-9">
           <OccasionPicker
             occasionId={occasionId}
             traditionId={traditionId}
@@ -234,7 +252,7 @@ export default function CreatePage() {
           <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
         </div>
 
-        <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:sticky lg:top-24">
+        <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24">
           <CardPreview draft={draft} config={config} motifs={motifs} />
           <MotionPicker
             motion={decorMotion}
@@ -258,6 +276,13 @@ export default function CreatePage() {
           />
         </div>
       </main>
+
+      {/*
+        The phone's way to the card: one bar, pinned to the bottom of the
+        screen, reachable from anywhere in the form. Renders nothing at lg,
+        where the card is already sitting in a sticky column beside it.
+      */}
+      <PreviewBar draft={draft} config={config} motifs={motifs} />
     </div>
   );
 }
