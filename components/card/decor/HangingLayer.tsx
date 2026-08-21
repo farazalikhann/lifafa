@@ -225,8 +225,11 @@ export function hangingDepth(
  * out, `pointer-events-none` so a lantern hanging over the cover can never
  * swallow a tap or a scroll that was meant for the card underneath.
  *
- * Sits above the background and below the text: the content column in
- * CardCanvas is `z-10`, and this is `z-[5]`.
+ * Sits above the text rather than below it: the content column in CardCanvas
+ * is `z-10`, the dissolve that clears text out of this band is `z-[12]`, and
+ * this is `z-[15]`. That order is what makes the fade work — a line on its way
+ * off the screen is gone before it reaches a lantern, and the lantern is drawn
+ * at full strength over the space it left.
  */
 export default function HangingLayer({
   enabledOrnaments,
@@ -253,7 +256,7 @@ export default function HangingLayer({
     */
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[5] overflow-clip"
+      className="pointer-events-none absolute inset-0 z-[15] overflow-clip"
     >
       <div
         className="sticky top-0 w-full overflow-clip"

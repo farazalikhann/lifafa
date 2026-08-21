@@ -54,6 +54,34 @@ function focusableWithin(root: HTMLElement): readonly HTMLElement[] {
   ).filter((element) => element.offsetParent !== null);
 }
 
+/**
+ * Whether this browser will put an element into fullscreen at all.
+ *
+ * Three separate things have to be true and none of them implies the others.
+ * `requestFullscreen` is simply absent on iPhone Safari, which offers it on
+ * <video> and nothing else. `document.fullscreenEnabled` is the permission
+ * answer rather than the support answer — it is false inside an iframe that was
+ * not given `allowfullscreen`, where the method exists and always rejects. And
+ * `exitFullscreen` is checked separately at the other end so the cleanup path
+ * cannot throw on a browser that let us in and then took the method away.
+ *
+ * Everything here degrades to the same place: the overlay stays exactly what it
+ * was before any of this, a `fixed inset-0` panel over the page. The address
+ * bar stays visible, and because nothing in the card is measured in `vh` the
+ * layout is identical either way — the card's own bands are `dvh`, which is the
+ * viewport as it actually is, and its sections are `svh`, which is the viewport
+ * at its smallest. Neither can overflow behind browser chrome.
+ */
+function canRequestFullscreen(
+  element: HTMLElement | null,
+): element is HTMLElement {
+  return (
+    element !== null &&
+    typeof element.requestFullscreen === "function" &&
+    document.fullscreenEnabled === true
+  );
+}
+
 function devicePillClass(isSelected: boolean): string {
   return [
     "min-h-11 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors duration-150",
@@ -102,6 +130,13 @@ export default function FullScreenPreview({
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [deviceId, setDeviceId] = useState<DeviceId>("phone");
+  /*
+    Tracked rather than assumed. Nothing reads it for layout — the overlay is
+    `fixed inset-0` and looks the same either way — but the close button's label
+    does, so a host who has already left fullscreen by a system gesture is not
+    offered a control that would do nothing.
+  */
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const titleId = useId();
 
   const device = DEVICES.find((entry) => entry.id === deviceId) ?? DEVICES[0];
@@ -138,6 +173,77 @@ export default function FullScreenPreview({
   }, []);
 
   /*
+    Native fullscreen, so the address bar goes away on Android Chrome.
+
+    THE HOST ONLY. This runs in the editor's preview and nowhere near the guest
+    invite page: a guest who opened a link never asked to lose their browser
+    chrome, and taking it would be hostile. The host asked for "full screen" by
+    name, which is the difference.
+
+    The request can fail and that is a normal outcome, not an error. It needs a
+    recent user gesture and this effect runs a frame after the click that
+    mounted the overlay, so a strict browser can decline; some decline for
+    reasons of their own. Every path is caught and the overlay simply carries on
+    windowed — there is no fallback UI to show, because the windowed overlay
+    already is the fallback.
+
+    `fullscreenchange` is what keeps the flag honest. A guest leaving fullscreen
+    with Escape, a swipe, or the system back gesture never tells this component
+    anything; without the listener the flag would still say fullscreen and the
+    exit on close would be a no-op against a browser that had already left.
+
+    The cleanup exits, and it runs on unmount as well as on close, so an overlay
+    torn down some other way — a route change, an error boundary — cannot leave
+    the browser stuck in fullscreen with nothing on screen to get out of it.
+  */
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    let active = true;
+
+    if (canRequestFullscreen(overlay)) {
+      /*
+        Promise rejection is the documented way this says no, so it is handled
+        rather than left to become an unhandled rejection in the console.
+      */
+      overlay.requestFullscreen().then(
+        () => {
+          if (active) {
+            setIsFullscreen(true);
+          }
+        },
+        () => {
+          /* Declined — windowed is a perfectly good preview. */
+        },
+      );
+    }
+
+    const syncFullscreen = (): void => {
+      setIsFullscreen(document.fullscreenElement !== null);
+    };
+
+    document.addEventListener("fullscreenchange", syncFullscreen);
+
+    return () => {
+      active = false;
+      document.removeEventListener("fullscreenchange", syncFullscreen);
+
+      /*
+        Only ours. If something else on the page is the fullscreen element,
+        exiting would be closing a door this component never opened.
+      */
+      if (
+        document.fullscreenElement !== null &&
+        document.fullscreenElement === overlay &&
+        typeof document.exitFullscreen === "function"
+      ) {
+        document.exitFullscreen().catch(() => {
+          /* Already on the way out, or refused. Nothing left to do. */
+        });
+      }
+    };
+  }, []);
+
+  /*
     Focus in on open, and back to the trigger on the way out. The return is a
     cleanup rather than a line in the close handler, so it happens however the
     overlay goes away.
@@ -169,6 +275,24 @@ export default function FullScreenPreview({
 
       if (event.key === "Escape") {
         event.preventDefault();
+
+        /*
+          In fullscreen the browser claims Escape for itself and leaves
+          fullscreen without dispatching a key event here at all, so the first
+          press is the browser's and this only ever sees the second. Exiting
+          explicitly covers the browsers that do deliver the key: leave
+          fullscreen first, then close, so the overlay never unmounts out from
+          under a fullscreen element.
+        */
+        if (
+          document.fullscreenElement !== null &&
+          typeof document.exitFullscreen === "function"
+        ) {
+          document.exitFullscreen().catch(() => {
+            /* Nothing to do — the close below happens either way. */
+          });
+        }
+
         onCloseRef.current();
         return;
       }
@@ -263,7 +387,7 @@ export default function FullScreenPreview({
       <button
         ref={closeButtonRef}
         type="button"
-        aria-label="Close preview"
+        aria-label={isFullscreen ? "Exit full screen preview" : "Close preview"}
         onClick={handleClose}
         className="absolute top-3 right-3 z-40 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 text-[var(--lifafa-cream)] backdrop-blur transition-colors duration-150 hover:bg-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
       >

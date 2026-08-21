@@ -30,6 +30,17 @@ import type { CardBorderStyle } from "@/types/card";
  * so the frame surrounds what the guest is looking at instead of running off
  * the top of the screen after the cover.
  *
+ * The band is measured in `dvh` rather than `svh`, which is what stopped the
+ * bottom edge turning up in the middle of the screen. `svh` is the *smallest*
+ * the viewport ever gets — the state with the address bar fully shown — so as
+ * soon as Chrome on Android collapses that bar the visible area is taller than
+ * the band, and a frame that ends where the band ends stops reaching the bottom
+ * of the screen. `dvh` follows the viewport as it actually is.
+ *
+ * It frames the screen, not the content, and it holds `z-[16]` — above the
+ * text at `z-10` and above the dissolve at `z-[12]`, so the frame keeps full
+ * opacity at exactly the edges where that dissolve is strongest.
+ *
  * NOTHING HERE ANIMATES. There are no keyframes, no transitions and no
  * `animation` property in this file, so `prefers-reduced-motion` has nothing to
  * suppress: a guest who has asked for less movement gets exactly the frame
@@ -39,6 +50,16 @@ import type { CardBorderStyle } from "@/types/card";
 
 /** Rendered stroke weight, in CSS px. Fine enough to read as ornament. */
 const STROKE = 1.2;
+
+/**
+ * How far the frame sits in from the edge of the screen, in px.
+ *
+ * Small on purpose. A frame flush to the edge reads as a browser artefact
+ * rather than as stationery, and anything much larger leaves a band of bare
+ * background outside it that looks like the card failed to fill the screen.
+ * 8px is enough to say "inset" and not enough to be a gap.
+ */
+const SCREEN_INSET = 8;
 
 /** Held well under half, so the frame never competes with the names. */
 const FRAME_OPACITY = 0.5;
@@ -600,11 +621,25 @@ export default function BorderFrame({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[6] overflow-clip"
+      className="pointer-events-none absolute inset-0 z-[16] overflow-clip"
     >
+      {/*
+        The inset lives on the sticky band rather than on the wrapper around it.
+        The wrapper has to stay at `inset-0` — it is what clips the frame to the
+        card — and a sticky element offset from its own wrapper still pins to
+        the scrollport, so `top` here is measured from the top of the screen and
+        the margins from its sides. Both edges of the height come off the band
+        so the bottom rail sits the same 8px up from the foot of the screen as
+        the top rail sits down from its head.
+      */}
       <div
-        className="sticky top-0 w-full overflow-clip"
-        style={{ height: bandHeight }}
+        className="sticky overflow-clip"
+        style={{
+          top: SCREEN_INSET,
+          height: `calc(${bandHeight} - ${SCREEN_INSET * 2}px)`,
+          marginLeft: SCREEN_INSET,
+          marginRight: SCREEN_INSET,
+        }}
       >
         <div
           className="absolute inset-0"

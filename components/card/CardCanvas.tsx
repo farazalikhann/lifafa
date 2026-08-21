@@ -5,6 +5,7 @@ import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
 import CornerLayer from "@/components/card/decor/CornerLayer";
+import ScrollFade from "@/components/card/decor/ScrollFade";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
 import HangingLayer, { hangingDepth } from "@/components/card/decor/HangingLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
@@ -203,9 +204,22 @@ function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
  * The guest's screen in "viewport"; the editor's fixed frame in "frame", where
  * a viewport-tall band would scatter most of the motifs outside the 620px box
  * the host is looking at.
+ *
+ * `dvh`, not `svh`, and that is the fix for a frame whose bottom edge kept
+ * appearing mid-screen. `svh` is the *smallest* the viewport ever gets — the
+ * state with the address bar fully shown — so the moment Chrome on Android
+ * collapses that bar the visible area is taller than the band and everything
+ * pinned inside it stops reaching the bottom of the screen. `dvh` tracks the
+ * viewport as it actually is, so the frame frames the whole screen and the
+ * decor covers it, in both states.
+ *
+ * Sections deliberately keep `svh` — see `sectionMinHeight`. A section that
+ * resized every time the address bar moved would reflow the text under the
+ * guest's thumb; a decor band that resizes is drawing a rectangle nobody is
+ * reading.
  */
 function scrollportHeight(sizing: CardSizing): string {
-  return sizing === "viewport" ? "100svh" : `${PREVIEW_FRAME_HEIGHT}px`;
+  return sizing === "viewport" ? "100dvh" : `${PREVIEW_FRAME_HEIGHT}px`;
 }
 
 /**
@@ -550,9 +564,11 @@ export default function CardCanvas({
         component is absent from the tree entirely on every other tradition,
         which is the difference between "renders nothing" and "cannot render".
 
-        Sits between the decor layer and the content column: `z-[5]` against the
-        column's `z-10`, so an ornament hangs in front of the scattered motifs
-        and behind every line of text. It is `pointer-events-none` throughout,
+        Sits above the fade at `z-[15]`, which is a change of order and a
+        deliberate one: the ornaments used to hang behind the text, and text
+        crossing them was the collision this release is fixing. Now the text
+        dissolves before it arrives and the lanterns are the thing left drawn,
+        so they have to be the ones on top. `pointer-events-none` throughout,
         so it can never take a tap or a scroll meant for the card underneath.
       */}
       {isMuslim ? (
@@ -565,16 +581,33 @@ export default function CardCanvas({
       {/*
         The border, over every other layer of decor and still under the text.
 
-        Last of the decor in the tree and `z-[6]` against the hanging layer's
-        `z-[5]`, because a frame is the outermost thing on a piece of
+        Last of the decor in the tree and `z-[16]` against the hanging layer's
+        `z-[15]`, because a frame is the outermost thing on a piece of
         stationery: a lantern that swung across the border would read as being
-        outside the card. Independent of the tradition — no `isMuslim` gate
-        here, unlike the two layers above it — and it returns null on its own
-        when the style is "none".
+        outside the card. Above the fade as well, so the frame keeps full
+        opacity at the very edges where the dissolve is strongest. Independent
+        of the tradition — no `isMuslim` gate here, unlike the two layers above
+        it — and it returns null on its own when the style is "none".
       */}
       <BorderFrame
         borderStyle={config.borderStyle}
         accent={effectiveTheme.accent}
+        bandHeight={bandHeight}
+      />
+
+      {/*
+        The dissolve at the top and bottom of the screen.
+
+        Ordered deliberately: this is `z-[12]`, the content column below it at
+        `z-10`, and the hanging ornaments and the border above it at `z-[15]`
+        and `z-[16]`. A layer fades what is painted beneath it and nothing
+        above, so that ordering is the whole specification — text dissolves, the
+        lanterns it is dissolving to avoid stay at full opacity, and so does the
+        frame.
+      */}
+      <ScrollFade
+        background={effectiveTheme.background}
+        hangingBand={hangingBand}
         bandHeight={bandHeight}
       />
 
