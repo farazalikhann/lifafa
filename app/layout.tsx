@@ -6,6 +6,7 @@ import {
   Fraunces,
   Inter,
   Lora,
+  Noto_Naskh_Arabic,
 } from "next/font/google";
 import "./globals.css";
 
@@ -48,12 +49,32 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
 });
 
+/*
+  The only face here that is not a Latin one, and the only one loaded for a
+  script rather than for a look.
+
+  Arabic set in a Latin display face falls back to whatever the device happens
+  to have, which across phones means anything from a proper naskh to a UI
+  sans — and a sans strips the joins and the stacked diacritics that the words
+  are actually made of. Naskh is the standard book face for this text.
+
+  The "arabic" subset only: pulling "latin" too would ship a second Latin face
+  the card never sets. It is wired to the Arabic elements alone, through
+  --lifafa-arabic in globals.css, so no Latin text can inherit it.
+*/
+const notoNaskhArabic = Noto_Naskh_Arabic({
+  subsets: ["arabic"],
+  display: "swap",
+  variable: "--font-arabic",
+});
+
 const FONT_VARIABLES = [
   fraunces.variable,
   inter.variable,
   cormorant.variable,
   lora.variable,
   dmSans.variable,
+  notoNaskhArabic.variable,
 ].join(" ");
 
 export const metadata: Metadata = {

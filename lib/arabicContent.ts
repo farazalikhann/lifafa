@@ -1,12 +1,19 @@
 /**
  * Greetings and duas offered on a Muslim card.
  *
- * EVERY ARABIC STRING IN THIS FILE SHIPS EMPTY, DELIBERATELY. Nothing here was
- * transliterated, reconstructed or recalled from memory. Each `arabic`,
- * `transliteration` and `translation` value must be copied from a verified
- * source and reviewed by someone knowledgeable before release. An empty string
- * renders nothing at all — the card simply omits the line — so the file is safe
- * to ship in this state and unsafe to fill in casually.
+ * EVERY ARABIC STRING HERE WAS SUPPLIED AND MUST STAY BYTE FOR BYTE AS GIVEN.
+ * Nothing in this file was transliterated, reconstructed or recalled from
+ * memory, and nothing may be. Any future value must be copied from a verified
+ * source and reviewed by someone knowledgeable before release.
+ *
+ * Do not "tidy" what is already here. The diacritics are load bearing: a
+ * dropped shadda or kasra changes the word, and a normalisation pass — NFC/NFD,
+ * a stripped tatweel, a collapsed space, an editor's auto-format — will do it
+ * silently and read as a whitespace diff. If a string ever needs to change, it
+ * gets replaced wholesale from the source, never edited in place.
+ *
+ * An empty string renders nothing at all, so a value that has not been supplied
+ * is safe to leave blank; it is filling one in casually that is unsafe.
  *
  * QURANIC VERSES ARE INTENTIONALLY OUT OF SCOPE FOR THIS FILE. The entries
  * below are greetings and duas only. Do not add an ayah here, and do not
@@ -21,11 +28,11 @@ export interface Greeting {
   id: GreetingId;
   /** Latin-script name of the greeting, shown in the editor's option list. */
   label: string;
-  /** Arabic script. Empty until reviewed — see the file header. */
+  /** Arabic script, exactly as supplied. See the file header before touching. */
   arabic: string;
-  /** Latin transliteration. Empty until reviewed — see the file header. */
+  /** Latin transliteration, exactly as supplied. Empty where none was given. */
   transliteration: string;
-  /** English rendering. Empty until reviewed — see the file header. */
+  /** English rendering, exactly as supplied. Empty where none was given. */
   translation: string;
 }
 
@@ -33,32 +40,24 @@ export const GREETINGS: readonly Greeting[] = [
   {
     id: "bismillah",
     label: "Bismillah",
-    /* TODO: Arabic script for the Bismillah greeting. */
-    arabic: "",
-    /* TODO: Latin transliteration of the Bismillah greeting. */
-    transliteration: "",
-    /* TODO: English translation of the Bismillah greeting. */
-    translation: "",
+    arabic: "بِسْمِ اللَّهِ",
+    transliteration: "Bismillah",
+    translation: "In the name of Allah",
   },
   {
     id: "salam",
     label: "Assalamu Alaikum",
-    /* TODO: Arabic script for the short salam greeting. */
-    arabic: "",
-    /* TODO: Latin transliteration of the short salam greeting. */
-    transliteration: "",
-    /* TODO: English translation of the short salam greeting. */
-    translation: "",
+    arabic: "السَّلَامُ عَلَيْكُمْ",
+    transliteration: "Assalamu Alaikum",
+    translation: "Peace be upon you",
   },
   {
     id: "salamFull",
     label: "Assalamu Alaikum wa Rahmatullahi wa Barakatuh",
-    /* TODO: Arabic script for the full salam greeting. */
-    arabic: "",
-    /* TODO: Latin transliteration of the full salam greeting. */
-    transliteration: "",
-    /* TODO: English translation of the full salam greeting. */
-    translation: "",
+    arabic: "السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ",
+    transliteration: "Assalamu Alaikum wa Rahmatullahi wa Barakatuh",
+    translation:
+      "Peace be upon you, and the mercy of Allah and His blessings",
   },
   {
     /*
@@ -85,11 +84,11 @@ export interface Dua {
   id: DuaId;
   /** Latin-script name of the dua, shown in the editor's option list. */
   label: string;
-  /** Arabic script. Empty until reviewed — see the file header. */
+  /** Arabic script, exactly as supplied. See the file header before touching. */
   arabic: string;
-  /** Latin transliteration. Empty until reviewed — see the file header. */
+  /** Latin transliteration, exactly as supplied. Empty where none was given. */
   transliteration: string;
-  /** English rendering. Empty until reviewed — see the file header. */
+  /** English rendering, exactly as supplied. Empty where none was given. */
   translation: string;
   /** Which occasion the dua suits, in the host's words. Never Arabic. */
   occasionNote: string;
@@ -99,45 +98,33 @@ export const DUAS: readonly Dua[] = [
   {
     id: "barakallah",
     label: "Barakallahu lakuma",
-    /* TODO: Arabic script for the Barakallahu lakuma dua. */
-    arabic: "",
-    /* TODO: Latin transliteration of the Barakallahu lakuma dua. */
-    transliteration: "",
-    /* TODO: English translation of the Barakallahu lakuma dua. */
-    translation: "",
+    arabic: "بَارَكَ اللَّهُ لَكُمَا",
+    transliteration: "Barakallahu lakuma",
+    translation: "May Allah bless you both",
     occasionNote: "Blessing for the couple",
   },
   {
     id: "jamaBaynakuma",
     label: "Wa jamaa baynakuma fi khayr",
-    /* TODO: Arabic script for the Wa jamaa baynakuma fi khayr dua. */
-    arabic: "",
-    /* TODO: Latin transliteration of the Wa jamaa baynakuma fi khayr dua. */
-    transliteration: "",
-    /* TODO: English translation of the Wa jamaa baynakuma fi khayr dua. */
-    translation: "",
+    arabic: "وَجَمَعَ بَيْنَكُمَا فِي خَيْرٍ",
+    transliteration: "Wa jamaa baynakuma fi khayr",
+    translation: "And may He unite you both in goodness",
     occasionNote: "Blessing for the couple",
   },
   {
     id: "barakahHome",
     label: "Dua for a blessed home",
-    /* TODO: Arabic script for the blessed-home dua. */
-    arabic: "",
-    /* TODO: Latin transliteration of the blessed-home dua. */
-    transliteration: "",
-    /* TODO: English translation of the blessed-home dua. */
-    translation: "",
+    arabic: "بَارَكَ اللَّهُ لَكُمْ فِي بَيْتِكُمْ",
+    transliteration: "Barakallahu lakum fi baytikum",
+    translation: "May Allah bless you in your home",
     occasionNote: "Housewarming",
   },
   {
     id: "generalBarakah",
     label: "Dua for blessings",
-    /* TODO: Arabic script for the general blessings dua. */
-    arabic: "",
-    /* TODO: Latin transliteration of the general blessings dua. */
-    transliteration: "",
-    /* TODO: English translation of the general blessings dua. */
-    translation: "",
+    arabic: "بَارَكَ اللَّهُ فِيكُمْ",
+    transliteration: "Barakallahu feekum",
+    translation: "May Allah bless you",
     occasionNote: "Any occasion",
   },
   {
@@ -155,9 +142,10 @@ export const DUAS: readonly Dua[] = [
  * Whether an entry is the deliberate opt-out rather than one still awaiting its
  * text.
  *
- * Both look identical from the outside — every string empty — so the editor
- * needs this to tell "No greeting" apart from a row whose content has not been
- * supplied yet, and show a pending note on only the second.
+ * Every entry now carries its text except the two opt-outs, so today this is
+ * what stops the editor printing "Arabic text pending" under "No greeting" —
+ * the two states are indistinguishable from the outside, both being empty
+ * strings, and only one of them is waiting on anything.
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";

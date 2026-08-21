@@ -12,15 +12,12 @@ import { MUSLIM_ORNAMENTS } from "@/lib/ornaments/muslim";
 import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
 
 /**
- * System Arabic fallback stack.
+ * What Arabic script is set in.
  *
- * No webfont is loaded for Arabic yet; this is what the guest's own device can
- * offer. A proper Arabic webfont should be added later — see the matching note
- * in CardCanvas, which uses the same stack so the editor and the card can never
- * show the host two different faces.
+ * The same variable the card resolves — declared once in globals.css — so the
+ * row the host picks and the line that lands on the card are the same face.
  */
-const ARABIC_FONT_STACK =
-  '"Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", "Arabic Typesetting", "Traditional Arabic", "Segoe UI", serif';
+const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
 
 function GroupHeading({ children }: { children: string }): ReactElement {
   return (

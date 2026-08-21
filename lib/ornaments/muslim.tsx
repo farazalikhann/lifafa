@@ -25,6 +25,24 @@ import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
 /** Rendered size of an ornament's larger dimension when the caller says nothing. */
 const DEFAULT_SIZE = 64;
 
+/**
+ * Each drawing's width over its height, from its own viewBox.
+ *
+ * Exported because it is not only the Frame's business: anything that has to
+ * reserve space for an ornament needs it too, and HangingLayer works out how
+ * far down the card a lantern reaches from exactly these numbers. Duplicating
+ * them there would let the two drift the moment a viewBox changed.
+ */
+export const ORNAMENT_ASPECT: Record<OrnamentId, number> = {
+  lantern: 48 / 88,
+  crescentMoon: 1,
+  stars: 1,
+  arabesqueBorder: 160 / 24,
+  mosqueArch: 100 / 140,
+  geometricStar: 1,
+  hangingLights: 160 / 40,
+};
+
 export interface OrnamentProps {
   /**
    * Rendered size in px of the ornament's *larger* dimension.
@@ -263,7 +281,7 @@ export const Lantern: Ornament = ({
   return (
     <Frame
       viewBox="0 0 48 88"
-      aspect={48 / 88}
+      aspect={ORNAMENT_ASPECT.lantern}
       size={size}
       strokeWidth={strokeWidth ?? 1.7}
       className={className}
@@ -352,7 +370,7 @@ export const CrescentMoon: Ornament = ({
 }) => (
   <Frame
     viewBox="0 0 64 64"
-    aspect={1}
+    aspect={ORNAMENT_ASPECT.crescentMoon}
     size={size}
     strokeWidth={strokeWidth ?? 1.5}
     className={className}
@@ -410,7 +428,7 @@ export const Stars: Ornament = ({
 }) => (
   <Frame
     viewBox="0 0 64 64"
-    aspect={1}
+    aspect={ORNAMENT_ASPECT.stars}
     size={size}
     strokeWidth={strokeWidth ?? 1.4}
     className={className}
@@ -472,7 +490,7 @@ export const ArabesqueBorder: Ornament = ({
 }) => (
   <Frame
     viewBox="0 0 160 24"
-    aspect={160 / 24}
+    aspect={ORNAMENT_ASPECT.arabesqueBorder}
     size={size}
     strokeWidth={strokeWidth ?? 1.3}
     className={className}
@@ -540,7 +558,7 @@ export const MosqueArch: Ornament = ({
 }) => (
   <Frame
     viewBox="0 0 100 140"
-    aspect={100 / 140}
+    aspect={ORNAMENT_ASPECT.mosqueArch}
     size={size}
     strokeWidth={strokeWidth ?? 2}
     className={className}
@@ -588,7 +606,7 @@ export const GeometricStar: Ornament = ({
 }) => (
   <Frame
     viewBox="0 0 64 64"
-    aspect={1}
+    aspect={ORNAMENT_ASPECT.geometricStar}
     size={size}
     strokeWidth={strokeWidth ?? 1.4}
     className={className}
@@ -646,7 +664,7 @@ export const HangingLights: Ornament = ({
 }) => (
   <Frame
     viewBox="0 0 160 40"
-    aspect={160 / 40}
+    aspect={ORNAMENT_ASPECT.hangingLights}
     size={size}
     strokeWidth={strokeWidth ?? 1.3}
     className={className}

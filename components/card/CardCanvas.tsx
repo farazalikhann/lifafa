@@ -2,7 +2,7 @@
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
-import HangingLayer from "@/components/card/decor/HangingLayer";
+import HangingLayer, { hangingDepth } from "@/components/card/decor/HangingLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
 import DetailsSection from "@/components/card/sections/DetailsSection";
 import VenueSection from "@/components/card/sections/VenueSection";
@@ -36,17 +36,20 @@ import type { OrnamentId } from "@/types/ornament";
 const DECOR_CEILING = 0.38;
 
 /**
- * What Arabic script is set in, for now.
+ * What Arabic script is set in.
  *
- * NO ARABIC WEBFONT IS LOADED IN THIS STEP — this is the guest's own device and
- * nothing more, which means the same greeting is a naskh on one phone and a
- * default UI face on another. A proper Arabic webfont should be added later and
- * this stack kept underneath it as the fallback. components/create/
- * OrnamentPanel.tsx repeats the same list on purpose, so the editor and the
- * card can never show the host two different faces.
+ * Noto Naskh Arabic, loaded by next/font in app/layout.tsx and resolved through
+ * one variable declared in globals.css, with the system faces behind it. Set on
+ * the Arabic elements only — never on a wrapper — so no Latin text on the card
+ * can inherit it.
  */
-const ARABIC_FONT_STACK =
-  '"Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", "Arabic Typesetting", "Traditional Arabic", "Segoe UI", serif';
+const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
+
+/**
+ * The blessing's inset from the top of the cover when nothing hangs above it,
+ * in px. Matches the cover's own `py-16` closely enough to read as one block.
+ */
+const BLESSING_TOP_PAD = 48;
 
 /**
  * One Arabic line with its transliteration and translation under it, or nothing
@@ -332,6 +335,20 @@ export default function CardCanvas({
   const useArabesqueDivider = ornaments.includes("arabesqueBorder");
   const useArch = ornaments.includes("mosqueArch");
 
+  /*
+    Where the blessing can start without landing on a lantern.
+
+    The hanging layer occupies the top of the card and the blessing heads the
+    cover, so on a card that has both they compete for the same band of pixels —
+    and Arabic set over a string of bulbs is simply unreadable. The answer is
+    asked of the layer that owns the positions rather than guessed here, so it
+    stays right if those positions ever move.
+
+    BLESSING_TOP_PAD is the floor: with nothing hanging, the blessing keeps its
+    own comfortable inset instead of being pulled up to the card's edge.
+  */
+  const blessingTopPad = Math.max(BLESSING_TOP_PAD, hangingDepth(ornaments));
+
   /* Consumed by the sections through inheritance, so a change is instant. */
   const cssVariables = {
     "--card-heading": fontFamilyOf(
@@ -416,7 +433,17 @@ export default function CardCanvas({
           const head =
             isCover && hasBlessing ? (
               /* No bottom padding — this heads the cover rather than sitting above it. */
-              <div className="flex flex-col items-center gap-4 px-7 pt-12 text-center">
+              <div
+                className="flex flex-col items-center gap-4 px-7 text-center"
+                style={{
+                  /*
+                    Only the first block clears the ornaments. Further down the
+                    card the hanging layer is long past, and a reordered cover
+                    would otherwise carry a 130px hole at the top of it.
+                  */
+                  paddingTop: `${index === 0 ? blessingTopPad : BLESSING_TOP_PAD}px`,
+                }}
+              >
                 {greeting !== null ? (
                   <Blessing
                     arabic={greeting.arabic}

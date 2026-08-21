@@ -18,6 +18,22 @@
   /* Type */
   --lifafa-cream: #f7f1e8;
   --lifafa-muted: #a1968a;
+
+  /*
+    The Arabic stack, used by the greeting and dua and by nothing else.
+
+    --font-arabic is Noto Naskh Arabic, loaded and self-hosted by next/font in
+    app/layout.tsx and set on <html> — the same element this rule targets, so
+    the reference resolves. The system faces behind it cover the swap period
+    and any device that fails to fetch the webfont; a Latin default is last, so
+    the text still renders even where no Arabic face exists at all.
+
+    Kept here rather than in the two components that need it, so the card and
+    the editor cannot drift into showing the host two different faces.
+  */
+  --lifafa-arabic:
+    var(--font-arabic), "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro",
+    "Arabic Typesetting", "Traditional Arabic", "Segoe UI", serif;
 }
 
 /* -------------------------------------------------------------------------

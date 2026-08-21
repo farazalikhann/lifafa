@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactElement } from "react";
-import { getOrnament } from "@/lib/ornaments/muslim";
+import { getOrnament, ORNAMENT_ASPECT } from "@/lib/ornaments/muslim";
 import type { HangingOrnament, OrnamentId } from "@/types/ornament";
 
 /**
@@ -118,6 +118,50 @@ const HANGING: readonly HangingOrnament[] = [
  * in. The staggered delays handle the first few seconds; this handles the rest.
  */
 const SWING_SECONDS: readonly number[] = [4.6, 5.3, 5.9, 4.9];
+
+/**
+ * Slack added under the deepest ornament by hangingDepth.
+ *
+ * A swinging lantern's tassel travels a few px past where it hangs at rest —
+ * 3 degrees across roughly 58px is about 3px — and a line of text that only
+ * just clears a lantern standing still would be clipped by one in motion.
+ */
+const SWING_MARGIN = 6;
+
+/**
+ * How far down the card the deepest enabled hanging ornament reaches, in px.
+ * Zero when nothing hangs.
+ *
+ * Exported because the card has to know: the greeting and the dua sit at the
+ * top of the cover, which is exactly where the lanterns are, and text laid over
+ * a string of bulbs is unreadable. Derived from the same table that positions
+ * them rather than written down a second time — a lantern moved deeper here
+ * pushes the greeting down with it, with nothing to keep in sync by hand.
+ */
+export function hangingDepth(
+  enabledOrnaments: readonly OrnamentId[],
+): number {
+  let deepest = 0;
+
+  for (const ornament of HANGING) {
+    if (
+      !HANGABLE.includes(ornament.id) ||
+      !enabledOrnaments.includes(ornament.id)
+    ) {
+      continue;
+    }
+
+    /* `sizeRem` measures the longer side, so a wide ornament is shorter than it. */
+    const size = ornament.sizeRem * ROOT_FONT_PX;
+    const aspect = ORNAMENT_ASPECT[ornament.id];
+    const height = aspect >= 1 ? size / aspect : size;
+    const top = (ornament.topPercent / 100) * BAND_HEIGHT;
+
+    deepest = Math.max(deepest, top + height);
+  }
+
+  return deepest === 0 ? 0 : Math.ceil(deepest + SWING_MARGIN);
+}
 
 /**
  * Ornaments pinned to the top edge of the card, hanging down into the cover.
