@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useCallback, useRef, useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
+import FullScreenPreview from "@/components/create/FullScreenPreview";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -30,6 +31,10 @@ const FRAME_QUERY = "(min-width: 64rem)";
  * Both branches come from one `isFramed` value, so the card is a single mounted
  * `CardCanvas`: crossing the breakpoint restyles it instead of remounting it,
  * and the host keeps their place in the card.
+ *
+ * Under both sits the way out of the editor entirely: a full screen preview,
+ * which is the only place the host sees the card at a real device width with
+ * nothing beside it.
  */
 export default function CardPreview({
   draft,
@@ -50,26 +55,74 @@ export default function CardPreview({
   const palette = getPalette(config.style.paletteId);
   const isFramed = useMediaQuery(FRAME_QUERY);
 
+  const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
+  /* Handed to the overlay, which returns focus here when it unmounts. */
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const closePreview = useCallback((): void => {
+    setIsPreviewOpen(false);
+  }, []);
+
   return (
-    <div
-      className={
-        isFramed
-          ? "lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.65)]"
-          : "mx-auto w-full max-w-[420px]"
-      }
-      style={{ backgroundColor: palette.background }}
-    >
+    <div className="flex flex-col gap-3">
+      <div
+        className={
+          isFramed
+            ? "lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.65)]"
+            : "mx-auto w-full max-w-[420px]"
+        }
+        style={{ backgroundColor: palette.background }}
+      >
+        {/*
+          Sections size against whatever is doing the scrolling: the 620px frame
+          when there is one, the phone screen when the card owns the page.
+        */}
+        <CardCanvas
+          draft={draft}
+          theme={theme}
+          config={config}
+          motifs={motifs}
+          sizing={isFramed ? "frame" : "viewport"}
+          /*
+            The inline preview repaints on every keystroke, so a scratch panel
+            here would ask the host to clear it again after each one. They get
+            the panel drawn open, with a line underneath saying what a guest
+            will meet; the full screen preview is where they can try the real
+            interaction.
+          */
+          audience="host-preview"
+        />
+      </div>
+
       {/*
-        Sections size against whatever is doing the scrolling: the 620px frame
-        when there is one, the phone screen when the card owns the page.
+        Directly under whichever of the two the host is looking at — the frame
+        on a desktop, the card itself on a phone — because it is an action on
+        that card and nothing else.
       */}
-      <CardCanvas
-        draft={draft}
-        theme={theme}
-        config={config}
-        motifs={motifs}
-        sizing={isFramed ? "frame" : "viewport"}
-      />
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setIsPreviewOpen(true)}
+        className="mx-auto min-h-11 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+      >
+        Preview full screen
+      </button>
+
+      {/*
+        Mounted only while open, so the scroll lock and the focus trap are set
+        up and torn down by the overlay's own lifecycle rather than by a flag
+        it has to keep watching.
+      */}
+      {isPreviewOpen ? (
+        <FullScreenPreview
+          draft={draft}
+          theme={theme}
+          config={config}
+          motifs={motifs}
+          triggerRef={triggerRef}
+          onClose={closePreview}
+        />
+      ) : null}
     </div>
   );
 }

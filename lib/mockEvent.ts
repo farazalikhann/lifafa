@@ -5,7 +5,7 @@ import {
   DEFAULT_TRADITION_ID,
   getOccasion,
 } from "@/lib/occasions";
-import type { DecorIntensity, DecorMotion } from "@/types/card";
+import type { DecorIntensity, DecorMotion, ScratchTarget } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
@@ -27,6 +27,7 @@ export interface MockEvent {
   traditionId: TraditionId;
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
+  scratchTarget: ScratchTarget;
   style: CardStyle;
   /** Ordered running order, exactly as CardCanvas expects it. */
   blocks: readonly CardBlock[];
@@ -66,6 +67,12 @@ export function getMockEvent(inviteCode: string): MockEvent {
     traditionId: DEFAULT_TRADITION_ID,
     decorMotion: OCCASION.defaultMotion,
     decorIntensity: "normal",
+    /*
+      The sample card exercises the feature rather than sitting on the default,
+      so opening an invite link shows what a scratch panel actually does. A
+      stored event will carry the host's own choice here.
+    */
+    scratchTarget: "date",
     style: {
       fontPairId: DEFAULT_FONT_PAIR_ID,
       paletteId: OCCASION.defaultPaletteId,

@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { FONT_PAIRS, fontFamilyOf } from "@/lib/fontPairs";
 import { PALETTES } from "@/lib/palettes";
+import type { ScratchTarget } from "@/types/card";
 import type {
   CardDensity,
   CardStyle,
@@ -16,6 +17,27 @@ const DENSITIES: readonly { id: CardDensity; label: string }[] = [
   { id: "airy", label: "Airy" },
 ];
 
+/*
+  Labelled by what the host is choosing to hide rather than by the mechanism,
+  because that is the decision they are actually making. Only one section can be
+  hidden, so these are radio-like pills rather than a pair of toggles.
+*/
+const SCRATCH_TARGETS: readonly { id: ScratchTarget; label: string }[] = [
+  { id: "none", label: "Off" },
+  { id: "date", label: "Hide the date" },
+  { id: "venue", label: "Hide the venue" },
+];
+
+function pillClass(isSelected: boolean): string {
+  return [
+    "min-h-11 rounded-full border px-3.5 text-[0.8125rem] font-medium transition-colors duration-150",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
+    isSelected
+      ? "border-transparent bg-[var(--lifafa-ink-raised)] text-[var(--lifafa-cream)] ring-2 ring-[var(--lifafa-marigold)]"
+      : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)] hover:text-[var(--lifafa-cream)]",
+  ].join(" ");
+}
+
 function GroupHeading({ children }: { children: string }): ReactElement {
   return (
     <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
@@ -28,20 +50,28 @@ export default function StylePanel({
   style,
   hostNames,
   paletteAccent,
+  scratchTarget,
   onFontPairChange,
   onPaletteChange,
   onDensityChange,
   onAccentChange,
+  onScratchTargetChange,
 }: {
   style: CardStyle;
   /** Shown in the typography previews so the host sees their own words. */
   hostNames: string;
   /** The selected palette's own accent, used by the reset control. */
   paletteAccent: string;
+  /*
+    Lives on the card config rather than on CardStyle, because it changes what
+    a guest has to do and not how the card looks, so it is passed on its own.
+  */
+  scratchTarget: ScratchTarget;
   onFontPairChange: (id: FontPairId) => void;
   onPaletteChange: (id: PaletteId) => void;
   onDensityChange: (density: CardDensity) => void;
   onAccentChange: (accent: string | null) => void;
+  onScratchTargetChange: (target: ScratchTarget) => void;
 }): ReactElement {
   const previewName =
     hostNames.trim().length > 0 ? hostNames.trim() : "Your names";
@@ -196,13 +226,7 @@ export default function StylePanel({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onDensityChange(option.id)}
-                className={[
-                  "min-h-11 rounded-full border px-3.5 text-[0.8125rem] font-medium transition-colors duration-150",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
-                  isSelected
-                    ? "border-transparent bg-[var(--lifafa-ink-raised)] text-[var(--lifafa-cream)] ring-2 ring-[var(--lifafa-marigold)]"
-                    : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)] hover:text-[var(--lifafa-cream)]",
-                ].join(" ")}
+                className={pillClass(isSelected)}
               >
                 {option.label}
               </button>
@@ -212,6 +236,33 @@ export default function StylePanel({
 
         <p className="text-xs text-[var(--lifafa-muted)]">
           Controls how much space each section takes.
+        </p>
+      </div>
+
+      {/* 4 — Reveal effect */}
+      <div className="flex flex-col gap-2.5">
+        <GroupHeading>Reveal effect</GroupHeading>
+
+        <div className="flex flex-wrap gap-2">
+          {SCRATCH_TARGETS.map((option) => {
+            const isSelected = option.id === scratchTarget;
+
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => onScratchTargetChange(option.id)}
+                className={pillClass(isSelected)}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="text-xs text-[var(--lifafa-muted)]">
+          Guests scratch the panel to uncover it.
         </p>
       </div>
     </section>

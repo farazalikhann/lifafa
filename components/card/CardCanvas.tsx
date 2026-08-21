@@ -7,13 +7,20 @@ import DetailsSection from "@/components/card/sections/DetailsSection";
 import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
+import ScratchPanel from "@/components/card/ScratchPanel";
 import { hasCustomContent, hasMessage } from "@/lib/cardSections";
 import { maxOverlayAlpha } from "@/lib/contrast";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
-import type { CardConfig, CardSizing } from "@/types/card";
+import type {
+  CardAudience,
+  CardConfig,
+  CardSectionId,
+  CardSizing,
+  ScratchTarget,
+} from "@/types/card";
 import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
@@ -85,6 +92,29 @@ function blockKey(block: CardBlock): string {
   return block.kind === "custom" ? block.section.id : block.id;
 }
 
+/**
+ * Which built-in section a scratch target names, if any.
+ *
+ * The target is phrased in the host's words — what is being hidden — and the
+ * card is built out of sections, so the two need a single point of translation
+ * rather than an id comparison at each place that cares.
+ */
+function scratchSection(target: ScratchTarget): CardSectionId | null {
+  switch (target) {
+    case "date":
+      return "details";
+    case "venue":
+      return "venue";
+    case "none":
+      return null;
+  }
+}
+
+const SCRATCH_LABEL: Record<"date" | "venue", string> = {
+  date: "Scratch to see the date",
+  venue: "Scratch to see the venue",
+};
+
 function renderBlock(
   block: CardBlock,
   draft: EventDraft,
@@ -130,16 +160,24 @@ export default function CardCanvas({
   config,
   motifs,
   sizing,
+  audience,
 }: {
   draft: EventDraft;
   theme: Theme;
   config: CardConfig;
   motifs: readonly Motif[];
   sizing: CardSizing;
+  /** Decides whether guest interactions — the scratch panel — are live. */
+  audience: CardAudience;
 }): ReactElement {
   const { style } = config;
   const minHeight = sectionMinHeight(sizing, style.density);
   const visible = config.blocks.filter((block) => blockRenders(block, draft));
+
+  const isHostPreview = audience === "host-preview";
+  const hiddenSection = scratchSection(config.scratchTarget);
+  const scratchLabel =
+    config.scratchTarget === "none" ? null : SCRATCH_LABEL[config.scratchTarget];
 
   /*
     Colour resolution order: the host's accent override, then the selected
@@ -218,19 +256,62 @@ export default function CardCanvas({
           section that returned null. A section that hides itself is absent from
           this list, so its divider is absent with it.
         */}
-        {visible.map((block, index) => (
-          <Fragment key={blockKey(block)}>
-            {index > 0 ? (
-              <div className="flex justify-center py-2">
-                <CardFlourish
+        {visible.map((block, index) => {
+          const section = renderBlock(block, draft, effectiveTheme, minHeight);
+
+          /*
+            At most one panel per card, and only over a built-in section: the
+            target names "date" or "venue", neither of which a custom block can
+            ever be. A card with the target set to a section the host has since
+            switched off simply has no panel, because that section is not in
+            `visible` at all.
+          */
+          const isHidden =
+            block.kind === "builtin" &&
+            block.id === hiddenSection &&
+            scratchLabel !== null;
+
+          return (
+            <Fragment key={blockKey(block)}>
+              {index > 0 ? (
+                <div className="flex justify-center py-2">
+                  <CardFlourish
+                    accent={effectiveTheme.accent}
+                    className="opacity-50"
+                  />
+                </div>
+              ) : null}
+
+              {isHidden ? (
+                <ScratchPanel
                   accent={effectiveTheme.accent}
-                  className="opacity-50"
-                />
-              </div>
-            ) : null}
-            {renderBlock(block, draft, effectiveTheme, minHeight)}
-          </Fragment>
-        ))}
+                  surface={effectiveTheme.surface}
+                  label={scratchLabel}
+                  /* The host edits; the guest scratches. */
+                  preCleared={isHostPreview}
+                >
+                  {section}
+                </ScratchPanel>
+              ) : (
+                section
+              )}
+
+              {/*
+                Said only in the editor, and only under the panel it describes:
+                the host is looking at an uncovered section and would otherwise
+                have no way to tell that their guests will not be.
+              */}
+              {isHidden && isHostPreview ? (
+                <p
+                  className="px-7 pb-6 text-center text-xs"
+                  style={{ color: effectiveTheme.textMuted }}
+                >
+                  Guests will need to scratch this.
+                </p>
+              ) : null}
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );

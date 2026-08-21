@@ -18,7 +18,12 @@ import {
   DEFAULT_TRADITION_ID,
   getOccasion,
 } from "@/lib/occasions";
-import type { CardConfig, DecorIntensity, DecorMotion } from "@/types/card";
+import type {
+  CardConfig,
+  DecorIntensity,
+  DecorMotion,
+  ScratchTarget,
+} from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
 import type { EventDraft } from "@/types/event";
@@ -50,6 +55,8 @@ export default function CreatePage() {
     DEFAULT_OCCASION.defaultMotion,
   );
   const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>("normal");
+  /* Off by default: a card that hides its own date has to be asked for. */
+  const [scratchTarget, setScratchTarget] = useState<ScratchTarget>("none");
   const [style, setStyle] = useState<CardStyle>({
     fontPairId: DEFAULT_FONT_PAIR_ID,
     paletteId: DEFAULT_OCCASION.defaultPaletteId,
@@ -113,7 +120,10 @@ export default function CreatePage() {
     decorIntensity,
     occasionId,
     traditionId,
+    scratchTarget,
     style,
+    /* Nothing in the editor has been paid for — that is what /create is. */
+    isPaid: false,
   };
 
   const motifs = getMotifs(occasionId, traditionId);
@@ -190,10 +200,12 @@ export default function CreatePage() {
             /* Resolved, so the specimen shows the same line the cover will. */
             hostNames={coverNameLine(resolveCoverNames(draft))}
             paletteAccent={getPalette(style.paletteId).accent}
+            scratchTarget={scratchTarget}
             onFontPairChange={setFontPair}
             onPaletteChange={setPalette}
             onDensityChange={setDensity}
             onAccentChange={setAccent}
+            onScratchTargetChange={setScratchTarget}
           />
         </div>
       </main>

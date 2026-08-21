@@ -2,6 +2,7 @@
 
 import { use, useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
+import Watermark from "@/components/card/Watermark";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
@@ -41,7 +42,15 @@ export default function InvitePage({
     decorIntensity: event.decorIntensity,
     occasionId: event.occasionId,
     traditionId: event.traditionId,
+    scratchTarget: event.scratchTarget,
     style: event.style,
+    /*
+      Hardcoded until there is a payment to read. A guest holding a link must
+      never meet a watermark, so this side is pinned true and only the wiring
+      below is real: when the flag starts coming from the stored event, the
+      card starts marking itself with no further change here.
+    */
+    isPaid: true,
   };
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
@@ -65,13 +74,23 @@ export default function InvitePage({
       </h1>
 
       {/* No frame here — the card fills the phone screen. */}
-      <CardCanvas
-        draft={event.draft}
-        theme={theme}
-        config={config}
-        motifs={motifs}
-        sizing="viewport"
-      />
+      <div className="relative">
+        <CardCanvas
+          draft={event.draft}
+          theme={theme}
+          config={config}
+          motifs={motifs}
+          sizing="viewport"
+          audience="guest"
+        />
+
+        {/* Renders nothing while isPaid holds. */}
+        <Watermark
+          show={!config.isPaid}
+          accent={config.style.accentOverride ?? palette.accent}
+          surface={palette.surface}
+        />
+      </div>
 
       {stage === "confirmed" && submitted !== null ? (
         <RsvpConfirmed
