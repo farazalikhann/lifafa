@@ -2,7 +2,7 @@
 
 import { use, useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
-import Watermark from "@/components/card/Watermark";
+import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
@@ -75,7 +75,13 @@ export default function InvitePage({
       </h1>
 
       {/* No frame here — the card fills the phone screen. */}
-      <div className="relative">
+      <div
+        className="relative"
+        /* Room for the pill, and only when there is a pill to leave it for. */
+        style={
+          config.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
+        }
+      >
         <CardCanvas
           draft={event.draft}
           theme={theme}

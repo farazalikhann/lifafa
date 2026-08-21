@@ -39,6 +39,23 @@ const OVERSCAN = "160%";
 const PILL_OFFSET = "3.5rem";
 
 /**
+ * Room the card has to leave at its foot when the mark is shown.
+ *
+ * PILL_OFFSET holds the pill 3.5rem off the bottom of the screen and the pill
+ * is a little over 2rem tall, so anything ending within about 5.5rem of the
+ * card's foot would finish underneath it. 7rem clears that with room over.
+ *
+ * Exported rather than restated at the call sites, so the offset and the space
+ * left for it cannot drift apart.
+ *
+ * This guarantees the *end* of the card clears the pill. The pill is fixed to
+ * the viewport by design — it belongs to the screen the host is looking at, not
+ * to a point partway down a card several screens long — so mid-scroll it still
+ * passes over whatever happens to be behind it at the time.
+ */
+export const WATERMARK_CLEARANCE = "7rem";
+
+/**
  * "Pay to unlock" made visible on the card itself.
  *
  * Two layers, both inert: a diagonal repeat of the wordmark across the whole

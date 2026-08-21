@@ -109,6 +109,16 @@ export default function CardPreview({
       </button>
 
       {/*
+        The overlay carries this line in its own footer at lg, but below lg it
+        has no footer to carry it in — the card takes the whole screen there.
+        Said here instead, where it reads as what the button is offering rather
+        than as a caption on something already open.
+      */}
+      <p className="text-center text-xs text-[var(--lifafa-muted)]">
+        This is exactly what your guests will see.
+      </p>
+
+      {/*
         Mounted only while open, so the scroll lock and the focus trap are set
         up and torn down by the overlay's own lifecycle rather than by a flag
         it has to keep watching.

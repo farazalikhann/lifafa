@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import CardCanvas from "@/components/card/CardCanvas";
-import Watermark from "@/components/card/Watermark";
+import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
@@ -225,10 +225,12 @@ export default function FullScreenPreview({
       </h2>
 
       {/*
-        Toggles left, close right. Both sides are pills of the same height, so
-        at 360px the row is a single line of tappable targets with room over.
+        The device toggles, and only where they answer something. Below lg the
+        screen already is the phone, so a Phone/Desktop pair there is a row of
+        chrome asking a question nobody at that width has — and the vertical
+        space it costs is space the card is not getting.
       */}
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--lifafa-hairline)] px-3 py-2 sm:px-5">
+      <header className="hidden shrink-0 items-center gap-3 border-b border-[var(--lifafa-hairline)] px-3 py-2 sm:px-5 lg:flex">
         <div className="flex items-center gap-2">
           {DEVICES.map((option) => (
             <button
@@ -242,27 +244,41 @@ export default function FullScreenPreview({
             </button>
           ))}
         </div>
-
-        <button
-          ref={closeButtonRef}
-          type="button"
-          aria-label="Close preview"
-          onClick={handleClose}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            strokeLinecap="round"
-          >
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
       </header>
+
+      {/*
+        Floated over the card rather than seated in a bar, which is what lets
+        the card have the whole viewport below lg with no chrome above or below
+        it. Kept after the header in the DOM so Tab still reaches the device
+        pills first at lg, where the two are visible together.
+
+        The translucent backdrop is not decoration: this sits over the card, and
+        the card can be cream or near-black depending on the palette, so the
+        button has to carry its own contrast rather than borrow the card's.
+
+        z-40 puts it over the watermark's own layers (20 for the tiled pattern,
+        30 for the pill) and under the overlay's 50. Without it the pattern
+        would draw across the button on a card tall enough to reach up here.
+      */}
+      <button
+        ref={closeButtonRef}
+        type="button"
+        aria-label="Close preview"
+        onClick={handleClose}
+        className="absolute top-3 right-3 z-40 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 text-[var(--lifafa-cream)] backdrop-blur transition-colors duration-150 hover:bg-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
 
       {/*
         min-h-0 is what lets this shrink inside the column: without it the flex
@@ -275,6 +291,12 @@ export default function FullScreenPreview({
           style={{
             maxWidth: `${device.width}px`,
             backgroundColor: palette.background,
+            /*
+              The mark is always drawn here, so the card always leaves room for
+              it: without this the last line of the card ends underneath the
+              pill, and on most cards that last line is the names.
+            */
+            paddingBottom: WATERMARK_CLEARANCE,
           }}
         >
           {/*
@@ -303,7 +325,13 @@ export default function FullScreenPreview({
         </div>
       </div>
 
-      <footer className="shrink-0 border-t border-[var(--lifafa-hairline)] px-4 py-3 text-center text-xs text-[var(--lifafa-muted)]">
+      {/*
+        Dropped below lg along with the header, for the same reason: the card is
+        meant to have the screen to itself there. The line is not lost — it now
+        sits under the trigger on the editor page, which is where the host reads
+        it before they open this.
+      */}
+      <footer className="hidden shrink-0 border-t border-[var(--lifafa-hairline)] px-4 py-3 text-center text-xs text-[var(--lifafa-muted)] lg:block">
         This is exactly what your guests will see.
       </footer>
     </div>,
