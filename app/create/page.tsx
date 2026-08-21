@@ -12,6 +12,7 @@ import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getMotifs } from "@/lib/motifs";
+import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { getPalette } from "@/lib/palettes";
 import {
   DEFAULT_OCCASION_ID,
@@ -23,6 +24,7 @@ import type { CardBlock } from "@/types/customSection";
 import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { OrnamentConfig } from "@/types/ornament";
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);
 
@@ -50,6 +52,14 @@ export default function CreatePage() {
     DEFAULT_OCCASION.defaultMotion,
   );
   const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>("normal");
+  /*
+    The Muslim ornament pack's choices. Kept here rather than inside the panel,
+    because the panel unmounts the moment the host leaves that tradition and
+    state that unmounts with its editor would quietly survive on the card.
+  */
+  const [ornamentConfig, setOrnamentConfig] = useState<OrnamentConfig>(
+    DEFAULT_ORNAMENT_CONFIG,
+  );
   const [style, setStyle] = useState<CardStyle>({
     fontPairId: DEFAULT_FONT_PAIR_ID,
     paletteId: DEFAULT_OCCASION.defaultPaletteId,
@@ -90,6 +100,21 @@ export default function CreatePage() {
     }));
   }, []);
 
+  /**
+   * A tradition click is the one thing that can clear the ornament pack.
+   *
+   * Leaving "muslim" resets the config outright rather than merely hiding the
+   * panel: a host who tries the lanterns, changes their mind about the
+   * tradition, and never opens that panel again would otherwise ship a Sikh or
+   * a Christian card with a lantern hanging off it and no control anywhere on
+   * the page that could switch it off. Arriving at "muslim" resets it too, so
+   * the pack always opens from a known state.
+   */
+  const handleTraditionSelect = useCallback((id: TraditionId) => {
+    setTraditionId(id);
+    setOrnamentConfig(DEFAULT_ORNAMENT_CONFIG);
+  }, []);
+
   const setFontPair = useCallback((fontPairId: FontPairId) => {
     setStyle((previous) => ({ ...previous, fontPairId }));
   }, []);
@@ -114,6 +139,7 @@ export default function CreatePage() {
     occasionId,
     traditionId,
     style,
+    ornamentConfig,
   };
 
   const motifs = getMotifs(occasionId, traditionId);
@@ -170,8 +196,10 @@ export default function CreatePage() {
           <OccasionPicker
             occasionId={occasionId}
             traditionId={traditionId}
+            ornamentConfig={ornamentConfig}
             onOccasionChange={handleOccasionSelect}
-            onTraditionChange={setTraditionId}
+            onTraditionChange={handleTraditionSelect}
+            onOrnamentConfigChange={setOrnamentConfig}
           />
           <EventForm draft={draft} onChange={handleChange} />
           <SectionManager blocks={blocks} onBlocksChange={setBlocks} />

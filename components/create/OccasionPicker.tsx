@@ -1,20 +1,31 @@
 "use client";
 
 import type { ReactElement } from "react";
+import OrnamentPanel from "@/components/create/OrnamentPanel";
 import { OCCASIONS, TRADITIONS } from "@/lib/occasions";
 import { getMotifs } from "@/lib/motifs";
 import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { OrnamentConfig } from "@/types/ornament";
 
 export default function OccasionPicker({
   occasionId,
   traditionId,
+  ornamentConfig,
   onOccasionChange,
   onTraditionChange,
+  onOrnamentConfigChange,
 }: {
   occasionId: OccasionId;
   traditionId: TraditionId;
+  /*
+    Only ever acted on when the tradition is "muslim". Still passed on every
+    tradition, because the panel is mounted and unmounted by that same value and
+    a conditional prop would just move the branch somewhere less obvious.
+  */
+  ornamentConfig: OrnamentConfig;
   onOccasionChange: (id: OccasionId) => void;
   onTraditionChange: (id: TraditionId) => void;
+  onOrnamentConfigChange: (next: OrnamentConfig) => void;
 }): ReactElement {
   return (
     <section className="flex flex-col gap-4">
@@ -93,6 +104,19 @@ export default function OccasionPicker({
             );
           })}
         </div>
+
+        {/*
+          Directly under the pills, because it only exists because of the pill
+          above it. Mounted on "muslim" alone — every other tradition removes it
+          from the tree, and the page resets the config as it goes, so nothing
+          from this pack can be left switched on behind a hidden panel.
+        */}
+        {traditionId === "muslim" ? (
+          <OrnamentPanel
+            config={ornamentConfig}
+            onChange={onOrnamentConfigChange}
+          />
+        ) : null}
       </div>
     </section>
   );

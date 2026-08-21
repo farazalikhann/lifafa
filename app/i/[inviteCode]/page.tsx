@@ -42,6 +42,7 @@ export default function InvitePage({
     occasionId: event.occasionId,
     traditionId: event.traditionId,
     style: event.style,
+    ornamentConfig: event.ornamentConfig,
   };
   const motifs = getMotifs(config.occasionId, config.traditionId);
 

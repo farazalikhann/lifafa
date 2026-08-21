@@ -180,6 +180,72 @@
   }
 }
 
+/* --- Muslim ornament pack. Driven by HangingLayer's hardcoded position table. --- */
+
+/*
+  Pendulum for anything hanging off the top edge of the card.
+
+  transform-origin is the top centre, so the ornament pivots from the point its
+  chain is drawn at rather than about its own middle — swinging about the centre
+  would slide the lantern sideways instead of rocking it.
+
+  Duration and delay are set inline per ornament, so no two swing in unison.
+*/
+@keyframes lifafa-ornament-swing {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+.lifafa-hang-swing {
+  display: block;
+  transform-origin: top center;
+  animation-name: lifafa-ornament-swing;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+/*
+  Lantern flame.
+
+  Deliberately uneven — the dip at 68% is what keeps it from reading as a
+  regular pulse. Opacity only, so it composites on its own layer and never
+  costs a relayout.
+*/
+@keyframes lifafa-flame-flicker {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  34% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.62;
+  }
+}
+
+.lifafa-flame-flicker {
+  animation: lifafa-flame-flicker 3.4s ease-in-out infinite;
+}
+
+/*
+  Reduced motion switches both off outright rather than slowing them down. The
+  ornaments themselves stay — a guest who has asked for less movement still
+  wants the card to look like a card.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-hang-swing,
+  .lifafa-flame-flicker {
+    animation: none;
+  }
+}
+
 /* Headcount bars ticking up. */
 @keyframes lifafa-grow {
   0%,
