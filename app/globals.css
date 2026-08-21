@@ -34,6 +34,47 @@
   --lifafa-arabic:
     var(--font-arabic), "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro",
     "Arabic Typesetting", "Traditional Arabic", "Segoe UI", serif;
+
+  /*
+    The Devanagari stack, used by the greeting and shlok and by nothing else.
+
+    Same arrangement as the Arabic above: --font-devanagari is Noto Sans
+    Devanagari, loaded and self-hosted by next/font in app/layout.tsx and set on
+    <html>, with system faces behind it for the swap period and for any device
+    that fails to fetch the webfont. Nirmala UI is the Windows Devanagari face,
+    Kohinoor the Apple one; a Latin default is last so the text still renders
+    where no Devanagari face exists at all.
+  */
+  --lifafa-devanagari:
+    var(--font-devanagari), "Noto Sans Devanagari", "Nirmala UI",
+    "Kohinoor Devanagari", "Devanagari Sangam MN", "Mangal", "Noto Serif Devanagari",
+    serif;
+
+  /*
+    Line-height for Devanagari, and not a number to round off by eye.
+
+    Devanagari hangs a shirorekha across the top of every word and stacks matras
+    and reph above that, so its ink runs far higher above the baseline than
+    Latin's cap height — and higher than the font's own declared ascender, which
+    is what makes it clip at a line-height that looks generous for Latin.
+
+    Measured, not guessed, by rendering all nine strings in lib/devanagariContent.ts
+    and scanning the pixels for ink (see the note there). Worst case over the set:
+
+      Noto Sans Devanagari   0.899em above the baseline, 0.274em below
+      Nirmala UI (fallback)  1.062em above the baseline, 0.253em below
+
+    The webfont's own content box is only 1.304em (ascent 0.896 + descent 0.408),
+    so its ink already overruns its metrics. Against that box the floor is a
+    line-height of 1.31 for the webfont and about 1.64 for the Windows fallback
+    that shows during the swap. 1.75 clears both with room to spare, and is the
+    number to keep if a longer shlok is ever added — re-measure before lowering
+    it.
+
+    Deliberately not the Arabic's 1.9/2.1: fully vowelled naskh stacks higher
+    still. Two scripts, two leadings.
+  */
+  --lifafa-devanagari-leading: 1.75;
 }
 
 /* -------------------------------------------------------------------------

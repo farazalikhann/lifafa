@@ -7,6 +7,7 @@ import {
   Inter,
   Lora,
   Noto_Naskh_Arabic,
+  Noto_Sans_Devanagari,
 } from "next/font/google";
 import "./globals.css";
 
@@ -68,6 +69,36 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
   variable: "--font-arabic",
 });
 
+/*
+  The second face loaded for a script rather than for a look, on the same terms
+  as the Arabic above.
+
+  Not a cut of the Naskh family — Noto Naskh Arabic ships arabic, latin, math
+  and symbols and has no Devanagari, so there is no way to set both scripts in
+  one family and the two are matched by weight and colour instead.
+
+  Devanagari left to a device default lands on whatever is installed: Nirmala UI
+  on Windows, Kohinoor on iOS, something arbitrary elsewhere, each with its own
+  metrics — which is why the line-height in globals.css is set for the worst of
+  them and not just for this face.
+
+  The "devanagari" subset only. Worth being exact about what that does, because
+  the build output does not look like it at a glance: `subsets` chooses what is
+  PRELOADED, not what is emitted. next/font writes an @font-face for every
+  subset the family publishes — checked against a real build, this one emits
+  three, devanagari plus latin and latin-ext — and only the listed one gets the
+  preload and is fetched eagerly. The Latin cuts are dead weight in the CSS and
+  nothing more: they are downloaded only if some Latin glyph is rendered in this
+  family, and the family reaches the Devanagari elements alone through
+  --lifafa-devanagari. Adding "latin" here would preload one of those for real,
+  which is the thing to avoid.
+*/
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  subsets: ["devanagari"],
+  display: "swap",
+  variable: "--font-devanagari",
+});
+
 const FONT_VARIABLES = [
   fraunces.variable,
   inter.variable,
@@ -75,6 +106,7 @@ const FONT_VARIABLES = [
   lora.variable,
   dmSans.variable,
   notoNaskhArabic.variable,
+  notoSansDevanagari.variable,
 ].join(" ");
 
 export const metadata: Metadata = {
