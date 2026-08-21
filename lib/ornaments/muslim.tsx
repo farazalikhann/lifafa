@@ -260,8 +260,52 @@ const JAALI = [
   "M 21 56 L 13 48",
 ].join(" ");
 
-/** Warm enough to read as fire against every palette the card ships with. */
-const FLAME_COLOUR = "#ffcb7a";
+/**
+ * Warm enough to read as fire against every palette the card ships with.
+ *
+ * Exported because the Hindu pack's diya burns too, and its flame is meant to
+ * be the same flame — see FlameGlow below.
+ */
+export const FLAME_COLOUR = "#ffcb7a";
+
+/**
+ * The glow behind a flame.
+ *
+ * Lifted out of the lantern so the Hindu pack's diya can use the identical
+ * filter rather than a second one that drifts: lib/ornaments/hindu.tsx imports
+ * this and FLAME_COLOUR, and the two flames are one treatment defined once. If
+ * this changes, both flames change, which is the point — do not fork it.
+ *
+ * `id` must be unique per rendered flame and must come from the caller's stable
+ * instanceId, never from Math.random or the clock: two renders of the same
+ * ornament in the same place have to emit byte-identical markup or hydration
+ * reports a mismatch.
+ */
+export function FlameGlow({ id }: { id: string }): ReactElement {
+  return (
+    /*
+      Generous filter region: the blur spreads well outside the flame's own box,
+      and the default -10%/120% region would clip the halo into a visible
+      square.
+    */
+    <filter
+      id={id}
+      x="-150%"
+      y="-150%"
+      width="400%"
+      height="400%"
+      colorInterpolationFilters="sRGB"
+    >
+      <feGaussianBlur stdDeviation="2.4" result="lifafaFlameBlur" />
+      <feMerge>
+        {/* Twice, so the halo carries past anything drawn in front of it. */}
+        <feMergeNode in="lifafaFlameBlur" />
+        <feMergeNode in="lifafaFlameBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  );
+}
 
 export const Lantern: Ornament = ({
   size,
@@ -289,27 +333,7 @@ export const Lantern: Ornament = ({
       style={style}
     >
       <defs>
-        {/*
-          Generous filter region: the blur spreads well outside the flame's own
-          box, and the default -10%/120% region would clip the halo into a
-          visible square.
-        */}
-        <filter
-          id={glowId}
-          x="-150%"
-          y="-150%"
-          width="400%"
-          height="400%"
-          colorInterpolationFilters="sRGB"
-        >
-          <feGaussianBlur stdDeviation="2.4" result="lifafaFlameBlur" />
-          <feMerge>
-            {/* Twice, so the halo carries past the lattice drawn in front. */}
-            <feMergeNode in="lifafaFlameBlur" />
-            <feMergeNode in="lifafaFlameBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        <FlameGlow id={glowId} />
       </defs>
 
       {/* Chain — three linked segments and the hook down to the cap. */}
