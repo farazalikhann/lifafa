@@ -65,7 +65,7 @@ export default function Image({
 
   const { eventTitle, eventDate, eventTime } = event.draft;
   /* The same resolution the card runs, so the unfurl cannot disagree with it. */
-  const names = resolveCoverNames(event.draft);
+  const names = resolveCoverNames(event.draft, event.occasionId);
   const when = formatWhen(eventDate, eventTime);
 
   const content: ReactElement = (

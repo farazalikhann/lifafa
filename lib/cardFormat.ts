@@ -6,7 +6,9 @@
  * anywhere in the card tree without creating an import cycle.
  */
 
+import { pairsNames } from "@/lib/occasions";
 import type { EventDraft } from "@/types/event";
+import type { OccasionId } from "@/types/occasion";
 
 /**
  * Every date on the card is pinned to India, on both sides of the wire.
@@ -111,15 +113,26 @@ export type CoverNameFields = Pick<
 /**
  * Resolves what the cover should call the people being celebrated.
  *
- * The pair wins only when *both* names are there: one name plus a joining word
- * is a half-finished thought, and rendering "Aarav weds" would be worse than
- * falling back. Everything else comes down to hostNames, then the placeholder.
+ * The occasion decides whether a pair is even possible. A birthday has one
+ * person and a corporate invitation has none, so those never set two names over
+ * three lines however the draft happens to be filled in — which also means a
+ * host who types a pair under "Wedding" and then switches to "Birthday" gets
+ * the single line their new occasion calls for, with the pair kept in the draft
+ * and waiting should they switch back.
+ *
+ * Within an occasion that does pair, the pair wins only when *both* names are
+ * there: one name plus a joining word is a half-finished thought, and rendering
+ * "Aarav weds" would be worse than falling back. Everything else comes down to
+ * hostNames, then the placeholder.
  */
-export function resolveCoverNames(draft: CoverNameFields): CoverNames {
+export function resolveCoverNames(
+  draft: CoverNameFields,
+  occasionId: OccasionId,
+): CoverNames {
   const first = draft.partyOneName.trim();
   const second = draft.partyTwoName.trim();
 
-  if (first.length > 0 && second.length > 0) {
+  if (pairsNames(occasionId) && first.length > 0 && second.length > 0) {
     const joiner = draft.joinerWord.trim();
 
     return {

@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
+import { pairsNames } from "@/lib/occasions";
 import type { DraftChangeHandler, EventDraft } from "@/types/event";
+import type { OccasionId } from "@/types/occasion";
 
 const MESSAGE_LIMIT = 200;
 
@@ -167,11 +169,26 @@ const DATE_HINT =
 export default function EventForm({
   draft,
   onChange,
+  occasionId,
 }: {
   draft: EventDraft;
   onChange: DraftChangeHandler;
+  /**
+   * Which occasion this is, and so how many people the card is about.
+   *
+   * A wedding, an engagement and an anniversary join two names; a birthday, a
+   * baby shower, a housewarming and a corporate invitation do not. Asking a
+   * host planning a birthday for a "first name" and a "second name" with
+   * "weds" between them is asking a question their event has no answer to, so
+   * those occasions are shown one name field instead of three.
+   *
+   * The answer comes from the occasion table rather than a list kept here, so
+   * this and `resolveCoverNames` cannot drift into disagreeing about it.
+   */
+  occasionId: OccasionId;
 }): ReactElement {
   const remaining = MESSAGE_LIMIT - draft.message.length;
+  const isPair = pairsNames(occasionId);
 
   return (
     /* Deliberately a div, not a <form>: nothing submits in this step. */
@@ -181,7 +198,12 @@ export default function EventForm({
           The two party fields and the joining word are one thought — they
           build a single line of the card between them — so they sit under
           their own heading rather than loose among the other fields.
+
+          Shown only where the occasion joins two people. Everything else gets
+          the single field below, promoted from a fallback to the way the name
+          is entered.
         */}
+        {isPair ? (
         <div
           className="flex flex-col gap-3"
           role="group"
@@ -246,20 +268,27 @@ export default function EventForm({
             </div>
           </div>
         </div>
+        ) : null}
 
+        {/*
+          One field, two jobs. Beside the pair it is the escape hatch for a line
+          the three fields cannot make — "The Sharma family", a name with a
+          title in it. On its own it *is* the name, so it takes the plain label
+          and drops the hint about fields that are not on screen.
+        */}
         <Field
           id="hostNames"
-          label="Or write one line yourself"
-          hint={HOST_HINT}
+          label={isPair ? "Or write one line yourself" : "Name on the card"}
+          hint={isPair ? HOST_HINT : undefined}
         >
           <input
             id="hostNames"
             type="text"
             value={draft.hostNames}
             onChange={(event) => onChange("hostNames", event.target.value)}
-            placeholder="Aarav and Meera"
+            placeholder={isPair ? "Aarav and Meera" : "Aarav"}
             autoComplete="off"
-            aria-describedby="hostNames-hint"
+            aria-describedby={isPair ? "hostNames-hint" : undefined}
             className={INPUT_CLASS}
           />
         </Field>

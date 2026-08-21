@@ -248,7 +248,11 @@ export default function CreatePage() {
             onTraditionChange={handleTraditionSelect}
             onOrnamentConfigChange={setOrnamentConfig}
           />
-          <EventForm draft={draft} onChange={handleChange} />
+          <EventForm
+            draft={draft}
+            onChange={handleChange}
+            occasionId={occasionId}
+          />
           <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
         </div>
 
@@ -263,7 +267,7 @@ export default function CreatePage() {
           <StylePanel
             style={style}
             /* Resolved, so the specimen shows the same line the cover will. */
-            hostNames={coverNameLine(resolveCoverNames(draft))}
+            hostNames={coverNameLine(resolveCoverNames(draft, occasionId))}
             paletteAccent={getPalette(style.paletteId).accent}
             scratchTarget={scratchTarget}
             borderStyle={borderStyle}

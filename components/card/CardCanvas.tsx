@@ -32,6 +32,7 @@ import type {
 import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
+import type { OccasionId } from "@/types/occasion";
 import type { OrnamentId } from "@/types/ornament";
 
 /**
@@ -268,6 +269,7 @@ function renderBlock(
   theme: Theme,
   minHeight: string,
   pad: number,
+  occasionId: OccasionId,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -288,6 +290,7 @@ function renderBlock(
           theme={theme}
           minHeight={minHeight}
           pad={pad}
+          occasionId={occasionId}
         />
       );
     case "details":
@@ -616,6 +619,7 @@ export default function CardCanvas({
             effectiveTheme,
             minHeight,
             sectionPad,
+            config.occasionId,
           );
 
           /*

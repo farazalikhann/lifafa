@@ -15,6 +15,7 @@ import {
 } from "@/lib/cardFormat";
 import type { Theme } from "@/lib/themes";
 import type { EventDraft } from "@/types/event";
+import type { OccasionId } from "@/types/occasion";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -71,9 +72,19 @@ export default function CoverSection({
   theme,
   minHeight,
   pad,
+  occasionId,
 }: {
   draft: EventDraft;
   theme: Theme;
+  /**
+   * Which occasion this is, and so whether the cover joins two names.
+   *
+   * A birthday has one person and a corporate invitation has none, so neither
+   * sets a pair over three lines however the draft happens to be filled in.
+   * Resolved through `resolveCoverNames` rather than branched on here, so the
+   * card, the page title and the share image cannot disagree about it.
+   */
+  occasionId: OccasionId;
   minHeight: string;
   /**
    * Inset for the section's content, top and bottom, in px.
@@ -119,7 +130,7 @@ export default function CoverSection({
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const cueRetired = !prefersReducedMotion && hasScrolledPast;
 
-  const names = resolveCoverNames(draft);
+  const names = resolveCoverNames(draft, occasionId);
   const title = resolve(draft.eventTitle, "Event title");
 
   /*

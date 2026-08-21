@@ -72,7 +72,7 @@ export default function InvitePage({
       */}
       <h1 className="sr-only">
         {event.draft.eventTitle} —{" "}
-        {coverNameLine(resolveCoverNames(event.draft))}
+        {coverNameLine(resolveCoverNames(event.draft, event.occasionId))}
       </h1>
 
       {/* No frame here — the card fills the phone screen. */}

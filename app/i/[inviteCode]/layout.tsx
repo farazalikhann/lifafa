@@ -26,11 +26,13 @@ export async function generateMetadata({
   params: Promise<{ inviteCode: string }>;
 }): Promise<Metadata> {
   const { inviteCode } = await params;
-  const { draft } = getMockEvent(inviteCode);
+  const { draft, occasionId } = getMockEvent(inviteCode);
 
   /* Flattened from the same resolution the cover runs, so the chat thread and
      the card it links to name the same people. */
-  const title = `${draft.eventTitle} — ${coverNameLine(resolveCoverNames(draft))}`;
+  const title = `${draft.eventTitle} — ${coverNameLine(
+    resolveCoverNames(draft, occasionId),
+  )}`;
 
   return {
     title,
