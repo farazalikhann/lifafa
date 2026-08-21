@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import CardCanvas from "@/components/card/CardCanvas";
-import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
+import Watermark from "@/components/card/Watermark";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
@@ -410,17 +410,29 @@ export default function FullScreenPreview({
         screen and the footer goes with it.
       */}
       <div className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {/*
+          No bottom clearance for the watermark pill any more, and dropping it
+          is what stops the border frame breaking at the end of the scroll.
+
+          The clearance existed because a card used to be able to finish its last
+          line right at its own foot, underneath the pill. That has not been true
+          since sections became a full screen tall with symmetric padding: the
+          last line now sits about 300px above the card's foot, and the pill —
+          3.5rem off the bottom of the screen — lands in that padding with
+          nothing behind it.
+
+          What the clearance did do was end the card 112px above the bottom of
+          the scroller, and the frame is pinned *inside* the card. So at the very
+          bottom of the scroll the sticky band ran out of containing block, the
+          bottom rail rode up, and the frame came apart with a band of bare
+          background beneath it. Letting the card fill the scroller fixes the
+          frame and removes 112px of dead space at the same time.
+        */}
         <div
           className="relative mx-auto w-full"
           style={{
             maxWidth: `${device.width}px`,
             backgroundColor: palette.background,
-            /*
-              The mark is always drawn here, so the card always leaves room for
-              it: without this the last line of the card ends underneath the
-              pill, and on most cards that last line is the names.
-            */
-            paddingBottom: WATERMARK_CLEARANCE,
           }}
         >
           {/*

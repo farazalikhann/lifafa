@@ -206,7 +206,22 @@ export default function CreatePage() {
         */}
         <h1 className="sr-only">Create your invitation</h1>
 
-        <div className="order-2 flex flex-col gap-9 lg:order-1">
+        {/*
+          `min-w-0` on both columns, and it is load-bearing rather than tidy.
+
+          A grid item's automatic minimum size is its *min-content* width, not
+          zero, so anything inside that refuses to wrap sets a floor the column
+          cannot go below. The typography specimens are `white-space: nowrap` by
+          design — they are type samples, and a sample that wraps stops showing
+          the face — so a host typing a long pair of names pushed that floor to
+          472px on a 360px screen. The page did not scroll sideways; it did
+          something worse and zoomed out to fit, shrinking the whole editor and
+          the card preview with it.
+
+          `min-w-0` lets the column shrink to the space it actually has, which
+          is what finally lets the specimens' own `truncate` do its job.
+        */}
+        <div className="order-2 flex min-w-0 flex-col gap-9 lg:order-1">
           <OccasionPicker
             occasionId={occasionId}
             traditionId={traditionId}
@@ -219,7 +234,7 @@ export default function CreatePage() {
           <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
         </div>
 
-        <div className="order-1 flex flex-col gap-6 lg:order-2 lg:sticky lg:top-24">
+        <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:sticky lg:top-24">
           <CardPreview draft={draft} config={config} motifs={motifs} />
           <MotionPicker
             motion={decorMotion}

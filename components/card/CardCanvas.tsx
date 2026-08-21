@@ -51,12 +51,6 @@ const DECOR_CEILING = 0.22;
 const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
 
 /**
- * The blessing's inset from the top of the cover when nothing hangs above it,
- * in px. Matches the cover's own `py-10` closely enough to read as one block.
- */
-const BLESSING_TOP_PAD = 40;
-
-/**
  * The mosque arch's inset from the cover's edges when no border is drawn, in px.
  *
  * Exactly what `inset-x-4 top-5` used to say in Tailwind. Moved into numbers
@@ -458,19 +452,14 @@ export default function CardCanvas({
   const contentTopInset = Math.max(0, clearance.y - SECTION_TOP_PAD);
 
   /*
-    Where the blessing can start without landing on a lantern.
+    How far down the screen the ornaments reach.
 
-    The hanging layer occupies the top of the card and the blessing heads the
-    cover, so on a card that has both they compete for the same band of pixels —
-    and Arabic set over a string of bulbs is simply unreadable. The answer is
-    asked of the layer that owns the positions rather than guessed here, so it
-    stays right if those positions ever move.
-
-    BLESSING_TOP_PAD is the floor: with nothing hanging, the blessing keeps its
-    own comfortable inset instead of being pulled up to the card's edge.
+    Asked of the layer that owns their positions rather than guessed here, so a
+    lantern moved deeper carries the whole card's spacing with it. Feeds the
+    section padding below, and the dissolve, and nothing has to be kept in sync
+    by hand.
   */
   const hangingBand = hangingDepth(ornaments);
-  const blessingTopPad = Math.max(BLESSING_TOP_PAD, hangingBand);
 
   /*
     What every section insets its content by, top and bottom alike.
@@ -655,10 +644,29 @@ export default function CardCanvas({
 
           const head =
             isCover && hasBlessing ? (
-              /* No bottom padding — this heads the cover rather than sitting above it. */
+              /*
+                A screen of its own, not a header sitting on top of the names.
+
+                It used to be a block of whatever height the Arabic came to,
+                stacked above the cover with a single top inset, which put it in
+                the top band of the screen — inside the dissolve, so the first
+                thing a guest read was a blurred Bismillah, with the names
+                already crowding in underneath.
+
+                Given the same `minHeight` and the same symmetric padding every
+                section gets, it becomes what it should have been all along: one
+                swipe that shows the blessing, centred, at full strength and
+                clear of both the ornaments and the fade, and a second swipe that
+                brings the names up whole. Same rule as the rest of the card —
+                one screen, one thing.
+              */
               <div
-                className="flex flex-col items-center gap-4 px-7 text-center"
-                style={{ paddingTop: `${blessingTopPad}px` }}
+                className="flex flex-col items-center justify-center gap-4 px-7 text-center"
+                style={{
+                  minHeight,
+                  paddingTop: sectionPad,
+                  paddingBottom: sectionPad,
+                }}
               >
                 {greeting !== null ? (
                   <Blessing
