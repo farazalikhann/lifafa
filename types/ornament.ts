@@ -1,10 +1,11 @@
 /**
- * Muslim ornament pack — the shapes a host can add to their card and the
+ * Muslim ornament pack — the shapes a host can add to their card, and the
  * greeting and dua that head it.
  *
  * These types are tradition neutral in name only. Everything they describe is
- * drawn in lib/ornaments/muslim.tsx and offered by components/create/
- * OrnamentPanel.tsx, both of which are gated on `traditionId === "muslim"`.
+ * drawn in lib/ornaments/muslim.tsx and offered by
+ * components/create/OrnamentPanel.tsx, both of which are gated on
+ * `traditionId === "muslim"`.
  */
 
 export type OrnamentId =
@@ -24,16 +25,15 @@ export type OrnamentId =
  */
 export interface HangingOrnament {
   id: OrnamentId;
-  /** Horizontal position across the card, 0 at the left edge, 100 at the right. */
+  /** Horizontal position across the card: 0 at the left edge, 100 at the right. */
   xPercent: number;
   /**
    * How far down the hanging band the ornament starts, as a percentage of that
    * band's height.
    *
-   * Not in the original field list, but a row of lanterns all pinned to one
-   * offset reads as a shelf rather than as lamps on strings of different
-   * lengths — the depth has to be authored per ornament, and this is where it
-   * lives.
+   * A row of lanterns all pinned to one offset reads as a shelf rather than as
+   * lamps on strings of different lengths, so the depth has to be authored per
+   * ornament — this is where it lives.
    */
   topPercent: number;
   /** Rendered size of the ornament's larger dimension, in rem. */
@@ -48,7 +48,8 @@ export interface HangingOrnament {
  *
  * The greeting and dua are held as ids rather than as text: the strings live in
  * lib/arabicContent.ts, which is reviewed on its own, and a card must never
- * carry a copy of an Arabic string that the content file could later correct.
+ * carry a frozen copy of an Arabic string that the content file could later
+ * correct.
  */
 export interface OrnamentConfig {
   enabledOrnaments: readonly OrnamentId[];

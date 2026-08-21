@@ -152,8 +152,8 @@ export const DUAS: readonly Dua[] = [
 ];
 
 /**
- * Whether an entry is the deliberate opt-out rather than one still awaiting
- * its text.
+ * Whether an entry is the deliberate opt-out rather than one still awaiting its
+ * text.
  *
  * Both look identical from the outside — every string empty — so the editor
  * needs this to tell "No greeting" apart from a row whose content has not been

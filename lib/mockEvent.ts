@@ -5,10 +5,12 @@ import {
   DEFAULT_TRADITION_ID,
   getOccasion,
 } from "@/lib/occasions";
+import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import type { DecorIntensity, DecorMotion, ScratchTarget } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { OrnamentConfig } from "@/types/ornament";
 import type { CardStyle } from "@/types/style";
 
 /**
@@ -29,6 +31,14 @@ export interface MockEvent {
   decorIntensity: DecorIntensity;
   scratchTarget: ScratchTarget;
   style: CardStyle;
+  /**
+   * The Muslim ornament pack's choices.
+   *
+   * Carried whatever the tradition, so a stored event has one shape rather than
+   * two. The card reads it only on a Muslim tradition, and the sample below is
+   * not one, so today this is always the empty default.
+   */
+  ornamentConfig: OrnamentConfig;
   /** Ordered running order, exactly as CardCanvas expects it. */
   blocks: readonly CardBlock[];
 }
@@ -73,6 +83,8 @@ export function getMockEvent(inviteCode: string): MockEvent {
       stored event will carry the host's own choice here.
     */
     scratchTarget: "date",
+    /* The sample event chooses no tradition at all, so the pack stays off. */
+    ornamentConfig: DEFAULT_ORNAMENT_CONFIG,
     style: {
       fontPairId: DEFAULT_FONT_PAIR_ID,
       paletteId: OCCASION.defaultPaletteId,

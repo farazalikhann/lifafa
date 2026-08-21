@@ -1,6 +1,7 @@
 import type { CardBlock } from "@/types/customSection";
 import type { ThemeId } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
+import type { OrnamentConfig } from "@/types/ornament";
 import type { CardStyle } from "@/types/style";
 
 export type CardSectionId = "cover" | "details" | "venue" | "message";
@@ -50,6 +51,17 @@ export interface CardConfig {
   scratchTarget: ScratchTarget;
   /** Host overrides for typography, colour and card length. */
   style: CardStyle;
+  /**
+   * The Muslim ornament pack's choices: which ornaments are on, and which
+   * greeting and dua head the card.
+   *
+   * Always present, and always read through `traditionId` — the card acts on it
+   * only when the tradition is "muslim", and the editor resets it to its
+   * defaults the moment the host picks a different one. A card that is not a
+   * Muslim card therefore cannot render a Muslim ornament even if a stale
+   * config were somehow to reach it.
+   */
+  ornamentConfig: OrnamentConfig;
   /**
    * Whether this invitation has been paid for.
    *

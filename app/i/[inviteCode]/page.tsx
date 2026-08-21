@@ -44,6 +44,7 @@ export default function InvitePage({
     traditionId: event.traditionId,
     scratchTarget: event.scratchTarget,
     style: event.style,
+    ornamentConfig: event.ornamentConfig,
     /*
       Hardcoded until there is a payment to read. A guest holding a link must
       never meet a watermark, so this side is pinned true and only the wiring
