@@ -305,7 +305,8 @@ export default function ScratchPanel({
 
       ctx.globalAlpha = 1;
       ctx.fillStyle = labelColour(accent, surface);
-      const size = Math.round(Math.min(17, Math.max(13, rect.width * 0.042)));
+      /* The card's own type scale went up ~1.22x; the label follows it. */
+      const size = Math.round(Math.min(21, Math.max(16, rect.width * 0.051)));
       /* Resolved off the host, so the label is set in the card's own face. */
       const family = window.getComputedStyle(host).fontFamily;
       ctx.font = size + "px " + (family.length > 0 ? family : "sans-serif");
@@ -491,41 +492,67 @@ export default function ScratchPanel({
   }, [accent, surface, label, handleCleared, showCanvas]);
 
   return (
-    <div>
-      <div ref={hostRef} className="relative">
-        {children}
+    /*
+      NO LAYOUT SHIFT, BY CONSTRUCTION.
 
-        {showCanvas ? (
-          <canvas
-            ref={canvasRef}
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full select-none"
-            style={{
-              /*
-                The whole scroll story in one declaration: the browser keeps
-                vertical drags for itself and hands sideways ones to the
-                pointer handlers above.
-              */
-              touchAction: "pan-y",
-              opacity: phase === "fading" ? 0 : 1,
-              transition: "opacity " + FADE_MS + "ms ease-out",
-            }}
-          />
-        ) : null}
-      </div>
+      Everything the panel adds — the canvas, the escape hatch under it — is
+      absolutely positioned inside this one box, so the panel occupies exactly
+      the box the content occupies and the moment it is revealed nothing moves.
+      The escape hatch used to sit in the flow beneath the canvas with its own
+      `pb-6`, which meant clearing the panel took roughly 70px out of the
+      section: everything below jumped up, and the section, having lost content
+      but kept its min-height, was left with a hole at the bottom.
+
+      The content's height is reserved before the canvas ever mounts, because
+      the children are laid out normally and always have been — the canvas is
+      `inset-0` over them and contributes no height at all. That is also what
+      lets `paint()` read a real `getBoundingClientRect` on its first run
+      rather than a zero-height box it would have to be re-run for.
+    */
+    <div ref={hostRef} className="relative">
+      {children}
+
+      {showCanvas ? (
+        <canvas
+          ref={canvasRef}
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full select-none"
+          style={{
+            /*
+              The whole scroll story in one declaration: the browser keeps
+              vertical drags for itself and hands sideways ones to the
+              pointer handlers above.
+            */
+            touchAction: "pan-y",
+            opacity: phase === "fading" ? 0 : 1,
+            transition: "opacity " + FADE_MS + "ms ease-out",
+          }}
+        />
+      ) : null}
 
       {/*
         Required, not a nicety. A guest using a switch, a head pointer, or a
         trackpad they cannot drag accurately still has to be able to read where
         the wedding is, and "scratch harder" is not an answer. Visible rather
         than sr-only for the same reason.
+
+        Laid over the foot of the panel rather than under it. After the canvas
+        in the DOM and `z-10` above it, so it takes its own taps instead of
+        handing them to the scratch surface; it fades out with the canvas, and
+        because it is out of flow it takes no height with it when it goes.
       */}
       {showCanvas ? (
-        <div className="flex justify-center pb-6">
+        <div
+          className="absolute inset-x-0 bottom-4 z-10 flex justify-center"
+          style={{
+            opacity: phase === "fading" ? 0 : 1,
+            transition: "opacity " + FADE_MS + "ms ease-out",
+          }}
+        >
           <button
             type="button"
             onClick={revealNow}
-            className="min-h-11 rounded-full px-4 text-[0.8125rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-150 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="min-h-11 rounded-full px-4 text-[1rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-150 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{ color: accent, outlineColor: accent }}
           >
             Reveal without scratching

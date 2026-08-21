@@ -54,7 +54,7 @@ function HeroName({
 }): ReactElement {
   return (
     <p
-      className="text-[2rem] leading-[1.05] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[2.25rem]"
+      className="text-[2.4375rem] leading-[1.05] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[2.75rem]"
       style={{
         opacity: placeholderOpacity(isPlaceholder, "primary"),
         fontFamily: "var(--card-heading)",
@@ -125,7 +125,7 @@ export default function CoverSection({
   return (
     <section
       ref={ref}
-      className="relative flex flex-col items-center justify-center px-7 py-16 text-center"
+      className="relative flex flex-col items-center justify-center px-7 py-10 text-center"
       style={{
         minHeight,
         gap: `calc(1.5rem * var(--card-gap-scale, 1))`,
@@ -151,7 +151,7 @@ export default function CoverSection({
               host who types "Weds" still gets the card's own voice back.
             */}
             <p
-              className="text-[0.9rem] leading-none tracking-[0.22em] break-words lowercase sm:text-[1rem]"
+              className="text-[1.1rem] leading-none tracking-[0.22em] break-words lowercase sm:text-[1.2rem]"
               style={{ color: theme.accent }}
             >
               {names.joiner}
@@ -170,7 +170,7 @@ export default function CoverSection({
 
       <div className={reveal} style={lineDelay(stepAfterNames)}>
         <p
-          className="text-[0.6875rem] tracking-[0.28em] break-words uppercase text-balance"
+          className="text-[0.84rem] tracking-[0.28em] break-words uppercase text-balance"
           style={{
             color: theme.textMuted,
             opacity: placeholderOpacity(title.isPlaceholder, "muted"),
@@ -199,7 +199,7 @@ export default function CoverSection({
         after the guest has already started scrolling reads as a stuck cue.
       */}
       <div
-        className={`mt-6 flex flex-col items-center gap-2 ${REVEAL_BASE} ${revealClass(
+        className={`mt-2 flex flex-col items-center gap-2 ${REVEAL_BASE} ${revealClass(
           isInView && !cueRetired,
         )}`}
         /* Transparent is not enough — a retired cue must also stop being read out. */
@@ -207,7 +207,7 @@ export default function CoverSection({
         style={cueRetired ? undefined : lineDelay(stepAfterNames + 2)}
       >
         <span
-          className="text-[0.625rem] tracking-[0.3em] uppercase"
+          className="text-[0.765rem] tracking-[0.3em] uppercase"
           style={{ color: theme.textMuted }}
         >
           Scroll

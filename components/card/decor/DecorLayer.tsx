@@ -163,9 +163,18 @@ const KEYFRAME_NAME: Record<Exclude<DecorMotion, "none">, string> = {
 /**
  * Decorative background for the card canvas.
  *
- * Sits inside the canvas bounds only — an absolutely positioned layer, with the
- * shapes held in a sticky viewport-height band so they stay in view while the
- * guest scrolls without ever escaping the card.
+ * Sits inside the canvas bounds only — an absolutely positioned layer spanning
+ * the whole card, with the shapes held in a sticky band exactly as tall as the
+ * visible area. The card scrolls over it; it does not scroll with the card.
+ *
+ * The clipping on both wrappers is `overflow: clip`, never `overflow: hidden`,
+ * and the same is now true of the canvas root above them. That is the whole
+ * reason the sticky band works at all: `hidden` makes an element a scroll
+ * container, and a sticky child sticks to the nearest one — which, when that
+ * container is the card itself, never scrolls, so the band simply sat where it
+ * was laid out and drifted away with the content. `clip` clips without
+ * creating a scroll container, so the band keeps looking further up for the
+ * real scrollport: the guest's screen, or the editor's phone frame.
  *
  * Under reduced motion the layer is removed twice over: `motion-reduce:hidden`
  * covers the server render and the very first paint, and once the media query
@@ -182,12 +191,24 @@ export default function DecorLayer({
   motion,
   motifs,
   intensity,
+  bandHeight,
   maxAlpha,
 }: {
   accent: string;
   motion: DecorMotion;
   motifs: readonly Motif[];
   intensity: DecorIntensity;
+  /**
+   * How tall the sticky band is — the height of whatever is doing the
+   * scrolling.
+   *
+   * Passed in rather than hardcoded to `100svh`, because the card lives in two
+   * very different scrollports: the guest's screen, where the visible area is
+   * the viewport, and the editor's fixed phone frame, where a viewport-tall
+   * band would scatter most of the motifs outside the frame and show the host
+   * a card their guests never receive.
+   */
+  bandHeight: string;
   /**
    * Ceiling on any one shape's opacity, measured by the canvas against the
    * palette actually in use.
@@ -214,9 +235,17 @@ export default function DecorLayer({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden"
+      className="pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
     >
-      <div className="sticky top-0 h-[100svh] w-full">
+      {/*
+        Pinned flush to the top of the scrollport and exactly as tall as it, so
+        the scatter covers the whole visible area edge to edge rather than a
+        band somewhere down the middle of it.
+      */}
+      <div
+        className="sticky top-0 w-full overflow-clip"
+        style={{ height: bandHeight }}
+      >
         {shapes.map((shape, index) => {
           /* Cycle the motifs across the fixed positions. */
           const MotifShape = motifs[index % motifs.length];

@@ -11,7 +11,8 @@ import type { HangingOrnament, OrnamentId } from "@/types/ornament";
  * something above them. An arch, a border and a star do not — they are surfaces
  * and frames, and hanging one from the top edge of the card would look like a
  * mistake rather than a decision. Anything not in this set is ignored here and
- * left to the parts of the card that know what to do with it.
+ * left to the parts of the card that know what to do with it — the two stars go
+ * to CornerLayer, the border to the dividers, the arch to the cover.
  */
 const HANGABLE: readonly OrnamentId[] = [
   "lantern",
@@ -27,8 +28,8 @@ const HANGABLE: readonly OrnamentId[] = [
  * A percentage of either would put the lanterns in a different place in each,
  * and the host would be shown a card their guests never receive.
  *
- * 380 keeps the deepest lantern's tassel around 150px down, comfortably above
- * the cover's names, which sit near the middle of a section at least 496px tall.
+ * 380 leaves the deepest ornament's foot around 216px down at the sizes below,
+ * which is what `hangingDepth` then clears the greeting past.
  */
 const BAND_HEIGHT = 380;
 
@@ -48,43 +49,68 @@ const ROOT_FONT_PX = 16;
  * which React reports as a hydration mismatch — the same reason DecorLayer's
  * scatter is a fixed table.
  *
- * The four lanterns sit between 4% and 18% down the band on purpose: a row of
- * lamps at one depth reads as a shelf, and the whole point of a lantern is that
- * it is on a string of its own length. They also keep to the outer quarters of
- * the card, so nothing hangs over the middle where the names are set.
+ * SIZES. Every lantern and moon here is 2.5x what it used to be: at the old
+ * sizes a lantern was a 58px speck on a phone and the jaali lattice that makes
+ * it a lantern rather than a blob was not legible at all. Those sizes do not
+ * fit the old positions — four lanterns at 2.5x are 262px of a 360px screen —
+ * so the x values are re-authored around the new widths rather than kept and
+ * left to collide. The five widest hang as one staggered row, in this order
+ * across the card: lantern, lantern, moon, lantern, lantern, with a gap between
+ * every pair of boxes at 360px. The small moon is the exception and clears its
+ * neighbours vertically instead, tucked under the leftmost lantern's foot.
+ *
+ * The depths still vary on purpose: a row of lamps at one offset reads as a
+ * shelf, and the whole point of a lantern is that it is on a string of its own
+ * length.
  */
 const HANGING: readonly HangingOrnament[] = [
-  /* The string of lights spans the full width, so it is drawn first, behind. */
+  /*
+    The string of lights spans the full width, so it is drawn first, behind.
+
+    22.5rem is 360px — the width this row is laid out against, and this is the
+    one ornament here that could not take the 2.5x the rest did. It is already
+    a full-bleed span, so 2.5x would be 840px of wire on a 360px screen: the
+    hooks it is tied off on would hang somewhere outside the card entirely.
+    Widened to the card's own width instead, which is as large as it goes
+    without running past the edges.
+  */
   {
     id: "hangingLights",
     xPercent: 50,
     topPercent: 0,
-    sizeRem: 21,
+    sizeRem: 22.5,
     delayMs: 0,
     swing: false,
   },
-  { id: "lantern", xPercent: 9, topPercent: 4, sizeRem: 3.6, delayMs: 0, swing: true },
   {
     id: "lantern",
-    xPercent: 23,
-    topPercent: 13,
-    sizeRem: 2.8,
+    xPercent: 11.5,
+    topPercent: 2,
+    sizeRem: 9,
+    delayMs: 0,
+    swing: true,
+  },
+  {
+    id: "lantern",
+    xPercent: 31,
+    topPercent: 20,
+    sizeRem: 7,
     delayMs: 900,
     swing: true,
   },
   {
     id: "lantern",
-    xPercent: 77,
-    topPercent: 8,
-    sizeRem: 3.2,
+    xPercent: 71.5,
+    topPercent: 25,
+    sizeRem: 6,
     delayMs: 1800,
     swing: true,
   },
   {
     id: "lantern",
-    xPercent: 91,
-    topPercent: 18,
-    sizeRem: 2.4,
+    xPercent: 89,
+    topPercent: 4,
+    sizeRem: 8,
     delayMs: 2600,
     swing: true,
   },
@@ -94,17 +120,22 @@ const HANGING: readonly HangingOrnament[] = [
   */
   {
     id: "crescentMoon",
-    xPercent: 84,
-    topPercent: 2,
-    sizeRem: 2.1,
+    xPercent: 51.5,
+    topPercent: 28,
+    sizeRem: 5.25,
     delayMs: 1300,
     swing: false,
   },
+  /*
+    Under the leftmost lantern's foot rather than beside anything: once the
+    other five are placed there is no horizontal room left on a 360px card, so
+    this one is separated in the other axis.
+  */
   {
     id: "crescentMoon",
-    xPercent: 15,
-    topPercent: 25,
-    sizeRem: 1.5,
+    xPercent: 12,
+    topPercent: 41,
+    sizeRem: 3.75,
     delayMs: 2100,
     swing: false,
   },
@@ -123,10 +154,11 @@ const SWING_SECONDS: readonly number[] = [4.6, 5.3, 5.9, 4.9];
  * Slack added under the deepest ornament by hangingDepth.
  *
  * A swinging lantern's tassel travels a few px past where it hangs at rest —
- * 3 degrees across roughly 58px is about 3px — and a line of text that only
- * just clears a lantern standing still would be clipped by one in motion.
+ * 3 degrees across roughly 145px is about 8px at the sizes above — and a line
+ * of text that only just clears a lantern standing still would be clipped by
+ * one in motion.
  */
-const SWING_MARGIN = 6;
+const SWING_MARGIN = 10;
 
 /**
  * How far down the card the deepest enabled hanging ornament reaches, in px.
@@ -137,6 +169,10 @@ const SWING_MARGIN = 6;
  * a string of bulbs is unreadable. Derived from the same table that positions
  * them rather than written down a second time — a lantern moved deeper here
  * pushes the greeting down with it, with nothing to keep in sync by hand.
+ *
+ * Now that the band is pinned to the top of the screen rather than to the top
+ * of the card, this is a clearance every section needs and not only the first
+ * one — the caller applies it wherever the greeting lands in the running order.
  */
 export function hangingDepth(
   enabledOrnaments: readonly OrnamentId[],
@@ -164,12 +200,21 @@ export function hangingDepth(
 }
 
 /**
- * Ornaments pinned to the top edge of the card, hanging down into the cover.
+ * Ornaments pinned to the top edge of the *screen*, hanging over whichever
+ * section the guest is currently looking at.
  *
  * Separate from DecorLayer, which scatters motifs across the whole card and
  * moves them on a loop. This layer does one thing DecorLayer cannot: it anchors
- * to a single edge, so a lantern reads as suspended from the top of the card
- * rather than as floating somewhere on it.
+ * to a single edge, so a lantern reads as suspended from above rather than as
+ * floating somewhere on the card.
+ *
+ * The band is sticky rather than simply sitting at the top of the card. Pinned
+ * to the card, the lanterns scrolled away with the cover and were gone for the
+ * whole rest of the invitation, which is not what a hanging ornament does.
+ * Both wrappers clip with `overflow: clip` and never `overflow: hidden`, as
+ * does the canvas root above them: `hidden` makes an element a scroll
+ * container, and a sticky child sticks to the nearest one — which, being the
+ * card itself, never scrolls, so the band would not move at all.
  *
  * Purely decorative and completely inert — `aria-hidden` so it is never read
  * out, `pointer-events-none` so a lantern hanging over the cover can never
@@ -197,62 +242,74 @@ export default function HangingLayer({
   let swingIndex = 0;
 
   return (
+    /*
+      The outer layer spans the whole card and clips to it, so nothing can bleed
+      past the card's own width; the band inside it is what stays in view.
+    */
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 top-0 z-[5] overflow-hidden"
-      style={{ height: `${BAND_HEIGHT}px` }}
+      className="pointer-events-none absolute inset-0 z-[5] overflow-clip"
     >
-      {hanging.map((ornament, index) => {
-        const Shape = getOrnament(ornament.id);
+      <div
+        className="sticky top-0 w-full overflow-clip"
+        style={{ height: `${BAND_HEIGHT}px` }}
+      >
+        {hanging.map((ornament, index) => {
+          const Shape = getOrnament(ornament.id);
 
-        /*
-          Counted over the swinging ornaments only, not over the whole table:
-          indexing by position would let the two non-swinging moons consume
-          durations and hand two lanterns the same one.
-        */
-        const duration = ornament.swing
-          ? SWING_SECONDS[swingIndex++ % SWING_SECONDS.length]
-          : 0;
+          /*
+            Counted over the swinging ornaments only, not over the whole table:
+            indexing by position would let the two non-swinging moons consume
+            durations and hand two lanterns the same one.
+          */
+          const duration = ornament.swing
+            ? SWING_SECONDS[swingIndex++ % SWING_SECONDS.length]
+            : 0;
 
-        const swingStyle: CSSProperties = ornament.swing
-          ? {
-              animationDuration: `${duration}s`,
-              animationDelay: `${ornament.delayMs}ms`,
-            }
-          : {};
+          const swingStyle: CSSProperties = ornament.swing
+            ? {
+                animationDuration: `${duration}s`,
+                animationDelay: `${ornament.delayMs}ms`,
+              }
+            : {};
 
-        return (
-          <span
-            key={`${ornament.id}-${ornament.xPercent}-${ornament.topPercent}`}
-            className="absolute block -translate-x-1/2"
-            style={{
-              left: `${ornament.xPercent}%`,
-              top: `${ornament.topPercent}%`,
-              /* Ornaments draw with currentColor, so the accent is set here. */
-              color: accent,
-            }}
-          >
-            {/*
-              The centring translate above and the swing below are on two
-              different elements on purpose: an animation's transform replaces
-              the element's own outright, so a keyframe rotation applied here
-              would drop the -50% and shunt every ornament half its width to
-              the right the moment the animation took over.
-            */}
-            <span className={ornament.swing ? "lifafa-hang-swing" : "block"} style={swingStyle}>
-              <Shape
-                size={ornament.sizeRem * ROOT_FONT_PX}
-                /*
-                  Stable per slot and unique across the layer, which is what the
-                  lantern's glow filter needs: an id built from the table's own
-                  fixed values is identical on the server and in the browser.
-                */
-                instanceId={`hang-${index}-${ornament.id}`}
-              />
+          return (
+            <span
+              key={`${ornament.id}-${ornament.xPercent}-${ornament.topPercent}`}
+              className="absolute block -translate-x-1/2"
+              style={{
+                left: `${ornament.xPercent}%`,
+                top: `${ornament.topPercent}%`,
+                /* Ornaments draw with currentColor, so the accent is set here. */
+                color: accent,
+              }}
+            >
+              {/*
+                The centring translate above and the swing below are on two
+                different elements on purpose: an animation's transform replaces
+                the element's own outright, so a keyframe rotation applied here
+                would drop the -50% and shunt every ornament half its width to
+                the right the moment the animation took over.
+              */}
+              <span
+                className={ornament.swing ? "lifafa-hang-swing" : "block"}
+                style={swingStyle}
+              >
+                <Shape
+                  size={ornament.sizeRem * ROOT_FONT_PX}
+                  /*
+                    Stable per slot and unique across the layer, which is what
+                    the lantern's glow filter needs: an id built from the
+                    table's own fixed values is identical on the server and in
+                    the browser.
+                  */
+                  instanceId={`hang-${index}-${ornament.id}`}
+                />
+              </span>
             </span>
-          </span>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

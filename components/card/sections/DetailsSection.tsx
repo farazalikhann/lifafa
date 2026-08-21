@@ -34,7 +34,7 @@ export default function DetailsSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      className="flex flex-col items-center justify-center px-7 py-10 text-center"
       style={{
         minHeight,
         gap: `calc(1rem * var(--card-gap-scale, 1))`,
@@ -42,7 +42,7 @@ export default function DetailsSection({
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
-          className="text-[0.6875rem] tracking-[0.3em] uppercase"
+          className="text-[0.84rem] tracking-[0.3em] uppercase"
           style={{
             color: theme.textMuted,
             opacity: placeholderOpacity(!hasDate, "muted"),
@@ -55,7 +55,7 @@ export default function DetailsSection({
       {/* The dominant line of this section. */}
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[16ch] text-[1.5rem] leading-[1.2] font-medium tracking-[0.02em] break-words text-balance sm:text-[1.75rem]"
+          className="max-w-[16ch] text-[1.825rem] leading-[1.2] font-medium tracking-[0.02em] break-words text-balance sm:text-[2.125rem]"
           style={{
             opacity: placeholderOpacity(!hasDate, "primary"),
             fontFamily: "var(--card-heading)",

@@ -35,7 +35,7 @@ export default function VenueSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      className="flex flex-col items-center justify-center px-7 py-10 text-center"
       style={{
         minHeight,
         gap: `calc(1rem * var(--card-gap-scale, 1))`,
@@ -43,7 +43,7 @@ export default function VenueSection({
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
-          className="max-w-[22ch] text-[1.25rem] leading-snug font-medium break-words text-balance sm:text-[1.375rem]"
+          className="max-w-[22ch] text-[1.525rem] leading-snug font-medium break-words text-balance sm:text-[1.675rem]"
           style={{
             opacity: placeholderOpacity(venue.isPlaceholder, "primary"),
             fontFamily: "var(--card-heading)",
@@ -64,7 +64,7 @@ export default function VenueSection({
           against its edge.
         */}
         <p
-          className="max-w-[34ch] text-xs leading-relaxed break-words text-pretty"
+          className="max-w-[34ch] text-[0.9rem] leading-relaxed break-words text-pretty"
           style={{
             color: theme.textMuted,
             opacity: placeholderOpacity(address.isPlaceholder, "muted"),
@@ -80,7 +80,7 @@ export default function VenueSection({
             href={mapsSearchUrl(draft.venueName, draft.venueAddress)}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded text-[0.8125rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="rounded text-[1rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
             style={{ color: theme.accent, outlineColor: theme.accent }}
           >
             Open in Maps

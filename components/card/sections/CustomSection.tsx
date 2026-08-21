@@ -43,7 +43,7 @@ export default function CustomSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      className="flex flex-col items-center justify-center px-7 py-10 text-center"
       style={{
         minHeight,
         gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
@@ -52,7 +52,7 @@ export default function CustomSection({
       {heading.length > 0 ? (
         <div className={reveal} style={lineDelay(0)}>
           <p
-            className="tracking-[0.28em] break-words text-[0.6875rem] uppercase text-balance"
+            className="tracking-[0.28em] break-words text-[0.84rem] uppercase text-balance"
             style={{
               color: theme.accent,
               fontFamily: "var(--card-heading)",
@@ -67,7 +67,7 @@ export default function CustomSection({
       {body.length > 0 ? (
         <div className={reveal} style={lineDelay(1)}>
           <p
-            className="max-w-[32ch] text-sm leading-relaxed break-words whitespace-pre-line text-pretty"
+            className="max-w-[32ch] text-[1.0625rem] leading-relaxed break-words whitespace-pre-line text-pretty"
             style={{ color: theme.textMuted }}
           >
             {body}

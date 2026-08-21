@@ -42,7 +42,7 @@ export default function MessageSection({
   return (
     <section
       ref={ref}
-      className="flex flex-col items-center justify-center px-7 py-16 text-center"
+      className="flex flex-col items-center justify-center px-7 py-10 text-center"
       style={{
         minHeight,
         gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
@@ -58,7 +58,7 @@ export default function MessageSection({
 
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[32ch] text-sm leading-relaxed break-words text-pretty italic"
+          className="max-w-[32ch] text-[1.0625rem] leading-relaxed break-words text-pretty italic"
           style={{ color: theme.textMuted }}
         >
           {message}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
+import CornerLayer from "@/components/card/decor/CornerLayer";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
 import HangingLayer, { hangingDepth } from "@/components/card/decor/HangingLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
@@ -47,9 +48,9 @@ const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
 
 /**
  * The blessing's inset from the top of the cover when nothing hangs above it,
- * in px. Matches the cover's own `py-16` closely enough to read as one block.
+ * in px. Matches the cover's own `py-10` closely enough to read as one block.
  */
-const BLESSING_TOP_PAD = 48;
+const BLESSING_TOP_PAD = 40;
 
 /**
  * One Arabic line with its transliteration and translation under it, or nothing
@@ -104,7 +105,7 @@ function Blessing({
       {transliteration.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[0.75rem] leading-relaxed wrap-anywhere italic"
+          className="w-full text-center text-[0.9rem] leading-relaxed wrap-anywhere italic"
           style={{ color: theme.textMuted }}
         >
           {transliteration}
@@ -114,7 +115,7 @@ function Blessing({
       {translation.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[0.75rem] leading-relaxed wrap-anywhere"
+          className="w-full text-center text-[0.9rem] leading-relaxed wrap-anywhere"
           style={{ color: theme.textMuted }}
         >
           {translation}
@@ -137,14 +138,25 @@ const PREVIEW_FRAME_HEIGHT = 620;
 /**
  * Density scales section height and the gaps between lines together.
  *
- * "comfortable" is 0.8 of the base, which is exactly the previous fixed
- * behaviour, so an existing card is unchanged. The same scale is applied in
- * both sizing modes, so the editor preview stays proportionally honest.
+ * Every tier is now well under a screen, which is the point. A section is a
+ * centred group of three or four lines — measured on a 360x800 phone, the date
+ * is 123px of content and the note 76px — and asking for 0.8 of the viewport
+ * around that left over 450px of nothing, half a screen the guest had to scroll
+ * through to reach the next line. "comfortable" is 0.45: enough that a section
+ * still arrives as its own thing rather than as a paragraph in a list, little
+ * enough that what is left over reads as margin rather than as a gap.
+ *
+ * The same scale is applied in both sizing modes, so the editor preview stays
+ * proportionally honest.
+ *
+ * These are minimums, and a section taller than its minimum simply keeps its
+ * own `py-10`: the cover, at 364px of content and padding, is already past
+ * this on a phone and so sits at an even 40px inset top and bottom.
  */
 const DENSITY_HEIGHT_SCALE: Record<CardDensity, number> = {
-  compact: 0.6,
-  comfortable: 0.8,
-  airy: 1,
+  compact: 0.34,
+  comfortable: 0.45,
+  airy: 0.58,
 };
 
 /** 1 leaves every section's existing gap untouched. */
@@ -160,6 +172,18 @@ function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
   return sizing === "viewport"
     ? `${Math.round(scale * 100)}svh`
     : `${Math.round(PREVIEW_FRAME_HEIGHT * scale)}px`;
+}
+
+/**
+ * How tall the pinned decor bands are — the height of whatever is scrolling the
+ * card, which is the same question `sectionMinHeight` answers for sections.
+ *
+ * The guest's screen in "viewport"; the editor's fixed frame in "frame", where
+ * a viewport-tall band would scatter most of the motifs outside the 620px box
+ * the host is looking at.
+ */
+function scrollportHeight(sizing: CardSizing): string {
+  return sizing === "viewport" ? "100svh" : `${PREVIEW_FRAME_HEIGHT}px`;
 }
 
 /**
@@ -265,6 +289,7 @@ export default function CardCanvas({
 }): ReactElement {
   const { style } = config;
   const minHeight = sectionMinHeight(sizing, style.density);
+  const bandHeight = scrollportHeight(sizing);
   const visible = config.blocks.filter((block) => blockRenders(block, draft));
 
   const isHostPreview = audience === "host-preview";
@@ -349,6 +374,15 @@ export default function CardCanvas({
   */
   const blessingTopPad = Math.max(BLESSING_TOP_PAD, hangingDepth(ornaments));
 
+  /*
+    The blessing's inset is now the same wherever the cover sits in the running
+    order. It used to be applied only to the first block, because the hanging
+    layer was pinned to the top of the *card* and was long past by the second
+    section. The layer is pinned to the top of the *screen* now — the lanterns
+    are overhead on every section — so a cover the host has moved down the card
+    meets exactly the same lanterns the first one would.
+  */
+
   /* Consumed by the sections through inheritance, so a change is instant. */
   const cssVariables = {
     "--card-heading": fontFamilyOf(
@@ -360,8 +394,22 @@ export default function CardCanvas({
   } as CSSProperties;
 
   return (
+    /*
+      `overflow-x-clip`, deliberately, and not `overflow-hidden`.
+
+      The horizontal clip is what it always was: motifs are authored to run off
+      the sides and be cut by the card's edge, and a long unbroken name has to
+      be cut rather than widen the page. What changed is the vertical axis.
+      `hidden` makes an element a scroll container on *both* axes, and a sticky
+      descendant sticks to the nearest scroll container — so with `hidden` here,
+      every pinned band below was sticking to this box, which never scrolls, and
+      the decor and the lanterns simply travelled up the screen with the
+      content. `clip` clips without creating a scroll container, so those bands
+      resolve against the real scrollport: the guest's screen, or the editor's
+      phone frame. Nothing escapes sideways, and each layer clips itself.
+    */
     <div
-      className="relative mx-auto w-full max-w-[420px] overflow-hidden"
+      className="relative mx-auto w-full max-w-[420px] overflow-x-clip"
       style={{
         ...cssVariables,
         backgroundColor: effectiveTheme.background,
@@ -374,8 +422,26 @@ export default function CardCanvas({
         motion={config.decorMotion}
         motifs={motifs}
         intensity={config.decorIntensity}
+        bandHeight={bandHeight}
         maxAlpha={decorMaxAlpha}
       />
+
+      {/*
+        Where "stars" and "geometricStar" are drawn, and the only place either
+        one is: they do not hang, they do not divide and they do not frame, so
+        before this layer existed a host could switch them on and nothing at all
+        appeared. Gated on the tradition exactly as HangingLayer is, and given
+        the same measured alpha ceiling as the scattered motifs, because it sits
+        behind the same text.
+      */}
+      {isMuslim ? (
+        <CornerLayer
+          enabledOrnaments={ornaments}
+          accent={effectiveTheme.accent}
+          bandHeight={bandHeight}
+          maxAlpha={decorMaxAlpha}
+        />
+      ) : null}
 
       {/*
         Mounted only on a Muslim card. Not merely handed an empty list — the
@@ -435,14 +501,7 @@ export default function CardCanvas({
               /* No bottom padding — this heads the cover rather than sitting above it. */
               <div
                 className="flex flex-col items-center gap-4 px-7 text-center"
-                style={{
-                  /*
-                    Only the first block clears the ornaments. Further down the
-                    card the hanging layer is long past, and a reordered cover
-                    would otherwise carry a 130px hole at the top of it.
-                  */
-                  paddingTop: `${index === 0 ? blessingTopPad : BLESSING_TOP_PAD}px`,
-                }}
+                style={{ paddingTop: `${blessingTopPad}px` }}
               >
                 {greeting !== null ? (
                   <Blessing
@@ -481,7 +540,14 @@ export default function CardCanvas({
           return (
             <Fragment key={blockKey(block)}>
               {index > 0 ? (
-                <div className="flex justify-center py-2">
+                /*
+                  No padding of its own. The sections above and below each end
+                  in their own `py-10`, so the divider already sits 40px clear
+                  of the content on both sides — the same inset a section keeps
+                  at its top. Padding here was adding a band of nothing on top
+                  of that, which is what left the gap under the names.
+                */
+                <div className="flex justify-center">
                   {/*
                     The vine takes the divider's place rather than joining it —
                     two ornaments stacked on one hairline reads as a mistake.
