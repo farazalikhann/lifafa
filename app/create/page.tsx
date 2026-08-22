@@ -64,9 +64,10 @@ export default function CreatePage() {
   /* Off by default: a card that hides its own date has to be asked for. */
   const [scratchTarget, setScratchTarget] = useState<ScratchTarget>("none");
   /*
-    The Muslim ornament pack's choices. Kept here rather than inside the panel,
-    because the panel unmounts the moment the host leaves that tradition and
-    state that unmounts with its editor would quietly survive on the card.
+    The current tradition's ornament pack choices. Kept here rather than inside
+    the panel, because the panel unmounts the moment the host leaves a tradition
+    that has a pack, and state that unmounts with its editor would quietly
+    survive on the card.
   */
   const [ornamentConfig, setOrnamentConfig] = useState<OrnamentConfig>(
     DEFAULT_ORNAMENT_CONFIG,
@@ -114,12 +115,16 @@ export default function CreatePage() {
   /**
    * A tradition click is the one thing that can clear the ornament pack.
    *
-   * Leaving "muslim" resets the config outright rather than merely hiding the
-   * panel: a host who tries the lanterns, changes their mind about the
-   * tradition, and never opens that panel again would otherwise ship a Sikh or
-   * a Christian card with a lantern hanging off it and no control anywhere on
-   * the page that could switch it off. Arriving at "muslim" resets it too, so
-   * the pack always opens from a known state.
+   * EVERY tradition click resets it, including a click that lands on another
+   * tradition with a pack of its own. That is what stops a selection crossing
+   * between packs: a host who picks Bismillah under Muslim and then chooses
+   * Hindu gets an empty Hindu panel, not a greeting id from the wrong content
+   * file sitting in the slot. It also covers leaving a pack entirely — a host
+   * who tries the lanterns, changes their mind, and never opens that panel
+   * again would otherwise ship a Sikh or a Christian card with a lantern
+   * hanging off it and no control anywhere on the page that could switch it
+   * off. Arriving at a pack resets it too, so a pack always opens from a known
+   * state.
    */
   const handleTraditionSelect = useCallback((id: TraditionId) => {
     setTraditionId(id);

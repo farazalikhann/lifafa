@@ -33,7 +33,7 @@ import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
-import type { OrnamentId } from "@/types/ornament";
+import type { AnyOrnamentId } from "@/types/ornament";
 
 /**
  * The most opaque any decor shape is ever authored to be, and so the highest
@@ -405,12 +405,12 @@ export default function CardCanvas({
     One boolean, checked once — not seven separate places that could disagree.
   */
   const isMuslim = config.traditionId === "muslim";
-  const ornaments: readonly OrnamentId[] = isMuslim
+  const ornaments: readonly AnyOrnamentId[] = isMuslim
     ? config.ornamentConfig.enabledOrnaments
     : [];
 
   const greeting = isMuslim ? getGreeting(config.ornamentConfig.greetingId) : null;
-  const dua = isMuslim ? getDua(config.ornamentConfig.duaId) : null;
+  const dua = isMuslim ? getDua(config.ornamentConfig.blessingId) : null;
 
   /* Both resolve to nothing while lib/arabicContent.ts ships empty strings. */
   const hasBlessing =

@@ -1,23 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
-import {
-  DUAS,
-  GREETINGS,
-  isOptOut,
-  type Dua,
-  type Greeting,
-} from "@/lib/arabicContent";
-import { MUSLIM_ORNAMENTS } from "@/lib/ornaments/muslim";
-import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
-
-/**
- * What Arabic script is set in.
- *
- * The same variable the card resolves — declared once in globals.css — so the
- * row the host picks and the line that lands on the card are the same face.
- */
-const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
+import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
+import type { AnyOrnamentId, OrnamentConfig } from "@/types/ornament";
 
 function GroupHeading({ children }: { children: string }): ReactElement {
   return (
@@ -32,7 +17,7 @@ function MutedNote({ children }: { children: string }): ReactElement {
 }
 
 /**
- * A row in the greeting or dua list.
+ * A row in the greeting or blessing list.
  *
  * Both lists are single-select and both are drawn the same way, so the shell —
  * the ring, the pressed state, the tap target — lives here once and each list
@@ -68,54 +53,115 @@ function OptionRow({
 }
 
 /**
- * The Arabic line, or the note that stands in for it.
+ * The line of script, or the note that stands in for it.
  *
- * lib/arabicContent.ts ships every Arabic string empty on purpose, so this is
- * the normal state today rather than an error one — the host is told the text
- * is coming instead of being shown a row that looks broken. The opt-out rows
- * are exempt: "No greeting" is not waiting on anything.
+ * A content file can ship an entry with its script blank, so this is a normal
+ * state rather than an error one — the host is told the text is coming instead
+ * of being shown a row that looks broken. The opt-out rows are exempt: "No
+ * greeting" is not waiting on anything, which is what `pack.isOptOut` is asked.
+ *
+ * The pack's own ScriptRun draws the text. That is deliberately not a font name
+ * passed down: Arabic sets dir="rtl" and Devanagari must set no dir at all and
+ * sits inside a span tagged hi, and neither rule survives being reassembled
+ * here from parts.
  */
-function ArabicLine({
-  arabic,
-  optOut,
-  pendingLabel,
+function ScriptLine({
+  entry,
+  pack,
 }: {
-  arabic: string;
-  optOut: boolean;
-  pendingLabel: string;
+  entry: PackBlessing;
+  pack: TraditionPack;
 }): ReactElement | null {
-  if (arabic.length === 0) {
-    return optOut ? null : <MutedNote>{pendingLabel}</MutedNote>;
+  const { ScriptRun } = pack;
+
+  if (entry.script.length === 0) {
+    return pack.isOptOut(entry.id) ? null : (
+      <MutedNote>{pack.pendingLabel}</MutedNote>
+    );
   }
 
   return (
-    <p
-      dir="rtl"
-      lang="ar"
-      className="w-full text-[1.0625rem] leading-[1.9] wrap-anywhere text-[var(--lifafa-cream)]"
-      style={{ fontFamily: ARABIC_FONT_STACK }}
+    <ScriptRun
+      className={`w-full wrap-anywhere text-[var(--lifafa-cream)] ${pack.panelScriptClass}`}
     >
-      {arabic}
-    </p>
+      {entry.script}
+    </ScriptRun>
+  );
+}
+
+/** One single-select list — the greeting list and the blessing list are the same thing. */
+function BlessingList({
+  rows,
+  selectedId,
+  pack,
+  onSelect,
+}: {
+  rows: readonly PackBlessing[];
+  selectedId: string | null;
+  pack: TraditionPack;
+  onSelect: (row: PackBlessing) => void;
+}): ReactElement {
+  return (
+    <ul className="flex flex-col gap-2">
+      {rows.map((row) => (
+        <OptionRow
+          key={row.id}
+          isSelected={selectedId === row.id}
+          onSelect={() => onSelect(row)}
+        >
+          <>
+            <span className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
+              {row.label}
+            </span>
+
+            {row.occasionNote.length > 0 ? (
+              <span className="text-[0.6875rem] tracking-[0.14em] text-[var(--lifafa-muted)] uppercase">
+                {row.occasionNote}
+              </span>
+            ) : null}
+
+            <ScriptLine entry={row} pack={pack} />
+
+            {row.transliteration.length > 0 ? (
+              <span className="text-xs text-[var(--lifafa-muted)] italic">
+                {row.transliteration}
+              </span>
+            ) : null}
+
+            {row.translation.length > 0 ? (
+              <span className="text-xs text-[var(--lifafa-muted)]">
+                {row.translation}
+              </span>
+            ) : null}
+          </>
+        </OptionRow>
+      ))}
+    </ul>
   );
 }
 
 /**
- * Ornaments, greeting and dua for a Muslim card.
+ * Ornaments, greeting and blessing for one tradition's card.
  *
- * Rendered only when the tradition is "muslim" — the caller owns that gate, and
- * also owns resetting `config` back to its defaults when the host moves to a
- * different tradition, so nothing from this pack can survive on a card that is
- * no longer a Muslim one.
+ * ONE PANEL FOR EVERY TRADITION. The pack is the parameter — its ornaments, its
+ * two lists, its script and its two muted notes — and nothing in this file
+ * names a tradition or a script. A pack with no entry in lib/traditionPacks.tsx
+ * never reaches here, because the caller only renders this when the lookup
+ * returns one.
+ *
+ * The caller also owns resetting `config` when the host moves to a different
+ * tradition, so no selection from one pack can survive into the next.
  */
 export default function OrnamentPanel({
+  pack,
   config,
   onChange,
 }: {
+  pack: TraditionPack;
   config: OrnamentConfig;
   onChange: (next: OrnamentConfig) => void;
 }): ReactElement {
-  const toggleOrnament = (id: OrnamentId): void => {
+  const toggleOrnament = (id: AnyOrnamentId): void => {
     const isOn = config.enabledOrnaments.includes(id);
 
     onChange({
@@ -124,14 +170,6 @@ export default function OrnamentPanel({
         ? config.enabledOrnaments.filter((current) => current !== id)
         : [...config.enabledOrnaments, id],
     });
-  };
-
-  const selectGreeting = (greeting: Greeting): void => {
-    onChange({ ...config, greetingId: greeting.id });
-  };
-
-  const selectDua = (dua: Dua): void => {
-    onChange({ ...config, duaId: dua.id });
   };
 
   return (
@@ -145,7 +183,7 @@ export default function OrnamentPanel({
         <GroupHeading>Add to your card</GroupHeading>
 
         <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-          {MUSLIM_ORNAMENTS.map(({ id, label, Component, chipSize }) => {
+          {pack.ornaments.map(({ id, label, Component, chipSize }) => {
             const isSelected = config.enabledOrnaments.includes(id);
 
             return (
@@ -166,7 +204,7 @@ export default function OrnamentPanel({
                   Fixed height box with the drawing centred in it, so a 0.55:1
                   lantern and a 6.7:1 vine sit on the same baseline and all
                   seven chips come out one size. Each ornament brings its own
-                  `chipSize` — see the note on OrnamentEntry.
+                  `chipSize` — see the note on the pack's entry type.
                 */}
                 <span
                   aria-hidden="true"
@@ -187,97 +225,33 @@ export default function OrnamentPanel({
           })}
         </div>
 
-        <MutedNote>
-          Lanterns, moons and lights hang from the top of your card.
-        </MutedNote>
+        <MutedNote>{pack.ornamentsNote}</MutedNote>
       </div>
 
       {/* 2 — Greeting */}
       <div className="flex flex-col gap-2.5">
         <GroupHeading>Greeting</GroupHeading>
 
-        <ul className="flex flex-col gap-2">
-          {GREETINGS.map((greeting) => {
-            const optOut = isOptOut(greeting.id);
-
-            return (
-              <OptionRow
-                key={greeting.id}
-                isSelected={config.greetingId === greeting.id}
-                onSelect={() => selectGreeting(greeting)}
-              >
-                <>
-                  <span className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
-                    {greeting.label}
-                  </span>
-
-                  <ArabicLine
-                    arabic={greeting.arabic}
-                    optOut={optOut}
-                    pendingLabel="Arabic text pending"
-                  />
-
-                  {greeting.transliteration.length > 0 ? (
-                    <span className="text-xs text-[var(--lifafa-muted)] italic">
-                      {greeting.transliteration}
-                    </span>
-                  ) : null}
-
-                  {greeting.translation.length > 0 ? (
-                    <span className="text-xs text-[var(--lifafa-muted)]">
-                      {greeting.translation}
-                    </span>
-                  ) : null}
-                </>
-              </OptionRow>
-            );
-          })}
-        </ul>
+        <BlessingList
+          rows={pack.greetings}
+          selectedId={config.greetingId}
+          pack={pack}
+          onSelect={(row) => onChange({ ...config, greetingId: row.id })}
+        />
       </div>
 
-      {/* 3 — Dua */}
+      {/* 3 — Dua, or shlok, or whatever this tradition calls the slot */}
       <div className="flex flex-col gap-2.5">
-        <GroupHeading>Dua</GroupHeading>
+        <GroupHeading>{pack.blessingLabel}</GroupHeading>
 
-        <ul className="flex flex-col gap-2">
-          {DUAS.map((dua) => {
-            const optOut = isOptOut(dua.id);
+        <BlessingList
+          rows={pack.blessings}
+          selectedId={config.blessingId}
+          pack={pack}
+          onSelect={(row) => onChange({ ...config, blessingId: row.id })}
+        />
 
-            return (
-              <OptionRow
-                key={dua.id}
-                isSelected={config.duaId === dua.id}
-                onSelect={() => selectDua(dua)}
-              >
-                <>
-                  <span className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
-                    {dua.label}
-                  </span>
-
-                  {dua.occasionNote.length > 0 ? (
-                    <span className="text-[0.6875rem] tracking-[0.14em] text-[var(--lifafa-muted)] uppercase">
-                      {dua.occasionNote}
-                    </span>
-                  ) : null}
-
-                  <ArabicLine
-                    arabic={dua.arabic}
-                    optOut={optOut}
-                    pendingLabel="Text pending"
-                  />
-
-                  {dua.translation.length > 0 ? (
-                    <span className="text-xs text-[var(--lifafa-muted)]">
-                      {dua.translation}
-                    </span>
-                  ) : null}
-                </>
-              </OptionRow>
-            );
-          })}
-        </ul>
-
-        <MutedNote>The dua appears at the top of your card.</MutedNote>
+        <MutedNote>{pack.blessingNote}</MutedNote>
       </div>
     </section>
   );
