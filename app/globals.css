@@ -75,6 +75,46 @@
     still. Two scripts, two leadings.
   */
   --lifafa-devanagari-leading: 1.75;
+
+  /*
+    The Gurmukhi stack, used by the Sikh greeting and blessing and by nothing
+    else.
+
+    Same arrangement as the two above: --font-gurmukhi is Noto Sans Gurmukhi,
+    loaded and self-hosted by next/font in app/layout.tsx and set on <html>,
+    with system faces behind it for the swap period. Nirmala UI is the Windows
+    face that covers Gurmukhi; a Latin default is last so the text still renders
+    where no Gurmukhi face exists at all — as boxes, but on a line of the right
+    height rather than collapsing the layout.
+  */
+  --lifafa-gurmukhi:
+    var(--font-gurmukhi), "Noto Sans Gurmukhi", "Nirmala UI", "Gurmukhi MN",
+    "Gurmukhi Sangam MN", "Raavi", serif;
+
+  /*
+    Line-height for Gurmukhi, measured the same way the Devanagari one was.
+
+    Gurmukhi hangs a sirorekha across the top of a word and stacks lagaan and
+    bindi above it, so its ink runs past the face's own declared ascender —
+    the same failure as Devanagari, and it clips at a leading that looks
+    generous for Latin.
+
+    Measured from Noto Sans Gurmukhi's own tables: content box 1.304em (typo
+    ascent 0.896 + descent 0.408, USE_TYPO_METRICS set so browsers use those),
+    against a glyph bounding box reaching 0.995em above the baseline and 0.398em
+    below. That puts the floor for the face at a line-height of 1.502.
+
+    UNLIKE THE DEVANAGARI NUMBER, THIS ONE IS NOT MEASURED FROM REAL STRINGS —
+    every Gurmukhi string in lib/gurmukhiContent.ts is still empty, so the floor
+    above is the font-wide worst case over every glyph rather than over the
+    lines this app will actually set. It is the safer of the two bounds, being
+    taken over more glyphs than any card will use. Re-measure against the real
+    strings once they land.
+
+    1.75 clears it with room, and matches the Devanagari leading so the two
+    Indic scripts sit on the same rhythm.
+  */
+  --lifafa-gurmukhi-leading: 1.75;
 }
 
 /* -------------------------------------------------------------------------

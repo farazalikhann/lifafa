@@ -8,6 +8,7 @@ import {
   Lora,
   Noto_Naskh_Arabic,
   Noto_Sans_Devanagari,
+  Noto_Sans_Gurmukhi,
 } from "next/font/google";
 import "./globals.css";
 
@@ -99,6 +100,31 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
   variable: "--font-devanagari",
 });
 
+/*
+  The third face loaded for a script rather than for a look, on the same terms
+  as the Arabic and the Devanagari above.
+
+  Gurmukhi left to a device default lands on whatever is installed, and on a
+  great many phones that is nothing at all — the text comes out as boxes rather
+  than as a wrong-looking face, which is the failure mode that makes this one
+  worth loading rather than optional.
+
+  The "gurmukhi" subset only. As with the other two, `subsets` chooses what is
+  PRELOADED rather than what is emitted: next/font writes an @font-face for
+  every subset the family publishes and preloads just this one. It reaches the
+  Gurmukhi elements alone through --lifafa-gurmukhi, so no Latin text can
+  inherit it.
+
+  The Jain pack needs NO face of its own — it sets Devanagari, which is already
+  loaded above. Christian and Buddhist need none either: both are Latin. Six
+  packs, three script faces.
+*/
+const notoSansGurmukhi = Noto_Sans_Gurmukhi({
+  subsets: ["gurmukhi"],
+  display: "swap",
+  variable: "--font-gurmukhi",
+});
+
 const FONT_VARIABLES = [
   fraunces.variable,
   inter.variable,
@@ -107,6 +133,7 @@ const FONT_VARIABLES = [
   dmSans.variable,
   notoNaskhArabic.variable,
   notoSansDevanagari.variable,
+  notoSansGurmukhi.variable,
 ].join(" ");
 
 export const metadata: Metadata = {

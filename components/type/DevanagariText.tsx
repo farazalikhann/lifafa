@@ -29,9 +29,10 @@ export const DEVANAGARI_LINE_HEIGHT = "var(--lifafa-devanagari-leading)";
  *   - `lang="hi"` is set here and cannot be forgotten. The font matcher and the
  *     line breaker both key off the element carrying the text, so a lang on an
  *     ancestor is not the same thing.
- *   - `dir` IS NEVER SET. Devanagari runs left to right. The Arabic components
- *     set dir="rtl" on their text element, and this is the file that exists so
- *     nobody copies that line across with the markup around it.
+ *   - `dir="ltr"` is set explicitly. Devanagari runs left to right, and saying
+ *     so stops an ancestor's direction — or a wrapper copied from the Arabic
+ *     components, which set dir="rtl" — from ever flipping it. This file is
+ *     where that decision lives so no caller has to make it.
  *   - The line-height travels with the font. Devanagari ink runs above the
  *     face's own declared ascender, so a caller who sets the family without the
  *     leading gets clipped matras — the two must not be separable.
@@ -42,16 +43,25 @@ export const DEVANAGARI_LINE_HEIGHT = "var(--lifafa-devanagari-leading)";
  * colour and size — but overriding `lineHeight` or `fontFamily` there defeats
  * the point of the component.
  *
- * Renders nothing at all for an empty string, because lib/devanagariContent.ts
- * ships the opt-out entries with every field blank and absence has to read as
- * absence rather than as a gap.
+ * `lang` defaults to Hindi and is overridable because two packs set Devanagari
+ * and they are not the same language: the Hindu pack's lines are Hindi, and the
+ * Jain pack's are Prakrit and Sanskrit, which JAIN_LANG declares as "sa". The
+ * face and the leading resolve identically either way; the tag is for screen
+ * readers and line breaking, and claiming the wrong language is a small lie
+ * that costs nothing to avoid.
+ *
+ * Renders nothing at all for an empty string, because the content files ship
+ * the opt-out entries with every field blank and absence has to read as absence
+ * rather than as a gap.
  */
 export default function DevanagariText({
   children,
+  lang = DEVANAGARI_LANG,
   className,
   style,
 }: {
   children: string;
+  lang?: string;
   className?: string;
   style?: CSSProperties;
 }): ReactElement | null {
@@ -61,7 +71,8 @@ export default function DevanagariText({
 
   return (
     <span
-      lang={DEVANAGARI_LANG}
+      lang={lang}
+      dir="ltr"
       className={className}
       style={{
         fontFamily: DEVANAGARI_FONT_STACK,

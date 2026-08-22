@@ -1,5 +1,16 @@
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
+import { DEFAULT_SIZE, Frame, polygonPath, r2 } from "@/lib/ornaments/frame";
+import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
 import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
+
+/*
+  The shell, the props and the shared path helpers now live in
+  lib/ornaments/frame.tsx. They were private here, copied once into the Hindu
+  pack with a note saying that when a third pack arrived both belonged in a
+  shared module — four arrived at once. Re-exported below so existing importers
+  of this file keep working.
+*/
+export type { Ornament, OrnamentProps };
 
 /**
  * Hand drawn Muslim ornament pack.
@@ -22,9 +33,6 @@ import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
  * blown-up icon rather than as ornament.
  */
 
-/** Rendered size of an ornament's larger dimension when the caller says nothing. */
-const DEFAULT_SIZE = 64;
-
 /**
  * Each drawing's width over its height, from its own viewBox.
  *
@@ -42,85 +50,6 @@ export const ORNAMENT_ASPECT: Record<OrnamentId, number> = {
   geometricStar: 1,
   hangingLights: 160 / 40,
 };
-
-export interface OrnamentProps {
-  /**
-   * Rendered size in px of the ornament's *larger* dimension.
-   *
-   * Sizing the long side rather than a fixed square is what lets a 6.7:1 vine
-   * border and a 0.55:1 lantern share one prop: at `size` 64 the border comes
-   * out 64x10 and the lantern 35x64, and both are drawn to hold up there.
-   *
-   * Ignored when `className` is supplied — that branch hands sizing to CSS.
-   */
-  size?: number;
-  /**
-   * Stable id fragment, used to build the unique ids that SVG filters need.
-   *
-   * Supplied by the caller rather than generated, and never from Math.random
-   * or the clock: two renders of the same ornament in the same place have to
-   * emit byte-identical markup or hydration reports a mismatch.
-   *
-   * Required on every ornament even though only the lantern reads it today, so
-   * that adding a gradient to any other shape later is a local change rather
-   * than a change to every call site.
-   */
-  instanceId: string;
-  /**
-   * Sizes the svg through CSS instead of width/height attributes.
-   *
-   * Used where an ornament has to stretch to a box whose size it cannot know —
-   * the arch framing the cover is the only such case today.
-   */
-  className?: string;
-  preserveAspectRatio?: string;
-  style?: CSSProperties;
-  /**
-   * Overrides the ornament's authored stroke weight, in viewBox units.
-   *
-   * Stroke scales with the drawing, which is right nearly everywhere: an
-   * ornament is meant to look like the same pen drew it at 30px and at 64px.
-   * It stops being right the moment one is blown up far past the sizes it was
-   * authored for — the arch stretched across a whole cover is drawn at roughly
-   * 3.4x, and its 2 unit line would land as a 7px band. This is the escape
-   * hatch for that case and nothing else.
-   */
-  strokeWidth?: number;
-}
-
-export type Ornament = (props: OrnamentProps) => ReactElement;
-
-/** Two places is finer than a subpixel at these sizes, and keeps the markup short. */
-function r2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-/**
- * A closed regular polygon.
- *
- * `rotationDeg` 0 puts the first vertex straight up, which is how every star
- * and octagon below is authored.
- */
-function polygonPath(
-  cx: number,
-  cy: number,
-  sides: number,
-  radius: number,
-  rotationDeg: number,
-): string {
-  const start = (rotationDeg * Math.PI) / 180 - Math.PI / 2;
-  const step = (Math.PI * 2) / sides;
-  const points: string[] = [];
-
-  for (let index = 0; index < sides; index += 1) {
-    const angle = start + index * step;
-    points.push(
-      `${r2(cx + radius * Math.cos(angle))} ${r2(cy + radius * Math.sin(angle))}`,
-    );
-  }
-
-  return `M ${points.join(" L ")} Z`;
-}
 
 /** A closed star, alternating between the outer and the inner radius. */
 function starPath(
@@ -173,62 +102,6 @@ function scallopPath(
   }
 
   return d;
-}
-
-/**
- * Shared svg shell.
- *
- * `aspect` is the drawing's width over its height, and is what turns the single
- * `size` prop into the right pair of dimensions for shapes as different as a
- * tall lantern and a wide vine.
- */
-function Frame({
-  viewBox,
-  aspect,
-  size = DEFAULT_SIZE,
-  strokeWidth,
-  className,
-  preserveAspectRatio,
-  style,
-  children,
-}: {
-  viewBox: string;
-  aspect: number;
-  size?: number;
-  strokeWidth: number;
-  className?: string;
-  preserveAspectRatio?: string;
-  style?: CSSProperties;
-  children: ReactNode;
-}): ReactElement {
-  /* CSS sizing and attribute sizing are mutually exclusive, never both. */
-  const dimensions =
-    className === undefined
-      ? {
-          width: r2(aspect >= 1 ? size : size * aspect),
-          height: r2(aspect >= 1 ? size / aspect : size),
-        }
-      : {};
-
-  return (
-    <svg
-      viewBox={viewBox}
-      {...dimensions}
-      className={className}
-      style={style}
-      preserveAspectRatio={preserveAspectRatio}
-      role="presentation"
-      aria-hidden="true"
-      focusable="false"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {children}
-    </svg>
-  );
 }
 
 /* ---------------------------------------------------------------------------

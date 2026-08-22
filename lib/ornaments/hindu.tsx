@@ -1,6 +1,13 @@
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import {
+  Frame,
+  cordPath,
+  flowerPath,
+  leafPath,
+  pointOnCord,
+  r2,
+} from "@/lib/ornaments/frame";
+import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
 import { FLAME_COLOUR, FlameGlow } from "@/lib/ornaments/muslim";
-import type { Ornament, OrnamentProps } from "@/lib/ornaments/muslim";
 import type { HinduOrnamentId } from "@/types/hinduOrnament";
 
 /**
@@ -19,12 +26,10 @@ import type { HinduOrnamentId } from "@/types/hinduOrnament";
  * Muslim lantern's flame. It is imported from that file rather than restated.
  * Nothing else here is filled.
  *
- * `OrnamentProps` and `Ornament` are imported from the Muslim pack rather than
- * redeclared. They describe nothing Muslim — a size, an instance id, a stroke
- * override — and sharing the one definition is what lets a renderer take an
- * ornament from either pack without knowing which. The `Frame` shell below is a
- * copy of that file's, because it is private there; when a third pack lands,
- * both belong in a shared module and this copy goes away.
+ * The shell, the props and the path helpers come from lib/ornaments/frame.tsx.
+ * They were copied into this file from the Muslim pack with a note saying that
+ * when a third pack landed they belonged in a shared module; four landed at
+ * once, so they moved and the copy here is gone.
  *
  * ONE GLYPH IS DRAWN HERE, DELIBERATELY. Devanagari text belongs in
  * lib/devanagariContent.ts, which is reviewed on its own, and a letterform
@@ -37,9 +42,6 @@ import type { HinduOrnamentId } from "@/types/hinduOrnament";
  * follow it. The swastik is a symbol rather than a letter and raises no such
  * question.
  */
-
-/** Rendered size of an ornament's larger dimension when the caller says nothing. */
-const DEFAULT_SIZE = 64;
 
 /**
  * Each drawing's width over its height, from its own viewBox.
@@ -57,175 +59,6 @@ export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
   toran: 160 / 40,
   marigold: 160 / 34,
 };
-
-/** Two places is finer than a subpixel at these sizes, and keeps the markup short. */
-function r2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-/**
- * A pointed leaf, as a closed outline of two quadratics either side of the
- * base-to-tip line.
- *
- * `controlSpread` is how far the control points sit off that line, NOT the
- * leaf's half width: a quadratic only reaches half way to its control, so a
- * leaf three units wide either side is authored by passing six. Kept as the raw
- * control offset rather than the finished width because that is the number
- * being nudged when a leaf is made fatter or thinner by eye.
- */
-function leafPath(
-  baseX: number,
-  baseY: number,
-  tipX: number,
-  tipY: number,
-  controlSpread: number,
-): string {
-  const runX = tipX - baseX;
-  const runY = tipY - baseY;
-  const length = Math.hypot(runX, runY);
-  /* Unit normal to the base-to-tip line, scaled out to the control offset. */
-  const offsetX = (runY / length) * controlSpread;
-  const offsetY = (-runX / length) * controlSpread;
-  const midX = (baseX + tipX) / 2;
-  const midY = (baseY + tipY) / 2;
-
-  return [
-    `M ${r2(baseX)} ${r2(baseY)}`,
-    `Q ${r2(midX + offsetX)} ${r2(midY + offsetY)} ${r2(tipX)} ${r2(tipY)}`,
-    `Q ${r2(midX - offsetX)} ${r2(midY - offsetY)} ${r2(baseX)} ${r2(baseY)}`,
-    "Z",
-  ].join(" ");
-}
-
-/**
- * A closed ring of outward bulging arcs — a flower head seen face on.
- *
- * `curvature` is each arc's radius as a fraction of the chord it spans, the
- * same convention the Muslim pack's scallop uses. Anything above 0.5 is a
- * drawable arc; the closer to 0.5, the deeper the petal.
- *
- * Points are walked in increasing angle, which with y pointing down is
- * clockwise on screen, so sweep flag 1 bulges every arc away from the centre.
- */
-function flowerPath(
-  cx: number,
-  cy: number,
-  radius: number,
-  petals: number,
-  curvature: number,
-): string {
-  const step = (Math.PI * 2) / petals;
-  const at = (index: number): readonly [number, number] => {
-    const angle = index * step - Math.PI / 2;
-
-    return [
-      r2(cx + radius * Math.cos(angle)),
-      r2(cy + radius * Math.sin(angle)),
-    ];
-  };
-
-  const [startX, startY] = at(0);
-  let d = `M ${startX} ${startY}`;
-
-  for (let index = 1; index <= petals; index += 1) {
-    const [previousX, previousY] = at(index - 1);
-    const [x, y] = at(index);
-    const arcR = r2(Math.hypot(x - previousX, y - previousY) * curvature);
-
-    d += ` A ${arcR} ${arcR} 0 0 1 ${x} ${y}`;
-  }
-
-  return `${d} Z`;
-}
-
-/**
- * A point on a quadratic cord.
- *
- * Leaves and blooms are placed by evaluating the cord they hang from rather
- * than at hand-guessed heights, so every one sits exactly on the string and the
- * drape stays a real drape — the same trick the Muslim pack's hanging lights
- * use for their bulbs.
- */
-function pointOnCord(
-  start: readonly [number, number],
-  control: readonly [number, number],
-  end: readonly [number, number],
-  t: number,
-): readonly [number, number] {
-  const inverse = 1 - t;
-  const x =
-    inverse * inverse * start[0] + 2 * inverse * t * control[0] + t * t * end[0];
-  const y =
-    inverse * inverse * start[1] + 2 * inverse * t * control[1] + t * t * end[1];
-
-  return [r2(x), r2(y)];
-}
-
-/** The `d` of a quadratic cord, from the same three points. */
-function cordPath(
-  start: readonly [number, number],
-  control: readonly [number, number],
-  end: readonly [number, number],
-): string {
-  return `M ${start[0]} ${start[1]} Q ${control[0]} ${control[1]} ${end[0]} ${end[1]}`;
-}
-
-/**
- * Shared svg shell — a copy of the Muslim pack's, which is private to that
- * file. See the note in the header.
- *
- * `aspect` is the drawing's width over its height, and is what turns the single
- * `size` prop into the right pair of dimensions for shapes as different as a
- * tall kalash and a wide garland.
- */
-function Frame({
-  viewBox,
-  aspect,
-  size = DEFAULT_SIZE,
-  strokeWidth,
-  className,
-  preserveAspectRatio,
-  style,
-  children,
-}: {
-  viewBox: string;
-  aspect: number;
-  size?: number;
-  strokeWidth: number;
-  className?: string;
-  preserveAspectRatio?: string;
-  style?: CSSProperties;
-  children: ReactNode;
-}): ReactElement {
-  /* CSS sizing and attribute sizing are mutually exclusive, never both. */
-  const dimensions =
-    className === undefined
-      ? {
-          width: r2(aspect >= 1 ? size : size * aspect),
-          height: r2(aspect >= 1 ? size / aspect : size),
-        }
-      : {};
-
-  return (
-    <svg
-      viewBox={viewBox}
-      {...dimensions}
-      className={className}
-      style={style}
-      preserveAspectRatio={preserveAspectRatio}
-      role="presentation"
-      aria-hidden="true"
-      focusable="false"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {children}
-    </svg>
-  );
-}
 
 /* ---------------------------------------------------------------------------
    Diya
@@ -739,6 +572,8 @@ export interface HinduOrnamentEntry {
    * across packs, this is the field it has to honour.
    */
   topRegionOnly: boolean;
+  /** Never rotate or tilt this shape. See the note on the swastik. */
+  uprightOnly?: boolean;
 }
 
 /**
@@ -782,6 +617,8 @@ export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = [
     Component: Swastik,
     chipSize: 36,
     topRegionOnly: false,
+    /* Upright and clockwise or it is not this symbol — see the note on Swastik. */
+    uprightOnly: true,
   },
   {
     id: "toran",

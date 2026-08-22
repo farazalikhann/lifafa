@@ -9,7 +9,11 @@
  * one descriptor — see the note on OrnamentConfig below.
  */
 
+import type { BuddhistOrnamentId } from "@/types/buddhistOrnament";
+import type { ChristianOrnamentId } from "@/types/christianOrnament";
 import type { HinduOrnamentId } from "@/types/hinduOrnament";
+import type { JainOrnamentId } from "@/types/jainOrnament";
+import type { SikhOrnamentId } from "@/types/sikhOrnament";
 
 /** Ornament ids belonging to the Muslim pack, drawn in lib/ornaments/muslim.tsx. */
 export type OrnamentId =
@@ -25,10 +29,12 @@ export type OrnamentId =
  * One ornament pinned to the top edge of the card.
  *
  * Every field is authored by hand in a fixed table — never generated — so the
- * server and the browser lay the row out identically.
+ * server and the browser lay the row out identically. Each tradition brings its
+ * own table; see HANGING_BY_TRADITION in
+ * components/card/decor/HangingLayer.tsx.
  */
 export interface HangingOrnament {
-  id: OrnamentId;
+  id: AnyOrnamentId;
   /** Horizontal position across the card: 0 at the left edge, 100 at the right. */
   xPercent: number;
   /**
@@ -57,8 +63,21 @@ export interface HangingOrnament {
  * every tradition click. Nothing renders it either: both the canvas and the
  * placer resolve an id through the *current* pack, and an id the pack does not
  * know is skipped rather than drawn.
+ *
+ * SOME IDS BELONG TO MORE THAN ONE PACK. Three traditions offer a "lotus" and
+ * two offer a "kalash", and the union collapses each to a single member — which
+ * is correct, because resolution is always per pack: the Buddhist lotus and the
+ * Jain lotus are different drawings reached through different registries, and an
+ * id alone was never enough to find a component. Never resolve an ornament from
+ * this union without knowing which pack you are in.
  */
-export type AnyOrnamentId = OrnamentId | HinduOrnamentId;
+export type AnyOrnamentId =
+  | OrnamentId
+  | HinduOrnamentId
+  | SikhOrnamentId
+  | ChristianOrnamentId
+  | JainOrnamentId
+  | BuddhistOrnamentId;
 
 /**
  * The host's ornament choices for one card.

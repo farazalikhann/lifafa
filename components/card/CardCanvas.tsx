@@ -7,19 +7,22 @@ import BorderFrame, {
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import ScrollFade from "@/components/card/decor/ScrollFade";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
-import HangingLayer, { hangingDepth } from "@/components/card/decor/HangingLayer";
+import HangingLayer, {
+  hangingDepth,
+  hangingIdsFor,
+} from "@/components/card/decor/HangingLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
 import DetailsSection from "@/components/card/sections/DetailsSection";
 import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
 import ScratchPanel from "@/components/card/ScratchPanel";
-import { getDua, getGreeting } from "@/lib/arabicContent";
+import { getTraditionPack } from "@/lib/traditionPacks";
 import { hasCustomContent, hasMessage } from "@/lib/cardSections";
 import { maxOverlayAlpha } from "@/lib/contrast";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
-import { ArabesqueBorder, MosqueArch } from "@/lib/ornaments/muslim";
+
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
 import type {
@@ -33,6 +36,7 @@ import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
+import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
 import type { AnyOrnamentId } from "@/types/ornament";
 
 /**
@@ -40,16 +44,6 @@ import type { AnyOrnamentId } from "@/types/ornament";
  * alpha worth testing for contrast. Mirrors OPACITY_AT_SMALLEST in DecorLayer.
  */
 const DECOR_CEILING = 0.22;
-
-/**
- * What Arabic script is set in.
- *
- * Noto Naskh Arabic, loaded by next/font in app/layout.tsx and resolved through
- * one variable declared in globals.css, with the system faces behind it. Set on
- * the Arabic elements only — never on a wrapper — so no Latin text on the card
- * can inherit it.
- */
-const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
 
 /**
  * The mosque arch's inset from the cover's edges when no border is drawn, in px.
@@ -80,62 +74,63 @@ const SECTION_TOP_PAD = 40;
  * neighbours do not.
  */
 function Blessing({
-  arabic,
-  transliteration,
-  translation,
+  entry,
+  pack,
   theme,
   sizeClass,
 }: {
-  arabic: string;
-  transliteration: string;
-  translation: string;
+  entry: PackBlessing;
+  pack: TraditionPack;
   theme: Theme;
   sizeClass: string;
 }): ReactElement | null {
-  if (arabic.length === 0) {
+  if (entry.script.length === 0) {
     return null;
   }
+
+  const { ScriptRun } = pack;
 
   return (
     <div className="flex w-full flex-col items-center gap-1.5">
       {/*
-        `dir` and `lang` on the element that actually holds the script, never on
-        a wrapper: the bidi algorithm and the font matcher both key off the
-        element carrying the text. `wrap-anywhere` is what keeps a long unbroken
+        The pack draws its own script line, because `dir` and `lang` belong on
+        the element that actually holds the text — the bidi algorithm and the
+        font matcher both key off it — and the rules differ per script in ways a
+        shared caller must not be the one to decide. Arabic sets dir="rtl";
+        Devanagari and Gurmukhi set dir="ltr" and carry their own measured
+        leading with their face. `wrap-anywhere` is what keeps a long unbroken
         run inside a 360px card, which is the width this was checked at.
       */}
-      <p
-        dir="rtl"
-        lang="ar"
+      <ScriptRun
         className={`w-full text-center wrap-anywhere ${sizeClass}`}
-        style={{ fontFamily: ARABIC_FONT_STACK, color: theme.accent }}
+        style={{ color: theme.accent }}
       >
-        {arabic}
-      </p>
+        {entry.script}
+      </ScriptRun>
 
       {/*
-        Latin script, so both of these are explicitly left to right — they sit
-        inside a block that has just been told it is RTL, and an unmarked Latin
-        line there has its punctuation pushed to the wrong end. They inherit the
-        card's body font from the canvas root rather than setting one.
+        Latin script, so both of these are explicitly left to right — under an
+        RTL pack they sit inside a block that has just been told it is RTL, and
+        an unmarked Latin line there has its punctuation pushed to the wrong
+        end. They inherit the card's body font from the canvas root.
       */}
-      {transliteration.length > 0 ? (
+      {entry.transliteration.length > 0 ? (
         <p
           dir="ltr"
           className="w-full text-center text-[0.9rem] leading-relaxed wrap-anywhere italic"
           style={{ color: theme.textMuted }}
         >
-          {transliteration}
+          {entry.transliteration}
         </p>
       ) : null}
 
-      {translation.length > 0 ? (
+      {entry.translation.length > 0 ? (
         <p
           dir="ltr"
           className="w-full text-center text-[0.9rem] leading-relaxed wrap-anywhere"
           style={{ color: theme.textMuted }}
         >
-          {translation}
+          {entry.translation}
         </p>
       ) : null}
     </div>
@@ -397,27 +392,68 @@ export default function CardCanvas({
   );
 
   /*
-    The single gate on the whole ornament pack.
+    THE SINGLE GATE ON THE WHOLE ORNAMENT FEATURE, for every tradition.
 
-    Everything below reads `ornaments` rather than `config.ornamentConfig`, so
-    on any other tradition the list is empty, every `includes` is false, the
-    greeting and dua lookups are handed null, and HangingLayer is never mounted.
-    One boolean, checked once — not seven separate places that could disagree.
+    One lookup, checked once. A tradition with no pack resolves to null, the
+    ornament list comes out empty, every `includes` below is false, the greeting
+    and blessing lookups are handed null, and no ornament layer mounts — which
+    is exactly what a card carried before any pack existed. Not seven separate
+    branches that could disagree, and no tradition named anywhere below.
   */
-  const isMuslim = config.traditionId === "muslim";
-  const ornaments: readonly AnyOrnamentId[] = isMuslim
-    ? config.ornamentConfig.enabledOrnaments
-    : [];
+  const pack = getTraditionPack(config.traditionId);
+  const ornaments: readonly AnyOrnamentId[] =
+    pack !== null ? config.ornamentConfig.enabledOrnaments : [];
 
-  const greeting = isMuslim ? getGreeting(config.ornamentConfig.greetingId) : null;
-  const dua = isMuslim ? getDua(config.ornamentConfig.blessingId) : null;
+  const greeting = pack?.findGreeting(config.ornamentConfig.greetingId) ?? null;
+  const blessing = pack?.findBlessing(config.ornamentConfig.blessingId) ?? null;
 
-  /* Both resolve to nothing while lib/arabicContent.ts ships empty strings. */
+  /*
+    Resolves to nothing wherever a content file still ships empty strings, which
+    today is every line of four of the six packs.
+  */
   const hasBlessing =
-    (greeting?.arabic.length ?? 0) > 0 || (dua?.arabic.length ?? 0) > 0;
+    (greeting?.script.length ?? 0) > 0 || (blessing?.script.length ?? 0) > 0;
 
-  const useArabesqueDivider = ornaments.includes("arabesqueBorder");
-  const useArch = ornaments.includes("mosqueArch");
+  /*
+    The three claims a pack can make on an ornament, and what is left over.
+
+    An ornament that hangs is placed by HangingLayer, the cover arch frames the
+    cover and the divider rules between sections. EVERYTHING ELSE GOES TO
+    CornerLayer — computed here rather than listed, because this is the only
+    place that can see all three claims at once, and an ornament that no layer
+    claims is an ornament the host can switch on and never see.
+  */
+  const hangingIds = hangingIdsFor(pack);
+  const scatterIds =
+    pack === null
+      ? []
+      : pack.ornaments
+          .map((ornament) => ornament.id)
+          .filter(
+            (id) =>
+              !hangingIds.includes(id) &&
+              id !== pack.coverArchId &&
+              id !== pack.dividerId,
+          );
+
+  const dividerId = pack?.dividerId ?? null;
+  const archId = pack?.coverArchId ?? null;
+  /*
+    Resolved through the pack, never named here. Each pack nominates its own
+    divider and its own cover arch, so this file draws whichever the tradition
+    in hand supplies — a running border and a mosque arch under Muslim, a floral
+    band and a gurudwara arch under Sikh, an olive branch and a gothic arch
+    under Christian, and nothing at all under a pack that nominates neither.
+  */
+  const dividerOrnament =
+    dividerId !== null && ornaments.includes(dividerId)
+      ? (pack?.findOrnament(dividerId) ?? null)
+      : null;
+  const archOrnament =
+    archId !== null && ornaments.includes(archId)
+      ? (pack?.findOrnament(archId) ?? null)
+      : null;
+  const useArch = archOrnament !== null;
 
   /*
     Where the arch has to sit so it does not cross the border.
@@ -462,7 +498,7 @@ export default function CardCanvas({
     section padding below, and the dissolve, and nothing has to be kept in sync
     by hand.
   */
-  const hangingBand = hangingDepth(ornaments);
+  const hangingBand = hangingDepth(pack, ornaments);
 
   /*
     What every section insets its content by, top and bottom alike.
@@ -542,8 +578,10 @@ export default function CardCanvas({
         the same measured alpha ceiling as the scattered motifs, because it sits
         behind the same text.
       */}
-      {isMuslim ? (
+      {pack !== null ? (
         <CornerLayer
+          pack={pack}
+          scatterIds={scatterIds}
           enabledOrnaments={ornaments}
           accent={effectiveTheme.accent}
           bandHeight={bandHeight}
@@ -563,8 +601,9 @@ export default function CardCanvas({
         so they have to be the ones on top. `pointer-events-none` throughout,
         so it can never take a tap or a scroll meant for the card underneath.
       */}
-      {isMuslim ? (
+      {pack !== null ? (
         <HangingLayer
+          pack={pack}
           enabledOrnaments={ornaments}
           accent={effectiveTheme.accent}
         />
@@ -672,26 +711,24 @@ export default function CardCanvas({
                   paddingBottom: sectionPad,
                 }}
               >
-                {greeting !== null ? (
+                {greeting !== null && pack !== null ? (
                   <Blessing
-                    arabic={greeting.arabic}
-                    transliteration={greeting.transliteration}
-                    translation={greeting.translation}
+                    entry={greeting}
+                    pack={pack}
                     theme={effectiveTheme}
                     /*
                       The greeting is the smaller of the two. It is a form of
-                      address; the dua is the blessing being offered, and the
+                      address; the blessing is what is being offered, and the
                       card should read in that order of weight.
                     */
                     sizeClass="text-[1.25rem] leading-[2] sm:text-[1.375rem]"
                   />
                 ) : null}
 
-                {dua !== null ? (
+                {blessing !== null && pack !== null ? (
                   <Blessing
-                    arabic={dua.arabic}
-                    transliteration={dua.transliteration}
-                    translation={dua.translation}
+                    entry={blessing}
+                    pack={pack}
                     theme={effectiveTheme}
                     sizeClass="text-[1.375rem] leading-[2.1] sm:text-[1.5rem]"
                   />
@@ -723,8 +760,8 @@ export default function CardCanvas({
                     Sized wider than the flourish because it is a repeating band
                     and needs the width to show more than one repeat.
                   */}
-                  {useArabesqueDivider ? (
-                    <ArabesqueBorder
+                  {dividerOrnament !== null ? (
+                    <dividerOrnament.Component
                       instanceId={`divider-${index}`}
                       size={168}
                       style={{ color: effectiveTheme.accent, opacity: 0.55 }}
@@ -767,7 +804,7 @@ export default function CardCanvas({
                   over a jamb still carries.
                 */
                 <div className="relative">
-                  <MosqueArch
+                  <archOrnament.Component
                     instanceId="cover-frame"
                     className="pointer-events-none absolute bottom-0"
                     preserveAspectRatio="none"
