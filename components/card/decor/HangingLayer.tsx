@@ -2,7 +2,11 @@
 
 import type { CSSProperties, ReactElement } from "react";
 import { getOrnament, ORNAMENT_ASPECT } from "@/lib/ornaments/muslim";
-import type { HangingOrnament, OrnamentId } from "@/types/ornament";
+import type {
+  AnyOrnamentId,
+  HangingOrnament,
+  OrnamentId,
+} from "@/types/ornament";
 
 /**
  * Which ornaments are allowed to hang.
@@ -180,7 +184,7 @@ const SWING_MARGIN = 6;
  * date came to be rendered behind them. The caller applies this to all of them.
  */
 export function hangingDepth(
-  enabledOrnaments: readonly OrnamentId[],
+  enabledOrnaments: readonly AnyOrnamentId[],
 ): number {
   let deepest = 0;
 
@@ -235,7 +239,7 @@ export default function HangingLayer({
   enabledOrnaments,
   accent,
 }: {
-  enabledOrnaments: readonly OrnamentId[];
+  enabledOrnaments: readonly AnyOrnamentId[];
   accent: string;
 }): ReactElement | null {
   const hanging = HANGING.filter(

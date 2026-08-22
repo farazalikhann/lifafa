@@ -2,14 +2,21 @@
  * Hindu ornament pack — the shapes a host can add to their card, and the
  * greeting and shlok that head it.
  *
- * The parallel of types/ornament.ts, which does the same job for the Muslim
- * pack. Kept as its own file rather than widened unions on that one: the two
- * packs share no ornament, and a card is only ever one tradition, so a union
- * spanning both would let a lantern and a kalash coexist in a type that no
- * screen can render.
+ * The parallel of types/ornament.ts, which declares the Muslim pack's ids.
  *
- * Nothing here is drawn yet. The drawings and the editor come later; this step
- * is the data only.
+ * THIS FILE ONCE ARGUED AGAINST SHARING A TYPE WITH THAT ONE, on the grounds
+ * that a union spanning both packs would permit a lantern and a kalash in the
+ * same array. That was true and beside the point: the alternative was a second
+ * config shape, which meant a second path through the panel and the canvas, and
+ * two copies of a layout drift apart on the first change to either. The union
+ * is AnyOrnamentId in types/ornament.ts, and the mixed state it permits is
+ * unreachable — the panel offers one pack's chips, the editor empties the list
+ * on every tradition click, and both the canvas and the placer resolve an id
+ * through the current pack and skip one it does not know.
+ *
+ * What stays here is the id union itself: these seven names are the Hindu
+ * pack's, drawn in lib/ornaments/hindu.tsx, and keeping them declared apart is
+ * what lets that pack's own registry stay exhaustively typed.
  */
 
 export type HinduOrnamentId =
@@ -21,19 +28,9 @@ export type HinduOrnamentId =
   | "toran"
   | "marigold";
 
-/**
- * The host's ornament choices for one Hindu card.
- *
- * Mirrors OrnamentConfig field for field, with `shlokId` where the Muslim
- * config carries `duaId`.
- *
- * The greeting and shlok are held as ids rather than as text: the strings live
- * in lib/devanagariContent.ts, which is reviewed on its own, and a card must
- * never carry a frozen copy of a Devanagari string that the content file could
- * later correct.
- */
-export interface HinduOrnamentConfig {
-  enabledOrnaments: readonly HinduOrnamentId[];
-  greetingId: string | null;
-  shlokId: string | null;
-}
+/*
+  There is no HinduOrnamentConfig. The host's choices live in OrnamentConfig in
+  types/ornament.ts, one shape for every tradition — see the note there. A
+  second config would have been a second code path through the panel and the
+  canvas, which is the thing this pack is built not to be.
+*/

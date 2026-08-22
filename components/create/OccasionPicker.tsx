@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import OrnamentPanel from "@/components/create/OrnamentPanel";
+import { getTraditionPack } from "@/lib/traditionPacks";
 import { OCCASIONS, TRADITIONS } from "@/lib/occasions";
 import { getMotifs } from "@/lib/motifs";
 import type { OccasionId, TraditionId } from "@/types/occasion";
@@ -18,7 +19,7 @@ export default function OccasionPicker({
   occasionId: OccasionId;
   traditionId: TraditionId;
   /*
-    Only ever acted on when the tradition is "muslim". Still passed on every
+    Only ever acted on by a tradition that has a pack. Still passed on every
     tradition, because the panel is mounted and unmounted by that same value and
     a conditional prop would just move the branch somewhere less obvious.
   */
@@ -27,6 +28,8 @@ export default function OccasionPicker({
   onTraditionChange: (id: TraditionId) => void;
   onOrnamentConfigChange: (next: OrnamentConfig) => void;
 }): ReactElement {
+  const pack = getTraditionPack(traditionId);
+
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
@@ -107,12 +110,14 @@ export default function OccasionPicker({
 
         {/*
           Directly under the pills, because it only exists because of the pill
-          above it. Mounted on "muslim" alone — every other tradition removes it
-          from the tree, and the page resets the config as it goes, so nothing
-          from this pack can be left switched on behind a hidden panel.
+          above it. Mounted only for a tradition that has a pack — every other
+          one removes it from the tree, and the page resets the config as it
+          goes, so nothing from any pack can be left switched on behind a
+          hidden panel. The lookup is the gate; the panel names no tradition.
         */}
-        {traditionId === "muslim" ? (
+        {pack !== null ? (
           <OrnamentPanel
+            pack={pack}
             config={ornamentConfig}
             onChange={onOrnamentConfigChange}
           />

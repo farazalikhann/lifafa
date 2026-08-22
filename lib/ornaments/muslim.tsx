@@ -806,5 +806,5 @@ export function getOrnament(id: OrnamentId): Ornament {
 export const DEFAULT_ORNAMENT_CONFIG: OrnamentConfig = {
   enabledOrnaments: [],
   greetingId: null,
-  duaId: null,
+  blessingId: null,
 };

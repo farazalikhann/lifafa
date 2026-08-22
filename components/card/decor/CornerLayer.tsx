@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { getOrnament } from "@/lib/ornaments/muslim";
-import type { OrnamentId } from "@/types/ornament";
+import type { AnyOrnamentId, OrnamentId } from "@/types/ornament";
 
 /**
  * Home for the two ornaments in the pack that neither hang nor frame anything.
@@ -86,7 +86,7 @@ export default function CornerLayer({
   bandHeight,
   maxAlpha,
 }: {
-  enabledOrnaments: readonly OrnamentId[];
+  enabledOrnaments: readonly AnyOrnamentId[];
   accent: string;
   /** Height of the scrollport, exactly as DecorLayer takes it. */
   bandHeight: string;

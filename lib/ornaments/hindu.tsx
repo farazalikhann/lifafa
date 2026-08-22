@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { FLAME_COLOUR, FlameGlow } from "@/lib/ornaments/muslim";
 import type { Ornament, OrnamentProps } from "@/lib/ornaments/muslim";
-import type { HinduOrnamentConfig, HinduOrnamentId } from "@/types/hinduOrnament";
+import type { HinduOrnamentId } from "@/types/hinduOrnament";
 
 /**
  * Hand drawn Hindu ornament pack.
@@ -817,17 +817,8 @@ export function getHinduOrnament(id: HinduOrnamentId): Ornament {
   return BY_ID[id];
 }
 
-/**
- * What a card carries before the host touches anything, and what a card is
- * reset to the moment it stops being a Hindu card.
- *
- * Every field is empty or null, so a non-Hindu card that still holds this
- * object renders exactly what it rendered before the pack existed.
- */
-export const DEFAULT_HINDU_ORNAMENT_CONFIG: HinduOrnamentConfig = {
-  enabledOrnaments: [],
-  greetingId: null,
-  shlokId: null,
-};
-
-export type { Ornament, OrnamentProps };
+/*
+  There is no DEFAULT_HINDU_ORNAMENT_CONFIG either. DEFAULT_ORNAMENT_CONFIG in
+  lib/ornaments/muslim.tsx is empty on every field and is what the editor resets
+  to on any tradition click, this one included.
+*/
