@@ -7,6 +7,7 @@ import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getMotifs } from "@/lib/motifs";
+import { addReply } from "@/lib/guestStore";
 import { getMockEvent } from "@/lib/mockEvent";
 import { getPalette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
@@ -57,6 +58,19 @@ export default function InvitePage({
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
   const handleSubmit = (submission: RsvpSubmission): void => {
+    /*
+      The timestamp is minted here, in the handler, so nothing reads the clock
+      during render. The store assigns the id for the same reason.
+    */
+    addReply({
+      name: submission.name,
+      phone: submission.phone,
+      status: submission.status,
+      partySize: submission.partySize,
+      message: submission.message,
+      respondedAt: new Date().toISOString(),
+    });
+
     setSubmitted(submission);
     setStage("confirmed");
   };

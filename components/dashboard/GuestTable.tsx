@@ -84,6 +84,16 @@ function bringingLabel(count: number): string {
   return count === 0 ? "—" : `+${count}`;
 }
 
+/**
+ * Seeded guests carry no message at all and a guest can submit an empty one,
+ * so both collapse to the same muted dash rather than an empty cell that reads
+ * as a rendering fault.
+ */
+function messageText(message: string | undefined): string | null {
+  const trimmed = message?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export default function GuestTable({
   guests,
 }: {
@@ -162,17 +172,22 @@ export default function GuestTable({
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="bg-[var(--lifafa-ink-raised)]">
-                  {["Guest", "Phone", "Reply", "Bringing", "Checked in"].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="px-4 py-3 text-[0.6875rem] font-medium tracking-[0.16em] text-[var(--lifafa-muted)] uppercase"
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Guest",
+                    "Phone",
+                    "Reply",
+                    "Bringing",
+                    "Message",
+                    "Checked in",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      scope="col"
+                      className="px-4 py-3 text-[0.6875rem] font-medium tracking-[0.16em] text-[var(--lifafa-muted)] uppercase"
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -192,6 +207,23 @@ export default function GuestTable({
                     </td>
                     <td className="px-4 py-3.5 text-sm text-[var(--lifafa-cream)] tabular-nums">
                       {bringingLabel(guest.accompanyingCount)}
+                    </td>
+                    {/*
+                      Capped and clipped so one chatty guest cannot stretch the
+                      row; the full text stays available on hover and to a
+                      screen reader through the title.
+                    */}
+                    <td className="max-w-[18rem] px-4 py-3.5 text-sm text-[var(--lifafa-muted)]">
+                      {messageText(guest.message) === null ? (
+                        <span aria-hidden="true">—</span>
+                      ) : (
+                        <span
+                          className="block truncate"
+                          title={messageText(guest.message) ?? undefined}
+                        >
+                          {messageText(guest.message)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3.5">
                       <CheckedInMark checkedIn={guest.checkedIn} />
@@ -227,6 +259,24 @@ export default function GuestTable({
                     <dt className="text-[var(--lifafa-muted)]">Bringing</dt>
                     <dd className="text-[var(--lifafa-cream)] tabular-nums">
                       {bringingLabel(guest.accompanyingCount)}
+                    </dd>
+                  </div>
+                  {/*
+                    Stacked rather than side by side: a message is the one field
+                    here that runs to several lines, and squeezing it into the
+                    right hand column would wrap it to a sliver.
+                  */}
+                  <div className="flex flex-col gap-1">
+                    <dt className="text-[var(--lifafa-muted)]">Message</dt>
+                    <dd className="text-[var(--lifafa-cream)]">
+                      {messageText(guest.message) ?? (
+                        <span
+                          className="text-[var(--lifafa-muted)]"
+                          aria-hidden="true"
+                        >
+                          —
+                        </span>
+                      )}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between gap-3">

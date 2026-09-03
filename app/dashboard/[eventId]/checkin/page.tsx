@@ -8,8 +8,8 @@ import CheckinResult, {
 } from "@/components/checkin/CheckinResult";
 import ManualLookup from "@/components/checkin/ManualLookup";
 import ScannerFrame from "@/components/checkin/ScannerFrame";
-import { MOCK_GUESTS } from "@/lib/mockGuests";
-import type { Guest } from "@/types/guest";
+import { useGuests } from "@/hooks/useGuests";
+import { setCheckedIn } from "@/lib/guestStore";
 
 /* Static placeholder until events come from a real store. */
 const EVENT_TITLE = "Aarav and Meera's Reception";
@@ -21,8 +21,11 @@ export default function CheckinPage({
 }): ReactElement {
   const { eventId } = use(params);
 
-  /* Seeded from the mock list, then owned here so check-ins are live. */
-  const [guests, setGuests] = useState<readonly Guest[]>(MOCK_GUESTS);
+  /*
+    The shared store, not a local copy: a guest who replied on their phone is
+    at the door too, and the scanner has to be able to find them.
+  */
+  const guests = useGuests();
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
 
   const allCheckedIn = guests.every((guest) => guest.checkedIn);
@@ -36,15 +39,7 @@ export default function CheckinPage({
    * during render, so nothing depends on the clock while rendering.
    */
   const checkIn = useCallback((guestId: string): void => {
-    const arrivedAt = new Date().toISOString();
-
-    setGuests((previous) =>
-      previous.map((guest) =>
-        guest.id === guestId
-          ? { ...guest, checkedIn: true, checkedInAt: arrivedAt }
-          : guest,
-      ),
-    );
+    setCheckedIn(guestId, new Date().toISOString());
     setScanResult(null);
   }, []);
 

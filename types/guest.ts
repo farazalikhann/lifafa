@@ -10,6 +10,8 @@ export interface Guest {
   rsvp: RsvpStatus;
   /** Extra people this guest is bringing, not counting themselves. */
   accompanyingCount: number;
+  /** Free text a guest left for the hosts. Absent on seeded rows. */
+  message?: string;
   /** ISO timestamp of the reply, or null while still pending. */
   respondedAt: string | null;
   checkedIn: boolean;

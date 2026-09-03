@@ -1,21 +1,31 @@
-import type { ReactElement } from "react";
+"use client";
+
+import { use, type ReactElement } from "react";
 import Link from "next/link";
+import ExportCsvButton from "@/components/dashboard/ExportCsvButton";
 import GuestTable from "@/components/dashboard/GuestTable";
 import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
 import ShareBar from "@/components/dashboard/ShareBar";
-import { MOCK_GUESTS } from "@/lib/mockGuests";
+import { useGuests } from "@/hooks/useGuests";
 
 /* Static placeholders until events come from a real store. */
 const EVENT_TITLE = "Aarav and Meera's Reception";
 const EVENT_DATE = "Monday, 14 December 2026 at 7:00 PM";
 
-export default async function DashboardPage({
+export default function DashboardPage({
   params,
 }: {
   params: Promise<{ eventId: string }>;
-}): Promise<ReactElement> {
-  const { eventId } = await params;
+}): ReactElement {
+  const { eventId } = use(params);
   const inviteUrl = `https://getlifafa.co.in/i/${eventId}`;
+
+  /*
+    One source for the whole page. Every figure below is derived from this
+    array, so a reply that lands in the store moves the headcount, the filter
+    counts and the CSV together.
+  */
+  const guests = useGuests();
 
   return (
     <div className="min-h-screen">
@@ -40,9 +50,16 @@ export default async function DashboardPage({
       </header>
 
       <main className="mx-auto flex max-w-[1100px] flex-col gap-8 px-5 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-        <ShareBar inviteUrl={inviteUrl} />
-        <HeadcountSummary guests={MOCK_GUESTS} />
-        <GuestTable guests={MOCK_GUESTS} />
+        {/* Share the link, or take the list away with you. */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <ShareBar inviteUrl={inviteUrl} />
+          </div>
+          <ExportCsvButton guests={guests} eventId={eventId} />
+        </div>
+
+        <HeadcountSummary guests={guests} />
+        <GuestTable guests={guests} />
       </main>
     </div>
   );
