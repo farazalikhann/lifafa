@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import type { CSSProperties, ReactElement } from "react";
 import { formatWhen, resolveCoverNames } from "@/lib/cardFormat";
-import { getMockEvent } from "@/lib/mockEvent";
+import { getEventByInviteCode } from "@/lib/db/events";
 import { getPalette } from "@/lib/palettes";
 
 /**
@@ -53,19 +53,51 @@ function heroStyle(color: string): CSSProperties {
   };
 }
 
-export default function Image({
+export default async function Image({
   params,
 }: {
   /* Already awaited by Next's metadata route handler — a plain object here. */
   params: { inviteCode: string };
-}): Response {
-  const event = getMockEvent(params.inviteCode);
-  const palette = getPalette(event.style.paletteId);
-  const accent = event.style.accentOverride ?? palette.accent;
+}): Promise<Response> {
+  const result = await getEventByInviteCode(params.inviteCode);
+
+  /*
+    An unknown code still gets an image: a scraper asks for this before anyone
+    opens the link, and returning nothing leaves a broken thumbnail in the chat
+    thread. A plain marigold-on-ink card says nothing about the event, which is
+    the right amount to say about one that could not be found.
+  */
+  if (!result.ok || result.data === null) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            height: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#12100e",
+            color: "#e8a33d",
+            fontFamily: FONT_STACK,
+            fontSize: 64,
+            fontWeight: 600,
+          }}
+        >
+          Lifafa
+        </div>
+      ),
+      size,
+    );
+  }
+
+  const event = result.data;
+  const palette = getPalette(event.config.style.paletteId);
+  const accent = event.config.style.accentOverride ?? palette.accent;
 
   const { eventTitle, eventDate, eventTime } = event.draft;
   /* The same resolution the card runs, so the unfurl cannot disagree with it. */
-  const names = resolveCoverNames(event.draft, event.occasionId);
+  const names = resolveCoverNames(event.draft, event.config.occasionId);
   const when = formatWhen(eventDate, eventTime);
 
   const content: ReactElement = (

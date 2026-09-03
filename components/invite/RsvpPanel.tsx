@@ -62,11 +62,17 @@ export default function RsvpPanel({
   theme,
   initial,
   onSubmit,
+  isSending = false,
+  submitError = null,
 }: {
   theme: Theme;
   /** Previous answers, so "Change my reply" returns a filled form. */
   initial: RsvpSubmission | null;
   onSubmit: (submission: RsvpSubmission) => void;
+  /** True while the reply is in flight, so it cannot be sent twice. */
+  isSending?: boolean;
+  /** A readable failure from the write, rendered under the button. */
+  submitError?: string | null;
 }): ReactElement {
   const seed = initial ?? EMPTY;
 
@@ -85,7 +91,7 @@ export default function RsvpPanel({
   const trimmedName = name.trim();
   const nameValid = trimmedName.length > 0;
   const phoneValid = phone.length === PHONE_LENGTH;
-  const canSubmit = status !== null && nameValid && phoneValid;
+  const canSubmit = status !== null && nameValid && phoneValid && !isSending;
 
   /** Names the first thing still missing, in the order the form reads. */
   const blockingHint: string | null =
@@ -338,8 +344,22 @@ export default function RsvpPanel({
           outlineColor: theme.accent,
         }}
       >
-        Send my reply
+        {isSending ? "Sending…" : "Send my reply"}
       </button>
+
+      {/* The write failed. Inline and re-readable, never an alert. */}
+      {submitError !== null ? (
+        <p
+          role="alert"
+          className="mt-3 rounded-xl px-4 py-3 text-center text-sm"
+          style={{
+            backgroundColor: `${theme.accent}1a`,
+            color: theme.textPrimary,
+          }}
+        >
+          {submitError}
+        </p>
+      ) : null}
 
       {blockingHint !== null ? (
         <p

@@ -19,7 +19,15 @@ import type { Guest, RsvpStatus } from "@/types/guest";
 
 /* ────────────────────────── Row shapes ────────────────────────── */
 
-export interface EventRow {
+/*
+  Type aliases, not interfaces, throughout this file. postgrest-js requires each
+  Row/Insert/Update to satisfy Record<string, unknown>, and only an object type
+  alias picks up TypeScript's implicit index signature — an interface fails that
+  check, which collapses the whole schema to `never` and turns every query into
+  an unhelpful "not assignable to type 'never'".
+*/
+
+export type EventRow = {
   id: string;
   host_id: string;
   invite_code: string;
@@ -40,7 +48,7 @@ export interface EventRow {
  * the events_insert_own policy checks it against auth.uid() and an insert
  * without it is refused.
  */
-export interface EventInsert {
+export type EventInsert = {
   id?: string;
   host_id: string;
   invite_code: string;
@@ -58,7 +66,7 @@ export type EventUpdate = Partial<
   >
 >;
 
-export interface GuestRow {
+export type GuestRow = {
   id: string;
   event_id: string;
   name: string;
@@ -72,7 +80,7 @@ export interface GuestRow {
   created_at: string;
 }
 
-export interface GuestInsert {
+export type GuestInsert = {
   id?: string;
   event_id: string;
   name: string;
@@ -102,7 +110,7 @@ export type GuestUpdate = Partial<
  * guest-facing columns, so host_id, payment_id and the timestamps are absent
  * here by design rather than by omission.
  */
-export interface EventByInviteCodeRow {
+export type EventByInviteCodeRow = {
   id: string;
   invite_code: string;
   card_config: CardConfig;
@@ -119,21 +127,34 @@ export interface EventByInviteCodeRow {
  * is parameterised with it, so a query naming a column that does not exist
  * fails at tsc rather than at runtime.
  */
-export interface Database {
+/*
+  A `type`, not an `interface`, and that is load-bearing. postgrest-js checks
+  this against Record<string, GenericTable> and friends; only an object *type
+  alias* gets TypeScript's implicit index signature, so an interface fails the
+  constraint and every query silently degrades to `never`.
+*/
+export type Database = {
   public: {
     Tables: {
       events: {
         Row: EventRow;
         Insert: EventInsert;
         Update: EventUpdate;
+        /*
+          Required by postgrest-js's GenericTable. Empty because nothing here
+          traverses a foreign key in a select — a schema that omits it fails the
+          constraint silently, and every query then degrades to `never`.
+        */
+        Relationships: [];
       };
       guests: {
         Row: GuestRow;
         Insert: GuestInsert;
         Update: GuestUpdate;
+        Relationships: [];
       };
     };
-    Views: Record<never, never>;
+    Views: Record<string, never>;
     Functions: {
       event_by_invite_code: {
         Args: { p_invite_code: string };
@@ -143,9 +164,21 @@ export interface Database {
         Args: { p_event_id: string };
         Returns: boolean;
       };
+      /* Returns void: the guest write path cannot read the list it writes to. */
+      submit_reply: {
+        Args: {
+          p_invite_code: string;
+          p_name: string;
+          p_phone: string;
+          p_rsvp: string;
+          p_accompanying_count: number;
+          p_message: string;
+        };
+        Returns: undefined;
+      };
     };
-    Enums: Record<never, never>;
-    CompositeTypes: Record<never, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 
@@ -154,9 +187,9 @@ export interface Database {
 /**
  * The app-side view of a stored event.
  *
- * Mirrors MockEvent in lib/mockEvent.ts closely enough that the invite page and
- * the share image can move onto it without changing shape — that is the whole
- * point of matching the existing types rather than inventing new ones.
+ * What the invite page, the share image and the dashboard all read. Shaped to
+ * the app's own types rather than the database's, so a column rename stops at
+ * the converters below.
  */
 export interface StoredEvent {
   id: string;
@@ -165,6 +198,9 @@ export interface StoredEvent {
   draft: EventDraft;
   isPaid: boolean;
 }
+
+/** An event as the index page needs it: the event plus its reply tally. */
+export type HostEvent = StoredEvent & { replyCount: number };
 
 /**
  * Row to app shape.
@@ -233,9 +269,9 @@ export function toGuest(row: GuestRow): Guest {
 /**
  * A guest's reply to an insert.
  *
- * partySize counts the guest themselves; accompanying_count does not — the same
- * subtraction lib/guestStore.ts makes, clamped the same way, so the in-memory
- * store and the database cannot disagree about what a party of one means.
+ * partySize counts the guest themselves; accompanying_count does not. Clamped
+ * to the column's own 0..9 check, so a malformed size is refused here rather
+ * than arriving as a constraint violation.
  *
  * respondedAt is a parameter, minted by the caller in its handler. Nothing here
  * reads the clock: a converter that called now() would put a timestamp into a

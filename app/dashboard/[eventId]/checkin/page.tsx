@@ -1,118 +1,53 @@
-"use client";
-
-import { use, useCallback, useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import Link from "next/link";
-import ArrivalCounter from "@/components/checkin/ArrivalCounter";
-import CheckinResult, {
-  type ScanResult,
-} from "@/components/checkin/CheckinResult";
-import ManualLookup from "@/components/checkin/ManualLookup";
-import ScannerFrame from "@/components/checkin/ScannerFrame";
-import { useGuests } from "@/hooks/useGuests";
-import { setCheckedIn } from "@/lib/guestStore";
+import CheckinScreen from "@/components/checkin/CheckinScreen";
+import { getEventById } from "@/lib/db/events";
+import { getGuestsForEvent } from "@/lib/db/guests";
 
-/* Static placeholder until events come from a real store. */
-const EVENT_TITLE = "Aarav and Meera's Reception";
-
-export default function CheckinPage({
+/**
+ * The door.
+ *
+ * A server shell that reads the event and its guest list, wrapping the client
+ * screen that owns the scan interaction. Same ownership check as the dashboard:
+ * an event that is not this host's simply is not found.
+ */
+export default async function CheckinPage({
   params,
 }: {
   params: Promise<{ eventId: string }>;
-}): ReactElement {
-  const { eventId } = use(params);
+}): Promise<ReactElement> {
+  const { eventId } = await params;
+  const eventResult = await getEventById(eventId);
 
-  /*
-    The shared store, not a local copy: a guest who replied on their phone is
-    at the door too, and the scanner has to be able to find them.
-  */
-  const guests = useGuests();
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  if (!eventResult.ok || eventResult.data === null) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
+        <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--lifafa-cream)]">
+          We could not find that invitation.
+        </p>
+        <Link
+          href="/dashboard"
+          className="min-h-11 rounded px-2 text-sm font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+        >
+          Back to your invitations
+        </Link>
+      </main>
+    );
+  }
 
-  const allCheckedIn = guests.every((guest) => guest.checkedIn);
-
-  const closeResult = useCallback((): void => {
-    setScanResult(null);
-  }, []);
-
-  /**
-   * Marks a guest arrived. The timestamp is generated here in the handler, not
-   * during render, so nothing depends on the clock while rendering.
-   */
-  const checkIn = useCallback((guestId: string): void => {
-    setCheckedIn(guestId, new Date().toISOString());
-    setScanResult(null);
-  }, []);
-
-  const handleSimulateScan = useCallback((): void => {
-    const next = guests.find((guest) => !guest.checkedIn);
-
-    if (next === undefined) {
-      return;
-    }
-
-    /* `next` is by definition not checked in yet. */
-    setScanResult({ kind: "valid", guest: next });
-  }, [guests]);
-
-  const handleSimulateUnknown = useCallback((): void => {
-    setScanResult({ kind: "notFound" });
-  }, []);
-
-  /** Tapping an arrived guest surfaces when they came in. */
-  const handleLookupCheckIn = useCallback(
-    (guestId: string): void => {
-      const guest = guests.find((candidate) => candidate.id === guestId);
-
-      if (guest === undefined) {
-        return;
-      }
-
-      if (guest.checkedIn) {
-        setScanResult({ kind: "already", guest });
-        return;
-      }
-
-      checkIn(guestId);
-    },
-    [guests, checkIn],
-  );
+  const event = eventResult.data;
+  const guestsResult = await getGuestsForEvent(event.id);
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-[520px] items-center justify-between gap-3 px-5 py-3">
-          <Link
-            href={`/dashboard/${eventId}`}
-            className="min-h-11 shrink-0 rounded py-2 text-sm font-medium text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-          >
-            &larr; Back to dashboard
-          </Link>
-          <p className="min-w-0 truncate text-right text-xs text-[var(--lifafa-muted)]">
-            {EVENT_TITLE}
-          </p>
-        </div>
-      </header>
-
-      {/* Phone first by design — this is used one handed at a door. */}
-      <main className="mx-auto flex max-w-[520px] flex-col gap-6 px-5 py-6">
-        <ArrivalCounter guests={guests} />
-
-        {scanResult !== null ? (
-          <CheckinResult
-            result={scanResult}
-            onConfirm={checkIn}
-            onClose={closeResult}
-          />
-        ) : null}
-
-        <ScannerFrame
-          onSimulateScan={handleSimulateScan}
-          onSimulateUnknown={handleSimulateUnknown}
-          allCheckedIn={allCheckedIn}
-        />
-
-        <ManualLookup guests={guests} onCheckIn={handleLookupCheckIn} />
-      </main>
-    </div>
+    <CheckinScreen
+      eventId={event.id}
+      eventTitle={
+        event.draft.eventTitle.length > 0
+          ? event.draft.eventTitle
+          : "Untitled invitation"
+      }
+      initialGuests={guestsResult.ok ? guestsResult.data : []}
+      loadError={guestsResult.ok ? null : guestsResult.error}
+    />
   );
 }

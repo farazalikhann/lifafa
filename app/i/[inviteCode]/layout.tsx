@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { getMockEvent } from "@/lib/mockEvent";
+import { getEventByInviteCode } from "@/lib/db/events";
 
 /**
  * A server wrapper that exists purely to own the invite page's metadata.
@@ -26,12 +26,23 @@ export async function generateMetadata({
   params: Promise<{ inviteCode: string }>;
 }): Promise<Metadata> {
   const { inviteCode } = await params;
-  const { draft, occasionId } = getMockEvent(inviteCode);
+  const result = await getEventByInviteCode(inviteCode);
+
+  /*
+    An unknown code still needs metadata — a scraper follows the link before
+    anyone sees the page — so it falls back to the product name rather than
+    leaking that the code was invalid into a chat thread's preview.
+  */
+  if (!result.ok || result.data === null) {
+    return { title: "Invitation — Lifafa", description: DESCRIPTION };
+  }
+
+  const { draft, config } = result.data;
 
   /* Flattened from the same resolution the cover runs, so the chat thread and
      the card it links to name the same people. */
   const title = `${draft.eventTitle} — ${coverNameLine(
-    resolveCoverNames(draft, occasionId),
+    resolveCoverNames(draft, config.occasionId),
   )}`;
 
   return {

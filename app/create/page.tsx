@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import CardPreview from "@/components/create/CardPreview";
+import SaveEventButton, {
+  clearPendingCard,
+  readPendingCard,
+} from "@/components/create/SaveEventButton";
 import EventForm from "@/components/create/EventForm";
 import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
@@ -147,6 +151,36 @@ export default function CreatePage() {
     setStyle((previous) => ({ ...previous, accentOverride }));
   }, []);
 
+  /*
+    A card stashed before a sign-in detour comes back here.
+
+    Runs once, after mount rather than during render: sessionStorage does not
+    exist on the server, and seeding useState from it would make the first
+    client render disagree with the HTML and tear hydration. The entry is
+    cleared as it is read — restoring it twice would overwrite whatever the
+    host had started typing in the meantime.
+  */
+  useEffect(() => {
+    const pending = readPendingCard();
+
+    if (pending === null) {
+      return;
+    }
+
+    clearPendingCard();
+
+    setDraft(pending.draft);
+    setOccasionId(pending.config.occasionId);
+    setTraditionId(pending.config.traditionId);
+    setDecorMotion(pending.config.decorMotion);
+    setDecorIntensity(pending.config.decorIntensity);
+    setBorderStyle(pending.config.borderStyle);
+    setScratchTarget(pending.config.scratchTarget);
+    setOrnamentConfig(pending.config.ornamentConfig);
+    setStyle(pending.config.style);
+    setBlocks(pending.config.blocks);
+  }, []);
+
   const config: CardConfig = {
     themeId: draft.themeId,
     blocks,
@@ -176,23 +210,11 @@ export default function CreatePage() {
             Lifafa
           </Link>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden text-xs text-[var(--lifafa-muted)] sm:inline">
-              Coming soon
-            </span>
-            <button
-              type="button"
-              disabled
-              title="Coming soon"
-              aria-describedby="payment-note"
-              className="cursor-not-allowed rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-2 text-[0.8125rem] font-medium text-[var(--lifafa-muted)] opacity-70"
-            >
-              Continue to payment
-            </button>
-            <span id="payment-note" className="sr-only">
-              Coming soon
-            </span>
-          </div>
+          {/*
+            The editor stays open to everyone; this is the first point that
+            needs an account, and it asks for one only when it is clicked.
+          */}
+          <SaveEventButton draft={draft} config={config} />
         </div>
       </header>
 

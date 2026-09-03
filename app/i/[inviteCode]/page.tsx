@@ -1,131 +1,60 @@
-"use client";
+import type { ReactElement } from "react";
+import Link from "next/link";
+import InviteExperience from "@/components/invite/InviteExperience";
+import { getEventByInviteCode } from "@/lib/db/events";
 
-import { use, useState, type ReactElement } from "react";
-import CardCanvas from "@/components/card/CardCanvas";
-import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
-import RsvpPanel from "@/components/invite/RsvpPanel";
-import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
-import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { getMotifs } from "@/lib/motifs";
-import { addReply } from "@/lib/guestStore";
-import { getMockEvent } from "@/lib/mockEvent";
-import { getPalette } from "@/lib/palettes";
-import { getTheme } from "@/lib/themes";
-import type { CardConfig } from "@/types/card";
-import type { RsvpSubmission } from "@/types/guest";
+/**
+ * A guest opening their link.
+ *
+ * A server component: the event is read here, through the one anonymous path
+ * the schema allows, and only the reply interaction crosses to the client.
+ * Nothing on this route asks anyone to sign in.
+ */
 
-type InviteStage = "form" | "confirmed";
+/** Shown for an unknown code, and for a read that failed. */
+function InviteNotFound({ reason }: { reason: string }): ReactElement {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[var(--lifafa-ink)] px-6 text-center">
+      <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-balance text-[var(--lifafa-cream)]">
+        This invitation could not be found.
+      </p>
+      <p className="max-w-[34ch] text-sm leading-relaxed text-[var(--lifafa-muted)]">
+        {reason}
+      </p>
+      <Link
+        href="/"
+        className="mt-2 min-h-11 rounded px-2 text-sm font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+      >
+        Go to Lifafa
+      </Link>
+    </main>
+  );
+}
 
-export default function InvitePage({
+export default async function InvitePage({
   params,
 }: {
   params: Promise<{ inviteCode: string }>;
-}): ReactElement {
-  const { inviteCode } = use(params);
-
-  const [stage, setStage] = useState<InviteStage>("form");
-  /** The whole submission is kept, so the form comes back filled in. */
-  const [submitted, setSubmitted] = useState<RsvpSubmission | null>(null);
+}): Promise<ReactElement> {
+  const { inviteCode } = await params;
+  const result = await getEventByInviteCode(inviteCode);
 
   /*
-    Same lookup the share image runs, so the card a guest opens and the preview
-    that got them here can never describe two different events.
+    A failed read and an unknown code are shown the same way. A guest can do
+    nothing about either, and the difference is only meaningful in the server
+    log — where dbFailure has already written it.
   */
-  const event = getMockEvent(inviteCode);
-  const theme = getTheme(event.draft.themeId);
-  /* Page background follows the palette, the same source the card resolves from. */
-  const palette = getPalette(event.style.paletteId);
+  if (!result.ok) {
+    return (
+      <InviteNotFound reason="Something went wrong opening this invitation. Please try the link again in a moment." />
+    );
+  }
 
-  const config: CardConfig = {
-    themeId: event.draft.themeId,
-    blocks: event.blocks,
-    decorMotion: event.decorMotion,
-    decorIntensity: event.decorIntensity,
-    occasionId: event.occasionId,
-    traditionId: event.traditionId,
-    scratchTarget: event.scratchTarget,
-    borderStyle: event.borderStyle,
-    style: event.style,
-    ornamentConfig: event.ornamentConfig,
-    /*
-      Hardcoded until there is a payment to read. A guest holding a link must
-      never meet a watermark, so this side is pinned true and only the wiring
-      below is real: when the flag starts coming from the stored event, the
-      card starts marking itself with no further change here.
-    */
-    isPaid: true,
-  };
-  const motifs = getMotifs(config.occasionId, config.traditionId);
+  if (result.data === null) {
+    return (
+      <InviteNotFound reason="The link may have been mistyped, or this invitation may have been removed by the host." />
+    );
+  }
 
-  const handleSubmit = (submission: RsvpSubmission): void => {
-    /*
-      The timestamp is minted here, in the handler, so nothing reads the clock
-      during render. The store assigns the id for the same reason.
-    */
-    addReply({
-      name: submission.name,
-      phone: submission.phone,
-      status: submission.status,
-      partySize: submission.partySize,
-      message: submission.message,
-      respondedAt: new Date().toISOString(),
-    });
-
-    setSubmitted(submission);
-    setStage("confirmed");
-  };
-
-  return (
-    <main className="min-h-screen" style={{ backgroundColor: palette.background }}>
-      {/*
-        The card opens with host names set in display type, but they are a
-        design element rather than a document heading — promoting them to an h1
-        would put the page's typography and its outline in the same object and
-        let one drag the other around. This carries the outline instead, so a
-        screen reader announces what the page is before the card starts.
-      */}
-      <h1 className="sr-only">
-        {event.draft.eventTitle} —{" "}
-        {coverNameLine(resolveCoverNames(event.draft, event.occasionId))}
-      </h1>
-
-      {/* No frame here — the card fills the phone screen. */}
-      <div
-        className="relative"
-        /* Room for the pill, and only when there is a pill to leave it for. */
-        style={
-          config.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
-        }
-      >
-        <CardCanvas
-          draft={event.draft}
-          theme={theme}
-          config={config}
-          motifs={motifs}
-          sizing="viewport"
-          audience="guest"
-        />
-
-        {/* Renders nothing while isPaid holds. */}
-        <Watermark
-          show={!config.isPaid}
-          accent={config.style.accentOverride ?? palette.accent}
-          surface={palette.surface}
-        />
-      </div>
-
-      {stage === "confirmed" && submitted !== null ? (
-        <RsvpConfirmed
-          status={submitted.status}
-          partySize={submitted.partySize}
-          name={submitted.name}
-          theme={theme}
-          /* Values stay in state, so the form comes back pre-filled. */
-          onChangeReply={() => setStage("form")}
-        />
-      ) : (
-        <RsvpPanel theme={theme} initial={submitted} onSubmit={handleSubmit} />
-      )}
-    </main>
-  );
+  return <InviteExperience event={result.data} />;
 }
