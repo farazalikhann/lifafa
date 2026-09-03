@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useState, type ClipboardEvent, type ReactElement } from "react";
 import type { Theme } from "@/lib/themes";
 import type { GuestReply, RsvpSubmission } from "@/types/guest";
 
@@ -14,6 +14,31 @@ const MIN_PARTY = 1;
 const MAX_PARTY = 10;
 const MESSAGE_LIMIT = 200;
 const PHONE_LENGTH = 10;
+/** Dropped rather than counted, so a pasted "+91 ..." keeps the right ten. */
+const COUNTRY_CODE = "91";
+
+/**
+ * Reduces anything a guest can paste — "+91 98765 43210", "098765 43210" — to
+ * the ten digits a host would actually dial. A country code or trunk zero is
+ * removed before the length is trimmed; counting it would push the real last
+ * digits off the end and hand the host a number that silently does not ring.
+ */
+function normalisePhone(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+
+  /*
+    Both guards are behind a length check, so a genuine ten digit number that
+    happens to open with 91 or 0 is left exactly as the guest entered it.
+  */
+  if (digits.length > PHONE_LENGTH) {
+    digits = digits.replace(/^0+/, "");
+  }
+  if (digits.length > PHONE_LENGTH && digits.startsWith(COUNTRY_CODE)) {
+    digits = digits.slice(COUNTRY_CODE.length);
+  }
+
+  return digits.slice(0, PHONE_LENGTH);
+}
 
 const EMPTY: RsvpSubmission = {
   status: "accepted",
@@ -79,7 +104,18 @@ export default function RsvpPanel({
 
   const handlePhoneChange = (raw: string): void => {
     /* Strip rather than reject, so pasted "+91 98450 21174" still works. */
-    setPhone(raw.replace(/\D/g, "").slice(0, PHONE_LENGTH));
+    setPhone(normalisePhone(raw));
+  };
+
+  const handlePhonePaste = (event: ClipboardEvent<HTMLInputElement>): void => {
+    /*
+      maxLength counts characters, not digits. Left to the browser, a pasted
+      "+91 98765 43210" is cut to ten *characters* — "+91 98765 " — and the
+      digits that matter are gone before onChange can strip the separators.
+      Taking the paste here keeps the string whole long enough to normalise it.
+    */
+    event.preventDefault();
+    setPhone(normalisePhone(event.clipboardData.getData("text")));
   };
 
   const handleSubmit = (): void => {
@@ -244,6 +280,7 @@ export default function RsvpPanel({
             maxLength={PHONE_LENGTH}
             value={phone}
             onChange={(event) => handlePhoneChange(event.target.value)}
+            onPaste={handlePhonePaste}
             onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
             aria-invalid={touched.phone && !phoneValid}
             className={`${fieldClass} tabular-nums`}
