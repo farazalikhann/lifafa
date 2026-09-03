@@ -3,6 +3,10 @@ node_modules
 out
 build
 .env*
+# Also catch env files that do not start with .env — x.env.local,
+# local.env, prod.env. The pattern above anchors at the start of the
+# name, so those were committable.
+*.env*
 !.env.example
 next-env.d.ts
 *.tsbuildinfo
