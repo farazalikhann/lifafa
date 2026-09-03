@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ClipboardEvent, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import type { Theme } from "@/lib/themes";
 import type { GuestReply, RsvpSubmission } from "@/types/guest";
 
@@ -18,10 +18,15 @@ const PHONE_LENGTH = 10;
 const COUNTRY_CODE = "91";
 
 /**
- * Reduces anything a guest can paste — "+91 98765 43210", "098765 43210" — to
- * the ten digits a host would actually dial. A country code or trunk zero is
- * removed before the length is trimmed; counting it would push the real last
- * digits off the end and hand the host a number that silently does not ring.
+ * Reduces anything that can reach the field — "+91 98765 43210", "098765
+ * 43210" — to the ten digits a host would actually dial. A country code or
+ * trunk zero is removed before the length is trimmed; counting it would push
+ * the real last digits off the end and hand the host a number that silently
+ * does not ring.
+ *
+ * Every route into the field runs through here: typing, pasting, browser
+ * autofill and speech input all arrive as a change event, so none of them can
+ * take a shortcut past the normalising.
  */
 function normalisePhone(raw: string): string {
   let digits = raw.replace(/\D/g, "");
@@ -103,19 +108,8 @@ export default function RsvpPanel({
     "w-full min-h-12 rounded-xl border px-4 py-3 text-base transition-colors duration-150 focus:outline-2 focus:outline-offset-2";
 
   const handlePhoneChange = (raw: string): void => {
-    /* Strip rather than reject, so pasted "+91 98450 21174" still works. */
+    /* Strip rather than reject, so "+91 98450 21174" still works. */
     setPhone(normalisePhone(raw));
-  };
-
-  const handlePhonePaste = (event: ClipboardEvent<HTMLInputElement>): void => {
-    /*
-      maxLength counts characters, not digits. Left to the browser, a pasted
-      "+91 98765 43210" is cut to ten *characters* — "+91 98765 " — and the
-      digits that matter are gone before onChange can strip the separators.
-      Taking the paste here keeps the string whole long enough to normalise it.
-    */
-    event.preventDefault();
-    setPhone(normalisePhone(event.clipboardData.getData("text")));
   };
 
   const handleSubmit = (): void => {
@@ -133,8 +127,14 @@ export default function RsvpPanel({
     });
   };
 
+  /*
+    Padding rather than a viewport height: the panel is the next thing after the
+    card, not another full screen after it. Comfortable top and bottom, and an
+    internal rhythm tight enough that the heading and the submit button stay
+    within about one screen at 360px.
+  */
   return (
-    <section className="mx-auto w-full max-w-[480px] px-5 py-12 sm:px-6">
+    <section className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-12 sm:px-6 sm:pt-12 sm:pb-14">
       <h2
         className="text-center font-[family-name:var(--font-display)] text-2xl font-semibold"
         style={{ color: theme.textPrimary }}
@@ -143,7 +143,7 @@ export default function RsvpPanel({
       </h2>
 
       {/* Reply buttons */}
-      <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+      <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
         {REPLIES.map((option) => {
           const isSelected = option.id === status;
 
@@ -169,7 +169,7 @@ export default function RsvpPanel({
 
       {/* Companion stepper — acceptances only */}
       {status === "accepted" ? (
-        <div className="mt-7">
+        <div className="mt-6">
           <p
             className="text-center text-sm font-medium"
             style={{ color: theme.textPrimary }}
@@ -227,7 +227,7 @@ export default function RsvpPanel({
       ) : null}
 
       {/* Identity — the whole point of collecting a reply */}
-      <div className="mt-8 flex flex-col gap-5">
+      <div className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="rsvp-name"
@@ -277,10 +277,15 @@ export default function RsvpPanel({
             required
             inputMode="tel"
             autoComplete="tel-national"
-            maxLength={PHONE_LENGTH}
+            /*
+              No maxLength. It counts characters, not digits, so the browser
+              would cut "+91 98765 43210" to ten *characters* before onChange
+              could strip the separators — and autofill, which never fires a
+              paste event, had no way around it. normalisePhone is the only
+              length limit the field needs.
+            */
             value={phone}
             onChange={(event) => handlePhoneChange(event.target.value)}
-            onPaste={handlePhonePaste}
             onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
             aria-invalid={touched.phone && !phoneValid}
             className={`${fieldClass} tabular-nums`}
@@ -311,7 +316,7 @@ export default function RsvpPanel({
           </div>
           <textarea
             id="rsvp-message"
-            rows={3}
+            rows={2}
             maxLength={MESSAGE_LIMIT}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
@@ -325,7 +330,7 @@ export default function RsvpPanel({
         type="button"
         disabled={!canSubmit}
         onClick={handleSubmit}
-        className="mt-8 min-h-[52px] w-full rounded-xl px-4 text-base font-semibold transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 enabled:hover:-translate-y-px disabled:cursor-not-allowed"
+        className="mt-7 min-h-[52px] w-full rounded-xl px-4 text-base font-semibold transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 enabled:hover:-translate-y-px disabled:cursor-not-allowed"
         style={{
           backgroundColor: canSubmit ? theme.accent : "transparent",
           border: canSubmit ? "1px solid transparent" : `1px solid ${theme.textMuted}55`,
