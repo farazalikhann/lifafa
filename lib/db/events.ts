@@ -2,7 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { generateInviteCode, isValidInviteCode } from "@/lib/inviteCode";
-import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
+import {
+  dbFailure,
+  dbSuccess,
+  postgresError,
+  type DbResult,
+} from "@/lib/db/result";
 import {
   DEFAULT_COVER_ANIMATION,
   isCoverAnimationId,
@@ -14,6 +19,7 @@ import {
   type StoredEvent,
 } from "@/types/database";
 import type { CardConfig } from "@/types/card";
+import type { EventInsert } from "@/types/database";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -31,6 +37,30 @@ const CODE_ATTEMPTS = 5;
 
 /** Postgres unique-violation. Raised here by events_invite_code_key. */
 const UNIQUE_VIOLATION = "23505";
+
+/**
+ * The two ways a write naming a column the database does not have comes back.
+ *
+ * Postgres raises 42703 itself; PostgREST answers PGRST204 when the column is
+ * absent from the schema cache it validates writes against, which is what an
+ * insert usually hits first.
+ */
+const UNDEFINED_COLUMN = "42703";
+const SCHEMA_CACHE_MISS = "PGRST204";
+
+/** True when this failure is the named column not existing, and nothing else. */
+function isMissingColumn(cause: unknown, column: string): boolean {
+  const pg = postgresError(cause);
+
+  if (pg === null) {
+    return false;
+  }
+
+  return (
+    (pg.code === UNDEFINED_COLUMN || pg.code === SCHEMA_CACHE_MISS) &&
+    pg.message.includes(column)
+  );
+}
 
 /**
  * Creates an event owned by the signed-in host.
@@ -81,11 +111,50 @@ export async function createEvent(
   for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt += 1) {
     const inviteCode = generateInviteCode();
 
-    const { data, error } = await supabase
+    const row = toEventInsert(user.id, inviteCode, cardConfig, draft, chosenCover);
+
+    let attemptResult = await supabase
       .from("events")
-      .insert(toEventInsert(user.id, inviteCode, cardConfig, draft, chosenCover))
+      .insert(row)
       .select("*")
       .single();
+
+    /*
+      The card matters more than the cover it opens with.
+
+      cover_animation arrived in supabase/migrations/0003, and an application
+      deploy reaches production before a migration someone has to paste into the
+      SQL editor by hand. In that window every insert names a column the table
+      does not have, Postgres refuses the whole row, and a host who has spent
+      twenty minutes on a card is told to try again — forever, because trying
+      again sends exactly the same column.
+
+      So a missing column costs the choice and not the card: the row goes in
+      without it, cover_animation reads back as null, and getCoverAnimation
+      resolves null to "none". Loud in the log, because this is a schema that
+      needs migrating and not a state to settle into. Narrow on purpose — only
+      this column, only these two codes — so nothing else is retried into
+      silence.
+    */
+    if (
+      attemptResult.error !== null &&
+      isMissingColumn(attemptResult.error, "cover_animation")
+    ) {
+      console.error(
+        "[db] createEvent/insert: events.cover_animation does not exist. Apply supabase/migrations/0003_cover_animation.sql. Saving this card without the host's cover choice.",
+      );
+
+      const withoutCover: EventInsert = { ...row };
+      delete withoutCover.cover_animation;
+
+      attemptResult = await supabase
+        .from("events")
+        .insert(withoutCover)
+        .select("*")
+        .single();
+    }
+
+    const { data, error } = attemptResult;
 
     if (error === null && data !== null) {
       return dbSuccess(toStoredEvent(data));

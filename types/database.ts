@@ -304,7 +304,12 @@ export function toStoredEvent(
     },
     draft: row.event_draft,
     isPaid: row.is_paid,
-    coverAnimation: row.cover_animation,
+    /*
+      `?? null` rather than a straight read. Until 0003 is applied the column is
+      not in the row at all, and `undefined` would be a StoredEvent that does not
+      match its own type. Both mean "no cover was ever chosen".
+    */
+    coverAnimation: row.cover_animation ?? null,
   };
 }
 
