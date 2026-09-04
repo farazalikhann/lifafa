@@ -13,11 +13,13 @@ import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import PreviewBar from "@/components/create/PreviewBar";
 import SectionManager from "@/components/create/SectionManager";
+import WeatherPicker from "@/components/create/WeatherPicker";
 import StylePanel from "@/components/create/StylePanel";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
+import { DEFAULT_WEATHER_THEME } from "@/lib/weatherThemes";
 import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { getPalette } from "@/lib/palettes";
@@ -34,6 +36,7 @@ import type {
   ScratchTarget,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
+import type { WeatherThemeId } from "@/types/weather";
 import type { CardBlock } from "@/types/customSection";
 import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
 import type { EventDraft } from "@/types/event";
@@ -76,6 +79,14 @@ export default function CreatePage() {
   */
   const [coverAnimation, setCoverAnimation] = useState<CoverAnimationId>(
     DEFAULT_COVER_ANIMATION,
+  );
+  /*
+    Off, and off is the default a host has to change rather than one they have
+    to find. Also its own column rather than part of CardConfig; see 0004.
+  */
+  const [showWeather, setShowWeather] = useState(false);
+  const [weatherTheme, setWeatherTheme] = useState<WeatherThemeId>(
+    DEFAULT_WEATHER_THEME,
   );
   /*
     The current tradition's ornament pack choices. Kept here rather than inside
@@ -194,6 +205,12 @@ export default function CreatePage() {
     if (pending.coverAnimation !== undefined) {
       setCoverAnimation(pending.coverAnimation);
     }
+
+    setShowWeather(pending.showWeather === true);
+
+    if (pending.weatherTheme !== undefined) {
+      setWeatherTheme(pending.weatherTheme);
+    }
   }, []);
 
   const config: CardConfig = {
@@ -233,6 +250,8 @@ export default function CreatePage() {
             draft={draft}
             config={config}
             coverAnimation={coverAnimation}
+            showWeather={showWeather}
+            weatherTheme={weatherTheme}
           />
         </div>
       </header>
@@ -303,6 +322,12 @@ export default function CreatePage() {
           <CoverAnimationPicker
             coverAnimation={coverAnimation}
             onChange={setCoverAnimation}
+          />
+          <WeatherPicker
+            showWeather={showWeather}
+            weatherTheme={weatherTheme}
+            onShowWeatherChange={setShowWeather}
+            onWeatherThemeChange={setWeatherTheme}
           />
         </div>
 

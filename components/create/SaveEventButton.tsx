@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { createEvent } from "@/lib/db/events";
 import { useUser } from "@/hooks/useUser";
 import { isCoverAnimationId } from "@/lib/coverAnimations";
+import { isWeatherThemeId } from "@/lib/weatherThemes";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
+import type { WeatherThemeId } from "@/types/weather";
 
 /**
  * Where an unsaved card waits while the host signs in.
@@ -30,6 +32,9 @@ export interface PendingCard {
    * what `undefined` means, and the reader below checks it before trusting it.
    */
   coverAnimation?: CoverAnimationId;
+  /** Optional for the same reason: neither of these lives inside CardConfig. */
+  showWeather?: boolean;
+  weatherTheme?: WeatherThemeId;
 }
 
 /** Reads the stashed card, tolerating anything that is not one. */
@@ -66,9 +71,22 @@ export function readPendingCard(): PendingCard | null {
       with a check constraint, and a stale or hand-edited entry naming an id
       that no longer exists would be carried all the way to a failed insert.
     */
-    return isCoverAnimationId(card.coverAnimation)
-      ? card
-      : { draft: card.draft, config: card.config };
+    /*
+      The stored ids are re-checked, the boolean is not: a boolean cannot name
+      something that has stopped existing. Anything that fails is dropped rather
+      than repaired, and the editor falls back to its own default.
+    */
+    return {
+      draft: card.draft,
+      config: card.config,
+      coverAnimation: isCoverAnimationId(card.coverAnimation)
+        ? card.coverAnimation
+        : undefined,
+      showWeather: card.showWeather === true,
+      weatherTheme: isWeatherThemeId(card.weatherTheme)
+        ? card.weatherTheme
+        : undefined,
+    };
   } catch {
     /* Private mode, disabled storage, malformed JSON — all mean "nothing saved". */
     return null;
@@ -87,10 +105,14 @@ export default function SaveEventButton({
   draft,
   config,
   coverAnimation,
+  showWeather,
+  weatherTheme,
 }: {
   draft: EventDraft;
   config: CardConfig;
   coverAnimation: CoverAnimationId;
+  showWeather: boolean;
+  weatherTheme: WeatherThemeId;
 }): ReactElement {
   const router = useRouter();
   const { user, isLoading } = useUser();
@@ -114,7 +136,13 @@ export default function SaveEventButton({
       try {
         window.sessionStorage.setItem(
           PENDING_DRAFT_KEY,
-          JSON.stringify({ draft, config, coverAnimation } satisfies PendingCard),
+          JSON.stringify({
+            draft,
+            config,
+            coverAnimation,
+            showWeather,
+            weatherTheme,
+          } satisfies PendingCard),
         );
       } catch (cause) {
         /*
@@ -134,7 +162,10 @@ export default function SaveEventButton({
 
     setIsSaving(true);
 
-    void createEvent(draft, config, coverAnimation)
+    void createEvent(draft, config, coverAnimation, {
+      showWeather,
+      themeId: weatherTheme,
+    })
       .then((result) => {
         if (!result.ok) {
           setIsSaving(false);

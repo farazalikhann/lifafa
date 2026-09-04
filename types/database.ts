@@ -1,6 +1,7 @@
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
+import type { Coordinates, WeatherThemeId } from "@/types/weather";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { Guest, RsvpStatus } from "@/types/guest";
@@ -51,6 +52,24 @@ export type EventRow = {
    * asked — every event saved before covers existed.
    */
   cover_animation: string | null;
+  /**
+   * Whether guests see the weather on the card.
+   *
+   * Null is "never asked", which reads the same as false everywhere: the card
+   * tests for `=== true`, so an event saved before 0004 shows nothing.
+   */
+  show_weather: boolean | null;
+  /**
+   * The venue, resolved once at save time by lib/weather.ts.
+   *
+   * Stored rather than looked up per page load. The venue is free text inside
+   * event_draft and geocoding it on a card three hundred guests are opening
+   * would be three hundred lookups of an answer that never changes.
+   */
+  latitude: number | null;
+  longitude: number | null;
+  /** A WeatherThemeId, or null. `string` for the same reason cover_animation is. */
+  weather_theme: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +90,10 @@ export type EventInsert = {
   is_paid?: boolean;
   payment_id?: string | null;
   cover_animation?: string | null;
+  show_weather?: boolean | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  weather_theme?: string | null;
 }
 
 /** Every field a host may change. Ownership and identity are not among them. */
@@ -83,6 +106,10 @@ export type EventUpdate = Partial<
     | "payment_id"
     | "invite_code"
     | "cover_animation"
+    | "show_weather"
+    | "latitude"
+    | "longitude"
+    | "weather_theme"
   >
 >;
 
@@ -138,6 +165,11 @@ export type EventByInviteCodeRow = {
   is_paid: boolean;
   /* Projected by 0003. The cover is drawn for the guest, so the guest read needs it. */
   cover_animation: string | null;
+  /* Projected by 0004, for the same reason: the weather is drawn for the guest. */
+  show_weather: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
+  weather_theme: string | null;
 }
 
 /* ────────────────────── The Database generic ────────────────────── */
@@ -221,6 +253,18 @@ export interface StoredEvent {
   isPaid: boolean;
   /** Raw, exactly as stored. Resolved by getCoverAnimation at the point of use. */
   coverAnimation: string | null;
+  /** False whenever the host has not explicitly asked for weather. */
+  showWeather: boolean;
+  /**
+   * The venue's coordinates, or null when it could not be resolved.
+   *
+   * One object rather than two loose numbers, because a latitude without a
+   * longitude is not half an answer, it is no answer, and the pair being
+   * present or absent together is the only state the weather code can use.
+   */
+  coordinates: Coordinates | null;
+  /** Raw, exactly as stored. Resolved by getWeatherTheme at the point of use. */
+  weatherTheme: string | null;
 }
 
 /** An event as the index page needs it: the event plus its reply tally. */
@@ -310,6 +354,16 @@ export function toStoredEvent(
       match its own type. Both mean "no cover was ever chosen".
     */
     coverAnimation: row.cover_animation ?? null,
+    /*
+      `=== true`, not a truthiness test. Null is "never asked" and false is
+      "asked and declined", and a card treats them identically: no weather.
+    */
+    showWeather: row.show_weather === true,
+    coordinates:
+      typeof row.latitude === "number" && typeof row.longitude === "number"
+        ? { latitude: row.latitude, longitude: row.longitude }
+        : null,
+    weatherTheme: row.weather_theme ?? null,
   };
 }
 
@@ -326,6 +380,12 @@ export function toEventInsert(
   config: CardConfig,
   draft: EventDraft,
   coverAnimation: CoverAnimationId,
+  weather: {
+    showWeather: boolean;
+    themeId: WeatherThemeId;
+    /** Null when the venue could not be geocoded, which is a card with no weather. */
+    coordinates: Coordinates | null;
+  },
 ): EventInsert {
   return {
     host_id: hostId,
@@ -340,6 +400,16 @@ export function toEventInsert(
       is whatever the row happens to hold.
     */
     cover_animation: coverAnimation,
+    show_weather: weather.showWeather,
+    weather_theme: weather.themeId,
+    /*
+      Written whether or not the host switched weather on. The dashboard shows
+      the forecast to the host either way — it is useful for their own planning
+      even when guests never see it — so the coordinates are worth keeping the
+      moment they are known.
+    */
+    latitude: weather.coordinates?.latitude ?? null,
+    longitude: weather.coordinates?.longitude ?? null,
   };
 }
 

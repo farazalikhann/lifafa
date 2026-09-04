@@ -16,6 +16,7 @@ import { inviteUrl } from "@/lib/siteUrl";
 import { getTheme } from "@/lib/themes";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
+import type { EventWeather } from "@/types/weather";
 
 type InviteStage = "form" | "confirmed";
 
@@ -31,8 +32,11 @@ type InviteStage = "form" | "confirmed";
  */
 export default function InviteExperience({
   event,
+  weather,
 }: {
   event: StoredEvent;
+  /** Resolved by the page, on the server. Null means the card shows none. */
+  weather: EventWeather | null;
 }): ReactElement {
   const [stage, setStage] = useState<InviteStage>("form");
   /** Kept whole, so "Change my reply" returns a filled form. */

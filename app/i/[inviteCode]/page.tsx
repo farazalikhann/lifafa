@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import InviteExperience from "@/components/invite/InviteExperience";
 import { getEventByInviteCode } from "@/lib/db/events";
+import { getEventWeather } from "@/lib/weather";
 
 /**
  * A guest opening their link.
@@ -56,5 +57,23 @@ export default async function InvitePage({
     );
   }
 
-  return <InviteExperience event={result.data} />;
+  const event = result.data;
+
+  /*
+    Read here, on the server, and handed down finished.
+
+    This is the only place the weather is fetched for a guest, and it is cached
+    by Next's fetch cache rather than requested per visitor: an invitation
+    opened by three hundred people makes one call upstream. Skipped outright
+    when the host switched weather off, so their guests cost nothing at all.
+
+    getEventWeather never throws and returns null for every failure, so nothing
+    here needs a try or a fallback: null simply means the card renders without
+    it.
+  */
+  const weather = event.showWeather
+    ? await getEventWeather(event.coordinates, event.draft.eventDate)
+    : null;
+
+  return <InviteExperience event={event} weather={weather} />;
 }

@@ -6,10 +6,12 @@ import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
 import ReminderPanel from "@/components/dashboard/ReminderPanel";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
+import WeatherSummary from "@/components/dashboard/WeatherSummary";
 import { formatWhen } from "@/lib/cardFormat";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
 import { inviteUrl } from "@/lib/siteUrl";
+import { getEventWeather } from "@/lib/weather";
 
 /**
  * One event's dashboard.
@@ -73,6 +75,16 @@ export default async function DashboardPage({
   /* One link, built once, shared by the share bar and the reminder message. */
   const url = inviteUrl(event.inviteCode);
 
+  /*
+    Read whatever the host chose for their guests.
+
+    show_weather governs the card, not this page: whether it will rain on the
+    day is the host's problem regardless of what they decided to print on the
+    invitation. Null when there is nothing to say, and the panel renders nothing
+    on null.
+  */
+  const weather = await getEventWeather(event.coordinates, draft.eventDate);
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/85 backdrop-blur">
@@ -124,6 +136,12 @@ export default async function DashboardPage({
             </Link>
           </div>
         </div>
+
+        {/*
+          Above the headcount, with the event's own details rather than with the
+          guest list. It is a fact about the day, not a fact about who is coming.
+        */}
+        <WeatherSummary weather={weather} showWeather={event.showWeather} />
 
         <HeadcountSummary guests={guests} />
         <GuestTable guests={guests} />

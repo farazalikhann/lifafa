@@ -18,6 +18,7 @@ import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
 import AddToCalendar from "@/components/card/AddToCalendar";
+import WeatherPanel from "@/components/card/WeatherPanel";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { hasCountdown, hasCustomContent, hasMessage } from "@/lib/cardSections";
@@ -25,6 +26,7 @@ import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha } from "@/lib/contrast";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
+import type { EventWeather } from "@/types/weather";
 
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
@@ -389,6 +391,8 @@ export default function CardCanvas({
   sizing,
   audience,
   invite,
+  weather = null,
+  weatherTheme = null,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -406,6 +410,18 @@ export default function CardCanvas({
    * PREVIEW_INVITE and get the buttons without a link inside the file.
    */
   invite: CalendarInvite;
+  /**
+   * The reading to show under the card, or null for no weather at all.
+   *
+   * Resolved on the server and handed down finished, never fetched from here.
+   * Null covers every reason there might be nothing to show — the host switched
+   * it off, the venue could not be located, Open-Meteo was down, the date is in
+   * the past — and every one of them renders the same way, which is nothing.
+   * The editor's previews pass nothing and get a card without it.
+   */
+  weather?: EventWeather | null;
+  /** Raw, as stored. Resolved inside the panel. */
+  weatherTheme?: string | null;
 }): ReactElement {
   const { style } = config;
   const minHeight = sectionMinHeight(sizing, style.density);
@@ -919,6 +935,24 @@ export default function CardCanvas({
             </Fragment>
           );
         })}
+
+        {/*
+          After the last section rather than inside one.
+
+          The weather belongs to the whole invitation, not to the venue block or
+          the date block, and pinning it inside either would mean a host who
+          switched that section off silently lost it. It is also the one thing
+          on the card that is not the host's own words, so it reads better as a
+          footnote under the card than as a screen of its own in the middle.
+        */}
+        {weather !== null ? (
+          <WeatherPanel
+            weather={weather}
+            themeId={weatherTheme}
+            theme={effectiveTheme}
+            draft={draft}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -12,6 +12,11 @@ import {
   DEFAULT_COVER_ANIMATION,
   isCoverAnimationId,
 } from "@/lib/coverAnimations";
+import { geocodeVenue } from "@/lib/weather";
+import {
+  DEFAULT_WEATHER_THEME,
+  isWeatherThemeId,
+} from "@/lib/weatherThemes";
 import {
   toEventInsert,
   toStoredEvent,
@@ -48,18 +53,50 @@ const UNIQUE_VIOLATION = "23505";
 const UNDEFINED_COLUMN = "42703";
 const SCHEMA_CACHE_MISS = "PGRST204";
 
-/** True when this failure is the named column not existing, and nothing else. */
-function isMissingColumn(cause: unknown, column: string): boolean {
+/**
+ * Columns a deploy can name before the migration that creates them is applied.
+ *
+ * An application deploy reaches production the moment it is pushed; a migration
+ * waits for someone to paste it into the SQL editor. In between, an insert
+ * names columns the table does not have, Postgres refuses the entire row, and
+ * a host who has spent twenty minutes on a card is told to try again — forever,
+ * because trying again sends exactly the same columns.
+ *
+ * So the card outlives the columns. Only these, only the two codes that mean
+ * "no such column", and each one dropped individually, so nothing else is ever
+ * retried into silence.
+ */
+const PENDING_COLUMNS = [
+  "cover_animation",
+  "show_weather",
+  "latitude",
+  "longitude",
+  "weather_theme",
+] as const;
+
+type PendingColumn = (typeof PENDING_COLUMNS)[number];
+
+/** Which pending column this failure is about, or null if it is about something else. */
+function missingColumn(cause: unknown): PendingColumn | null {
   const pg = postgresError(cause);
 
   if (pg === null) {
-    return false;
+    return null;
   }
 
-  return (
-    (pg.code === UNDEFINED_COLUMN || pg.code === SCHEMA_CACHE_MISS) &&
-    pg.message.includes(column)
-  );
+  if (pg.code !== UNDEFINED_COLUMN && pg.code !== SCHEMA_CACHE_MISS) {
+    return null;
+  }
+
+  return PENDING_COLUMNS.find((column) => pg.message.includes(column)) ?? null;
+}
+
+/** One insert, returning the row it wrote. Split out so the retry above reads. */
+function insert(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  row: EventInsert,
+) {
+  return supabase.from("events").insert(row).select("*").single();
 }
 
 /**
@@ -74,6 +111,7 @@ export async function createEvent(
   draft: EventDraft,
   cardConfig: CardConfig,
   coverAnimation: string,
+  weather: { showWeather: boolean; themeId: string },
 ): Promise<DbResult<StoredEvent>> {
   const supabase = await createClient();
 
@@ -89,6 +127,12 @@ export async function createEvent(
     ? coverAnimation
     : DEFAULT_COVER_ANIMATION;
 
+  /* Same check, same reason: a server action's arguments are whatever arrived. */
+  const chosenTheme = isWeatherThemeId(weather.themeId)
+    ? weather.themeId
+    : DEFAULT_WEATHER_THEME;
+  const showWeather = weather.showWeather === true;
+
   const {
     data: { user },
     error: authError,
@@ -103,6 +147,17 @@ export async function createEvent(
   }
 
   /*
+    The one geocode this feature ever performs.
+
+    Here rather than on the invite page, because the venue does not move and a
+    link opened by three hundred guests would otherwise resolve the same address
+    three hundred times. Null when Open-Meteo recognises nothing in what the
+    host typed, and null is a card with no weather rather than a failed save:
+    the row is written either way.
+  */
+  const coordinates = await geocodeVenue(draft.venueName, draft.venueAddress);
+
+  /*
     Retried rather than trusted first time. Eight characters over a 31 symbol
     alphabet makes a collision vanishingly unlikely, but "unlikely" is not
     "impossible" and the unique constraint is what actually decides. Re-rolling
@@ -111,47 +166,37 @@ export async function createEvent(
   for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt += 1) {
     const inviteCode = generateInviteCode();
 
-    const row = toEventInsert(user.id, inviteCode, cardConfig, draft, chosenCover);
-
-    let attemptResult = await supabase
-      .from("events")
-      .insert(row)
-      .select("*")
-      .single();
+    const row = toEventInsert(
+      user.id,
+      inviteCode,
+      cardConfig,
+      draft,
+      chosenCover,
+      { showWeather, themeId: chosenTheme, coordinates },
+    );
 
     /*
-      The card matters more than the cover it opens with.
-
-      cover_animation arrived in supabase/migrations/0003, and an application
-      deploy reaches production before a migration someone has to paste into the
-      SQL editor by hand. In that window every insert names a column the table
-      does not have, Postgres refuses the whole row, and a host who has spent
-      twenty minutes on a card is told to try again — forever, because trying
-      again sends exactly the same column.
-
-      So a missing column costs the choice and not the card: the row goes in
-      without it, cover_animation reads back as null, and getCoverAnimation
-      resolves null to "none". Loud in the log, because this is a schema that
-      needs migrating and not a state to settle into. Narrow on purpose — only
-      this column, only these two codes — so nothing else is retried into
-      silence.
+      Each refused column is dropped and the row is sent again. The choice it
+      carried is lost — the card opens with no cover, or shows no weather — and
+      the card itself still saves, which is the trade worth making. Bounded by
+      the list, so this cannot spin.
     */
-    if (
-      attemptResult.error !== null &&
-      isMissingColumn(attemptResult.error, "cover_animation")
-    ) {
+    const attempt: EventInsert = { ...row };
+    let attemptResult = await insert(supabase, attempt);
+
+    for (let dropped = 0; dropped < PENDING_COLUMNS.length; dropped += 1) {
+      const column = missingColumn(attemptResult.error);
+
+      if (column === null) {
+        break;
+      }
+
       console.error(
-        "[db] createEvent/insert: events.cover_animation does not exist. Apply supabase/migrations/0003_cover_animation.sql. Saving this card without the host's cover choice.",
+        `[db] createEvent/insert: events.${column} does not exist. Apply the outstanding migrations in supabase/migrations. Saving this card without it.`,
       );
 
-      const withoutCover: EventInsert = { ...row };
-      delete withoutCover.cover_animation;
-
-      attemptResult = await supabase
-        .from("events")
-        .insert(withoutCover)
-        .select("*")
-        .single();
+      delete attempt[column];
+      attemptResult = await insert(supabase, attempt);
     }
 
     const { data, error } = attemptResult;
