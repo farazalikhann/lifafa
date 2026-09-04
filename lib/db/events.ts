@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { generateInviteCode, isValidInviteCode } from "@/lib/inviteCode";
 import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
 import {
+  DEFAULT_COVER_ANIMATION,
+  isCoverAnimationId,
+} from "@/lib/coverAnimations";
+import {
   toEventInsert,
   toStoredEvent,
   type HostEvent,
@@ -39,8 +43,21 @@ const UNIQUE_VIOLATION = "23505";
 export async function createEvent(
   draft: EventDraft,
   cardConfig: CardConfig,
+  coverAnimation: string,
 ): Promise<DbResult<StoredEvent>> {
   const supabase = await createClient();
+
+  /*
+    Checked here rather than trusted from the caller. The editor's own state is
+    typed to the union and cannot produce anything else, but this is a server
+    action: its argument is whatever crossed the wire, and the column has a
+    check constraint that would reject an unknown id as a database error the
+    host cannot act on. An id nobody recognises falls back to the default,
+    which is also what an older client that sends nothing at all would get.
+  */
+  const chosenCover = isCoverAnimationId(coverAnimation)
+    ? coverAnimation
+    : DEFAULT_COVER_ANIMATION;
 
   const {
     data: { user },
@@ -66,7 +83,7 @@ export async function createEvent(
 
     const { data, error } = await supabase
       .from("events")
-      .insert(toEventInsert(user.id, inviteCode, cardConfig, draft))
+      .insert(toEventInsert(user.id, inviteCode, cardConfig, draft, chosenCover))
       .select("*")
       .single();
 

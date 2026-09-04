@@ -4,7 +4,9 @@ import { useState, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { createEvent } from "@/lib/db/events";
 import { useUser } from "@/hooks/useUser";
+import { isCoverAnimationId } from "@/lib/coverAnimations";
 import type { CardConfig } from "@/types/card";
+import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -19,6 +21,15 @@ export const PENDING_DRAFT_KEY = "lifafa:pending-card";
 export interface PendingCard {
   draft: EventDraft;
   config: CardConfig;
+  /**
+   * Optional, because it is not part of CardConfig.
+   *
+   * The cover is its own column rather than a field in the card's JSON, so it
+   * has to be stashed alongside rather than travelling inside `config`. Older
+   * entries written before this existed have no key here, which is exactly
+   * what `undefined` means, and the reader below checks it before trusting it.
+   */
+  coverAnimation?: CoverAnimationId;
 }
 
 /** Reads the stashed card, tolerating anything that is not one. */
@@ -47,7 +58,17 @@ export function readPendingCard(): PendingCard | null {
       return null;
     }
 
-    return parsed as PendingCard;
+    const card = parsed as PendingCard;
+
+    /*
+      The one field worth re-checking. Everything else in here is restored into
+      state that only feeds the renderer, but this one is written to a column
+      with a check constraint, and a stale or hand-edited entry naming an id
+      that no longer exists would be carried all the way to a failed insert.
+    */
+    return isCoverAnimationId(card.coverAnimation)
+      ? card
+      : { draft: card.draft, config: card.config };
   } catch {
     /* Private mode, disabled storage, malformed JSON — all mean "nothing saved". */
     return null;
@@ -65,9 +86,11 @@ export function clearPendingCard(): void {
 export default function SaveEventButton({
   draft,
   config,
+  coverAnimation,
 }: {
   draft: EventDraft;
   config: CardConfig;
+  coverAnimation: CoverAnimationId;
 }): ReactElement {
   const router = useRouter();
   const { user, isLoading } = useUser();
@@ -91,7 +114,7 @@ export default function SaveEventButton({
       try {
         window.sessionStorage.setItem(
           PENDING_DRAFT_KEY,
-          JSON.stringify({ draft, config } satisfies PendingCard),
+          JSON.stringify({ draft, config, coverAnimation } satisfies PendingCard),
         );
       } catch (cause) {
         /*
@@ -111,7 +134,7 @@ export default function SaveEventButton({
 
     setIsSaving(true);
 
-    void createEvent(draft, config)
+    void createEvent(draft, config, coverAnimation)
       .then((result) => {
         if (!result.ok) {
           setIsSaving(false);

@@ -9,7 +9,6 @@ import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -46,11 +45,7 @@ export default function InviteExperience({
   const palette = getPalette(config.style.paletteId);
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
-  /*
-    The same names the card's own cover sets, flattened to one line. Read from
-    the draft rather than from a saved column: the animation a host picks is the
-    next step's work, so for now every invitation opens the same way.
-  */
+  /* The same names the card's own cover sets, flattened to one line. */
   const names = resolveCoverNames(draft, config.occasionId);
   const coverTitle = names.kind === "line" && names.isPlaceholder
     ? undefined
@@ -103,7 +98,7 @@ export default function InviteExperience({
 
   return (
     <CoverShell
-      animationId={DEFAULT_COVER_ANIMATION}
+      animationId={event.coverAnimation}
       title={coverTitle}
       renderVisual={(state) => <CoverVisual {...state} />}
     >

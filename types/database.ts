@@ -1,11 +1,12 @@
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import type { CardConfig } from "@/types/card";
+import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { Guest, RsvpStatus } from "@/types/guest";
 
 /**
- * Hand-written database types, matching supabase/migrations/0001_initial.sql.
+ * Hand-written database types, matching the migrations in supabase/migrations.
  *
  * Hand-written rather than generated, because generated types would be one more
  * thing to regenerate before the schema is settled — and because the jsonb
@@ -39,6 +40,17 @@ export type EventRow = {
   event_draft: EventDraft;
   is_paid: boolean;
   payment_id: string | null;
+  /**
+   * The id of the opening animation, from types/coverAnimation.ts.
+   *
+   * `string`, not CoverAnimationId, and that is deliberate. This is what came
+   * back from Postgres: a row written by an older build, or edited by hand, can
+   * carry an id this build has never heard of, and typing the column as the
+   * union would be a promise the database has not made. getCoverAnimation()
+   * turns whatever is here into a real option. Null means the host was never
+   * asked — every event saved before covers existed.
+   */
+  cover_animation: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,13 +70,19 @@ export type EventInsert = {
   event_draft: EventDraft;
   is_paid?: boolean;
   payment_id?: string | null;
+  cover_animation?: string | null;
 }
 
 /** Every field a host may change. Ownership and identity are not among them. */
 export type EventUpdate = Partial<
   Pick<
     EventRow,
-    "card_config" | "event_draft" | "is_paid" | "payment_id" | "invite_code"
+    | "card_config"
+    | "event_draft"
+    | "is_paid"
+    | "payment_id"
+    | "invite_code"
+    | "cover_animation"
   >
 >;
 
@@ -118,6 +136,8 @@ export type EventByInviteCodeRow = {
   card_config: CardConfig;
   event_draft: EventDraft;
   is_paid: boolean;
+  /* Projected by 0003. The cover is drawn for the guest, so the guest read needs it. */
+  cover_animation: string | null;
 }
 
 /* ────────────────────── The Database generic ────────────────────── */
@@ -199,6 +219,8 @@ export interface StoredEvent {
   config: CardConfig;
   draft: EventDraft;
   isPaid: boolean;
+  /** Raw, exactly as stored. Resolved by getCoverAnimation at the point of use. */
+  coverAnimation: string | null;
 }
 
 /** An event as the index page needs it: the event plus its reply tally. */
@@ -282,6 +304,7 @@ export function toStoredEvent(
     },
     draft: row.event_draft,
     isPaid: row.is_paid,
+    coverAnimation: row.cover_animation,
   };
 }
 
@@ -297,6 +320,7 @@ export function toEventInsert(
   inviteCode: string,
   config: CardConfig,
   draft: EventDraft,
+  coverAnimation: CoverAnimationId,
 ): EventInsert {
   return {
     host_id: hostId,
@@ -304,6 +328,13 @@ export function toEventInsert(
     card_config: config,
     event_draft: draft,
     is_paid: config.isPaid,
+    /*
+      A CoverAnimationId on the way in, a plain string on the way out. The
+      caller has already checked it against the union, so what reaches the
+      column is one of the five the check constraint allows; what comes back
+      is whatever the row happens to hold.
+    */
+    cover_animation: coverAnimation,
   };
 }
 

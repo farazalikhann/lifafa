@@ -7,6 +7,7 @@ import SaveEventButton, {
   clearPendingCard,
   readPendingCard,
 } from "@/components/create/SaveEventButton";
+import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
 import EventForm from "@/components/create/EventForm";
 import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
@@ -16,6 +17,7 @@ import StylePanel from "@/components/create/StylePanel";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
 import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { getPalette } from "@/lib/palettes";
@@ -31,6 +33,7 @@ import type {
   DecorMotion,
   ScratchTarget,
 } from "@/types/card";
+import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { CardBlock } from "@/types/customSection";
 import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
 import type { EventDraft } from "@/types/event";
@@ -67,6 +70,13 @@ export default function CreatePage() {
   const [borderStyle, setBorderStyle] = useState<CardBorderStyle>("none");
   /* Off by default: a card that hides its own date has to be asked for. */
   const [scratchTarget, setScratchTarget] = useState<ScratchTarget>("none");
+  /*
+    Not part of CardConfig: the cover wraps the card rather than being on it,
+    and it is stored in its own column. See supabase/migrations/0003.
+  */
+  const [coverAnimation, setCoverAnimation] = useState<CoverAnimationId>(
+    DEFAULT_COVER_ANIMATION,
+  );
   /*
     The current tradition's ornament pack choices. Kept here rather than inside
     the panel, because the panel unmounts the moment the host leaves a tradition
@@ -179,6 +189,11 @@ export default function CreatePage() {
     setOrnamentConfig(pending.config.ornamentConfig);
     setStyle(pending.config.style);
     setBlocks(pending.config.blocks);
+
+    /* Absent on an entry stashed before covers existed; the default stands. */
+    if (pending.coverAnimation !== undefined) {
+      setCoverAnimation(pending.coverAnimation);
+    }
   }, []);
 
   const config: CardConfig = {
@@ -214,7 +229,11 @@ export default function CreatePage() {
             The editor stays open to everyone; this is the first point that
             needs an account, and it asks for one only when it is clicked.
           */}
-          <SaveEventButton draft={draft} config={config} />
+          <SaveEventButton
+            draft={draft}
+            config={config}
+            coverAnimation={coverAnimation}
+          />
         </div>
       </header>
 
@@ -281,6 +300,10 @@ export default function CreatePage() {
             occasionId={occasionId}
           />
           <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
+          <CoverAnimationPicker
+            coverAnimation={coverAnimation}
+            onChange={setCoverAnimation}
+          />
         </div>
 
         <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24">
