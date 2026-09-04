@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type ReactElement,
+} from "react";
+import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useInView } from "@/hooks/useInView";
 import { hasCountdown } from "@/lib/cardSections";
 import {
@@ -50,6 +56,17 @@ interface Unit {
   readonly label: string;
   /** null before the first tick — see PENDING. */
   readonly value: number | null;
+  /**
+   * Digit slots the number is held to, in `ch`.
+   *
+   * The reason the reveal does not move anything. A unit that sized itself to
+   * its content would be one width holding the placeholder and another holding
+   * the number that replaces it, and on a scratched countdown those two arrive
+   * in consecutive frames — the row would visibly jump the moment the cover
+   * came off. Hours, minutes and seconds are always two digits; days are given
+   * three, which covers every event anyone would send an invitation for.
+   */
+  readonly slots: number;
 }
 
 /**
@@ -93,10 +110,10 @@ function measure(target: Date, now: Date): Countdown {
 function unitsOf(countdown: Countdown | null): readonly Unit[] {
   if (countdown === null) {
     return [
-      { label: "Days", value: null },
-      { label: "Hours", value: null },
-      { label: "Minutes", value: null },
-      { label: "Seconds", value: null },
+      { label: "Days", value: null, slots: 3 },
+      { label: "Hours", value: null, slots: 2 },
+      { label: "Minutes", value: null, slots: 2 },
+      { label: "Seconds", value: null, slots: 2 },
     ];
   }
 
@@ -105,13 +122,13 @@ function unitsOf(countdown: Countdown | null): readonly Unit[] {
   }
 
   const inner: readonly Unit[] = [
-    { label: "Hours", value: countdown.hours },
-    { label: "Minutes", value: countdown.minutes },
-    { label: "Seconds", value: countdown.seconds },
+    { label: "Hours", value: countdown.hours, slots: 2 },
+    { label: "Minutes", value: countdown.minutes, slots: 2 },
+    { label: "Seconds", value: countdown.seconds, slots: 2 },
   ];
 
   return countdown.days > 0
-    ? [{ label: "Days", value: countdown.days }, ...inner]
+    ? [{ label: "Days", value: countdown.days, slots: 3 }, ...inner]
     : inner;
 }
 
@@ -161,17 +178,41 @@ export default function CountdownSection({
   theme,
   minHeight,
   pad,
+  scratch,
 }: {
   draft: EventDraft;
   theme: Theme;
   minHeight: string;
   /** Content inset, top and bottom, in px — see CoverSection for what it is for. */
   pad: number;
+  /**
+   * Set when the host chose to hide the countdown. Covers the units only — the
+   * heading above them and the calendar links below stay in plain sight, so the
+   * card still says what is behind the patch.
+   */
+  scratch: ScratchConfig | null;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
   /** null until the first tick. Never seeded from the clock. */
   const [countdown, setCountdown] = useState<Countdown | null>(null);
+
+  /*
+    Whether the units are still behind a panel.
+
+    Seeded from the props alone so the server and the first client paint agree:
+    a panel that is present and not pre-cleared is covering something. Reduced
+    motion can make that wrong, but only the browser knows, and ScratchPanel
+    corrects it through `onCoveredChange` on its first commit.
+  */
+  const [isCovered, setIsCovered] = useState<boolean>(
+    scratch !== null && !scratch.preCleared,
+  );
+
+  /* Stable, so it is not a dependency that re-fires the panel's effect. */
+  const handleCoveredChange = useCallback((covered: boolean): void => {
+    setIsCovered(covered);
+  }, []);
 
   /*
     A number rather than the Date, because `eventInstant` mints a fresh object
@@ -181,8 +222,18 @@ export default function CountdownSection({
   const target = eventInstant(draft.eventDate, draft.eventTime);
   const targetTime = target === null ? null : target.getTime();
 
+  /*
+    The interval is gated on the cover, not merely on the date.
+
+    A per second setState behind an opaque canvas is spent battery for nobody,
+    and the number it leaves in the DOM is stale by exactly as long as the
+    guest took to scratch — so the first thing they would see on reveal is the
+    wrong time, corrected a second later. Starting on reveal instead means the
+    `tick()` inside `start()` runs while the canvas is still fading, and the
+    first legible frame is already right.
+  */
   useEffect(() => {
-    if (targetTime === null) {
+    if (targetTime === null || isCovered) {
       return;
     }
 
@@ -238,7 +289,7 @@ export default function CountdownSection({
       stop();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [targetTime]);
+  }, [targetTime, isCovered]);
 
   if (!hasCountdown(draft)) {
     return null;
@@ -254,6 +305,59 @@ export default function CountdownSection({
       : "text-[2rem] sm:text-[2.5rem]";
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
+
+  const counter =
+    closing !== null ? (
+      <div className={reveal} style={lineDelay(1)}>
+        <p
+          className="max-w-[18ch] text-[1.825rem] leading-[1.2] font-medium tracking-[0.02em] text-balance sm:text-[2.125rem]"
+          style={{
+            fontFamily: "var(--card-heading)",
+            fontWeight: "var(--card-heading-weight)" as unknown as number,
+          }}
+        >
+          {closing}
+        </p>
+      </div>
+    ) : (
+      <div
+        className={`flex items-start justify-center gap-5 sm:gap-7 ${reveal}`}
+        style={lineDelay(1)}
+        /*
+          A timer that never announces itself. `role="timer"` names the row
+          for a screen reader that navigates onto it, and the explicit "off"
+          is the point: a live region re-read every second — four numbers,
+          sixty times a minute — would make the rest of the card unreachable.
+          The date itself is stated in full by the details section, so
+          nothing here is the only copy of anything.
+        */
+        role="timer"
+        aria-live="off"
+      >
+        {units.map((unit) => (
+          <div key={unit.label} className="flex flex-col items-center gap-1">
+            <span
+              className={`block text-center leading-none font-medium tabular-nums ${numberSize}`}
+              style={{
+                /* Tabular figures make a `ch` exactly one digit wide. */
+                minWidth: `${unit.slots}ch`,
+                color: theme.accent,
+                fontFamily: "var(--card-heading)",
+                fontWeight: "var(--card-heading-weight)" as unknown as number,
+              }}
+            >
+              {digits(unit)}
+            </span>
+            <span
+              className="text-[0.6875rem] tracking-[0.2em] uppercase sm:text-xs"
+              style={{ color: theme.textMuted }}
+            >
+              {unit.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
 
   return (
     <section
@@ -275,54 +379,17 @@ export default function CountdownSection({
         </p>
       </div>
 
-      {closing !== null ? (
-        <div className={reveal} style={lineDelay(1)}>
-          <p
-            className="max-w-[18ch] text-[1.825rem] leading-[1.2] font-medium tracking-[0.02em] text-balance sm:text-[2.125rem]"
-            style={{
-              fontFamily: "var(--card-heading)",
-              fontWeight: "var(--card-heading-weight)" as unknown as number,
-            }}
-          >
-            {closing}
-          </p>
-        </div>
+      {/*
+        The units, or the line that replaces them once there is nothing left to
+        count. One slot either way, which is what lets the panel cover "the
+        numbers" without having to know which of the two is in there today.
+      */}
+      {scratch === null ? (
+        counter
       ) : (
-        <div
-          className={`flex items-start justify-center gap-5 sm:gap-7 ${reveal}`}
-          style={lineDelay(1)}
-          /*
-            A timer that never announces itself. `role="timer"` names the row
-            for a screen reader that navigates onto it, and the explicit "off"
-            is the point: a live region re-read every second — four numbers,
-            sixty times a minute — would make the rest of the card unreachable.
-            The date itself is stated in full by the details section, so
-            nothing here is the only copy of anything.
-          */
-          role="timer"
-          aria-live="off"
-        >
-          {units.map((unit) => (
-            <div key={unit.label} className="flex flex-col items-center gap-1">
-              <span
-                className={`leading-none font-medium tabular-nums ${numberSize}`}
-                style={{
-                  color: theme.accent,
-                  fontFamily: "var(--card-heading)",
-                  fontWeight: "var(--card-heading-weight)" as unknown as number,
-                }}
-              >
-                {digits(unit)}
-              </span>
-              <span
-                className="text-[0.6875rem] tracking-[0.2em] uppercase sm:text-xs"
-                style={{ color: theme.textMuted }}
-              >
-                {unit.label}
-              </span>
-            </div>
-          ))}
-        </div>
+        <ScratchPanel {...scratch} onCoveredChange={handleCoveredChange}>
+          {counter}
+        </ScratchPanel>
       )}
 
       <div className={reveal} style={lineDelay(2)}>

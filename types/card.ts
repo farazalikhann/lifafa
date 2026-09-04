@@ -40,7 +40,7 @@ export type CardBorderStyle =
  * At most one. Two scratch panels on a single card turn an ornament into a
  * chore, and a guest who gives up on the second one never reaches the RSVP.
  */
-export type ScratchTarget = "none" | "date" | "venue";
+export type ScratchTarget = "none" | "date" | "venue" | "countdown";
 
 /**
  * Who the card is being drawn for.

@@ -197,6 +197,7 @@ const SCRATCH_TARGETS: readonly { id: ScratchTarget; label: string }[] = [
   { id: "none", label: "Off" },
   { id: "date", label: "Hide the date" },
   { id: "venue", label: "Hide the venue" },
+  { id: "countdown", label: "Hide the countdown" },
 ];
 
 function pillClass(isSelected: boolean): string {

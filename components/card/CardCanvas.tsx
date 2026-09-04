@@ -18,7 +18,7 @@ import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
 import AddToCalendar from "@/components/card/AddToCalendar";
-import ScratchPanel from "@/components/card/ScratchPanel";
+import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { hasCountdown, hasCustomContent, hasMessage } from "@/lib/cardSections";
 import type { CalendarInvite } from "@/lib/calendar";
@@ -264,16 +264,30 @@ function scratchSection(target: ScratchTarget): CardSectionId | null {
       return "details";
     case "venue":
       return "venue";
+    case "countdown":
+      return "countdown";
     case "none":
       return null;
   }
 }
 
-const SCRATCH_LABEL: Record<"date" | "venue", string> = {
+const SCRATCH_LABEL: Record<Exclude<ScratchTarget, "none">, string> = {
   date: "Scratch to see the date",
   venue: "Scratch to see the venue",
+  countdown: "Scratch to see the countdown",
 };
 
+/**
+ * Draws one block of the running order.
+ *
+ * `scratch` is non-null for at most one block on the card, and only for the
+ * three built-ins that can carry a panel. It is handed down rather than applied
+ * here on purpose: a panel wrapped around a whole section covers a screen-tall
+ * box, which is the slab this replaces. Only the section knows which of its own
+ * lines are the ones worth hiding — the date but not its rule, the venue and
+ * the Maps link that would otherwise give it away, the countdown's units but
+ * neither its heading nor the calendar buttons under it.
+ */
 function renderBlock(
   block: CardBlock,
   draft: EventDraft,
@@ -282,6 +296,7 @@ function renderBlock(
   pad: number,
   occasionId: OccasionId,
   invite: CalendarInvite,
+  scratch: ScratchConfig | null,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -312,6 +327,7 @@ function renderBlock(
           theme={theme}
           minHeight={minHeight}
           pad={pad}
+          scratch={scratch}
         />
       );
     /*
@@ -331,6 +347,7 @@ function renderBlock(
             theme={theme}
             minHeight={minHeight}
             pad={pad}
+            scratch={scratch}
           />
           <AddToCalendar draft={draft} theme={theme} invite={invite} />
         </>
@@ -342,6 +359,7 @@ function renderBlock(
           theme={theme}
           minHeight={minHeight}
           pad={pad}
+          scratch={scratch}
         />
       );
     case "message":
@@ -700,6 +718,35 @@ export default function CardCanvas({
           this list, so its divider is absent with it.
         */}
         {visible.map((block, index) => {
+          /*
+            At most one panel per card, and only over a built-in section: the
+            target names "date", "venue" or "countdown", none of which a custom
+            block can ever be. A card with the target set to a section the host
+            has since switched off simply has no panel, because that section is
+            not in `visible` at all.
+          */
+          const isHidden =
+            block.kind === "builtin" &&
+            block.id === hiddenSection &&
+            scratchLabel !== null;
+
+          /*
+            Built here and handed to the section, which decides which of its own
+            lines go behind it. The canvas is where the palette, the audience
+            and the chosen target are all in scope at once, and the section is
+            where the content is — so this is the object those two meet in.
+          */
+          const scratch: ScratchConfig | null =
+            isHidden && scratchLabel !== null
+              ? {
+                  accent: effectiveTheme.accent,
+                  surface: effectiveTheme.surface,
+                  label: scratchLabel,
+                  /* The host edits; the guest scratches. */
+                  preCleared: isHostPreview,
+                }
+              : null;
+
           const section = renderBlock(
             block,
             draft,
@@ -708,19 +755,8 @@ export default function CardCanvas({
             sectionPad,
             config.occasionId,
             invite,
+            scratch,
           );
-
-          /*
-            At most one panel per card, and only over a built-in section: the
-            target names "date" or "venue", neither of which a custom block can
-            ever be. A card with the target set to a section the host has since
-            switched off simply has no panel, because that section is not in
-            `visible` at all.
-          */
-          const isHidden =
-            block.kind === "builtin" &&
-            block.id === hiddenSection &&
-            scratchLabel !== null;
 
           /*
             The greeting and dua head the cover, so they are anchored to the
@@ -729,8 +765,8 @@ export default function CardCanvas({
             introducing the venue.
 
             Never the same block as `isHidden` above: the scratch target names
-            "date" or "venue" and can never name the cover, so a blessing is
-            never hidden behind a panel a guest has to scratch.
+            "date", "venue" or "countdown" and can never name the cover, so a
+            blessing is never hidden behind a panel a guest has to scratch.
           */
           const isCover = block.kind === "builtin" && block.id === "cover";
 
@@ -825,25 +861,15 @@ export default function CardCanvas({
               ) : null}
 
               {/*
-                Three ways a block can be drawn, and they are checked in this
-                order because only one can ever apply.
-
-                A scratch panel and an arch frame can never land on the same
-                block — the scratch target names "date" or "venue" and the arch
-                only ever frames the cover — so this is a genuine three-way
-                choice rather than two wrappers that might have to nest.
+                Two ways a block can be drawn now that the scratch panel has
+                moved inside the sections. It used to be three, with a panel
+                wrapped around the whole block here — which is precisely what
+                made it a screen-tall slab rather than a sticker over the words.
+                A block that is hidden is still drawn exactly like any other
+                from out here; the section it renders has already put the panel
+                over the lines that need it.
               */}
-              {isHidden ? (
-                <ScratchPanel
-                  accent={effectiveTheme.accent}
-                  surface={effectiveTheme.surface}
-                  label={scratchLabel}
-                  /* The host edits; the guest scratches. */
-                  preCleared={isHostPreview}
-                >
-                  {covered}
-                </ScratchPanel>
-              ) : isCover && useArch ? (
+              {isCover && useArch ? (
                 /*
                   The arch frames the cover rather than replacing anything: an
                   outline behind the content, inset from the card's edges, with
