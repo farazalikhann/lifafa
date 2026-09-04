@@ -3,9 +3,13 @@
 import { useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
 import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
+import CoverShell from "@/components/invite/CoverShell";
+import CoverVisual from "@/components/invite/covers/CoverVisual";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -41,6 +45,16 @@ export default function InviteExperience({
   const theme = getTheme(config.themeId);
   const palette = getPalette(config.style.paletteId);
   const motifs = getMotifs(config.occasionId, config.traditionId);
+
+  /*
+    The same names the card's own cover sets, flattened to one line. Read from
+    the draft rather than from a saved column: the animation a host picks is the
+    next step's work, so for now every invitation opens the same way.
+  */
+  const names = resolveCoverNames(draft, config.occasionId);
+  const coverTitle = names.kind === "line" && names.isPlaceholder
+    ? undefined
+    : coverNameLine(names);
 
   /*
     Built here rather than from window.location: this component server-renders
@@ -88,59 +102,65 @@ export default function InviteExperience({
   };
 
   return (
-    <main
-      className="min-h-screen"
-      style={{ backgroundColor: palette.background }}
+    <CoverShell
+      animationId={DEFAULT_COVER_ANIMATION}
+      title={coverTitle}
+      renderVisual={(state) => <CoverVisual {...state} />}
     >
-      {/*
-        The card opens with names set in display type, but they are a design
-        element rather than a document heading. This carries the outline so a
-        screen reader announces what the page is before the card starts.
-      */}
-      <h1 className="sr-only">
-        {draft.eventTitle} — {draft.hostNames}
-      </h1>
-
-      <div
-        className="relative"
-        style={
-          config.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
-        }
+      <main
+        className="min-h-screen"
+        style={{ backgroundColor: palette.background }}
       >
-        <CardCanvas
-          draft={draft}
-          theme={theme}
-          config={config}
-          motifs={motifs}
-          sizing="viewport"
-          audience="guest"
-          invite={invite}
-        />
+        {/*
+          The card opens with names set in display type, but they are a design
+          element rather than a document heading. This carries the outline so a
+          screen reader announces what the page is before the card starts.
+        */}
+        <h1 className="sr-only">
+          {draft.eventTitle} — {draft.hostNames}
+        </h1>
 
-        <Watermark
-          show={!config.isPaid}
-          accent={config.style.accentOverride ?? palette.accent}
-          surface={palette.surface}
-        />
-      </div>
+        <div
+          className="relative"
+          style={
+            config.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
+          }
+        >
+          <CardCanvas
+            draft={draft}
+            theme={theme}
+            config={config}
+            motifs={motifs}
+            sizing="viewport"
+            audience="guest"
+            invite={invite}
+          />
 
-      {stage === "confirmed" && submitted !== null ? (
-        <RsvpConfirmed
-          status={submitted.status}
-          partySize={submitted.partySize}
-          name={submitted.name}
-          theme={theme}
-          onChangeReply={() => setStage("form")}
-        />
-      ) : (
-        <RsvpPanel
-          theme={theme}
-          initial={submitted}
-          onSubmit={handleSubmit}
-          isSending={isSending}
-          submitError={submitError}
-        />
-      )}
-    </main>
+          <Watermark
+            show={!config.isPaid}
+            accent={config.style.accentOverride ?? palette.accent}
+            surface={palette.surface}
+          />
+        </div>
+
+        {stage === "confirmed" && submitted !== null ? (
+          <RsvpConfirmed
+            status={submitted.status}
+            partySize={submitted.partySize}
+            name={submitted.name}
+            theme={theme}
+            onChangeReply={() => setStage("form")}
+          />
+        ) : (
+          <RsvpPanel
+            theme={theme}
+            initial={submitted}
+            onSubmit={handleSubmit}
+            isSending={isSending}
+            submitError={submitError}
+          />
+        )}
+      </main>
+    </CoverShell>
   );
 }

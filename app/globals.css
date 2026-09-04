@@ -353,3 +353,18 @@
     transform: scaleY(1);
   }
 }
+
+/*
+  The wax seal on the closed envelope cover, breathing so it reads as the thing
+  to tap. Small and slow: the guest has not been told to do anything yet, and a
+  cover that flashes at them is a cover that looks broken.
+*/
+@keyframes lifafa-seal-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}

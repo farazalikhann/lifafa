@@ -7,6 +7,7 @@ import {
   useState,
   type RefObject,
 } from "react";
+import { useRevealGate } from "@/hooks/useRevealGate";
 
 export interface UseInViewResult<T extends HTMLElement> {
   ref: RefObject<T | null>;
@@ -40,6 +41,12 @@ const useIsomorphicLayoutEffect =
  * If the visitor prefers reduced motion, `isInView` is set to `true` and no
  * observer is created, so callers render the final state with no transform.
  *
+ * While the surrounding reveal gate is closed — a cover is still sitting over
+ * the content, see hooks/useRevealGate.ts — the element is put into its hidden
+ * state and the observer is not armed at all. Nothing can latch behind a cover
+ * and be over before the guest sees it. The gate is open everywhere by default,
+ * so this changes nothing for a caller that has no cover above it.
+ *
  * `initialInView` defaults to `true`, which is what a reveal wants: content
  * that never runs JavaScript must still be readable. A caller asking the
  * opposite question — "has the guest scrolled as far as this marker yet?" —
@@ -54,6 +61,7 @@ export function useInView<T extends HTMLElement>(
   const ref = useRef<T | null>(null);
   const hasRevealed = useRef<boolean>(false);
   const [isInView, setIsInView] = useState<boolean>(initialInView);
+  const gateOpen = useRevealGate();
 
   const { threshold, rootMargin, root } = {
     ...DEFAULT_OPTIONS,
@@ -85,6 +93,15 @@ export function useInView<T extends HTMLElement>(
 
     setIsInView(false);
 
+    /*
+      Held here until the gate opens. The hidden state is set first and kept, so
+      the content is already sitting in its "before" position when the observer
+      finally arms and there is nothing to see snapping backwards.
+    */
+    if (!gateOpen) {
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -104,7 +121,7 @@ export function useInView<T extends HTMLElement>(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, rootMargin, root]);
+  }, [threshold, rootMargin, root, gateOpen]);
 
   return { ref, isInView };
 }
