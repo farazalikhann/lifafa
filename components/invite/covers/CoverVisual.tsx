@@ -2,7 +2,10 @@
 
 import type { ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
+import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
+import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
+import PetalDustCover from "@/components/invite/covers/PetalDustCover";
 
 /**
  * Picks the drawing for whichever animation the card was saved with.
@@ -18,10 +21,16 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
     case "envelope-seal":
       return <EnvelopeSealCover {...state} />;
 
-    /* Drawn in a later step. Until then these fall through to the plain cover. */
     case "curtain-reveal":
+      return <CurtainRevealCover {...state} />;
+
     case "fold-unfold":
+      return <FoldUnfoldCover {...state} />;
+
     case "petal-dust":
+      return <PetalDustCover {...state} />;
+
+    /* The host asked for no animation. The shell never shows a cover at all. */
     case "none":
       return null;
   }

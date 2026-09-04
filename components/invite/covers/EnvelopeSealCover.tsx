@@ -2,6 +2,7 @@
 
 import { type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
+import { stage } from "@/components/invite/covers/timing";
 
 /**
  * How the open splits across the shell's timer, as fractions of --cover-ms.
@@ -59,11 +60,6 @@ function initialsOf(title: string | undefined): string {
   }
 
   return letters.join("");
-}
-
-/** `<duration> <easing> <delay>`, all three sized off the shell's own timer. */
-function stage(property: string, share: number, start: number, easing: string): string {
-  return `${property} calc(var(--cover-ms)*${share}) ${easing} calc(var(--cover-ms)*${start})`;
 }
 
 /**
