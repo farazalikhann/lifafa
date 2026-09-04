@@ -1,4 +1,6 @@
+import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import type { CardConfig } from "@/types/card";
+import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { Guest, RsvpStatus } from "@/types/guest";
 
@@ -203,6 +205,63 @@ export interface StoredEvent {
 export type HostEvent = StoredEvent & { replyCount: number };
 
 /**
+ * Adds any built-in section the stored running order has never heard of.
+ *
+ * card_config is a jsonb snapshot of the registry as it stood the day the host
+ * saved, so every event written before a new section existed carries a list
+ * without it — and would go on rendering the old card forever. Registering a
+ * section would then ship a feature that only new events could ever show.
+ *
+ * A missing section is placed after the last section that precedes it in
+ * DEFAULT_SECTION_ORDER, so it lands where the registry says it belongs even
+ * on a card the host has reordered, and at the front when nothing precedes it.
+ * Enabled, matching how a new event starts; a host who does not want it has
+ * the same toggle they have for every other section.
+ *
+ * Only ever adds. A section the host switched off is `enabled: false` and
+ * still present, so nothing here can turn it back on, and a custom section is
+ * never touched.
+ */
+function withRegisteredSections(
+  blocks: readonly CardBlock[],
+): readonly CardBlock[] {
+  const present = new Set(
+    blocks
+      .filter((block) => block.kind === "builtin")
+      .map((block) => block.id),
+  );
+
+  const missing = DEFAULT_SECTION_ORDER.filter((id) => !present.has(id));
+
+  if (missing.length === 0) {
+    return blocks;
+  }
+
+  const next = [...blocks];
+
+  for (const id of missing) {
+    const rank = DEFAULT_SECTION_ORDER.indexOf(id);
+    let at = 0;
+
+    for (let i = next.length - 1; i >= 0; i -= 1) {
+      const block = next[i];
+
+      if (
+        block.kind === "builtin" &&
+        DEFAULT_SECTION_ORDER.indexOf(block.id) < rank
+      ) {
+        at = i + 1;
+        break;
+      }
+    }
+
+    next.splice(at, 0, { kind: "builtin", id, enabled: true });
+  }
+
+  return next;
+}
+
+/**
  * Row to app shape.
  *
  * isPaid is taken from the column and written over whatever card_config carries.
@@ -216,7 +275,11 @@ export function toStoredEvent(
   return {
     id: row.id,
     inviteCode: row.invite_code,
-    config: { ...row.card_config, isPaid: row.is_paid },
+    config: {
+      ...row.card_config,
+      blocks: withRegisteredSections(row.card_config.blocks),
+      isPaid: row.is_paid,
+    },
     draft: row.event_draft,
     isPaid: row.is_paid,
   };

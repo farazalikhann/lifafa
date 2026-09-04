@@ -13,12 +13,15 @@ import HangingLayer, {
 } from "@/components/card/decor/HangingLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
 import DetailsSection from "@/components/card/sections/DetailsSection";
+import CountdownSection from "@/components/card/sections/CountdownSection";
 import VenueSection from "@/components/card/sections/VenueSection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
+import AddToCalendar from "@/components/card/AddToCalendar";
 import ScratchPanel from "@/components/card/ScratchPanel";
 import { getTraditionPack } from "@/lib/traditionPacks";
-import { hasCustomContent, hasMessage } from "@/lib/cardSections";
+import { hasCountdown, hasCustomContent, hasMessage } from "@/lib/cardSections";
+import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha } from "@/lib/contrast";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
@@ -228,7 +231,20 @@ function blockRenders(block: CardBlock, draft: EventDraft): boolean {
     return false;
   }
 
-  return block.id !== "message" || hasMessage(draft);
+  /*
+    A switch rather than a chain of inequalities, so a section added to
+    CardSectionId that hides itself under some condition cannot quietly be
+    forgotten here. The default is the honest answer for a section that always
+    renders; the two that do not are named.
+  */
+  switch (block.id) {
+    case "message":
+      return hasMessage(draft);
+    case "countdown":
+      return hasCountdown(draft);
+    default:
+      return true;
+  }
 }
 
 function blockKey(block: CardBlock): string {
@@ -265,6 +281,7 @@ function renderBlock(
   minHeight: string,
   pad: number,
   occasionId: OccasionId,
+  invite: CalendarInvite,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -296,6 +313,27 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
         />
+      );
+    /*
+      The one built-in that renders two things. The calendar links belong to
+      the countdown — they answer the question it raises — but they are not a
+      section: they carry no minHeight, take no screen of their own, and sit
+      directly under it, above the divider that closes the countdown off.
+
+      They also need the invite code and link, which no section is given and
+      only the canvas is handed, so this is the one place the two can meet.
+    */
+    case "countdown":
+      return (
+        <>
+          <CountdownSection
+            draft={draft}
+            theme={theme}
+            minHeight={minHeight}
+            pad={pad}
+          />
+          <AddToCalendar draft={draft} theme={theme} invite={invite} />
+        </>
       );
     case "venue":
       return (
@@ -332,6 +370,7 @@ export default function CardCanvas({
   motifs,
   sizing,
   audience,
+  invite,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -340,6 +379,15 @@ export default function CardCanvas({
   sizing: CardSizing;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
+  /**
+   * The invitation the calendar links point back at.
+   *
+   * On the canvas rather than on a section because it is the one piece of the
+   * card that does not come from the draft: an invite code is minted when the
+   * event is saved, and the editor's previews have none yet — they pass
+   * PREVIEW_INVITE and get the buttons without a link inside the file.
+   */
+  invite: CalendarInvite;
 }): ReactElement {
   const { style } = config;
   const minHeight = sectionMinHeight(sizing, style.density);
@@ -659,6 +707,7 @@ export default function CardCanvas({
             minHeight,
             sectionPad,
             config.occasionId,
+            invite,
           );
 
           /*

@@ -3,11 +3,13 @@ import Link from "next/link";
 import ExportCsvButton from "@/components/dashboard/ExportCsvButton";
 import GuestTable from "@/components/dashboard/GuestTable";
 import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
+import ReminderPanel from "@/components/dashboard/ReminderPanel";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import { formatWhen } from "@/lib/cardFormat";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
+import { inviteUrl } from "@/lib/siteUrl";
 
 /**
  * One event's dashboard.
@@ -68,6 +70,8 @@ export default async function DashboardPage({
   const when = formatWhen(draft.eventDate, draft.eventTime);
   const title =
     draft.eventTitle.length > 0 ? draft.eventTitle : "Untitled invitation";
+  /* One link, built once, shared by the share bar and the reminder message. */
+  const url = inviteUrl(event.inviteCode);
 
   return (
     <div className="min-h-screen">
@@ -108,7 +112,7 @@ export default async function DashboardPage({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
             {/* The real link, built from the event's own code. */}
-            <ShareBar inviteUrl={`https://getlifafa.co.in/i/${event.inviteCode}`} />
+            <ShareBar inviteUrl={url} />
           </div>
           <div className="flex gap-2">
             <ExportCsvButton guests={guests} eventId={event.id} />
@@ -123,6 +127,18 @@ export default async function DashboardPage({
 
         <HeadcountSummary guests={guests} />
         <GuestTable guests={guests} />
+
+        {/*
+          Under the table rather than over it. The host comes to this page for
+          the headcount and the list; chasing the people missing from it is the
+          next thing they do, not the first thing they read.
+        */}
+        <ReminderPanel
+          guests={guests}
+          eventTitle={title}
+          when={when}
+          inviteUrl={url}
+        />
       </main>
     </div>
   );

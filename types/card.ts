@@ -4,7 +4,12 @@ import type { OccasionId, TraditionId } from "@/types/occasion";
 import type { OrnamentConfig } from "@/types/ornament";
 import type { CardStyle } from "@/types/style";
 
-export type CardSectionId = "cover" | "details" | "venue" | "message";
+export type CardSectionId =
+  | "cover"
+  | "details"
+  | "countdown"
+  | "venue"
+  | "message";
 
 export type DecorMotion = "float" | "fall" | "drift" | "none";
 

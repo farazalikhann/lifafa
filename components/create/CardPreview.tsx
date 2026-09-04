@@ -4,6 +4,7 @@ import { useCallback, useRef, useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
 import FullScreenPreview from "@/components/create/FullScreenPreview";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { PREVIEW_INVITE } from "@/lib/calendar";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
@@ -82,6 +83,8 @@ export default function CardPreview({
           config={config}
           motifs={motifs}
           sizing="frame"
+          /* No code minted yet — the host sees the buttons, not a live link. */
+          invite={PREVIEW_INVITE}
           /*
             This repaints on every keystroke, so a scratch panel here would ask
             the host to clear it again after each one. They get the panel drawn

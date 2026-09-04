@@ -161,8 +161,17 @@ export function coverNameLine(names: CoverNames): string {
 /**
  * Builds an absolute instant from the draft's own date and time strings, never
  * from the ambient clock. Returns null when the date is empty or unparseable.
+ *
+ * Exported because it is the only date parsing path in the app. The countdown
+ * and the calendar links both need the same absolute instant these formatters
+ * work from, and a second parser — even one written identically — would be free
+ * to drift: a card that reads "14 December at 7:00 PM" while its countdown ran
+ * to a different moment is worse than either being wrong on its own.
  */
-function toInstant(eventDate: string, eventTime: string): Date | null {
+export function eventInstant(
+  eventDate: string,
+  eventTime: string,
+): Date | null {
   const date = eventDate.trim();
 
   if (!DATE_PATTERN.test(date)) {
@@ -174,6 +183,27 @@ function toInstant(eventDate: string, eventTime: string): Date | null {
   const parsed = new Date(`${date}T${time}:00${IST_OFFSET}`);
 
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** en-CA renders as YYYY-MM-DD, which is a sortable, comparable day key. */
+const IST_DAY_FORMAT: Intl.DateTimeFormatOptions = {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: TIME_ZONE,
+};
+
+/**
+ * Which Indian calendar day an instant falls on, as "YYYY-MM-DD".
+ *
+ * The countdown needs this to tell "the celebration is happening right now"
+ * from "the celebration is over", and neither question can be answered by
+ * subtracting two instants: a reception that started an hour ago is still
+ * today, and one that ended at midnight last night is not. Comparing day keys
+ * in Asia/Kolkata answers it the way the guest holding the card would.
+ */
+export function istDayKey(instant: Date): string {
+  return new Intl.DateTimeFormat("en-CA", IST_DAY_FORMAT).format(instant);
 }
 
 function hasTime(eventTime: string): boolean {
@@ -195,7 +225,7 @@ export function formatWeekday(
   eventDate: string,
   eventTime: string,
 ): string | null {
-  const instant = toInstant(eventDate, eventTime);
+  const instant = eventInstant(eventDate, eventTime);
   return instant === null
     ? null
     : new Intl.DateTimeFormat("en-IN", WEEKDAY_FORMAT).format(instant);
@@ -206,7 +236,7 @@ export function formatDateAndTime(
   eventDate: string,
   eventTime: string,
 ): string | null {
-  const instant = toInstant(eventDate, eventTime);
+  const instant = eventInstant(eventDate, eventTime);
 
   if (instant === null) {
     return null;
@@ -232,7 +262,7 @@ export function formatWhen(
   eventDate: string,
   eventTime: string,
 ): string | null {
-  const instant = toInstant(eventDate, eventTime);
+  const instant = eventInstant(eventDate, eventTime);
 
   if (instant === null) {
     return null;

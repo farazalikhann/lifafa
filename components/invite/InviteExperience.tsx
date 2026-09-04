@@ -5,9 +5,11 @@ import CardCanvas from "@/components/card/CardCanvas";
 import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
+import type { CalendarInvite } from "@/lib/calendar";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
+import { inviteUrl } from "@/lib/siteUrl";
 import { getTheme } from "@/lib/themes";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
@@ -39,6 +41,16 @@ export default function InviteExperience({
   const theme = getTheme(config.themeId);
   const palette = getPalette(config.style.paletteId);
   const motifs = getMotifs(config.occasionId, config.traditionId);
+
+  /*
+    Built here rather than from window.location: this component server-renders
+    first, and an origin the two runtimes could disagree about would put one
+    link in the markup and another in the hydrated tree.
+  */
+  const invite: CalendarInvite = {
+    code: event.inviteCode,
+    url: inviteUrl(event.inviteCode),
+  };
 
   const handleSubmit = (submission: RsvpSubmission): void => {
     setIsSending(true);
@@ -102,6 +114,7 @@ export default function InviteExperience({
           motifs={motifs}
           sizing="viewport"
           audience="guest"
+          invite={invite}
         />
 
         <Watermark

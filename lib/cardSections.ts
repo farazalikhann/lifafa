@@ -1,3 +1,4 @@
+import { eventInstant } from "@/lib/cardFormat";
 import type { CardSectionId } from "@/types/card";
 import type { CustomSection } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
@@ -24,6 +25,11 @@ export const CARD_SECTIONS: Record<CardSectionId, CardSectionMeta> = {
     label: "Date and time",
     description: "When the celebration happens, with the day of the week.",
   },
+  countdown: {
+    label: "Countdown",
+    description:
+      "A live count down to the celebration. Hidden until a date is set.",
+  },
   venue: {
     label: "Venue",
     description: "Where to go, with a link that opens the place in Maps.",
@@ -38,6 +44,7 @@ export const CARD_SECTIONS: Record<CardSectionId, CardSectionMeta> = {
 export const DEFAULT_SECTION_ORDER: readonly CardSectionId[] = [
   "cover",
   "details",
+  "countdown",
   "venue",
   "message",
 ];
@@ -62,4 +69,16 @@ export function hasCustomContent(section: CustomSection): boolean {
 /** The message section hides itself when the host wrote no note. */
 export function hasMessage(draft: EventDraft): boolean {
   return draft.message.trim().length > 0;
+}
+
+/**
+ * The countdown hides itself when there is nothing to count down to.
+ *
+ * Deliberately answered from the draft alone and never from the clock. This
+ * runs on the server as well as in the browser — CardCanvas calls it to decide
+ * where the dividers go — so an answer that moved as the seconds passed would
+ * put a divider beside a section the two runtimes disagreed about.
+ */
+export function hasCountdown(draft: EventDraft): boolean {
+  return eventInstant(draft.eventDate, draft.eventTime) !== null;
 }

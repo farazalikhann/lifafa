@@ -12,6 +12,7 @@ import {
 import { createPortal } from "react-dom";
 import CardCanvas from "@/components/card/CardCanvas";
 import Watermark from "@/components/card/Watermark";
+import { PREVIEW_INVITE } from "@/lib/calendar";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
@@ -448,6 +449,8 @@ export default function FullScreenPreview({
               config={config}
               motifs={motifs}
               sizing="viewport"
+              /* No code minted yet — the host sees the buttons, not a live link. */
+              invite={PREVIEW_INVITE}
               /* "Exactly what your guests will see" has to include the doing. */
               audience="guest"
             />
