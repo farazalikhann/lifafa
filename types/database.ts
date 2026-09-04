@@ -328,6 +328,23 @@ function withRegisteredSections(
 }
 
 /**
+ * Fills in draft fields that did not exist when the row was written.
+ *
+ * event_draft is a jsonb snapshot of EventDraft as it stood the day the host
+ * saved, so every draft written before sub-events existed has no `subEvents`
+ * key. TypeScript would go on believing it was an array, `.map` would be called
+ * on undefined, and a card saved last month would throw in the middle of a
+ * guest's render.
+ *
+ * Only `subEvents` needs this. The family fields are declared optional and
+ * `undefined` is a shape their readers already handle, which is the difference
+ * between a field that is missing and a field that is empty.
+ */
+function withDraftDefaults(draft: EventDraft): EventDraft {
+  return Array.isArray(draft.subEvents) ? draft : { ...draft, subEvents: [] };
+}
+
+/**
  * Row to app shape.
  *
  * isPaid is taken from the column and written over whatever card_config carries.
@@ -346,7 +363,7 @@ export function toStoredEvent(
       blocks: withRegisteredSections(row.card_config.blocks),
       isPaid: row.is_paid,
     },
-    draft: row.event_draft,
+    draft: withDraftDefaults(row.event_draft),
     isPaid: row.is_paid,
     /*
       `?? null` rather than a straight read. Until 0003 is applied the column is

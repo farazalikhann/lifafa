@@ -15,13 +15,21 @@ import CoverSection from "@/components/card/sections/CoverSection";
 import DetailsSection from "@/components/card/sections/DetailsSection";
 import CountdownSection from "@/components/card/sections/CountdownSection";
 import VenueSection from "@/components/card/sections/VenueSection";
+import TimelineSection from "@/components/card/sections/TimelineSection";
+import FamilySection from "@/components/card/sections/FamilySection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
 import AddToCalendar from "@/components/card/AddToCalendar";
 import WeatherPanel from "@/components/card/WeatherPanel";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { getTraditionPack } from "@/lib/traditionPacks";
-import { hasCountdown, hasCustomContent, hasMessage } from "@/lib/cardSections";
+import {
+  hasCountdown,
+  hasCustomContent,
+  hasFamily,
+  hasMessage,
+  hasTimeline,
+} from "@/lib/cardSections";
 import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha } from "@/lib/contrast";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
@@ -244,6 +252,10 @@ function blockRenders(block: CardBlock, draft: EventDraft): boolean {
       return hasMessage(draft);
     case "countdown":
       return hasCountdown(draft);
+    case "timeline":
+      return hasTimeline(draft);
+    case "family":
+      return hasFamily(draft);
     default:
       return true;
   }
@@ -362,6 +374,24 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
           scratch={scratch}
+        />
+      );
+    case "timeline":
+      return (
+        <TimelineSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+        />
+      );
+    case "family":
+      return (
+        <FamilySection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
         />
       );
     case "message":

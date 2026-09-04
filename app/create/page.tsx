@@ -13,6 +13,7 @@ import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import PreviewBar from "@/components/create/PreviewBar";
 import SectionManager from "@/components/create/SectionManager";
+import SubEventEditor from "@/components/create/SubEventEditor";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import StylePanel from "@/components/create/StylePanel";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
@@ -58,6 +59,7 @@ const EMPTY_DRAFT: EventDraft = {
   venueAddress: "",
   message: "",
   themeId: DEFAULT_OCCASION.defaultThemeId,
+  subEvents: [],
 };
 
 export default function CreatePage() {
@@ -317,6 +319,10 @@ export default function CreatePage() {
             draft={draft}
             onChange={handleChange}
             occasionId={occasionId}
+          />
+          <SubEventEditor
+            subEvents={draft.subEvents}
+            onChange={(subEvents) => handleChange("subEvents", subEvents)}
           />
           <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
           <CoverAnimationPicker

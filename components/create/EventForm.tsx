@@ -166,6 +166,70 @@ function JoinerControl({
 const DATE_HINT =
   "Guests will see this in their own time zone as the local event time.";
 
+/**
+ * Parents and home town, one side at a time.
+ *
+ * Compact on purpose: these are two optional fields on a form that already
+ * has plenty, and giving them the full field treatment would make them read as
+ * something a host has to answer. Headed with the person's own name once they
+ * have typed one, so the two groups are told apart by whose family they are
+ * rather than by their position on the page.
+ */
+function FamilyGroup({
+  idPrefix,
+  heading,
+  parents,
+  city,
+  onParentsChange,
+  onCityChange,
+}: {
+  idPrefix: string;
+  heading: string;
+  parents: string;
+  city: string;
+  onParentsChange: (value: string) => void;
+  onCityChange: (value: string) => void;
+}): ReactElement {
+  return (
+    <div
+      className="flex flex-col gap-3"
+      role="group"
+      aria-labelledby={`${idPrefix}-family-heading`}
+    >
+      <h4
+        id={`${idPrefix}-family-heading`}
+        className="truncate text-[0.8125rem] font-medium text-[var(--lifafa-cream)]"
+      >
+        {heading}
+      </h4>
+
+      <Field id={`${idPrefix}Parents`} label="Parents">
+        <input
+          id={`${idPrefix}Parents`}
+          type="text"
+          value={parents}
+          onChange={(event) => onParentsChange(event.target.value)}
+          placeholder="Mr Rajesh and Mrs Sunita Sharma"
+          autoComplete="off"
+          className={INPUT_CLASS}
+        />
+      </Field>
+
+      <Field id={`${idPrefix}City`} label="City">
+        <input
+          id={`${idPrefix}City`}
+          type="text"
+          value={city}
+          onChange={(event) => onCityChange(event.target.value)}
+          placeholder="Jaipur"
+          autoComplete="off"
+          className={INPUT_CLASS}
+        />
+      </Field>
+    </div>
+  );
+}
+
 export default function EventForm({
   draft,
   onChange,
@@ -189,6 +253,15 @@ export default function EventForm({
 }): ReactElement {
   const remaining = MESSAGE_LIMIT - draft.message.length;
   const isPair = pairsNames(occasionId);
+
+  /*
+    Named by whoever they belong to once there is a name to use. The fallbacks
+    are positional rather than descriptive because that is all that is known:
+    "First person" says where the field is, which beats guessing a relationship.
+  */
+  const firstHeading =
+    draft.partyOneName.trim() || draft.hostNames.trim() || "First person";
+  const secondHeading = draft.partyTwoName.trim() || "Second person";
 
   return (
     /* Deliberately a div, not a <form>: nothing submits in this step. */
@@ -292,6 +365,50 @@ export default function EventForm({
             className={INPUT_CLASS}
           />
         </Field>
+
+        {/*
+          The families, under the names they belong to.
+
+          Two groups where the occasion joins two people and one where it does
+          not: a birthday has one person, and asking whose parents the second
+          set are would be asking about somebody who is not on the card.
+        */}
+        <div
+          className="flex flex-col gap-5"
+          role="group"
+          aria-labelledby="families-heading"
+        >
+          <h3
+            id="families-heading"
+            className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase"
+          >
+            Families
+          </h3>
+
+          <FamilyGroup
+            idPrefix="partyOne"
+            heading={firstHeading}
+            parents={draft.partyOneParents ?? ""}
+            city={draft.partyOneCity ?? ""}
+            onParentsChange={(value) => onChange("partyOneParents", value)}
+            onCityChange={(value) => onChange("partyOneCity", value)}
+          />
+
+          {isPair ? (
+            <FamilyGroup
+              idPrefix="partyTwo"
+              heading={secondHeading}
+              parents={draft.partyTwoParents ?? ""}
+              city={draft.partyTwoCity ?? ""}
+              onParentsChange={(value) => onChange("partyTwoParents", value)}
+              onCityChange={(value) => onChange("partyTwoCity", value)}
+            />
+          ) : null}
+
+          <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+            Optional. Shown on the card if you fill it in.
+          </p>
+        </div>
       </Section>
 
       <Section label="What">

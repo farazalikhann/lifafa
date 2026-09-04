@@ -6,9 +6,11 @@ import type { CardStyle } from "@/types/style";
 
 export type CardSectionId =
   | "cover"
+  | "family"
   | "details"
   | "countdown"
   | "venue"
+  | "timeline"
   | "message";
 
 export type DecorMotion = "float" | "fall" | "drift" | "none";
