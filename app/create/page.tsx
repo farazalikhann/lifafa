@@ -75,6 +75,8 @@ export default function CreatePage() {
   const [borderStyle, setBorderStyle] = useState<CardBorderStyle>("none");
   /* Off by default: a card that hides its own date has to be asked for. */
   const [scratchTarget, setScratchTarget] = useState<ScratchTarget>("none");
+  /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
+  const [musicUrl, setMusicUrl] = useState<string | null>(null);
   /*
     Not part of CardConfig: the cover wraps the card rather than being on it,
     and it is stored in its own column. See supabase/migrations/0003.
@@ -199,6 +201,8 @@ export default function CreatePage() {
     setDecorIntensity(pending.config.decorIntensity);
     setBorderStyle(pending.config.borderStyle);
     setScratchTarget(pending.config.scratchTarget);
+    /* Absent on a card stashed before this field existed. */
+    setMusicUrl(pending.config.musicUrl ?? null);
     setOrnamentConfig(pending.config.ornamentConfig);
     setStyle(pending.config.style);
     setBlocks(pending.config.blocks);
@@ -226,6 +230,7 @@ export default function CreatePage() {
     borderStyle,
     style,
     ornamentConfig,
+    musicUrl,
     /* Nothing in the editor has been paid for — that is what /create is. */
     isPaid: false,
   };
@@ -338,7 +343,12 @@ export default function CreatePage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24">
-          <CardPreview draft={draft} config={config} motifs={motifs} />
+          <CardPreview
+            draft={draft}
+            config={config}
+            motifs={motifs}
+            coverAnimation={coverAnimation}
+          />
           <MotionPicker
             motion={decorMotion}
             intensity={decorIntensity}
@@ -352,12 +362,14 @@ export default function CreatePage() {
             paletteAccent={getPalette(style.paletteId).accent}
             scratchTarget={scratchTarget}
             borderStyle={borderStyle}
+            musicUrl={musicUrl}
             onFontPairChange={setFontPair}
             onPaletteChange={setPalette}
             onDensityChange={setDensity}
             onAccentChange={setAccent}
             onScratchTargetChange={setScratchTarget}
             onBorderStyleChange={setBorderStyle}
+            onMusicUrlChange={setMusicUrl}
           />
         </div>
       </main>
@@ -367,7 +379,12 @@ export default function CreatePage() {
         screen, reachable from anywhere in the form. Renders nothing at lg,
         where the card is already sitting in a sticky column beside it.
       */}
-      <PreviewBar draft={draft} config={config} motifs={motifs} />
+      <PreviewBar
+        draft={draft}
+        config={config}
+        motifs={motifs}
+        coverAnimation={coverAnimation}
+      />
     </div>
   );
 }

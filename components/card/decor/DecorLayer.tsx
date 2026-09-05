@@ -173,7 +173,62 @@ const KEYFRAME_NAME: Record<Exclude<DecorMotion, "none">, string> = {
   float: "lifafa-decor-float",
   fall: "lifafa-decor-fall",
   drift: "lifafa-decor-drift",
+  roam: "lifafa-decor-roam",
 };
+
+/* ---------------------------------------------------------------------------
+   Roaming.
+
+   A roaming shape is the most expensive thing the card draws. The other three
+   motions travel a short path and repeat; this one wanders through six offsets
+   across a large area, which means a compositor layer moving over most of the
+   screen for half a minute at a time, on a phone, behind text.
+
+   So it is capped harder than the intensity tiers cap anything else, and its
+   durations are stretched until each shape is barely seen to move. Both numbers
+   are about the same thing: how much of the page is repainting at once.
+   --------------------------------------------------------------------------- */
+
+/** The most shapes drawn under "roam", whatever the intensity says. */
+const ROAM_MAX_COUNT = 12;
+
+/**
+ * The window roaming durations are mapped into, in seconds.
+ *
+ * The shape table's own durations run 14 to 21, authored for motions that
+ * repeat every few seconds. Stretching that range onto 18 to 34 keeps the
+ * table's existing spread — no two rows land together, and the relative
+ * ordering is preserved — while making every path slow enough to read as
+ * wandering rather than as patrolling.
+ */
+const ROAM_MIN_DURATION = 18;
+const ROAM_MAX_DURATION = 34;
+
+/** The shape table's own duration bounds, which the mapping reads from. */
+const TABLE_MIN_DURATION = 14;
+const TABLE_MAX_DURATION = 21;
+
+/**
+ * One row's roaming duration, derived from the row rather than authored again.
+ *
+ * Never Math.random: this renders on the server and again in the browser, and
+ * two different durations for one shape is a hydration mismatch. Deriving it
+ * from the fixed table means the stagger that table already has is the stagger
+ * the roam inherits.
+ */
+function roamDuration(tableDuration: number): number {
+  const span = TABLE_MAX_DURATION - TABLE_MIN_DURATION;
+  const t = Math.min(
+    1,
+    Math.max(0, (tableDuration - TABLE_MIN_DURATION) / span),
+  );
+
+  return (
+    Math.round(
+      (ROAM_MIN_DURATION + t * (ROAM_MAX_DURATION - ROAM_MIN_DURATION)) * 100,
+    ) / 100
+  );
+}
 
 /**
  * Decorative background for the card canvas.
@@ -245,7 +300,16 @@ export default function DecorLayer({
 
   const keyframe = KEYFRAME_NAME[motion];
   const tier = INTENSITY[intensity];
-  const shapes = SHAPES.slice(0, tier.count);
+  const isRoam = motion === "roam";
+
+  /*
+    "lively" asks for 14 and roam gives it 12. The cap is on the motion rather
+    than on the tier because it is the path length that costs, not the density:
+    fourteen shapes travelling 16px and back is cheaper than twelve crossing the
+    card, and only one of those two needs holding down.
+  */
+  const count = isRoam ? Math.min(tier.count, ROAM_MAX_COUNT) : tier.count;
+  const shapes = SHAPES.slice(0, count);
 
   return (
     <div
@@ -282,7 +346,15 @@ export default function DecorLayer({
             /* Motifs draw with currentColor, so the accent is set here. */
             color: accent,
             animationName: keyframe,
-            animationDuration: `${(shape.duration * tier.durationScale).toFixed(2)}s`,
+            /*
+              Roam ignores the tier's duration scale. That scale exists to make
+              "lively" feel livelier by running the short paths faster, and
+              applying it here would shorten the one path that is slow on
+              purpose.
+            */
+            animationDuration: isRoam
+              ? `${roamDuration(shape.duration)}s`
+              : `${(shape.duration * tier.durationScale).toFixed(2)}s`,
             animationDelay: `${shape.delay}s`,
             animationTimingFunction: "ease-in-out",
             animationIterationCount: "infinite",

@@ -7,6 +7,7 @@ const MOTIONS: readonly { id: DecorMotion; label: string }[] = [
   { id: "float", label: "Float" },
   { id: "fall", label: "Fall" },
   { id: "drift", label: "Drift" },
+  { id: "roam", label: "Roam" },
   { id: "none", label: "None" },
 ];
 

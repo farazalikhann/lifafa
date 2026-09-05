@@ -13,7 +13,15 @@ export type CardSectionId =
   | "timeline"
   | "message";
 
-export type DecorMotion = "float" | "fall" | "drift" | "none";
+/**
+ * How the scattered motifs move.
+ *
+ * "roam" is the odd one out and costs the most: the other three travel a short
+ * fixed path and repeat, while a roaming shape wanders through several offsets
+ * across a large area over half a minute. DecorLayer caps how many of those it
+ * will draw for exactly that reason.
+ */
+export type DecorMotion = "float" | "fall" | "drift" | "roam" | "none";
 
 /** How much decoration the canvas scatters. */
 export type DecorIntensity = "subtle" | "normal" | "lively";
@@ -66,6 +74,20 @@ export type CardSizing = "viewport" | "frame";
 
 export interface CardConfig {
   themeId: ThemeId;
+  /**
+   * A link to an audio file the guest may choose to play, or null.
+   *
+   * A URL and not an upload. Hosting audio and clearing music rights are both
+   * out of scope for this step: the first needs storage, a size cap and a
+   * scanner, and the second is a question about somebody else's copyright that
+   * a form field cannot answer. So the host brings their own link and the note
+   * under the field says whose responsibility that is.
+   *
+   * Null on every card saved before this existed, and absent from those rows
+   * entirely — CardCanvas reads it with `?? null` for that reason. Nothing ever
+   * plays without a tap; see components/card/MusicToggle.tsx.
+   */
+  musicUrl: string | null;
   /** Ordered — the canvas renders blocks in exactly this sequence. */
   blocks: readonly CardBlock[];
   decorMotion: DecorMotion;

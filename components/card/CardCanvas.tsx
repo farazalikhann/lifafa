@@ -21,6 +21,7 @@ import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
 import AddToCalendar from "@/components/card/AddToCalendar";
 import WeatherPanel from "@/components/card/WeatherPanel";
+import MusicToggle from "@/components/card/MusicToggle";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
@@ -756,6 +757,21 @@ export default function CardCanvas({
 
       {/* Content rides above the decor layer. */}
       <div className="relative z-10" style={{ paddingTop: contentTopInset }}>
+        {/*
+          First in the column and no height of its own, so it sticks to the top
+          of the scrollport without pushing the cover down a pixel. Renders
+          nothing at all when the host pasted no link, which is most cards.
+
+          `?? null` because card_config is a jsonb snapshot: a card saved before
+          this field existed has no key here, and `undefined` is not a value
+          MusicToggle should have to know about.
+        */}
+        <MusicToggle
+          musicUrl={config.musicUrl ?? null}
+          accent={effectiveTheme.accent}
+          surface={effectiveTheme.surface}
+        />
+
         {/*
           Dividers are driven off `visible`, never off `config.blocks`: an
           index > 0 test on the filtered list is what guarantees no divider can

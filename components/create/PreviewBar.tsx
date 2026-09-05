@@ -7,6 +7,7 @@ import type { Motif } from "@/lib/motifs";
 import { getPalette, type Palette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
+import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 
 /** Tailwind's `lg`, the breakpoint the editor's two-column grid starts at. */
@@ -101,10 +102,13 @@ export default function PreviewBar({
   draft,
   config,
   motifs,
+  coverAnimation,
 }: {
   draft: EventDraft;
   config: CardConfig;
   motifs: readonly Motif[];
+  /* Handed on to the overlay behind this bar, which is what plays it. */
+  coverAnimation: CoverAnimationId;
 }): ReactElement | null {
   const isFramed = useMediaQuery(FRAME_QUERY);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
@@ -196,6 +200,7 @@ export default function PreviewBar({
           theme={theme}
           config={config}
           motifs={motifs}
+          coverAnimation={coverAnimation}
           triggerRef={triggerRef}
           onClose={closePreview}
         />

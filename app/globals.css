@@ -368,3 +368,39 @@
     transform: scale(1.045);
   }
 }
+
+/*
+  Roaming: a long wandering path through six offsets, with a little rotation.
+
+  Every step is transform only, so the whole thing stays on the compositor. No
+  opacity here either, deliberately — the shape's own alpha lives on the inner
+  span in DecorLayer, and a keyframe touching opacity would override it and
+  make the scatter far louder than the contrast ceiling allows.
+
+  The offsets are asymmetric and do not retrace: a path that goes out and comes
+  straight back reads as a pendulum, and the point of this motion is that no
+  shape appears to be following a route.
+*/
+@keyframes lifafa-decor-roam {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  18% {
+    transform: translate3d(34px, -22px, 0) rotate(4deg);
+  }
+  36% {
+    transform: translate3d(12px, -46px, 0) rotate(-3deg);
+  }
+  54% {
+    transform: translate3d(-28px, -30px, 0) rotate(5deg);
+  }
+  72% {
+    transform: translate3d(-40px, 14px, 0) rotate(-4deg);
+  }
+  86% {
+    transform: translate3d(-14px, 32px, 0) rotate(2deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}

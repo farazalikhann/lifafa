@@ -12,11 +12,17 @@ import {
 import { createPortal } from "react-dom";
 import CardCanvas from "@/components/card/CardCanvas";
 import Watermark from "@/components/card/Watermark";
+import CoverShell from "@/components/invite/CoverShell";
+import CoverVisual from "@/components/invite/covers/CoverVisual";
+import { useRevealGate } from "@/hooks/useRevealGate";
 import { PREVIEW_INVITE } from "@/lib/calendar";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { getCoverAnimation } from "@/lib/coverAnimations";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
+import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 
 type DeviceId = "phone" | "desktop";
@@ -39,6 +45,12 @@ const DEVICES: readonly Device[] = [
  * Queried live on each Tab rather than captured on open, because the device
  * toggle re-renders and the card's own content can change under it — a stale
  * list would trap focus on a node that is no longer in the document.
+ *
+ * Anything under an `inert` ancestor is dropped, which matters from the moment
+ * a cover can be up: the card and the device toggles are still laid out behind
+ * it and still match the selector, but the browser will not focus them, so
+ * leaving them in the list would let the trap wrap onto a node that quietly
+ * refuses focus and leave Tab doing nothing at all.
  */
 const FOCUSABLE_SELECTOR = [
   "a[href]",
@@ -52,7 +64,10 @@ const FOCUSABLE_SELECTOR = [
 function focusableWithin(root: HTMLElement): readonly HTMLElement[] {
   return Array.from(
     root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-  ).filter((element) => element.offsetParent !== null);
+  ).filter(
+    (element) =>
+      element.offsetParent !== null && element.closest("[inert]") === null,
+  );
 }
 
 /**
@@ -94,6 +109,38 @@ function devicePillClass(isSelected: boolean): string {
 }
 
 /**
+ * The cover's reveal gate, reported back out of the cover.
+ *
+ * CoverShell keeps its phase to itself and offers no callback, but it does
+ * publish the gate to everything it wraps: false while the cover is still up,
+ * true the moment it has opened. Reading that from a child which draws nothing
+ * is how the preview learns the cover has finished, without CoverShell needing
+ * to know a preview exists.
+ *
+ * Reports the key of the cover instance rather than a bare `true`, so that a
+ * remounted cover cannot be mistaken for one that has already opened: the
+ * parent compares the key it was handed against the key it is rendering now,
+ * and the two differ from the very first render after a replay.
+ */
+function CoverReveal({
+  coverKey,
+  onRevealed,
+}: {
+  coverKey: string;
+  onRevealed: (key: string) => void;
+}): null {
+  const isRevealed = useRevealGate();
+
+  useEffect(() => {
+    if (isRevealed) {
+      onRevealed(coverKey);
+    }
+  }, [isRevealed, coverKey, onRevealed]);
+
+  return null;
+}
+
+/**
  * The invitation with nothing of the editor around it.
  *
  * The phone frame on /create is an honest preview of the proportions but not of
@@ -117,6 +164,7 @@ export default function FullScreenPreview({
   theme,
   config,
   motifs,
+  coverAnimation,
   triggerRef,
   onClose,
 }: {
@@ -124,6 +172,13 @@ export default function FullScreenPreview({
   theme: Theme;
   config: CardConfig;
   motifs: readonly Motif[];
+  /**
+   * The cover the host has selected *right now*, straight from the editor's
+   * own state rather than from a saved row: nothing here has been written to
+   * the database yet, and a preview that waited for a save would be answering
+   * a question the host has already moved on from.
+   */
+  coverAnimation: CoverAnimationId;
   /** Focus returns here on close, so the host lands where they left. */
   triggerRef: RefObject<HTMLButtonElement | null>;
   onClose: () => void;
@@ -138,10 +193,42 @@ export default function FullScreenPreview({
     offered a control that would do nothing.
   */
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  /*
+    Bumped by Replay, and half of the cover's key. Remounting the shell is the
+    only way back to a closed cover: it runs its phases forwards once and has
+    no reset, and giving it one would put a control that exists for the host
+    inside the component a guest uses.
+  */
+  const [replayCount, setReplayCount] = useState<number>(0);
+  /*
+    The key of the cover instance that has finished opening, or null. Held as a
+    key rather than as a boolean so that a change of key reads as "not opened
+    yet" in the very render that changes it, with no frame where Replay lingers
+    over a cover that has already gone back to its resting state.
+  */
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const titleId = useId();
 
   const device = DEVICES.find((entry) => entry.id === deviceId) ?? DEVICES[0];
   const palette = getPalette(config.style.paletteId);
+
+  const coverOption = getCoverAnimation(coverAnimation);
+  const hasCover = coverOption.id !== "none";
+  /*
+    The selection and the counter together. Replay bumps the counter; the id is
+    in the key so that picking a different animation while the preview is open
+    also resets the cover to its resting state and plays the new choice.
+  */
+  const coverKey = `${coverOption.id}:${replayCount}`;
+  const isRevealed = revealedKey === coverKey;
+  const isCovered = hasCover && !isRevealed;
+
+  /* The same line the guest's cover prints. See InviteExperience. */
+  const names = resolveCoverNames(draft, config.occasionId);
+  const coverTitle =
+    names.kind === "line" && names.isPlaceholder
+      ? undefined
+      : coverNameLine(names);
 
   /*
     onClose comes from the parent and is not guaranteed to be stable, so the
@@ -156,20 +243,45 @@ export default function FullScreenPreview({
     onCloseRef.current();
   }, []);
 
+  const handleReplay = useCallback((): void => {
+    setReplayCount((count) => count + 1);
+
+    /*
+      This control unmounts on its own click — the cover is closed again, so
+      there is nothing left to replay — and focus would be dropped on <body>
+      for the trap to catch on the next Tab. Handed somewhere real instead.
+    */
+    closeButtonRef.current?.focus();
+  }, []);
+
   /*
-    Scroll lock.
+    Scroll lock — on the document element, where it used to be on <body>.
+
+    CoverShell locks `body.style.overflow` for exactly as long as its cover is
+    up, saving and restoring the previous value the same way this did, and the
+    two cannot share one property. Nested on <body> they clobber each other in
+    both directions. A child's effects run before its parent's, so this one
+    would capture the *cover's* "hidden" as the value to put back, and closing
+    the preview after the cover had opened would leave /create frozen with
+    nothing on screen to unfreeze it. The other way round, the cover's own
+    restore when it opens would drop this lock halfway through the preview's
+    life and let the editor scroll about behind the overlay.
+
+    The viewport takes its overflow from <html> unless <html> is `visible`, so
+    locking here is exactly as effective and touches nothing the cover owns.
+    Order between the two stops mattering: each puts back the property it saved.
 
     The cleanup restores whatever the page had before, and it runs on unmount
     as well as on close — so an overlay torn down while still open (a route
     change, an error boundary) cannot leave the page behind it frozen.
   */
   useEffect(() => {
-    const { body } = document;
-    const previousOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
+    const root = document.documentElement;
+    const previousOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
 
     return () => {
-      body.style.overflow = previousOverflow;
+      root.style.overflow = previousOverflow;
     };
   }, []);
 
@@ -355,7 +467,17 @@ export default function FullScreenPreview({
         chrome asking a question nobody at that width has — and the vertical
         space it costs is space the card is not getting.
       */}
-      <header className="hidden shrink-0 items-center gap-3 border-b border-[var(--lifafa-hairline)] px-3 py-2 sm:px-5 lg:flex">
+      {/*
+        `inert` while the cover is up, because the cover is drawn over this bar
+        and an element that is merely painted over is still in the tab order.
+        The bar stays mounted rather than being dropped: rendering it back in
+        when the cover opens would push the card down a bar's height at the
+        exact moment the host is watching the reveal land.
+      */}
+      <header
+        inert={isCovered}
+        className="hidden shrink-0 items-center gap-3 border-b border-[var(--lifafa-hairline)] px-3 py-2 sm:px-5 lg:flex"
+      >
         <div className="flex items-center gap-2">
           {DEVICES.map((option) => (
             <button
@@ -381,16 +503,19 @@ export default function FullScreenPreview({
         the card can be cream or near-black depending on the palette, so the
         button has to carry its own contrast rather than borrow the card's.
 
-        z-40 puts it over the watermark's own layers (20 for the tiled pattern,
-        30 for the pill) and under the overlay's 50. Without it the pattern
-        would draw across the button on a card tall enough to reach up here.
+        The overlay is `fixed` with a z-index of its own, so it opens a stacking
+        context and every z-index below is scoped inside it. 60 clears the
+        watermark's layers (20 for the tiled pattern, 30 for the pill) as 40
+        used to, and now clears the cover at 50 as well — a cover is a full
+        viewport panel, and under it this button would be painted over with the
+        Escape key left as the only way out of the preview.
       */}
       <button
         ref={closeButtonRef}
         type="button"
         aria-label={isFullscreen ? "Exit full screen preview" : "Close preview"}
         onClick={handleClose}
-        className="absolute top-3 right-3 z-40 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 text-[var(--lifafa-cream)] backdrop-blur transition-colors duration-150 hover:bg-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+        className="absolute top-3 right-3 z-[60] flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 text-[var(--lifafa-cream)] backdrop-blur transition-colors duration-150 hover:bg-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
       >
         <svg
           aria-hidden="true"
@@ -406,63 +531,114 @@ export default function FullScreenPreview({
       </button>
 
       {/*
-        min-h-0 is what lets this shrink inside the column: without it the flex
-        item takes its content height, the card runs off the bottom of the
-        screen and the footer goes with it.
+        Replay, and it is the editor's control and nowhere near a guest.
+
+        A cover runs forwards once by design: a guest tears an envelope open and
+        that is the end of it. A host is deciding whether they like the thing,
+        and until now seeing it a second time meant closing the preview and
+        opening it again. Remounting the shell under a new key is the whole
+        mechanism — the cover comes back seeded at "closed", with no state of
+        its own that had to be reset, and CoverShell is untouched.
+
+        Only once the cover has opened. Before the tap there is nothing to
+        replay, and while the animation is playing the shell already offers
+        Skip. Never at all under "No animation", where there is no cover.
+
+        Low emphasis on purpose: it sits beside the close button in the same
+        floating row, in the editor's muted text rather than the card's colours.
       */}
-      <div className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {/*
-          No bottom clearance for the watermark pill any more, and dropping it
-          is what stops the border frame breaking at the end of the scroll.
-
-          The clearance existed because a card used to be able to finish its last
-          line right at its own foot, underneath the pill. That has not been true
-          since sections became a full screen tall with symmetric padding: the
-          last line now sits about 300px above the card's foot, and the pill —
-          3.5rem off the bottom of the screen — lands in that padding with
-          nothing behind it.
-
-          What the clearance did do was end the card 112px above the bottom of
-          the scroller, and the frame is pinned *inside* the card. So at the very
-          bottom of the scroll the sticky band ran out of containing block, the
-          bottom rail rode up, and the frame came apart with a band of bare
-          background beneath it. Letting the card fill the scroller fixes the
-          frame and removes 112px of dead space at the same time.
-        */}
-        <div
-          className="relative mx-auto w-full"
-          style={{
-            maxWidth: `${device.width}px`,
-            backgroundColor: palette.background,
-          }}
+      {hasCover && isRevealed ? (
+        <button
+          type="button"
+          onClick={handleReplay}
+          className="absolute top-3 right-16 z-40 flex h-11 shrink-0 items-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 px-4 text-[0.8125rem] font-medium text-[var(--lifafa-muted)] backdrop-blur transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
         >
+          Replay
+        </button>
+      ) : null}
+
+      {/*
+        The cover, wrapped exactly the way the guest's page wraps it — same
+        shell, same visual, same title line — so that "exactly what your guests
+        will see" covers how the card arrives and not only what it says.
+
+        The id comes from the editor's live state and not from a saved row, so
+        the host sees the choice they have just made without saving anything.
+        The key is what makes it replayable and what resets it when they change
+        their mind, and CoverReveal beside the card is what tells this component
+        the cover has finished. See the notes on both, above.
+
+        `display: contents` on the shell's own wrapper is why the scroller
+        inside still behaves as a flex item of this column.
+      */}
+      <CoverShell
+        key={coverKey}
+        animationId={coverAnimation}
+        title={coverTitle}
+        renderVisual={(state) => <CoverVisual {...state} />}
+      >
+        {/*
+          min-h-0 is what lets this shrink inside the column: without it the flex
+          item takes its content height, the card runs off the bottom of the
+          screen and the footer goes with it.
+        */}
+        <div className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {/*
-            CardCanvas caps itself at 420px, the width of the editor's frame.
-            Desktop is wider than that, so the cap is lifted and the width comes
-            from this wrapper instead — which is also what keeps a 390px phone
-            preview inside a 360px screen.
+            No bottom clearance for the watermark pill any more, and dropping it
+            is what stops the border frame breaking at the end of the scroll.
+
+            The clearance existed because a card used to be able to finish its last
+            line right at its own foot, underneath the pill. That has not been true
+            since sections became a full screen tall with symmetric padding: the
+            last line now sits about 300px above the card's foot, and the pill —
+            3.5rem off the bottom of the screen — lands in that padding with
+            nothing behind it.
+
+            What the clearance did do was end the card 112px above the bottom of
+            the scroller, and the frame is pinned *inside* the card. So at the very
+            bottom of the scroll the sticky band ran out of containing block, the
+            bottom rail rode up, and the frame came apart with a band of bare
+            background beneath it. Letting the card fill the scroller fixes the
+            frame and removes 112px of dead space at the same time.
           */}
-          <div className="[&>*]:max-w-none">
-            <CardCanvas
-              draft={draft}
-              theme={theme}
-              config={config}
-              motifs={motifs}
-              sizing="viewport"
-              /* No code minted yet — the host sees the buttons, not a live link. */
-              invite={PREVIEW_INVITE}
-              /* "Exactly what your guests will see" has to include the doing. */
-              audience="guest"
+          <div
+            className="relative mx-auto w-full"
+            style={{
+              maxWidth: `${device.width}px`,
+              backgroundColor: palette.background,
+            }}
+          >
+            {/*
+              CardCanvas caps itself at 420px, the width of the editor's frame.
+              Desktop is wider than that, so the cap is lifted and the width comes
+              from this wrapper instead — which is also what keeps a 390px phone
+              preview inside a 360px screen.
+            */}
+            <div className="[&>*]:max-w-none">
+              <CardCanvas
+                draft={draft}
+                theme={theme}
+                config={config}
+                motifs={motifs}
+                sizing="viewport"
+                /* No code minted yet — the host sees the buttons, not a live link. */
+                invite={PREVIEW_INVITE}
+                /* "Exactly what your guests will see" has to include the doing. */
+                audience="guest"
+              />
+            </div>
+
+            <Watermark
+              show
+              accent={config.style.accentOverride ?? palette.accent}
+              surface={palette.surface}
             />
           </div>
-
-          <Watermark
-            show
-            accent={config.style.accentOverride ?? palette.accent}
-            surface={palette.surface}
-          />
         </div>
-      </div>
+
+        {/* Draws nothing. Reads the shell's gate and reports it out. */}
+        <CoverReveal coverKey={coverKey} onRevealed={setRevealedKey} />
+      </CoverShell>
 
       {/*
         Dropped below lg along with the header, for the same reason: the card is

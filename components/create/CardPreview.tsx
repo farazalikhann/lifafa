@@ -9,6 +9,7 @@ import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
+import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
@@ -42,10 +43,18 @@ export default function CardPreview({
   draft,
   config,
   motifs,
+  coverAnimation,
 }: {
   draft: EventDraft;
   config: CardConfig;
   motifs: readonly Motif[];
+  /*
+    Passed straight through to the full screen preview, which is the only
+    surface here that plays it. The framed card above stays uncovered on
+    purpose: it repaints on every keystroke, and a cover the host had to tap
+    open again after each one would make the frame useless for editing.
+  */
+  coverAnimation: CoverAnimationId;
 }): ReactElement | null {
   /*
     The frame behind the card takes its colour from the selected palette, the
@@ -116,6 +125,7 @@ export default function CardPreview({
           theme={theme}
           config={config}
           motifs={motifs}
+          coverAnimation={coverAnimation}
           triggerRef={triggerRef}
           onClose={closePreview}
         />
