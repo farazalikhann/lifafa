@@ -3,14 +3,12 @@
 import { useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
 import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
-import EnvelopeOpening from "@/components/card/EnvelopeOpening";
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { getCoverAnimation } from "@/lib/coverAnimations";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -102,23 +100,7 @@ export default function InviteExperience({
       });
   };
 
-  /*
-    Two openings exist and exactly one of them may ever run.
-
-    CoverShell draws whichever cover the host chose in the designer, and
-    EnvelopeOpening is the envelope every other card gets. Nesting both would
-    ask a guest to tap through two envelopes, so this is the switch: a card
-    whose cover resolves to "none" — never chosen, or explicitly declined — is
-    the one that gets the plain envelope, and a card with a real cover on it
-    gets the host's.
-
-    Worth saying plainly: these two components do the same job and the product
-    should end up with one of them. Which one is a decision about the designer,
-    not about this file.
-  */
-  const hasChosenCover = getCoverAnimation(event.coverAnimation).id !== "none";
-
-  const card = (
+  return (
     <CoverShell
       animationId={event.coverAnimation}
       title={coverTitle}
@@ -179,19 +161,5 @@ export default function InviteExperience({
         )}
       </main>
     </CoverShell>
-  );
-
-  if (hasChosenCover) {
-    return card;
-  }
-
-  return (
-    <EnvelopeOpening
-      /* The same resolution the watermark uses, so a host's override reaches here too. */
-      accent={config.style.accentOverride ?? palette.accent}
-      background={palette.background}
-    >
-      {card}
-    </EnvelopeOpening>
   );
 }

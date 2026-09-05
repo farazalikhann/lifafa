@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
-import { timelineEntries } from "@/lib/cardSections";
+import { hasTimeline, timelineEntries } from "@/lib/cardSections";
 import {
   REVEAL_BASE,
   SECTION_REVEAL_OPTIONS,
@@ -22,10 +22,12 @@ import type { EventDraft } from "@/types/event";
  * the one way a schedule cannot afford to be. `timelineEntries` sorts a copy;
  * the draft keeps the host's own order untouched.
  *
- * Renders nothing when there is nothing to schedule — no sub-events and no
- * primary date — and CardCanvas filters it out of the running order in exactly
- * that case, so its divider goes with it. Both sides ask the same function,
- * which is what stops a divider being stranded beside nothing.
+ * Renders nothing until the host has added a function of their own. One event
+ * is not a sequence, and a schedule listing the single thing the date and venue
+ * sections have already covered is a screen that says nothing twice. CardCanvas
+ * filters the section out of the running order in that case, so its divider
+ * goes with it — both sides ask hasTimeline, which is what stops a divider
+ * being stranded beside nothing.
  */
 
 /**
@@ -56,11 +58,17 @@ export default function TimelineSection({
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
-  const entries = timelineEntries(draft);
-
-  if (entries.length === 0) {
+  /*
+    Asked of hasTimeline, not of the row count. The two are no longer the same
+    question — a card with a date and no sub-events has one entry and no
+    timeline — and CardCanvas places the dividers from hasTimeline, so a null
+    return decided any other way would strand a divider beside nothing.
+  */
+  if (!hasTimeline(draft)) {
     return null;
   }
+
+  const entries = timelineEntries(draft);
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 

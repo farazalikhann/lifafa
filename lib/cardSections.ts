@@ -162,9 +162,22 @@ export function timelineEntries(draft: EventDraft): readonly TimelineEntry[] {
     .map((row) => row.entry);
 }
 
-/** The timeline hides itself when it has no function to list. */
+/**
+ * The timeline waits for a second function before it appears at all.
+ *
+ * Not `timelineEntries(draft).length > 0`, which is what this used to be and
+ * which counted the primary event on its own. A card with one function and a
+ * date would grow a schedule listing that one function, saying what the date
+ * and venue sections above it had already said, under a heading promising
+ * celebrations plural. Every invitation that predates sub-events would have
+ * gained that section the day it shipped.
+ *
+ * So the question is not "is there anything to list" but "is there a sequence",
+ * and one event is not a sequence. Once a host adds a mehndi, the primary joins
+ * it in the list and the section is worth its screen.
+ */
 export function hasTimeline(draft: EventDraft): boolean {
-  return timelineEntries(draft).length > 0;
+  return draft.subEvents.length > 0;
 }
 
 /* ---------------------------------------------------------------------------

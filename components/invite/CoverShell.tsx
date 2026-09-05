@@ -84,6 +84,24 @@ export default function CoverShell({
   */
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
 
+  /*
+    Reduced motion means no cover at all, not a still one.
+
+    A guest who has asked their device for less movement has asked to be taken
+    to the content. An envelope that no longer animates but still has to be
+    tapped through is not a gentler flourish, it is a stile: the motion is gone
+    and only the obstacle is left. So the whole layer is skipped and the card is
+    what they land on.
+
+    Declared here, above the effects, because the scroll lock is keyed to it.
+
+    A consequence worth knowing: `reducedMotion` is therefore always false by
+    the time a visual is rendered, and the reduced-motion branches inside the
+    four cover visuals are unreachable while this holds. They are left in place
+    because they are what those files would need the day this policy is revisited.
+  */
+  const covered = phase !== "open" && !reducedMotion;
+
   /** The pending hand-off from "opening" to "open", so a skip can cancel it. */
   const timerRef = useRef<number | null>(null);
 
@@ -133,7 +151,7 @@ export default function CoverShell({
     lock some other component set.
   */
   useEffect(() => {
-    if (phase === "open") {
+    if (!covered) {
       return;
     }
 
@@ -144,9 +162,8 @@ export default function CoverShell({
     return () => {
       body.style.overflow = previousOverflow;
     };
-  }, [phase]);
+  }, [covered]);
 
-  const covered = phase !== "open";
   const visual = renderVisual?.({ phase, option, reducedMotion, title });
 
   return (
@@ -216,11 +233,17 @@ export default function CoverShell({
           </button>
 
           {/*
-            Only while it is playing. Offered before the tap it would be a
-            second, competing way in, and after the tap there is nothing left
-            to skip.
+            Present from the first frame, not revealed once the animation
+            starts.
+
+            It reads as a second way in, and that is exactly what it is for. The
+            guest it exists for is the one who has opened this card already —
+            checking the venue, showing somebody the date — and asking them to
+            tap an envelope and then sit through it again every time is how a
+            flourish turns into a toll. Offering it only mid-animation helps
+            nobody: by then they have already paid.
           */}
-          {phase === "opening" ? (
+          {covered ? (
             <button
               type="button"
               onClick={handleSkip}
