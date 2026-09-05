@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import CardPreview from "@/components/create/CardPreview";
 import SaveEventButton, {
@@ -8,12 +8,16 @@ import SaveEventButton, {
   readPendingCard,
 } from "@/components/create/SaveEventButton";
 import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
+import EditorTabs, { type EditorTabId } from "@/components/create/EditorTabs";
 import EventForm from "@/components/create/EventForm";
-import OccasionPicker from "@/components/create/OccasionPicker";
 import MotionPicker from "@/components/create/MotionPicker";
+import MusicPanel from "@/components/create/MusicPanel";
+import OccasionGrid from "@/components/create/OccasionGrid";
 import PreviewBar from "@/components/create/PreviewBar";
+import RevealPanel from "@/components/create/RevealPanel";
 import SectionManager from "@/components/create/SectionManager";
 import SubEventEditor from "@/components/create/SubEventEditor";
+import TraditionPicker from "@/components/create/TraditionPicker";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import StylePanel from "@/components/create/StylePanel";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
@@ -64,6 +68,13 @@ const EMPTY_DRAFT: EventDraft = {
 
 export default function CreatePage() {
   const [draft, setDraft] = useState<EventDraft>(EMPTY_DRAFT);
+  /*
+    Which pile of controls is on screen. React state and nothing else: no
+    localStorage, which is unavailable here, and nothing in the URL either — a
+    tab is where the host happens to be looking, not a place to come back to.
+    Details, because the facts are what an empty card needs first.
+  */
+  const [tab, setTab] = useState<EditorTabId>("details");
   const [occasionId, setOccasionId] = useState<OccasionId>(DEFAULT_OCCASION_ID);
   const [traditionId, setTraditionId] =
     useState<TraditionId>(DEFAULT_TRADITION_ID);
@@ -108,6 +119,18 @@ export default function CreatePage() {
     accentOverride: null,
   });
 
+  /*
+    Which function in the timeline has its fields open, and the counter that
+    names a new custom section.
+
+    Both were local to their own editor until those editors started unmounting
+    every time the host switched tab. The open row would have collapsed under
+    them; the counter would have restarted at 1 and minted an id a section in
+    the list already had. See the props on SubEventEditor and SectionManager.
+  */
+  const [openSubEventId, setOpenSubEventId] = useState<string | null>(null);
+  const nextCustomId = useRef<number>(1);
+
   /* Every built in section starts enabled, in the registry order. */
   const [blocks, setBlocks] = useState<readonly CardBlock[]>(() =>
     DEFAULT_SECTION_ORDER.map((id) => ({
@@ -116,6 +139,27 @@ export default function CreatePage() {
       enabled: true,
     })),
   );
+
+  /**
+   * The next unused `custom-n`.
+   *
+   * The skip loop is not belt and braces. A card restored from the sign-in
+   * stash arrives carrying custom-1 and custom-2 while this counter is still at
+   * 1 — exactly what a restored draft does to SubEventEditor's counter — so it
+   * is stepped past anything the list already holds rather than trusted blind.
+   */
+  const mintCustomId = useCallback((): string => {
+    let id = "";
+
+    do {
+      id = `custom-${nextCustomId.current}`;
+      nextCustomId.current += 1;
+    } while (
+      blocks.some((block) => block.kind === "custom" && block.section.id === id)
+    );
+
+    return id;
+  }, [blocks]);
 
   const handleChange = useCallback<
     <K extends keyof EventDraft>(field: K, value: EventDraft[K]) => void
@@ -237,6 +281,17 @@ export default function CreatePage() {
 
   const motifs = getMotifs(occasionId, traditionId);
 
+  /*
+    The one completion hint in the editor: Details is the only tab holding
+    anything a host would regret leaving blank. Every design and decoration
+    choice has a working default and the structure starts complete, so those
+    three never carry a dot and there is no scoring system here to decide it.
+  */
+  const detailsIncomplete =
+    draft.eventTitle.trim().length === 0 ||
+    draft.eventDate.length === 0 ||
+    draft.venueName.trim().length === 0;
+
   return (
     <div className="min-h-screen">
       {/* Slim top bar */}
@@ -264,16 +319,23 @@ export default function CreatePage() {
       </header>
 
       {/*
-        Below lg the preview comes first, so the card is the first thing a host
-        sees. At lg the form takes the left ~45% and the preview sticks on the
-        right ~55% while the form scrolls.
+        Two columns at lg: the controls on the left, the card sticking on the
+        right while they scroll. Below lg the card comes off the page entirely
+        and lives behind PreviewBar, pinned to the bottom of the screen.
+
+        The ratio moved from 45/55 to 58/42 when the tabs arrived, because the
+        left column now spends 11rem of itself on the tab sidebar and the
+        controls need the rest. Nothing is taken from the card: the preview
+        frame is `max-w-[380px]` and 42% of this container clears that at every
+        width from 1024px up, so it draws at exactly the size it always did.
       */}
       {/*
-        `pb-32` leaves room for the preview bar, which is fixed to the bottom of
-        the screen on a phone and would otherwise sit across the last control.
-        Dropped at lg, where there is no bar.
+        `pb-52` is room for two stacked bars on a phone — the tab bar and the
+        preview bar below it, about 150px between them over the safe area — so
+        the last control of every panel can be scrolled clear of both. Dropped
+        at lg, where there is neither.
       */}
-      <main className="mx-auto grid max-w-6xl gap-10 px-5 pt-8 pb-32 lg:grid-cols-[45fr_55fr] lg:items-start lg:gap-14 lg:px-8 lg:py-12">
+      <main className="mx-auto grid max-w-6xl gap-10 px-5 pt-8 pb-52 lg:grid-cols-[58fr_42fr] lg:items-start lg:px-8 lg:py-12">
         {/*
           The editor's visible headings all describe one part of the card —
           Occasion, Card sections, Style — and none of them names the page, so
@@ -298,78 +360,132 @@ export default function CreatePage() {
 
           `min-w-0` lets the column shrink to the space it actually has, which
           is what finally lets the specimens' own `truncate` do its job.
+          EditorTabs carries it on its own root and passes it to the panel.
         */}
         {/*
-          The controls come first now, in source order and on the page.
+          FOUR TABS, AND ONLY THE SELECTED ONE IS BUILT.
 
-          They used to be `order-2`, which put the whole card above them on a
-          phone: every colour or font change meant scrolling several screens up
-          to see the result and several screens back down to make the next one.
-          The card is not above them any more — it is behind the bar pinned to
-          the bottom of the screen — so the top of the page belongs to the work.
+          The order is the order a card gets made in: the facts, then the look,
+          then what goes on it, then what appears and in what order. What each
+          tab holds is decided here and nowhere else — EditorTabs draws the bar
+          and mounts whatever it is handed, and has no idea what a palette or a
+          sub-event is.
 
-          At lg the source order does the same job the `order` utilities used to:
-          first child takes the left column, second the right.
+          Every value below is page state, which is what makes unmounting three
+          panels safe: a control that leaves the screen leaves nothing behind
+          it. See the notes on `openSubEventId` and `nextCustomId` for the two
+          pieces that had to be lifted out of their editors to make that true.
         */}
-        <div className="flex min-w-0 flex-col gap-9">
-          <OccasionPicker
-            occasionId={occasionId}
-            traditionId={traditionId}
-            ornamentConfig={ornamentConfig}
-            onOccasionChange={handleOccasionSelect}
-            onTraditionChange={handleTraditionSelect}
-            onOrnamentConfigChange={setOrnamentConfig}
-          />
-          <EventForm
-            draft={draft}
-            onChange={handleChange}
-            occasionId={occasionId}
-          />
-          <SubEventEditor
-            subEvents={draft.subEvents}
-            onChange={(subEvents) => handleChange("subEvents", subEvents)}
-          />
-          <SectionManager blocks={blocks} onBlocksChange={setBlocks} />
-          <CoverAnimationPicker
-            coverAnimation={coverAnimation}
-            onChange={setCoverAnimation}
-          />
-          <WeatherPicker
-            showWeather={showWeather}
-            weatherTheme={weatherTheme}
-            onShowWeatherChange={setShowWeather}
-            onWeatherThemeChange={setWeatherTheme}
-          />
-        </div>
+        <EditorTabs
+          selected={tab}
+          onSelect={setTab}
+          detailsIncomplete={detailsIncomplete}
+        >
+          {/* 1 — DETAILS. Who, what, where. */}
+          {tab === "details" ? (
+            <>
+              <OccasionGrid
+                occasionId={occasionId}
+                onOccasionChange={handleOccasionSelect}
+              />
+              <EventForm
+                draft={draft}
+                onChange={handleChange}
+                occasionId={occasionId}
+              />
+              <SubEventEditor
+                subEvents={draft.subEvents}
+                openId={openSubEventId}
+                onChange={(subEvents) => handleChange("subEvents", subEvents)}
+                onOpenIdChange={setOpenSubEventId}
+              />
+            </>
+          ) : null}
 
+          {/* 2 — DESIGN. How it looks. */}
+          {tab === "design" ? (
+            <>
+              <StylePanel
+                style={style}
+                /* Resolved, so the specimen shows the same line the cover will. */
+                hostNames={coverNameLine(resolveCoverNames(draft, occasionId))}
+                paletteAccent={getPalette(style.paletteId).accent}
+                borderStyle={borderStyle}
+                onFontPairChange={setFontPair}
+                onPaletteChange={setPalette}
+                onDensityChange={setDensity}
+                onAccentChange={setAccent}
+                onBorderStyleChange={setBorderStyle}
+              />
+              <MotionPicker
+                motion={decorMotion}
+                intensity={decorIntensity}
+                onMotionChange={setDecorMotion}
+                onIntensityChange={setDecorIntensity}
+              />
+            </>
+          ) : null}
+
+          {/*
+            3 — DECORATION. What is on it.
+
+            The weather panel is here rather than under Structure, which is the
+            other tab it could have gone to. It is an optional treatment drawn
+            on the card, off until a host turns it on, which is what everything
+            else in this tab is; Structure is about the sections and the order
+            they come in, and the weather is not one of them.
+          */}
+          {tab === "decoration" ? (
+            <>
+              <TraditionPicker
+                traditionId={traditionId}
+                ornamentConfig={ornamentConfig}
+                onTraditionChange={handleTraditionSelect}
+                onOrnamentConfigChange={setOrnamentConfig}
+              />
+              <RevealPanel
+                scratchTarget={scratchTarget}
+                onScratchTargetChange={setScratchTarget}
+              />
+              <WeatherPicker
+                showWeather={showWeather}
+                weatherTheme={weatherTheme}
+                onShowWeatherChange={setShowWeather}
+                onWeatherThemeChange={setWeatherTheme}
+              />
+            </>
+          ) : null}
+
+          {/* 4 — STRUCTURE. What appears, and in what order. */}
+          {tab === "structure" ? (
+            <>
+              <SectionManager
+                blocks={blocks}
+                mintCustomId={mintCustomId}
+                onBlocksChange={setBlocks}
+              />
+              <CoverAnimationPicker
+                coverAnimation={coverAnimation}
+                onChange={setCoverAnimation}
+              />
+              <MusicPanel musicUrl={musicUrl} onMusicUrlChange={setMusicUrl} />
+            </>
+          ) : null}
+        </EditorTabs>
+
+        {/*
+          The preview belongs to no tab and never moves into one. Staying
+          mounted across all four is also what keeps it from resetting:
+          switching tabs re-renders this column, it does not remount it, so the
+          frame's own scroll position and the overlay's state survive a tab
+          switch untouched.
+        */}
         <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24">
           <CardPreview
             draft={draft}
             config={config}
             motifs={motifs}
             coverAnimation={coverAnimation}
-          />
-          <MotionPicker
-            motion={decorMotion}
-            intensity={decorIntensity}
-            onMotionChange={setDecorMotion}
-            onIntensityChange={setDecorIntensity}
-          />
-          <StylePanel
-            style={style}
-            /* Resolved, so the specimen shows the same line the cover will. */
-            hostNames={coverNameLine(resolveCoverNames(draft, occasionId))}
-            paletteAccent={getPalette(style.paletteId).accent}
-            scratchTarget={scratchTarget}
-            borderStyle={borderStyle}
-            musicUrl={musicUrl}
-            onFontPairChange={setFontPair}
-            onPaletteChange={setPalette}
-            onDensityChange={setDensity}
-            onAccentChange={setAccent}
-            onScratchTargetChange={setScratchTarget}
-            onBorderStyleChange={setBorderStyle}
-            onMusicUrlChange={setMusicUrl}
           />
         </div>
       </main>

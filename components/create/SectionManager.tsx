@@ -78,17 +78,24 @@ function blockKey(block: CardBlock): string {
 
 export default function SectionManager({
   blocks,
+  mintCustomId,
   onBlocksChange,
 }: {
   blocks: readonly CardBlock[];
+  /**
+   * A fresh id for a custom section, counted by the page.
+   *
+   * The counter used to be a ref in here, and it cannot be any more: this panel
+   * is unmounted whenever the host is looking at another tab, so the ref would
+   * restart at 1 and hand `custom-1` out a second time — two blocks with one
+   * id, a duplicate React key, and an edit to either landing on both. The
+   * counter is still a counter and not `Math.random` or `Date.now`, which
+   * differ between the server and the client and would trip a hydration
+   * mismatch, and would also remount the editor mid-typing.
+   */
+  mintCustomId: () => string;
   onBlocksChange: (blocks: readonly CardBlock[]) => void;
 }): ReactElement {
-  /*
-    Ids come from a ref counter, not Math.random or Date.now: those differ
-    between server and client and would trip a hydration mismatch, and a
-    changing id would also remount the editor mid-typing.
-  */
-  const nextCustomId = useRef<number>(1);
   const editorRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [scrollToId, setScrollToId] = useState<string | null>(null);
 
@@ -135,8 +142,7 @@ export default function SectionManager({
       return;
     }
 
-    const id = `custom-${nextCustomId.current}`;
-    nextCustomId.current += 1;
+    const id = mintCustomId();
 
     const section: CustomSection = { id, heading: "", body: "" };
     onBlocksChange([...blocks, { kind: "custom", section }]);

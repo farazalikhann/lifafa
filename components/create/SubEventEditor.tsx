@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactElement } from "react";
+import { useRef, type ReactElement } from "react";
 import { formatDateAndTime } from "@/lib/cardFormat";
 import type { SubEvent } from "@/types/event";
 
@@ -77,13 +77,24 @@ function Field({
 
 export default function SubEventEditor({
   subEvents,
+  openId,
   onChange,
+  onOpenIdChange,
 }: {
   subEvents: readonly SubEvent[];
+  /**
+   * Which function has its fields open. One at a time, or the column is a wall.
+   *
+   * Owned by the page rather than by this editor, because the editor now lives
+   * in the Details tab and is unmounted the moment the host looks at anything
+   * else. A host who opens the sangeet, goes to Design to try a palette and
+   * comes back would otherwise find every function collapsed again and have to
+   * hunt for their place.
+   */
+  openId: string | null;
   onChange: (next: readonly SubEvent[]) => void;
+  onOpenIdChange: (id: string | null) => void;
 }): ReactElement {
-  /** Which function has its fields open. One at a time, or the column is a wall. */
-  const [openId, setOpenId] = useState<string | null>(null);
 
   /*
     Ids come from a counter, never Math.random and never Date.now.
@@ -122,7 +133,7 @@ export default function SubEventEditor({
     onChange([...subEvents, added]);
 
     /* Added and opened in one click. Nobody adds a function to leave it blank. */
-    setOpenId(id);
+    onOpenIdChange(id);
   };
 
   const handleField = <K extends keyof SubEvent>(
@@ -141,7 +152,7 @@ export default function SubEventEditor({
     onChange(subEvents.filter((entry) => entry.id !== id));
 
     if (openId === id) {
-      setOpenId(null);
+      onOpenIdChange(null);
     }
   };
 
@@ -188,7 +199,7 @@ export default function SubEventEditor({
 
                   <button
                     type="button"
-                    onClick={() => setOpenId(isOpen ? null : entry.id)}
+                    onClick={() => onOpenIdChange(isOpen ? null : entry.id)}
                     aria-expanded={isOpen}
                     aria-label={
                       isOpen ? `Close ${title}` : `Edit ${title}`

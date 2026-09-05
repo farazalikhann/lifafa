@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { FONT_PAIRS, fontFamilyOf } from "@/lib/fontPairs";
 import { PALETTES } from "@/lib/palettes";
-import type { CardBorderStyle, ScratchTarget } from "@/types/card";
+import type { CardBorderStyle } from "@/types/card";
 import type {
   CardDensity,
   CardStyle,
@@ -188,18 +188,6 @@ const DENSITIES: readonly { id: CardDensity; label: string }[] = [
   { id: "airy", label: "Airy" },
 ];
 
-/*
-  Labelled by what the host is choosing to hide rather than by the mechanism,
-  because that is the decision they are actually making. Only one section can be
-  hidden, so these are radio-like pills rather than a pair of toggles.
-*/
-const SCRATCH_TARGETS: readonly { id: ScratchTarget; label: string }[] = [
-  { id: "none", label: "Off" },
-  { id: "date", label: "Hide the date" },
-  { id: "venue", label: "Hide the venue" },
-  { id: "countdown", label: "Hide the countdown" },
-];
-
 function pillClass(isSelected: boolean): string {
   return [
     "min-h-11 rounded-full border px-3.5 text-[0.8125rem] font-medium transition-colors duration-150",
@@ -222,16 +210,12 @@ export default function StylePanel({
   style,
   hostNames,
   paletteAccent,
-  scratchTarget,
   borderStyle,
-  musicUrl,
   onFontPairChange,
   onPaletteChange,
   onDensityChange,
   onAccentChange,
-  onScratchTargetChange,
   onBorderStyleChange,
-  onMusicUrlChange,
 }: {
   style: CardStyle;
   /** Shown in the typography previews so the host sees their own words. */
@@ -239,32 +223,18 @@ export default function StylePanel({
   /** The selected palette's own accent, used by the reset control. */
   paletteAccent: string;
   /*
-    Lives on the card config rather than on CardStyle, because it changes what
-    a guest has to do and not how the card looks, so it is passed on its own.
-  */
-  scratchTarget: ScratchTarget;
-  /*
-    On the card config rather than on CardStyle for the same reason the scratch
-    target is: it is furniture the canvas draws around the sections, not a
+    On the card config rather than on CardStyle, for the same reason the
+    scratch target is — back when that lived here too, it was the neighbouring
+    prop. This is furniture the canvas draws around the sections, not a
     typographic setting the sections inherit. Independent of the tradition —
     every style is offered on every card.
   */
   borderStyle: CardBorderStyle;
-  /*
-    A link the host pastes, never a file they upload. Hosting audio needs
-    storage, a size cap and a scanner, and clearing music rights is a question
-    about somebody else's copyright that no form field can answer. Both are out
-    of scope for this step, which is why the note under the input says plainly
-    whose responsibility the link is.
-  */
-  musicUrl: string | null;
   onFontPairChange: (id: FontPairId) => void;
   onPaletteChange: (id: PaletteId) => void;
   onDensityChange: (density: CardDensity) => void;
   onAccentChange: (accent: string | null) => void;
-  onScratchTargetChange: (target: ScratchTarget) => void;
   onBorderStyleChange: (border: CardBorderStyle) => void;
-  onMusicUrlChange: (url: string | null) => void;
 }): ReactElement {
   const previewName =
     hostNames.trim().length > 0 ? hostNames.trim() : "Your names";
@@ -432,34 +402,7 @@ export default function StylePanel({
         </p>
       </div>
 
-      {/* 4 — Reveal effect */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Reveal effect</GroupHeading>
-
-        <div className="flex flex-wrap gap-2">
-          {SCRATCH_TARGETS.map((option) => {
-            const isSelected = option.id === scratchTarget;
-
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => onScratchTargetChange(option.id)}
-                className={pillClass(isSelected)}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <p className="text-xs text-[var(--lifafa-muted)]">
-          Guests scratch the panel to uncover it.
-        </p>
-      </div>
-
-      {/* 5 — Card border */}
+      {/* 4 — Card border */}
       <div className="flex flex-col gap-2.5">
         <GroupHeading>Card border</GroupHeading>
 
@@ -509,52 +452,6 @@ export default function StylePanel({
 
         <p className="text-xs text-[var(--lifafa-muted)]">
           A decorative frame around the edges of your card.
-        </p>
-      </div>
-
-      {/* 6 — Background music */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Background music</GroupHeading>
-
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="musicUrl"
-            className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]"
-          >
-            Music file URL
-          </label>
-          <input
-            id="musicUrl"
-            type="url"
-            inputMode="url"
-            value={musicUrl ?? ""}
-            /*
-              An empty field is null, not "". Null is what "no music" means
-              everywhere else — the column, the config, the toggle's own guard —
-              and storing an empty string would be a second way to say it that
-              every reader would then have to know about.
-            */
-            onChange={(event) => {
-              const next = event.target.value.trim();
-              onMusicUrlChange(next.length > 0 ? next : null);
-            }}
-            placeholder="https://example.com/song.mp3"
-            autoComplete="off"
-            spellCheck={false}
-            aria-describedby="musicUrl-hint"
-            className={[
-              "w-full min-h-11 rounded-xl px-4 py-2.5",
-              "border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]",
-              "text-[0.9375rem] text-[var(--lifafa-cream)] placeholder:text-[var(--lifafa-muted)]/70",
-              "transition-colors duration-150 [color-scheme:dark]",
-              "focus:border-[var(--lifafa-marigold)] focus:ring-2 focus:ring-[var(--lifafa-marigold)]/30 focus:outline-none",
-            ].join(" ")}
-          />
-        </div>
-
-        <p id="musicUrl-hint" className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-          Paste a link to an audio file you have the right to use. Guests choose
-          whether to play it.
         </p>
       </div>
     </section>
