@@ -3,6 +3,7 @@ import Link from "next/link";
 import ExportCsvButton from "@/components/dashboard/ExportCsvButton";
 import GuestTable from "@/components/dashboard/GuestTable";
 import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
+import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import ReminderPanel from "@/components/dashboard/ReminderPanel";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
@@ -88,15 +89,50 @@ export default async function DashboardPage({
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-5 py-3 sm:px-6 lg:px-8">
-          <Link
-            href="/dashboard"
-            className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-          >
-            Lifafa
-          </Link>
+        {/*
+          Wraps rather than crushing four things onto one line.
 
-          <div className="flex min-w-0 items-center gap-4">
+          There are two groups here now — where you can go, and which event you
+          are looking at — and on a phone they take a row each. That is the
+          deliberate choice: nowrap would fit them both by shrinking the title
+          block to nothing, and a truncated title is not a shorter title, it is
+          a missing one.
+        */}
+        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3 sm:px-6 lg:px-8">
+          {/*
+            The wordmark goes to the landing page and the link beside it goes to
+            the list. It used to be one control doing both jobs silently — a
+            wordmark is not a signpost, and a host who had saved a second card
+            had no visible way from this page back to the first one. Now the way
+            back is a link that says where it goes.
+          */}
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/"
+              className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              Lifafa
+            </Link>
+
+            <Link
+              href="/dashboard"
+              className="flex min-h-11 items-center rounded text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              {/* Decorative: the words already say which direction this goes. */}
+              <span aria-hidden="true" className="mr-1.5">
+                ←
+              </span>
+              All my invitations
+            </Link>
+          </div>
+
+          {/*
+            `ml-auto` so that when this wraps onto its own row it stays against
+            the right edge. justify-between does nothing for a row holding one
+            item, and a right-aligned title block sitting at the left would read
+            as a mistake.
+          */}
+          <div className="ml-auto flex min-w-0 items-center gap-4">
             <div className="min-w-0 text-right">
               <p className="truncate text-[0.8125rem] font-medium text-[var(--lifafa-cream)] sm:text-sm">
                 {title}
@@ -120,6 +156,15 @@ export default async function DashboardPage({
             {guestsResult.error}
           </p>
         ) : null}
+
+        {/*
+          Above the share bar, and that placement is the whole argument for it.
+
+          The watermark is on the card a guest opens, so the moment a host is
+          about to copy the link is the moment they need to know it is there.
+          Renders nothing once the event is paid for.
+        */}
+        <PaymentBanner isPaid={event.isPaid} />
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">

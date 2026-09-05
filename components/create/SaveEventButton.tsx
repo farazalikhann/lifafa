@@ -196,6 +196,24 @@ export default function SaveEventButton({
         {isSaving ? "Saving…" : "Save and get my link"}
       </button>
 
+      {/*
+        The price, next to the button that commits to it.
+
+        One invitation is one payment, and the moment a host is about to make a
+        second one is the moment that has to be true in writing rather than
+        discovered on a bill. Muted and small: it is a footnote to the button,
+        not a second call to action, and nothing on this page charges anyone
+        anything yet.
+
+        No max-width, and left to wrap. The header gives this column whatever is
+        left after the wordmark, which at 360px is enough for the sentence at
+        this size; anything narrower takes a second line rather than squeezing
+        the one button the header exists for.
+      */}
+      <p className="text-right text-[0.6875rem] leading-snug text-[var(--lifafa-muted)]">
+        Each invitation is a separate ₹999 payment.
+      </p>
+
       {error !== null ? (
         <p
           role="alert"

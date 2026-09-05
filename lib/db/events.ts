@@ -316,6 +316,44 @@ export async function getEventsForHost(): Promise<DbResult<HostEvent[]>> {
 }
 
 /**
+ * How many events the signed-in host has, and nothing else about them.
+ *
+ * ONE REQUEST, NO ROWS. `head: true` with an exact count asks PostgREST for the
+ * Content-Range header and no body at all, so a host with forty invitations
+ * pays for a tally rather than for forty rows they were not going to be shown.
+ * The `select("id")` names the cheapest column there is; with `head: true` it
+ * is never actually projected.
+ *
+ * Host-scoped by events_select_own rather than by a host_id filter written
+ * here, exactly as getEventsForHost is — which also means an anonymous caller
+ * gets 0 rather than an error. That matters: this is a server action, and the
+ * notice on /create calls it from a page anyone may open.
+ *
+ * NOT A LIMIT. Nothing in the app refuses a host a further invitation because
+ * of this number. It exists so /create can say what already exists and the
+ * dashboard can say how much there is; a host may keep as many drafts as they
+ * like and pays per invitation, not per account.
+ */
+export async function countEventsForHost(): Promise<DbResult<number>> {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from("events")
+    .select("id", { count: "exact", head: true });
+
+  if (error !== null) {
+    return dbFailure(
+      "countEventsForHost",
+      error,
+      "Could not count your invitations, please try again.",
+    );
+  }
+
+  /* Null when PostgREST returns no range header at all; no rows is 0 either way. */
+  return dbSuccess(count ?? 0);
+}
+
+/**
  * One event by id, for the host's dashboard.
  *
  * Host-scoped by events_select_own rather than by a host_id filter written

@@ -10,6 +10,7 @@ import SaveEventButton, {
 import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
 import EditorTabs, { type EditorTabId } from "@/components/create/EditorTabs";
 import EventForm from "@/components/create/EventForm";
+import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import MotionPicker from "@/components/create/MotionPicker";
 import MusicPanel from "@/components/create/MusicPanel";
 import OccasionGrid from "@/components/create/OccasionGrid";
@@ -345,6 +346,18 @@ export default function CreatePage() {
           itself, and a visible title would compete with it.
         */}
         <h1 className="sr-only">Create your invitation</h1>
+
+        {/*
+          Above everything, and spanning both columns at lg.
+
+          It is a fact about the page rather than about any one control, so it
+          sits over the whole editor rather than inside the Details tab — a host
+          who happens to open on Design would otherwise never be told. It
+          renders null for a signed-out visitor and for a host with nothing
+          saved yet, which is most of the traffic /create sees, so no grid item
+          is created at all in the ordinary case.
+        */}
+        <ExistingInvitationsNotice />
 
         {/*
           `min-w-0` on both columns, and it is load-bearing rather than tidy.
