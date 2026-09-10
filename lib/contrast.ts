@@ -45,23 +45,37 @@ export function contrastRatio(a: string, b: string): number {
 }
 
 /**
+ * `from` moved `amount` of the way towards `to`, as an opaque hex colour.
+ *
+ * Mixed in sRGB rather than in a perceptual space, because the result is used
+ * where a browser would have composited anyway — a flat fill standing in for a
+ * translucent one — and matching what the browser does matters more here than
+ * being perceptually even. `amount` is clamped, so a caller cannot mix past
+ * either end and come back with a colour that is no longer between the two.
+ */
+export function mixHex(from: string, to: string, amount: number): string {
+  const t = Math.min(1, Math.max(0, amount));
+  const [fr, fg, fb] = channels(from);
+  const [tr, tg, tb] = channels(to);
+
+  const blend = (start: number, end: number): number =>
+    Math.round(start * (1 - t) + end * t);
+
+  return [blend(fr, tr), blend(fg, tg), blend(fb, tb)]
+    .reduce((hex, part) => hex + part.toString(16).padStart(2, "0"), "#")
+    .toUpperCase();
+}
+
+/**
  * The colour an opaque background becomes once a translucent overlay is laid
  * over it. Compositing happens in sRGB, which is what a browser does, so the
  * result is the colour a glyph behind that overlay is really read against.
+ *
+ * The same arithmetic as mixHex, and expressed as it: an overlay at alpha a is
+ * the background moved a of the way towards the overlay's colour.
  */
 function composite(overlay: string, background: string, alpha: number): string {
-  const [fr, fg, fb] = channels(overlay);
-  const [br, bg, bb] = channels(background);
-
-  const mix = (front: number, back: number): number =>
-    Math.round(front * alpha + back * (1 - alpha));
-
-  return [mix(fr, br), mix(fg, bg), mix(fb, bb)]
-    .reduce(
-      (hex, part) => hex + part.toString(16).padStart(2, "0"),
-      "#",
-    )
-    .toUpperCase();
+  return mixHex(background, overlay, alpha);
 }
 
 /** WCAG's threshold for text below 18.66px, which is all of the card's body copy. */

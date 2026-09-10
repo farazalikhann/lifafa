@@ -5,12 +5,16 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactElement,
   type ReactNode,
 } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { RevealGateContext } from "@/hooks/useRevealGate";
 import { getCoverAnimation } from "@/lib/coverAnimations";
+import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
+import type { Palette } from "@/lib/palettes";
+import { playCoverSound } from "@/lib/coverSound";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
@@ -31,6 +35,13 @@ export interface CoverVisualState {
   option: CoverAnimationOption;
   /** True when the guest has asked for no motion; the visual should draw a still frame. */
   reducedMotion: boolean;
+  /**
+   * The colours to draw in, derived from the card's own palette. A visual must
+   * take every fill, stroke and ornament colour from here and hold none of its
+   * own — see lib/coverPalette.ts for why the wrapper is made of the same
+   * material as the card inside it.
+   */
+  colors: CoverPalette;
   /**
    * The same title the cover prints, passed on so a visual can letter it into
    * the drawing — initials on a wax seal, a monogram on a curtain. Undefined
@@ -56,12 +67,25 @@ export interface CoverVisualState {
  */
 export default function CoverShell({
   animationId,
+  palette,
+  accent,
   title,
   renderVisual,
   children,
 }: {
   /** The raw value off the saved card. Unknown, null and undefined all mean "no cover". */
   animationId: string | null | undefined;
+  /**
+   * The card's palette, which is also the cover's.
+   *
+   * Required rather than defaulted. A default would be a cream cover in front
+   * of whatever the host actually chose, which is the exact fault this argument
+   * exists to remove — and there are only two places that mount a cover, so
+   * there is no call site a required prop makes awkward.
+   */
+  palette: Palette;
+  /** The host's own accent when they set one; the palette's otherwise. */
+  accent?: string | null;
   /** The couple, or whatever names the event, shown on the closed cover. */
   title?: string;
   renderVisual?: (state: CoverVisualState) => ReactNode;
@@ -69,6 +93,7 @@ export default function CoverShell({
 }): ReactElement {
   const option = getCoverAnimation(animationId);
   const hasCover = option.id !== "none";
+  const colors = coverPalette(palette, accent);
 
   /*
     Seeded rather than corrected in an effect. A card saved with no animation
@@ -112,7 +137,32 @@ export default function CoverShell({
     }
   }, []);
 
+  /**
+   * Whether this cover has already made its sound.
+   *
+   * A ref rather than the phase, and it is not redundant with the guard below.
+   * That guard lives inside a state updater, and React calls an updater twice
+   * in development and may call it again on a replayed render; a sound
+   * scheduled in there would be scheduled twice. This is read and set once, in
+   * the handler itself, where a tap happens exactly as often as it happens.
+   */
+  const soundedRef = useRef(false);
+
   const handleOpen = useCallback((): void => {
+    /*
+      The sound goes with the tap, not with the phase change.
+
+      Skipped entirely under reduced motion and for a cover with no time to run,
+      both of which open instantly — a noise with no animation under it is a
+      jump scare, not a flourish. playCoverSound swallows everything else: a
+      browser with no Web Audio, or one that will not start a context, opens the
+      card in silence and says nothing about it.
+    */
+    if (!soundedRef.current && !reducedMotion && option.durationMs > 0) {
+      soundedRef.current = true;
+      playCoverSound(option.sound);
+    }
+
     /*
       The whole double tap guard. A second tap during "opening" would queue a
       second timeout, and an impatient guest could stack several; the phase
@@ -134,7 +184,7 @@ export default function CoverShell({
 
       return "opening";
     });
-  }, [option.durationMs, reducedMotion]);
+  }, [option.durationMs, option.sound, reducedMotion]);
 
   const handleSkip = useCallback((): void => {
     clearTimer();
@@ -164,7 +214,7 @@ export default function CoverShell({
     };
   }, [covered]);
 
-  const visual = renderVisual?.({ phase, option, reducedMotion, title });
+  const visual = renderVisual?.({ phase, option, reducedMotion, colors, title });
 
   return (
     <>
@@ -200,7 +250,33 @@ export default function CoverShell({
         <div
           data-phase={phase}
           data-animation={option.id}
-          className="fixed inset-0 z-50 flex min-h-dvh w-full flex-col items-center justify-center bg-[var(--lifafa-cream)]"
+          /*
+            The ground is the card's own background, not cream.
+
+            This is the frame before the first frame of the invitation, and for
+            nine of the ten palettes a cream one was a lie about what was behind
+            it: a guest tapped a white envelope and the screen went black. Now
+            the cover and the card start from the same colour, so opening reads
+            as paper coming away rather than as the lights being switched.
+
+            Inline rather than a class, for the same reason CardCanvas sets its
+            colours inline — the palette is data on a row, not one of a fixed
+            set of themes a stylesheet could enumerate.
+          */
+          style={
+            {
+              backgroundColor: colors.ground,
+              /*
+                Published as variables as well as painted, so the controls below
+                can use them in states an inline style cannot reach — a hover, a
+                focus ring — without each one being handed the palette again.
+              */
+              "--cover-text": colors.text,
+              "--cover-muted": colors.textMuted,
+              "--cover-accent": colors.accent,
+            } as CSSProperties
+          }
+          className="fixed inset-0 z-50 flex min-h-dvh w-full flex-col items-center justify-center"
         >
           {visual}
 
@@ -216,18 +292,23 @@ export default function CoverShell({
               under it and sit low. With no visual there is nothing to clear and
               they take the centre, which is where a plain cover wants them.
             */
-            className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--lifafa-ink)] disabled:cursor-default ${
+            /*
+              The focus ring is the accent rather than ink: on a dark palette an
+              ink outline on an ink ground is a focus ring nobody can see, and
+              this is the only control a keyboard guest has.
+            */
+            className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
               visual === null || visual === undefined
                 ? "justify-center"
                 : "justify-end pb-[12vh]"
             }`}
           >
             {title ? (
-              <span className="text-2xl text-[var(--lifafa-ink)] sm:text-3xl">
+              <span className="text-2xl text-[var(--cover-text)] sm:text-3xl">
                 {title}
               </span>
             ) : null}
-            <span className="text-sm tracking-wide text-[var(--lifafa-muted)]">
+            <span className="text-sm tracking-wide text-[var(--cover-muted)]">
               {option.openPromptText}
             </span>
           </button>
@@ -247,7 +328,7 @@ export default function CoverShell({
             <button
               type="button"
               onClick={handleSkip}
-              className="absolute bottom-6 right-6 rounded-full px-3 py-1.5 text-xs text-[var(--lifafa-muted)] underline underline-offset-4 hover:text-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-ink)]"
+              className="absolute right-6 bottom-6 rounded-full px-3 py-1.5 text-xs text-[var(--cover-muted)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--cover-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cover-accent)]"
             >
               Skip
             </button>

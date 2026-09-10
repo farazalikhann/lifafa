@@ -102,11 +102,16 @@ function speckDrift(speck: Speck): { dx: number; dy: number } {
  * a CSS `transform` on the inner one, never both on the same element: the CSS
  * property overrides the presentation attribute, so a single element carrying
  * both would snap to the middle of the drawing the moment it animated.
+ *
+ * Petals, dust and glow are all the card's accent — the host's override when
+ * they set one — rather than the product's marigold, so the scatter belongs to
+ * the invitation underneath it. See lib/coverPalette.ts.
  */
 export default function PetalDustCover({
   phase,
   option,
   reducedMotion,
+  colors,
 }: CoverVisualState): ReactElement {
   const opening = phase === "opening";
 
@@ -165,9 +170,9 @@ export default function PetalDustCover({
       >
         <defs>
           <radialGradient id="lifafa-petal-glow">
-            <stop offset="0%" stopColor="var(--lifafa-marigold)" stopOpacity="0.3" />
-            <stop offset="55%" stopColor="var(--lifafa-marigold)" stopOpacity="0.1" />
-            <stop offset="100%" stopColor="var(--lifafa-marigold)" stopOpacity="0" />
+            <stop offset="0%" stopColor={colors.accent} stopOpacity="0.3" />
+            <stop offset="55%" stopColor={colors.accent} stopOpacity="0.1" />
+            <stop offset="100%" stopColor={colors.accent} stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -198,11 +203,7 @@ export default function PetalDustCover({
               transform={`translate(${speck.x} ${speck.y})`}
             >
               <g style={driftStyle(dx, dy, speck.delay)}>
-                <circle
-                  r={speck.r}
-                  fill="var(--lifafa-marigold)"
-                  opacity={speck.opacity}
-                />
+                <circle r={speck.r} fill={colors.accent} opacity={speck.opacity} />
               </g>
             </g>
           );
@@ -214,11 +215,7 @@ export default function PetalDustCover({
             transform={`translate(${petal.x} ${petal.y}) rotate(${petal.rotate}) scale(${petal.size})`}
           >
             <g style={driftStyle(petal.dx, petal.dy, petal.delay)}>
-              <path
-                d={PETAL_PATH}
-                fill="var(--lifafa-marigold)"
-                opacity={petal.opacity}
-              />
+              <path d={PETAL_PATH} fill={colors.accent} opacity={petal.opacity} />
             </g>
           </g>
         ))}

@@ -3,6 +3,7 @@
 import { type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import { stage } from "@/components/invite/covers/timing";
+import type { CoverPalette } from "@/lib/coverPalette";
 
 /**
  * How the open splits across the shell's timer, as fractions of --cover-ms.
@@ -24,20 +25,31 @@ const FADE_START = 0.7;
  */
 const TRAVEL = 86;
 
-/** Fabric, a shade off the cover's cream ground, with the folds a touch deeper. */
-const FABRIC = "#f2e8da";
-const FOLD = "#e4d5bd";
-
 /*
   The drape, as one repeating gradient rather than a stack of elements. Uneven
   stops on purpose: evenly spaced folds read as corrugation, and cloth does not
   hang in a regular wave.
+
+  Built from the card's palette rather than from two cream constants, so the
+  curtains are cut from the same cloth as the invitation behind them — see
+  lib/coverPalette.ts. `paper` is the lit face of a fold and `paperDeep` the
+  shaded one, whichever direction "darker" happens to be for this card.
 */
-const DRAPE =
-  `repeating-linear-gradient(90deg, ${FABRIC} 0px, ${FOLD} 11px, ${FABRIC} 23px, ${FABRIC} 34px, ${FOLD} 47px, ${FABRIC} 58px)`;
+function drape(colors: CoverPalette): string {
+  const lit = colors.paper;
+  const fold = colors.paperDeep;
+
+  return `repeating-linear-gradient(90deg, ${lit} 0px, ${fold} 11px, ${lit} 23px, ${lit} 34px, ${fold} 47px, ${lit} 58px)`;
+}
 
 /** The gathered ring and tail that hold a panel back, drawn once and mirrored. */
-function TieBack({ side }: { side: "left" | "right" }): ReactElement {
+function TieBack({
+  side,
+  accent,
+}: {
+  side: "left" | "right";
+  accent: string;
+}): ReactElement {
   return (
     <svg
       viewBox="0 0 60 120"
@@ -51,23 +63,23 @@ function TieBack({ side }: { side: "left" | "right" }): ReactElement {
       <path
         d="M8 34 C34 44 34 76 8 86"
         fill="none"
-        stroke="var(--lifafa-marigold)"
+        stroke={accent}
         strokeWidth="3"
         strokeLinecap="round"
         opacity="0.8"
       />
-      <circle cx="30" cy="60" r="6" fill="var(--lifafa-marigold)" opacity="0.9" />
+      <circle cx="30" cy="60" r="6" fill={accent} opacity="0.9" />
       {/* The tassel hanging off it. */}
       <path
         d="M30 66 L30 82"
-        stroke="var(--lifafa-marigold)"
+        stroke={accent}
         strokeWidth="2"
         strokeLinecap="round"
         opacity="0.7"
       />
       <path
         d="M24 82 L36 82 L33 96 L27 96 Z"
-        fill="var(--lifafa-marigold)"
+        fill={accent}
         opacity="0.65"
       />
     </svg>
@@ -87,6 +99,7 @@ export default function CurtainRevealCover({
   phase,
   option,
   reducedMotion,
+  colors,
 }: CoverVisualState): ReactElement {
   const opening = phase === "opening";
 
@@ -112,8 +125,18 @@ export default function CurtainRevealCover({
       ? undefined
       : stage("transform", SLIDE_SHARE, 0, "cubic-bezier(0.22,1.15,0.36,1)"),
     transform: opening ? `translateX(${direction * TRAVEL}%)` : "translateX(0)",
-    backgroundImage: DRAPE,
+    backgroundImage: drape(colors),
   });
+
+  /*
+    A shadow stays a shadow, on every palette.
+
+    This is the one thing in the cover that is NOT read off the card's colours,
+    and deliberately: shading is light not reaching the cloth, so it is dark
+    whether the curtain is cream or near-black. Mixing it from the palette would
+    make it lighten the fabric on a dark card, which is not a fold, it is a
+    crease of glare. It is translucent, so the drape's own tones read through it.
+  */
 
   /* Deepest where the two panels meet, and softening as the gap opens. */
   const seamShadowStyle: CSSProperties = {
@@ -140,10 +163,10 @@ export default function CurtainRevealCover({
           style={{
             ...seamShadowStyle,
             backgroundImage:
-              "linear-gradient(90deg, rgba(18,16,14,0.10) 0%, rgba(18,16,14,0) 38%, rgba(18,16,14,0.16) 100%)",
+              "linear-gradient(90deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.18) 100%)",
           }}
         />
-        <TieBack side="left" />
+        <TieBack side="left" accent={colors.accent} />
       </div>
 
       <div
@@ -155,10 +178,10 @@ export default function CurtainRevealCover({
           style={{
             ...seamShadowStyle,
             backgroundImage:
-              "linear-gradient(270deg, rgba(18,16,14,0.10) 0%, rgba(18,16,14,0) 38%, rgba(18,16,14,0.16) 100%)",
+              "linear-gradient(270deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.18) 100%)",
           }}
         />
-        <TieBack side="right" />
+        <TieBack side="right" accent={colors.accent} />
       </div>
     </div>
   );

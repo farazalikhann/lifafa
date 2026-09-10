@@ -8,6 +8,8 @@
  * id is safe. Changing an old one is not.
  */
 
+import type { CoverSoundId } from "@/lib/coverSound";
+
 /** Every opening animation the card knows how to play. */
 export type CoverAnimationId =
   | "none"
@@ -30,6 +32,16 @@ export interface CoverAnimationOption {
   openPromptText: string;
   /** Total length of the open animation, in milliseconds. */
   durationMs: number;
+  /**
+   * The sound the cover makes when a guest taps it open, synthesised rather
+   * than fetched — see lib/coverSound.ts. Null for a cover that opens in
+   * silence, which is what "none" does because there is nothing to open.
+   *
+   * NOT AN ID THE DATABASE EVER SEES. Unlike the animation id above, this is a
+   * property of the animation rather than a choice a host saves, so it can be
+   * changed, retuned or dropped without a stored row meaning anything different.
+   */
+  sound: CoverSoundId | null;
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
 }

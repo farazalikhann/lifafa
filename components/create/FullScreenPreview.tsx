@@ -574,6 +574,9 @@ export default function FullScreenPreview({
       <CoverShell
         key={coverKey}
         animationId={coverAnimation}
+        /* The same two the invite page passes, so this preview stays honest. */
+        palette={palette}
+        accent={config.style.accentOverride}
         title={coverTitle}
         renderVisual={(state) => <CoverVisual {...state} />}
       >

@@ -31,11 +31,6 @@ const SIDE_OPEN = -116;
 /** How far the front face swings once the side has let go. */
 const FACE_OPEN = 74;
 
-/** Card stock, a shade off the cover's cream ground, with the inside lighter. */
-const STOCK = "#f2e8da";
-const STOCK_INNER = "#eadcc6";
-const EDGE = "#d9c4a0";
-
 /**
  * A folded card opening out.
  *
@@ -43,11 +38,16 @@ const EDGE = "#d9c4a0";
  * one's transform origin on its own edge rather than the viewBox corner, and
  * the perspective is written into each transform so the 3D depends on nothing
  * above it in the tree.
+ *
+ * The stock is the card's own palette worked into paper tones, so a folded card
+ * on an ink invitation is dark stock rather than a cream one that vanishes into
+ * white the moment it opens. See lib/coverPalette.ts.
  */
 export default function FoldUnfoldCover({
   phase,
   option,
   reducedMotion,
+  colors,
 }: CoverVisualState): ReactElement {
   const opening = phase === "opening";
 
@@ -113,8 +113,8 @@ export default function FoldUnfoldCover({
               width="120"
               height="180"
               rx="4"
-              fill={STOCK_INNER}
-              stroke={EDGE}
+              fill={colors.paperDeep}
+              stroke={colors.edge}
               strokeWidth="1.5"
             />
           </g>
@@ -126,8 +126,8 @@ export default function FoldUnfoldCover({
               width="120"
               height="180"
               rx="4"
-              fill={STOCK}
-              stroke={EDGE}
+              fill={colors.paper}
+              stroke={colors.edge}
               strokeWidth="1.5"
             />
 
@@ -139,7 +139,7 @@ export default function FoldUnfoldCover({
               height="162"
               rx="2"
               fill="none"
-              stroke="var(--lifafa-marigold)"
+              stroke={colors.accent}
               strokeWidth="1"
               opacity="0.75"
             />
@@ -148,10 +148,10 @@ export default function FoldUnfoldCover({
             <g opacity="0.8">
               <path
                 d="M260 136 L268 150 L260 164 L252 150 Z"
-                fill="var(--lifafa-marigold)"
+                fill={colors.accent}
               />
-              <circle cx="260" cy="120" r="2.5" fill="var(--lifafa-marigold)" />
-              <circle cx="260" cy="180" r="2.5" fill="var(--lifafa-marigold)" />
+              <circle cx="260" cy="120" r="2.5" fill={colors.accent} />
+              <circle cx="260" cy="180" r="2.5" fill={colors.accent} />
             </g>
           </g>
 
@@ -161,7 +161,7 @@ export default function FoldUnfoldCover({
             y1="60"
             x2="200"
             y2="240"
-            stroke={EDGE}
+            stroke={colors.edge}
             strokeWidth="1.5"
             opacity="0.9"
           />

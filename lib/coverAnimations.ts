@@ -15,6 +15,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     description: "The card is open the moment the guest arrives.",
     openPromptText: "",
     durationMs: 0,
+    sound: null,
     supportsReducedMotion: true,
   },
   {
@@ -23,6 +24,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     description: "A sealed envelope breaks open and the card slides out.",
     openPromptText: "Tap seal to open",
     durationMs: 1400,
+    sound: "seal",
     supportsReducedMotion: true,
   },
   {
@@ -31,6 +33,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     description: "Two curtains draw apart to show the card behind them.",
     openPromptText: "Tap to draw the curtains",
     durationMs: 1100,
+    sound: "curtain",
     supportsReducedMotion: true,
   },
   {
@@ -39,6 +42,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     description: "A folded card opens out flat, one panel at a time.",
     openPromptText: "Tap to unfold",
     durationMs: 1300,
+    sound: "fold",
     supportsReducedMotion: true,
   },
   {
@@ -47,6 +51,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     description: "Petals scatter off the cover and settle to reveal the card.",
     openPromptText: "Tap to scatter the petals",
     durationMs: 1200,
+    sound: "chime",
     supportsReducedMotion: true,
   },
 ];

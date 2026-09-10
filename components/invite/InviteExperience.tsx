@@ -103,6 +103,14 @@ export default function InviteExperience({
   return (
     <CoverShell
       animationId={event.coverAnimation}
+      /*
+        The card's own colours, so the cover a guest taps is made of the same
+        material as the invitation behind it. The accent is resolved the same
+        way the watermark resolves it, which is what stops a host's overridden
+        accent meeting the product's marigold on the way in.
+      */
+      palette={palette}
+      accent={config.style.accentOverride}
       title={coverTitle}
       renderVisual={(state) => <CoverVisual {...state} />}
     >
