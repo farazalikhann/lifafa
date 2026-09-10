@@ -99,6 +99,40 @@ export async function getGuestsForEvent(
 }
 
 /**
+ * How many people have replied to one event, and nothing else about them.
+ *
+ * ONE REQUEST, NO ROWS. `head: true` with an exact count asks PostgREST for the
+ * Content-Range header and no body, so the editor can warn a host that guests
+ * are already holding this date without loading a guest list it has no way to
+ * show and no business reading.
+ *
+ * Host-scoped by guests_select_host, exactly as getGuestsForEvent is, so an
+ * event the caller does not own counts 0 rather than erroring — which is the
+ * correct and uninformative answer for a stranger.
+ */
+export async function countGuestsForEvent(
+  eventId: string,
+): Promise<DbResult<number>> {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from("guests")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId);
+
+  if (error !== null) {
+    return dbFailure(
+      "countGuestsForEvent",
+      error,
+      "Could not count the replies, please try again.",
+    );
+  }
+
+  /* Null when PostgREST returns no range header at all; no rows is 0 either way. */
+  return dbSuccess(count ?? 0);
+}
+
+/**
  * Marks a guest arrived, or undoes it.
  *
  * The flag and its timestamp are written in the same statement, so the two can

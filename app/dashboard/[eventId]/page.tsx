@@ -1,10 +1,12 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import EventNotFound from "@/components/dashboard/EventNotFound";
 import ExportCsvButton from "@/components/dashboard/ExportCsvButton";
 import GuestTable from "@/components/dashboard/GuestTable";
 import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
 import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import ReminderPanel from "@/components/dashboard/ReminderPanel";
+import SavedNotice from "@/components/dashboard/SavedNotice";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import WeatherSummary from "@/components/dashboard/WeatherSummary";
@@ -22,35 +24,24 @@ import { getEventWeather } from "@/lib/weather";
  * is derived from the guest list rather than stored.
  */
 
-function NotFound({ message }: { message: string }): ReactElement {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
-      <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--lifafa-cream)]">
-        We could not find that invitation.
-      </p>
-      <p className="max-w-[38ch] text-sm leading-relaxed text-[var(--lifafa-muted)]">
-        {message}
-      </p>
-      <Link
-        href="/dashboard"
-        className="mt-2 min-h-11 rounded px-2 text-sm font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-      >
-        Back to your invitations
-      </Link>
-    </main>
-  );
-}
-
 export default async function DashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>;
+  /*
+    Only `saved`, and only ever written by the editor on its way back here. See
+    components/dashboard/SavedNotice.tsx for why the confirmation travels in the
+    URL and how it takes itself back out of one.
+  */
+  searchParams: Promise<{ saved?: string }>;
 }): Promise<ReactElement> {
   const { eventId } = await params;
+  const { saved } = await searchParams;
   const eventResult = await getEventById(eventId);
 
   if (!eventResult.ok) {
-    return <NotFound message={eventResult.error} />;
+    return <EventNotFound message={eventResult.error} />;
   }
 
   /*
@@ -61,7 +52,7 @@ export default async function DashboardPage({
   */
   if (eventResult.data === null) {
     return (
-      <NotFound message="It may have been deleted, or it belongs to a different account." />
+      <EventNotFound message="It may have been deleted, or it belongs to a different account." />
     );
   }
 
@@ -141,12 +132,49 @@ export default async function DashboardPage({
                 {when ?? "Date not set yet"}
               </p>
             </div>
+            {/*
+              The way into the editor, and the first thing a host looks for
+              when they spot a wrong date on this page. In the top bar rather
+              than beside the share link, because it acts on the invitation as
+              a whole and not on any one panel below.
+
+              Filled marigold: it is the one control up here that changes
+              something, and it sits before Sign out so that the destructive
+              end of the bar stays at the edge.
+
+              One word below sm, and the shorter label is not a compromise on
+              this bar — it is what keeps the event's own name readable. At
+              360px this row wraps under the wordmark with about 320px to share
+              between the title, this and Sign out; "Edit invitation" would take
+              enough of it to truncate the title to seven characters, and a host
+              cannot tell two invitations apart by their first seven characters.
+              Only one of the two is in the tree at any width, so a screen
+              reader hears one label rather than both.
+            */}
+            <Link
+              href={`/dashboard/${event.id}/edit`}
+              className="flex min-h-11 shrink-0 items-center rounded-full bg-[var(--lifafa-marigold)] px-4 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              <span className="sm:hidden">Edit</span>
+              <span className="hidden sm:inline">Edit invitation</span>
+            </Link>
+
             <SignOutButton />
           </div>
         </div>
       </header>
 
       <main className="mx-auto flex max-w-[1100px] flex-col gap-8 px-5 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+        {/*
+          First thing on the page after an edit, and gone on the next visit.
+          "details" is the editor saying the date or the venue moved, which is
+          the one change the people already holding this date need to hear
+          about — from the host, who is the only one who can tell them.
+        */}
+        {saved === undefined ? null : (
+          <SavedNotice variant={saved === "details" ? "details" : "plain"} />
+        )}
+
         {/* A failed guest read leaves the page standing and says so. */}
         {!guestsResult.ok ? (
           <p

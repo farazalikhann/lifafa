@@ -24,7 +24,7 @@ import {
   type StoredEvent,
 } from "@/types/database";
 import type { CardConfig } from "@/types/card";
-import type { EventInsert } from "@/types/database";
+import type { EventInsert, EventUpdate } from "@/types/database";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -383,31 +383,202 @@ export async function getEventById(
 }
 
 /**
- * Updates an event the host owns.
+ * The only columns an edit may write.
  *
- * host_id and id are not patchable — the type forbids it, and events_update_own
- * would refuse anyway. updated_at is left alone: the trigger owns it.
+ * A type rather than a comment, so the list below is checked rather than
+ * remembered. Every column of public.events that is missing from this Pick is
+ * missing on purpose; see the note on updateEvent.
+ */
+type EventContentUpdate = Pick<
+  EventUpdate,
+  | "card_config"
+  | "event_draft"
+  | "cover_animation"
+  | "show_weather"
+  | "weather_theme"
+  | "latitude"
+  | "longitude"
+>;
+
+/** One update, returning the row it wrote. Split out so the retry below reads. */
+function update(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+  hostId: string,
+  row: EventContentUpdate,
+) {
+  return supabase
+    .from("events")
+    .update(row)
+    /*
+      HOST SCOPED TWICE, AND BOTH ARE MEANT.
+
+      events_update_own already refuses a row belonging to anybody else, so this
+      filter changes no outcome — it changes what the application is *asking
+      for*. A write that names only an id is a write that would take another
+      host's row if the policy were ever dropped, loosened or applied to a new
+      role; a write that names the host as well is one that cannot, and the
+      policy becomes the second lock rather than the only one.
+    */
+    .eq("id", id)
+    .eq("host_id", hostId)
+    .select("*")
+    .single();
+}
+
+/**
+ * Saves a host's edits to an invitation they own.
+ *
+ * WHAT MAY BE WRITTEN is the card and nothing else: card_config, event_draft,
+ * and the four columns that hold the parts of the card which never fitted
+ * inside card_config — the cover animation, the two weather choices and the
+ * venue's coordinates. The object handed to Postgres is built here, field by
+ * field, from a patch that has nowhere to put anything else.
+ *
+ * WHAT MAY NEVER BE WRITTEN, and why:
+ *
+ * invite_code. THE LINK IS ALREADY OUT. A host has put that code in a WhatsApp
+ * group, printed it on a paper card, sent it to three hundred people. Rolling
+ * it would break every one of those at once, silently, and there is no version
+ * of "fixed a typo in the venue" that should be able to do that. It is not
+ * editable in the UI, it is not a field on the patch, and it is not in
+ * EventContentUpdate — so there is no expression in this function that could
+ * name it even by accident.
+ *
+ * host_id. Ownership is not a thing an owner may hand over from an editor.
+ *
+ * is_paid and payment_id. These belong to the payment path, which is the only
+ * thing entitled to say an invitation has been paid for. A card's own JSON
+ * carries an isPaid copy for the renderer, and toStoredEvent lets the column
+ * win over it on the way out for exactly this reason: an editor cannot make a
+ * card free of its watermark by claiming it in a config.
+ *
+ * updated_at is left alone: the trigger owns it.
  */
 export async function updateEvent(
   id: string,
   patch: {
-    draft?: EventDraft;
-    cardConfig?: CardConfig;
+    draft: EventDraft;
+    cardConfig: CardConfig;
+    coverAnimation: string;
+    weather: { showWeather: boolean; themeId: string };
   },
 ): Promise<DbResult<StoredEvent>> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError !== null || user === null) {
+    return dbFailure(
+      "updateEvent/auth",
+      authError,
+      "You need to be signed in to change an event.",
+    );
+  }
+
+  /*
+    Checked here rather than trusted from the caller, exactly as createEvent
+    checks them: this is a server action, so its arguments are whatever crossed
+    the wire, and both columns carry check constraints that would turn an
+    unknown id into a database error the host cannot act on.
+  */
+  const chosenCover = isCoverAnimationId(patch.coverAnimation)
+    ? patch.coverAnimation
+    : DEFAULT_COVER_ANIMATION;
+  const chosenTheme = isWeatherThemeId(patch.weather.themeId)
+    ? patch.weather.themeId
+    : DEFAULT_WEATHER_THEME;
+
+  /*
+    The row as it stands, read before it is written.
+
+    Two things need it. The venue is one: geocoding is the one slow call in this
+    path, and re-running it on every save would spend a network round trip to
+    learn that the hall did not move. The other is the answer to "is this yours"
+    — events_select_own filters rather than refuses, so a missing row here means
+    the event was deleted or belongs to somebody else, and both deserve the same
+    uninformative reply.
+  */
+  const { data: existing, error: readError } = await supabase
     .from("events")
-    .update({
-      ...(patch.draft === undefined ? {} : { event_draft: patch.draft }),
-      ...(patch.cardConfig === undefined
-        ? {}
-        : { card_config: patch.cardConfig }),
-    })
+    .select("event_draft, latitude, longitude")
     .eq("id", id)
-    .select("*")
-    .single();
+    .eq("host_id", user.id)
+    .maybeSingle();
+
+  if (readError !== null) {
+    return dbFailure(
+      "updateEvent/read",
+      readError,
+      "Could not save your changes, please try again.",
+    );
+  }
+
+  if (existing === null) {
+    return dbFailure(
+      "updateEvent/notFound",
+      `event ${id} is not available to host ${user.id}`,
+      "Could not find that invitation. It may have been deleted, or it belongs to a different account.",
+    );
+  }
+
+  const venueMoved =
+    existing.event_draft.venueName !== patch.draft.venueName ||
+    existing.event_draft.venueAddress !== patch.draft.venueAddress;
+
+  /*
+    Re-resolved only when the host changed where it is. A failed lookup writes
+    null, which is a card with no weather rather than a refused save — the same
+    trade createEvent makes — and a venue that did not change keeps the
+    coordinates it already had, including the null it already had.
+  */
+  const coordinates = venueMoved
+    ? await geocodeVenue(patch.draft.venueName, patch.draft.venueAddress)
+    : {
+        latitude: existing.latitude,
+        longitude: existing.longitude,
+      };
+
+  const row: EventContentUpdate = {
+    card_config: patch.cardConfig,
+    event_draft: patch.draft,
+    cover_animation: chosenCover,
+    show_weather: patch.weather.showWeather === true,
+    weather_theme: chosenTheme,
+    latitude: coordinates?.latitude ?? null,
+    longitude: coordinates?.longitude ?? null,
+  };
+
+  /*
+    Each refused column is dropped and the row is sent again, for the reason
+    spelled out over PENDING_COLUMNS: an application deploy can name a column
+    before the migration that creates it has been applied. The choice it carried
+    is lost — the card keeps the cover it had, or shows no weather — and the
+    host's edit still saves, which is the trade worth making. Bounded by the
+    list, so this cannot spin.
+  */
+  const attempt: EventContentUpdate = { ...row };
+  let attemptResult = await update(supabase, id, user.id, attempt);
+
+  for (let dropped = 0; dropped < PENDING_COLUMNS.length; dropped += 1) {
+    const column = missingColumn(attemptResult.error);
+
+    if (column === null) {
+      break;
+    }
+
+    console.error(
+      `[db] updateEvent/update: events.${column} does not exist. Apply the outstanding migrations in supabase/migrations. Saving these changes without it.`,
+    );
+
+    delete attempt[column];
+    attemptResult = await update(supabase, id, user.id, attempt);
+  }
+
+  const { data, error } = attemptResult;
 
   if (error !== null || data === null) {
     return dbFailure(
@@ -418,4 +589,75 @@ export async function updateEvent(
   }
 
   return dbSuccess(toStoredEvent(data));
+}
+
+/**
+ * Deletes an invitation the signed-in host owns, and everything hanging off it.
+ *
+ * THE GUEST LIST GOES WITH IT. guests.event_id is `on delete cascade`, so this
+ * one statement also destroys every reply, every headcount and every check-in
+ * recorded against the event. That is the intended meaning of the word delete
+ * here — an invitation whose replies outlived it would be a row nothing in the
+ * app can reach — but it is why the control that calls this asks first, and why
+ * the dialog says how many replies are about to go.
+ *
+ * THE LINK DIES TOO. Any guest who opens the shared /i/<code> afterwards meets
+ * the not-found card rather than the invitation, and the code is freed for a
+ * future roll. There is no undo. A host who wants an invitation to stop taking
+ * replies without losing what it has collected wants something this is not.
+ *
+ * HOST SCOPED TWICE, for the reason spelled out over `update`: events_delete_own
+ * already refuses another host's row, and naming host_id here means the
+ * statement the application sends could not take one even if that policy were
+ * dropped. RLS filters rather than refuses, so a row belonging to someone else
+ * simply matches nothing — which is why the delete asks for the id back rather
+ * than trusting the absence of an error.
+ */
+export async function deleteEvent(id: string): Promise<DbResult<null>> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError !== null || user === null) {
+    return dbFailure(
+      "deleteEvent/auth",
+      authError,
+      "You need to be signed in to delete an invitation.",
+    );
+  }
+
+  /*
+    `select("id")` is what turns a silent no-op into an answer. A delete that
+    matches no rows is a perfectly successful statement as far as Postgres is
+    concerned; without asking for the deleted rows back, an event that was
+    already gone — or never this host's — would report the same cheerful success
+    as one that was actually removed, and the list would redraw still holding it.
+  */
+  const { data, error } = await supabase
+    .from("events")
+    .delete()
+    .eq("id", id)
+    .eq("host_id", user.id)
+    .select("id");
+
+  if (error !== null) {
+    return dbFailure(
+      "deleteEvent",
+      error,
+      "Could not delete this invitation, please try again.",
+    );
+  }
+
+  if ((data ?? []).length === 0) {
+    return dbFailure(
+      "deleteEvent/notFound",
+      `event ${id} is not available to host ${user.id}`,
+      "Could not find that invitation. It may already have been deleted.",
+    );
+  }
+
+  return dbSuccess(null);
 }

@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import DeleteEventButton from "@/components/dashboard/DeleteEventButton";
 import PaymentBadge from "@/components/dashboard/PaymentBadge";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
@@ -66,7 +67,14 @@ function EventCard({ event }: { event: HostEvent }): ReactElement {
   const heading = eventHeading(event);
 
   return (
-    <li>
+    /*
+      `relative`, because the Edit link below is positioned against this row
+      rather than laid out inside it. An anchor cannot contain another anchor —
+      the browser drops the inner one — and the whole card being one link is
+      what makes a row easy to hit on a phone, so the second destination sits
+      over the first instead of inside it.
+    */
+    <li className="relative">
       <Link
         href={`/dashboard/${event.id}`}
         className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-5 py-5 transition-colors duration-150 hover:border-[var(--lifafa-marigold)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
@@ -95,7 +103,14 @@ function EventCard({ event }: { event: HostEvent }): ReactElement {
           off is worse than useless — it is what a host reads back to check
           which link they sent.
         */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {/*
+          `pr-32` is the room the Edit and Delete controls take out of this row.
+          It is a reservation rather than padding for its own sake: both are
+          absolutely positioned over this corner, and a code long enough to
+          reach them would be sitting under a click target that goes somewhere
+          else.
+        */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pr-32">
           <span className="font-mono text-xs tracking-wide text-[var(--lifafa-muted)]">
             /i/{event.inviteCode}
           </span>
@@ -105,6 +120,37 @@ function EventCard({ event }: { event: HostEvent }): ReactElement {
           </span>
         </div>
       </Link>
+
+      {/*
+        The two ways in this row did not have: change it, or be rid of it.
+
+        Both are labelled with the invitation's own name rather than left as a
+        bare "Edit" and "Delete": a screen reader user moving through this list
+        by control would otherwise hear the same two words once per row with
+        nothing to tell them apart. The visible text stays short, because the
+        row it sits on has already said which invitation this is.
+
+        Edit is marigold and Delete is muted until hovered, which is the whole
+        of the visual argument between them — the safe one is the one that looks
+        like a control, and the one there is no undo for does not compete for
+        the eye. Delete is last, at the outside edge, where a destructive
+        action is hardest to hit by accident.
+      */}
+      <div className="absolute right-3 bottom-3 flex items-center gap-1">
+        <Link
+          href={`/dashboard/${event.id}/edit`}
+          aria-label={`Edit ${heading}`}
+          className="flex min-h-11 items-center rounded px-2 text-[0.8125rem] font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+        >
+          Edit
+        </Link>
+
+        <DeleteEventButton
+          eventId={event.id}
+          heading={heading}
+          replyCount={event.replyCount}
+        />
+      </div>
     </li>
   );
 }
