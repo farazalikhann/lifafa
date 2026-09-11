@@ -18,7 +18,7 @@
  * next to sleeping children. MusicToggle takes the same position about the
  * card's background music and takes it further — that never starts on its own
  * at all. The difference is that this is the sound of the thing they just
- * pressed, it is under a second, and it is over before they have read a word.
+ * pressed, it lasts about a second, and it is over before they have read a word.
  *
  * NOTHING IT DOES IS ALLOWED TO MATTER. Every path out of here is a return: a
  * browser with no Web Audio, a context that will not start, an autoplay policy
@@ -184,8 +184,9 @@ function tone(
  *
  * Two events, and the gap between them is the point: the crack of the seal
  * comes first, then the longer drag of the paper, then a soft body as the
- * envelope settles. The timings shadow EnvelopeSealCover's own stages, so what
- * a guest hears lines up with what they are watching.
+ * envelope settles, and last the lighter slide of the letter coming out. The
+ * timings shadow EnvelopeSealCover's own stages, so what a guest hears lines
+ * up with what they are watching.
  */
 function playSeal(context: AudioContext, master: GainNode, now: number): void {
   /* The seal itself: short, dry, high. */
@@ -201,8 +202,8 @@ function playSeal(context: AudioContext, master: GainNode, now: number): void {
 
   /* The flap dragging over the pocket. */
   burst(context, master, {
-    start: now + 0.09,
-    duration: 0.34,
+    start: now + 0.22,
+    duration: 0.55,
     frequency: 1500,
     sweepTo: 700,
     q: 0.7,
@@ -217,6 +218,17 @@ function playSeal(context: AudioContext, master: GainNode, now: number): void {
     frequency: 150,
     glideTo: 78,
     gain: 0.3,
+  });
+
+  /* The letter sliding up out of the pocket: lighter, and higher. */
+  burst(context, master, {
+    start: now + 0.88,
+    duration: 0.5,
+    frequency: 2600,
+    sweepTo: 1800,
+    q: 0.6,
+    gain: 0.16,
+    attack: 0.12,
   });
 }
 

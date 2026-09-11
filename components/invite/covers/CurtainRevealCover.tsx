@@ -8,13 +8,23 @@ import type { CoverPalette } from "@/lib/coverPalette";
 /**
  * How the open splits across the shell's timer, as fractions of --cover-ms.
  *
- * The two overlap by a hair on purpose: the panels are still settling into the
- * edges as the layer starts to go, so there is no moment where the curtains sit
- * still and wait to be dismissed.
+ * The two overlap on purpose: the panels are still gliding into the edges as
+ * the layer starts to go, so there is no moment where the curtains sit still
+ * and wait to be dismissed.
  */
-const SLIDE_SHARE = 0.72;
+const SLIDE_SHARE = 0.84;
 const FADE_SHARE = 0.3;
 const FADE_START = 0.7;
+
+/**
+ * How quickly the ground behind the panels clears.
+ *
+ * Almost at once: the panels still cover the whole screen for the first few
+ * frames, so nothing is lost by clearing it early, and by the time a gap has
+ * opened between them it is the card in the gap and not a blank ground that
+ * pops into a card when the layer unmounts.
+ */
+const BACKDROP_SHARE = 0.16;
 
 /**
  * How far each panel travels, as a share of its own width.
@@ -107,6 +117,15 @@ export default function CurtainRevealCover({
     "--cover-ms": `${option.durationMs}ms`,
   } as CSSProperties;
 
+  /* The card's ground, cleared behind the panels as they start to move. */
+  const backdropStyle: CSSProperties = {
+    backgroundColor: colors.ground,
+    transition: reducedMotion
+      ? undefined
+      : stage("opacity", BACKDROP_SHARE, 0, "linear"),
+    opacity: opening ? 0 : 1,
+  };
+
   /* The whole layer leaving, once the panels are at the edges. */
   const layerStyle: CSSProperties = {
     transition: reducedMotion
@@ -116,15 +135,21 @@ export default function CurtainRevealCover({
   };
 
   /*
-    The overshoot lives in this curve: it runs past its resting value and
-    settles back, which is what gives the draw its snap. A panel is heavy, and
-    linear cloth looks like a sliding door.
+    Slow to start and slow to stop, which is how a heavy panel moves: the cloth
+    has to be got going, and it glides into the edge rather than hitting it.
+    This used to overshoot and settle back, and that curve did four fifths of
+    the travel in the first fifth of the time — the panels snapped open and
+    then sat still at the edges for most of the open, which read as a jolt
+    rather than a draw.
   */
   const panel = (direction: -1 | 1): CSSProperties => ({
     transition: reducedMotion
       ? undefined
-      : stage("transform", SLIDE_SHARE, 0, "cubic-bezier(0.22,1.15,0.36,1)"),
-    transform: opening ? `translateX(${direction * TRAVEL}%)` : "translateX(0)",
+      : stage("transform", SLIDE_SHARE, 0, "cubic-bezier(0.55,0,0.2,1)"),
+    transform: opening
+      ? `translate3d(${direction * TRAVEL}%, 0, 0)`
+      : "translate3d(0, 0, 0)",
+    willChange: "transform",
     backgroundImage: drape(colors),
   });
 
@@ -152,6 +177,8 @@ export default function CurtainRevealCover({
       style={{ ...rootStyle, ...layerStyle }}
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
+      <div className="absolute inset-0" style={backdropStyle} />
+
       {/* The extra pixel is the seam: two panels meeting exactly at 50% can
           leave a hairline of card showing between them at some widths. */}
       <div

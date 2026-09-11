@@ -21,6 +21,26 @@ import type { CoverAnimationOption } from "@/types/coverAnimation";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 /**
+ * How long the cover stays mounted after its own animation says it is done.
+ *
+ * A CSS transition starts on the frame after the phase changes, while the timer
+ * below starts on the tap itself, so unmounting at exactly durationMs cuts the
+ * last frame or two of every fade. On a fade that is revealing the card, those
+ * frames are the difference between the cover dissolving and the cover
+ * blinking out. A few frames of grace lets the final one paint.
+ */
+const UNMOUNT_GRACE_MS = 80;
+
+/**
+ * How quickly the names and the prompt leave once the guest has tapped.
+ *
+ * Quicker than any visual: they asked to be let in, and "Tap seal to open"
+ * still sitting there while the seal breaks reads as an instruction nobody
+ * has followed yet.
+ */
+const WORDS_FADE_MS = 360;
+
+/**
  * Where the cover is in its one journey.
  *
  * "closed" is what a guest lands on, "opening" is the animation playing, and
@@ -43,6 +63,16 @@ export interface CoverVisualState {
    */
   colors: CoverPalette;
   /**
+   * THE VISUAL PAINTS ITS OWN GROUND ONCE THE COVER IS OPENING.
+   *
+   * The shell's layer is the card's background while "closed" and goes
+   * transparent the moment the guest taps, so a visual that draws anything
+   * must also draw a full-bleed backdrop in `colors.ground` and fade it on its
+   * own schedule. That is what lets the card show through as the envelope
+   * falls away or the curtains part, instead of appearing all at once when the
+   * shell unmounts. A visual that forgets its backdrop reveals the card on the
+   * first frame of the tap.
+   *
    * The same title the cover prints, passed on so a visual can letter it into
    * the drawing — initials on a wax seal, a monogram on a curtain. Undefined
    * when the host has not named anyone, and a visual must still draw without it.
@@ -180,7 +210,7 @@ export default function CoverShell({
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
         setPhase("open");
-      }, option.durationMs);
+      }, option.durationMs + UNMOUNT_GRACE_MS);
 
       return "opening";
     });
@@ -215,6 +245,7 @@ export default function CoverShell({
   }, [covered]);
 
   const visual = renderVisual?.({ phase, option, reducedMotion, colors, title });
+  const hasVisual = visual !== null && visual !== undefined;
 
   return (
     <>
@@ -265,7 +296,18 @@ export default function CoverShell({
           */
           style={
             {
-              backgroundColor: colors.ground,
+              /*
+                Handed to the visual from the tap onwards — see the note on
+                CoverVisualState. With no visual there is nobody to hand it to,
+                so the plain panel fades itself over the same timer instead.
+              */
+              backgroundColor:
+                phase === "closed" || !hasVisual ? colors.ground : "transparent",
+              opacity: phase === "opening" && !hasVisual ? 0 : 1,
+              transition:
+                phase === "opening" && !hasVisual
+                  ? `opacity ${option.durationMs}ms ease-in`
+                  : undefined,
               /*
                 Published as variables as well as painted, so the controls below
                 can use them in states an inline style cannot reach — a hover, a
@@ -284,6 +326,10 @@ export default function CoverShell({
             type="button"
             onClick={handleOpen}
             disabled={phase !== "closed"}
+            style={{
+              opacity: phase === "closed" ? 1 : 0,
+              transition: `opacity ${WORDS_FADE_MS}ms ease-out`,
+            }}
             aria-label={
               title ? `${option.openPromptText}: ${title}` : option.openPromptText
             }
@@ -298,7 +344,7 @@ export default function CoverShell({
               this is the only control a keyboard guest has.
             */
             className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
-              visual === null || visual === undefined
+              !hasVisual
                 ? "justify-center"
                 : "justify-end pb-[12vh]"
             }`}

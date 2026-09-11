@@ -383,6 +383,24 @@
 }
 
 /*
+  A leaf on the petal-dust cover, stirring in a breeze before it is blown away.
+
+  Driven inline per leaf — duration and a negative delay from the cover's own
+  table — so the field is never in step and is already mid-sway on the first
+  frame. Transform only, and on a layer of its own inside the leaf, so it
+  keeps running through the burst without fighting it.
+*/
+@keyframes lifafa-leaf-sway {
+  0%,
+  100% {
+    transform: translate3d(-2px, 0, 0) rotate(-8deg);
+  }
+  50% {
+    transform: translate3d(2px, -3px, 0) rotate(8deg);
+  }
+}
+
+/*
   Roaming: a long wandering path through six offsets, with a little rotation.
 
   Every step is transform only, so the whole thing stays on the compositor. No
