@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
+import { useNearViewport } from "@/hooks/useNearViewport";
 
 type Accent = "marigold" | "rose";
 
@@ -271,22 +272,35 @@ function StoryPanel({
   panel: StoryPanelData;
   index: number;
 }): ReactElement {
-  const { ref, isInView } = useInView<HTMLElement>();
+  /*
+    The observer watches the content, not the panel. A panel is a full viewport
+    tall with its content centred in it, so watching the panel meant the reveal
+    fired against its empty top edge — the drawing and the line played their
+    entrance half a screen below the fold and were already finished, sitting
+    still, by the time the visitor scrolled far enough to see them. Watching the
+    content itself starts the entrance when the content actually arrives.
+  */
+  const { ref: contentRef, isInView } = useInView<HTMLDivElement>();
+  const { ref: panelRef, isNear } = useNearViewport<HTMLElement>();
 
   // Even panels read illustration -> caption, odd panels mirror it. Below the
   // lg breakpoint both collapse to the same stacked, centred column.
   const mirrored = index % 2 === 1;
 
   return (
+    /*
+      relative only so the panel paints after the hero does. The hero's rose
+      bloom deliberately hangs past its own bottom edge into this first panel;
+      a positioned element later in the document paints over one earlier, so
+      the drawing and the caption sit on top of the colour rather than under a
+      wash of it. The panel has no background, so the bloom still shows through.
+    */
     <section
-      ref={ref}
-      className={[
-        "flex min-h-[100svh] items-center justify-center px-6 py-16",
-        "transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none",
-        isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
-      ].join(" ")}
+      ref={panelRef}
+      className="relative flex min-h-[100svh] items-center justify-center px-6 py-16"
     >
       <div
+        ref={contentRef}
         className={[
           "flex flex-col items-center gap-8 lg:gap-14",
           mirrored ? "lg:flex-row-reverse" : "lg:flex-row",
@@ -295,9 +309,18 @@ function StoryPanel({
         <div
           className={[
             "h-[150px] w-[150px] shrink-0 lg:h-[200px] lg:w-[200px]",
-            "transition-transform duration-700 ease-out motion-reduce:transition-none",
+            /*
+              transform-gpu gives the drawing a layer of its own, so its idle
+              loop repaints on its own small surface instead of dirtying the
+              panel behind it every frame.
+            */
+            "transform-gpu transition-[opacity,transform] duration-700 ease-out",
+            "motion-reduce:transition-none",
             ACCENT_TEXT[panel.accent],
-            isInView ? "scale-100" : "scale-95",
+            isInView
+              ? "translate-y-0 scale-100 opacity-100"
+              : "translate-y-4 scale-95 opacity-0",
+            isNear ? "" : "lifafa-parked",
           ].join(" ")}
         >
           {panel.illustration}
@@ -309,6 +332,14 @@ function StoryPanel({
             "font-[family-name:var(--font-display)] font-medium tracking-[-0.01em]",
             "text-3xl leading-[1.2] text-[var(--lifafa-cream)] lg:text-4xl",
             mirrored ? "lg:text-right" : "lg:text-left",
+            /*
+              A beat behind the drawing. The two arriving together read as one
+              block sliding; staggered, the caption reads as an answer to the
+              picture.
+            */
+            "transform-gpu transition-[opacity,transform] duration-700 delay-150 ease-out",
+            "motion-reduce:transition-none motion-reduce:delay-0",
+            isInView ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
           ].join(" ")}
         >
           {panel.text}
