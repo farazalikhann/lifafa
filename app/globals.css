@@ -198,6 +198,25 @@
   }
 }
 
+/* --- Loading skeletons. --- */
+
+/*
+  The breathing of a placeholder block while a page is on its way.
+
+  Opacity only, and between two values that are both clearly "not content" —
+  a skeleton that brightens to full strength reads as something that finished
+  loading, and a host waits at it.
+*/
+@keyframes lifafa-skeleton {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
 /* Sparkles and secondary details. */
 @keyframes lifafa-twinkle {
   0%,

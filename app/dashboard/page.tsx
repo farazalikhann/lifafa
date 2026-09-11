@@ -17,14 +17,21 @@ import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
  */
 
 export default async function DashboardIndexPage(): Promise<ReactElement> {
-  const result = await getEventsForHost();
   /*
     The tally comes from countEventsForHost rather than from result.data.length,
     so the number a host reads here and the number the notice on /create reads
     are the same question answered the same way. It is a head request carrying
     no rows, which is what makes a second call cheap enough to be worth it.
+
+    Both go together rather than one after the other. Neither reads the other's
+    answer, and awaited in sequence the page sat through two round trips to
+    Supabase before it could put a single row on screen — a second request's
+    worth of waiting for a number that was already on its way.
   */
-  const countResult = await countEventsForHost();
+  const [result, countResult] = await Promise.all([
+    getEventsForHost(),
+    countEventsForHost(),
+  ]);
   const count = countResult.ok ? countResult.data : null;
 
   return (
