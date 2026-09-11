@@ -288,9 +288,16 @@ function StoryPanel({
   const mirrored = index % 2 === 1;
 
   return (
+    /*
+      relative only so the panel paints after the hero does. The hero's rose
+      bloom deliberately hangs past its own bottom edge into this first panel;
+      a positioned element later in the document paints over one earlier, so
+      the drawing and the caption sit on top of the colour rather than under a
+      wash of it. The panel has no background, so the bloom still shows through.
+    */
     <section
       ref={panelRef}
-      className="flex min-h-[100svh] items-center justify-center px-6 py-16"
+      className="relative flex min-h-[100svh] items-center justify-center px-6 py-16"
     >
       <div
         ref={contentRef}
