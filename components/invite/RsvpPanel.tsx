@@ -90,7 +90,28 @@ export default function RsvpPanel({
 
   const trimmedName = name.trim();
   const nameValid = trimmedName.length > 0;
-  const phoneValid = phone.length === PHONE_LENGTH;
+
+  /**
+   * Asked for from the guests who are coming, and from nobody else.
+   *
+   * The number is not a contact detail on this form, it is the key: it is what
+   * a second reply is matched against, so it is what lets a guest change their
+   * mind later and what keeps one guest out of the headcount twice. Both of
+   * those are about the people who are actually turning up. Nothing is catered
+   * for a no and nobody scans one at the door, so asking for a number to say
+   * no is a toll on the least willing person in the list — and the commonest
+   * reason a reply never arrives at all.
+   */
+  const phoneRequired = status === "accepted";
+
+  /*
+    Half a number is a mistake either way. Optional means "none or all ten",
+    never "as many as you felt like typing" — a host who reads back four digits
+    is worse off than one who reads back nothing.
+  */
+  const phoneValid =
+    phone.length === PHONE_LENGTH || (!phoneRequired && phone.length === 0);
+
   const canSubmit = status !== null && nameValid && phoneValid && !isSending;
 
   /** Names the first thing still missing, in the order the form reads. */
@@ -100,7 +121,9 @@ export default function RsvpPanel({
       : !nameValid
         ? "Add your name to continue"
         : !phoneValid
-          ? `Enter a ${PHONE_LENGTH} digit phone number`
+          ? phoneRequired
+            ? `Enter a ${PHONE_LENGTH} digit phone number`
+            : `A phone number needs all ${PHONE_LENGTH} digits, or leave it empty`
           : null;
 
   const fieldStyle = {
@@ -269,6 +292,14 @@ export default function RsvpPanel({
               style={{ color: theme.textPrimary }}
             >
               Phone number
+              {phoneRequired ? null : (
+                <span
+                  className="ml-1.5 text-xs font-normal"
+                  style={{ color: theme.textMuted }}
+                >
+                  (optional)
+                </span>
+              )}
             </label>
             <span
               className="text-xs tabular-nums"
@@ -280,7 +311,7 @@ export default function RsvpPanel({
           <input
             id="rsvp-phone"
             type="text"
-            required
+            required={phoneRequired}
             inputMode="tel"
             autoComplete="tel-national"
             /*
@@ -301,7 +332,19 @@ export default function RsvpPanel({
             <p className="text-xs" style={{ color: theme.accent }}>
               Phone number must be {PHONE_LENGTH} digits.
             </p>
-          ) : null}
+          ) : (
+            /*
+              Says which of the two states the field is in, rather than leaving
+              "(optional)" beside the label to carry it alone. A guest who has
+              picked yes and is looking at a field that was optional a moment
+              ago is owed the reason it stopped being.
+            */
+            <p className="text-xs" style={{ color: theme.textMuted }}>
+              {phoneRequired
+                ? "So the hosts can count you in, and so you can change your reply later."
+                : "Leave it empty if you would rather not."}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
