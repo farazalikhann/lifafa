@@ -14,7 +14,7 @@ import { formatWhen } from "@/lib/cardFormat";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
 import { inviteUrl } from "@/lib/siteUrl";
-import { getEventWeather } from "@/lib/weather";
+import { geocodeVenue, getEventWeather } from "@/lib/weather";
 
 /**
  * One event's dashboard.
@@ -75,7 +75,26 @@ export default async function DashboardPage({
     invitation. Null when there is nothing to say, and the panel renders nothing
     on null.
   */
-  const weather = await getEventWeather(event.coordinates, draft.eventDate);
+  /*
+    The coordinates the row already has, or resolved here when it has none.
+
+    The invite page must never do this — one link opened by three hundred
+    guests would be three hundred lookups — but this page has exactly one
+    reader. A row saved before its venue was filled in, or one whose lookup
+    failed the first time, would otherwise show the host nothing here forever
+    with no way to ask again; they would have to guess that re-saving the card
+    is what fixes it. geocodeVenue's answer is cached for a month, so a host
+    refreshing this page pays for the first look and not the rest.
+
+    Nothing is written back from here. The next save is what stores it, and
+    updateEvent now re-resolves a row that has none — this is the same repair
+    made where a host can see the result of it.
+  */
+  const coordinates =
+    event.coordinates ??
+    (await geocodeVenue(draft.venueName, draft.venueAddress));
+
+  const weather = await getEventWeather(coordinates, draft.eventDate);
 
   return (
     <div className="min-h-screen">
