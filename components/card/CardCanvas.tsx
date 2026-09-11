@@ -33,6 +33,7 @@ import {
 } from "@/lib/cardSections";
 import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha } from "@/lib/contrast";
+import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
 import type { EventWeather } from "@/types/weather";
@@ -474,15 +475,12 @@ export default function CardCanvas({
   const palette = getPalette(style.paletteId);
   const fontPair = getFontPair(style.fontPairId);
 
-  const effectiveTheme: Theme = {
-    ...theme,
-    background: palette.background ?? theme.background,
-    surface: palette.surface ?? theme.surface,
-    accent: style.accentOverride ?? palette.accent ?? theme.accent,
-    textPrimary: palette.textPrimary ?? theme.textPrimary,
-    textMuted: palette.textMuted ?? theme.textMuted,
-    fontFamily: fontFamilyOf(fontPair.bodyVar, fontPair.bodyFallback),
-  };
+  /*
+    Lifted into lib/cardTheme.ts, because the card is no longer the only thing
+    that needs it: the guest's reply form sits directly under this and was
+    reading the raw theme, which put cream labels on a cream card.
+  */
+  const effectiveTheme: Theme = composeCardTheme(theme, style);
 
   /*
     How strong the decor is allowed to get on this particular card.

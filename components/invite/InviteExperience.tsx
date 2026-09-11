@@ -10,6 +10,7 @@ import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { effectiveTheme } from "@/lib/cardTheme";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
@@ -52,6 +53,19 @@ export default function InviteExperience({
 
   const { config, draft } = event;
   const theme = getTheme(config.themeId);
+  /*
+    What the card is actually painted in, which is not the theme.
+
+    themeId comes from the occasion and no control in the editor changes it;
+    the Colour picker writes the palette. Everything laid out beside the card —
+    the reply form, the confirmation, the guest's pass — used to be handed the
+    raw theme, so a host who chose a light palette got a card in cream with a
+    reply form underneath it in near-black text fields and invisible labels.
+
+    CardCanvas composes the same thing from the same helper, so the two cannot
+    drift apart again.
+  */
+  const cardTheme = effectiveTheme(theme, config.style);
   const palette = getPalette(config.style.paletteId);
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
@@ -178,7 +192,7 @@ export default function InviteExperience({
             status={submitted.status}
             partySize={submitted.partySize}
             name={submitted.name}
-            theme={theme}
+            theme={cardTheme}
             onChangeReply={() => setStage("form")}
             pass={
               /*
@@ -193,14 +207,14 @@ export default function InviteExperience({
                   token={checkinToken}
                   guestName={submitted.name}
                   eventName={passEventName}
-                  theme={theme}
+                  theme={cardTheme}
                 />
               ) : null
             }
           />
         ) : (
           <RsvpPanel
-            theme={theme}
+            theme={cardTheme}
             initial={submitted}
             onSubmit={handleSubmit}
             isSending={isSending}
