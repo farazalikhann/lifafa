@@ -39,6 +39,8 @@ export interface PendingCard {
   /** Optional for the same reason: neither of these lives inside CardConfig. */
   showWeather?: boolean;
   weatherTheme?: WeatherThemeId;
+  /** Nor does this. Absent on anything stashed before 0005, which reads as off. */
+  qrCheckinEnabled?: boolean;
 }
 
 /** Reads the stashed card, tolerating anything that is not one. */
@@ -70,7 +72,7 @@ export function readPendingCard(): PendingCard | null {
     const card = parsed as PendingCard;
 
     /*
-      The stored ids are re-checked, the boolean is not: a boolean cannot name
+      The stored ids are re-checked, the booleans are not: a boolean cannot name
       something that has stopped existing. Everything else in here is restored
       into state that only feeds the renderer, but these two are written to
       columns with check constraints, and a stale or hand-edited entry naming an
@@ -88,6 +90,7 @@ export function readPendingCard(): PendingCard | null {
       weatherTheme: isWeatherThemeId(card.weatherTheme)
         ? card.weatherTheme
         : undefined,
+      qrCheckinEnabled: card.qrCheckinEnabled === true,
     };
   } catch {
     /* Private mode, disabled storage, malformed JSON — all mean "nothing saved". */

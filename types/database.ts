@@ -70,6 +70,15 @@ export type EventRow = {
   longitude: number | null;
   /** A WeatherThemeId, or null. `string` for the same reason cover_animation is. */
   weather_theme: string | null;
+  /**
+   * Whether the host has switched on QR check-in at the door.
+   *
+   * `boolean` like is_paid rather than `boolean | null` like show_weather: the
+   * column is NOT NULL DEFAULT false (0005), so a row that has it always holds
+   * an answer. A row read before 0005 is applied has no key at all, which is
+   * why toStoredEvent tests it with `=== true` rather than reading it straight.
+   */
+  qr_checkin_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -94,6 +103,7 @@ export type EventInsert = {
   latitude?: number | null;
   longitude?: number | null;
   weather_theme?: string | null;
+  qr_checkin_enabled?: boolean;
 }
 
 /** Every field a host may change. Ownership and identity are not among them. */
@@ -110,6 +120,7 @@ export type EventUpdate = Partial<
     | "latitude"
     | "longitude"
     | "weather_theme"
+    | "qr_checkin_enabled"
   >
 >;
 
@@ -265,6 +276,8 @@ export interface StoredEvent {
   coordinates: Coordinates | null;
   /** Raw, exactly as stored. Resolved by getWeatherTheme at the point of use. */
   weatherTheme: string | null;
+  /** False unless the host has switched QR check-in on. */
+  qrCheckinEnabled: boolean;
 }
 
 /** An event as the index page needs it: the event plus its reply tally. */
@@ -381,6 +394,15 @@ export function toStoredEvent(
         ? { latitude: row.latitude, longitude: row.longitude }
         : null,
     weatherTheme: row.weather_theme ?? null,
+    /*
+      `in` first, because the guest's read never carries it: 0005 did not
+      reproject event_by_invite_code(), so a StoredEvent built for a guest says
+      false, which is the right answer until a guest has a code to show. Then
+      `=== true`, because until 0005 is applied the host's own row has no such
+      key either, and a missing key has to mean off.
+    */
+    qrCheckinEnabled:
+      "qr_checkin_enabled" in row && row.qr_checkin_enabled === true,
   };
 }
 
@@ -403,6 +425,7 @@ export function toEventInsert(
     /** Null when the venue could not be geocoded, which is a card with no weather. */
     coordinates: Coordinates | null;
   },
+  qrCheckinEnabled: boolean,
 ): EventInsert {
   return {
     host_id: hostId,
@@ -427,6 +450,7 @@ export function toEventInsert(
     */
     latitude: weather.coordinates?.latitude ?? null,
     longitude: weather.coordinates?.longitude ?? null,
+    qr_checkin_enabled: qrCheckinEnabled,
   };
 }
 

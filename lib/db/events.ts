@@ -72,6 +72,7 @@ const PENDING_COLUMNS = [
   "latitude",
   "longitude",
   "weather_theme",
+  "qr_checkin_enabled",
 ] as const;
 
 type PendingColumn = (typeof PENDING_COLUMNS)[number];
@@ -112,6 +113,7 @@ export async function createEvent(
   cardConfig: CardConfig,
   coverAnimation: string,
   weather: { showWeather: boolean; themeId: string },
+  qrCheckinEnabled: boolean,
 ): Promise<DbResult<StoredEvent>> {
   const supabase = await createClient();
 
@@ -132,6 +134,7 @@ export async function createEvent(
     ? weather.themeId
     : DEFAULT_WEATHER_THEME;
   const showWeather = weather.showWeather === true;
+  const wantsQrCheckin = qrCheckinEnabled === true;
 
   const {
     data: { user },
@@ -173,6 +176,7 @@ export async function createEvent(
       draft,
       chosenCover,
       { showWeather, themeId: chosenTheme, coordinates },
+      wantsQrCheckin,
     );
 
     /*
@@ -398,6 +402,7 @@ type EventContentUpdate = Pick<
   | "weather_theme"
   | "latitude"
   | "longitude"
+  | "qr_checkin_enabled"
 >;
 
 /** One update, returning the row it wrote. Split out so the retry below reads. */
@@ -430,9 +435,9 @@ function update(
  * Saves a host's edits to an invitation they own.
  *
  * WHAT MAY BE WRITTEN is the card and nothing else: card_config, event_draft,
- * and the four columns that hold the parts of the card which never fitted
- * inside card_config — the cover animation, the two weather choices and the
- * venue's coordinates. The object handed to Postgres is built here, field by
+ * and the columns that hold the choices which never fitted inside card_config
+ * — the cover animation, the two weather choices, the venue's coordinates and
+ * the check-in switch. The object handed to Postgres is built here, field by
  * field, from a patch that has nowhere to put anything else.
  *
  * WHAT MAY NEVER BE WRITTEN, and why:
@@ -462,6 +467,7 @@ export async function updateEvent(
     cardConfig: CardConfig;
     coverAnimation: string;
     weather: { showWeather: boolean; themeId: string };
+    qrCheckinEnabled: boolean;
   },
 ): Promise<DbResult<StoredEvent>> {
   const supabase = await createClient();
@@ -550,6 +556,8 @@ export async function updateEvent(
     weather_theme: chosenTheme,
     latitude: coordinates?.latitude ?? null,
     longitude: coordinates?.longitude ?? null,
+    /* Same trust rule as createEvent: a boolean from the wire is only true if it says so. */
+    qr_checkin_enabled: patch.qrCheckinEnabled === true,
   };
 
   /*

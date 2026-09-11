@@ -86,6 +86,7 @@ export default async function EditEventPage({
         coverAnimation,
         showWeather: event.showWeather,
         weatherTheme,
+        qrCheckinEnabled: event.qrCheckinEnabled,
       }}
       notice={
         <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />

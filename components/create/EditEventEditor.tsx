@@ -43,6 +43,7 @@ export default function EditEventEditor({
         showWeather: snapshot.showWeather,
         themeId: snapshot.weatherTheme,
       },
+      qrCheckinEnabled: snapshot.qrCheckinEnabled,
     });
 
     if (!result.ok) {
@@ -98,6 +99,7 @@ export default function EditEventEditor({
       initialCoverAnimation={initial.coverAnimation}
       initialShowWeather={initial.showWeather}
       initialWeatherTheme={initial.weatherTheme}
+      initialQrCheckinEnabled={initial.qrCheckinEnabled}
       onSave={handleSave}
       notice={notice}
     />

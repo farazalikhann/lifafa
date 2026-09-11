@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CardPreview from "@/components/create/CardPreview";
+import CheckinPanel from "@/components/create/CheckinPanel";
 import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorTabs, { type EditorTabId } from "@/components/create/EditorTabs";
@@ -50,11 +51,11 @@ import type { OrnamentConfig } from "@/types/ornament";
 /**
  * Everything a saved invitation is made of, in one object.
  *
- * The cover animation and the two weather fields are here rather than inside
- * CardConfig because they are their own columns — see supabase/migrations 0003
- * and 0004 — and this is the shape that has to travel whole: to the sign-in
- * stash on /create, to createEvent, to updateEvent, and back out of the row
- * when a host reopens the editor.
+ * The cover animation, the two weather fields and the check-in switch are here
+ * rather than inside CardConfig because they are their own columns — see
+ * supabase/migrations 0003, 0004 and 0005 — and this is the shape that has to
+ * travel whole: to the sign-in stash on /create, to createEvent, to
+ * updateEvent, and back out of the row when a host reopens the editor.
  */
 export interface EditorSnapshot {
   draft: EventDraft;
@@ -62,6 +63,7 @@ export interface EditorSnapshot {
   coverAnimation: CoverAnimationId;
   showWeather: boolean;
   weatherTheme: WeatherThemeId;
+  qrCheckinEnabled: boolean;
 }
 
 /**
@@ -101,6 +103,7 @@ interface EditorState {
   coverAnimation: CoverAnimationId;
   showWeather: boolean;
   weatherTheme: WeatherThemeId;
+  qrCheckinEnabled: boolean;
 }
 
 /**
@@ -143,6 +146,7 @@ function toState(snapshot: EditorSnapshot): EditorState {
     coverAnimation: snapshot.coverAnimation,
     showWeather: snapshot.showWeather,
     weatherTheme: snapshot.weatherTheme,
+    qrCheckinEnabled: snapshot.qrCheckinEnabled,
   };
 }
 
@@ -176,6 +180,7 @@ function toSnapshot(state: EditorState): EditorSnapshot {
     coverAnimation: state.coverAnimation,
     showWeather: state.showWeather,
     weatherTheme: state.weatherTheme,
+    qrCheckinEnabled: state.qrCheckinEnabled,
   };
 }
 
@@ -185,6 +190,7 @@ type CardEditorProps = {
   initialCoverAnimation: CoverAnimationId;
   initialShowWeather: boolean;
   initialWeatherTheme: WeatherThemeId;
+  initialQrCheckinEnabled: boolean;
   /** What this route does with a finished card. The editor never writes a row. */
   onSave: (snapshot: EditorSnapshot) => Promise<SaveOutcome>;
   /**
@@ -240,6 +246,7 @@ export default function CardEditor({
   initialCoverAnimation,
   initialShowWeather,
   initialWeatherTheme,
+  initialQrCheckinEnabled,
   onSave,
   notice,
   restore,
@@ -257,6 +264,7 @@ export default function CardEditor({
     coverAnimation: initialCoverAnimation,
     showWeather: initialShowWeather,
     weatherTheme: initialWeatherTheme,
+    qrCheckinEnabled: initialQrCheckinEnabled,
   });
 
   const [draft, setDraft] = useState<EventDraft>(initial.draft);
@@ -291,6 +299,10 @@ export default function CardEditor({
   const [showWeather, setShowWeather] = useState(initial.showWeather);
   const [weatherTheme, setWeatherTheme] = useState<WeatherThemeId>(
     initial.weatherTheme,
+  );
+  /* Its own column as well; see 0005. Only the switch exists so far. */
+  const [qrCheckinEnabled, setQrCheckinEnabled] = useState(
+    initial.qrCheckinEnabled,
   );
   /*
     The current tradition's ornament pack choices. Kept here rather than inside
@@ -418,6 +430,7 @@ export default function CardEditor({
     coverAnimation,
     showWeather,
     weatherTheme,
+    qrCheckinEnabled,
   });
   const config: CardConfig = snapshot.config;
 
@@ -499,6 +512,7 @@ export default function CardEditor({
     setCoverAnimation(restored.coverAnimation);
     setShowWeather(restored.showWeather);
     setWeatherTheme(restored.weatherTheme);
+    setQrCheckinEnabled(restored.qrCheckinEnabled);
     setBaseline(toSnapshot(restored));
   }, []);
 
@@ -906,6 +920,15 @@ export default function CardEditor({
                 onChange={setCoverAnimation}
               />
               <MusicPanel musicUrl={musicUrl} onMusicUrlChange={setMusicUrl} />
+              {/*
+                Here rather than under Decoration: it changes nothing a guest
+                sees on the card. It is about how the day itself runs, which
+                makes it the same kind of choice as the cover and the music.
+              */}
+              <CheckinPanel
+                enabled={qrCheckinEnabled}
+                onEnabledChange={setQrCheckinEnabled}
+              />
             </>
           ) : null}
         </EditorTabs>

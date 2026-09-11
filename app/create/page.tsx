@@ -116,6 +116,7 @@ export default function CreatePage(): ReactElement {
         coverAnimation: snapshot.coverAnimation,
         showWeather: snapshot.showWeather,
         weatherTheme: snapshot.weatherTheme,
+        qrCheckinEnabled: snapshot.qrCheckinEnabled,
       });
 
       if (!stashed) {
@@ -139,6 +140,7 @@ export default function CreatePage(): ReactElement {
       snapshot.config,
       snapshot.coverAnimation,
       { showWeather: snapshot.showWeather, themeId: snapshot.weatherTheme },
+      snapshot.qrCheckinEnabled,
     );
 
     if (!result.ok) {
@@ -156,7 +158,7 @@ export default function CreatePage(): ReactElement {
    * The card that was waiting through the sign-in detour, if there is one.
    *
    * Cleared as it is read: restoring it twice would overwrite whatever the host
-   * had started typing in the meantime. The three fields that are not part of
+   * had started typing in the meantime. The four fields that are not part of
    * CardConfig fall back to this page's own defaults, because an entry stashed
    * before they existed carries nothing for them.
    */
@@ -175,6 +177,7 @@ export default function CreatePage(): ReactElement {
       coverAnimation: pending.coverAnimation ?? DEFAULT_COVER_ANIMATION,
       showWeather: pending.showWeather === true,
       weatherTheme: pending.weatherTheme ?? DEFAULT_WEATHER_THEME,
+      qrCheckinEnabled: pending.qrCheckinEnabled === true,
     };
   };
 
@@ -186,6 +189,7 @@ export default function CreatePage(): ReactElement {
       initialCoverAnimation={DEFAULT_COVER_ANIMATION}
       initialShowWeather={false}
       initialWeatherTheme={DEFAULT_WEATHER_THEME}
+      initialQrCheckinEnabled={false}
       onSave={handleSave}
       restore={restore}
       notice={<ExistingInvitationsNotice />}
