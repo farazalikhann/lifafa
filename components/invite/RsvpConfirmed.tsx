@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { Theme } from "@/lib/themes";
 import type { GuestReply } from "@/types/guest";
 
@@ -66,12 +66,15 @@ export default function RsvpConfirmed({
   name,
   theme,
   onChangeReply,
+  pass = null,
 }: {
   status: GuestReply;
   partySize: number;
   name: string;
   theme: Theme;
   onChangeReply: () => void;
+  /** The guest's check-in pass, or null when there is none to show. */
+  pass?: ReactNode;
 }): ReactElement {
   return (
     <section className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 px-6 py-14 text-center">
@@ -93,6 +96,8 @@ export default function RsvpConfirmed({
       <p className="text-sm" style={{ color: theme.textMuted }}>
         Your reply has been sent to the hosts.
       </p>
+
+      {pass}
 
       <button
         type="button"

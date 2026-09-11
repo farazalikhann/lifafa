@@ -5,6 +5,7 @@ import CardCanvas from "@/components/card/CardCanvas";
 import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
+import GuestPass from "@/components/invite/GuestPass";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
@@ -43,6 +44,11 @@ export default function InviteExperience({
   const [submitted, setSubmitted] = useState<RsvpSubmission | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /**
+   * The guest's own check-in token, as their latest reply handed it back. Null
+   * for any reply that is not a yes, and for every reply before 0006 is applied.
+   */
+  const [checkinToken, setCheckinToken] = useState<string | null>(null);
 
   const { config, draft } = event;
   const theme = getTheme(config.themeId);
@@ -54,6 +60,12 @@ export default function InviteExperience({
   const coverTitle = names.kind === "line" && names.isPlaceholder
     ? undefined
     : coverNameLine(names);
+
+  /* What the saved pass calls the occasion: its title, or the names if it has none. */
+  const passEventName =
+    draft.eventTitle.trim().length > 0
+      ? draft.eventTitle.trim()
+      : (coverTitle ?? "Invitation");
 
   /*
     Built here rather than from window.location: this component server-renders
@@ -91,6 +103,7 @@ export default function InviteExperience({
           catering for someone who thinks they are coming.
         */
         setSubmitted(submission);
+        setCheckinToken(result.data.checkinToken);
         setStage("confirmed");
       })
       .catch((cause: unknown) => {
@@ -157,6 +170,23 @@ export default function InviteExperience({
             name={submitted.name}
             theme={theme}
             onChangeReply={() => setStage("form")}
+            pass={
+              /*
+                Three gates, and all three must hold: the host switched check-in
+                on, this reply is a yes, and the database issued a token. Any one
+                missing renders nothing at all — no heading, no empty box.
+              */
+              event.qrCheckinEnabled &&
+              submitted.status === "accepted" &&
+              checkinToken !== null ? (
+                <GuestPass
+                  token={checkinToken}
+                  guestName={submitted.name}
+                  eventName={passEventName}
+                  theme={theme}
+                />
+              ) : null
+            }
           />
         ) : (
           <RsvpPanel

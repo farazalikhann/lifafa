@@ -34,16 +34,17 @@ export interface ReplyInput {
  * constraint and there is no UPDATE policy to fall back on. Granting anon
  * UPDATE would let anyone with the link rewrite another guest's reply.
  *
- * Returns nothing on success. The function returns void by design, so this
- * write cannot be turned into a read of the guest list.
+ * Returns the guest's own check-in token when the reply is accepted, and null
+ * otherwise. submit_reply() hands back that one value and never a row (0006),
+ * so this write still cannot be turned into a read of the guest list.
  */
 export async function addOrUpdateReply(
   inviteCode: string,
   reply: ReplyInput,
-): Promise<DbResult<null>> {
+): Promise<DbResult<{ checkinToken: string | null }>> {
   const supabase = await createClient();
 
-  const { error } = await supabase.rpc("submit_reply", {
+  const { data, error } = await supabase.rpc("submit_reply", {
     p_invite_code: inviteCode,
     p_name: reply.name.trim(),
     p_phone: reply.phone,
@@ -65,7 +66,13 @@ export async function addOrUpdateReply(
     );
   }
 
-  return dbSuccess(null);
+  /*
+    A string only when the database says so. Before 0006 the function returns
+    void, which arrives as null, and the guest simply sees no pass.
+  */
+  return dbSuccess({
+    checkinToken: typeof data === "string" && data.length > 0 ? data : null,
+  });
 }
 
 /**

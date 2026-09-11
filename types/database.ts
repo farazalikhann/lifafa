@@ -135,6 +135,13 @@ export type GuestRow = {
   responded_at: string | null;
   checked_in: boolean;
   checked_in_at: string | null;
+  /**
+   * The secret on a guest's check-in pass, from 0006. Issued by a trigger the
+   * first time the row is accepted and never changed after; null for a reply
+   * that has never been a yes. Deliberately absent from GuestInsert and
+   * GuestUpdate: no caller mints or edits one.
+   */
+  checkin_token: string | null;
   created_at: string;
 }
 
@@ -181,6 +188,8 @@ export type EventByInviteCodeRow = {
   latitude: number | null;
   longitude: number | null;
   weather_theme: string | null;
+  /* Projected by 0006, so the guest's page knows whether to offer a pass. */
+  qr_checkin_enabled: boolean;
 }
 
 /* ────────────────────── The Database generic ────────────────────── */
@@ -229,7 +238,12 @@ export type Database = {
         Args: { p_event_id: string };
         Returns: boolean;
       };
-      /* Returns void: the guest write path cannot read the list it writes to. */
+      /*
+        The caller's own check-in token when the reply is accepted, null
+        otherwise (0006) — one value, never a row, so the guest write path still
+        cannot read the list it writes to. Before 0006 it returns void, which
+        arrives as null and reads the same as "no pass".
+      */
       submit_reply: {
         Args: {
           p_invite_code: string;
@@ -239,7 +253,7 @@ export type Database = {
           p_accompanying_count: number;
           p_message: string;
         };
-        Returns: undefined;
+        Returns: string | null;
       };
     };
     Enums: Record<string, never>;
@@ -395,14 +409,11 @@ export function toStoredEvent(
         : null,
     weatherTheme: row.weather_theme ?? null,
     /*
-      `in` first, because the guest's read never carries it: 0005 did not
-      reproject event_by_invite_code(), so a StoredEvent built for a guest says
-      false, which is the right answer until a guest has a code to show. Then
-      `=== true`, because until 0005 is applied the host's own row has no such
-      key either, and a missing key has to mean off.
+      `=== true` rather than a straight read. Until 0005 is applied the host's
+      row has no such key, and until 0006 the guest's read does not project it;
+      either way a missing key has to mean off.
     */
-    qrCheckinEnabled:
-      "qr_checkin_enabled" in row && row.qr_checkin_enabled === true,
+    qrCheckinEnabled: row.qr_checkin_enabled === true,
   };
 }
 
