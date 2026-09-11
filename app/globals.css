@@ -135,6 +135,19 @@
   display: none; /* Chrome, Safari, newer Edge */
 }
 
+/*
+  Parks every looping animation inside the element, itself included. The
+  landing story hangs this on an illustration while its panel is far from the
+  viewport: five drawings stepping dash offsets and opacities off screen is
+  main-thread work the visitor never sees, and it reads as stutter in the
+  scroll on a phone. Pausing keeps each loop's position, so a drawing picks up
+  where it left off rather than snapping back to its first frame.
+*/
+.lifafa-parked,
+.lifafa-parked * {
+  animation-play-state: paused;
+}
+
 /* -------------------------------------------------------------------------
    Keyframes. Consumed via arbitrary animation utilities in the components.
    ------------------------------------------------------------------------- */
