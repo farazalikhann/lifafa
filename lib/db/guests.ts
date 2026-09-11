@@ -1,6 +1,8 @@
 "use server";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isCheckinToken } from "@/lib/checkinPass";
 import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
 import { toGuest } from "@/types/database";
 import type { Guest, GuestReply } from "@/types/guest";
@@ -183,4 +185,234 @@ export async function setCheckedIn(
   }
 
   return dbSuccess(toGuest(data));
+}
+
+/**
+ * What the door learns from one pass.
+ *
+ * `success` and `already` carry the guest, so a scanner can update the row it
+ * is showing, and the event, so a page opened from a phone's camera can point
+ * back at the right guest list. `not_owner` and `not_found` carry nothing at
+ * all: a host scanning somebody else's pass learns only that it is not theirs.
+ *
+ * `wrong_event` is only ever returned when the caller named the event it is
+ * checking guests in to. The dashboard scanner does, so a guest holding the
+ * pass for the same host's other invitation is not quietly checked in there.
+ */
+export type PassCheckIn =
+  | { kind: "success"; guest: Guest; eventId: string }
+  | { kind: "already"; guest: Guest; eventId: string }
+  | { kind: "not_found" }
+  | { kind: "not_owner" }
+  | { kind: "wrong_event" };
+
+/** The one failure sentence the door shows, whichever query it was. */
+const PASS_FAILURE = "Could not check this pass, please try again.";
+
+/**
+ * Which host a pass belongs to, asked past RLS.
+ *
+ * The one question the host's own session cannot answer: guests_select_host
+ * filters another host's rows rather than refusing them, so "not yours" and
+ * "not there" look identical from inside it. The service client answers that
+ * and nothing more — the event id and its owner, never the guest's name, phone
+ * or reply — and everything after it goes back through RLS as the host.
+ *
+ * "unknown" when the service key is not configured. The caller then falls back
+ * to the host's session alone, where someone else's pass reads as not found
+ * rather than not yours: a less helpful answer, but never a leak.
+ */
+async function passOwner(
+  token: string,
+): Promise<DbResult<{ eventId: string; hostId: string } | null | "unknown">> {
+  let admin: ReturnType<typeof createAdminClient>;
+
+  try {
+    admin = createAdminClient();
+  } catch (cause: unknown) {
+    console.error(
+      "[db] passOwner: no service client, falling back to the host's session:",
+      cause instanceof Error ? cause.message : cause,
+    );
+    return dbSuccess("unknown");
+  }
+
+  const { data: guest, error: guestError } = await admin
+    .from("guests")
+    .select("event_id")
+    .eq("checkin_token", token)
+    .maybeSingle();
+
+  if (guestError !== null) {
+    return dbFailure("passOwner/guest", guestError, PASS_FAILURE);
+  }
+
+  if (guest === null) {
+    return dbSuccess(null);
+  }
+
+  const { data: event, error: eventError } = await admin
+    .from("events")
+    .select("host_id")
+    .eq("id", guest.event_id)
+    .maybeSingle();
+
+  if (eventError !== null) {
+    return dbFailure("passOwner/event", eventError, PASS_FAILURE);
+  }
+
+  return dbSuccess(
+    event === null ? null : { eventId: guest.event_id, hostId: event.host_id },
+  );
+}
+
+/**
+ * Checks a guest in from the token on their pass.
+ *
+ * Takes the signed-in user's id, as the door's own pages hand it over, but does
+ * not take it on trust. This module is "use server", so every export here is
+ * an endpoint a browser can call with any arguments it likes; the id is
+ * compared with the session's own, and a mismatch is simply a caller who does
+ * not own this pass.
+ *
+ * THE ORDER IS THE POINT: the token's shape, then the session, then who owns
+ * the pass, then which event the caller is working, and only then the guest.
+ * Nothing about a guest is read on anyone's behalf until the caller is known
+ * to be their host.
+ *
+ * Safe with two phones at one door: the write only lands on a row that is
+ * still not checked in, so the same pass scanned twice at once gives one
+ * success and one "already", and never two arrival times.
+ */
+export async function checkInByToken(
+  token: string,
+  userId: string,
+  expectedEventId?: string,
+): Promise<DbResult<PassCheckIn>> {
+  const normalised = token.trim().toLowerCase();
+
+  if (!isCheckinToken(normalised)) {
+    return dbSuccess({ kind: "not_found" });
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError !== null || user === null || user.id !== userId) {
+    return dbSuccess({ kind: "not_owner" });
+  }
+
+  const owner = await passOwner(normalised);
+
+  if (!owner.ok) {
+    return owner;
+  }
+
+  if (owner.data === null) {
+    return dbSuccess({ kind: "not_found" });
+  }
+
+  if (owner.data !== "unknown" && owner.data.hostId !== user.id) {
+    return dbSuccess({ kind: "not_owner" });
+  }
+
+  /* As the host from here on: guests_select_host and guests_update_host are the second lock. */
+  const { data: row, error: readError } = await supabase
+    .from("guests")
+    .select("*")
+    .eq("checkin_token", normalised)
+    .maybeSingle();
+
+  if (readError !== null) {
+    return dbFailure("checkInByToken/read", readError, PASS_FAILURE);
+  }
+
+  if (row === null) {
+    /*
+      Without the service client this is the only answer there is. With it, the
+      owner was just confirmed and RLS still hid the row, which should never
+      happen — so it fails closed.
+    */
+    return dbSuccess({
+      kind: owner.data === "unknown" ? "not_found" : "not_owner",
+    });
+  }
+
+  if (expectedEventId !== undefined && row.event_id !== expectedEventId) {
+    return dbSuccess({ kind: "wrong_event" });
+  }
+
+  if (row.checked_in) {
+    return dbSuccess({
+      kind: "already",
+      guest: toGuest(row),
+      eventId: row.event_id,
+    });
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from("guests")
+    .update({ checked_in: true, checked_in_at: new Date().toISOString() })
+    .eq("id", row.id)
+    .eq("checked_in", false)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError !== null) {
+    return dbFailure("checkInByToken/update", updateError, PASS_FAILURE);
+  }
+
+  if (updated !== null) {
+    return dbSuccess({
+      kind: "success",
+      guest: toGuest(updated),
+      eventId: updated.event_id,
+    });
+  }
+
+  /* Another phone at the door got there between the read and the write. */
+  const { data: latest, error: rereadError } = await supabase
+    .from("guests")
+    .select("*")
+    .eq("id", row.id)
+    .maybeSingle();
+
+  if (rereadError !== null || latest === null) {
+    return dbFailure(
+      "checkInByToken/reread",
+      rereadError ?? `guest ${row.id} vanished mid check-in`,
+      PASS_FAILURE,
+    );
+  }
+
+  return dbSuccess({
+    kind: "already",
+    guest: toGuest(latest),
+    eventId: latest.event_id,
+  });
+}
+
+/**
+ * The door's entry point from a browser: checks a pass in as whoever is signed
+ * in. The dashboard scanner and the /checkin page call this rather than
+ * checkInByToken, so neither ever has to know, or send, a user id.
+ */
+export async function checkInPass(
+  token: string,
+  expectedEventId?: string,
+): Promise<DbResult<PassCheckIn>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error !== null || user === null) {
+    return dbSuccess({ kind: "not_owner" });
+  }
+
+  return checkInByToken(token, user.id, expectedEventId);
 }

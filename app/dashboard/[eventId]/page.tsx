@@ -201,12 +201,18 @@ export default async function DashboardPage({
           </div>
           <div className="flex gap-2">
             <ExportCsvButton guests={guests} eventId={event.id} />
-            <Link
-              href={`/dashboard/${event.id}/checkin`}
-              className="flex min-h-11 items-center justify-center rounded-xl border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-sm"
-            >
-              Check-in
-            </Link>
+            {/*
+              Only when the host switched QR check-in on. An event without it has
+              no scanner to open, so there is nothing here to point at.
+            */}
+            {event.qrCheckinEnabled ? (
+              <Link
+                href={`/dashboard/${event.id}/checkin`}
+                className="flex min-h-11 items-center justify-center rounded-xl border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-sm"
+              >
+                Check-in
+              </Link>
+            ) : null}
           </div>
         </div>
 
