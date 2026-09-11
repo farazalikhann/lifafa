@@ -112,11 +112,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   /*
-    Everything except Next's own assets and image files. The session refresh has
-    to run broadly — a host can land anywhere — but running it on every static
-    chunk would add a token check to each one.
+    Everything except Next's own assets, image files and sounds. The session
+    refresh has to run broadly — a host can land anywhere — but running it on
+    every static chunk would add a token check to each one.
   */
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3)$).*)",
   ],
 };

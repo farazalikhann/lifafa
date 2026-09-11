@@ -1,30 +1,39 @@
 /**
  * The sound a cover makes when a guest opens it.
  *
- * SYNTHESISED, NOT A FILE. There is no mp3 in this repo and there deliberately
- * is not going to be one: a cover sound that has to be fetched is a cover sound
- * that arrives after the animation on a slow connection, plays over a card the
- * guest is already reading, and costs every guest a download whether their
- * phone is on silent or not. Four oscillators and a burst of noise cost
- * nothing, start on the same frame as the tap, and cannot fail to load.
+ * SYNTHESISED, EXCEPT THE CURTAIN. The seal, the fold and the chime are
+ * oscillators and bursts of noise built on the spot: they cost nothing, start
+ * on the same frame as the tap, and cannot fail to load. The curtain plays a
+ * recording, public/sounds/curtain.mp3, and a recording has none of that for
+ * free. A sound that has to be fetched is a sound that arrives after the
+ * animation on a slow connection and plays over a card the guest is already
+ * reading. So the file is fetched while the cover is still closed —
+ * preloadCoverSound, called from CoverShell — and at the tap it is either
+ * already in memory or not used at all: the synthesised curtain plays in its
+ * place. A slow or missing file changes what a guest hears, never when.
  *
- * IT ONLY EVER FOLLOWS A TAP. Nothing here runs on page load, on hydration, or
- * when a cover is skipped — see CoverShell, which calls this from the one
- * handler a guest's own press reaches. That is also what makes it work at all:
- * every mobile browser refuses audio that no gesture asked for, and an
- * AudioContext built anywhere else would be born suspended.
+ * IT ONLY EVER FOLLOWS A TAP. Nothing here plays on page load, on hydration,
+ * or when a cover is skipped — see CoverShell, which calls playCoverSound from
+ * the one handler a guest's own press reaches. preloadCoverSound runs before
+ * that, but it only fetches bytes: no context, no decoding, no sound. The tap
+ * is also what makes the audio work at all: every mobile browser refuses audio
+ * that no gesture asked for, and an AudioContext built anywhere else would be
+ * born suspended.
  *
  * IT IS QUIET AND IT IS SHORT. A guest opens invitations in offices, on trains,
  * next to sleeping children. MusicToggle takes the same position about the
  * card's background music and takes it further — that never starts on its own
  * at all. The difference is that this is the sound of the thing they just
- * pressed, it lasts about a second, and it is over before they have read a word.
+ * pressed, it lasts no longer than the cover does, and it is over before they
+ * have read a word. The recording goes through the same master gain as the
+ * synthesised voices, and is cut where its cover ends.
  *
  * NOTHING IT DOES IS ALLOWED TO MATTER. Every path out of here is a return: a
  * browser with no Web Audio, a context that will not start, an autoplay policy
- * that says no. A guest whose phone stays silent has still opened their
- * invitation, and an exception thrown on the way into a card would be a far
- * worse trade than a missing flourish.
+ * that says no, a recording that will not download or decode. A guest whose
+ * phone stays silent has still opened their invitation, and an exception
+ * thrown on the way into a card would be a far worse trade than a missing
+ * flourish.
  */
 
 /** Which sound a cover makes. One per animation that has anything to say. */
@@ -39,7 +48,10 @@ export type CoverSoundId = "seal" | "curtain" | "fold" | "chime";
  */
 const MASTER_GAIN = 0.22;
 
-/** How long the context is kept alive. Longer than the longest tail below. */
+/**
+ * How long the context is kept alive. Longer than the longest tail below, the
+ * recording's included, with room for decoding it first.
+ */
 const CONTEXT_LIFETIME_MS = 2200;
 
 type AudioContextConstructor = new () => AudioContext;
@@ -232,7 +244,12 @@ function playSeal(context: AudioContext, master: GainNode, now: number): void {
   });
 }
 
-/** Cloth pulled aside: one long low rustle, with the heavier drag under it. */
+/**
+ * Cloth pulled aside: one long low rustle, with the heavier drag under it.
+ *
+ * The curtain's fallback now, heard only when its recording has not arrived by
+ * the tap or will not decode — see RECORDINGS.
+ */
 function playCurtain(context: AudioContext, master: GainNode, now: number): void {
   burst(context, master, {
     start: now,
@@ -319,6 +336,154 @@ const VOICES: Record<
   chime: playChime,
 };
 
+/** A recorded sound, and where it sits in the mix. */
+interface Recording {
+  /** Served from public/, so the path is also the URL. */
+  url: string;
+  /** A fraction of MASTER_GAIN, like every synthesised voice above. */
+  gain: number;
+  /**
+   * Where the recording is cut, in seconds from its start.
+   *
+   * A file can run on in room tone well past its cover, and a sound still
+   * playing over the card is the thing this whole file is built to avoid.
+   */
+  end: number;
+  /** How long the fade into `end` takes. A hard stop, even on room tone, clicks. */
+  fade: number;
+}
+
+/**
+ * The sounds that play a file. Each still has its entry in VOICES, which is
+ * what plays when the file cannot.
+ *
+ * The curtain's numbers were measured, not guessed. The file's two hits land
+ * at about 0.5s and 1.5s and its cover runs for 1.6s, so the cut comes just
+ * after the second one; what follows it is a second of room tone. At 0.7 its
+ * loudest moment sits level with the synthesised curtain's, so falling back
+ * changes what the cover sounds like, not how loud it is.
+ */
+const RECORDINGS: Partial<Record<CoverSoundId, Recording>> = {
+  curtain: { url: "/sounds/curtain.mp3", gain: 0.7, end: 1.75, fade: 0.2 },
+};
+
+/**
+ * Recordings fetched so far, as bytes.
+ *
+ * Kept undecoded because decoding needs an AudioContext, and one built before
+ * the tap would be born suspended — see the header. Module level, so a cover
+ * that mounts again (a host replaying the preview) does not fetch again.
+ */
+const fetchedRecordings = new Map<CoverSoundId, ArrayBuffer>();
+
+/** Sounds whose fetch has started, so a cover mounted twice asks once. */
+const requestedRecordings = new Set<CoverSoundId>();
+
+/**
+ * Starts fetching a cover's recording, if it has one, and never throws.
+ *
+ * Called while the cover is still closed, so the file has the time a guest
+ * spends reading the names to arrive in. A sound with no recording, or one
+ * already asked for, returns at once.
+ */
+export function preloadCoverSound(sound: CoverSoundId | null | undefined): void {
+  if (sound === null || sound === undefined) {
+    return;
+  }
+
+  const recording = RECORDINGS[sound];
+
+  if (recording === undefined || requestedRecordings.has(sound)) {
+    return;
+  }
+
+  requestedRecordings.add(sound);
+
+  void fetch(recording.url)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`${recording.url} answered ${response.status}`);
+      }
+
+      return response.arrayBuffer();
+    })
+    .then((bytes) => {
+      fetchedRecordings.set(sound, bytes);
+    })
+    .catch((cause: unknown) => {
+      /*
+        Forgotten rather than remembered as failed, so the next cover to mount
+        tries again. This one opens to the synthesised voice.
+      */
+      requestedRecordings.delete(sound);
+      console.warn("[cover] could not fetch the opening sound:", cause);
+    });
+}
+
+/**
+ * decodeAudioData, in the one form every browser takes.
+ *
+ * Safari before 14.1 — the one still behind webkitAudioContext — has only the
+ * callback signature and returns nothing. Everything newer takes the callbacks
+ * too and also returns a promise, which rejects alongside the error callback;
+ * it is quietened so a failure is reported once, not twice.
+ */
+function decode(context: AudioContext, bytes: ArrayBuffer): Promise<AudioBuffer> {
+  return new Promise((resolve, reject) => {
+    const pending = context.decodeAudioData(bytes, resolve, reject) as
+      | Promise<AudioBuffer>
+      | undefined;
+
+    void pending?.catch(() => undefined);
+  });
+}
+
+/**
+ * Plays a fetched recording through the master, faded out at its `end`.
+ *
+ * Through Web Audio rather than an <audio> element, because on an iPhone an
+ * element ignores the volume a page sets and plays through the silent switch.
+ * Web Audio respects both, which the rest of this file already relies on.
+ *
+ * Decoded here, inside the tap's own context. A copy is decoded, not the bytes
+ * themselves: decoding detaches the buffer it is handed, and the next open
+ * needs them again. It takes a few milliseconds, so the recording starts that
+ * much after the tap; if it fails, `fallback` plays the synthesised voice
+ * instead, just as late.
+ */
+function playRecording(
+  context: AudioContext,
+  master: GainNode,
+  recording: Recording,
+  bytes: ArrayBuffer,
+  fallback: () => void,
+): void {
+  decode(context, bytes.slice(0))
+    .then((buffer) => {
+      const now = context.currentTime;
+
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(recording.gain, now);
+      gain.gain.setValueAtTime(
+        recording.gain,
+        now + recording.end - recording.fade,
+      );
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + recording.end);
+
+      source.connect(gain);
+      gain.connect(master);
+
+      source.start(now);
+      source.stop(now + recording.end);
+    }, fallback)
+    .catch((cause: unknown) => {
+      console.warn("[cover] could not play the opening sound:", cause);
+    });
+}
+
 /**
  * Plays one cover's sound, and never throws.
  *
@@ -357,7 +522,23 @@ export function playCoverSound(sound: CoverSoundId | null | undefined): void {
       void context.resume().catch(() => undefined);
     }
 
-    VOICES[sound](context, master, context.currentTime);
+    const synthesise = (): void => {
+      VOICES[sound](context, master, context.currentTime);
+    };
+
+    const recording = RECORDINGS[sound];
+    const bytes = fetchedRecordings.get(sound);
+
+    /*
+      The recording only if it is already here. One still in flight is left to
+      land unheard: waiting for it would put the sound after the animation,
+      which is the one thing a fetched sound must never do.
+    */
+    if (recording !== undefined && bytes !== undefined) {
+      playRecording(context, master, recording, bytes, synthesise);
+    } else {
+      synthesise();
+    }
 
     window.setTimeout(() => {
       void context.close().catch(() => undefined);

@@ -14,7 +14,7 @@ import { RevealGateContext } from "@/hooks/useRevealGate";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
-import { playCoverSound } from "@/lib/coverSound";
+import { playCoverSound, preloadCoverSound } from "@/lib/coverSound";
 import { enterFullscreen } from "@/lib/fullscreen";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -40,6 +40,18 @@ const UNMOUNT_GRACE_MS = 80;
  * has followed yet.
  */
 const WORDS_FADE_MS = 360;
+
+/**
+ * How long after the cover appears its recorded sound is fetched, if it has one.
+ *
+ * Not at once, for two reasons. On the first pass `reducedMotion` is still the
+ * server's `false` — the real answer lands in the render straight after
+ * hydration — and a guest who will never see the cover should not download its
+ * sound; waiting lets that render cancel the fetch before it starts. And the
+ * first moments belong to the card's own fonts and images. Still far shorter
+ * than anyone takes to read a name and tap.
+ */
+const SOUND_PRELOAD_DELAY_MS = 300;
 
 /**
  * Where the cover is in its one journey.
@@ -238,6 +250,25 @@ export default function CoverShell({
 
   /** A timer outliving the component would call setState on a dead tree. */
   useEffect(() => clearTimer, [clearTimer]);
+
+  /*
+    A recorded sound is fetched while the cover is closed, so it is already in
+    memory when the guest taps; fetched on the tap, it would land after the
+    curtains had parted. Asked for on the same terms handleOpen plays it, so a
+    cover that will open in silence downloads nothing. For a synthesised sound
+    this does nothing at all.
+  */
+  useEffect(() => {
+    if (phase !== "closed" || reducedMotion || option.durationMs <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      preloadCoverSound(option.sound);
+    }, SOUND_PRELOAD_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [phase, reducedMotion, option.durationMs, option.sound]);
 
   /*
     The cover is a full viewport layer, so the page behind it must not scroll:
