@@ -536,17 +536,34 @@ export async function updateEvent(
     existing.event_draft.venueAddress !== patch.draft.venueAddress;
 
   /*
-    Re-resolved only when the host changed where it is. A failed lookup writes
-    null, which is a card with no weather rather than a refused save — the same
-    trade createEvent makes — and a venue that did not change keeps the
-    coordinates it already had, including the null it already had.
+    What the row already knows about where this is, or null if it never
+    resolved. A latitude without a longitude is not half an answer, so the pair
+    is kept or dropped together.
   */
-  const coordinates = venueMoved
-    ? await geocodeVenue(patch.draft.venueName, patch.draft.venueAddress)
-    : {
-        latitude: existing.latitude,
-        longitude: existing.longitude,
-      };
+  const storedCoordinates =
+    existing.latitude !== null && existing.longitude !== null
+      ? { latitude: existing.latitude, longitude: existing.longitude }
+      : null;
+
+  /*
+    Re-resolved when the host changed where it is — and also when the row has
+    no coordinates at all, which is the case this used to strand.
+
+    Keeping "the null it already had" meant one failed lookup was permanent: an
+    event whose venue Open-Meteo did not recognise the first time, or one saved
+    before there was a venue to geocode, could never show weather again no
+    matter what the host did, because every later save took the null branch. A
+    host who then switched weather on watched nothing happen and had no way to
+    tell why. Retrying while there is nothing to lose costs one request on a
+    save that was already writing a row.
+
+    A failed lookup still writes null — a card with no weather rather than a
+    refused save, the same trade createEvent makes.
+  */
+  const coordinates =
+    venueMoved || storedCoordinates === null
+      ? await geocodeVenue(patch.draft.venueName, patch.draft.venueAddress)
+      : storedCoordinates;
 
   const row: EventContentUpdate = {
     card_config: patch.cardConfig,

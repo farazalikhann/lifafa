@@ -11,6 +11,7 @@ import { getTheme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
+import type { EventWeather, WeatherThemeId } from "@/types/weather";
 
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
 const FRAME_QUERY = "(min-width: 64rem)";
@@ -44,6 +45,8 @@ export default function CardPreview({
   config,
   motifs,
   coverAnimation,
+  weather,
+  weatherTheme,
 }: {
   draft: EventDraft;
   config: CardConfig;
@@ -55,6 +58,14 @@ export default function CardPreview({
     open again after each one would make the frame useless for editing.
   */
   coverAnimation: CoverAnimationId;
+  /*
+    Resolved by the editor against the draft's own venue, so what the host sees
+    here is the reading their guests will get rather than a stand-in. Null both
+    while it is being fetched and when the venue cannot be resolved — the card
+    shows no weather in either case, which is the honest preview of both.
+  */
+  weather: EventWeather | null;
+  weatherTheme: WeatherThemeId;
 }): ReactElement | null {
   /*
     The frame behind the card takes its colour from the selected palette, the
@@ -101,6 +112,8 @@ export default function CardPreview({
             screen preview is where they can try the real interaction.
           */
           audience="host-preview"
+          weather={weather}
+          weatherTheme={weatherTheme}
         />
       </div>
 
@@ -126,6 +139,8 @@ export default function CardPreview({
           config={config}
           motifs={motifs}
           coverAnimation={coverAnimation}
+          weather={weather}
+          weatherTheme={weatherTheme}
           triggerRef={triggerRef}
           onClose={closePreview}
         />

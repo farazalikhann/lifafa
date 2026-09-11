@@ -9,6 +9,7 @@ import { getTheme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
+import type { EventWeather, WeatherThemeId } from "@/types/weather";
 
 /** Tailwind's `lg`, the breakpoint the editor's two-column grid starts at. */
 const FRAME_QUERY = "(min-width: 64rem)";
@@ -103,12 +104,17 @@ export default function PreviewBar({
   config,
   motifs,
   coverAnimation,
+  weather,
+  weatherTheme,
 }: {
   draft: EventDraft;
   config: CardConfig;
   motifs: readonly Motif[];
   /* Handed on to the overlay behind this bar, which is what plays it. */
   coverAnimation: CoverAnimationId;
+  /* Same journey as the cover: this bar draws neither, the overlay draws both. */
+  weather: EventWeather | null;
+  weatherTheme: WeatherThemeId;
 }): ReactElement | null {
   const isFramed = useMediaQuery(FRAME_QUERY);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
@@ -201,6 +207,8 @@ export default function PreviewBar({
           config={config}
           motifs={motifs}
           coverAnimation={coverAnimation}
+          weather={weather}
+          weatherTheme={weatherTheme}
           triggerRef={triggerRef}
           onClose={closePreview}
         />

@@ -25,6 +25,7 @@ import SectionManager from "@/components/create/SectionManager";
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TraditionPicker from "@/components/create/TraditionPicker";
 import WeatherPicker from "@/components/create/WeatherPicker";
+import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
 import { deepEqual } from "@/lib/deepEqual";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
@@ -300,6 +301,20 @@ export default function CardEditor({
   const [weatherTheme, setWeatherTheme] = useState<WeatherThemeId>(
     initial.weatherTheme,
   );
+
+  /*
+    The real reading for the venue in front of the host, so the preview shows
+    the weather rather than only promising it. Resolved through a server action
+    because the lookup is a server one; null while it is in flight and null
+    when the venue cannot be resolved, which is exactly what the saved card
+    does with the same venue.
+  */
+  const previewWeather = useWeatherPreview({
+    enabled: showWeather,
+    venueName: draft.venueName,
+    venueAddress: draft.venueAddress,
+    eventDate: draft.eventDate,
+  });
   /* Its own column as well; see 0005. Only the switch exists so far. */
   const [qrCheckinEnabled, setQrCheckinEnabled] = useState(
     initial.qrCheckinEnabled,
@@ -946,6 +961,8 @@ export default function CardEditor({
             config={config}
             motifs={motifs}
             coverAnimation={coverAnimation}
+            weather={previewWeather}
+            weatherTheme={weatherTheme}
           />
         </div>
       </main>
@@ -960,6 +977,8 @@ export default function CardEditor({
         config={config}
         motifs={motifs}
         coverAnimation={coverAnimation}
+        weather={previewWeather}
+        weatherTheme={weatherTheme}
       />
 
       {pendingHref !== null ? (
