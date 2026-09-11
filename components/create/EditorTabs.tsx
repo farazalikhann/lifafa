@@ -11,7 +11,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 /** Tailwind's `lg`: 64rem, the breakpoint the editor's two-column grid uses. */
 const LG_QUERY = "(min-width: 64rem)";
 
-export type EditorTabId = "details" | "design" | "decoration" | "structure";
+export type EditorTabId = "details" | "design" | "structure" | "extras";
 
 /** One panel, so one id, and every tab in either bar points at it. */
 const PANEL_ID = "editor-panel";
@@ -65,14 +65,14 @@ function DesignIcon(): ReactElement {
   );
 }
 
-/** A sprig, which is most of what this tab actually puts on the card. */
-function DecorationIcon(): ReactElement {
+/** Two switches, because everything in this tab is one. */
+function ExtrasIcon(): ReactElement {
   return (
     <TabIcon>
-      <path d="M12 21V9" />
-      <path d="M12 13c-3 0-5-1.6-5-4.5 3 0 5 1.6 5 4.5Z" />
-      <path d="M12 13c3 0 5-1.6 5-4.5-3 0-5 1.6-5 4.5Z" />
-      <circle cx={12} cy={5} r={1.8} />
+      <rect x={3} y={5} width={18} height={6} rx={3} />
+      <circle cx={16.5} cy={8} r={1.6} />
+      <rect x={3} y={13} width={18} height={6} rx={3} />
+      <circle cx={7.5} cy={16} r={1.6} />
     </TabIcon>
   );
 }
@@ -95,8 +95,8 @@ const TABS: readonly {
 }[] = [
   { id: "details", label: "Details", Icon: DetailsIcon },
   { id: "design", label: "Design", Icon: DesignIcon },
-  { id: "decoration", label: "Decoration", Icon: DecorationIcon },
   { id: "structure", label: "Structure", Icon: StructureIcon },
+  { id: "extras", label: "Extras", Icon: ExtrasIcon },
 ];
 
 /*
@@ -179,8 +179,21 @@ function TabButton({
  * WHY. The form was a single column of more than ten groups in the order they
  * were built in, which on a phone put the colour picker about fifteen screens
  * below the names. The groups are the same groups; what is new is that they sit
- * in four named piles — the facts, the look, the ornament, the running order —
- * and only one pile is on screen at a time.
+ * in four named piles and only one pile is on screen at a time.
+ *
+ * The four are the facts, the look, the running order, and the extras. Design
+ * and Decoration used to be two of them and are now one: a host choosing how
+ * their card looks does not think of the palette and the ornament as different
+ * errands, and splitting them meant deciding which tab a border belonged to
+ * every time one was added.
+ *
+ * Extras is what that merge made room for, and it is a different kind of pile
+ * from the other three. Everything in it is off until the host switches it on
+ * — the cover the guest taps, the scratch panel, the music, the weather, the
+ * QR check-in — and they used to be scattered across Decoration and Structure
+ * by an argument about what each one technically was. A host is not looking
+ * for "a treatment drawn on the card"; they are looking for the things they
+ * can add, and now those are in one place.
  *
  * ONLY THE SELECTED PANEL IS MOUNTED. `children` is already just that panel:
  * the page decides which one to build and the other three do not exist in the

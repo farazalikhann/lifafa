@@ -128,7 +128,11 @@ export type GuestRow = {
   id: string;
   event_id: string;
   name: string;
-  phone: string;
+  /**
+   * Null for a reply that gave none, which 0007 allows from a guest who is not
+   * coming. Never null on an acceptance — submit_reply still refuses one.
+   */
+  phone: string | null;
   rsvp: RsvpStatus;
   accompanying_count: number;
   message: string | null;
@@ -477,7 +481,13 @@ export function toGuest(row: GuestRow): Guest {
   return {
     id: row.id,
     name: row.name,
-    phone: row.phone,
+    /*
+      Flattened to "" rather than carried as null, for the same reason message
+      goes the other way: every reader of Guest.phone — the table, the CSV, the
+      door's manual lookup — already has an "there is nothing here" branch for
+      an empty string, and none of them wants a second one for null.
+    */
+    phone: row.phone ?? "",
     rsvp: row.rsvp,
     accompanyingCount: row.accompanying_count,
     message: row.message ?? undefined,

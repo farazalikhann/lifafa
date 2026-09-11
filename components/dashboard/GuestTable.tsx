@@ -80,6 +80,18 @@ function CheckedInMark({ checkedIn }: { checkedIn: boolean }): ReactElement {
   );
 }
 
+/**
+ * A phone number, or the mark that says there is not one.
+ *
+ * Empty since 0007, which asks for a number only from the guests who are
+ * coming. An em dash rather than a blank cell: a blank reads as a rendering
+ * fault, and this is a fact about the reply — they said no and kept their
+ * number, which they are entitled to do.
+ */
+function phoneLabel(phone: string): string {
+  return phone.length > 0 ? phone : "—";
+}
+
 function bringingLabel(count: number): string {
   return count === 0 ? "—" : `+${count}`;
 }
@@ -200,7 +212,7 @@ export default function GuestTable({
                       {guest.name}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-[var(--lifafa-muted)] tabular-nums">
-                      {guest.phone}
+                      {phoneLabel(guest.phone)}
                     </td>
                     <td className="px-4 py-3.5">
                       <StatusBadge status={guest.rsvp} />
@@ -252,7 +264,7 @@ export default function GuestTable({
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-[var(--lifafa-muted)]">Phone</dt>
                     <dd className="text-[var(--lifafa-cream)] tabular-nums">
-                      {guest.phone}
+                      {phoneLabel(guest.phone)}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between gap-3">

@@ -18,7 +18,12 @@ import type { Guest, GuestReply } from "@/types/guest";
 /** A reply as the invite form hands it over. */
 export interface ReplyInput {
   name: string;
-  /** Ten digits. Re-normalised in SQL regardless — the browser is not a trust boundary. */
+  /**
+   * Ten digits, or empty from a guest who is not coming — 0007 requires one
+   * only on an acceptance, because the number is the key the headcount and
+   * "change my reply" are matched on and both are about people turning up.
+   * Re-normalised in SQL regardless: the browser is not a trust boundary.
+   */
   phone: string;
   status: GuestReply;
   /** Total people attending, including the guest. Always >= 1. */

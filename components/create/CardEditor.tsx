@@ -868,7 +868,7 @@ export default function CardEditor({
             </>
           ) : null}
 
-          {/* 2 — DESIGN. How it looks. */}
+          {/* 2 — DESIGN. How it looks, ornament included. */}
           {tab === "design" ? (
             <>
               <StylePanel
@@ -889,63 +889,74 @@ export default function CardEditor({
                 onMotionChange={setDecorMotion}
                 onIntensityChange={setDecorIntensity}
               />
-            </>
-          ) : null}
-
-          {/*
-            3 — DECORATION. What is on it.
-
-            The weather panel is here rather than under Structure, which is the
-            other tab it could have gone to. It is an optional treatment drawn
-            on the card, off until a host turns it on, which is what everything
-            else in this tab is; Structure is about the sections and the order
-            they come in, and the weather is not one of them.
-          */}
-          {tab === "decoration" ? (
-            <>
+              {/*
+                The ornament had a tab of its own and does not need one. Which
+                motifs a card carries is the same question as which palette and
+                which faces it is set in — a host deciding how their invitation
+                should look is on one errand, and making them cross to another
+                tab for the sprigs was asking them to sort their own taste into
+                our filing.
+              */}
               <TraditionPicker
                 traditionId={traditionId}
                 ornamentConfig={ornamentConfig}
                 onTraditionChange={handleTraditionSelect}
                 onOrnamentConfigChange={setOrnamentConfig}
               />
+            </>
+          ) : null}
+
+          {/* 3 — STRUCTURE. What appears, and in what order. */}
+          {tab === "structure" ? (
+            <SectionManager
+              blocks={blocks}
+              mintCustomId={mintCustomId}
+              onBlocksChange={setBlocks}
+            />
+          ) : null}
+
+          {/*
+            4 — EXTRAS. Everything that is off until the host turns it on.
+
+            These five used to be split between Decoration and Structure by an
+            argument about what each one technically was: the weather was a
+            treatment drawn on the card, the cover and the music were about how
+            the day runs, check-in changed nothing a guest sees. Every one of
+            those readings is defensible and none of them is how a host looks
+            for them. What they actually have in common is the only thing that
+            matters here — a card has none of them until somebody asks for it,
+            and a host who wants to know what they can add should find the
+            answer in one list rather than by opening two tabs and reasoning
+            about our categories.
+
+            In the order a guest meets them: the cover they tap, the panel they
+            scratch, the music behind it, the sky over the venue, and the code
+            at the door.
+          */}
+          {tab === "extras" ? (
+            <>
+              <CoverAnimationPicker
+                coverAnimation={coverAnimation}
+                onChange={setCoverAnimation}
+              />
               <RevealPanel
                 scratchTarget={scratchTarget}
                 onScratchTargetChange={setScratchTarget}
               />
+              <MusicPanel musicUrl={musicUrl} onMusicUrlChange={setMusicUrl} />
               <WeatherPicker
                 showWeather={showWeather}
                 weatherTheme={weatherTheme}
                 onShowWeatherChange={setShowWeather}
                 onWeatherThemeChange={setWeatherTheme}
               />
-            </>
-          ) : null}
-
-          {/* 4 — STRUCTURE. What appears, and in what order. */}
-          {tab === "structure" ? (
-            <>
-              <SectionManager
-                blocks={blocks}
-                mintCustomId={mintCustomId}
-                onBlocksChange={setBlocks}
-              />
-              <CoverAnimationPicker
-                coverAnimation={coverAnimation}
-                onChange={setCoverAnimation}
-              />
-              <MusicPanel musicUrl={musicUrl} onMusicUrlChange={setMusicUrl} />
-              {/*
-                Here rather than under Decoration: it changes nothing a guest
-                sees on the card. It is about how the day itself runs, which
-                makes it the same kind of choice as the cover and the music.
-              */}
               <CheckinPanel
                 enabled={qrCheckinEnabled}
                 onEnabledChange={setQrCheckinEnabled}
               />
             </>
           ) : null}
+
         </EditorTabs>
 
         {/*
