@@ -154,6 +154,16 @@ export default function InviteExperience({
             sizing="viewport"
             audience="guest"
             invite={invite}
+            /*
+              The page resolves the reading on the server and hands it here; it
+              used to stop at this component, which took the prop and never
+              passed it on. Everything behind it worked — the venue was
+              geocoded at save time, the forecast was fetched and cached, the
+              host picked a treatment for it — and CardCanvas fell back to its
+              `weather = null` default, so no invitation has ever shown a sky.
+            */
+            weather={weather}
+            weatherTheme={event.weatherTheme}
           />
 
           <Watermark

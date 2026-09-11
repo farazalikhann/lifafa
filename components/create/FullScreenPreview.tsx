@@ -24,6 +24,7 @@ import type { Theme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
+import type { EventWeather, WeatherThemeId } from "@/types/weather";
 
 type DeviceId = "phone" | "desktop";
 
@@ -165,6 +166,8 @@ export default function FullScreenPreview({
   config,
   motifs,
   coverAnimation,
+  weather,
+  weatherTheme,
   triggerRef,
   onClose,
 }: {
@@ -179,6 +182,14 @@ export default function FullScreenPreview({
    * a question the host has already moved on from.
    */
   coverAnimation: CoverAnimationId;
+  /**
+   * The reading for the draft's own venue, on the same terms as the cover
+   * above: resolved from what the host has typed, not from a saved row. Null
+   * while it is being fetched and null when the venue cannot be resolved — the
+   * card draws nothing in either case, which is what a guest would get too.
+   */
+  weather: EventWeather | null;
+  weatherTheme: WeatherThemeId;
   /** Focus returns here on close, so the host lands where they left. */
   triggerRef: RefObject<HTMLButtonElement | null>;
   onClose: () => void;
@@ -628,6 +639,8 @@ export default function FullScreenPreview({
                 invite={PREVIEW_INVITE}
                 /* "Exactly what your guests will see" has to include the doing. */
                 audience="guest"
+                weather={weather}
+                weatherTheme={weatherTheme}
               />
             </div>
 
