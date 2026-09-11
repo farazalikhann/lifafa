@@ -15,6 +15,7 @@ import { getCoverAnimation } from "@/lib/coverAnimations";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
 import { playCoverSound } from "@/lib/coverSound";
+import { enterFullscreen } from "@/lib/fullscreen";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
@@ -180,6 +181,18 @@ export default function CoverShell({
 
   const handleOpen = useCallback((): void => {
     /*
+      The address bar goes with the tap too, and for the same reason the sound
+      does: fullscreen is only ever granted from inside a user gesture, so this
+      is the one moment on the whole page where it can be asked for. A guest
+      who has just tapped a wax seal is the guest most willing to be handed a
+      whole screen of invitation.
+
+      Does nothing on an iPhone, which has no page fullscreen to give — see
+      lib/fullscreen.ts. Nothing below depends on the answer.
+    */
+    enterFullscreen();
+
+    /*
       The sound goes with the tap, not with the phase change.
 
       Skipped entirely under reduced motion and for a cover with no time to run,
@@ -217,6 +230,8 @@ export default function CoverShell({
   }, [option.durationMs, option.sound, reducedMotion]);
 
   const handleSkip = useCallback((): void => {
+    /* Also a tap, so also a gesture the browser will honour. */
+    enterFullscreen();
     clearTimer();
     setPhase("open");
   }, [clearTimer]);
