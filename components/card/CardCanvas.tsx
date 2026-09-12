@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
-import { bismillahGround } from "@/lib/bismillah";
+import { calligraphyGround } from "@/lib/calligraphy";
 import { butterflyStyle } from "@/lib/butterflies";
 import BorderFrame, {
   borderClearance,
@@ -561,23 +561,25 @@ export default function CardCanvas({
               !hangingIds.includes(id) &&
               id !== pack.coverArchId &&
               id !== pack.dividerId &&
-              id !== pack.calligraphyId,
+              !pack.calligraphyIds.includes(id),
           );
 
   /*
-    The calligraphy that heads the card, if this pack has one and the host
-    switched it on.
+    The calligraphy that heads the card: whichever of the pack's panels the host
+    switched on, in the pack's own order.
 
     Resolved here beside the divider and the arch, because those three are the
     claims that keep an ornament out of the scatter — and a claim made in one
     place and honoured in another is how an ornament ends up sprinkled across
     the card at 30px.
   */
-  const calligraphyId = pack?.calligraphyId ?? null;
   const calligraphy =
-    calligraphyId !== null && ornaments.includes(calligraphyId)
-      ? (pack?.findOrnament(calligraphyId) ?? null)
-      : null;
+    pack === null
+      ? []
+      : pack.calligraphyIds
+          .filter((id) => ornaments.includes(id))
+          .map((id) => pack.findOrnament(id))
+          .filter((entry) => entry !== null);
 
   const dividerId = pack?.dividerId ?? null;
   const archId = pack?.coverArchId ?? null;
@@ -936,7 +938,7 @@ export default function CardCanvas({
           const isCover = block.kind === "builtin" && block.id === "cover";
 
           const head =
-            isCover && (hasBlessing || calligraphy !== null) ? (
+            isCover && (hasBlessing || calligraphy.length > 0) ? (
               /*
                 A screen of its own, not a header sitting on top of the names.
 
@@ -962,24 +964,27 @@ export default function CardCanvas({
                 }}
               >
                 {/*
-                  Above the greeting, because it opens what follows rather than
-                  sitting beside it: a card that carries both reads Bismillah,
-                  then the address, then the dua, which is the order they are
-                  said in.
+                  Above the greeting, because they open what follows rather than
+                  sitting beside it: a card that carries the lot reads Bismillah,
+                  then the verse, then the address, then the dua, which is the
+                  order they are said in. Pack order, not the order the host
+                  switched them on in — an opening does not become a closing
+                  because it was chosen second.
 
                   `className` rather than `size`, so the width is the column's
-                  and not a number chosen here — the calligraphy is the one
+                  and not a number chosen here — calligraphy is the only
                   ornament that spans the card rather than being placed on it.
                   Which ink it uses is decided from the card's own background;
-                  see lib/bismillah.ts.
+                  see lib/calligraphy.ts.
                 */}
-                {calligraphy !== null ? (
-                  <calligraphy.Component
-                    instanceId="cover-calligraphy"
+                {calligraphy.map((panel) => (
+                  <panel.Component
+                    key={panel.id}
+                    instanceId={`cover-calligraphy-${panel.id}`}
                     className="block h-auto w-full max-w-[19rem]"
-                    ground={bismillahGround(effectiveTheme.background)}
+                    ground={calligraphyGround(effectiveTheme.background)}
                   />
-                ) : null}
+                ))}
 
                 {greeting !== null && pack !== null ? (
                   <Blessing

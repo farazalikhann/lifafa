@@ -24,7 +24,8 @@ export type OrnamentId =
   | "mosqueArch"
   | "geometricStar"
   | "hangingLights"
-  | "bismillah";
+  | "bismillah"
+  | "versePairs";
 
 /**
  * One ornament pinned to the top edge of the card.

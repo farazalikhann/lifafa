@@ -2,10 +2,11 @@ import type { ReactElement } from "react";
 import { DEFAULT_SIZE, Frame, polygonPath, r2 } from "@/lib/ornaments/frame";
 import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
 import {
-  BISMILLAH_ALT,
-  BISMILLAH_ASPECT,
-  bismillahSrc,
-} from "@/lib/bismillah";
+  calligraphyAlt,
+  calligraphyAspect,
+  calligraphySrc,
+  type CalligraphyId,
+} from "@/lib/calligraphy";
 import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
 
 /*
@@ -47,15 +48,17 @@ export type { Ornament, OrnamentProps };
  * them there would let the two drift the moment a viewBox changed.
  */
 export const ORNAMENT_ASPECT: Record<OrnamentId, number> = {
-  lantern: 48 / 88,
+  /* The published cut-out's own box, not a viewBox — the lantern is a photograph. */
+  lantern: 154 / 400,
   crescentMoon: 1,
   stars: 1,
   arabesqueBorder: 160 / 24,
   mosqueArch: 100 / 140,
   geometricStar: 1,
   hangingLights: 160 / 40,
-  /* Not a viewBox: the published crop the two inks share. See lib/bismillah.ts. */
-  bismillah: BISMILLAH_ASPECT,
+  /* Not viewBoxes either: the published crops each pair of inks shares. */
+  bismillah: calligraphyAspect("bismillah"),
+  versePairs: calligraphyAspect("versePairs"),
 };
 
 /** A closed star, alternating between the outer and the inner radius. */
@@ -116,31 +119,6 @@ function scallopPath(
    --------------------------------------------------------------------------- */
 
 /**
- * Jaali lattice inside the lantern body.
- *
- * Two families of parallel diagonals crossing at right angles, authored as
- * literal path data rather than generated: the diamonds have to land on the
- * body's own edges to read as pierced metal, which a loop over an even stride
- * does not guarantee.
- */
-const JAALI = [
-  /* Down-right family. */
-  "M 13 33 L 20 26",
-  "M 13 40 L 27 26",
-  "M 13 47 L 34 26",
-  "M 13 54 L 35 32",
-  "M 20 56 L 35 41",
-  "M 27 56 L 35 48",
-  /* Down-left family, mirrored about the body's centre line. */
-  "M 35 33 L 28 26",
-  "M 35 40 L 21 26",
-  "M 35 47 L 14 26",
-  "M 35 54 L 13 32",
-  "M 28 56 L 13 41",
-  "M 21 56 L 13 48",
-].join(" ");
-
-/**
  * Warm enough to read as fire against every palette the card ships with.
  *
  * Exported because the Hindu pack's diya burns too, and its flame is meant to
@@ -187,80 +165,48 @@ export function FlameGlow({ id }: { id: string }): ReactElement {
   );
 }
 
-export const Lantern: Ornament = ({
-  size,
-  instanceId,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => {
-  /*
-    One filter per rendered lantern, defined once here and referenced once
-    below. Derived from the caller's stable id, so the same lantern in the same
-    slot emits the same id on the server and in the browser.
-  */
-  const glowId = `lifafa-lantern-glow-${instanceId}`;
-
-  return (
-    <Frame
-      viewBox="0 0 48 88"
-      aspect={ORNAMENT_ASPECT.lantern}
-      size={size}
-      strokeWidth={strokeWidth ?? 1.7}
-      className={className}
-      preserveAspectRatio={preserveAspectRatio}
-      style={style}
-    >
-      <defs>
-        <FlameGlow id={glowId} />
-      </defs>
-
-      {/* Chain — three linked segments and the hook down to the cap. */}
-      <ellipse cx={24} cy={3.4} rx={2.2} ry={2.9} />
-      <ellipse cx={24} cy={8.6} rx={2.2} ry={2.9} />
-      <ellipse cx={24} cy={13.8} rx={2.2} ry={2.9} />
-      <path d="M 24 16.6 V 19.4" />
-
-      {/* Finial and domed cap. */}
-      <circle cx={24} cy={20.6} r={1.4} />
-      <path d="M 13.5 25.8 Q 24 13.4 34.5 25.8" />
-      <path d="M 11 25.8 H 37" />
-
-      {/*
-        Flame is drawn before the body, so the jaali lattice reads as standing
-        in front of the light rather than behind it.
-      */}
-      <ellipse
-        cx={24}
-        cy={42}
-        rx={3.6}
-        ry={5.4}
-        fill={FLAME_COLOUR}
-        stroke="none"
-        filter={`url(#${glowId})`}
-        className="lifafa-flame-flicker"
-      />
-
-      {/* Body — bowed sides between the cap plate and the base plate. */}
-      <path d="M 13 26 Q 8.2 41 13 56" />
-      <path d="M 35 26 Q 39.8 41 35 56" />
-      <path d="M 13 56 H 35" />
-      <path d={JAALI} />
-
-      {/* Tapered base and foot. */}
-      <path d="M 15.5 56 L 18.5 63 H 29.5 L 32.5 56" />
-      <path d="M 19.5 63 H 28.5" />
-      <circle cx={24} cy={65.6} r={1.6} />
-
-      {/* Tassel. */}
-      <path d="M 24 67.2 V 71" />
-      <path d="M 20.6 73.4 Q 24 70.4 27.4 73.4 Q 24 79.6 20.6 73.4 Z" />
-      <path d="M 22 78 V 83.4 M 24 78.8 V 85.4 M 26 78 V 83.4" />
-    </Frame>
-  );
-};
-
+/**
+ * The lantern — a photograph of a pierced brass one, lit, on its chain.
+ *
+ * It was line art until it wasn't. The drawing held up at 43px the way line art
+ * does, and that was the whole of what was wrong with it: a lantern on a
+ * wedding card is meant to be the warm thing in the corner of the eye, and a
+ * stroked outline in the card's accent is a diagram of one. This is the same
+ * ornament in the same slot with the same id, so a card saved with lanterns on
+ * keeps them; only the drawing changed.
+ *
+ * WHAT IT GIVES UP, deliberately. It no longer takes the card's accent — a
+ * photograph has no stroke to colour, and this one is brass whatever palette it
+ * lands on. It no longer carries FlameGlow either: the light is in the file,
+ * baked into the glass, rather than being a filter over a drawn flame. Both
+ * stay exported, because the Hindu diya is drawn and still needs them.
+ *
+ * `instanceId`, `strokeWidth` and `preserveAspectRatio` are taken and ignored.
+ * They exist so an svg can build filter ids and tune its pen, and an img has
+ * neither. Taking them anyway keeps this the same shape as every other
+ * Ornament, which is what lets the pack hold it in the same list.
+ */
+export const Lantern: Ornament = ({ size = 64, className, style }) => (
+  <img
+    src="/decor/lantern.webp"
+    alt=""
+    aria-hidden="true"
+    decoding="async"
+    /*
+      `size` measures the longer side, which for a lantern is its height — the
+      same contract the drawn ornaments keep, so the hanging table's rem values
+      and `hangingDepth` both go on meaning what they meant.
+    */
+    width={
+      className === undefined
+        ? Math.round(size * ORNAMENT_ASPECT.lantern)
+        : undefined
+    }
+    height={className === undefined ? Math.round(size) : undefined}
+    className={className ?? "block max-w-none"}
+    style={style}
+  />
+);
 /* ---------------------------------------------------------------------------
    Crescent moon
    --------------------------------------------------------------------------- */
@@ -605,50 +551,53 @@ export const HangingLights: Ornament = ({
 );
 
 /**
- * The Bismillah, in thuluth — the one ornament in this file that is not drawn.
+ * The calligraphy, built once and used twice — the ornaments in this file that
+ * are not drawn.
  *
  * Every other shape here is a path table stroked in `currentColor`, which is
- * what lets the card hand them its accent. This one is a photograph of
- * calligraphy, so it has no stroke to colour: its ink is fixed at the point it
- * was published, and it is published twice. `ground` is how it is told which
- * card it is standing on — see the note on OrnamentProps, and lib/bismillah.ts
- * for why a card's own background decides it rather than the guest's system
- * theme.
+ * what lets the card hand them its accent. These are photographs of lettering,
+ * so they have no stroke to colour: the ink is fixed at the point of
+ * publishing, and each is published twice. `ground` is how one is told which
+ * card it is standing on — see the note on OrnamentProps, and
+ * lib/calligraphy.ts for why the card's own background decides it rather than
+ * the guest's system theme.
  *
  * Sized off the same `size` prop as the rest, which measures the longer side —
- * here the width, since the crop is 2.35 to one.
+ * here the width, since both crops are wider than they are tall.
  *
- * `instanceId` is taken and ignored: it exists so an svg can build unique filter
- * ids, and an img has none to build. Taking it anyway keeps this component the
- * same shape as every other Ornament, which is what lets the pack hold it in
+ * `instanceId` is taken and ignored: it exists so an svg can build unique
+ * filter ids, and an img has none to build. Taking it anyway keeps these the
+ * same shape as every other Ornament, which is what lets the pack hold them in
  * the same list.
  *
- * The one ornament in the app with a real `alt` rather than an empty one. The
- * rest are pictures on the card and a guest loses nothing by not being told
- * they are there; this is a line that is read. In the editor's chip it says
- * nothing anyway — the span the grid wraps every drawing in is aria-hidden, and
- * the chip carries its own visible label.
+ * The only ornaments in the app with a real `alt` rather than an empty one.
+ * The rest are pictures on the card and a guest loses nothing by not being told
+ * they are there; these are lines that are read. In the editor's chip the alt
+ * says nothing anyway — the span the grid wraps every drawing in is
+ * aria-hidden, and the chip carries its own visible label.
  */
-export const Bismillah: Ornament = ({
-  size = 120,
-  className,
-  style,
-  ground = "dark",
-}) => (
-  <img
-    src={bismillahSrc(ground)}
-    alt={BISMILLAH_ALT}
-    decoding="async"
-    width={className === undefined ? Math.round(size) : undefined}
-    height={
-      className === undefined
-        ? Math.round(size / ORNAMENT_ASPECT.bismillah)
-        : undefined
-    }
-    className={className ?? "block max-w-none"}
-    style={style}
-  />
-);
+function calligraphyOrnament(id: CalligraphyId): Ornament {
+  const Panel: Ornament = ({ size = 120, className, style, ground = "dark" }) => (
+    <img
+      src={calligraphySrc(id, ground)}
+      alt={calligraphyAlt(id)}
+      decoding="async"
+      width={className === undefined ? Math.round(size) : undefined}
+      height={
+        className === undefined
+          ? Math.round(size / calligraphyAspect(id))
+          : undefined
+      }
+      className={className ?? "block max-w-none"}
+      style={style}
+    />
+  );
+
+  return Panel;
+}
+
+export const Bismillah = calligraphyOrnament("bismillah");
+export const VersePairs = calligraphyOrnament("versePairs");
 
 /* ---------------------------------------------------------------------------
    Registry
@@ -712,6 +661,17 @@ export const MUSLIM_ORNAMENTS: readonly OrnamentEntry[] = [
     tall — inside the 40px box the grid gives every drawing.
   */
   { id: "bismillah", label: "Bismillah", Component: Bismillah, chipSize: 84 },
+  /*
+    76 rather than the Bismillah's 84: this crop is 1.95 to one where that one
+    is 2.35, so the same width would stand it 43px tall and burst the 40px box
+    the grid gives every drawing.
+  */
+  {
+    id: "versePairs",
+    label: "Created you in pairs",
+    Component: VersePairs,
+    chipSize: 76,
+  },
 ];
 
 const BY_ID: Record<OrnamentId, Ornament> = {
@@ -723,6 +683,7 @@ const BY_ID: Record<OrnamentId, Ornament> = {
   geometricStar: GeometricStar,
   hangingLights: HangingLights,
   bismillah: Bismillah,
+  versePairs: VersePairs,
 };
 
 export function getOrnament(id: OrnamentId): Ornament {
