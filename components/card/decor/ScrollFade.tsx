@@ -74,6 +74,35 @@ const MIN_CLEARANCE = 24;
  */
 const BLUR = "2.5px";
 
+/**
+ * How far the dissolve reaches in from each edge, in px.
+ *
+ * Exported because it is not only this layer's business, and the card had the
+ * number wrong in exactly the way that is easy to get wrong. Sections inset
+ * their content by `hangingDepth` — the depth at which the *ornaments* stop —
+ * and that is where the dissolve is at its strongest, not where it ends. The
+ * 84px ramp below it is the part that looks like nothing is happening until
+ * something tall is standing in it, and then half of that thing is a smear.
+ *
+ * Which is precisely what the Bismillah did: it is the one piece of content on
+ * the card that is a block rather than a line, so it is the first thing whose
+ * top edge reached up into the ramp, and on a card with lanterns and a dua it
+ * lost its upper half to the wash. Anything that has to stand clear of the
+ * dissolve rather than pass through it asks here.
+ *
+ * The two ends differ because the fade does: the top has the ornaments to clear
+ * before its ramp even starts, and the bottom has nothing above it.
+ */
+export function scrollFadeDepth(hangingBand: number): {
+  top: number;
+  bottom: number;
+} {
+  return {
+    top: Math.max(MIN_CLEARANCE, hangingBand) + TOP_RAMP,
+    bottom: BOTTOM_FADE,
+  };
+}
+
 export default function ScrollFade({
   background,
   hangingBand,

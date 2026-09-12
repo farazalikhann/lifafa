@@ -8,7 +8,9 @@ import BorderFrame, {
 } from "@/components/card/decor/BorderFrame";
 import ButterflyLayer from "@/components/card/decor/ButterflyLayer";
 import CornerLayer from "@/components/card/decor/CornerLayer";
-import ScrollFade from "@/components/card/decor/ScrollFade";
+import ScrollFade, {
+  scrollFadeDepth,
+} from "@/components/card/decor/ScrollFade";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
 import HangingLayer, {
   hangingDepth,
@@ -675,6 +677,28 @@ export default function CardCanvas({
   const sectionPad = Math.max(SECTION_TOP_PAD, hangingBand);
 
   /*
+    What the head screen insets by, which is not what a section insets by.
+
+    A section insets to `sectionPad` — where the ornaments stop — and gets away
+    with it because it centres a line of text in a screen-tall box, so the line
+    lands far below the dissolve's ramp whatever the padding says. The head
+    screen does not: it stacks a calligraphic panel, a greeting and a dua, and
+    the taller that stack grows the higher its first item climbs. With lanterns
+    on and a dua picked, the Bismillah's top edge came to rest at 125px against
+    a dissolve that runs to 190 — and the upper half of it was washed into the
+    background. The bug read as the calligraphy vanishing the moment a dua was
+    chosen, because choosing one is what made the stack tall enough.
+
+    So this clears the whole dissolve rather than the ornaments alone, asked of
+    the layer that draws it. `min-height` and not `height`, so on the rare card
+    where the stack no longer fits between the two the screen grows a little
+    instead of pushing its own head off the top.
+  */
+  const fadeDepth = scrollFadeDepth(hangingBand);
+  const headPadTop = Math.max(sectionPad, fadeDepth.top);
+  const headPadBottom = Math.max(sectionPad, fadeDepth.bottom);
+
+  /*
     The blessing's inset is now the same wherever the cover sits in the running
     order. It used to be applied only to the first block, because the hanging
     layer was pinned to the top of the *card* and was long past by the second
@@ -933,8 +957,8 @@ export default function CardCanvas({
                 className="flex flex-col items-center justify-center gap-4 px-7 text-center"
                 style={{
                   minHeight,
-                  paddingTop: sectionPad,
-                  paddingBottom: sectionPad,
+                  paddingTop: headPadTop,
+                  paddingBottom: headPadBottom,
                 }}
               >
                 {/*
