@@ -638,7 +638,7 @@ export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = [
 
 /** Sits under the ornament grid in the editor. */
 export const HINDU_ORNAMENTS_NOTE =
-  "Diyas, kalash and torans frame the top of your card.";
+  "Marigold garlands hang from the top of your card.";
 
 const BY_ID: Record<HinduOrnamentId, Ornament> = {
   diya: Diya,

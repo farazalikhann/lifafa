@@ -74,6 +74,35 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   ],
 
   /*
+    THE JHALAR, AND ONLY THE JHALAR. This pack had no hanging row at all until
+    now, and picking which of its seven ornaments earned one is the whole of the
+    decision. A marigold string is hung — that is what it is for. A diya is not:
+    lib/ornaments/hindu.tsx draws it with a flared foot and says in as many
+    words that the foot is there so it reads as a lamp standing rather than as a
+    bowl, and hanging it would be arguing with its own drawing. The kalash sits
+    for the same reason, and Ganesh, Om and the swastik are symbols rather than
+    objects — nothing hangs a swastik from a string.
+
+    The toran is the other thing that hangs in life, and it stays the divider,
+    because it is already doing that job well and one ornament cannot be in two
+    places. So the garland does the hanging, three lengths of it: one across the
+    card and two shorter ones beneath its ends, which is how a mandap is dressed.
+
+    The two short ones hang at 14 and 19 percent rather than tucked up under the
+    long one, so they read as separate strands instead of thickening it — and
+    both still finish above its own 71px, so the whole jhalar costs the card the
+    same clearance a single garland would.
+
+    Checked at 360px: the long one spans 12 to 348, and the two short ones are
+    clear of each other at 7-151 and 217-345.
+  */
+  hindu: [
+    { id: "marigold", xPercent: 50, topPercent: 0, sizeRem: 21, delayMs: 0, swing: false },
+    { id: "marigold", xPercent: 22, topPercent: 14, sizeRem: 9, delayMs: 0, swing: false },
+    { id: "marigold", xPercent: 78, topPercent: 19, sizeRem: 8, delayMs: 0, swing: false },
+  ],
+
+  /*
     The Nishan Sahib flies from a staff, so it hangs from the top edge the way a
     banner does. Two of them, framing the head of the card rather than centred,
     which would put a flag straight through the greeting.
