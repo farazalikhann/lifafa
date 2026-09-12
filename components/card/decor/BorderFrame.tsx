@@ -1,6 +1,11 @@
 "use client";
 
 import { useId, type ReactElement, type ReactNode } from "react";
+import {
+  FLOWER_FRAME_CLEARANCE,
+  FLOWER_FRAME_SCALE,
+  flowerFrameStyle,
+} from "@/lib/flowerFrame";
 import type { CardBorderStyle } from "@/types/card";
 
 /**
@@ -25,6 +30,14 @@ import type { CardBorderStyle } from "@/types/card";
  * The one style that is a single drawing rather than a run, the garland, keeps
  * its aspect ratio through the same `preserveAspectRatio` rather than being
  * stretched to the card's width.
+ *
+ * ONE STYLE IS NOT DRAWN HERE AT ALL. "flowerBackground" is a photograph, and a
+ * photograph has no path table to tile from — it is placed as a nine-slice by
+ * FlowerFrame at the foot of this file, which is the same rule kept by other
+ * means: corners at a fixed size, the runs between them repeated. It takes none
+ * of the machinery above, so it returns before any of it runs, and the numbers
+ * that cut it up live in lib/flowerFrame.ts beside the art they were measured
+ * off.
  *
  * PINNED, not scrolled — the same sticky band DecorLayer and CornerLayer use,
  * so the frame surrounds what the guest is looking at instead of running off
@@ -157,6 +170,17 @@ function onQuadratic(
    card.
    --------------------------------------------------------------------------- */
 
+/**
+ * The styles this file actually draws.
+ *
+ * "none" draws nothing and the photographic frame is placed rather than drawn,
+ * so neither has a spec, a tile or a corner piece. Naming that as a type rather
+ * than repeating the exclusion keeps the table below exhaustive: a sixth drawn
+ * style added to CardBorderStyle fails to compile until it has a spec, which is
+ * exactly the reminder that was wanted.
+ */
+type DrawnBorderStyle = Exclude<CardBorderStyle, "none" | "flowerBackground">;
+
 interface BorderSpec {
   band: number;
   tile: number;
@@ -174,7 +198,7 @@ interface BorderSpec {
   clearance: { x: number; y: number };
 }
 
-const SPECS: Record<Exclude<CardBorderStyle, "none">, BorderSpec> = {
+const SPECS: Record<DrawnBorderStyle, BorderSpec> = {
   /* The richest of the five: a full vine on all four sides. */
   floralVine: {
     band: 20,
@@ -229,7 +253,20 @@ export function borderClearance(style: CardBorderStyle): {
   x: number;
   y: number;
 } {
-  return style === "none" ? { x: 0, y: 0 } : SPECS[style].clearance;
+  if (style === "none") {
+    return { x: 0, y: 0 };
+  }
+
+  /*
+    The photographic frame is the one style that asks for room on both axes.
+    Its own measurement, kept beside the artwork it was taken from rather than
+    copied into the table above — see the note on FLOWER_FRAME_CLEARANCE.
+  */
+  if (style === "flowerBackground") {
+    return FLOWER_FRAME_CLEARANCE;
+  }
+
+  return SPECS[style].clearance;
 }
 
 /* ---------------------------------------------------------------------------
@@ -457,7 +494,7 @@ function GarlandDrawing(): ReactElement {
    --------------------------------------------------------------------------- */
 
 /** Which tile each style runs down its sides, and which across its ends. */
-function tilesFor(style: Exclude<CardBorderStyle, "none">): {
+function tilesFor(style: DrawnBorderStyle): {
   horizontal: ReactNode;
   vertical: ReactNode;
   corner: ReactNode;
@@ -577,6 +614,48 @@ function Edge({
   );
 }
 
+/* ---------------------------------------------------------------------------
+   The photographic frame
+   --------------------------------------------------------------------------- */
+
+/**
+ * "flowerBackground" — roses placed as a nine-slice rather than drawn.
+ *
+ * One element and no svg at all. `border-image` cuts the artwork into nine
+ * pieces, pins the four corner clusters at a fixed size and repeats the runs
+ * down the two long sides to fill the height between them, which is the same
+ * bargain every tiled edge above strikes: a taller screen gets more repeats
+ * rather than a taller rose. lib/flowerFrame.ts holds where the cuts fall and
+ * why, and hands back the whole declaration.
+ *
+ * FLUSH TO THE EDGE, where the five drawn styles stand 8px in. That inset is
+ * what stops a hairline frame reading as a browser artefact; this one is a
+ * photograph whose flowers fade out into transparency at their own pace, and
+ * holding it off the edge leaves a bare strip of card outside the fade that
+ * reads as the image having failed to load.
+ *
+ * AT FULL OPACITY, where the drawn styles are held at half. Half is what keeps
+ * a line that crosses a name from competing with it — but nothing here crosses
+ * a name: FLOWER_FRAME_CLEARANCE stands the whole content column off the runs,
+ * and a photograph at half opacity is not restrained, only washed out.
+ */
+function FlowerFrame({ bandHeight }: { bandHeight: string }): ReactElement {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-[16] overflow-clip"
+    >
+      {/* The same sticky band the drawn frame uses, with no inset taken off it. */}
+      <div className="sticky top-0 overflow-clip" style={{ height: bandHeight }}>
+        <div
+          className="absolute inset-0"
+          style={flowerFrameStyle(FLOWER_FRAME_SCALE)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function BorderFrame({
   borderStyle,
   accent,
@@ -608,6 +687,15 @@ export default function BorderFrame({
 
   if (borderStyle === "none") {
     return null;
+  }
+
+  /*
+    Before the spec lookup, and that ordering is the point: the photographic
+    frame has no spec, no tile and no corner drawing, and narrowing it away here
+    is what lets everything below stay a table of line art.
+  */
+  if (borderStyle === "flowerBackground") {
+    return <FlowerFrame bandHeight={bandHeight} />;
   }
 
   const spec = SPECS[borderStyle];

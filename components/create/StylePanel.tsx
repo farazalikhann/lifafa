@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { FONT_PAIRS, fontFamilyOf } from "@/lib/fontPairs";
+import { flowerFrameStyle } from "@/lib/flowerFrame";
 import { PALETTES } from "@/lib/palettes";
 import type { CardBorderStyle } from "@/types/card";
 import type {
@@ -12,11 +13,13 @@ import type {
 } from "@/types/style";
 
 /**
- * The six borders, in the order the grid lays them out.
+ * The seven borders, in the order the grid lays them out.
  *
  * "None" comes first because it is the default and the way back, and the rest
  * run from the lightest to the busiest — so the row a host reads left to right
- * is also a run from restraint to ornament.
+ * is also a run from restraint to ornament. Which puts the photographic frame
+ * last: it is the only one that is not a line, and by some distance the most
+ * of anything on offer here.
  */
 const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "none", label: "None" },
@@ -25,6 +28,7 @@ const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "scallopedFrame", label: "Scalloped" },
   { id: "floralVine", label: "Floral vine" },
   { id: "hangingGarland", label: "Garland" },
+  { id: "flowerBackground", label: "Flower background" },
 ];
 
 /** Shared line work for the miniatures below. */
@@ -54,7 +58,11 @@ const PREVIEW_CORNERS: readonly string[] = [
  * at a size a host can actually read, arranged the way that style arranges
  * itself: all four sides, the corners only, or the top alone.
  */
-function BorderPreview({ id }: { id: CardBorderStyle }): ReactElement {
+function BorderPreview({
+  id,
+}: {
+  id: Exclude<CardBorderStyle, "flowerBackground">;
+}): ReactElement {
   return (
     <svg
       viewBox="0 0 64 44"
@@ -179,6 +187,37 @@ function BorderPreview({ id }: { id: CardBorderStyle }): ReactElement {
       {/* Nothing drawn on the card at all — just the plate, and a rule saying so. */}
       {id === "none" ? <path d="M 25 22 H 39" strokeOpacity={0.5} /> : null}
     </svg>
+  );
+}
+
+/**
+ * How far the photographic frame is scaled down for a chip.
+ *
+ * Against the chip's height rather than its width: at 0.055 the two horizontal
+ * bands come to 32 of the plate's 44px and leave a gap that still reads as the
+ * inside of a frame. Any bolder and the two bands meet in the middle, and the
+ * chip stops showing a border and starts showing a bouquet.
+ */
+const FLOWER_CHIP_SCALE = 0.055;
+
+/**
+ * The photographic frame's chip — the real thing, shrunk.
+ *
+ * The five styles above each get a hand drawn miniature because the honest
+ * miniature of a repeat is two or three of it rather than a whole card squeezed
+ * into a thumbnail. This one needs no such stand-in: it is a nine-slice, so the
+ * same declaration that frames a 828px screen frames a 44px chip, with the
+ * corner clusters pinned and less of the run between them. What the host sees
+ * here is what the card does, at the one size a chip has room for.
+ */
+function FlowerPreview(): ReactElement {
+  return (
+    <span
+      role="presentation"
+      aria-hidden="true"
+      className="block h-11 w-full"
+      style={flowerFrameStyle(FLOWER_CHIP_SCALE)}
+    />
   );
 }
 
@@ -407,11 +446,16 @@ export default function StylePanel({
         <GroupHeading>Card border</GroupHeading>
 
         {/*
-          Three per row on a phone, and still three above it — six chips in two
-          even rows at every width. A miniature is the only honest control here:
-          "Scalloped" and "Corner sprigs" mean nothing until they are drawn, and
-          without one the host is picking blind and checking the preview after
-          every guess.
+          Three per row on a phone, and still three above it, at every width. A
+          miniature is the only honest control here: "Scalloped" and "Corner
+          sprigs" mean nothing until they are drawn, and without one the host is
+          picking blind and checking the preview after every guess.
+
+          Seven chips, so the last row holds one. Left deliberately rather than
+          padded out to eight or squeezed into four columns: the odd chip is the
+          photographic frame, which is the one style that looks nothing like its
+          neighbours anyway, and a column narrow enough to fit four of these
+          miniatures is a column too narrow to read any of them.
         */}
         <div className="grid grid-cols-3 gap-2">
           {BORDER_STYLES.map((option) => {
@@ -433,7 +477,11 @@ export default function StylePanel({
                       : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)]",
                   ].join(" ")}
                 >
-                  <BorderPreview id={option.id} />
+                  {option.id === "flowerBackground" ? (
+                    <FlowerPreview />
+                  ) : (
+                    <BorderPreview id={option.id} />
+                  )}
                 </span>
 
                 <span

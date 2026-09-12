@@ -35,6 +35,11 @@ export type DecorIntensity = "subtle" | "normal" | "lively";
  *
  * "none" is the default and is a real member rather than a null, so the card
  * never has to distinguish "no border chosen" from "border turned off".
+ *
+ * "flowerBackground" is the odd one out and the only one that is not line art:
+ * it is a photograph of painted roses, placed as a nine-slice rather than drawn
+ * from a path table. Everything that follows from that — where it is cut, how
+ * far the text has to stand off it — lives in lib/flowerFrame.ts.
  */
 export type CardBorderStyle =
   | "none"
@@ -42,7 +47,8 @@ export type CardBorderStyle =
   | "cornerSprigs"
   | "geometricRule"
   | "scallopedFrame"
-  | "hangingGarland";
+  | "hangingGarland"
+  | "flowerBackground";
 
 /**
  * Which section, if any, a guest has to scratch open before they can read it.

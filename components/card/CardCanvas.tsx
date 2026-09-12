@@ -79,6 +79,17 @@ const ARCH_INSET_TOP = 20;
 const SECTION_TOP_PAD = 40;
 
 /**
+ * The side padding every section already carries, in px — its `px-7`.
+ *
+ * The horizontal twin of the constant above, and it earns its place for exactly
+ * one border. The five drawn frames keep to a band no wider than this, so every
+ * one of them subtracts to zero and nothing about the card moves; the
+ * photographic frame paints opaque roses roughly 48px in, down the full height
+ * of the screen, and without this the names would be read through them.
+ */
+const SECTION_SIDE_PAD = 28;
+
+/**
  * One Arabic line with its transliteration and translation under it, or nothing
  * at all.
  *
@@ -602,6 +613,17 @@ export default function CardCanvas({
   const contentTopInset = Math.max(0, clearance.y - SECTION_TOP_PAD);
 
   /*
+    And room down each side, for a border that stands in the margin.
+
+    Applied to the column rather than to its head, because that is where the
+    two clearances differ: the top of a frame is passed once, on the way in,
+    while its sides are beside every line of every section for the whole scroll.
+    Zero for all five drawn borders — their deepest band is 28px, which is the
+    section padding they were already clearing.
+  */
+  const contentSideInset = Math.max(0, clearance.x - SECTION_SIDE_PAD);
+
+  /*
     How far down the screen the ornaments reach.
 
     Asked of the layer that owns their positions rather than guessed here, so a
@@ -754,7 +776,13 @@ export default function CardCanvas({
       />
 
       {/* Content rides above the decor layer. */}
-      <div className="relative z-10" style={{ paddingTop: contentTopInset }}>
+      <div
+        className="relative z-10"
+        style={{
+          paddingTop: contentTopInset,
+          paddingInline: contentSideInset,
+        }}
+      >
         {/*
           First in the column and no height of its own, so it sticks to the top
           of the scrollport without pushing the cover down a pixel. Renders
