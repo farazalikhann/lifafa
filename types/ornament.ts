@@ -21,7 +21,6 @@ export type OrnamentId =
   | "crescentMoon"
   | "stars"
   | "arabesqueBorder"
-  | "mosqueArch"
   | "geometricStar"
   | "hangingLights"
   | "bismillah"

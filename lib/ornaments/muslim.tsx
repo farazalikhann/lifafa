@@ -48,15 +48,20 @@ export type { Ornament, OrnamentProps };
  * them there would let the two drift the moment a viewBox changed.
  */
 export const ORNAMENT_ASPECT: Record<OrnamentId, number> = {
-  /* The published cut-out's own box, not a viewBox — the lantern is a photograph. */
+  /*
+    The first three are not viewBoxes but the published cut-outs' own boxes —
+    they are photographs. The lights' box is the one worth reading twice: 2.38
+    to one where the drawn band was 4 to one, because real bulbs hang on
+    droppers of different lengths and a swag of them is simply deeper than a
+    stroked wire. `hangingDepth` reads this, so the whole card makes room.
+  */
   lantern: 154 / 400,
-  crescentMoon: 1,
+  crescentMoon: 213 / 340,
+  hangingLights: 1024 / 430,
   stars: 1,
   arabesqueBorder: 160 / 24,
-  mosqueArch: 100 / 140,
   geometricStar: 1,
-  hangingLights: 160 / 40,
-  /* Not viewBoxes either: the published crops each pair of inks shares. */
+  /* Nor are these: the published crops each pair of inks shares. */
   bismillah: calligraphyAspect("bismillah"),
   versePairs: calligraphyAspect("versePairs"),
 };
@@ -85,34 +90,6 @@ function starPath(
   return `M ${coords.join(" L ")} Z`;
 }
 
-/**
- * A run of arcs through the given points, each bulging to the same side.
- *
- * `curvature` is the arc radius as a fraction of the chord it spans. Anything
- * above 0.5 is a drawable arc; the closer to 0.5, the deeper the scallop.
- * Because it is a *fraction*, a long segment and a short one come out looking
- * like the same carving rather than one deep bite and one shallow one.
- *
- * Sweep flag 0 throughout: travelling up the left jamb, over the apex and down
- * the right, that is the side facing the middle of the arch the whole way
- * round, so one flag scallops the entire edge inward.
- */
-function scallopPath(
-  points: readonly (readonly [number, number])[],
-  curvature: number,
-): string {
-  let d = `M ${r2(points[0][0])} ${r2(points[0][1])}`;
-
-  for (let index = 1; index < points.length; index += 1) {
-    const [previousX, previousY] = points[index - 1];
-    const [x, y] = points[index];
-    const radius = r2(Math.hypot(x - previousX, y - previousY) * curvature);
-
-    d += ` A ${radius} ${radius} 0 0 0 ${r2(x)} ${r2(y)}`;
-  }
-
-  return d;
-}
 
 /* ---------------------------------------------------------------------------
    Lantern
@@ -166,83 +143,65 @@ export function FlameGlow({ id }: { id: string }): ReactElement {
 }
 
 /**
- * The lantern — a photograph of a pierced brass one, lit, on its chain.
+ * The three that are photographs, built from one factory.
  *
- * It was line art until it wasn't. The drawing held up at 43px the way line art
- * does, and that was the whole of what was wrong with it: a lantern on a
- * wedding card is meant to be the warm thing in the corner of the eye, and a
- * stroked outline in the card's accent is a diagram of one. This is the same
- * ornament in the same slot with the same id, so a card saved with lanterns on
- * keeps them; only the drawing changed.
+ * They were line art until they weren't, and that was the whole of what was
+ * wrong with them: a drawing holds up at 43px the way line art does, and a
+ * lantern on a wedding card is meant to be the warm thing at the corner of the
+ * eye rather than a diagram of one. Same ids, same slots, same rows in the
+ * hanging table, so a card saved with any of them on keeps them; only the
+ * drawings changed.
  *
- * WHAT IT GIVES UP, deliberately. It no longer takes the card's accent — a
- * photograph has no stroke to colour, and this one is brass whatever palette it
- * lands on. It no longer carries FlameGlow either: the light is in the file,
- * baked into the glass, rather than being a filter over a drawn flame. Both
- * stay exported, because the Hindu diya is drawn and still needs them.
+ * WHAT THEY GIVE UP, deliberately. They no longer take the card's accent — a
+ * photograph has no stroke to colour, and these are brass on every palette. The
+ * lantern no longer carries FlameGlow either: the light is in the file, baked
+ * into the glass, rather than being a filter over a drawn flame. FlameGlow and
+ * FLAME_COLOUR stay exported, because the Hindu diya is still drawn and still
+ * needs them.
  *
  * `instanceId`, `strokeWidth` and `preserveAspectRatio` are taken and ignored.
  * They exist so an svg can build filter ids and tune its pen, and an img has
- * neither. Taking them anyway keeps this the same shape as every other
- * Ornament, which is what lets the pack hold it in the same list.
+ * neither. Taking them anyway keeps these the same shape as every other
+ * Ornament, which is what lets the pack hold them in one list.
  */
-export const Lantern: Ornament = ({ size = 64, className, style }) => (
-  <img
-    src="/decor/lantern.webp"
-    alt=""
-    aria-hidden="true"
-    decoding="async"
+function photoOrnament(src: string, id: OrnamentId): Ornament {
+  const Photo: Ornament = ({ size = 64, className, style }) => {
     /*
-      `size` measures the longer side, which for a lantern is its height — the
-      same contract the drawn ornaments keep, so the hanging table's rem values
-      and `hangingDepth` both go on meaning what they meant.
+      `size` measures the longer side, exactly as it does for the drawn
+      ornaments — which for the lantern and the moon is the height and for the
+      string of lights is the width. Working both out from the aspect is what
+      lets the hanging table's rem values and `hangingDepth` go on meaning what
+      they meant.
     */
-    width={
-      className === undefined
-        ? Math.round(size * ORNAMENT_ASPECT.lantern)
-        : undefined
-    }
-    height={className === undefined ? Math.round(size) : undefined}
-    className={className ?? "block max-w-none"}
-    style={style}
-  />
+    const aspect = ORNAMENT_ASPECT[id];
+    const width = aspect >= 1 ? size : size * aspect;
+    const height = aspect >= 1 ? size / aspect : size;
+
+    return (
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        decoding="async"
+        width={className === undefined ? Math.round(width) : undefined}
+        height={className === undefined ? Math.round(height) : undefined}
+        className={className ?? "block max-w-none"}
+        style={style}
+      />
+    );
+  };
+
+  return Photo;
+}
+
+export const Lantern = photoOrnament("/decor/lantern.webp", "lantern");
+export const CrescentMoon = photoOrnament(
+  "/decor/crescent-moon.webp",
+  "crescentMoon",
 );
-/* ---------------------------------------------------------------------------
-   Crescent moon
-   --------------------------------------------------------------------------- */
-
-export const CrescentMoon: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 64 64"
-    aspect={ORNAMENT_ASPECT.crescentMoon}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.5}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/*
-      Two arcs sharing both endpoints. The outer takes the long way round the
-      left; the inner cuts back across on a wider radius struck from further
-      right, and the sliver left between them is the crescent. Two arcs rather
-      than one filled shape is what keeps it line art at 64px.
-    */}
-    <path d="M 40.6 8.5 A 25 25 0 1 0 40.6 55.5" />
-    <path d="M 40.6 8.5 A 23.7 23.7 0 0 0 40.6 55.5" />
-
-    {/* Ornamental detail, all of it inside the thick part of the curve. */}
-    <path d="M 14.5 20 A 21 21 0 0 0 14.5 44" />
-    <circle cx={13.6} cy={32} r={1.5} />
-    <circle cx={16.2} cy={24.6} r={0.9} />
-    <circle cx={16.2} cy={39.4} r={0.9} />
-    <path d="M 9.2 27.4 L 11.9 28.8 M 9.2 36.6 L 11.9 35.2" />
-  </Frame>
+export const HangingLights = photoOrnament(
+  "/decor/hanging-lights.webp",
+  "hangingLights",
 );
 
 /* ---------------------------------------------------------------------------
@@ -366,72 +325,6 @@ export const ArabesqueBorder: Ornament = ({
 );
 
 /* ---------------------------------------------------------------------------
-   Mosque arch
-   --------------------------------------------------------------------------- */
-
-/**
- * The scalloped inner edge, sampled from the foot of the left jamb, up over the
- * apex, and back down to the foot of the right.
- *
- * Mirror symmetric about x = 50 by construction, so the two halves carry the
- * same number of scallops at the same heights.
- */
-const ARCH_INNER: readonly (readonly [number, number])[] = [
-  [16, 138],
-  [16, 118],
-  [16, 98],
-  [16, 78],
-  [17, 66],
-  [21, 54],
-  [28, 42],
-  [37, 31],
-  [50, 16],
-  [63, 31],
-  [72, 42],
-  [79, 54],
-  [83, 66],
-  [84, 78],
-  [84, 98],
-  [84, 118],
-  [84, 138],
-];
-
-/** Arc radius as a fraction of each chord — see scallopPath. */
-const ARCH_CURVATURE = 0.75;
-
-export const MosqueArch: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 100 140"
-    aspect={ORNAMENT_ASPECT.mosqueArch}
-    size={size}
-    strokeWidth={strokeWidth ?? 2}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/*
-      Open at the bottom and unfilled throughout: this is a frame that content
-      sits inside, so it must never close across the middle.
-    */}
-    <path d="M 6 138 V 70 C 6 42 24 18 50 6 C 76 18 94 42 94 70 V 138" />
-    <path d={scallopPath(ARCH_INNER, ARCH_CURVATURE)} />
-
-    {/* Imposts marking the springline, where the jambs hand over to the curve. */}
-    <path d="M 6 70 H 16 M 84 70 H 94" />
-
-    {/* Finial. */}
-    <path d="M 50 6 V 2.4" />
-    <circle cx={50} cy={1.4} r={1.3} />
-  </Frame>
-);
-
-/* ---------------------------------------------------------------------------
    Geometric star
    --------------------------------------------------------------------------- */
 
@@ -475,107 +368,6 @@ export const GeometricStar: Ornament = ({
   </Frame>
 );
 
-/* ---------------------------------------------------------------------------
-   Hanging lights
-   --------------------------------------------------------------------------- */
-
-/*
-  The string is one quadratic curve. Bulbs are placed by evaluating that curve,
-  so every bulb sits exactly on the wire rather than near it, and the sag stays
-  a real droop instead of a row of bulbs at hand-guessed heights.
-*/
-const WIRE_START: readonly [number, number] = [2, 4];
-const WIRE_CONTROL: readonly [number, number] = [80, 44];
-const WIRE_END: readonly [number, number] = [158, 4];
-
-/** Where along the wire the bulbs hang. Fixed — never generated. */
-const BULB_STOPS: readonly number[] = [0.15, 0.3, 0.5, 0.7, 0.85];
-
-function pointOnWire(t: number): readonly [number, number] {
-  const inverse = 1 - t;
-  const x =
-    inverse * inverse * WIRE_START[0] +
-    2 * inverse * t * WIRE_CONTROL[0] +
-    t * t * WIRE_END[0];
-  const y =
-    inverse * inverse * WIRE_START[1] +
-    2 * inverse * t * WIRE_CONTROL[1] +
-    t * t * WIRE_END[1];
-
-  return [r2(x), r2(y)];
-}
-
-export const HangingLights: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 160 40"
-    aspect={ORNAMENT_ASPECT.hangingLights}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.3}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    <path
-      d={`M ${WIRE_START[0]} ${WIRE_START[1]} Q ${WIRE_CONTROL[0]} ${WIRE_CONTROL[1]} ${WIRE_END[0]} ${WIRE_END[1]}`}
-    />
-
-    {/* Hooks the string is tied off on. */}
-    <circle cx={WIRE_START[0]} cy={WIRE_START[1]} r={1.6} />
-    <circle cx={WIRE_END[0]} cy={WIRE_END[1]} r={1.6} />
-
-    {BULB_STOPS.map((t) => {
-      const [x, y] = pointOnWire(t);
-
-      return (
-        <g key={t}>
-          {/* Socket. */}
-          <path d={`M ${x} ${y} V ${r2(y + 2.2)}`} />
-          {/* Teardrop, narrow at the socket and full at the bottom. */}
-          <path
-            d={`M ${x} ${r2(y + 2.2)} C ${r2(x - 3.4)} ${r2(y + 5.4)} ${r2(x - 2.8)} ${r2(y + 10.4)} ${x} ${r2(y + 11)} C ${r2(x + 2.8)} ${r2(y + 10.4)} ${r2(x + 3.4)} ${r2(y + 5.4)} ${x} ${r2(y + 2.2)} Z`}
-          />
-          {/* Filament, so a bulb at 64px is not a bare outline. */}
-          <path
-            d={`M ${r2(x - 1)} ${r2(y + 6.6)} Q ${x} ${r2(y + 8.4)} ${r2(x + 1)} ${r2(y + 6.6)}`}
-          />
-        </g>
-      );
-    })}
-  </Frame>
-);
-
-/**
- * The calligraphy, built once and used twice — the ornaments in this file that
- * are not drawn.
- *
- * Every other shape here is a path table stroked in `currentColor`, which is
- * what lets the card hand them its accent. These are photographs of lettering,
- * so they have no stroke to colour: the ink is fixed at the point of
- * publishing, and each is published twice. `ground` is how one is told which
- * card it is standing on — see the note on OrnamentProps, and
- * lib/calligraphy.ts for why the card's own background decides it rather than
- * the guest's system theme.
- *
- * Sized off the same `size` prop as the rest, which measures the longer side —
- * here the width, since both crops are wider than they are tall.
- *
- * `instanceId` is taken and ignored: it exists so an svg can build unique
- * filter ids, and an img has none to build. Taking it anyway keeps these the
- * same shape as every other Ornament, which is what lets the pack hold them in
- * the same list.
- *
- * The only ornaments in the app with a real `alt` rather than an empty one.
- * The rest are pictures on the card and a guest loses nothing by not being told
- * they are there; these are lines that are read. In the editor's chip the alt
- * says nothing anyway — the span the grid wraps every drawing in is
- * aria-hidden, and the chip carries its own visible label.
- */
 function calligraphyOrnament(id: CalligraphyId): Ornament {
   const Panel: Ornament = ({ size = 120, className, style, ground = "dark" }) => (
     <img
@@ -654,7 +446,6 @@ export const MUSLIM_ORNAMENTS: readonly OrnamentEntry[] = [
     Component: ArabesqueBorder,
     chipSize: 84,
   },
-  { id: "mosqueArch", label: "Mosque arch", Component: MosqueArch, chipSize: 40 },
   /*
     Last, and the only entry whose chip is a photograph. 84 is the width the
     widest chip gets, and at 2.35 to one that lands the calligraphy at 36px
@@ -679,7 +470,6 @@ const BY_ID: Record<OrnamentId, Ornament> = {
   crescentMoon: CrescentMoon,
   stars: Stars,
   arabesqueBorder: ArabesqueBorder,
-  mosqueArch: MosqueArch,
   geometricStar: GeometricStar,
   hangingLights: HangingLights,
   bismillah: Bismillah,

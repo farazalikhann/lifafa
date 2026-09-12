@@ -414,7 +414,13 @@ const MUSLIM_PACK: TraditionPack = {
   findGreeting: (id) => find(MUSLIM_GREETINGS, id),
   findBlessing: (id) => find(MUSLIM_DUAS, id),
   findOrnament: (id) => MUSLIM_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
-  coverArchId: "mosqueArch",
+  /*
+    No arch. The Muslim pack had one and it is gone — the drawing framed the
+    cover in the card's accent and read as a diagram beside the photographed
+    lanterns it now shares a card with. The Sikh and Christian packs keep
+    theirs; this slot is per pack for exactly that reason.
+  */
+  coverArchId: null,
   dividerId: "arabesqueBorder",
   calligraphyIds: ["bismillah", "versePairs"],
 };

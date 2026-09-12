@@ -49,8 +49,11 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   muslim: [
     /*
       The string of lights spans the card, so it is drawn first, behind. Its
-      height is a function of its width — 21rem is 336px across and 84px deep at
-      the reference width, and both hooks sit inside a 360px card.
+      height is a function of its width — 21rem is 336px across and, now that
+      the string is a photograph of real bulbs on droppers rather than a stroked
+      swag, 141px deep where it used to be 84. Both ends sit inside a 360px
+      card, and the extra depth travels through `hangingDepth` into every
+      section's padding, which is the mechanism working rather than a cost.
     */
     { id: "hangingLights", xPercent: 50, topPercent: 0, sizeRem: 21, delayMs: 0, swing: false },
     { id: "lantern", xPercent: 10, topPercent: 4, sizeRem: 4.05, delayMs: 0, swing: true },
@@ -58,11 +61,16 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
     { id: "lantern", xPercent: 74, topPercent: 26, sizeRem: 2.7, delayMs: 1800, swing: true },
     { id: "lantern", xPercent: 90, topPercent: 11, sizeRem: 3.6, delayMs: 2600, swing: true },
     /*
-      Moons drift rather than swing — nothing is holding them, so a pendulum
-      would be describing a rope that is not drawn.
+      The moons swing now, and it is the artwork that decided it. They used to
+      drift, because nothing was holding them and a pendulum would have been
+      describing a rope that was not drawn. The photograph draws the rope.
+
+      Bigger, too — 2.35 and 1.7rem left a filigree crescent as a 27px speck.
+      The larger of the two costs nothing in depth: the string of lights above
+      already reaches 141px and sets the clearance for the whole pack.
     */
-    { id: "crescentMoon", xPercent: 50, topPercent: 8, sizeRem: 2.35, delayMs: 1300, swing: false },
-    { id: "crescentMoon", xPercent: 38, topPercent: 36, sizeRem: 1.7, delayMs: 2100, swing: false },
+    { id: "crescentMoon", xPercent: 50, topPercent: 8, sizeRem: 3.2, delayMs: 1300, swing: true },
+    { id: "crescentMoon", xPercent: 38, topPercent: 36, sizeRem: 2.4, delayMs: 2100, swing: true },
   ],
 
   /*
