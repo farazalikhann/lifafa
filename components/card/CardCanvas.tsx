@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
+import { bismillahGround } from "@/lib/bismillah";
 import { butterflyStyle } from "@/lib/butterflies";
 import BorderFrame, {
   borderClearance,
@@ -557,8 +558,24 @@ export default function CardCanvas({
             (id) =>
               !hangingIds.includes(id) &&
               id !== pack.coverArchId &&
-              id !== pack.dividerId,
+              id !== pack.dividerId &&
+              id !== pack.calligraphyId,
           );
+
+  /*
+    The calligraphy that heads the card, if this pack has one and the host
+    switched it on.
+
+    Resolved here beside the divider and the arch, because those three are the
+    claims that keep an ornament out of the scatter — and a claim made in one
+    place and honoured in another is how an ornament ends up sprinkled across
+    the card at 30px.
+  */
+  const calligraphyId = pack?.calligraphyId ?? null;
+  const calligraphy =
+    calligraphyId !== null && ornaments.includes(calligraphyId)
+      ? (pack?.findOrnament(calligraphyId) ?? null)
+      : null;
 
   const dividerId = pack?.dividerId ?? null;
   const archId = pack?.coverArchId ?? null;
@@ -895,7 +912,7 @@ export default function CardCanvas({
           const isCover = block.kind === "builtin" && block.id === "cover";
 
           const head =
-            isCover && hasBlessing ? (
+            isCover && (hasBlessing || calligraphy !== null) ? (
               /*
                 A screen of its own, not a header sitting on top of the names.
 
@@ -920,6 +937,26 @@ export default function CardCanvas({
                   paddingBottom: sectionPad,
                 }}
               >
+                {/*
+                  Above the greeting, because it opens what follows rather than
+                  sitting beside it: a card that carries both reads Bismillah,
+                  then the address, then the dua, which is the order they are
+                  said in.
+
+                  `className` rather than `size`, so the width is the column's
+                  and not a number chosen here — the calligraphy is the one
+                  ornament that spans the card rather than being placed on it.
+                  Which ink it uses is decided from the card's own background;
+                  see lib/bismillah.ts.
+                */}
+                {calligraphy !== null ? (
+                  <calligraphy.Component
+                    instanceId="cover-calligraphy"
+                    className="block h-auto w-full max-w-[19rem]"
+                    ground={bismillahGround(effectiveTheme.background)}
+                  />
+                ) : null}
+
                 {greeting !== null && pack !== null ? (
                   <Blessing
                     entry={greeting}

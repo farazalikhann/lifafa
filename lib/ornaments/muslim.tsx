@@ -1,6 +1,11 @@
 import type { ReactElement } from "react";
 import { DEFAULT_SIZE, Frame, polygonPath, r2 } from "@/lib/ornaments/frame";
 import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
+import {
+  BISMILLAH_ALT,
+  BISMILLAH_ASPECT,
+  bismillahSrc,
+} from "@/lib/bismillah";
 import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
 
 /*
@@ -49,6 +54,8 @@ export const ORNAMENT_ASPECT: Record<OrnamentId, number> = {
   mosqueArch: 100 / 140,
   geometricStar: 1,
   hangingLights: 160 / 40,
+  /* Not a viewBox: the published crop the two inks share. See lib/bismillah.ts. */
+  bismillah: BISMILLAH_ASPECT,
 };
 
 /** A closed star, alternating between the outer and the inner radius. */
@@ -597,6 +604,52 @@ export const HangingLights: Ornament = ({
   </Frame>
 );
 
+/**
+ * The Bismillah, in thuluth — the one ornament in this file that is not drawn.
+ *
+ * Every other shape here is a path table stroked in `currentColor`, which is
+ * what lets the card hand them its accent. This one is a photograph of
+ * calligraphy, so it has no stroke to colour: its ink is fixed at the point it
+ * was published, and it is published twice. `ground` is how it is told which
+ * card it is standing on — see the note on OrnamentProps, and lib/bismillah.ts
+ * for why a card's own background decides it rather than the guest's system
+ * theme.
+ *
+ * Sized off the same `size` prop as the rest, which measures the longer side —
+ * here the width, since the crop is 2.35 to one.
+ *
+ * `instanceId` is taken and ignored: it exists so an svg can build unique filter
+ * ids, and an img has none to build. Taking it anyway keeps this component the
+ * same shape as every other Ornament, which is what lets the pack hold it in
+ * the same list.
+ *
+ * The one ornament in the app with a real `alt` rather than an empty one. The
+ * rest are pictures on the card and a guest loses nothing by not being told
+ * they are there; this is a line that is read. In the editor's chip it says
+ * nothing anyway — the span the grid wraps every drawing in is aria-hidden, and
+ * the chip carries its own visible label.
+ */
+export const Bismillah: Ornament = ({
+  size = 120,
+  className,
+  style,
+  ground = "dark",
+}) => (
+  <img
+    src={bismillahSrc(ground)}
+    alt={BISMILLAH_ALT}
+    decoding="async"
+    width={className === undefined ? Math.round(size) : undefined}
+    height={
+      className === undefined
+        ? Math.round(size / ORNAMENT_ASPECT.bismillah)
+        : undefined
+    }
+    className={className ?? "block max-w-none"}
+    style={style}
+  />
+);
+
 /* ---------------------------------------------------------------------------
    Registry
    --------------------------------------------------------------------------- */
@@ -653,6 +706,12 @@ export const MUSLIM_ORNAMENTS: readonly OrnamentEntry[] = [
     chipSize: 84,
   },
   { id: "mosqueArch", label: "Mosque arch", Component: MosqueArch, chipSize: 40 },
+  /*
+    Last, and the only entry whose chip is a photograph. 84 is the width the
+    widest chip gets, and at 2.35 to one that lands the calligraphy at 36px
+    tall — inside the 40px box the grid gives every drawing.
+  */
+  { id: "bismillah", label: "Bismillah", Component: Bismillah, chipSize: 84 },
 ];
 
 const BY_ID: Record<OrnamentId, Ornament> = {
@@ -663,6 +722,7 @@ const BY_ID: Record<OrnamentId, Ornament> = {
   mosqueArch: MosqueArch,
   geometricStar: GeometricStar,
   hangingLights: HangingLights,
+  bismillah: Bismillah,
 };
 
 export function getOrnament(id: OrnamentId): Ornament {

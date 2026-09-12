@@ -61,6 +61,17 @@ export interface OrnamentProps {
    * authored for. This is the escape hatch for that case and nothing else.
    */
   strokeWidth?: number;
+  /**
+   * The ground this ornament is being laid on, light or dark.
+   *
+   * Meaningless to every drawn ornament here and read by exactly one: the
+   * Bismillah is a photograph of calligraphy, so its ink is fixed in the file
+   * rather than taken from `currentColor` like every stroke in this package,
+   * and the only way it can be both black and white is to be told which.
+   * Defaults to dark wherever it is not passed, which is the editor's chip
+   * panel.
+   */
+  ground?: "light" | "dark";
 }
 
 export type Ornament = (props: OrnamentProps) => ReactElement;

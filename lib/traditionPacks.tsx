@@ -213,6 +213,21 @@ export interface TraditionPack {
    * pack with none, in which case the card keeps its plain hairline.
    */
   dividerId: AnyOrnamentId | null;
+  /**
+   * The calligraphic panel that heads the card, if this pack has one.
+   *
+   * A fourth claim beside the arch and the divider, and it exists for the same
+   * reason they do: CardCanvas hands every ornament no layer has claimed to the
+   * scatter, so without a slot of its own the Bismillah would be sprinkled
+   * across the card at 30px like a star. It is not decor placed on the card —
+   * it is a line that is read, and it belongs at the head with the greeting.
+   *
+   * Null for a pack with none, which is every pack but the Muslim one. The
+   * other five have their own scripts and their own opening lines, but no
+   * artwork set in them; a pack gets one here when there is calligraphy to put
+   * in it, and not before.
+   */
+  calligraphyId: AnyOrnamentId | null;
 }
 
 /**
@@ -396,6 +411,7 @@ const MUSLIM_PACK: TraditionPack = {
   findOrnament: (id) => MUSLIM_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: "mosqueArch",
   dividerId: "arabesqueBorder",
+  calligraphyId: "bismillah",
 };
 
 const HINDU_PACK: TraditionPack = {
@@ -416,6 +432,7 @@ const HINDU_PACK: TraditionPack = {
   findOrnament: (id) => HINDU_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: "toran",
+  calligraphyId: null,
 };
 
 const SIKH_GREETING_ROWS = SIKH_GREETINGS.map(fromGurmukhi);
@@ -445,6 +462,7 @@ const SIKH_PACK: TraditionPack = {
   findOrnament: (id) => SIKH_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: "gurudwaraArch",
   dividerId: "kandaFloralBorder",
+  calligraphyId: null,
 };
 
 const CHRISTIAN_PACK: TraditionPack = {
@@ -465,6 +483,7 @@ const CHRISTIAN_PACK: TraditionPack = {
   findOrnament: (id) => CHRISTIAN_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: "gothicArch",
   dividerId: "oliveBranch",
+  calligraphyId: null,
 };
 
 const JAIN_PACK: TraditionPack = {
@@ -485,6 +504,7 @@ const JAIN_PACK: TraditionPack = {
   findOrnament: (id) => JAIN_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: null,
+  calligraphyId: null,
 };
 
 const BUDDHIST_PACK: TraditionPack = {
@@ -505,6 +525,7 @@ const BUDDHIST_PACK: TraditionPack = {
   findOrnament: (id) => BUDDHIST_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: null,
+  calligraphyId: null,
 };
 
 const PACKS: Partial<Record<TraditionId, TraditionPack>> = {
