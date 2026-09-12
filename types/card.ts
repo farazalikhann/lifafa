@@ -67,6 +67,18 @@ export type PhotoBorderStyle =
   | "flowerPurple";
 
 /**
+ * The butterflies a host can put on their card.
+ *
+ * "none" is a real member rather than a null, the way it is for the border, so
+ * the card never has to tell "no butterflies chosen" from "butterflies turned
+ * off". "mixed" flies all three, cycled across the flight table.
+ */
+export type ButterflyStyle = "none" | "red" | "yellow" | "purple" | "mixed";
+
+/** The three colours, without the two words that are not colours. */
+export type ButterflyColour = Exclude<ButterflyStyle, "none" | "mixed">;
+
+/**
  * Which section, if any, a guest has to scratch open before they can read it.
  *
  * At most one. Two scratch panels on a single card turn an ornament into a
@@ -115,18 +127,24 @@ export interface CardConfig {
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
   /**
-   * Whether a few small butterflies fly in the card's margins.
+   * Which butterflies, if any, fly in the card's margins.
    *
-   * Its own switch rather than another motif in the scatter, because it is the
-   * one piece of decor that is a photograph: the scatter is line art held under
-   * a contrast ceiling so text can be read through it, and a full colour insect
-   * at that alpha is a smudge. components/card/decor/ButterflyLayer.tsx is
-   * where the consequences of that live.
+   * Their own field rather than another motif in the scatter, because they are
+   * a photograph: the scatter is line art held under a contrast ceiling so text
+   * can be read through it, and a full colour insect at that alpha is a smudge.
+   * components/card/decor/ButterflyLayer.tsx is where that leads.
    *
-   * Absent entirely from every card saved before this existed, so CardCanvas
-   * reads it with `?? false` — the same reading `musicUrl` gets.
+   * Not a boolean, although it was one for an afternoon. A host picking
+   * butterflies is picking a colour — the card already has a palette, and three
+   * colours of insect arriving unasked is a decision made for them. "mixed" is
+   * still there for the host who wants all three; it is one of the choices
+   * rather than the only behaviour.
+   *
+   * Read through `butterflyStyle` in lib/butterflies.ts, never directly: cards
+   * saved before this existed carry no key at all, and cards saved during that
+   * afternoon carry `true` or `false`.
    */
-  butterflies: boolean;
+  butterflies: ButterflyStyle;
   occasionId: OccasionId;
   traditionId: TraditionId;
   /** Which section sits behind a scratch panel, if any. */

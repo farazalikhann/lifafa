@@ -27,6 +27,7 @@ import TraditionPicker from "@/components/create/TraditionPicker";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
+import { butterflyStyle } from "@/lib/butterflies";
 import { deepEqual } from "@/lib/deepEqual";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
@@ -35,6 +36,7 @@ import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { getPalette } from "@/lib/palettes";
 import { getOccasion } from "@/lib/occasions";
 import type {
+  ButterflyStyle,
   CardBorderStyle,
   CardConfig,
   DecorIntensity,
@@ -93,7 +95,7 @@ interface EditorState {
   blocks: readonly CardBlock[];
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
-  butterflies: boolean;
+  butterflies: ButterflyStyle;
   occasionId: OccasionId;
   traditionId: TraditionId;
   scratchTarget: ScratchTarget;
@@ -125,8 +127,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     blocks: config.blocks,
     decorMotion: config.decorMotion,
     decorIntensity: config.decorIntensity,
-    /* Absent on every card saved before butterflies existed. */
-    butterflies: config.butterflies ?? false,
+    /* A key that may be missing, a boolean, or the colour — see butterflyStyle. */
+    butterflies: butterflyStyle(config.butterflies),
     occasionId: config.occasionId,
     traditionId: config.traditionId,
     scratchTarget: config.scratchTarget,

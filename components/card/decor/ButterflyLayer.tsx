@@ -2,7 +2,8 @@
 
 import type { CSSProperties, ReactElement } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import type { DecorIntensity } from "@/types/card";
+import { BUTTERFLY_ASPECT, butterflySources } from "@/lib/butterflies";
+import type { ButterflyStyle, DecorIntensity } from "@/types/card";
 
 /**
  * A few small butterflies, flying in the margins of the card.
@@ -37,39 +38,31 @@ import type { DecorIntensity } from "@/types/card";
  * edge this cut-out has, cannot be stopped for a guest who has asked for less
  * movement, and every copy of one beats in the same rhythm at the same moment.
  *
+ * WHICH BUTTERFLY IS THE HOST'S, not this file's. A card has a palette, and
+ * three colours of insect arriving unasked is a decision made on the host's
+ * behalf — so the panel offers red, yellow, purple and a mixture of all three,
+ * and what arrives here is whichever they chose. lib/butterflies.ts names the
+ * files and turns that choice into the list this layer cycles.
+ *
  * PINNED, not scrolled — the same sticky band DecorLayer uses, so the
  * butterflies stay with what the guest is looking at rather than being left
  * behind after the cover.
  */
-
-/**
- * The published cut-outs, straightened to a vertical body axis, cycled across
- * the table below so a card is not four copies of one insect.
- *
- * All three are the same artwork recoloured, and only the red one was supplied
- * with an alpha channel — the other two arrived already composited over black.
- * They are cut out with the red one's alpha rather than by lifting the
- * background out of each: the three are pixel aligned (98% and 99% of their
- * lit pixels fall inside that mask), and a threshold deep enough to find the
- * background would also have eaten the black wing borders, which touch it.
- */
-const BUTTERFLIES: readonly string[] = [
-  "/decor/butterfly-red.webp",
-  "/decor/butterfly-yellow.webp",
-  "/decor/butterfly-purple.webp",
-];
-
-/** The artwork's own proportions, so a width is enough to place one. */
-const ASPECT = 180 / 110;
 
 interface Flyer {
   /**
    * Percentages within the band.
    *
    * Deliberately close to the edges. A butterfly at 2% on a 390px card starts
-   * 8px in and is 26px wide, so it ends around 34px — against a section that
-   * pads its text to 28px, that is a couple of pixels of overlap at the very
-   * tip of a wing, and the flight path adds at most 12 more.
+   * 8px in and is 32px wide, so it ends around 40px — against a section that
+   * pads its text to 28px, that is a wingtip's worth of overlap, and the flight
+   * path adds at most 12 more.
+   *
+   * The left-hand entries moved outward when the sizes went up, and that pairing
+   * is the point: a butterfly grows toward the middle of the card, so holding
+   * the inner edge where it was is the only way to make one bigger without
+   * making it reach further across the writing. The right-hand entries did not
+   * move, because on that side growth runs toward the card's edge instead.
    */
   left: number;
   top: number;
@@ -98,14 +91,14 @@ interface Flyer {
  * arranged rather than clustered. Every entry after that keeps the balance.
  */
 const FLYERS: readonly Flyer[] = [
-  { left: 3, top: 22, size: 27, path: "a", travel: 19, wing: 0.72, rotate: 12, delay: 0 },
-  { left: 85, top: 58, size: 24, path: "c", travel: 23, wing: 0.62, rotate: -16, delay: 1.4 },
+  { left: 2, top: 22, size: 32, path: "a", travel: 19, wing: 0.72, rotate: 12, delay: 0 },
+  { left: 85, top: 58, size: 29, path: "c", travel: 23, wing: 0.62, rotate: -16, delay: 1.4 },
   /* Joins at "normal". */
-  { left: 88, top: 14, size: 21, path: "b", travel: 21, wing: 0.84, rotate: 22, delay: 2.6 },
-  { left: 1, top: 70, size: 23, path: "c", travel: 25, wing: 0.68, rotate: -9, delay: 0.8 },
+  { left: 88, top: 14, size: 25, path: "b", travel: 21, wing: 0.84, rotate: 22, delay: 2.6 },
+  { left: 0, top: 70, size: 28, path: "c", travel: 25, wing: 0.68, rotate: -9, delay: 0.8 },
   /* The last two are only reached at "lively". */
-  { left: 90, top: 84, size: 20, path: "a", travel: 22, wing: 0.78, rotate: 7, delay: 3.4 },
-  { left: 4, top: 44, size: 22, path: "b", travel: 26, wing: 0.66, rotate: -20, delay: 2.0 },
+  { left: 90, top: 84, size: 24, path: "a", travel: 22, wing: 0.78, rotate: 7, delay: 3.4 },
+  { left: 3, top: 44, size: 26, path: "b", travel: 26, wing: 0.66, rotate: -20, delay: 2.0 },
 ];
 
 /**
@@ -201,7 +194,7 @@ function Butterfly({
             aria-hidden="true"
             decoding="async"
             width={flyer.size}
-            height={Math.round(flyer.size / ASPECT)}
+            height={Math.round(flyer.size / BUTTERFLY_ASPECT)}
             className="block max-w-none select-none"
             style={{ filter: SHADOW }}
           />
@@ -212,9 +205,12 @@ function Butterfly({
 }
 
 export default function ButterflyLayer({
+  style,
   intensity,
   bandHeight,
 }: {
+  /** Which the host picked. "none" never reaches here — the canvas gates on it. */
+  style: Exclude<ButterflyStyle, "none">;
   /** How many fly — the host's existing "Amount", read rather than duplicated. */
   intensity: DecorIntensity;
   /**
@@ -237,6 +233,8 @@ export default function ButterflyLayer({
     return null;
   }
 
+  const sources = butterflySources(style);
+
   return (
     <div
       aria-hidden="true"
@@ -252,11 +250,11 @@ export default function ButterflyLayer({
             flyer={flyer}
             /*
               Cycled by position rather than authored per flyer, the way
-              DecorLayer cycles its motifs and its rotations. Three colours
-              against six places means the two a "subtle" card gets are already
-              different from each other, and no side of the card repeats one.
+              DecorLayer cycles its motifs and its rotations — and the same
+              cycle covers both cases, because a single colour arrives as a list
+              of one and every place lands on it.
             */
-            src={BUTTERFLIES[index % BUTTERFLIES.length]}
+            src={sources[index % sources.length]}
           />
         ))}
       </div>

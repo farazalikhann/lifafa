@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
+import { butterflyStyle } from "@/lib/butterflies";
 import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
@@ -625,6 +626,9 @@ export default function CardCanvas({
   */
   const contentSideInset = Math.max(0, clearance.x - SECTION_SIDE_PAD);
 
+  /* Normalised once here, so the gate below and the layer read the same thing. */
+  const butterflies = butterflyStyle(config.butterflies);
+
   /*
     How far down the screen the ornaments reach.
 
@@ -767,10 +771,10 @@ export default function CardCanvas({
       {/*
         The butterflies, if the host asked for any.
 
-        `?? false` because card_config is a jsonb snapshot: every card saved
-        before this existed has no such key, and `undefined` is not a state
-        ButterflyLayer should have to know about — the same reading MusicToggle
-        gets further down.
+        Read through `butterflyStyle` because card_config is a jsonb snapshot
+        and three different shapes come back out of it: no key at all on a card
+        saved before butterflies existed, `true` or `false` on one saved while
+        the field was a switch, and the colour on everything since.
 
         Gated on the motion style as well as on its own switch. "Motion style:
         None" is two controls above this one in the same panel, and a host who
@@ -783,8 +787,9 @@ export default function CardCanvas({
         border paints its flowers, so at any depth below that one the flower
         frames simply swallowed it.
       */}
-      {(config.butterflies ?? false) && config.decorMotion !== "none" ? (
+      {butterflies !== "none" && config.decorMotion !== "none" ? (
         <ButterflyLayer
+          style={butterflies}
           intensity={config.decorIntensity}
           bandHeight={bandHeight}
         />
