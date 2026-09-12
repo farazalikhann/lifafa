@@ -706,31 +706,6 @@ export default function CardCanvas({
       />
 
       {/*
-        The butterflies, if the host asked for any.
-
-        `?? false` because card_config is a jsonb snapshot: every card saved
-        before this existed has no such key, and `undefined` is not a state
-        ButterflyLayer should have to know about — the same reading MusicToggle
-        gets further down.
-
-        Gated on the motion style as well as on its own switch. "Motion style:
-        None" is two controls above this one in the same panel, and a host who
-        has just asked the card to hold still would read four insects flying
-        over it as a bug rather than as a second opinion.
-
-        Beside DecorLayer rather than inside it, and at the same depth: these
-        share the scatter's stacking order, so the text column and the frame
-        both pass over them, and they dissolve into the same fade at the top and
-        bottom of the screen that everything else on this layer does.
-      */}
-      {(config.butterflies ?? false) && config.decorMotion !== "none" ? (
-        <ButterflyLayer
-          intensity={config.decorIntensity}
-          bandHeight={bandHeight}
-        />
-      ) : null}
-
-      {/*
         Where "stars" and "geometricStar" are drawn, and the only place either
         one is: they do not hang, they do not divide and they do not frame, so
         before this layer existed a host could switch them on and nothing at all
@@ -770,21 +745,50 @@ export default function CardCanvas({
       ) : null}
 
       {/*
-        The border, over every other layer of decor and still under the text.
+        The border, over every other layer of decor and over the text with it.
 
-        Last of the decor in the tree and `z-[16]` against the hanging layer's
-        `z-[15]`, because a frame is the outermost thing on a piece of
-        stationery: a lantern that swung across the border would read as being
-        outside the card. Above the fade as well, so the frame keeps full
-        opacity at the very edges where the dissolve is strongest. Independent
-        of the tradition — no `isMuslim` gate here, unlike the two layers above
-        it — and it returns null on its own when the style is "none".
+        `z-[16]` against the hanging layer's `z-[15]`, because a frame is the
+        outermost thing on a piece of stationery: a lantern that swung across
+        the border would read as being outside the card. Above the fade as well,
+        so the frame keeps full opacity at the very edges where the dissolve is
+        strongest. Independent of the tradition — no `isMuslim` gate here,
+        unlike the two layers above it — and it returns null on its own when the
+        style is "none".
+
+        Outermost of the decor until the butterflies, which are the one thing
+        that had to come out in front of it — the note under them says why.
       */}
       <BorderFrame
         borderStyle={config.borderStyle}
         accent={effectiveTheme.accent}
         bandHeight={bandHeight}
       />
+
+      {/*
+        The butterflies, if the host asked for any.
+
+        `?? false` because card_config is a jsonb snapshot: every card saved
+        before this existed has no such key, and `undefined` is not a state
+        ButterflyLayer should have to know about — the same reading MusicToggle
+        gets further down.
+
+        Gated on the motion style as well as on its own switch. "Motion style:
+        None" is two controls above this one in the same panel, and a host who
+        has just asked the card to hold still would read four insects flying
+        over it as a bug rather than as a second opinion.
+
+        Last of the decor and the only thing above the frame — see the note on
+        the layer itself. A butterfly is the nearest thing to the guest, and it
+        has to be: it flies in the margin, which is exactly where a photographic
+        border paints its flowers, so at any depth below that one the flower
+        frames simply swallowed it.
+      */}
+      {(config.butterflies ?? false) && config.decorMotion !== "none" ? (
+        <ButterflyLayer
+          intensity={config.decorIntensity}
+          bandHeight={bandHeight}
+        />
+      ) : null}
 
       {/*
         The dissolve at the top and bottom of the screen.

@@ -16,32 +16,48 @@ import type { DecorIntensity } from "@/types/card";
  * smudge, and at an alpha where it is a butterfly it is something the guest has
  * to read the date through.
  *
- * SO IT DOES NOT GO BEHIND THE TEXT. That is the whole shape of this file. The
+ * SO THEY DO NOT FLY OVER THE TEXT. That is the whole shape of this file. The
  * position table below keeps every butterfly in the margin outside the column
  * the sections set their text in, the flight paths are cut short on the
  * horizontal so none of them wanders back into it, and what is left — the
  * vertical — is where there is nothing to collide with. Which is what lets them
  * fly at 0.9 rather than at the scatter's ceiling, and read as butterflies.
  *
- * They still sit *under* the content column rather than over it. The margin is
- * measured against the section padding, and a long line, a wide screen or a
- * language that sets longer words can all reach further than that padding
- * suggests — so the stacking order is the backstop for the case the table
- * cannot see.
+ * THE TABLE IS THE ONLY THING KEEPING THEM OFF IT. This layer holds `z-[17]`,
+ * one above the border frame, which is one above the text: a butterfly is the
+ * nearest thing to the guest and passes in front of everything, because the
+ * alternative is what it looked like first — flying behind a photographic
+ * border, which paints the same margin they do, so the flower frames swallowed
+ * them whole. The stacking order used to be the backstop for a line longer than
+ * the section padding suggests; now there is none, and the margins above are
+ * chosen with that in mind.
  *
- * NO GIF. The wingbeat is CSS on a still image, and the reasons are in
- * lifafa-butterfly-wing in globals.css and in the note on FLUTTER_SECONDS
- * below. Briefly: a GIF cannot carry the soft edge this cut-out has, cannot be
- * stopped for a guest who has asked for less movement, and every copy of one
- * beats in the same rhythm.
+ * NO GIF. The wingbeat is CSS on a still image, and the whole of why is in
+ * lifafa-butterfly-wing in globals.css. Briefly: a GIF cannot carry the soft
+ * edge this cut-out has, cannot be stopped for a guest who has asked for less
+ * movement, and every copy of one beats in the same rhythm at the same moment.
  *
  * PINNED, not scrolled — the same sticky band DecorLayer uses, so the
  * butterflies stay with what the guest is looking at rather than being left
  * behind after the cover.
  */
 
-/** The published cut-out, straightened to a vertical body axis. */
-const BUTTERFLY_SRC = "/decor/butterfly.webp";
+/**
+ * The published cut-outs, straightened to a vertical body axis, cycled across
+ * the table below so a card is not four copies of one insect.
+ *
+ * All three are the same artwork recoloured, and only the red one was supplied
+ * with an alpha channel — the other two arrived already composited over black.
+ * They are cut out with the red one's alpha rather than by lifting the
+ * background out of each: the three are pixel aligned (98% and 99% of their
+ * lit pixels fall inside that mask), and a threshold deep enough to find the
+ * background would also have eaten the black wing borders, which touch it.
+ */
+const BUTTERFLIES: readonly string[] = [
+  "/decor/butterfly-red.webp",
+  "/decor/butterfly-yellow.webp",
+  "/decor/butterfly-purple.webp",
+];
 
 /** The artwork's own proportions, so a width is enough to place one. */
 const ASPECT = 180 / 110;
@@ -112,6 +128,22 @@ const COUNT: Record<DecorIntensity, number> = {
  */
 const OPACITY = 0.9;
 
+/**
+ * A shadow the shape of the butterfly, and it is not decoration.
+ *
+ * Flying above the border put them over the flower frames, which paint dense
+ * colour into exactly the margin the butterflies fly in — a violet butterfly
+ * over a violet bouquet simply disappeared into it. `drop-shadow` follows the
+ * cut-out's own alpha rather than its box, so what it draws is the insect's
+ * outline half a pixel down and behind, which is enough to lift it off whatever
+ * it is passing over and reads as nothing at all on a plain card.
+ *
+ * On the image, deliberately, and not on either animated span: `filter` is the
+ * one property neither keyframe touches, and an element carrying both a filter
+ * and an animation pays for the filter on every frame.
+ */
+const SHADOW = "drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.38))";
+
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 /**
@@ -124,7 +156,13 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  * innermost beats its wings. Nested opacity and nested transforms both compose,
  * which is what makes the split free.
  */
-function Butterfly({ flyer }: { flyer: Flyer }): ReactElement {
+function Butterfly({
+  flyer,
+  src,
+}: {
+  flyer: Flyer;
+  src: string;
+}): ReactElement {
   const travel: CSSProperties = {
     left: `${flyer.left}%`,
     top: `${flyer.top}%`,
@@ -158,13 +196,14 @@ function Butterfly({ flyer }: { flyer: Flyer }): ReactElement {
       >
         <span className="block" style={wing}>
           <img
-            src={BUTTERFLY_SRC}
+            src={src}
             alt=""
             aria-hidden="true"
             decoding="async"
             width={flyer.size}
             height={Math.round(flyer.size / ASPECT)}
             className="block max-w-none select-none"
+            style={{ filter: SHADOW }}
           />
         </span>
       </span>
@@ -201,14 +240,24 @@ export default function ButterflyLayer({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
+      className="pointer-events-none absolute inset-0 z-[17] overflow-clip motion-reduce:hidden"
     >
       <div
         className="sticky top-0 w-full overflow-clip"
         style={{ height: bandHeight }}
       >
-        {FLYERS.slice(0, COUNT[intensity]).map((flyer) => (
-          <Butterfly key={`${flyer.left}-${flyer.top}`} flyer={flyer} />
+        {FLYERS.slice(0, COUNT[intensity]).map((flyer, index) => (
+          <Butterfly
+            key={`${flyer.left}-${flyer.top}`}
+            flyer={flyer}
+            /*
+              Cycled by position rather than authored per flyer, the way
+              DecorLayer cycles its motifs and its rotations. Three colours
+              against six places means the two a "subtle" card gets are already
+              different from each other, and no side of the card repeats one.
+            */
+            src={BUTTERFLIES[index % BUTTERFLIES.length]}
+          />
         ))}
       </div>
     </div>
