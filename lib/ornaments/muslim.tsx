@@ -1,5 +1,11 @@
 import type { ReactElement } from "react";
-import { DEFAULT_SIZE, Frame, polygonPath, r2 } from "@/lib/ornaments/frame";
+import {
+  DEFAULT_SIZE,
+  Frame,
+  calligraphyOrnament,
+  polygonPath,
+  r2,
+} from "@/lib/ornaments/frame";
 import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
 import {
   calligraphyAlt,
@@ -367,26 +373,6 @@ export const GeometricStar: Ornament = ({
     <path d={polygonPath(STAR_CENTRE, STAR_CENTRE, 8, 6, 22.5)} />
   </Frame>
 );
-
-function calligraphyOrnament(id: CalligraphyId): Ornament {
-  const Panel: Ornament = ({ size = 120, className, style, ground = "dark" }) => (
-    <img
-      src={calligraphySrc(id, ground)}
-      alt={calligraphyAlt(id)}
-      decoding="async"
-      width={className === undefined ? Math.round(size) : undefined}
-      height={
-        className === undefined
-          ? Math.round(size / calligraphyAspect(id))
-          : undefined
-      }
-      className={className ?? "block max-w-none"}
-      style={style}
-    />
-  );
-
-  return Panel;
-}
 
 export const Bismillah = calligraphyOrnament("bismillah");
 export const VersePairs = calligraphyOrnament("versePairs");

@@ -161,6 +161,19 @@ export default function OrnamentPanel({
   config: OrnamentConfig;
   onChange: (next: OrnamentConfig) => void;
 }): ReactElement {
+  /*
+    The pack's chips, split by where the card actually sends them. A calligraphy
+    id is claimed by `calligraphyIds` and drawn at the head; everything else is
+    hung, framed, ruled or scattered. One list would have put a 460px word-mark
+    on the same 40px baseline as a swastik.
+  */
+  const calligraphy = pack.ornaments.filter((entry) =>
+    pack.calligraphyIds.includes(entry.id),
+  );
+  const shapes = pack.ornaments.filter(
+    (entry) => !pack.calligraphyIds.includes(entry.id),
+  );
+
   const toggleOrnament = (id: AnyOrnamentId): void => {
     const isOn = config.enabledOrnaments.includes(id);
 
@@ -183,7 +196,7 @@ export default function OrnamentPanel({
         <GroupHeading>Add to your card</GroupHeading>
 
         <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-          {pack.ornaments.map(({ id, label, Component, chipSize }) => {
+          {shapes.map(({ id, label, Component, chipSize }) => {
             const isSelected = config.enabledOrnaments.includes(id);
 
             return (
@@ -202,8 +215,8 @@ export default function OrnamentPanel({
               >
                 {/*
                   Fixed height box with the drawing centred in it, so a 0.55:1
-                  lantern and a 6.7:1 vine sit on the same baseline and all
-                  seven chips come out one size. Each ornament brings its own
+                  lantern and a 6.7:1 vine sit on the same baseline and every
+                  chip comes out one size. Each ornament brings its own
                   `chipSize` — see the note on the pack's entry type.
                 */}
                 <span
@@ -228,7 +241,66 @@ export default function OrnamentPanel({
         <MutedNote>{pack.ornamentsNote}</MutedNote>
       </div>
 
-      {/* 2 — Greeting */}
+      {/*
+        2 — Calligraphy, when the pack has any.
+
+        Its own group rather than nine more chips in the grid above, and the
+        Hindu pack is what forced it: seven shapes became sixteen, and a word-mark
+        four times wider than a swastik does not belong on the same baseline as
+        one. They are a different kind of thing anyway — a lantern is put on the
+        card, a line of calligraphy is put at the head of it and read.
+
+        Two columns at every width, where the shapes get four on a desktop: these
+        are words, and a column narrow enough for four of them is a column too
+        narrow to read any. Sized with CSS rather than `chipSize` for the same
+        reason — the chip is as wide as the cell, so a host can tell "Mangal
+        Parinay" from "Madhur Milan" without opening the preview.
+      */}
+      {calligraphy.length > 0 ? (
+        <div className="flex flex-col gap-2.5">
+          <GroupHeading>Calligraphy</GroupHeading>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {calligraphy.map(({ id, label, Component }) => {
+              const isSelected = config.enabledOrnaments.includes(id);
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => toggleOrnament(id)}
+                  className={[
+                    "flex flex-col items-center justify-center gap-2 rounded-xl border px-2.5 py-3 transition-colors duration-150",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
+                    isSelected
+                      ? "border-transparent bg-[var(--lifafa-ink-raised)] ring-2 ring-[var(--lifafa-marigold)]"
+                      : "border-[var(--lifafa-hairline)] hover:border-[var(--lifafa-marigold)]/60",
+                  ].join(" ")}
+                >
+                  <span aria-hidden="true" className="block w-full">
+                    <Component
+                      instanceId={`chip-${id}`}
+                      className="block h-auto w-full"
+                    />
+                  </span>
+
+                  <span className="text-center text-[0.75rem] font-medium text-[var(--lifafa-cream)]">
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <MutedNote>
+            A line of calligraphy sits at the head of your card, above the
+            greeting.
+          </MutedNote>
+        </div>
+      ) : null}
+
+      {/* 3 — Greeting */}
       <div className="flex flex-col gap-2.5">
         <GroupHeading>Greeting</GroupHeading>
 
@@ -240,7 +312,7 @@ export default function OrnamentPanel({
         />
       </div>
 
-      {/* 3 — Dua, or shlok, or whatever this tradition calls the slot */}
+      {/* 4 — Dua, or shlok, or whatever this tradition calls the slot */}
       <div className="flex flex-col gap-2.5">
         <GroupHeading>{pack.blessingLabel}</GroupHeading>
 

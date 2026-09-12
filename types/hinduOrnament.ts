@@ -14,9 +14,10 @@
  * on every tradition click, and both the canvas and the placer resolve an id
  * through the current pack and skip one it does not know.
  *
- * What stays here is the id union itself: these seven names are the Hindu
- * pack's, drawn in lib/ornaments/hindu.tsx, and keeping them declared apart is
- * what lets that pack's own registry stay exhaustively typed.
+ * What stays here is the id union itself: these names are the Hindu pack's,
+ * drawn — or, for the calligraphy, published — in lib/ornaments/hindu.tsx, and
+ * keeping them declared apart is what lets that pack's own registry stay
+ * exhaustively typed.
  */
 
 export type HinduOrnamentId =
@@ -26,7 +27,23 @@ export type HinduOrnamentId =
   | "om"
   | "swastik"
   | "toran"
-  | "marigold";
+  | "marigold"
+  /*
+    The nine below are calligraphy rather than shapes — Devanagari word-marks
+    cut from one supplied sheet. They are ids in this union like any other
+    because the host switches them on from the same panel and they travel in the
+    same `enabledOrnaments` list; what makes them different is where the pack
+    sends them, which is `calligraphyIds` and the head of the card.
+  */
+  | "shubhVivah"
+  | "sadarNimantran"
+  | "radheKrishna"
+  | "shriGaneshaya"
+  | "vivahotsav"
+  | "togetherForever"
+  | "mangalParinay"
+  | "madhurMilan"
+  | "shubhLabh";
 
 /*
   There is no HinduOrnamentConfig. The host's choices live in OrnamentConfig in

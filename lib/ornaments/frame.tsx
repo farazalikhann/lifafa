@@ -1,4 +1,10 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
+import {
+  calligraphyAlt,
+  calligraphyAspect,
+  calligraphySrc,
+  type CalligraphyId,
+} from "@/lib/calligraphy";
 
 /**
  * The shell every ornament in every pack is drawn inside, and the props they
@@ -257,4 +263,58 @@ export function cordPath(
   end: readonly [number, number],
 ): string {
   return `M ${start[0]} ${start[1]} Q ${control[0]} ${control[1]} ${end[0]} ${end[1]}`;
+}
+
+/**
+ * A piece of calligraphy, as an Ornament.
+ *
+ * Here rather than in either pack because both packs have some now — Arabic in
+ * lib/ornaments/muslim.tsx and Devanagari in lib/ornaments/hindu.tsx — and the
+ * second copy of this was the moment to move it, which is the same reason the
+ * Frame above is in this file at all.
+ *
+ * Every other ornament in the two packs is a path table stroked in
+ * `currentColor`, which is what lets the card hand it an accent. These are
+ * photographs of lettering, so they have no stroke to colour: the ink is fixed
+ * at the point of publishing and each is published twice. `ground` is how one
+ * is told which card it is standing on, and lib/calligraphy.ts is where the
+ * card's own background decides it rather than the guest's system theme.
+ *
+ * Sized off the same `size` prop as the rest, which measures the longer side —
+ * here always the width, since every crop is wider than it is tall.
+ *
+ * `instanceId`, `strokeWidth` and `preserveAspectRatio` are taken and ignored.
+ * They exist so an svg can build filter ids and tune its pen, and an img has
+ * neither. Taking them anyway keeps these the same shape as every other
+ * Ornament, which is what lets a pack hold them in the same list.
+ *
+ * The only ornaments in the app with a real `alt` rather than an empty one. The
+ * rest are pictures on the card and a guest loses nothing by not being told
+ * they are there; these are lines that are read. In the editor's chips the alt
+ * says nothing anyway — the span the grid wraps every drawing in is
+ * aria-hidden, and each chip carries its own visible label.
+ *
+ * `loading="lazy"` because a pack can now offer nine of these at once, and a
+ * host opening the panel should not be made to fetch every one of them before
+ * they have scrolled to it.
+ */
+export function calligraphyOrnament(id: CalligraphyId): Ornament {
+  const Panel: Ornament = ({ size = 120, className, style, ground = "dark" }) => (
+    <img
+      src={calligraphySrc(id, ground)}
+      alt={calligraphyAlt(id)}
+      decoding="async"
+      loading="lazy"
+      width={className === undefined ? Math.round(size) : undefined}
+      height={
+        className === undefined
+          ? Math.round(size / calligraphyAspect(id))
+          : undefined
+      }
+      className={className ?? "block max-w-none"}
+      style={style}
+    />
+  );
+
+  return Panel;
 }

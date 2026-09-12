@@ -1,5 +1,6 @@
 import {
   Frame,
+  calligraphyOrnament,
   cordPath,
   flowerPath,
   leafPath,
@@ -7,6 +8,7 @@ import {
   r2,
 } from "@/lib/ornaments/frame";
 import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
+import { calligraphyAspect } from "@/lib/calligraphy";
 import { FLAME_COLOUR, FlameGlow } from "@/lib/ornaments/muslim";
 import type { HinduOrnamentId } from "@/types/hinduOrnament";
 
@@ -58,6 +60,20 @@ export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
   swastik: 1,
   toran: 160 / 40,
   marigold: 160 / 34,
+  /*
+    Not viewBoxes: the published crops each calligraphy's pair of files shares.
+    Asked of lib/calligraphy.ts rather than copied, so the sheet can be re-cut
+    without two places disagreeing about how tall a word-mark is.
+  */
+  shubhVivah: calligraphyAspect("shubhVivah"),
+  sadarNimantran: calligraphyAspect("sadarNimantran"),
+  radheKrishna: calligraphyAspect("radheKrishna"),
+  shriGaneshaya: calligraphyAspect("shriGaneshaya"),
+  vivahotsav: calligraphyAspect("vivahotsav"),
+  togetherForever: calligraphyAspect("togetherForever"),
+  mangalParinay: calligraphyAspect("mangalParinay"),
+  madhurMilan: calligraphyAspect("madhurMilan"),
+  shubhLabh: calligraphyAspect("shubhLabh"),
 };
 
 /* ---------------------------------------------------------------------------
@@ -584,6 +600,28 @@ export interface HinduOrnamentEntry {
  * order supplied — the muted line under the grid names the diya, the kalash and
  * the toran wherever they land in it.
  */
+/* ---------------------------------------------------------------------------
+   Calligraphy
+   --------------------------------------------------------------------------- */
+
+/**
+ * The nine Devanagari word-marks, all from one shared factory.
+ *
+ * Photographs of lettering rather than drawings, which is why they come from
+ * lib/ornaments/frame.tsx alongside the Frame and not from a path table here —
+ * see the note on `calligraphyOrnament`. lib/calligraphy.ts holds which files
+ * each one has, what it says and how the dark version was made.
+ */
+export const ShubhVivah = calligraphyOrnament("shubhVivah");
+export const SadarNimantran = calligraphyOrnament("sadarNimantran");
+export const RadheKrishna = calligraphyOrnament("radheKrishna");
+export const ShriGaneshaya = calligraphyOrnament("shriGaneshaya");
+export const Vivahotsav = calligraphyOrnament("vivahotsav");
+export const TogetherForever = calligraphyOrnament("togetherForever");
+export const MangalParinay = calligraphyOrnament("mangalParinay");
+export const MadhurMilan = calligraphyOrnament("madhurMilan");
+export const ShubhLabh = calligraphyOrnament("shubhLabh");
+
 export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = [
   { id: "diya", label: "Diya", Component: Diya, chipSize: 38, topRegionOnly: false },
   {
@@ -634,6 +672,78 @@ export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = [
     chipSize: 84,
     topRegionOnly: false,
   },
+  {
+    id: "shubhVivah",
+    label: "Shubh Vivah",
+    Component: ShubhVivah,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "sadarNimantran",
+    label: "Sadar Nimantran",
+    Component: SadarNimantran,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "radheKrishna",
+    label: "Radhe Krishna",
+    Component: RadheKrishna,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "shriGaneshaya",
+    label: "Shri Ganeshaya Namah",
+    Component: ShriGaneshaya,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "vivahotsav",
+    label: "Vivahotsav",
+    Component: Vivahotsav,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "togetherForever",
+    label: "Together Forever",
+    Component: TogetherForever,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "mangalParinay",
+    label: "Mangal Parinay",
+    Component: MangalParinay,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "madhurMilan",
+    label: "Madhur Milan",
+    Component: MadhurMilan,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "shubhLabh",
+    label: "Shubh Labh",
+    Component: ShubhLabh,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
 ];
 
 /** Sits under the ornament grid in the editor. */
@@ -648,6 +758,15 @@ const BY_ID: Record<HinduOrnamentId, Ornament> = {
   swastik: Swastik,
   toran: Toran,
   marigold: Marigold,
+  shubhVivah: ShubhVivah,
+  sadarNimantran: SadarNimantran,
+  radheKrishna: RadheKrishna,
+  shriGaneshaya: ShriGaneshaya,
+  vivahotsav: Vivahotsav,
+  togetherForever: TogetherForever,
+  mangalParinay: MangalParinay,
+  madhurMilan: MadhurMilan,
+  shubhLabh: ShubhLabh,
 };
 
 export function getHinduOrnament(id: HinduOrnamentId): Ornament {

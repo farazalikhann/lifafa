@@ -443,7 +443,17 @@ const HINDU_PACK: TraditionPack = {
   findOrnament: (id) => HINDU_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: "toran",
-  calligraphyIds: [],
+  calligraphyIds: [
+    "shubhVivah",
+    "shriGaneshaya",
+    "mangalParinay",
+    "sadarNimantran",
+    "vivahotsav",
+    "madhurMilan",
+    "radheKrishna",
+    "togetherForever",
+    "shubhLabh",
+  ],
 };
 
 const SIKH_GREETING_ROWS = SIKH_GREETINGS.map(fromGurmukhi);
