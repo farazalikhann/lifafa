@@ -81,11 +81,11 @@ const SECTION_TOP_PAD = 40;
 /**
  * The side padding every section already carries, in px — its `px-7`.
  *
- * The horizontal twin of the constant above, and it earns its place for exactly
- * one border. The five drawn frames keep to a band no wider than this, so every
- * one of them subtracts to zero and nothing about the card moves; the
- * photographic frame paints opaque roses roughly 48px in, down the full height
- * of the screen, and without this the names would be read through them.
+ * The horizontal twin of the constant above, and it earns its place for the
+ * photographic borders alone. The five drawn frames keep to a band no wider
+ * than this, so every one of them subtracts to zero and nothing about the card
+ * moves; a flower frame paints opaque petals 40 to 55px in, down the full
+ * height of the screen, and without this the names would be read through them.
  */
 const SECTION_SIDE_PAD = 28;
 
@@ -619,7 +619,8 @@ export default function CardCanvas({
     two clearances differ: the top of a frame is passed once, on the way in,
     while its sides are beside every line of every section for the whole scroll.
     Zero for all five drawn borders — their deepest band is 28px, which is the
-    section padding they were already clearing.
+    section padding they were already clearing. The three photographs each ask
+    for their own, measured off their own artwork.
   */
   const contentSideInset = Math.max(0, clearance.x - SECTION_SIDE_PAD);
 

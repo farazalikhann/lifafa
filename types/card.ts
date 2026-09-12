@@ -36,10 +36,7 @@ export type DecorIntensity = "subtle" | "normal" | "lively";
  * "none" is the default and is a real member rather than a null, so the card
  * never has to distinguish "no border chosen" from "border turned off".
  *
- * "flowerBackground" is the odd one out and the only one that is not line art:
- * it is a photograph of painted roses, placed as a nine-slice rather than drawn
- * from a path table. Everything that follows from that — where it is cut, how
- * far the text has to stand off it — lives in lib/flowerFrame.ts.
+ * The photographic styles are the odd ones out — see PhotoBorderStyle.
  */
 export type CardBorderStyle =
   | "none"
@@ -48,7 +45,26 @@ export type CardBorderStyle =
   | "geometricRule"
   | "scallopedFrame"
   | "hangingGarland"
-  | "flowerBackground";
+  | PhotoBorderStyle;
+
+/**
+ * The borders that are photographs rather than line art.
+ *
+ * Named as their own union because almost everything downstream wants to ask
+ * the question: they are placed as a nine-slice instead of being drawn from a
+ * path table, they take no spec, tile or corner piece, and they are the only
+ * borders the card's text has to stand clear of on both axes. Everything that
+ * follows from being one — where each is cut, how far the names stand off it,
+ * how it is scaled — lives in lib/flowerFrame.ts.
+ *
+ * "flowerBackground" is spelt for the whole family rather than for its own
+ * colour because it shipped alone, before there was a family, and the id is
+ * written into every card saved since.
+ */
+export type PhotoBorderStyle =
+  | "flowerBackground"
+  | "flowerGold"
+  | "flowerPurple";
 
 /**
  * Which section, if any, a guest has to scratch open before they can read it.

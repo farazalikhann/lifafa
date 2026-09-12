@@ -2,11 +2,12 @@
 
 import { useId, type ReactElement, type ReactNode } from "react";
 import {
-  FLOWER_FRAME_CLEARANCE,
   FLOWER_FRAME_SCALE,
+  flowerFrameClearance,
   flowerFrameStyle,
+  isPhotoBorder,
 } from "@/lib/flowerFrame";
-import type { CardBorderStyle } from "@/types/card";
+import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
 
 /**
  * The decorative frame around the card's edges.
@@ -31,13 +32,13 @@ import type { CardBorderStyle } from "@/types/card";
  * its aspect ratio through the same `preserveAspectRatio` rather than being
  * stretched to the card's width.
  *
- * ONE STYLE IS NOT DRAWN HERE AT ALL. "flowerBackground" is a photograph, and a
- * photograph has no path table to tile from — it is placed as a nine-slice by
- * FlowerFrame at the foot of this file, which is the same rule kept by other
- * means: corners at a fixed size, the runs between them repeated. It takes none
- * of the machinery above, so it returns before any of it runs, and the numbers
- * that cut it up live in lib/flowerFrame.ts beside the art they were measured
- * off.
+ * THREE STYLES ARE NOT DRAWN HERE AT ALL. The flower frames are photographs,
+ * and a photograph has no path table to tile from — each is placed as a
+ * nine-slice by FlowerFrame at the foot of this file, which is the same rule
+ * kept by other means: corners at a fixed size, the runs between them repeated.
+ * They take none of the machinery above, so they return before any of it runs,
+ * and the numbers that cut each one up live in lib/flowerFrame.ts beside the art
+ * they were measured off.
  *
  * PINNED, not scrolled — the same sticky band DecorLayer and CornerLayer use,
  * so the frame surrounds what the guest is looking at instead of running off
@@ -173,13 +174,14 @@ function onQuadratic(
 /**
  * The styles this file actually draws.
  *
- * "none" draws nothing and the photographic frame is placed rather than drawn,
- * so neither has a spec, a tile or a corner piece. Naming that as a type rather
- * than repeating the exclusion keeps the table below exhaustive: a sixth drawn
- * style added to CardBorderStyle fails to compile until it has a spec, which is
- * exactly the reminder that was wanted.
+ * "none" draws nothing and the photographic frames are placed rather than drawn,
+ * so none of them has a spec, a tile or a corner piece. Naming that as a type
+ * rather than repeating the exclusion keeps the table below exhaustive: a sixth
+ * drawn style added to CardBorderStyle fails to compile until it has a spec,
+ * which is exactly the reminder that was wanted — and a fourth photograph added
+ * to PhotoBorderStyle is excluded without touching anything here.
  */
-type DrawnBorderStyle = Exclude<CardBorderStyle, "none" | "flowerBackground">;
+type DrawnBorderStyle = Exclude<CardBorderStyle, "none" | PhotoBorderStyle>;
 
 interface BorderSpec {
   band: number;
@@ -258,12 +260,13 @@ export function borderClearance(style: CardBorderStyle): {
   }
 
   /*
-    The photographic frame is the one style that asks for room on both axes.
-    Its own measurement, kept beside the artwork it was taken from rather than
-    copied into the table above — see the note on FLOWER_FRAME_CLEARANCE.
+    The photographic frames are the styles that ask for room on both axes, and
+    each asks for its own: the purple run is half again as wide as the rose's.
+    Kept beside the artwork each was measured off rather than copied into the
+    table above — see FrameArt.clearance.
   */
-  if (style === "flowerBackground") {
-    return FLOWER_FRAME_CLEARANCE;
+  if (isPhotoBorder(style)) {
+    return flowerFrameClearance(style);
   }
 
   return SPECS[style].clearance;
@@ -619,13 +622,13 @@ function Edge({
    --------------------------------------------------------------------------- */
 
 /**
- * "flowerBackground" — roses placed as a nine-slice rather than drawn.
+ * A flower frame — photographed, placed as a nine-slice rather than drawn.
  *
  * One element and no svg at all. `border-image` cuts the artwork into nine
  * pieces, pins the four corner clusters at a fixed size and repeats the runs
  * down the two long sides to fill the height between them, which is the same
  * bargain every tiled edge above strikes: a taller screen gets more repeats
- * rather than a taller rose. lib/flowerFrame.ts holds where the cuts fall and
+ * rather than a taller rose. lib/flowerFrame.ts holds where each one is cut and
  * why, and hands back the whole declaration.
  *
  * FLUSH TO THE EDGE, where the five drawn styles stand 8px in. That inset is
@@ -636,10 +639,16 @@ function Edge({
  *
  * AT FULL OPACITY, where the drawn styles are held at half. Half is what keeps
  * a line that crosses a name from competing with it — but nothing here crosses
- * a name: FLOWER_FRAME_CLEARANCE stands the whole content column off the runs,
+ * a name: the frame's clearance stands the whole content column off the runs,
  * and a photograph at half opacity is not restrained, only washed out.
  */
-function FlowerFrame({ bandHeight }: { bandHeight: string }): ReactElement {
+function FlowerFrame({
+  style,
+  bandHeight,
+}: {
+  style: PhotoBorderStyle;
+  bandHeight: string;
+}): ReactElement {
   return (
     <div
       aria-hidden="true"
@@ -649,7 +658,7 @@ function FlowerFrame({ bandHeight }: { bandHeight: string }): ReactElement {
       <div className="sticky top-0 overflow-clip" style={{ height: bandHeight }}>
         <div
           className="absolute inset-0"
-          style={flowerFrameStyle(FLOWER_FRAME_SCALE)}
+          style={flowerFrameStyle(style, FLOWER_FRAME_SCALE)}
         />
       </div>
     </div>
@@ -690,12 +699,12 @@ export default function BorderFrame({
   }
 
   /*
-    Before the spec lookup, and that ordering is the point: the photographic
-    frame has no spec, no tile and no corner drawing, and narrowing it away here
-    is what lets everything below stay a table of line art.
+    Before the spec lookup, and that ordering is the point: a photographic frame
+    has no spec, no tile and no corner drawing, and narrowing them away here is
+    what lets everything below stay a table of line art.
   */
-  if (borderStyle === "flowerBackground") {
-    return <FlowerFrame bandHeight={bandHeight} />;
+  if (isPhotoBorder(borderStyle)) {
+    return <FlowerFrame style={borderStyle} bandHeight={bandHeight} />;
   }
 
   const spec = SPECS[borderStyle];

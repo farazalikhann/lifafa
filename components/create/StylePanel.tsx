@@ -2,9 +2,13 @@
 
 import type { ReactElement } from "react";
 import { FONT_PAIRS, fontFamilyOf } from "@/lib/fontPairs";
-import { flowerFrameStyle } from "@/lib/flowerFrame";
+import {
+  flowerChipScale,
+  flowerFrameStyle,
+  isPhotoBorder,
+} from "@/lib/flowerFrame";
 import { PALETTES } from "@/lib/palettes";
-import type { CardBorderStyle } from "@/types/card";
+import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
 import type {
   CardDensity,
   CardStyle,
@@ -13,13 +17,17 @@ import type {
 } from "@/types/style";
 
 /**
- * The seven borders, in the order the grid lays them out.
+ * The nine borders, in the order the grid lays them out.
  *
  * "None" comes first because it is the default and the way back, and the rest
  * run from the lightest to the busiest — so the row a host reads left to right
- * is also a run from restraint to ornament. Which puts the photographic frame
- * last: it is the only one that is not a line, and by some distance the most
- * of anything on offer here.
+ * is also a run from restraint to ornament. Which puts the three photographic
+ * frames last, as a row of their own: they are the ones that are not lines, and
+ * by some distance the most of anything on offer here.
+ *
+ * Those three are named by colour because that is the only thing a host is
+ * choosing between — the flowers are arranged much the same way in all three,
+ * and a name describing the arrangement would fit every one of them.
  */
 const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "none", label: "None" },
@@ -29,6 +37,8 @@ const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "floralVine", label: "Floral vine" },
   { id: "hangingGarland", label: "Garland" },
   { id: "flowerBackground", label: "Flower background" },
+  { id: "flowerGold", label: "Flower gold" },
+  { id: "flowerPurple", label: "Flower purple" },
 ];
 
 /** Shared line work for the miniatures below. */
@@ -61,7 +71,7 @@ const PREVIEW_CORNERS: readonly string[] = [
 function BorderPreview({
   id,
 }: {
-  id: Exclude<CardBorderStyle, "flowerBackground">;
+  id: Exclude<CardBorderStyle, PhotoBorderStyle>;
 }): ReactElement {
   return (
     <svg
@@ -191,32 +201,26 @@ function BorderPreview({
 }
 
 /**
- * How far the photographic frame is scaled down for a chip.
- *
- * Against the chip's height rather than its width: at 0.055 the two horizontal
- * bands come to 32 of the plate's 44px and leave a gap that still reads as the
- * inside of a frame. Any bolder and the two bands meet in the middle, and the
- * chip stops showing a border and starts showing a bouquet.
- */
-const FLOWER_CHIP_SCALE = 0.055;
-
-/**
- * The photographic frame's chip — the real thing, shrunk.
+ * A photographic frame's chip — the real thing, shrunk.
  *
  * The five styles above each get a hand drawn miniature because the honest
  * miniature of a repeat is two or three of it rather than a whole card squeezed
- * into a thumbnail. This one needs no such stand-in: it is a nine-slice, so the
- * same declaration that frames a 828px screen frames a 44px chip, with the
- * corner clusters pinned and less of the run between them. What the host sees
- * here is what the card does, at the one size a chip has room for.
+ * into a thumbnail. These need no such stand-in: a nine-slice is a nine-slice,
+ * so the same declaration that frames an 828px screen frames a 44px chip, with
+ * the corner clusters pinned and less of the run between them. What the host
+ * sees here is what the card does, at the one size a chip has room for.
+ *
+ * The scale is asked of the frame rather than fixed here, because the three are
+ * cut at different depths and one number would serve none of them — see
+ * flowerChipScale.
  */
-function FlowerPreview(): ReactElement {
+function FlowerPreview({ style }: { style: PhotoBorderStyle }): ReactElement {
   return (
     <span
       role="presentation"
       aria-hidden="true"
       className="block h-11 w-full"
-      style={flowerFrameStyle(FLOWER_CHIP_SCALE)}
+      style={flowerFrameStyle(style, flowerChipScale(style))}
     />
   );
 }
@@ -451,11 +455,10 @@ export default function StylePanel({
           sprigs" mean nothing until they are drawn, and without one the host is
           picking blind and checking the preview after every guess.
 
-          Seven chips, so the last row holds one. Left deliberately rather than
-          padded out to eight or squeezed into four columns: the odd chip is the
-          photographic frame, which is the one style that looks nothing like its
-          neighbours anyway, and a column narrow enough to fit four of these
-          miniatures is a column too narrow to read any of them.
+          Nine chips, so three even rows, and the three photographs fall into
+          the last one together — which is the right reading of them: they are a
+          set, and a host choosing between them is choosing a colour rather than
+          a different kind of border.
         */}
         <div className="grid grid-cols-3 gap-2">
           {BORDER_STYLES.map((option) => {
@@ -477,8 +480,8 @@ export default function StylePanel({
                       : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)]",
                   ].join(" ")}
                 >
-                  {option.id === "flowerBackground" ? (
-                    <FlowerPreview />
+                  {isPhotoBorder(option.id) ? (
+                    <FlowerPreview style={option.id} />
                   ) : (
                     <BorderPreview id={option.id} />
                   )}
