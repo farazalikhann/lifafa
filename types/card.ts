@@ -114,6 +114,19 @@ export interface CardConfig {
   blocks: readonly CardBlock[];
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
+  /**
+   * Whether a few small butterflies fly in the card's margins.
+   *
+   * Its own switch rather than another motif in the scatter, because it is the
+   * one piece of decor that is a photograph: the scatter is line art held under
+   * a contrast ceiling so text can be read through it, and a full colour insect
+   * at that alpha is a smudge. components/card/decor/ButterflyLayer.tsx is
+   * where the consequences of that live.
+   *
+   * Absent entirely from every card saved before this existed, so CardCanvas
+   * reads it with `?? false` — the same reading `musicUrl` gets.
+   */
+  butterflies: boolean;
   occasionId: OccasionId;
   traditionId: TraditionId;
   /** Which section sits behind a scratch panel, if any. */

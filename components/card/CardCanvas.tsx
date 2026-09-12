@@ -4,6 +4,7 @@ import { Fragment, type CSSProperties, type ReactElement } from "react";
 import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
+import ButterflyLayer from "@/components/card/decor/ButterflyLayer";
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import ScrollFade from "@/components/card/decor/ScrollFade";
 import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
@@ -703,6 +704,31 @@ export default function CardCanvas({
         bandHeight={bandHeight}
         maxAlpha={decorMaxAlpha}
       />
+
+      {/*
+        The butterflies, if the host asked for any.
+
+        `?? false` because card_config is a jsonb snapshot: every card saved
+        before this existed has no such key, and `undefined` is not a state
+        ButterflyLayer should have to know about — the same reading MusicToggle
+        gets further down.
+
+        Gated on the motion style as well as on its own switch. "Motion style:
+        None" is two controls above this one in the same panel, and a host who
+        has just asked the card to hold still would read four insects flying
+        over it as a bug rather than as a second opinion.
+
+        Beside DecorLayer rather than inside it, and at the same depth: these
+        share the scatter's stacking order, so the text column and the frame
+        both pass over them, and they dissolve into the same fade at the top and
+        bottom of the screen that everything else on this layer does.
+      */}
+      {(config.butterflies ?? false) && config.decorMotion !== "none" ? (
+        <ButterflyLayer
+          intensity={config.decorIntensity}
+          bandHeight={bandHeight}
+        />
+      ) : null}
 
       {/*
         Where "stars" and "geometricStar" are drawn, and the only place either

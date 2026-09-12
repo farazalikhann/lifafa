@@ -454,3 +454,112 @@
     transform: translate3d(0, 0, 0) rotate(0deg);
   }
 }
+
+/* --- Butterflies. Driven by ButterflyLayer's hardcoded table. --- */
+
+/*
+  Three flight paths, and the reason there are three is that one would be
+  noticed. Four butterflies on a single path beat and turn together, which reads
+  as one cut-out copied rather than as four insects.
+
+  DELIBERATELY SHORT ON THE HORIZONTAL. Every path stays inside about 12px
+  either side of where the butterfly was placed, because the table that places
+  them keeps them out of the column the card sets its text in — and a path wide
+  enough to wander would walk them straight back into it. The vertical range is
+  the loose one: a butterfly that rises and settles reads as flying, and there
+  is nothing up there to collide with.
+
+  Transform only, so the whole thing stays on the compositor, and no opacity —
+  that lives on the span between the travel and the wingbeat, and a keyframe
+  touching it here would override it.
+*/
+@keyframes lifafa-butterfly-a {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  22% {
+    transform: translate3d(9px, -24px, 0) rotate(7deg);
+  }
+  45% {
+    transform: translate3d(-6px, -47px, 0) rotate(-5deg);
+  }
+  68% {
+    transform: translate3d(8px, -29px, 0) rotate(6deg);
+  }
+  86% {
+    transform: translate3d(-4px, -11px, 0) rotate(-3deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes lifafa-butterfly-b {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  26% {
+    transform: translate3d(-10px, 26px, 0) rotate(-8deg);
+  }
+  52% {
+    transform: translate3d(5px, 52px, 0) rotate(4deg);
+  }
+  74% {
+    transform: translate3d(-7px, 27px, 0) rotate(-6deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes lifafa-butterfly-c {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  18% {
+    transform: translate3d(11px, -17px, 0) rotate(6deg);
+  }
+  40% {
+    transform: translate3d(-8px, -38px, 0) rotate(-7deg);
+  }
+  58% {
+    transform: translate3d(10px, -58px, 0) rotate(5deg);
+  }
+  80% {
+    transform: translate3d(-5px, -25px, 0) rotate(-4deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+/*
+  The wingbeat.
+
+  A flat photograph of a butterfly seen from above has no folded pose in it, so
+  there is no second frame to cut to. What there is, is the thing the eye
+  actually reads as a wingbeat from that angle: the span narrowing and opening
+  as the wings tilt out of the plane. `scaleX` about the body is exactly that
+  foreshortening, which is why the artwork is straightened to a vertical axis
+  before it is published — on the 26-degree tilt it was drawn at, this would
+  shear the butterfly rather than beat its wings.
+
+  Not symmetric in time. The wings snap shut and open slower than they linger
+  open, so the keyframe spends most of its cycle near full span and passes
+  quickly through the closed end. Held at 0.58 rather than driven to nothing:
+  a butterfly whose wings vanish entirely reads as a glitch.
+
+  Duration is set inline per butterfly, so no two beat in unison.
+*/
+@keyframes lifafa-butterfly-wing {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  38% {
+    transform: scaleX(0.58);
+  }
+  62% {
+    transform: scaleX(0.86);
+  }
+}

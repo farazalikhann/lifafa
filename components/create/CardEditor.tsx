@@ -93,6 +93,7 @@ interface EditorState {
   blocks: readonly CardBlock[];
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
+  butterflies: boolean;
   occasionId: OccasionId;
   traditionId: TraditionId;
   scratchTarget: ScratchTarget;
@@ -124,6 +125,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     blocks: config.blocks,
     decorMotion: config.decorMotion,
     decorIntensity: config.decorIntensity,
+    /* Absent on every card saved before butterflies existed. */
+    butterflies: config.butterflies ?? false,
     occasionId: config.occasionId,
     traditionId: config.traditionId,
     scratchTarget: config.scratchTarget,
@@ -169,6 +172,7 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       blocks: state.blocks,
       decorMotion: state.decorMotion,
       decorIntensity: state.decorIntensity,
+      butterflies: state.butterflies,
       occasionId: state.occasionId,
       traditionId: state.traditionId,
       scratchTarget: state.scratchTarget,
@@ -285,6 +289,7 @@ export default function CardEditor({
   const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>(
     initial.decorIntensity,
   );
+  const [butterflies, setButterflies] = useState(initial.butterflies);
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
@@ -434,6 +439,7 @@ export default function CardEditor({
     blocks,
     decorMotion,
     decorIntensity,
+    butterflies,
     occasionId,
     traditionId,
     scratchTarget,
@@ -518,6 +524,7 @@ export default function CardEditor({
     setTraditionId(restored.traditionId);
     setDecorMotion(restored.decorMotion);
     setDecorIntensity(restored.decorIntensity);
+    setButterflies(restored.butterflies);
     setBorderStyle(restored.borderStyle);
     setScratchTarget(restored.scratchTarget);
     setMusicUrl(restored.musicUrl);
@@ -886,8 +893,10 @@ export default function CardEditor({
               <MotionPicker
                 motion={decorMotion}
                 intensity={decorIntensity}
+                butterflies={butterflies}
                 onMotionChange={setDecorMotion}
                 onIntensityChange={setDecorIntensity}
+                onButterfliesChange={setButterflies}
               />
               {/*
                 The ornament had a tab of its own and does not need one. Which

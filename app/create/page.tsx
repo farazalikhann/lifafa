@@ -67,6 +67,7 @@ const EMPTY_CONFIG: CardConfig = {
   })),
   decorMotion: DEFAULT_OCCASION.defaultMotion,
   decorIntensity: "normal",
+  butterflies: false,
   occasionId: DEFAULT_OCCASION_ID,
   traditionId: DEFAULT_TRADITION_ID,
   /* Off by default: a card that hides its own date has to be asked for. */
