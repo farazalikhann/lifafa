@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import Link from "next/link";
 import { useInView } from "@/hooks/useInView";
 
 const INCLUDED: readonly string[] = [
@@ -70,6 +71,19 @@ export default function Pricing() {
             </li>
           ))}
         </ul>
+
+        {/*
+          The card states a price and lists what it buys, and a visitor who
+          has just read both is ready to act on them. Outlined rather than
+          filled: the hero and the closing section carry the filled pill, and a
+          third one this close to the second would compete with it.
+        */}
+        <Link
+          href="/create"
+          className="mt-9 flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--lifafa-marigold)]/60 px-6 text-[0.9375rem] font-semibold text-[var(--lifafa-marigold)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] hover:bg-[var(--lifafa-marigold)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+        >
+          Start your invitation
+        </Link>
       </div>
     </section>
   );

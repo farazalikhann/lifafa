@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 /**
  * Hero — first viewport. Pure CSS entrance so it stays a server component and
  * animates on first paint rather than waiting for hydration.
@@ -9,7 +11,13 @@ export default function Hero() {
       edge and carry its colour into the story, and clipping it there is exactly
       the hard line this used to draw.
     */
-    <section className="relative isolate flex min-h-[100svh] flex-col items-center justify-center px-6 py-24 text-center">
+    /*
+      More padding below than above: the scroll cue is pinned 2.5rem off the
+      bottom and stands about 4.5rem tall, and on a short phone the call to
+      action is pushed down far enough to reach it. pb-32 keeps the two apart
+      whenever the content outgrows the viewport and the section has to grow.
+    */
+    <section className="relative isolate flex min-h-[100svh] flex-col items-center justify-center px-6 pt-24 pb-32 text-center">
       {/* Warm glow behind the wordmark — keeps the ink from reading as flat black. */}
       <div
         aria-hidden="true"
@@ -45,6 +53,21 @@ export default function Hero() {
       <p className="mt-3 max-w-[26ch] animate-[lifafa-rise_800ms_ease-out_both] text-balance text-[1.0625rem] leading-relaxed text-[var(--lifafa-muted)] [animation-delay:340ms] sm:max-w-[38ch] sm:text-xl motion-reduce:animate-none">
         Know exactly how many guests are coming, long before the day arrives.
       </p>
+
+      {/*
+        The way in, on the first screen.
+
+        The only link to the editor used to sit at the foot of the page, under
+        five full-screen story panels and the pricing card — a visitor who had
+        already decided had to scroll seven screens to find where to start.
+        Same pill as the closing call to action, so the two read as one control.
+      */}
+      <Link
+        href="/create"
+        className="mt-10 inline-flex min-h-12 animate-[lifafa-rise_800ms_ease-out_both] items-center justify-center rounded-full bg-[var(--lifafa-marigold)] px-8 text-base font-semibold text-[var(--lifafa-ink)] shadow-[0_10px_30px_-12px_rgba(232,163,61,0.55)] transition-[transform,box-shadow] duration-200 ease-out [animation-delay:480ms] hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-14px_rgba(232,163,61,0.75)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)] motion-reduce:animate-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      >
+        Create your invitation
+      </Link>
 
       {/* Scroll cue */}
       <div className="absolute inset-x-0 bottom-10 flex animate-[lifafa-rise_800ms_ease-out_both] flex-col items-center gap-3 [animation-delay:640ms] motion-reduce:animate-none">
