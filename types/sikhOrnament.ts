@@ -16,13 +16,27 @@ export type SikhOrnamentId =
   | "gurudwaraArch"
   | "lotus"
   | "nishanSahibPennant"
-  | "kandaFloralBorder";
+  | "kandaFloralBorder"
+  /*
+    Calligraphy rather than shapes — Gurmukhi word-marks cut from one supplied
+    sheet. Ids here because the host switches them on from the same panel;
+    the pack sends them to `calligraphyIds` and the head of the card.
+  */
+  | "ikOnkarCalligraphy"
+  | "satnamWaheguru"
+  | "shubhVivaah"
+  | "guruKirpa"
+  | "anandKaraj"
+  | "ikDoojeDeSang"
+  | "doRoohanIkRaah"
+  | "waheguru"
+  | "sarbatDaBhala";
 
 /*
-  There is no "ikOnkarGlyph" id, and its absence is deliberate. It is a script
-  character and the opening of the Mool Mantar, not a decorative mark; drawing
-  it would mean freezing a reconstructed letterform in a path that nobody could
-  correct. See the long note above SIKH_ORNAMENTS in lib/ornaments/sikh.tsx —
-  the route for putting it on a card is the "ikOnkar" greeting in
-  lib/gurmukhiContent.ts, where it is real, correctable, selectable text.
+  There is still no "ikOnkarGlyph" — no Ik Onkar DRAWN in a path, reconstructed
+  from memory, which nobody could correct. "ikOnkarCalligraphy" above is a
+  different thing: supplied artwork, published as it was given. The long note
+  above SIKH_ORNAMENTS in lib/ornaments/sikh.tsx says what that does and does
+  not fix, and the "ikOnkar" greeting in lib/gurmukhiContent.ts remains the
+  route where it is real, correctable, selectable text.
 */

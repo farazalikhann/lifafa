@@ -483,7 +483,21 @@ const SIKH_PACK: TraditionPack = {
   findOrnament: (id) => SIKH_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: "gurudwaraArch",
   dividerId: "kandaFloralBorder",
-  calligraphyIds: [],
+  /*
+    Ik Onkar first, because it opens everything that follows it; then the
+    ceremony's own name. The rest in the order a card would say them.
+  */
+  calligraphyIds: [
+    "ikOnkarCalligraphy",
+    "satnamWaheguru",
+    "anandKaraj",
+    "shubhVivaah",
+    "guruKirpa",
+    "ikDoojeDeSang",
+    "doRoohanIkRaah",
+    "waheguru",
+    "sarbatDaBhala",
+  ],
 };
 
 const CHRISTIAN_PACK: TraditionPack = {

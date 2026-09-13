@@ -1,5 +1,6 @@
-import { Frame, flowerPath, leafPath, r2 } from "@/lib/ornaments/frame";
+import { Frame, calligraphyOrnament, flowerPath, leafPath, r2 } from "@/lib/ornaments/frame";
 import type { Ornament } from "@/lib/ornaments/frame";
+import { calligraphyAspect } from "@/lib/calligraphy";
 import type { SikhOrnamentId } from "@/types/sikhOrnament";
 
 /**
@@ -274,6 +275,16 @@ export const SIKH_ORNAMENT_ASPECT: Record<SikhOrnamentId, number> = {
   lotus: 1,
   nishanSahibPennant: 56 / 88,
   kandaFloralBorder: 160 / 28,
+  /* Not viewBoxes: the published crops each calligraphy's pair of files shares. */
+  ikOnkarCalligraphy: calligraphyAspect("ikOnkarCalligraphy"),
+  satnamWaheguru: calligraphyAspect("satnamWaheguru"),
+  anandKaraj: calligraphyAspect("anandKaraj"),
+  shubhVivaah: calligraphyAspect("shubhVivaah"),
+  guruKirpa: calligraphyAspect("guruKirpa"),
+  ikDoojeDeSang: calligraphyAspect("ikDoojeDeSang"),
+  doRoohanIkRaah: calligraphyAspect("doRoohanIkRaah"),
+  waheguru: calligraphyAspect("waheguru"),
+  sarbatDaBhala: calligraphyAspect("sarbatDaBhala"),
 };
 
 /** One ornament offered in the editor. The same shape as HinduOrnamentEntry. */
@@ -288,12 +299,43 @@ export interface SikhOrnamentEntry {
   topRegionOnly: boolean;
 }
 
+/* ---------------------------------------------------------------------------
+   Calligraphy
+   --------------------------------------------------------------------------- */
+
+/**
+ * The nine Gurmukhi word-marks, from the shared factory in
+ * lib/ornaments/frame.tsx. lib/calligraphy.ts holds their files, what each is
+ * meant to say, and how the dark version was made.
+ */
+export const IkOnkarCalligraphy = calligraphyOrnament("ikOnkarCalligraphy");
+export const SatnamWaheguru = calligraphyOrnament("satnamWaheguru");
+export const AnandKaraj = calligraphyOrnament("anandKaraj");
+export const ShubhVivaah = calligraphyOrnament("shubhVivaah");
+export const GuruKirpa = calligraphyOrnament("guruKirpa");
+export const IkDoojeDeSang = calligraphyOrnament("ikDoojeDeSang");
+export const DoRoohanIkRaah = calligraphyOrnament("doRoohanIkRaah");
+export const Waheguru = calligraphyOrnament("waheguru");
+export const SarbatDaBhala = calligraphyOrnament("sarbatDaBhala");
+
 /**
  * The pack, in the order the editor lays out its chips.
  *
- * IK ONKAR IS NOT IN THIS LIST, AND ITS ABSENCE IS THE DECISION, not an
+ * IK ONKAR IS NOT DRAWN IN THIS FILE, AND ITS ABSENCE IS THE DECISION, not an
  * oversight. It was asked for with the option to omit it and say so, and this
  * is me saying so.
+ *
+ * What the list below does now carry is `ikOnkarCalligraphy` — supplied artwork
+ * of the glyph, published as it was given, not a letterform reconstructed here.
+ * That removes the half of the objection below that was about reconstructing
+ * it from memory. It does not remove the other half. A raster cannot be
+ * corrected the way a string can: if a letter in that artwork is wrong, the fix
+ * is new artwork, and until then it is wrong at the head of somebody's wedding
+ * invitation. Which is why it, and every Gurmukhi piece beside it, wants a
+ * Punjabi reader to check the spelling in the files themselves before it ships
+ * — the same standard lib/gurmukhiContent.ts holds its strings to, applied to
+ * the only form of the text that exists here. The sheet these came from reads
+ * as machine-made, and machine-made Gurmukhi is where letters go wrong.
  *
  * The Ik Onkar glyph is not a decorative mark; it is the opening of the Mool Mantar, and it is a
  * script character. Drawing it means reconstructing a specific letterform from
@@ -334,6 +376,78 @@ export const SIKH_ORNAMENTS: readonly SikhOrnamentEntry[] = [
     chipSize: 40,
     topRegionOnly: false,
   },
+  {
+    id: "ikOnkarCalligraphy",
+    label: "Ik Onkar",
+    Component: IkOnkarCalligraphy,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "satnamWaheguru",
+    label: "Satnam Waheguru",
+    Component: SatnamWaheguru,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "anandKaraj",
+    label: "Anand Karaj",
+    Component: AnandKaraj,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "shubhVivaah",
+    label: "Shubh Vivaah",
+    Component: ShubhVivaah,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "guruKirpa",
+    label: "Guru Kirpa",
+    Component: GuruKirpa,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "ikDoojeDeSang",
+    label: "Ik Dooje De Sang",
+    Component: IkDoojeDeSang,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "doRoohanIkRaah",
+    label: "Do Roohan Ik Raah",
+    Component: DoRoohanIkRaah,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "waheguru",
+    label: "Waheguru",
+    Component: Waheguru,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
+  {
+    id: "sarbatDaBhala",
+    label: "Sarbat Da Bhala",
+    Component: SarbatDaBhala,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 84,
+    topRegionOnly: false,
+  },
 ];
 
 /** Sits under the ornament grid in the editor. */
@@ -346,6 +460,15 @@ const BY_ID: Record<SikhOrnamentId, Ornament> = {
   lotus: Lotus,
   nishanSahibPennant: NishanSahibPennant,
   kandaFloralBorder: KandaFloralBorder,
+  ikOnkarCalligraphy: IkOnkarCalligraphy,
+  satnamWaheguru: SatnamWaheguru,
+  anandKaraj: AnandKaraj,
+  shubhVivaah: ShubhVivaah,
+  guruKirpa: GuruKirpa,
+  ikDoojeDeSang: IkDoojeDeSang,
+  doRoohanIkRaah: DoRoohanIkRaah,
+  waheguru: Waheguru,
+  sarbatDaBhala: SarbatDaBhala,
 };
 
 export function getSikhOrnament(id: SikhOrnamentId): Ornament {

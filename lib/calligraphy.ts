@@ -16,8 +16,10 @@ import { relativeLuminance } from "@/lib/contrast";
  * colour the card hands them; these are rasters, so the ink is fixed at the
  * point of publishing and the only way to have it both ways is to publish it
  * both ways. For the Arabic pieces that is black and white. For the Devanagari
- * ones it cannot be — they are gold and maroon — so the second file is the
- * artwork lifted rather than recoloured; see `devanagari` below.
+ * and Gurmukhi ones it cannot be — they are coloured artwork — so the second
+ * file is the artwork adjusted for a dark ground rather than recoloured; see
+ * `devanagari` and `gurmukhi` below, which adjust it in two different ways for
+ * two different reasons.
  *
  * BOTH INKS OF A PIECE ARE THE SAME SHAPE, to the pixel, and that is not a
  * detail. The card picks between them on the fly, so a pair that disagreed on
@@ -41,7 +43,16 @@ export type CalligraphyId =
   | "togetherForever"
   | "mangalParinay"
   | "madhurMilan"
-  | "shubhLabh";
+  | "shubhLabh"
+  | "ikOnkarCalligraphy"
+  | "satnamWaheguru"
+  | "shubhVivaah"
+  | "guruKirpa"
+  | "anandKaraj"
+  | "ikDoojeDeSang"
+  | "doRoohanIkRaah"
+  | "waheguru"
+  | "sarbatDaBhala";
 
 /** Which ground the lettering is being laid on. */
 export type CalligraphyGround = "light" | "dark";
@@ -90,6 +101,32 @@ function devanagari(
     src: {
       light: `/decor/hindu/${slug}-light.webp`,
       dark: `/decor/hindu/${slug}-dark.webp`,
+    },
+    aspect,
+    alt,
+  };
+}
+
+/**
+ * The Gurmukhi pieces, cut from one supplied sheet of nine.
+ *
+ * Navy and gold where the Devanagari sheet is gold and maroon, and that one
+ * difference is why they are not built by `devanagari`. Half this ink is navy,
+ * and the Devanagari lift — scale every channel up, mix toward gold — turns
+ * navy into a muddy blue-grey that is barely more legible on midnight than the
+ * navy was. So the dark file instead moves each pixel toward cream by how dark
+ * it is: fully for the navy letters, not at all for the gold that is already
+ * bright, and in proportion for everything between, so a gradient stays a
+ * gradient. On a dark card the result is cream lettering with its gold
+ * flourishes intact.
+ *
+ * Both files share one box, as every pair here does.
+ */
+function gurmukhi(slug: string, aspect: number, alt: string): CalligraphyArt {
+  return {
+    src: {
+      light: `/decor/sikh/${slug}-light.webp`,
+      dark: `/decor/sikh/${slug}-dark.webp`,
     },
     aspect,
     alt,
@@ -166,6 +203,56 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
     "shubh-labh",
     424 / 253,
     "Shubh Labh — auspiciousness and prosperity",
+  ),
+
+  /*
+    The nine Gurmukhi pieces, in the order the sheet set them out.
+
+    The alt text says what each piece is MEANT to read. It is not a claim that
+    the lettering in the artwork is spelt that way — that is a question for a
+    Punjabi reader looking at the files, and see the note above SIKH_ORNAMENTS
+    in lib/ornaments/sikh.tsx for why it matters more here than anywhere else.
+  */
+  ikOnkarCalligraphy: gurmukhi(
+    "ik-onkar",
+    434 / 324,
+    "Ik Onkar — One Creator",
+  ),
+  satnamWaheguru: gurmukhi(
+    "satnam-waheguru",
+    422 / 283,
+    "Satnam Waheguru",
+  ),
+  shubhVivaah: gurmukhi(
+    "shubh-vivaah",
+    471 / 359,
+    "Shubh Vivaah — an auspicious marriage",
+  ),
+  guruKirpa: gurmukhi(
+    "guru-kirpa",
+    453 / 270,
+    "Guru Kirpa Sada Rahe — with the Guru's blessings always",
+  ),
+  anandKaraj: gurmukhi(
+    "anand-karaj",
+    491 / 295,
+    "Anand Karaj — the Sikh wedding ceremony",
+  ),
+  ikDoojeDeSang: gurmukhi(
+    "ik-dooje-de-sang",
+    442 / 269,
+    "Ik Dooje De Sang — together, in faith",
+  ),
+  doRoohanIkRaah: gurmukhi(
+    "do-roohan-ik-raah",
+    513 / 241,
+    "Do Roohan Ik Raah — two souls, one journey",
+  ),
+  waheguru: gurmukhi("waheguru", 392 / 289, "Waheguru — always with us"),
+  sarbatDaBhala: gurmukhi(
+    "sarbat-da-bhala",
+    471 / 182,
+    "Sarbat Da Bhala — may all be well",
   ),
 };
 
