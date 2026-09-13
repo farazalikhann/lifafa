@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import InviteExperience from "@/components/invite/InviteExperience";
-import { getEventByInviteCode } from "@/lib/db/events";
+import { getInviteEvent } from "@/lib/db/inviteEvent";
 import { getEventWeather } from "@/lib/weather";
 
 /**
@@ -38,7 +38,8 @@ export default async function InvitePage({
   params: Promise<{ inviteCode: string }>;
 }): Promise<ReactElement> {
   const { inviteCode } = await params;
-  const result = await getEventByInviteCode(inviteCode);
+  /* Shared with the layout's metadata, so this is not a second query. */
+  const result = await getInviteEvent(inviteCode);
 
   /*
     A failed read and an unknown code are shown the same way. A guest can do

@@ -89,7 +89,9 @@ export default function RsvpConfirmed({
 
       {status === "accepted" ? (
         <p className="text-sm" style={{ color: theme.textPrimary }}>
-          {partySize === 1 ? "Just you" : `You and ${partySize - 1} others`}
+          {partySize === 1
+            ? "Just you"
+            : `You and ${partySize - 1} ${partySize === 2 ? "other" : "others"}`}
         </p>
       ) : null}
 
@@ -107,10 +109,6 @@ export default function RsvpConfirmed({
       >
         Change my reply
       </button>
-
-      <p className="mt-4 text-xs" style={{ color: theme.textMuted }}>
-        Demo mode: replies are not stored yet.
-      </p>
     </section>
   );
 }

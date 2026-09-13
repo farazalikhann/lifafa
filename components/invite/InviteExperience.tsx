@@ -82,6 +82,15 @@ export default function InviteExperience({
       : (coverTitle ?? "Invitation");
 
   /*
+    The page's heading, from the same resolution the cover prints. hostNames is
+    only the fallback line and is empty on most pair cards, so reading it here
+    announced "Wedding — " with nobody's name after the dash.
+  */
+  const pageHeading = [draft.eventTitle.trim(), coverTitle]
+    .filter((part): part is string => part !== undefined && part.length > 0)
+    .join(" — ");
+
+  /*
     Built here rather than from window.location: this component server-renders
     first, and an origin the two runtimes could disagree about would put one
     link in the markup and another in the hydrated tree.
@@ -151,7 +160,7 @@ export default function InviteExperience({
           screen reader announces what the page is before the card starts.
         */}
         <h1 className="sr-only">
-          {draft.eventTitle} — {draft.hostNames}
+          {pageHeading.length > 0 ? pageHeading : "Invitation"}
         </h1>
 
         <div

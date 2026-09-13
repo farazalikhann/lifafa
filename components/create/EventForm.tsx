@@ -163,8 +163,13 @@ function JoinerControl({
   );
 }
 
+/*
+  Every date on the card is formatted in Indian time (see lib/cardFormat.ts), so
+  a guest abroad sees exactly what was typed here rather than a converted hour.
+  The hint used to promise the opposite.
+*/
 const DATE_HINT =
-  "Guests will see this in their own time zone as the local event time.";
+  "Guests see the date and time exactly as you enter them, in Indian time.";
 
 /**
  * Parents and home town, one side at a time.
