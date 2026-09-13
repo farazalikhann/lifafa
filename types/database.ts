@@ -497,40 +497,9 @@ export function toGuest(row: GuestRow): Guest {
   };
 }
 
-/**
- * A guest's reply to an insert.
- *
- * partySize counts the guest themselves; accompanying_count does not. Clamped
- * to the column's own 0..9 check, so a malformed size is refused here rather
- * than arriving as a constraint violation.
- *
- * respondedAt is a parameter, minted by the caller in its handler. Nothing here
- * reads the clock: a converter that called now() would put a timestamp into a
- * render.
- */
-export function toGuestInsert(
-  eventId: string,
-  reply: {
-    name: string;
-    phone: string;
-    status: Exclude<RsvpStatus, "pending">;
-    partySize: number;
-    message: string;
-    respondedAt: string;
-  },
-): GuestInsert {
-  const trimmedMessage = reply.message.trim();
-
-  return {
-    event_id: eventId,
-    name: reply.name,
-    phone: reply.phone,
-    rsvp: reply.status,
-    /* Clamped to the column's own check constraint, 0..9. */
-    accompanying_count: Math.min(9, Math.max(0, reply.partySize - 1)),
-    message: trimmedMessage.length > 0 ? trimmedMessage : null,
-    responded_at: reply.respondedAt,
-    checked_in: false,
-    checked_in_at: null,
-  };
-}
+/*
+  There is no toGuestInsert. A reply is never inserted from the application:
+  it goes through submit_reply() (0002, 0006, 0007), which normalises the phone,
+  clamps the party size and upserts on (event_id, phone) with the definer's
+  rights. See addOrUpdateReply in lib/db/guests.ts.
+*/

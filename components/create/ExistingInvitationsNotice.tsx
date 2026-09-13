@@ -87,7 +87,7 @@ export default function ExistingInvitationsNotice(): ReactElement | null {
         `lg:col-span-2` is here rather than on a wrapper in the page, because a
         wrapper would be a grid item on every render — including the many where
         this component returns null and the editor would be pushed down by an
-        empty row. The two-column grid it spans is defined in app/create.
+        empty row. The two-column grid it spans is defined in CardEditor.
       */
       className="flex items-start gap-3 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3.5 sm:px-5 lg:col-span-2"
     >

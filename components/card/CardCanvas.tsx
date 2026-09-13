@@ -181,9 +181,9 @@ const PREVIEW_FRAME_HEIGHT = 620;
 /**
  * Density scales section height and the gaps between lines together.
  *
- * Every tier is now well under a screen, which is the point. A section is a
- * centred group of three or four lines — measured on a 360x800 phone, the date
- * is 123px of content and the note 76px — and asking for 0.8 of the viewport
+ * A section is a centred group of three or four lines — measured on a 360x800
+ * phone, the date is 123px of content and the note 76px.
+ *
  * The card is read one swipe at a time, and a swipe should deliver one thing:
  * the names, or the date, or the venue. That only holds if a section is at
  * least as tall as the screen it lands on. Cutting "comfortable" to 0.45 to
@@ -772,9 +772,10 @@ export default function CardCanvas({
       ) : null}
 
       {/*
-        Mounted only on a Muslim card. Not merely handed an empty list — the
-        component is absent from the tree entirely on every other tradition,
-        which is the difference between "renders nothing" and "cannot render".
+        Mounted only when the tradition has an ornament pack. Not merely handed
+        an empty list — the component is absent from the tree entirely on a card
+        with no pack, which is the difference between "renders nothing" and
+        "cannot render".
 
         Sits above the fade at `z-[15]`, which is a change of order and a
         deliberate one: the ornaments used to hang behind the text, and text

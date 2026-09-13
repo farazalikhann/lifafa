@@ -5,8 +5,8 @@ import type { ReactElement } from "react";
 /**
  * The link to a track that plays behind the card.
  *
- * Was the sixth group inside StylePanel, and it sits in the Structure tab now,
- * with the sections and the cover: it is another thing the invitation carries,
+ * Was the sixth group inside StylePanel, and it sits in the Extras tab now,
+ * with the cover and the weather: it is another thing the invitation carries,
  * not a typographic choice. The field, its label and its note are unchanged.
  */
 export default function MusicPanel({

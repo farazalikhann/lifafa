@@ -60,9 +60,10 @@ export const WATERMARK_CLEARANCE = "7rem";
  *
  * Two layers, both inert: a diagonal repeat of the wordmark across the whole
  * card, and one pill naming the reason it is there. Neither takes pointer
- * events and neither is exposed to assistive tech — a guest never sees this,
- * and for the host it is a state of the card, not content of it. The status is
- * already carried in the surrounding UI, where it can be read and acted on.
+ * events and neither is exposed to assistive tech: it is a state of the card,
+ * not content of it. It is drawn in the host's full screen preview and, until
+ * the invitation is paid for, on the card guests open — which is what the
+ * dashboard's PaymentBanner warns the host about.
  *
  * Renders into the nearest positioned ancestor, so the caller wraps the card in
  * a `relative` box. The pill is `fixed` instead: it belongs to the bottom of the

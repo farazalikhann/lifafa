@@ -5,10 +5,11 @@ import { useId, type ReactElement } from "react";
 /**
  * Whether guests are scanned in at the door on the day.
  *
- * Only the switch for now. The scanner and the code a guest shows are later
- * work; this records the host's answer so both have something to read when
- * they arrive. Stored in its own column rather than in CardConfig, like the
- * cover and the weather — see supabase/migrations/0005.
+ * The switch that both halves of check-in read: the pass a guest is shown after
+ * accepting (components/invite/GuestPass.tsx) and the scanner on the host's
+ * dashboard (app/dashboard/[eventId]/checkin). Stored in its own column rather
+ * than in CardConfig, like the cover and the weather — see
+ * supabase/migrations/0005.
  *
  * A button with role="switch" rather than WeatherPicker's styled checkbox, so it
  * looks and announces itself the way the section switches in SectionManager

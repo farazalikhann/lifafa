@@ -201,7 +201,7 @@ function TabButton({
  * name field re-rendering the typography specimens, the six border miniatures
  * and both blessing lists for nobody. The cost of that decision is that a
  * panel's own state dies when the host leaves it, which is why every value
- * these controls read lives in app/create/page.tsx.
+ * these controls read lives in components/create/CardEditor.tsx.
  *
  * ONE TABLIST AT A TIME, chosen by media query rather than two lists with one
  * hidden by CSS: `role="tab"` elements need ids for the panel's

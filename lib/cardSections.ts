@@ -12,9 +12,9 @@ export interface CardSectionMeta {
  * The registry of card sections — the single source of truth for what a card
  * can contain and the order sections appear in.
  *
- * A later step will drive a section toggle panel in the editor from this map;
- * that panel is deliberately not built yet. Adding a section here means adding
- * its id to CardSectionId and a renderer in CardCanvas.
+ * The editor's section list (components/create/SectionManager.tsx) reads its
+ * labels from this map. Adding a section here means adding its id to
+ * CardSectionId and a renderer in CardCanvas.
  */
 export const CARD_SECTIONS: Record<CardSectionId, CardSectionMeta> = {
   cover: {
