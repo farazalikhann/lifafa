@@ -16,7 +16,7 @@ const REPLY_LABEL: Record<RsvpStatus, string> = {
  * dropped. Without it Excel opens the file as ANSI and a rupee sign or an em
  * dash in a guest's message arrives as mojibake.
  */
-const BOM = "﻿";
+const BOM = "\uFEFF";
 
 const COLUMNS: readonly string[] = [
   "Name",
@@ -37,7 +37,8 @@ const COLUMNS: readonly string[] = [
  * "Congratulations, both of you!" shifts every later column on their row by
  * one, which is the kind of corruption a host only notices at the venue.
  */
-function csvField(value: string): string {
+function csvField(raw: string): string {
+  const value = neutraliseFormula(raw);
   const needsQuoting = /[",\r\n]/.test(value);
 
   if (!needsQuoting) {
@@ -45,6 +46,22 @@ function csvField(value: string): string {
   }
 
   return `"${value.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Keeps a guest's words from running as a spreadsheet formula.
+ *
+ * The name and the message are typed by whoever holds the invite link, and
+ * Excel, Sheets and Numbers all treat a cell opening with =, +, - or @ as a
+ * formula — so a "name" of =HYPERLINK(...) arrives in the host's sheet as a live
+ * link, and worse on older Excel. A leading apostrophe is the standard defence:
+ * the spreadsheet shows the text as written and never evaluates it.
+ *
+ * A tab or carriage return at the start counts too, because some importers
+ * strip it and then read the character behind it.
+ */
+function neutraliseFormula(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
 function toCsv(guests: readonly Guest[]): string {

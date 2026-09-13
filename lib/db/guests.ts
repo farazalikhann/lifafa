@@ -274,11 +274,11 @@ async function passOwner(
 /**
  * Checks a guest in from the token on their pass.
  *
- * Takes the signed-in user's id, as the door's own pages hand it over, but does
- * not take it on trust. This module is "use server", so every export here is
- * an endpoint a browser can call with any arguments it likes; the id is
- * compared with the session's own, and a mismatch is simply a caller who does
- * not own this pass.
+ * Not exported. This module is "use server", so every export is an endpoint a
+ * browser can call with any arguments it likes, and nothing outside this file
+ * needs a version that takes a user id — the door calls checkInPass below. The
+ * id is still compared with the session's own rather than taken on trust, so a
+ * mismatch is simply a caller who does not own this pass.
  *
  * THE ORDER IS THE POINT: the token's shape, then the session, then who owns
  * the pass, then which event the caller is working, and only then the guest.
@@ -289,7 +289,7 @@ async function passOwner(
  * still not checked in, so the same pass scanned twice at once gives one
  * success and one "already", and never two arrival times.
  */
-export async function checkInByToken(
+async function checkInByToken(
   token: string,
   userId: string,
   expectedEventId?: string,

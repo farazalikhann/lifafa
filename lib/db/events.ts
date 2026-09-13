@@ -136,6 +136,17 @@ export async function createEvent(
   const showWeather = weather.showWeather === true;
   const wantsQrCheckin = qrCheckinEnabled === true;
 
+  /*
+    A new invitation is unpaid, whatever the config that arrived says.
+
+    toEventInsert writes is_paid from the config's own copy, and that copy is
+    part of this action's argument — so a request edited on its way here could
+    set it true and save a card with no watermark and no payment behind it. The
+    payment path is the only thing entitled to say otherwise, and it has not
+    run for a row that does not exist yet.
+  */
+  const unpaidConfig: CardConfig = { ...cardConfig, isPaid: false };
+
   const {
     data: { user },
     error: authError,
@@ -172,7 +183,7 @@ export async function createEvent(
     const row = toEventInsert(
       user.id,
       inviteCode,
-      cardConfig,
+      unpaidConfig,
       draft,
       chosenCover,
       { showWeather, themeId: chosenTheme, coordinates },
@@ -510,7 +521,7 @@ export async function updateEvent(
   */
   const { data: existing, error: readError } = await supabase
     .from("events")
-    .select("event_draft, latitude, longitude")
+    .select("event_draft, latitude, longitude, is_paid")
     .eq("id", id)
     .eq("host_id", user.id)
     .maybeSingle();
@@ -566,7 +577,13 @@ export async function updateEvent(
       : storedCoordinates;
 
   const row: EventContentUpdate = {
-    card_config: patch.cardConfig,
+    /*
+      The JSON's isPaid copy is set from the column rather than taken from the
+      wire. toStoredEvent already lets the column win on the way out, so this
+      changes nothing a guest sees; it keeps a stored config from contradicting
+      its own row because a request claimed a payment that never happened.
+    */
+    card_config: { ...patch.cardConfig, isPaid: existing.is_paid },
     event_draft: patch.draft,
     cover_animation: chosenCover,
     show_weather: patch.weather.showWeather === true,
