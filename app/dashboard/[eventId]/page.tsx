@@ -57,9 +57,6 @@ export default async function DashboardPage({
   }
 
   const event = eventResult.data;
-  const guestsResult = await getGuestsForEvent(event.id);
-  const guests = guestsResult.ok ? guestsResult.data : [];
-
   const { draft } = event;
   const when = formatWhen(draft.eventDate, draft.eventTime);
   const title =
@@ -90,11 +87,25 @@ export default async function DashboardPage({
     updateEvent now re-resolves a row that has none — this is the same repair
     made where a host can see the result of it.
   */
-  const coordinates =
-    event.coordinates ??
-    (await geocodeVenue(draft.venueName, draft.venueAddress));
+  const readWeather = async () => {
+    const coordinates =
+      event.coordinates ??
+      (await geocodeVenue(draft.venueName, draft.venueAddress));
 
-  const weather = await getEventWeather(coordinates, draft.eventDate);
+    return getEventWeather(coordinates, draft.eventDate);
+  };
+
+  /*
+    The guest list and the weather together rather than one after the other.
+    Neither reads the other, and the weather can wait up to four seconds on
+    Open-Meteo per request — time the headcount a host came here for used to
+    spend queued behind a forecast.
+  */
+  const [guestsResult, weather] = await Promise.all([
+    getGuestsForEvent(event.id),
+    readWeather(),
+  ]);
+  const guests = guestsResult.ok ? guestsResult.data : [];
 
   return (
     <div className="min-h-screen">
