@@ -33,6 +33,30 @@ const ERROR_MESSAGES: Record<string, string> = {
   config: "Sign in is not available right now. Please try again shortly.",
 };
 
+/**
+ * A refused request, in words a host can act on.
+ *
+ * Supabase's own messages are written for developers — "email rate limit
+ * exceeded", "For security purposes, you can only request this after 42
+ * seconds" — and the commonest by far is a host tapping send again because the
+ * first email had not arrived yet. That one gets its own sentence; everything
+ * else gets a plain retry, with the real message left in the console.
+ */
+function signInErrorMessage(cause: { status?: number; message: string }): string {
+  if (
+    cause.status === 429 ||
+    /rate limit|security purposes|too many/i.test(cause.message)
+  ) {
+    return "A sign in link was sent a moment ago. Check your inbox and spam folder, or wait a minute before asking for another.";
+  }
+
+  if (/invalid|validate email/i.test(cause.message)) {
+    return "That email address was not accepted. Check it for typos and try again.";
+  }
+
+  return "Could not send the link, please try again.";
+}
+
 export default function SignInForm({
   redirectTo,
   initialError,
@@ -77,23 +101,32 @@ export default function SignInForm({
     const callback = new URL("/auth/callback", window.location.origin);
     callback.searchParams.set("redirectTo", redirectTo);
 
-    const { error: signInError } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: { emailRedirectTo: callback.toString() },
-    });
+    /*
+      Caught as well as checked. supabase-js reports most failures as a value,
+      but a request that never leaves the device can still throw — and without
+      this the button stayed on "Sending…" for good, with nothing to press.
+    */
+    try {
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: { emailRedirectTo: callback.toString() },
+      });
 
-    setIsSending(false);
+      if (signInError !== null) {
+        console.error("[auth] could not send the sign in link:", signInError);
+        setError(signInErrorMessage(signInError));
+        return;
+      }
 
-    if (signInError !== null) {
+      setSentTo(trimmed);
+    } catch (cause: unknown) {
+      console.error("[auth] sign in request failed:", cause);
       setError(
-        signInError.message.length > 0
-          ? signInError.message
-          : "Could not send the link, please try again.",
+        "Could not reach the sign in service. Check your connection and try again.",
       );
-      return;
+    } finally {
+      setIsSending(false);
     }
-
-    setSentTo(trimmed);
   };
 
   /* ── Confirmation ── */
