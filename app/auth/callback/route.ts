@@ -6,7 +6,12 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Where a magic link lands.
+ * Where a magic link, or a return from Google, lands.
+ *
+ * Google sign in comes back as a PKCE `code`, exchanged below exactly as the
+ * default magic link was. It needs no browser hop to go wrong: the verifier
+ * cookie is written by the tab that pressed the button, and Google sends that
+ * same tab straight back here.
  *
  * Two shapes of link arrive here, and both end with the session cookies set.
  * This is a route handler rather than a page because it can write cookies,
@@ -68,6 +73,23 @@ export async function GET(request: NextRequest) {
   */
   const providerError =
     searchParams.get("error_description") ?? searchParams.get("error");
+
+  /*
+    A host who backs out of Google's consent screen. Google reports it as
+    `access_denied`, and Supabase passes that on with no `error_code`. Supabase
+    also uses `access_denied` for a banned user or disabled signups, but always
+    adds an `error_code` to those, so they fall through to the error below.
+    The destination is kept so a second attempt still returns them there.
+  */
+  if (
+    searchParams.get("error") === "access_denied" &&
+    searchParams.get("error_code") === null
+  ) {
+    const loginUrl = new URL("/login", origin);
+    loginUrl.searchParams.set("error", "cancelled");
+    loginUrl.searchParams.set("redirectTo", destination);
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (providerError !== null) {
     console.error("[auth] provider returned an error:", providerError);
