@@ -2,7 +2,9 @@ import Hero from "@/components/landing/Hero";
 import LandingHeader from "@/components/landing/LandingHeader";
 import Showcase from "@/components/landing/Showcase";
 import ScrollStory from "@/components/landing/ScrollStory";
+import HowItWorks from "@/components/landing/HowItWorks";
 import Pricing from "@/components/landing/Pricing";
+import Faq from "@/components/landing/Faq";
 import CallToAction from "@/components/landing/CallToAction";
 import HelpFooter from "@/components/landing/HelpFooter";
 
@@ -30,7 +32,13 @@ export default function Page() {
         */}
         <Showcase />
         <ScrollStory />
+        <HowItWorks />
         <Pricing />
+        {/*
+          After the price, because that is when these get asked: a visitor who
+          has just read ₹999 wants to know what it covers before they tap.
+        */}
+        <Faq />
         <CallToAction />
         <HelpFooter />
       </main>

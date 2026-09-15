@@ -4,9 +4,18 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { useInView } from "@/hooks/useInView";
 
+/*
+  What one payment buys, and every line has to be something the product does
+  today. The tradition count is the ornament packs in lib/traditionPacks.tsx —
+  a card with no tradition has occasion motifs but nothing traditional — and
+  the functions are the host's own sub-events, which the card sets as a
+  timeline.
+*/
 const INCLUDED: readonly string[] = [
   "Unlimited guests",
   "Live headcount as replies arrive",
+  "Every function: mehndi, sangeet, reception",
+  "Traditional motifs for six traditions",
   "QR check-in on the event day",
   "Guest list export",
   "Works on every phone, no app needed",
@@ -38,6 +47,7 @@ export default function Pricing() {
   return (
     <section
       ref={ref}
+      aria-labelledby="pricing-heading"
       className={[
         "flex min-h-[80svh] items-center justify-center px-6 py-20",
         "transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none",
@@ -45,15 +55,25 @@ export default function Pricing() {
       ].join(" ")}
     >
       <div className="w-full max-w-[420px] rounded-3xl border border-[var(--lifafa-marigold)]/45 bg-[var(--lifafa-ink-raised)] px-7 py-10 sm:px-9 sm:py-12">
-        <p className="text-center text-[0.6875rem] tracking-[0.28em] text-[var(--lifafa-muted)] uppercase">
+        {/*
+          The section's name for anything navigating by headings. The label
+          under it says what the price is, which is what a sighted visitor
+          needs above a number; "Pricing" above it said only what they could
+          already see.
+        */}
+        <h2 id="pricing-heading" className="sr-only">
           Pricing
+        </h2>
+
+        <p className="text-center text-[0.6875rem] tracking-[0.28em] text-[var(--lifafa-muted)] uppercase">
+          One event, one payment
         </p>
 
         <p className="mt-5 text-center font-[family-name:var(--font-display)] text-[3.5rem] leading-none font-semibold tracking-[-0.02em] text-[var(--lifafa-cream)] sm:text-6xl">
           ₹999
         </p>
         <p className="mt-3 text-center text-sm text-[var(--lifafa-muted)]">
-          per event, one time
+          No subscription. No per-guest charge.
         </p>
 
         <div
