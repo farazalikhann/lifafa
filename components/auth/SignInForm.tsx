@@ -30,6 +30,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   link: "That sign in link could not be read. Please request a new one.",
   expired:
     "That sign in link has expired or has already been used. Please request a new one.",
+  browser:
+    "That link opened in a different browser from the one you asked for it in. Please request a new one.",
   config: "Sign in is not available right now. Please try again shortly.",
 };
 
@@ -97,6 +99,10 @@ export default function SignInForm({
       because the link is opened in whatever tab the host's mail client hands
       it to — often not this one, sometimes not even this browser. Nothing this
       component remembers survives that hop.
+
+      The Supabase email templates append `&token_hash=…&type=email` straight
+      onto this URL, so it must always leave here with a query string already
+      on it. Dropping the redirectTo parameter would break every link.
     */
     const callback = new URL("/auth/callback", window.location.origin);
     callback.searchParams.set("redirectTo", redirectTo);
