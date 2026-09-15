@@ -220,8 +220,20 @@
   guest who has raised their browser's text size gets a proportionally wider
   card rather than smaller type.
 
+  THE CARD FILLS THE SCREEN; ITS READING COLUMN DOES NOT. `--card-width` is
+  the column the text is set in. The card around it — its background, its
+  border, the butterflies and the corner ornaments — runs to the edges of the
+  screen, the way it does on a phone. It used to stop at the column, which put
+  the border down the middle of a laptop screen with bare page either side:
+  a phone held up in front of a monitor rather than an invitation.
+
+  What stays over the column is what was composed for it: the text, the
+  hanging ornaments, which are one arrangement across the top of the names,
+  and the card's own scatter. The margins either side get a fainter scatter
+  of their own; see MarginDecorLayer.
+
   Unlayered, like the Hindi rule above, so it outranks the `max-w-[420px]`
-  utility on the card root without an !important.
+  and `inset-0` utilities it overrides without an !important.
 */
 @media (min-width: 48rem) {
   .lifafa-card-fluid {
@@ -237,10 +249,36 @@
     */
     --spacing: calc(var(--card-rem) * 0.25);
     --text-xs: calc(var(--card-rem) * 0.75);
+
+    /*
+      The border stands at the screen's edges now, well clear of the column,
+      so the column no longer steps in from it. Read by CardCanvas.
+    */
+    --card-side-inset: 0;
+
+    max-width: none;
   }
 
-  .lifafa-card-fluid > .lifafa-card-root {
+  .lifafa-card-fluid .lifafa-card-content {
     max-width: var(--card-width);
+    margin-inline: auto;
+  }
+
+  /* A layer composed for the column, held over the column. */
+  .lifafa-card-fluid .lifafa-card-column {
+    left: calc(50% - var(--card-width) / 2);
+    right: calc(50% - var(--card-width) / 2);
+  }
+
+  /*
+    The garland is one drawing scaled to its width, not a run that repeats,
+    so across a whole laptop screen it would be half a screen deep. It stays
+    the width it was over the column — less the frame's 8px inset each side —
+    and hangs centred above it.
+  */
+  .lifafa-card-fluid .lifafa-card-garland {
+    width: calc(var(--card-width) - 16px);
+    margin-inline: auto;
   }
 
   /*

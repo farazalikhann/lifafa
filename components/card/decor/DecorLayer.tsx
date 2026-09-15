@@ -315,7 +315,12 @@ export default function DecorLayer({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
+      /*
+        `lifafa-card-column`: on a card that fills a laptop screen the scatter
+        keeps to the reading column it was composed for, and MarginDecorLayer
+        takes the sides. The whole card everywhere else.
+      */
+      className="lifafa-card-column pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
     >
       {/*
         Pinned flush to the top of the scrollport and exactly as tall as it, so
@@ -404,11 +409,11 @@ export default function DecorLayer({
 /* ---------------------------------------------------------------------------
    The margin.
 
-   On a tablet or a laptop the card is a column down the middle of a screen
-   much wider than it, and the rest of that screen was bare background, which
-   read as a page that had not finished loading. This carries the card's own
-   scatter out into it, at lower strength, so the empty sides read as the table
-   the card is lying on rather than as nothing.
+   On a tablet or a laptop the card fills the screen but its text keeps to a
+   column down the middle, and the card's own scatter keeps to that column with
+   it. The strips either side would otherwise be plain background inside the
+   border. This carries the scatter out into them at lower strength, so the
+   sides read as more of the same card rather than as a gap in it.
    --------------------------------------------------------------------------- */
 
 interface MarginShape {
@@ -473,16 +478,18 @@ const MARGIN_OPACITY_SCALE = 0.6;
 const WIDE_QUERY = "(min-width: 48rem)";
 
 /**
- * The card's scatter, continued into the page either side of it.
+ * The card's scatter, continued into the strips either side of its column.
  *
- * Mounted by CardCanvas beside a fluid card and nowhere else, and rendered only
- * from 768px up — below that the card fills the screen and there is no margin
- * to decorate. Takes exactly what DecorLayer takes, so a host's motion,
+ * Mounted by CardCanvas inside a fluid card and nowhere else, and rendered only
+ * from 768px up — below that the column is the whole card and there is no
+ * margin to decorate. Takes exactly what DecorLayer takes, so a host's motion,
  * intensity and motifs reach the margin unchanged, and a host who switched the
  * motion off gets a plain margin to match their plain card.
  *
- * Positioned against `--card-width`, which the fluid wrapper this sits in
- * publishes: the card is centred, so its left edge is at 50% less half of it.
+ * One clipped strip per side, each as wide as the space between the column and
+ * the screen's edge — 50% less half of `--card-width`, which the fluid card
+ * publishes. Clipped so a shape near a strip's inner edge is cut there rather
+ * than drifting in behind the names at the margin's strength.
  */
 export function MarginDecorLayer({
   accent,
@@ -517,7 +524,6 @@ export function MarginDecorLayer({
   }
 
   const keyframe = KEYFRAME_NAME[motion];
-  const tier = INTENSITY[intensity];
   const isRoam = motion === "roam";
 
   /* Halved under roam, which is the motion that moves a layer across the most screen. */
@@ -525,76 +531,121 @@ export function MarginDecorLayer({
     ? Math.min(MARGIN_COUNT[intensity], ROAM_MAX_COUNT / 2)
     : MARGIN_COUNT[intensity];
 
+  /*
+    The index into the full table travels with each shape, so splitting the
+    rows by side does not change which motif, size and angle any of them gets.
+  */
+  const placed = MARGIN_SHAPES.slice(0, count).map((shape, index) => ({
+    shape,
+    index,
+  }));
+
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
+    <>
+      {(["left", "right"] as const).map((side) => (
+        <div
+          key={side}
+          aria-hidden="true"
+          className={`pointer-events-none absolute top-0 bottom-0 overflow-clip motion-reduce:hidden ${
+            side === "left" ? "left-0" : "right-0"
+          }`}
+          style={{ width: "calc(50% - var(--card-width) / 2)" }}
+        >
+          <div
+            className="sticky top-0 w-full overflow-clip"
+            style={{ height: bandHeight }}
+          >
+            {placed
+              .filter(({ shape }) => shape.side === side)
+              .map(({ shape, index }) => (
+                <MarginMotif
+                  key={`${shape.side}-${shape.across}-${shape.top}`}
+                  shape={shape}
+                  index={index}
+                  accent={accent}
+                  keyframe={keyframe}
+                  motifs={motifs}
+                  intensity={intensity}
+                  isRoam={isRoam}
+                  maxAlpha={maxAlpha}
+                />
+              ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** One shape in a margin strip. */
+function MarginMotif({
+  shape,
+  index,
+  accent,
+  keyframe,
+  motifs,
+  intensity,
+  isRoam,
+  maxAlpha,
+}: {
+  shape: MarginShape;
+  index: number;
+  accent: string;
+  keyframe: string;
+  motifs: readonly Motif[];
+  intensity: DecorIntensity;
+  isRoam: boolean;
+  maxAlpha: number;
+}): ReactElement {
+  const tier = INTENSITY[intensity];
+
+  /*
+    Offset into the card's own cycles, so the margin does not open on the same
+    motif and size the card does and read as a copy of it.
+  */
+  const cycle = index + 3;
+  const MotifShape = motifs[cycle % motifs.length];
+  const size = Math.min(SIZE_STEPS[cycle % SIZE_STEPS.length], tier.sizeCap);
+  const rotation = ROTATIONS[cycle % ROTATIONS.length];
+  const opacity =
+    Math.round(
+      Math.min(maxAlpha, opacityForSize(size) * tier.opacityScale) *
+        MARGIN_OPACITY_SCALE *
+        1000,
+    ) / 1000;
+
+  return (
+    <span
+      className="absolute block"
+      style={{
+        /* Measured from the screen's edge on both sides. */
+        ...(shape.side === "left"
+          ? { left: `${shape.across}%` }
+          : { right: `${shape.across}%` }),
+        top: `${shape.top}%`,
+        color: accent,
+        animationName: keyframe,
+        animationDuration: isRoam
+          ? `${roamDuration(shape.duration)}s`
+          : `${(shape.duration * tier.durationScale).toFixed(2)}s`,
+        animationDelay: `${shape.delay}s`,
+        animationTimingFunction: "ease-in-out",
+        animationIterationCount: "infinite",
+        animationFillMode: "both",
+      }}
     >
-      <div
-        className="sticky top-0 w-full overflow-clip"
-        style={{ height: bandHeight }}
+      <span
+        className="lifafa-card-art block"
+        style={{
+          ...artWidth(size),
+          opacity,
+          transform: `rotate(${rotation}deg)`,
+          filter: size >= BLUR_MIN_SIZE ? `blur(${BLUR_RADIUS})` : undefined,
+        }}
       >
-        {MARGIN_SHAPES.slice(0, count).map((shape, index) => {
-          /*
-            Offset into the card's own cycles, so the margin does not open on
-            the same motif and size the card does and read as a copy of it.
-          */
-          const cycle = index + 3;
-          const MotifShape = motifs[cycle % motifs.length];
-          const size = Math.min(
-            SIZE_STEPS[cycle % SIZE_STEPS.length],
-            tier.sizeCap,
-          );
-          const rotation = ROTATIONS[cycle % ROTATIONS.length];
-          const opacity =
-            Math.round(
-              Math.min(maxAlpha, opacityForSize(size) * tier.opacityScale) *
-                MARGIN_OPACITY_SCALE *
-                1000,
-            ) / 1000;
-
-          const margin = "(50% - var(--card-width) / 2)";
-          const fraction = shape.across / 100;
-          const left =
-            shape.side === "left"
-              ? `calc(${margin} * ${fraction})`
-              : `calc(50% + var(--card-width) / 2 + ${margin} * ${fraction})`;
-
-          return (
-            <span
-              key={`${shape.side}-${shape.across}-${shape.top}`}
-              className="absolute block"
-              style={{
-                left,
-                top: `${shape.top}%`,
-                color: accent,
-                animationName: keyframe,
-                animationDuration: isRoam
-                  ? `${roamDuration(shape.duration)}s`
-                  : `${(shape.duration * tier.durationScale).toFixed(2)}s`,
-                animationDelay: `${shape.delay}s`,
-                animationTimingFunction: "ease-in-out",
-                animationIterationCount: "infinite",
-                animationFillMode: "both",
-              }}
-            >
-              <span
-                className="lifafa-card-art block"
-                style={{
-                  ...artWidth(size),
-                  opacity,
-                  transform: `rotate(${rotation}deg)`,
-                  filter:
-                    size >= BLUR_MIN_SIZE ? `blur(${BLUR_RADIUS})` : undefined,
-                }}
-              >
-                <MotifShape size={size} />
-              </span>
-            </span>
-          );
-        })}
-      </div>
-    </div>
+        <MotifShape size={size} />
+      </span>
+    </span>
   );
 }
 

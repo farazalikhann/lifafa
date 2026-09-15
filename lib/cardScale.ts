@@ -10,8 +10,9 @@ import type { CSSProperties } from "react";
  * has to grow with it: the type, the gaps, the ornaments and the padding that
  * keeps text clear of them.
  *
- * THE MECHANISM. From 768px up, a card inside `.lifafa-card-fluid` publishes
- * two lengths in globals.css:
+ * THE MECHANISM. From 768px up, a card marked `.lifafa-card-fluid` fills the
+ * screen, sets its text in a centred column, and publishes two lengths in
+ * globals.css:
  *
  *   --card-rem   what 1rem is on this card
  *   --card-px    what 1px is on this card

@@ -864,7 +864,11 @@ export default function BorderFrame({
 
           {borderStyle === "hangingGarland" ? (
             <svg
-              className="absolute inset-x-0 top-0 h-auto w-full"
+              /*
+                `lifafa-card-garland` keeps the swag at the reading column's
+                width on a card that fills a laptop screen; see globals.css.
+              */
+              className="lifafa-card-garland absolute inset-x-0 top-0 h-auto w-full"
               viewBox="0 0 360 104"
               preserveAspectRatio="xMidYMid meet"
               role="presentation"

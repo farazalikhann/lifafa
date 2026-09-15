@@ -279,7 +279,12 @@ export default function HangingLayer({
     */
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[15] overflow-clip"
+      /*
+        `lifafa-card-column`: the ornaments are one arrangement over the names,
+        so on a card that fills a laptop screen they hang over the reading
+        column rather than being spread to the screen's corners.
+      */
+      className="lifafa-card-column pointer-events-none absolute inset-0 z-[15] overflow-clip"
     >
       {/*
         In card pixels, so on a card that has grown with a tablet screen the

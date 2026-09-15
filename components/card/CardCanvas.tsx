@@ -757,7 +757,7 @@ export default function CardCanvas({
     "--card-gap-scale": String(DENSITY_GAP_SCALE[style.density]),
   } as CSSProperties;
 
-  const card = (
+  return (
     /*
       `overflow-x-clip`, deliberately, and not `overflow-hidden`.
 
@@ -781,10 +781,14 @@ export default function CardCanvas({
       */
       lang={copy.lang}
       /*
-        `lifafa-card-root` is what a fluid wrapper widens from 768px up; see
-        globals.css. Inert everywhere else.
+        `lifafa-card-fluid` is what lets the guest's card fill a tablet or
+        laptop screen from 768px up, with its text in a scaled column down the
+        middle; see globals.css and lib/cardScale.ts. Below 768px it does
+        nothing at all.
       */
-      className="lifafa-card-root relative mx-auto w-full max-w-[420px] overflow-x-clip"
+      className={`relative mx-auto w-full max-w-[420px] overflow-x-clip${
+        fluid ? " lifafa-card-fluid" : ""
+      }`}
       style={{
         ...cssVariables,
         backgroundColor: effectiveTheme.background,
@@ -792,6 +796,22 @@ export default function CardCanvas({
         fontFamily: effectiveTheme.fontFamily,
       }}
     >
+      {/*
+        The sides of a card that fills a laptop screen, first so everything
+        else paints over them. Mounts only on the guest's card, and draws
+        nothing until the screen is 768px wide.
+      */}
+      {fluid ? (
+        <MarginDecorLayer
+          accent={effectiveTheme.accent}
+          motion={config.decorMotion}
+          motifs={motifs}
+          intensity={config.decorIntensity}
+          bandHeight={bandHeight}
+          maxAlpha={decorMaxAlpha}
+        />
+      ) : null}
+
       <DecorLayer
         accent={effectiveTheme.accent}
         motion={config.decorMotion}
@@ -905,11 +925,17 @@ export default function CardCanvas({
       />
 
       {/* Content rides above the decor layer. */}
+      {/*
+        `lifafa-card-content` is the reading column a fluid card centres at
+        its scaled width. The side inset is multiplied by --card-side-inset,
+        which a fluid card sets to 0 from 768px up: its border is at the edge of
+        the screen by then, nowhere near the text.
+      */}
       <div
-        className="relative z-10"
+        className="lifafa-card-content relative z-10"
         style={{
           paddingTop: cardPx(contentTopInset),
-          paddingInline: cardPx(contentSideInset),
+          paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
         }}
       >
         {/*
@@ -1206,37 +1232,6 @@ export default function CardCanvas({
           />
         ) : null}
       </div>
-    </div>
-  );
-
-  if (!fluid) {
-    return card;
-  }
-
-  return (
-    /*
-      Full width, where the card itself is not, and that is what it is for.
-
-      The scale variables live here rather than on the card so the margin decor
-      beside the card can read the card's width too. Below 768px this is a plain
-      block with nothing in it but the card, which lays out exactly as it would
-      without it: the card still centres itself inside the same width.
-    */
-    <div className="lifafa-card-fluid relative">
-      {/*
-        Before the card in the source, so the card paints over it. The card
-        root is opaque, so the part of the scatter that falls behind it is
-        simply covered and only the margins show.
-      */}
-      <MarginDecorLayer
-        accent={effectiveTheme.accent}
-        motion={config.decorMotion}
-        motifs={motifs}
-        intensity={config.decorIntensity}
-        bandHeight={bandHeight}
-        maxAlpha={decorMaxAlpha}
-      />
-      {card}
     </div>
   );
 }
