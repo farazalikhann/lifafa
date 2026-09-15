@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardCopy, DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { getInviteEvent } from "@/lib/db/inviteEvent";
+import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 
 /**
  * A server wrapper that exists purely to own the invite page's metadata.
@@ -13,8 +14,11 @@ import { getInviteEvent } from "@/lib/db/inviteEvent";
  * here costs no second query.
  *
  * The route's opengraph-image.tsx is picked up by file convention and needs no
- * mention here; `metadataBase` in the root layout is what resolves it to an
- * absolute URL, which is the form WhatsApp and every other scraper require.
+ * mention here; `metadataBase` is what resolves it to an absolute URL, which is
+ * the form WhatsApp and every other scraper require. Set here from
+ * serverSiteOrigin() rather than left to the root layout's, so the image a
+ * chat unfurls is on the same origin as the invite link it came from, even on
+ * a deployment with nothing configured.
  */
 
 export async function generateMetadata({
@@ -23,7 +27,11 @@ export async function generateMetadata({
   params: Promise<{ inviteCode: string }>;
 }): Promise<Metadata> {
   const { inviteCode } = await params;
-  const result = await getInviteEvent(inviteCode);
+  const [result, origin] = await Promise.all([
+    getInviteEvent(inviteCode),
+    serverSiteOrigin(),
+  ]);
+  const metadataBase = new URL(origin);
 
   /*
     An unknown code still needs metadata — a scraper follows the link before
@@ -38,6 +46,7 @@ export async function generateMetadata({
     const fallback = cardCopy(DEFAULT_CARD_LANGUAGE).invite;
 
     return {
+      metadataBase,
       title: fallback.shareTitleFallback,
       description: fallback.shareDescription(true),
     };
@@ -68,6 +77,7 @@ export async function generateMetadata({
       .join(" — ") || copy.shareTitleFallback;
 
   return {
+    metadataBase,
     title,
     description,
     openGraph: {

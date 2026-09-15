@@ -217,8 +217,9 @@ function download(blob: Blob): void {
  *
  * THE ORIGIN IS THE PAGE'S OWN. window.location.origin is the address this guest
  * actually opened, so a pass made on a preview deploy points at that deploy and
- * one made on the live site points at the live site. lib/siteUrl.ts is a fixed
- * domain, which is right for a link printed on a card and wrong for this.
+ * one made on the live site points at the live site. lib/siteUrl.ts resolves the
+ * site's configured address, which is right for a link a host sends out and
+ * wrong for this: the pass must lead back to the deployment its guest is on.
  *
  * THE PICTURE IS BUILT BEFORE THE TAP. Safari only lets navigator.share run
  * close to the gesture that asked for it, and a share that first waits on font

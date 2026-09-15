@@ -14,6 +14,7 @@ import WeatherSummary from "@/components/dashboard/WeatherSummary";
 import { formatWhen } from "@/lib/cardFormat";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
+import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { geocodeVenue, getEventWeather } from "@/lib/weather";
 
@@ -63,8 +64,13 @@ export default async function DashboardPage({
   const when = formatWhen(draft.eventDate, draft.eventTime, "en");
   const title =
     draft.eventTitle.length > 0 ? draft.eventTitle : "Untitled invitation";
-  /* One link, built once, shared by the share bar and the reminder message. */
-  const url = inviteUrl(event.inviteCode);
+  /*
+    One link, built once, shared by the share bar's field, its copy button and
+    its WhatsApp message, and by the reminder message. Built here on the server
+    and handed down, so the client components render the same string they
+    hydrate with.
+  */
+  const url = inviteUrl(event.inviteCode, await serverSiteOrigin());
 
   /*
     Read whatever the host chose for their guests.

@@ -15,7 +15,6 @@ import { effectiveTheme } from "@/lib/cardTheme";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
-import { inviteUrl } from "@/lib/siteUrl";
 import { getTheme } from "@/lib/themes";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
@@ -36,10 +35,13 @@ type InviteStage = "form" | "confirmed";
 export default function InviteExperience({
   event,
   weather,
+  inviteUrl,
 }: {
   event: StoredEvent;
   /** Resolved by the page, on the server. Null means the card shows none. */
   weather: EventWeather | null;
+  /** This card's own link, built by the page through lib/siteUrl.ts. */
+  inviteUrl: string;
 }): ReactElement {
   const [stage, setStage] = useState<InviteStage>("form");
   /** Kept whole, so "Change my reply" returns a filled form. */
@@ -100,13 +102,14 @@ export default function InviteExperience({
     .join(" — ");
 
   /*
-    Built here rather than from window.location: this component server-renders
-    first, and an origin the two runtimes could disagree about would put one
-    link in the markup and another in the hydrated tree.
+    The link arrives from the server rather than being built here: this
+    component server-renders first, and an origin the two runtimes could
+    disagree about, such as the page's own, would put one link in the markup
+    and another in the hydrated tree.
   */
   const invite: CalendarInvite = {
     code: event.inviteCode,
-    url: inviteUrl(event.inviteCode),
+    url: inviteUrl,
   };
 
   const handleSubmit = (submission: RsvpSubmission): void => {

@@ -2,6 +2,8 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import InviteExperience from "@/components/invite/InviteExperience";
 import { getInviteEvent } from "@/lib/db/inviteEvent";
+import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
+import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
 
 /**
@@ -76,5 +78,11 @@ export default async function InvitePage({
     ? await getEventWeather(event.coordinates, event.draft.eventDate)
     : null;
 
-  return <InviteExperience event={event} weather={weather} />;
+  return (
+    <InviteExperience
+      event={event}
+      weather={weather}
+      inviteUrl={inviteUrl(event.inviteCode, await serverSiteOrigin())}
+    />
+  );
 }

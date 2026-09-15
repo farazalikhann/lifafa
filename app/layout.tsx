@@ -10,6 +10,7 @@ import {
   Noto_Sans_Devanagari,
   Noto_Sans_Gurmukhi,
 } from "next/font/google";
+import { configuredSiteOrigin } from "@/lib/siteUrl";
 import "./globals.css";
 
 /*
@@ -136,8 +137,17 @@ const FONT_VARIABLES = [
   notoSansGurmukhi.variable,
 ].join(" ");
 
+/*
+  The configured origin, which is fixed at build time and so safe in static
+  metadata. Left unset when nothing is configured, as under `next dev`, where
+  Next falls back to localhost. The invite route, the one page scrapers read,
+  sets its own from the request instead; see app/i/[inviteCode]/layout.tsx.
+*/
+const configuredOrigin = configuredSiteOrigin();
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://getlifafa.co.in"),
+  metadataBase:
+    configuredOrigin === null ? undefined : new URL(configuredOrigin),
   title: "Lifafa | Digital invitations with a live guest count",
   description:
     "Create a digital invitation for your celebration, share one link, and know exactly how many guests are coming before the day arrives.",
