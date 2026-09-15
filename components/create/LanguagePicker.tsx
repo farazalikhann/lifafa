@@ -49,9 +49,9 @@ export default function LanguagePicker({
           id={hintId}
           className="text-xs leading-relaxed text-[var(--lifafa-muted)]"
         >
-          Everything the card writes for you follows this: the date, the
-          headings, the countdown and the reply form. Type the names and
-          details in the same language.
+          The language you write the card in. The date, the headings and the
+          reply form follow it. To share the card in another language too, add
+          those words at the end of this tab.
         </p>
       </div>
 

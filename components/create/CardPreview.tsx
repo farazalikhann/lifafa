@@ -3,12 +3,13 @@
 import { useCallback, useRef, useState, type ReactElement } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
 import FullScreenPreview from "@/components/create/FullScreenPreview";
+import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { PREVIEW_INVITE } from "@/lib/calendar";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
-import type { CardConfig } from "@/types/card";
+import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
@@ -47,9 +48,16 @@ export default function CardPreview({
   coverAnimation,
   weather,
   weatherTheme,
+  onPreviewLanguageChange,
 }: {
+  /**
+   * The card already in the language being previewed — the editor resolves it
+   * through cardInLanguage — so `config.language` is that language.
+   */
   draft: EventDraft;
   config: CardConfig;
+  /** Switches the preview to another of the card's languages. */
+  onPreviewLanguageChange: (language: CardLanguage) => void;
   motifs: readonly Motif[];
   /*
     Passed straight through to the full screen preview, which is the only
@@ -92,6 +100,13 @@ export default function CardPreview({
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Over the frame, because it changes what the frame shows. */}
+      <PreviewLanguageSwitch
+        language={config.language}
+        onLanguageChange={onPreviewLanguageChange}
+        className="mx-auto"
+      />
+
       <div
         className="lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.65)]"
         style={{ backgroundColor: palette.background }}
@@ -143,6 +158,7 @@ export default function CardPreview({
           weatherTheme={weatherTheme}
           triggerRef={triggerRef}
           onClose={closePreview}
+          onPreviewLanguageChange={onPreviewLanguageChange}
         />
       ) : null}
     </div>

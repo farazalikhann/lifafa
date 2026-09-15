@@ -12,6 +12,8 @@ import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import WeatherSummary from "@/components/dashboard/WeatherSummary";
 import { formatWhen } from "@/lib/cardFormat";
+import { CARD_LANGUAGES } from "@/lib/cardLanguage";
+import { wordsWrittenIn } from "@/lib/cardTranslation";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
@@ -234,8 +236,23 @@ export default async function DashboardPage({
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
-            {/* The real link, built from the event's own code. */}
-            <ShareBar inviteUrl={url} language={event.config.language} />
+            {/*
+              The real link, built from the event's own code, in whichever of
+              the card's languages the host picks. The count per language is
+              what lets the bar say when a language has none of the host's own
+              words yet.
+            */}
+            <ShareBar
+              inviteUrl={url}
+              language={event.config.language}
+              wordsWritten={Object.fromEntries(
+                CARD_LANGUAGES.map((option) => [
+                  option.id,
+                  wordsWrittenIn(draft, event.config.blocks, option.id),
+                ]),
+              )}
+              editHref={`/dashboard/${event.id}/edit`}
+            />
           </div>
           <div className="flex gap-2">
             <ExportCsvButton guests={guests} eventId={event.id} />

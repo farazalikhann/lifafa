@@ -6,7 +6,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { Motif } from "@/lib/motifs";
 import { getPalette, type Palette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
-import type { CardConfig } from "@/types/card";
+import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
@@ -106,7 +106,9 @@ export default function PreviewBar({
   coverAnimation,
   weather,
   weatherTheme,
+  onPreviewLanguageChange,
 }: {
+  /** Already in the language being previewed; see CardPreview. */
   draft: EventDraft;
   config: CardConfig;
   motifs: readonly Motif[];
@@ -115,6 +117,8 @@ export default function PreviewBar({
   /* Same journey as the cover: this bar draws neither, the overlay draws both. */
   weather: EventWeather | null;
   weatherTheme: WeatherThemeId;
+  /* And the language switch, which only the overlay has room for on a phone. */
+  onPreviewLanguageChange: (language: CardLanguage) => void;
 }): ReactElement | null {
   const isFramed = useMediaQuery(FRAME_QUERY);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
@@ -211,6 +215,7 @@ export default function PreviewBar({
           weatherTheme={weatherTheme}
           triggerRef={triggerRef}
           onClose={closePreview}
+          onPreviewLanguageChange={onPreviewLanguageChange}
         />
       ) : null}
     </>

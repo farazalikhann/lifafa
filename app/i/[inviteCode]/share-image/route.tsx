@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
+import type { NextRequest } from "next/server";
 import type { CSSProperties, ReactElement } from "react";
 import { formatWhen, resolveCoverNames } from "@/lib/cardFormat";
+import { cardInLanguage, requestedLanguage } from "@/lib/cardTranslation";
 import { getEventByInviteCode } from "@/lib/db/events";
 import { getPalette } from "@/lib/palettes";
 
@@ -16,10 +18,17 @@ import { getPalette } from "@/lib/palettes";
  * subset of CSS and knows nothing of svh units, sticky positioning, scroll
  * reveals or the decor layer. Rebuilding the cover in flexbox is what makes the
  * output predictable.
+ *
+ * A ROUTE HANDLER, NOT AN opengraph-image FILE, and the language is why. A card
+ * can be shared in more than one language, and the link carries which as
+ * `?lang=`; the file convention hands its image nothing but the route's params,
+ * so it could only ever draw the card's own language. The invite page names
+ * this route in its metadata with the same `?lang=` the link was opened with,
+ * so an English link unfurls with the English names. File-based metadata
+ * outranks the page's own, which is why the convention file is gone rather
+ * than left beside this.
  */
-export const alt = "Invitation";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+const size = { width: 1200, height: 630 };
 
 /**
  * A system stack, resolved by Satori's bundled default face.
@@ -53,13 +62,12 @@ function heroStyle(color: string): CSSProperties {
   };
 }
 
-export default async function Image({
-  params,
-}: {
-  /* Already awaited by Next's metadata route handler — a plain object here. */
-  params: { inviteCode: string };
-}): Promise<Response> {
-  const result = await getEventByInviteCode(params.inviteCode);
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ inviteCode: string }> },
+): Promise<Response> {
+  const { inviteCode } = await params;
+  const result = await getEventByInviteCode(inviteCode);
 
   /*
     An unknown code still gets an image: a scraper asks for this before anyone
@@ -91,11 +99,24 @@ export default async function Image({
     );
   }
 
-  const event = result.data;
-  const palette = getPalette(event.config.style.paletteId);
-  const accent = event.config.style.accentOverride ?? palette.accent;
+  /*
+    The card in the language its link asked for: the host's words in that
+    language wherever they wrote them, and their own everywhere else — the same
+    view the invite page draws, so the unfurl names the people the card does.
+  */
+  const language = requestedLanguage(
+    request.nextUrl.searchParams.get("lang"),
+    result.data.config.language,
+  );
+  const { draft, config } = cardInLanguage(
+    result.data.draft,
+    result.data.config,
+    language,
+  );
+  const palette = getPalette(config.style.paletteId);
+  const accent = config.style.accentOverride ?? palette.accent;
 
-  const { eventTitle, eventDate, eventTime } = event.draft;
+  const { eventTitle, eventDate, eventTime } = draft;
   /*
     The same resolution the card runs, so the unfurl cannot disagree with it —
     but in English whatever the card is written in, and not by oversight.
@@ -110,7 +131,7 @@ export default async function Image({
     placeholder on a card with no names — stay in the script Satori can set.
     What the host typed is theirs and is drawn as typed.
   */
-  const names = resolveCoverNames(event.draft, event.config.occasionId, "en");
+  const names = resolveCoverNames(draft, config.occasionId, "en");
   const when = formatWhen(eventDate, eventTime, "en");
 
   const content: ReactElement = (

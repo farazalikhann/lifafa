@@ -1,9 +1,21 @@
 import type { CardSectionId } from "@/types/card";
+import type { Translations } from "@/types/event";
+
+/** A custom section's words in another language. See DraftWords in types/event.ts. */
+export interface CustomSectionWords {
+  heading?: string;
+  body?: string;
+}
 
 export interface CustomSection {
   id: string;
   heading: string;
   body: string;
+  /**
+   * The heading and body in the card's other languages. Absent until the host
+   * writes one; kept on the section so removing it removes these with it.
+   */
+  translations?: Translations<CustomSectionWords>;
 }
 
 /**

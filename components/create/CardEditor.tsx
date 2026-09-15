@@ -26,6 +26,7 @@ import RevealPanel from "@/components/create/RevealPanel";
 import SectionManager from "@/components/create/SectionManager";
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TraditionPicker from "@/components/create/TraditionPicker";
+import TranslationPanel from "@/components/create/TranslationPanel";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
@@ -33,7 +34,14 @@ import { butterflyStyle } from "@/lib/butterflies";
 import { deepEqual } from "@/lib/deepEqual";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { cardLanguage, swapJoinerWord } from "@/lib/cardLanguage";
+import { cardLanguage } from "@/lib/cardLanguage";
+import {
+  cardInLanguage,
+  setDraftWord,
+  setSectionWord,
+  setSubEventWord,
+  swapCardLanguage,
+} from "@/lib/cardTranslation";
 import { rsvpEnabled as readRsvpEnabled } from "@/lib/cardSections";
 import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
@@ -50,9 +58,9 @@ import type {
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { WeatherThemeId } from "@/types/weather";
-import type { CardBlock } from "@/types/customSection";
+import type { CardBlock, CustomSectionWords } from "@/types/customSection";
 import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
-import type { EventDraft } from "@/types/event";
+import type { DraftWords, EventDraft, SubEventWords } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
 import type { OrnamentConfig } from "@/types/ornament";
 
@@ -304,6 +312,17 @@ export default function CardEditor({
     initial.traditionId,
   );
   const [language, setLanguage] = useState<CardLanguage>(initial.language);
+  /*
+    Which language the preview shows, which is not the card's language.
+
+    A card can be shared in every language, so the host needs to see each
+    version, and this is only a lens: nothing about it is saved. It follows
+    what the host is typing — into the other language's words, or back into
+    the card's own — and the switch over the preview sets it outright.
+  */
+  const [previewLanguage, setPreviewLanguage] = useState<CardLanguage>(
+    initial.language,
+  );
   /* On unless the host turns it off; see ReplyFormPanel. */
   const [rsvpEnabled, setRsvpEnabled] = useState<boolean>(initial.rsvpEnabled);
   const [decorMotion, setDecorMotion] = useState(initial.decorMotion);
@@ -420,24 +439,73 @@ export default function CardEditor({
   }, []);
 
   /**
-   * A language click, which rewrites one word of the draft at most.
+   * A language click: the card is now written in `next`.
    *
-   * The joining word is the only part of the draft the editor offers as a
-   * preset, so it is the only part a language switch may translate — "weds"
-   * becomes "संग" and back — and only while it is still a preset. A word the
-   * host wrote for themselves is left exactly as they wrote it, as is every
-   * name, title and address: the host typed those, in whichever script they
-   * chose, and a switch has no business rewriting them.
+   * Nothing the host typed is translated — nothing here can translate — but
+   * nothing is lost either. Words the host already wrote in `next` become the
+   * card's own and the ones they replace become its translation, so a host who
+   * filled in Hindi with English names beside it and then flips the card to
+   * English finds both still there, the right way round. With nothing written
+   * in `next`, the words stay exactly where they are, apart from a preset
+   * joining word, which takes the new language's preset ("weds" and "संग").
+   * See swapCardLanguage.
+   *
+   * Reads the draft and blocks from the render rather than through updaters,
+   * because one click has to rewrite both from the same starting point.
    */
   const handleLanguageSelect = useCallback(
     (next: CardLanguage) => {
+      if (next === language) {
+        return;
+      }
+
+      const swapped = swapCardLanguage(draft, blocks, language, next);
+
       setLanguage(next);
-      setDraft((previous) => ({
-        ...previous,
-        joinerWord: swapJoinerWord(previous.joinerWord, language, next),
-      }));
+      setDraft(swapped.draft);
+      setBlocks(swapped.blocks);
+      setPreviewLanguage(next);
     },
-    [language],
+    [language, draft, blocks],
+  );
+
+  /*
+    One word in another language, written or cleared. Through updaters, like
+    every other keystroke here, so fast typing cannot drop a character.
+  */
+  const handleDraftWord = useCallback(
+    (wordLanguage: CardLanguage, field: keyof DraftWords, value: string) => {
+      setDraft((previous) => setDraftWord(previous, wordLanguage, field, value));
+    },
+    [],
+  );
+
+  const handleSubEventWord = useCallback(
+    (
+      wordLanguage: CardLanguage,
+      subEventId: string,
+      field: keyof SubEventWords,
+      value: string,
+    ) => {
+      setDraft((previous) =>
+        setSubEventWord(previous, wordLanguage, subEventId, field, value),
+      );
+    },
+    [],
+  );
+
+  const handleSectionWord = useCallback(
+    (
+      wordLanguage: CardLanguage,
+      sectionId: string,
+      field: keyof CustomSectionWords,
+      value: string,
+    ) => {
+      setBlocks((previous) =>
+        setSectionWord(previous, wordLanguage, sectionId, field, value),
+      );
+    },
+    [],
   );
 
   /**
@@ -567,6 +635,7 @@ export default function CardEditor({
     setOccasionId(restored.occasionId);
     setTraditionId(restored.traditionId);
     setLanguage(restored.language);
+    setPreviewLanguage(restored.language);
     setRsvpEnabled(restored.rsvpEnabled);
     setDecorMotion(restored.decorMotion);
     setDecorIntensity(restored.decorIntensity);
@@ -675,6 +744,14 @@ export default function CardEditor({
 
   const motifs = getMotifs(occasionId, traditionId);
   const dashboardHref = eventId === undefined ? "/dashboard" : `/dashboard/${eventId}`;
+
+  /*
+    The card as the preview shows it: the language being previewed, through the
+    same cardInLanguage the guest's page runs over the stored card, so "this is
+    what your English guests will see" is the same construction as what they
+    do see. The card's own language hands back the card untouched.
+  */
+  const preview = cardInLanguage(draft, config, previewLanguage);
 
   /*
     The one completion hint in the editor: Details is the only tab holding
@@ -909,25 +986,51 @@ export default function CardEditor({
           */}
           {tab === "details" ? (
             <>
-              <LanguagePicker
-                language={language}
-                onLanguageChange={handleLanguageSelect}
-              />
-              <OccasionGrid
-                occasionId={occasionId}
-                onOccasionChange={handleOccasionSelect}
-              />
-              <EventForm
+              {/*
+                The card's own words, wrapped only so that typing in any of
+                them turns the preview back to the card's own language after
+                the host has been writing the other one below. The same column
+                and gap as the tab panel, so the wrapper changes no layout.
+              */}
+              <div
+                className="flex min-w-0 flex-col gap-9"
+                onFocusCapture={() => setPreviewLanguage(language)}
+              >
+                <LanguagePicker
+                  language={language}
+                  onLanguageChange={handleLanguageSelect}
+                />
+                <OccasionGrid
+                  occasionId={occasionId}
+                  onOccasionChange={handleOccasionSelect}
+                />
+                <EventForm
+                  draft={draft}
+                  onChange={handleChange}
+                  occasionId={occasionId}
+                  language={language}
+                />
+                <SubEventEditor
+                  subEvents={draft.subEvents}
+                  openId={openSubEventId}
+                  onChange={(subEvents) => handleChange("subEvents", subEvents)}
+                  onOpenIdChange={setOpenSubEventId}
+                />
+              </div>
+
+              {/*
+                Last, under the words it translates. See TranslationPanel for
+                why it is not a second copy of the form above.
+              */}
+              <TranslationPanel
+                cardLanguage={language}
                 draft={draft}
-                onChange={handleChange}
+                blocks={blocks}
                 occasionId={occasionId}
-                language={language}
-              />
-              <SubEventEditor
-                subEvents={draft.subEvents}
-                openId={openSubEventId}
-                onChange={(subEvents) => handleChange("subEvents", subEvents)}
-                onOpenIdChange={setOpenSubEventId}
+                onDraftWord={handleDraftWord}
+                onSubEventWord={handleSubEventWord}
+                onSectionWord={handleSectionWord}
+                onFocusLanguage={setPreviewLanguage}
               />
             </>
           ) : null}
@@ -1046,8 +1149,9 @@ export default function CardEditor({
         */}
         <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24">
           <CardPreview
-            draft={draft}
-            config={config}
+            draft={preview.draft}
+            config={preview.config}
+            onPreviewLanguageChange={setPreviewLanguage}
             motifs={motifs}
             coverAnimation={coverAnimation}
             weather={previewWeather}
@@ -1062,8 +1166,9 @@ export default function CardEditor({
         where the card is already sitting in a sticky column beside it.
       */}
       <PreviewBar
-        draft={draft}
-        config={config}
+        draft={preview.draft}
+        config={preview.config}
+        onPreviewLanguageChange={setPreviewLanguage}
         motifs={motifs}
         coverAnimation={coverAnimation}
         weather={previewWeather}

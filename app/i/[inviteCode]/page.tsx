@@ -1,10 +1,19 @@
+import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import InviteExperience from "@/components/invite/InviteExperience";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { cardCopy } from "@/lib/cardLanguage";
+import {
+  cardInLanguage,
+  inviteLinkIn,
+  requestedLanguage,
+} from "@/lib/cardTranslation";
 import { getInviteEvent } from "@/lib/db/inviteEvent";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
+import type { StoredEvent } from "@/types/database";
 
 /**
  * A guest opening their link.
@@ -12,7 +21,18 @@ import { getEventWeather } from "@/lib/weather";
  * A server component: the event is read here, through the one anonymous path
  * the schema allows, and only the reply interaction crosses to the client.
  * Nothing on this route asks anyone to sign in.
+ *
+ * `?lang=` picks the language, and it is how the host shares one invitation
+ * with guests who read different ones — see the share bar on the dashboard. A
+ * link without it, or with a language Lifafa does not have, opens the card in
+ * the language it was written in, which is what every link sent before this
+ * existed does.
  */
+
+type InviteParams = {
+  params: Promise<{ inviteCode: string }>;
+  searchParams: Promise<{ lang?: string | string[] }>;
+};
 
 /** Shown for an unknown code, and for a read that failed. */
 function InviteNotFound({ reason }: { reason: string }): ReactElement {
@@ -34,13 +54,89 @@ function InviteNotFound({ reason }: { reason: string }): ReactElement {
   );
 }
 
+/**
+ * The stored event as a guest reads it in the language the link asked for.
+ *
+ * One construction for the page and its metadata, so the chat thread's preview
+ * and the card it opens can never be in two languages.
+ */
+function eventInLanguage(
+  event: StoredEvent,
+  lang: string | string[] | undefined,
+): StoredEvent {
+  const language = requestedLanguage(lang, event.config.language);
+  const { draft, config } = cardInLanguage(event.draft, event.config, language);
+
+  return { ...event, draft, config };
+}
+
+/**
+ * The preview a chat app unfurls, in the link's language.
+ *
+ * Here and not in the layout, because a layout is never handed the query
+ * string. The layout still sets metadataBase and speaks for a code that finds
+ * no card; everything this returns is merged over it.
+ */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: InviteParams): Promise<Metadata> {
+  const [{ inviteCode }, { lang }] = await Promise.all([params, searchParams]);
+  const result = await getInviteEvent(inviteCode);
+
+  if (!result.ok || result.data === null) {
+    return {};
+  }
+
+  const { draft, config, inviteCode: code } = eventInLanguage(result.data, lang);
+  const copy = cardCopy(config.language).invite;
+
+  /*
+    In the link's language, and honest about the form: a card the host sent
+    without one must not promise the guest a reply they cannot send.
+  */
+  const description = copy.shareDescription(config.rsvpEnabled);
+
+  /*
+    Flattened from the same resolution the cover runs, so the chat thread and
+    the card it links to name the same people. Either half can be missing — a
+    card with no title, or one whose names are still the editor's placeholder —
+    and a title that opens with a dash, or announces "Your names" to a guest,
+    reads as broken in a WhatsApp preview.
+  */
+  const names = resolveCoverNames(draft, config.occasionId, config.language);
+  const nameLine =
+    names.kind === "line" && names.isPlaceholder ? "" : coverNameLine(names);
+  const title =
+    [draft.eventTitle.trim(), nameLine]
+      .filter((part) => part.length > 0)
+      .join(" — ") || copy.shareTitleFallback;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      images: [
+        {
+          url: `/i/${encodeURIComponent(code)}/share-image?lang=${config.language}`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+  };
+}
+
 export default async function InvitePage({
   params,
-}: {
-  params: Promise<{ inviteCode: string }>;
-}): Promise<ReactElement> {
-  const { inviteCode } = await params;
-  /* Shared with the layout's metadata, so this is not a second query. */
+  searchParams,
+}: InviteParams): Promise<ReactElement> {
+  const [{ inviteCode }, { lang }] = await Promise.all([params, searchParams]);
+  /* Shared with the metadata above and the layout's, so this is not another query. */
   const result = await getInviteEvent(inviteCode);
 
   /*
@@ -60,7 +156,12 @@ export default async function InvitePage({
     );
   }
 
-  const event = result.data;
+  /*
+    Resolved to the link's language before anything is handed down, so the
+    card and everything around it — cover, form, pass — only ever see one
+    language's words and need no idea that a card can hold another.
+  */
+  const event = eventInLanguage(result.data, lang);
 
   /*
     Read here, on the server, and handed down finished.
@@ -82,7 +183,14 @@ export default async function InvitePage({
     <InviteExperience
       event={event}
       weather={weather}
-      inviteUrl={inviteUrl(event.inviteCode, await serverSiteOrigin())}
+      /*
+        In the language this card is being read in, so the link written into a
+        guest's calendar brings them back to the card they saved it from.
+      */
+      inviteUrl={inviteLinkIn(
+        inviteUrl(event.inviteCode, await serverSiteOrigin()),
+        event.config.language,
+      )}
     />
   );
 }

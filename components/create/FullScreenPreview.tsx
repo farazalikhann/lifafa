@@ -12,6 +12,7 @@ import {
 import { createPortal } from "react-dom";
 import CardCanvas from "@/components/card/CardCanvas";
 import Watermark from "@/components/card/Watermark";
+import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import { useRevealGate } from "@/hooks/useRevealGate";
@@ -21,7 +22,7 @@ import { getCoverAnimation } from "@/lib/coverAnimations";
 import type { Motif } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
-import type { CardConfig } from "@/types/card";
+import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
@@ -170,10 +171,14 @@ export default function FullScreenPreview({
   weatherTheme,
   triggerRef,
   onClose,
+  onPreviewLanguageChange,
 }: {
+  /** Already in the language being previewed; `config.language` names it. */
   draft: EventDraft;
   theme: Theme;
   config: CardConfig;
+  /** Switches the preview to another of the card's languages. */
+  onPreviewLanguageChange: (language: CardLanguage) => void;
   motifs: readonly Motif[];
   /**
    * The cover the host has selected *right now*, straight from the editor's
@@ -502,7 +507,25 @@ export default function FullScreenPreview({
             </button>
           ))}
         </div>
+
+        <PreviewLanguageSwitch
+          language={config.language}
+          onLanguageChange={onPreviewLanguageChange}
+          className="ml-2"
+        />
       </header>
+
+      {/*
+        The same switch below lg, where there is no header to hold it: floated
+        over the card's top left, opposite the close button, and above the
+        cover like it, so a host on a phone can check the other language
+        before the envelope is even open.
+      */}
+      <PreviewLanguageSwitch
+        language={config.language}
+        onLanguageChange={onPreviewLanguageChange}
+        className="absolute top-3 left-3 z-[60] lg:hidden"
+      />
 
       {/*
         Floated over the card rather than seated in a bar, which is what lets

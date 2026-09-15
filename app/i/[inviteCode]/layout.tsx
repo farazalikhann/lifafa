@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardCopy, DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { getInviteEvent } from "@/lib/db/inviteEvent";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 
 /**
- * A server wrapper that exists purely to own the invite page's metadata.
+ * A server wrapper that owns the part of the invite page's metadata that does
+ * not depend on the language the link asked for.
  *
- * Kept in the layout rather than the page so the page stays about the card,
- * and it renders its children untouched, so it adds nothing to the DOM. The
- * read is shared with the page through getInviteEvent, so owning the metadata
- * here costs no second query.
+ * It renders its children untouched, so it adds nothing to the DOM. The words
+ * of the preview — title, description, image — used to be written here too and
+ * moved to the page when a card became shareable in more than one language: a
+ * layout is never given the query string, and `?lang=` is where the language
+ * travels. The read is shared with the page through getInviteEvent, so neither
+ * costs a second query.
  *
- * The route's opengraph-image.tsx is picked up by file convention and needs no
- * mention here; `metadataBase` is what resolves it to an absolute URL, which is
- * the form WhatsApp and every other scraper require. Set here from
+ * The share image is named by the page, at share-image/?lang=, and
+ * `metadataBase` is what resolves that to an absolute URL, which is the form
+ * WhatsApp and every other scraper require. Set here from
  * serverSiteOrigin() rather than left to the root layout's, so the image a
  * chat unfurls is on the same origin as the invite link it came from, even on
  * a deployment with nothing configured.
@@ -37,6 +39,11 @@ export async function generateMetadata({
     An unknown code still needs metadata — a scraper follows the link before
     anyone sees the page — so it falls back to the product name rather than
     leaking that the code was invalid into a chat thread's preview.
+
+    This is the only preview words the layout still writes. A card that exists
+    is described by the page, which alone can read the link's `?lang=`; a
+    layout is never handed the query string. The page's metadata is merged over
+    this, so it wins wherever it speaks.
   */
   if (!result.ok || result.data === null) {
     /*
@@ -49,43 +56,23 @@ export async function generateMetadata({
       metadataBase,
       title: fallback.shareTitleFallback,
       description: fallback.shareDescription(true),
+      /*
+        The share image route draws a plain wordmark for a code it cannot find,
+        so the chat thread gets a thumbnail rather than a broken one.
+      */
+      openGraph: {
+        images: [
+          {
+            url: `/i/${encodeURIComponent(inviteCode)}/share-image`,
+            width: 1200,
+            height: 630,
+          },
+        ],
+      },
     };
   }
 
-  const { draft, config } = result.data;
-  const copy = cardCopy(config.language).invite;
-
-  /*
-    In the card's language, and honest about the form: a card the host sent
-    without one must not promise the guest a reply they cannot send.
-  */
-  const description = copy.shareDescription(config.rsvpEnabled);
-
-  /*
-    Flattened from the same resolution the cover runs, so the chat thread and
-    the card it links to name the same people. Either half can be missing — a
-    card with no title, or one whose names are still the editor's placeholder —
-    and a title that opens with a dash, or announces "Your names" to a guest,
-    reads as broken in a WhatsApp preview.
-  */
-  const names = resolveCoverNames(draft, config.occasionId, config.language);
-  const nameLine =
-    names.kind === "line" && names.isPlaceholder ? "" : coverNameLine(names);
-  const title =
-    [draft.eventTitle.trim(), nameLine]
-      .filter((part) => part.length > 0)
-      .join(" — ") || copy.shareTitleFallback;
-
-  return {
-    metadataBase,
-    title,
-    description,
-    openGraph: {
-      type: "website",
-      title,
-      description,
-    },
-  };
+  return { metadataBase };
 }
 
 export default function InviteLayout({

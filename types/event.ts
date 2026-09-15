@@ -1,5 +1,58 @@
+import type { CardLanguage } from "@/types/card";
+
 /** Keyed to the themes declared in lib/themes.ts. */
 export type ThemeId = "marigold" | "rose" | "emerald";
+
+/**
+ * A card's words in a language other than the one it was written in.
+ *
+ * WHY A CARD HAS MORE THAN ONE. A family sends one invitation to two kinds of
+ * guest: the relatives who read Hindi and the colleagues who read English. The
+ * card's own words — the date, the headings, the reply form — can be printed
+ * in either without the host lifting a finger; the names, the venue and the
+ * note are the host's, and only the host can say what they are in the other
+ * script. This is where they say it.
+ *
+ * Every field optional and every field a fallback. A word the host left blank
+ * shows as they wrote it in the card's own language, so a half-finished
+ * version is still a whole card. See cardInLanguage in lib/cardTranslation.ts,
+ * which is the only reader.
+ *
+ * Only the words. Dates, times, the design and the running order belong to the
+ * event, not to a language, and are never repeated here.
+ */
+export interface DraftWords {
+  partyOneName?: string;
+  partyTwoName?: string;
+  joinerWord?: string;
+  hostNames?: string;
+  eventTitle?: string;
+  venueName?: string;
+  venueAddress?: string;
+  message?: string;
+  partyOneParents?: string;
+  partyOneCity?: string;
+  partyTwoParents?: string;
+  partyTwoCity?: string;
+}
+
+/** One function's words in another language. See DraftWords. */
+export interface SubEventWords {
+  label?: string;
+  venueName?: string;
+  venueAddress?: string;
+  note?: string;
+}
+
+/**
+ * Words kept per language, for everything but the card's own language.
+ *
+ * Never holds an entry for the card's own language: those words are the
+ * ordinary fields beside this, and a second copy of them here would be a
+ * second answer to the same question. Changing the card's language moves the
+ * words across rather than leaving them stranded — see swapCardLanguage.
+ */
+export type Translations<Words> = Partial<Record<CardLanguage, Words>>;
 
 /**
  * One function in a celebration that runs to more than one.
@@ -36,6 +89,12 @@ export interface SubEvent {
   venueAddress: string;
   /** One short line, e.g. "Lunch will be served". Absent when unused. */
   note?: string;
+  /**
+   * This function's words in the card's other languages. Absent until the
+   * host writes one, which is every function saved before this existed.
+   * Travels with the function, so removing it removes its translations too.
+   */
+  translations?: Translations<SubEventWords>;
 }
 
 export interface EventDraft {
@@ -106,6 +165,13 @@ export interface EventDraft {
   partyOneCity?: string;
   partyTwoParents?: string;
   partyTwoCity?: string;
+  /**
+   * The words above, in the card's other languages, so one invitation can be
+   * shared in each. Absent on every draft saved before this existed and on
+   * every draft whose host has not written a word of another language, which
+   * reads exactly as an empty one does.
+   */
+  translations?: Translations<DraftWords>;
 }
 
 /**
