@@ -12,7 +12,9 @@ import {
   placeholderOpacity,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /** The section's own rhythm, shared with the group the panel covers. */
@@ -24,6 +26,7 @@ export default function DetailsSection({
   minHeight,
   pad,
   scratch,
+  language,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -35,11 +38,18 @@ export default function DetailsSection({
    * is every card but one and both of the other two scratch targets.
    */
   scratch: ScratchConfig | null;
+  /** The language the date is written in. */
+  language: CardLanguage;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
-  const weekday = formatWeekday(draft.eventDate, draft.eventTime);
-  const dateAndTime = formatDateAndTime(draft.eventDate, draft.eventTime);
+  const copy = cardCopy(language);
+  const weekday = formatWeekday(draft.eventDate, draft.eventTime, language);
+  const dateAndTime = formatDateAndTime(
+    draft.eventDate,
+    draft.eventTime,
+    language,
+  );
   const hasDate = dateAndTime !== null;
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
@@ -66,21 +76,26 @@ export default function DetailsSection({
             opacity: placeholderOpacity(!hasDate, "muted"),
           }}
         >
-          {weekday ?? "The day"}
+          {weekday ?? copy.details.dayPlaceholder}
         </p>
       </div>
 
-      {/* The dominant line of this section. */}
+      {/*
+        The dominant line of this section. Given more leading in Devanagari,
+        whose matras need room above the headline that a Latin date does not.
+      */}
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[16ch] text-[1.825rem] leading-[1.2] font-medium tracking-[0.02em] break-words text-balance sm:text-[2.125rem]"
+          className={`max-w-[16ch] text-[1.825rem] font-medium tracking-[0.02em] break-words text-balance sm:text-[2.125rem] ${
+            copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
+          }`}
           style={{
             opacity: placeholderOpacity(!hasDate, "primary"),
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}
         >
-          {dateAndTime ?? "Date and time"}
+          {dateAndTime ?? copy.details.dateTimePlaceholder}
         </p>
       </div>
     </div>

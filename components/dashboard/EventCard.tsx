@@ -31,7 +31,7 @@ import type { HostEvent } from "@/types/database";
  * check rather than trusting the string it returns.
  */
 function eventHeading(event: HostEvent): string {
-  const names = resolveCoverNames(event.draft, event.config.occasionId);
+  const names = resolveCoverNames(event.draft, event.config.occasionId, "en");
 
   if (names.kind === "pair" || !names.isPlaceholder) {
     return coverNameLine(names);
@@ -51,7 +51,8 @@ function eventHeading(event: HostEvent): string {
  */
 function eventSubtitle(event: HostEvent, heading: string): string {
   const title = event.draft.eventTitle.trim();
-  const when = formatWhen(event.draft.eventDate, event.draft.eventTime);
+  /* The host's list, so English, whatever each card is written in. */
+  const when = formatWhen(event.draft.eventDate, event.draft.eventTime, "en");
 
   const parts = [
     title.length > 0 && title !== heading ? title : null,

@@ -38,6 +38,7 @@ import {
 } from "@/lib/cardSections";
 import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha } from "@/lib/contrast";
+import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
@@ -48,6 +49,7 @@ import type { Theme } from "@/lib/themes";
 import type {
   CardAudience,
   CardConfig,
+  CardLanguage,
   CardSectionId,
   CardSizing,
   ScratchTarget,
@@ -303,11 +305,13 @@ function scratchSection(target: ScratchTarget): CardSectionId | null {
   }
 }
 
-const SCRATCH_LABEL: Record<Exclude<ScratchTarget, "none">, string> = {
-  date: "Scratch to see the date",
-  venue: "Scratch to see the venue",
-  countdown: "Scratch to see the countdown",
-};
+/** What the panel says over each target, in the card's language. */
+function scratchLabel(
+  target: ScratchTarget,
+  copy: CardCopy["scratch"],
+): string | null {
+  return target === "none" ? null : copy[target];
+}
 
 /**
  * Draws one block of the running order.
@@ -329,6 +333,7 @@ function renderBlock(
   occasionId: OccasionId,
   invite: CalendarInvite,
   scratch: ScratchConfig | null,
+  language: CardLanguage,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -350,6 +355,7 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
           occasionId={occasionId}
+          language={language}
         />
       );
     case "details":
@@ -360,6 +366,7 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
           scratch={scratch}
+          language={language}
         />
       );
     /*
@@ -380,8 +387,14 @@ function renderBlock(
             minHeight={minHeight}
             pad={pad}
             scratch={scratch}
+            language={language}
           />
-          <AddToCalendar draft={draft} theme={theme} invite={invite} />
+          <AddToCalendar
+            draft={draft}
+            theme={theme}
+            invite={invite}
+            language={language}
+          />
         </>
       );
     case "venue":
@@ -392,6 +405,7 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
           scratch={scratch}
+          language={language}
         />
       );
     case "timeline":
@@ -401,6 +415,7 @@ function renderBlock(
           theme={theme}
           minHeight={minHeight}
           pad={pad}
+          language={language}
         />
       );
     case "family":
@@ -476,10 +491,16 @@ export default function CardCanvas({
   const bandHeight = scrollportHeight(sizing);
   const visible = config.blocks.filter((block) => blockRenders(block, draft));
 
+  /*
+    The one place the card's language is read. Everything it writes for itself
+    below is handed this rather than reaching for the config again.
+  */
+  const language = config.language;
+  const copy = cardCopy(language);
+
   const isHostPreview = audience === "host-preview";
   const hiddenSection = scratchSection(config.scratchTarget);
-  const scratchLabel =
-    config.scratchTarget === "none" ? null : SCRATCH_LABEL[config.scratchTarget];
+  const panelLabel = scratchLabel(config.scratchTarget, copy.scratch);
 
   /*
     Colour resolution order: the host's accent override, then the selected
@@ -735,6 +756,13 @@ export default function CardCanvas({
       phone frame. Nothing escapes sideways, and each layer clips itself.
     */
     <div
+      /*
+        On the card's own root rather than left to <html>, which says en-IN on
+        every page. A Hindi card inside the English editor is still Hindi, and
+        the line breaker, a screen reader's voice and the no-tracking rule in
+        globals.css all read the nearest `lang` up the tree.
+      */
+      lang={copy.lang}
       className="relative mx-auto w-full max-w-[420px] overflow-x-clip"
       style={{
         ...cssVariables,
@@ -876,6 +904,7 @@ export default function CardCanvas({
           musicUrl={config.musicUrl ?? null}
           accent={effectiveTheme.accent}
           surface={effectiveTheme.surface}
+          language={language}
         />
 
         {/*
@@ -896,7 +925,7 @@ export default function CardCanvas({
           const isHidden =
             block.kind === "builtin" &&
             block.id === hiddenSection &&
-            scratchLabel !== null;
+            panelLabel !== null;
 
           /*
             Built here and handed to the section, which decides which of its own
@@ -905,11 +934,12 @@ export default function CardCanvas({
             where the content is — so this is the object those two meet in.
           */
           const scratch: ScratchConfig | null =
-            isHidden && scratchLabel !== null
+            isHidden && panelLabel !== null
               ? {
                   accent: effectiveTheme.accent,
                   surface: effectiveTheme.surface,
-                  label: scratchLabel,
+                  label: panelLabel,
+                  phrases: copy.scratch,
                   /* The host edits; the guest scratches. */
                   preCleared: isHostPreview,
                 }
@@ -924,6 +954,7 @@ export default function CardCanvas({
             config.occasionId,
             invite,
             scratch,
+            language,
           );
 
           /*
@@ -1098,9 +1129,13 @@ export default function CardCanvas({
                 Said only in the editor, and only under the panel it describes:
                 the host is looking at an uncovered section and would otherwise
                 have no way to tell that their guests will not be.
+
+                In English whatever the card is written in, and tagged so: it
+                is the editor talking to the host, not the card to a guest.
               */}
               {isHidden && isHostPreview ? (
                 <p
+                  lang="en-IN"
                   className="px-7 pb-6 text-center text-xs"
                   style={{ color: effectiveTheme.textMuted }}
                 >
@@ -1126,6 +1161,7 @@ export default function CardCanvas({
             themeId={weatherTheme}
             theme={effectiveTheme}
             draft={draft}
+            language={language}
           />
         ) : null}
       </div>

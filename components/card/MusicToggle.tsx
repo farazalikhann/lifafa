@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
+import { cardCopy } from "@/lib/cardLanguage";
+import type { CardLanguage } from "@/types/card";
 
 /**
  * A guest's control over the card's background music, and never anything else.
@@ -24,11 +26,14 @@ export default function MusicToggle({
   musicUrl,
   accent,
   surface,
+  language,
 }: {
   /** Null on every card whose host never pasted a link, which is most of them. */
   musicUrl: string | null;
   accent: string;
   surface: string;
+  /** The button has no visible words, but its label is read aloud and shown on hover. */
+  language: CardLanguage;
 }): ReactElement | null {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -139,7 +144,8 @@ export default function MusicToggle({
     return null;
   }
 
-  const label = isPlaying ? "Pause background music" : "Play background music";
+  const { music } = cardCopy(language);
+  const label = isPlaying ? music.pause : music.play;
 
   return (
     /*

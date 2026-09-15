@@ -136,6 +136,28 @@
 }
 
 /*
+  No tracking on anything marked Hindi.
+
+  Devanagari joins the letters of a word under one continuous headline, the
+  shirorekha, and letter-spacing opens a gap in that line between every
+  cluster — the word comes apart into pieces rather than reading as spaced out.
+  The card sets its small labels in wide tracking for Latin capitals, and a
+  Hindi card sets the same labels in Devanagari, so the tracking has to go
+  wherever the text is Hindi.
+
+  Outside any layer on purpose. Tailwind's utilities live in a cascade layer,
+  and an unlayered rule outranks every layered one whatever its specificity, so
+  this wins over each `tracking-[…]` class without a list of them. It is keyed
+  to the `lang` attribute a Hindi card puts on its root, the cover and the
+  reply form — see `lang` in lib/cardLanguage.ts. On an English card it reaches
+  only the Hindu pack's own Devanagari lines, which DevanagariText tags "hi" and
+  which want it for exactly the same reason.
+*/
+:lang(hi) {
+  letter-spacing: normal;
+}
+
+/*
   Parks every looping animation inside the element, itself included. The
   landing story hangs this on an illustration while its panel is far from the
   viewport: five drawings stepping dash offsets and opacities off screen is

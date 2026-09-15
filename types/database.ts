@@ -1,4 +1,5 @@
-import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
+import { cardLanguage } from "@/lib/cardLanguage";
+import { DEFAULT_SECTION_ORDER, rsvpEnabled } from "@/lib/cardSections";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { Coordinates, WeatherThemeId } from "@/types/weather";
@@ -392,6 +393,14 @@ export function toStoredEvent(
     config: {
       ...row.card_config,
       blocks: withRegisteredSections(row.card_config.blocks),
+      /*
+        Both absent from every card saved before they existed, and both have
+        a reading that keeps those cards exactly as they were: English, and
+        taking replies. Resolved once here so nothing downstream of a stored
+        event has to know a key can be missing.
+      */
+      language: cardLanguage(row.card_config.language),
+      rsvpEnabled: rsvpEnabled(row.card_config.rsvpEnabled),
       isPaid: row.is_paid,
     },
     draft: withDraftDefaults(row.event_draft),

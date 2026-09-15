@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isCheckinToken } from "@/lib/checkinPass";
+import { getEventByInviteCode } from "@/lib/db/events";
 import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
 import { toGuest } from "@/types/database";
 import type { Guest, GuestReply } from "@/types/guest";
@@ -32,6 +33,18 @@ export interface ReplyInput {
 }
 
 /**
+ * What became of a reply that reached the database layer without failing.
+ *
+ * "closed" is not a failure. The host switched the reply form off, the guest
+ * sent one anyway — usually from a card they opened before the switch — and
+ * the honest answer is a sentence saying so, not "please try again", which
+ * would have them try again.
+ */
+export type ReplyOutcome =
+  | { kind: "saved"; checkinToken: string | null }
+  | { kind: "closed" };
+
+/**
  * Records a guest's reply, or replaces the one their phone already left.
  *
  * Takes the invite code, not an event id, and calls submit_reply() — the
@@ -48,7 +61,31 @@ export interface ReplyInput {
 export async function addOrUpdateReply(
   inviteCode: string,
   reply: ReplyInput,
-): Promise<DbResult<{ checkinToken: string | null }>> {
+): Promise<DbResult<ReplyOutcome>> {
+  /*
+    WHETHER THE HOST IS STILL TAKING REPLIES, asked of the stored card first.
+
+    Hiding the form on the card is not the same as refusing a reply. A guest
+    who opened the link before the host switched it off still has the form in
+    front of them, and this is a server action — an endpoint anyone holding the
+    invite code can call with or without a form. It costs one read of the
+    invitation per reply, which is the same read a guest's page makes to open.
+
+    Only a card that positively says no is refused. A read that fails lets the
+    reply through to submit_reply, which fails on its own if the database is
+    really down, rather than turning a guest away over a hiccup in a check.
+
+    Enforced here and not in submit_reply(): the switch lives inside the
+    card_config JSON, and a caller going round the app straight to PostgREST
+    with the anon key can still reply. That is no more than such a caller could
+    already do, and the reply lands in the host's list like any other.
+  */
+  const event = await getEventByInviteCode(inviteCode);
+
+  if (event.ok && event.data !== null && !event.data.config.rsvpEnabled) {
+    return dbSuccess({ kind: "closed" });
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("submit_reply", {
@@ -78,6 +115,7 @@ export async function addOrUpdateReply(
     void, which arrives as null, and the guest simply sees no pass.
   */
   return dbSuccess({
+    kind: "saved",
     checkinToken: typeof data === "string" && data.length > 0 ? data : null,
   });
 }

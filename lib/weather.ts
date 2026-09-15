@@ -74,6 +74,9 @@ const REQUEST_TIMEOUT_MS = 4000;
  * Written out rather than grouped into "rain" and "clear", because the whole
  * value of a condition on an invitation is the difference between light rain
  * and a thunderstorm on the day someone is deciding what to wear.
+ *
+ * The Hindi for each is in lib/cardLanguage.ts, keyed by the same codes. A code
+ * added here and not there reads as "mixed conditions" on a Hindi card.
  */
 const CONDITIONS: Readonly<Record<number, string>> = {
   0: "Clear sky",
@@ -373,6 +376,7 @@ async function fetchForecast(
     highC: Math.round(daily.highs[0]),
     lowC: Math.round(daily.lows[0]),
     condition: conditionFor(daily.codes[0]),
+    conditionCode: daily.codes[0] ?? null,
     icon: iconFor(daily.codes[0]),
     yearsAveraged: null,
   };
@@ -435,6 +439,7 @@ async function fetchSeasonal(
     highC: Math.round(mean(highs)),
     lowC: Math.round(mean(lows)),
     condition: conditionFor(typical),
+    conditionCode: typical ?? null,
     icon: iconFor(typical),
     yearsAveraged: usable.length,
   };

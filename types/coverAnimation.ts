@@ -9,6 +9,7 @@
  */
 
 import type { CoverSoundId } from "@/lib/coverSound";
+import type { CardLanguage } from "@/types/card";
 
 /** Every opening animation the card knows how to play. */
 export type CoverAnimationId =
@@ -26,10 +27,15 @@ export interface CoverAnimationOption {
   /** One short line explaining what the effect does. */
   description: string;
   /**
-   * The invitation printed on the closed cover, for example "Tap seal to open".
+   * The invitation printed on the closed cover, for example "Tap seal to open",
+   * in each language a card can be written in.
+   *
+   * Here beside the animation rather than in lib/cardLanguage.ts, because the
+   * prompt describes this one drawing — a seal, curtains, petals — and a new
+   * cover should not be addable without saying what a guest does to it.
    * Empty for "none", which has no cover to tap.
    */
-  openPromptText: string;
+  openPromptText: Readonly<Record<CardLanguage, string>>;
   /** Total length of the open animation, in milliseconds. */
   durationMs: number;
   /**

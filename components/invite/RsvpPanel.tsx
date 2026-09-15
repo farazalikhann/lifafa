@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { cardCopy } from "@/lib/cardLanguage";
+import { DISPLAY_FACE } from "@/lib/fontPairs";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { GuestReply, RsvpSubmission } from "@/types/guest";
 
-const REPLIES: readonly { id: GuestReply; label: string }[] = [
-  { id: "accepted", label: "Yes, I'll be there" },
-  { id: "maybe", label: "Maybe" },
-  { id: "declined", label: "Sorry, can't make it" },
-];
+/** The three answers, in the order they are offered. Labelled from the card's copy. */
+const REPLIES: readonly GuestReply[] = ["accepted", "maybe", "declined"];
 
 const MIN_PARTY = 1;
 const MAX_PARTY = 10;
@@ -64,8 +64,11 @@ export default function RsvpPanel({
   onSubmit,
   isSending = false,
   submitError = null,
+  language,
 }: {
   theme: Theme;
+  /** The card's language, which the whole form is written in. */
+  language: CardLanguage;
   /** Previous answers, so "Change my reply" returns a filled form. */
   initial: RsvpSubmission | null;
   onSubmit: (submission: RsvpSubmission) => void;
@@ -75,6 +78,7 @@ export default function RsvpPanel({
   submitError?: string | null;
 }): ReactElement {
   const seed = initial ?? EMPTY;
+  const copy = cardCopy(language).rsvp;
 
   const [status, setStatus] = useState<GuestReply | null>(
     initial === null ? null : seed.status,
@@ -117,13 +121,13 @@ export default function RsvpPanel({
   /** Names the first thing still missing, in the order the form reads. */
   const blockingHint: string | null =
     status === null
-      ? "Choose your reply to continue"
+      ? copy.chooseReply
       : !nameValid
-        ? "Add your name to continue"
+        ? copy.addName
         : !phoneValid
           ? phoneRequired
-            ? `Enter a ${PHONE_LENGTH} digit phone number`
-            : `A phone number needs all ${PHONE_LENGTH} digits, or leave it empty`
+            ? copy.enterPhone(PHONE_LENGTH)
+            : copy.phoneAllOrNothing(PHONE_LENGTH)
           : null;
 
   const fieldStyle = {
@@ -165,23 +169,23 @@ export default function RsvpPanel({
   return (
     <section className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-12 sm:px-6 sm:pt-12 sm:pb-14">
       <h2
-        className="text-center font-[family-name:var(--font-display)] text-2xl font-semibold"
-        style={{ color: theme.textPrimary }}
+        className="text-center text-2xl font-semibold"
+        style={{ color: theme.textPrimary, fontFamily: DISPLAY_FACE }}
       >
-        Will you join us?
+        {copy.heading}
       </h2>
 
       {/* Reply buttons */}
       <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
-        {REPLIES.map((option) => {
-          const isSelected = option.id === status;
+        {REPLIES.map((reply) => {
+          const isSelected = reply === status;
 
           return (
             <button
-              key={option.id}
+              key={reply}
               type="button"
               aria-pressed={isSelected}
-              onClick={() => setStatus(option.id)}
+              onClick={() => setStatus(reply)}
               className="min-h-14 flex-1 rounded-xl border px-4 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2"
               style={{
                 backgroundColor: isSelected ? theme.accent : "transparent",
@@ -190,7 +194,7 @@ export default function RsvpPanel({
                 outlineColor: theme.accent,
               }}
             >
-              {option.label}
+              {copy[reply]}
             </button>
           );
         })}
@@ -203,13 +207,13 @@ export default function RsvpPanel({
             className="text-center text-sm font-medium"
             style={{ color: theme.textPrimary }}
           >
-            How many people are coming, including you?
+            {copy.partyQuestion}
           </p>
 
           <div className="mt-3 flex items-center justify-center gap-5">
             <button
               type="button"
-              aria-label="One fewer person"
+              aria-label={copy.fewer}
               disabled={partySize <= MIN_PARTY}
               onClick={() => setPartySize((n) => Math.max(MIN_PARTY, n - 1))}
               className="h-11 w-11 rounded-full border text-xl leading-none transition-opacity duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-35"
@@ -232,7 +236,7 @@ export default function RsvpPanel({
 
             <button
               type="button"
-              aria-label="One more person"
+              aria-label={copy.more}
               disabled={partySize >= MAX_PARTY}
               onClick={() => setPartySize((n) => Math.min(MAX_PARTY, n + 1))}
               className="h-11 w-11 rounded-full border text-xl leading-none transition-opacity duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-35"
@@ -250,7 +254,7 @@ export default function RsvpPanel({
             className="mt-3 text-center text-xs"
             style={{ color: theme.textMuted }}
           >
-            This helps the hosts plan the catering.
+            {copy.partyHint}
           </p>
         </div>
       ) : null}
@@ -263,7 +267,7 @@ export default function RsvpPanel({
             className="text-sm font-medium"
             style={{ color: theme.textPrimary }}
           >
-            Your name
+            {copy.name}
           </label>
           <input
             id="rsvp-name"
@@ -279,7 +283,7 @@ export default function RsvpPanel({
           />
           {touched.name && !nameValid ? (
             <p className="text-xs" style={{ color: theme.accent }}>
-              Please enter your name.
+              {copy.nameMissing}
             </p>
           ) : null}
         </div>
@@ -291,13 +295,13 @@ export default function RsvpPanel({
               className="text-sm font-medium"
               style={{ color: theme.textPrimary }}
             >
-              Phone number
+              {copy.phone}
               {phoneRequired ? null : (
                 <span
                   className="ml-1.5 text-xs font-normal"
                   style={{ color: theme.textMuted }}
                 >
-                  (optional)
+                  {copy.optional}
                 </span>
               )}
             </label>
@@ -330,7 +334,7 @@ export default function RsvpPanel({
           />
           {touched.phone && !phoneValid ? (
             <p className="text-xs" style={{ color: theme.accent }}>
-              Phone number must be {PHONE_LENGTH} digits.
+              {copy.phoneLength(PHONE_LENGTH)}
             </p>
           ) : (
             /*
@@ -340,9 +344,7 @@ export default function RsvpPanel({
               ago is owed the reason it stopped being.
             */
             <p className="text-xs" style={{ color: theme.textMuted }}>
-              {phoneRequired
-                ? "So the hosts can count you in, and so you can change your reply later."
-                : "Leave it empty if you would rather not."}
+              {phoneRequired ? copy.phoneWhyRequired : copy.phoneWhyOptional}
             </p>
           )}
         </div>
@@ -354,7 +356,7 @@ export default function RsvpPanel({
               className="text-sm font-medium"
               style={{ color: theme.textPrimary }}
             >
-              A message for the hosts
+              {copy.message}
             </label>
             <span
               className="text-xs tabular-nums"
@@ -387,7 +389,7 @@ export default function RsvpPanel({
           outlineColor: theme.accent,
         }}
       >
-        {isSending ? "Sending…" : "Send my reply"}
+        {isSending ? copy.sending : copy.send}
       </button>
 
       {/* The write failed. Inline and re-readable, never an alert. */}

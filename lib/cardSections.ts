@@ -1,5 +1,6 @@
 import { eventInstant } from "@/lib/cardFormat";
-import type { CardSectionId } from "@/types/card";
+import { cardCopy } from "@/lib/cardLanguage";
+import type { CardLanguage, CardSectionId } from "@/types/card";
 import type { CustomSection } from "@/types/customSection";
 import type { EventDraft, SubEvent } from "@/types/event";
 
@@ -90,9 +91,6 @@ export function hasMessage(draft: EventDraft): boolean {
 /** One row of the schedule. The primary event becomes one of these too. */
 export type TimelineEntry = SubEvent;
 
-/** What the main event is called when the host has not titled it. */
-const PRIMARY_FALLBACK_LABEL = "Main function";
-
 /**
  * The primary event as a timeline row, or null when it has no date.
  *
@@ -100,7 +98,10 @@ const PRIMARY_FALLBACK_LABEL = "Main function";
  * placed in a sequence, and a row reading "Main function" with nothing under it
  * is worse than a schedule that begins at the mehndi.
  */
-function primaryEntry(draft: EventDraft): TimelineEntry | null {
+function primaryEntry(
+  draft: EventDraft,
+  language: CardLanguage,
+): TimelineEntry | null {
   if (eventInstant(draft.eventDate, draft.eventTime) === null) {
     return null;
   }
@@ -110,7 +111,8 @@ function primaryEntry(draft: EventDraft): TimelineEntry | null {
   return {
     /* Cannot collide: the editor mints "sub-N" and nothing else. */
     id: "primary",
-    label: title.length > 0 ? title : PRIMARY_FALLBACK_LABEL,
+    /* Named in the card's language when the host has not named it at all. */
+    label: title.length > 0 ? title : cardCopy(language).timeline.primaryFallback,
     date: draft.eventDate,
     time: draft.eventTime,
     venueName: draft.venueName,
@@ -131,8 +133,11 @@ function primaryEntry(draft: EventDraft): TimelineEntry | null {
  * mehndi. Among themselves those keep the order they were added in, which is
  * the only order there is any information about.
  */
-export function timelineEntries(draft: EventDraft): readonly TimelineEntry[] {
-  const primary = primaryEntry(draft);
+export function timelineEntries(
+  draft: EventDraft,
+  language: CardLanguage,
+): readonly TimelineEntry[] {
+  const primary = primaryEntry(draft, language);
   const rows: TimelineEntry[] = [
     ...(primary === null ? [] : [primary]),
     ...draft.subEvents,
@@ -247,4 +252,24 @@ export function hasFamily(draft: EventDraft): boolean {
  */
 export function hasCountdown(draft: EventDraft): boolean {
   return eventInstant(draft.eventDate, draft.eventTime) !== null;
+}
+
+/* ---------------------------------------------------------------------------
+   The reply form.
+
+   Not a section — it follows the card rather than being one of its blocks, it
+   cannot be moved, and the guest page draws it outside the canvas — but it is
+   the other thing a host decides whether their guests see.
+   --------------------------------------------------------------------------- */
+
+/**
+ * Whether a stored card still takes replies.
+ *
+ * `!== false`, never a truthiness test. Every card saved before a host could
+ * switch the form off has no key here at all, and every one of those cards had
+ * a form: reading the missing key as off would silently close replies on every
+ * invitation already sent.
+ */
+export function rsvpEnabled(value: unknown): boolean {
+  return value !== false;
 }

@@ -87,9 +87,6 @@ const MOTIF_ALPHA = 0.16;
 const LABEL_FULL_MIN = 200;
 const LABEL_NONE_MAX = 120;
 
-/** What the label degrades to when the patch is too narrow for the sentence. */
-const SHORT_LABEL = "Scratch";
-
 /** Type sizes for the label, in CSS pixels. */
 const LABEL_MAX_SIZE = 21;
 const LABEL_MIN_SIZE = 11;
@@ -119,6 +116,16 @@ export interface ScratchConfig {
   surface: string;
   /** Drawn across the panel, e.g. "Scratch to see the date". */
   label: string;
+  /**
+   * The panel's own words, in the same language as the label: what the label
+   * shrinks to on a patch too narrow for the sentence, the button under the
+   * patch, and what a screen reader is told once it has gone.
+   */
+  phrases: {
+    short: string;
+    reveal: string;
+    revealed: string;
+  };
   /**
    * Render the content already uncovered.
    *
@@ -156,12 +163,16 @@ function labelColour(accent: string, surface: string): string {
  * all, is what lets the same component cover a whole date line and a three
  * digit countdown unit without either looking like a mistake.
  */
-function labelFor(label: string, width: number): string | null {
+function labelFor(
+  label: string,
+  shortLabel: string,
+  width: number,
+): string | null {
   if (width < LABEL_NONE_MAX) {
     return null;
   }
 
-  return width < LABEL_FULL_MIN ? SHORT_LABEL : label;
+  return width < LABEL_FULL_MIN ? shortLabel : label;
 }
 
 /**
@@ -292,6 +303,7 @@ export default function ScratchPanel({
   accent,
   surface,
   label,
+  phrases,
   preCleared,
   onCoveredChange,
   children,
@@ -350,13 +362,13 @@ export default function ScratchPanel({
   /* Handed to the canvas effect, so a finished scratch can start the fade. */
   const handleCleared = useCallback((): void => {
     setPhase("fading");
-    setAnnouncement("Revealed.");
-  }, []);
+    setAnnouncement(phrases.revealed);
+  }, [phrases.revealed]);
 
   const revealNow = useCallback((): void => {
     setPhase("gone");
-    setAnnouncement("Revealed.");
-  }, []);
+    setAnnouncement(phrases.revealed);
+  }, [phrases.revealed]);
 
   /* The fade itself is a CSS transition; this is only the unmount after it. */
   useEffect(() => {
@@ -546,7 +558,7 @@ export default function ScratchPanel({
       );
       ctx.stroke();
 
-      const text = labelFor(label, rect.width);
+      const text = labelFor(label, phrases.short, rect.width);
 
       if (text !== null) {
         ctx.globalAlpha = 1;
@@ -764,7 +776,7 @@ export default function ScratchPanel({
       mid-session — must be painted rather than left as a transparent sheet over
       the content.
     */
-  }, [accent, surface, label, handleCleared, showCanvas]);
+  }, [accent, surface, label, phrases.short, handleCleared, showCanvas]);
 
   return (
     /*
@@ -856,7 +868,7 @@ export default function ScratchPanel({
             className="min-h-11 rounded-full px-3 text-xs font-medium underline decoration-transparent underline-offset-4 opacity-70 transition-opacity duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{ color: accent, outlineColor: accent }}
           >
-            Reveal without scratching
+            {phrases.reveal}
           </button>
         </div>
       ) : null}

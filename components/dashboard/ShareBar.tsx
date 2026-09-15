@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, type ReactElement } from "react";
+import { cardCopy } from "@/lib/cardLanguage";
+import type { CardLanguage } from "@/types/card";
 
 type CopyState = "idle" | "copied" | "unavailable";
 
@@ -10,12 +12,17 @@ const COPY_LABEL: Record<CopyState, string> = {
   unavailable: "Press Ctrl+C",
 };
 
-const WHATSAPP_MESSAGE = "You are invited! Here are the details:";
-
 export default function ShareBar({
   inviteUrl,
+  language,
 }: {
   inviteUrl: string;
+  /**
+   * The card's language. The bar is the host's and stays in English, but the
+   * WhatsApp message it opens is read by the guests, ahead of a card in this
+   * language, so it is written in it.
+   */
+  language: CardLanguage;
 }): ReactElement {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -48,7 +55,7 @@ export default function ShareBar({
   };
 
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(
-    `${WHATSAPP_MESSAGE} ${inviteUrl}`,
+    `${cardCopy(language).shareMessage} ${inviteUrl}`,
   )}`;
 
   return (

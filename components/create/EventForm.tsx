@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
+import { JOINER_PRESETS } from "@/lib/cardLanguage";
 import { pairsNames } from "@/lib/occasions";
+import type { CardLanguage } from "@/types/card";
 import type { DraftChangeHandler, EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
 
@@ -64,8 +66,53 @@ function Field({
 
 const HOST_HINT = "Used only when the two name fields are empty.";
 
-/** The joining words offered as one tap. Anything else is a custom word. */
-const JOINER_PRESETS: readonly string[] = ["weds", "&", "and"];
+/**
+ * The example in each field that goes on the card, in the card's language.
+ *
+ * The labels stay in English with the rest of the editor; the placeholders are
+ * what the card will say, so they are written the way the card will be. A host
+ * who picks Hindi and meets "आरव" in the first box has been told, without a
+ * sentence about it, that the names go in in Hindi too.
+ */
+interface FieldExamples {
+  partyOneName: string;
+  partyTwoName: string;
+  pairLine: string;
+  parents: string;
+  city: string;
+  eventTitle: string;
+  venueName: string;
+  venueAddress: string;
+  message: string;
+  customJoiner: string;
+}
+
+const EXAMPLES: Readonly<Record<CardLanguage, FieldExamples>> = {
+  en: {
+    partyOneName: "Aarav",
+    partyTwoName: "Meera",
+    pairLine: "Aarav and Meera",
+    parents: "Mr Rajesh and Mrs Sunita Sharma",
+    city: "Jaipur",
+    eventTitle: "Wedding Reception",
+    venueName: "The Grand Ballroom",
+    venueAddress: "12 MG Road, Bengaluru 560001",
+    message: "We would love to have you with us.",
+    customJoiner: "ties with",
+  },
+  hi: {
+    partyOneName: "आरव",
+    partyTwoName: "मीरा",
+    pairLine: "आरव और मीरा",
+    parents: "श्री राजेश एवं श्रीमती सुनीता शर्मा",
+    city: "जयपुर",
+    eventTitle: "शुभ विवाह",
+    venueName: "होटल ग्रैंड पैलेस",
+    venueAddress: "12, एम. जी. रोड, बेंगलुरु 560001",
+    message: "आप सपरिवार सादर आमंत्रित हैं।",
+    customJoiner: "के संग",
+  },
+};
 
 /**
  * Short by design. This word is set at hero size between two names, and the
@@ -97,11 +144,15 @@ function pillClass(isSelected: boolean): string {
 function JoinerControl({
   value,
   onChange,
+  language,
 }: {
   value: string;
   onChange: (value: string) => void;
+  /** Which language's presets to offer. See JOINER_PRESETS. */
+  language: CardLanguage;
 }): ReactElement {
-  const isCustom = !JOINER_PRESETS.includes(value);
+  const presets = JOINER_PRESETS[language];
+  const isCustom = !presets.includes(value);
 
   return (
     <div
@@ -117,7 +168,7 @@ function JoinerControl({
       </span>
 
       <div className="flex flex-wrap justify-center gap-2">
-        {JOINER_PRESETS.map((preset) => (
+        {presets.map((preset) => (
           <button
             key={preset}
             type="button"
@@ -151,7 +202,7 @@ function JoinerControl({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           maxLength={CUSTOM_JOINER_LIMIT}
-          placeholder="ties with"
+          placeholder={EXAMPLES[language].customJoiner}
           aria-label="Custom joining word"
           autoComplete="off"
           /* Asked for by tapping Custom, so opening the keyboard is expected. */
@@ -187,6 +238,7 @@ function FamilyGroup({
   city,
   onParentsChange,
   onCityChange,
+  examples,
 }: {
   idPrefix: string;
   heading: string;
@@ -194,6 +246,7 @@ function FamilyGroup({
   city: string;
   onParentsChange: (value: string) => void;
   onCityChange: (value: string) => void;
+  examples: FieldExamples;
 }): ReactElement {
   return (
     <div
@@ -214,7 +267,7 @@ function FamilyGroup({
           type="text"
           value={parents}
           onChange={(event) => onParentsChange(event.target.value)}
-          placeholder="Mr Rajesh and Mrs Sunita Sharma"
+          placeholder={examples.parents}
           autoComplete="off"
           className={INPUT_CLASS}
         />
@@ -226,7 +279,7 @@ function FamilyGroup({
           type="text"
           value={city}
           onChange={(event) => onCityChange(event.target.value)}
-          placeholder="Jaipur"
+          placeholder={examples.city}
           autoComplete="off"
           className={INPUT_CLASS}
         />
@@ -239,6 +292,7 @@ export default function EventForm({
   draft,
   onChange,
   occasionId,
+  language,
 }: {
   draft: EventDraft;
   onChange: DraftChangeHandler;
@@ -255,9 +309,12 @@ export default function EventForm({
    * this and `resolveCoverNames` cannot drift into disagreeing about it.
    */
   occasionId: OccasionId;
+  /** The card's language, which the examples and the joining words follow. */
+  language: CardLanguage;
 }): ReactElement {
   const remaining = MESSAGE_LIMIT - draft.message.length;
   const isPair = pairsNames(occasionId);
+  const examples = EXAMPLES[language];
 
   /*
     Named by whoever they belong to once there is a name to use. The fallbacks
@@ -315,7 +372,7 @@ export default function EventForm({
                   onChange={(event) =>
                     onChange("partyOneName", event.target.value)
                   }
-                  placeholder="Aarav"
+                  placeholder={examples.partyOneName}
                   autoComplete="off"
                   className={INPUT_CLASS}
                 />
@@ -326,6 +383,7 @@ export default function EventForm({
               <JoinerControl
                 value={draft.joinerWord}
                 onChange={(joinerWord) => onChange("joinerWord", joinerWord)}
+                language={language}
               />
             </div>
 
@@ -338,7 +396,7 @@ export default function EventForm({
                   onChange={(event) =>
                     onChange("partyTwoName", event.target.value)
                   }
-                  placeholder="Meera"
+                  placeholder={examples.partyTwoName}
                   autoComplete="off"
                   className={INPUT_CLASS}
                 />
@@ -364,7 +422,7 @@ export default function EventForm({
             type="text"
             value={draft.hostNames}
             onChange={(event) => onChange("hostNames", event.target.value)}
-            placeholder={isPair ? "Aarav and Meera" : "Aarav"}
+            placeholder={isPair ? examples.pairLine : examples.partyOneName}
             autoComplete="off"
             aria-describedby={isPair ? "hostNames-hint" : undefined}
             className={INPUT_CLASS}
@@ -397,6 +455,7 @@ export default function EventForm({
             city={draft.partyOneCity ?? ""}
             onParentsChange={(value) => onChange("partyOneParents", value)}
             onCityChange={(value) => onChange("partyOneCity", value)}
+            examples={examples}
           />
 
           {isPair ? (
@@ -407,6 +466,7 @@ export default function EventForm({
               city={draft.partyTwoCity ?? ""}
               onParentsChange={(value) => onChange("partyTwoParents", value)}
               onCityChange={(value) => onChange("partyTwoCity", value)}
+              examples={examples}
             />
           ) : null}
 
@@ -423,7 +483,7 @@ export default function EventForm({
             type="text"
             value={draft.eventTitle}
             onChange={(event) => onChange("eventTitle", event.target.value)}
-            placeholder="Wedding Reception"
+            placeholder={examples.eventTitle}
             autoComplete="off"
             className={INPUT_CLASS}
           />
@@ -460,7 +520,7 @@ export default function EventForm({
             type="text"
             value={draft.venueName}
             onChange={(event) => onChange("venueName", event.target.value)}
-            placeholder="The Grand Ballroom"
+            placeholder={examples.venueName}
             autoComplete="off"
             className={INPUT_CLASS}
           />
@@ -472,7 +532,7 @@ export default function EventForm({
             type="text"
             value={draft.venueAddress}
             onChange={(event) => onChange("venueAddress", event.target.value)}
-            placeholder="12 MG Road, Bengaluru 560001"
+            placeholder={examples.venueAddress}
             autoComplete="off"
             className={INPUT_CLASS}
           />
@@ -487,7 +547,7 @@ export default function EventForm({
             maxLength={MESSAGE_LIMIT}
             value={draft.message}
             onChange={(event) => onChange("message", event.target.value)}
-            placeholder="We would love to have you with us."
+            placeholder={examples.message}
             className={`${INPUT_CLASS} resize-y`}
           />
           <p

@@ -8,7 +8,10 @@ import {
   useState,
   type ReactElement,
 } from "react";
+import { cardCopy } from "@/lib/cardLanguage";
+import { DISPLAY_FACE } from "@/lib/fontPairs";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 
 /**
  * The code's own dark and light, fixed whatever the card's colours.
@@ -227,12 +230,16 @@ export default function GuestPass({
   guestName,
   eventName,
   theme,
+  language,
 }: {
   token: string;
   guestName: string;
   eventName: string;
   theme: Theme;
+  /** The card's language, which the pass is written in. */
+  language: CardLanguage;
 }): ReactElement {
+  const copy = cardCopy(language).pass;
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   /** The saved picture, once it has been made. */
@@ -310,7 +317,7 @@ export default function GuestPass({
         navigator.canShare({ files: [file] })
       ) {
         try {
-          await navigator.share({ files: [file], title: `${eventName} — pass` });
+          await navigator.share({ files: [file], title: copy.shareTitle(eventName) });
           return;
         } catch (cause: unknown) {
           /* The guest closed the share sheet. That is an answer, not a failure. */
@@ -324,7 +331,7 @@ export default function GuestPass({
       download(blob);
     } catch (cause: unknown) {
       console.error("[pass] could not save the pass:", cause);
-      setSaveError("Could not save your pass. A screenshot of this code works just as well.");
+      setSaveError(copy.saveFailed);
     } finally {
       setIsSaving(false);
     }
@@ -346,13 +353,13 @@ export default function GuestPass({
     >
       <div className="flex flex-col gap-1">
         <h3
-          className="font-[family-name:var(--font-display)] text-lg font-semibold"
-          style={{ color: theme.textPrimary }}
+          className="text-lg font-semibold"
+          style={{ color: theme.textPrimary, fontFamily: DISPLAY_FACE }}
         >
-          Your entry pass
+          {copy.heading}
         </h3>
         <p className="text-sm" style={{ color: theme.textMuted }}>
-          Show this code at the entrance on the day.
+          {copy.hint}
         </p>
       </div>
 
@@ -361,7 +368,7 @@ export default function GuestPass({
         <canvas
           ref={canvasRef}
           role="img"
-          aria-label={`Check-in code for ${guestName.trim()}`}
+          aria-label={copy.codeLabel(guestName.trim())}
           width={QR_SIZE}
           height={QR_SIZE}
           className="block"
@@ -382,7 +389,7 @@ export default function GuestPass({
           outlineColor: theme.accent,
         }}
       >
-        Save my pass
+        {copy.save}
       </button>
 
       {/* Inline and re-readable, never an alert box — the same as a failed reply. */}

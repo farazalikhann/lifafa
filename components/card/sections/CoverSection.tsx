@@ -13,7 +13,9 @@ import {
   resolveCoverNames,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
 
@@ -45,17 +47,26 @@ const CUE_SENTINEL_OPTIONS: IntersectionObserverInit = {
  * clips its overflow, and at this size one 60 character word is nearly three
  * times the width of the card. Everything else wraps at spaces inside the
  * container's own width, so no max-width is needed.
+ *
+ * The leading follows the script. 1.05 is a hero setting for Latin, where a
+ * wrapped name's two lines have nothing above the cap height to collide; a
+ * Devanagari name hangs its matras above the headline, and at 1.05 the second
+ * line's matras land in the first line's descenders.
  */
 function HeroName({
   text,
   isPlaceholder,
+  script,
 }: {
   text: string;
   isPlaceholder: boolean;
+  script: CardCopy["script"];
 }): ReactElement {
   return (
     <p
-      className="text-[2.4375rem] leading-[1.05] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[2.75rem]"
+      className={`text-[2.4375rem] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[2.75rem] ${
+        script === "devanagari" ? "leading-[1.45]" : "leading-[1.05]"
+      }`}
       style={{
         opacity: placeholderOpacity(isPlaceholder, "primary"),
         fontFamily: "var(--card-heading)",
@@ -73,9 +84,12 @@ export default function CoverSection({
   minHeight,
   pad,
   occasionId,
+  language,
 }: {
   draft: EventDraft;
   theme: Theme;
+  /** The language the placeholders and the scroll cue are written in. */
+  language: CardLanguage;
   /**
    * Which occasion this is, and so whether the cover joins two names.
    *
@@ -130,8 +144,9 @@ export default function CoverSection({
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const cueRetired = !prefersReducedMotion && hasScrolledPast;
 
-  const names = resolveCoverNames(draft, occasionId);
-  const title = resolve(draft.eventTitle, "Event title");
+  const copy = cardCopy(language);
+  const names = resolveCoverNames(draft, occasionId, language);
+  const title = resolve(draft.eventTitle, copy.cover.titlePlaceholder);
 
   /*
     Where the stagger picks up after the names. A pair spends three steps, a
@@ -168,7 +183,11 @@ export default function CoverSection({
         */
         <div className="flex flex-col items-center gap-1">
           <div className={reveal} style={lineDelay(0)}>
-            <HeroName text={names.first} isPlaceholder={false} />
+            <HeroName
+              text={names.first}
+              isPlaceholder={false}
+              script={copy.script}
+            />
           </div>
 
           <div className={reveal} style={lineDelay(1)}>
@@ -178,8 +197,15 @@ export default function CoverSection({
               with either. Lower cased in CSS rather than on the value, so a
               host who types "Weds" still gets the card's own voice back.
             */}
+            {/*
+              `leading-none` only for Latin: "संग" carries a matra above its
+              headline, and a line box with no room above the letters puts it
+              into the name overhead.
+            */}
             <p
-              className="text-[1.1rem] leading-none tracking-[0.22em] break-words lowercase sm:text-[1.2rem]"
+              className={`text-[1.1rem] tracking-[0.22em] break-words lowercase sm:text-[1.2rem] ${
+                copy.script === "devanagari" ? "leading-normal" : "leading-none"
+              }`}
               style={{ color: theme.accent }}
             >
               {names.joiner}
@@ -187,12 +213,20 @@ export default function CoverSection({
           </div>
 
           <div className={reveal} style={lineDelay(2)}>
-            <HeroName text={names.second} isPlaceholder={false} />
+            <HeroName
+              text={names.second}
+              isPlaceholder={false}
+              script={copy.script}
+            />
           </div>
         </div>
       ) : (
         <div className={reveal} style={lineDelay(0)}>
-          <HeroName text={names.text} isPlaceholder={names.isPlaceholder} />
+          <HeroName
+            text={names.text}
+            isPlaceholder={names.isPlaceholder}
+            script={copy.script}
+          />
         </div>
       )}
 
@@ -238,7 +272,7 @@ export default function CoverSection({
           className="text-[0.765rem] tracking-[0.3em] uppercase"
           style={{ color: theme.textMuted }}
         >
-          Scroll
+          {copy.cover.scrollCue}
         </span>
         <span
           aria-hidden="true"

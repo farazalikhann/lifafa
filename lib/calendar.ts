@@ -8,6 +8,8 @@
  */
 
 import { eventInstant } from "@/lib/cardFormat";
+import { cardCopy } from "@/lib/cardLanguage";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -24,9 +26,6 @@ const ASSUMED_DURATION_MS = 2 * 60 * 60 * 1000;
 
 /** Where a Lifafa invitation lives, for the UID's domain half. */
 const UID_DOMAIN = "getlifafa.co.in";
-
-/** Shown in place of an empty title, so a calendar entry is never blank. */
-const TITLE_FALLBACK = "Celebration";
 
 /**
  * The invitation these links point back at.
@@ -95,10 +94,13 @@ function toUtcBasic(instant: Date): string {
   ].join("");
 }
 
-/** The event's title, or a neutral stand-in so no entry is ever blank. */
-export function calendarTitle(draft: EventDraft): string {
+/**
+ * The event's title, or a neutral stand-in in the card's language so no entry
+ * is ever blank.
+ */
+export function calendarTitle(draft: EventDraft, language: CardLanguage): string {
   const title = draft.eventTitle.trim();
-  return title.length > 0 ? title : TITLE_FALLBACK;
+  return title.length > 0 ? title : cardCopy(language).calendar.titleFallback;
 }
 
 /** Venue name and address as one line, with either half allowed to be missing. */
@@ -113,12 +115,17 @@ function location(draft: EventDraft): string {
  * invitation. Two short lines — a calendar entry is glanced at rather than
  * read, and most clients truncate anything longer in the views that matter.
  */
-function description(draft: EventDraft, invite: CalendarInvite): string {
+function description(
+  draft: EventDraft,
+  invite: CalendarInvite,
+  language: CardLanguage,
+): string {
   const hosts = draft.hostNames.trim();
+  const { calendar } = cardCopy(language);
 
   const lines = [
-    hosts.length > 0 ? `Hosted by ${hosts}.` : null,
-    invite.url === null ? null : `Invitation: ${invite.url}`,
+    hosts.length > 0 ? calendar.hostedBy(hosts) : null,
+    invite.url === null ? null : calendar.invitationLink(invite.url),
   ].filter((line): line is string => line !== null);
 
   return lines.join("\n");
@@ -141,6 +148,7 @@ const GOOGLE_RENDER = "https://calendar.google.com/calendar/render";
 export function buildGoogleCalendarUrl(
   draft: EventDraft,
   invite: CalendarInvite,
+  language: CardLanguage,
 ): string | null {
   const window = span(draft);
 
@@ -150,10 +158,10 @@ export function buildGoogleCalendarUrl(
 
   const parameters: readonly (readonly [string, string])[] = [
     ["action", "TEMPLATE"],
-    ["text", calendarTitle(draft)],
+    ["text", calendarTitle(draft, language)],
     ["dates", `${toUtcBasic(window.start)}/${toUtcBasic(window.end)}`],
     ["location", location(draft)],
-    ["details", description(draft, invite)],
+    ["details", description(draft, invite, language)],
   ];
 
   const query = parameters
@@ -200,6 +208,7 @@ function escapeText(value: string): string {
 export function buildIcsContent(
   draft: EventDraft,
   invite: CalendarInvite,
+  language: CardLanguage,
 ): string | null {
   const window = span(draft);
 
@@ -219,9 +228,9 @@ export function buildIcsContent(
     `DTSTAMP:${start}`,
     `DTSTART:${start}`,
     `DTEND:${toUtcBasic(window.end)}`,
-    `SUMMARY:${escapeText(calendarTitle(draft))}`,
+    `SUMMARY:${escapeText(calendarTitle(draft, language))}`,
     `LOCATION:${escapeText(location(draft))}`,
-    `DESCRIPTION:${escapeText(description(draft, invite))}`,
+    `DESCRIPTION:${escapeText(description(draft, invite, language))}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
@@ -236,9 +245,13 @@ export function buildIcsContent(
  * Anything that is not a letter or a digit becomes a dash, because a title is
  * free text and a colon or a slash in a filename is refused outright by
  * Windows and silently rewritten by macOS.
+ *
+ * Always the English fallback, whatever the card is written in. The slug keeps
+ * a-z and digits only, so a title in Devanagari comes out as "invitation.ics"
+ * either way, and a filename is not something a guest reads.
  */
 export function icsFileName(draft: EventDraft): string {
-  const slug = calendarTitle(draft)
+  const slug = calendarTitle(draft, "en")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");

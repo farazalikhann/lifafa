@@ -6,7 +6,9 @@
  * anywhere in the card tree without creating an import cycle.
  */
 
+import { cardCopy } from "@/lib/cardLanguage";
 import { pairsNames } from "@/lib/occasions";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
 
@@ -80,9 +82,6 @@ export function resolve(value: string, placeholder: string): FieldValue {
    thread and another after tapping through.
    --------------------------------------------------------------------------- */
 
-/** The placeholder shown when the host has typed no names at all. */
-export const NAMES_PLACEHOLDER = "Your names";
-
 /** Used when both names are filled in but the joining word was left blank. */
 const JOINER_FALLBACK = "&";
 
@@ -123,11 +122,13 @@ export type CoverNameFields = Pick<
  * Within an occasion that does pair, the pair wins only when *both* names are
  * there: one name plus a joining word is a half-finished thought, and rendering
  * "Aarav weds" would be worse than falling back. Everything else comes down to
- * hostNames, then the placeholder.
+ * hostNames, then the placeholder — which is the one part of this in the
+ * card's language, since the names themselves are whatever the host typed.
  */
 export function resolveCoverNames(
   draft: CoverNameFields,
   occasionId: OccasionId,
+  language: CardLanguage,
 ): CoverNames {
   const first = draft.partyOneName.trim();
   const second = draft.partyTwoName.trim();
@@ -143,7 +144,10 @@ export function resolveCoverNames(
     };
   }
 
-  const line = resolve(draft.hostNames, NAMES_PLACEHOLDER);
+  const line = resolve(
+    draft.hostNames,
+    cardCopy(language).cover.namesPlaceholder,
+  );
 
   return { kind: "line", text: line.text, isPlaceholder: line.isPlaceholder };
 }
@@ -220,26 +224,157 @@ function normaliseTime(formatted: string): string {
     );
 }
 
-/** "Monday" — null when there is no usable date. */
+/* ---------------------------------------------------------------------------
+   Dates in Hindi.
+
+   Built by hand from a table rather than asked of Intl with "hi-IN", and the
+   reason is the same one that pins every date here to India: the card renders
+   on the server and again in the browser, and the two have to agree to the
+   character. English is safe to ask of ICU because every runtime has spelt
+   "December" the same way for decades; nothing promises the same of Hindi
+   across a server's Node and a guest's two-year-old phone, and one matra of
+   disagreement is a hydration error on the card. "hi-IN" also hands the time
+   back as "7:00 pm", in Latin letters, which no Hindi card says.
+
+   A month name and a weekday cannot drift, so they are written down once, and
+   the day period is said the way it is said aloud: शाम 7:00 बजे.
+   --------------------------------------------------------------------------- */
+
+const HINDI_MONTHS: readonly string[] = [
+  "जनवरी",
+  "फ़रवरी",
+  "मार्च",
+  "अप्रैल",
+  "मई",
+  "जून",
+  "जुलाई",
+  "अगस्त",
+  "सितंबर",
+  "अक्टूबर",
+  "नवंबर",
+  "दिसंबर",
+];
+
+/** Sunday first, matching Date's own getUTCDay. */
+const HINDI_WEEKDAYS: readonly string[] = [
+  "रविवार",
+  "सोमवार",
+  "मंगलवार",
+  "बुधवार",
+  "गुरुवार",
+  "शुक्रवार",
+  "शनिवार",
+];
+
+/** India is five and a half hours ahead of UTC all year; there is no daylight saving. */
+const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
+interface IstParts {
+  year: number;
+  /** 0 to 11. */
+  month: number;
+  day: number;
+  /** 0 is Sunday. */
+  weekday: number;
+  /** 0 to 23. */
+  hour: number;
+  minute: number;
+}
+
+/**
+ * The instant's calendar fields in Indian time, by arithmetic.
+ *
+ * Shifting by a constant offset and reading the UTC fields is exact for a zone
+ * with no daylight saving, and uses nothing a runtime could implement
+ * differently — which is the whole point of this path.
+ */
+function istParts(instant: Date): IstParts {
+  const shifted = new Date(instant.getTime() + IST_OFFSET_MS);
+
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth(),
+    day: shifted.getUTCDate(),
+    weekday: shifted.getUTCDay(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes(),
+  };
+}
+
+/**
+ * Which part of the day an hour is called.
+ *
+ * The boundaries are the everyday ones rather than anybody's almanac: a 4 PM
+ * reception is in the शाम and a 9 PM one in the रात, and a card that called
+ * either of them something else would be read as a typo.
+ */
+function hindiDayPeriod(hour: number): string {
+  if (hour >= 4 && hour < 12) {
+    return "सुबह";
+  }
+
+  if (hour >= 12 && hour < 16) {
+    return "दोपहर";
+  }
+
+  if (hour >= 16 && hour < 20) {
+    return "शाम";
+  }
+
+  return "रात";
+}
+
+/** "14 दिसंबर 2026". */
+function hindiDate(parts: IstParts): string {
+  return `${parts.day} ${HINDI_MONTHS[parts.month]} ${parts.year}`;
+}
+
+/** "शाम 7:00 बजे". */
+function hindiTime(parts: IstParts): string {
+  const hour = parts.hour % 12 === 0 ? 12 : parts.hour % 12;
+  const minute = String(parts.minute).padStart(2, "0");
+
+  return `${hindiDayPeriod(parts.hour)} ${hour}:${minute} बजे`;
+}
+
+/** "Monday" / "सोमवार" — null when there is no usable date. */
 export function formatWeekday(
   eventDate: string,
   eventTime: string,
-): string | null {
-  const instant = eventInstant(eventDate, eventTime);
-  return instant === null
-    ? null
-    : new Intl.DateTimeFormat("en-IN", WEEKDAY_FORMAT).format(instant);
-}
-
-/** "14 December 2026 at 7:00 PM" — weekday omitted, it gets its own line. */
-export function formatDateAndTime(
-  eventDate: string,
-  eventTime: string,
+  language: CardLanguage,
 ): string | null {
   const instant = eventInstant(eventDate, eventTime);
 
   if (instant === null) {
     return null;
+  }
+
+  return language === "hi"
+    ? HINDI_WEEKDAYS[istParts(instant).weekday]
+    : new Intl.DateTimeFormat("en-IN", WEEKDAY_FORMAT).format(instant);
+}
+
+/**
+ * "14 December 2026 at 7:00 PM" / "14 दिसंबर 2026, शाम 7:00 बजे" — weekday
+ * omitted, it gets its own line.
+ */
+export function formatDateAndTime(
+  eventDate: string,
+  eventTime: string,
+  language: CardLanguage,
+): string | null {
+  const instant = eventInstant(eventDate, eventTime);
+
+  if (instant === null) {
+    return null;
+  }
+
+  if (language === "hi") {
+    const parts = istParts(instant);
+
+    return hasTime(eventTime)
+      ? `${hindiDate(parts)}, ${hindiTime(parts)}`
+      : hindiDate(parts);
   }
 
   const datePart = new Intl.DateTimeFormat("en-IN", DATE_ONLY_FORMAT).format(
@@ -257,15 +392,26 @@ export function formatDateAndTime(
   return `${datePart} at ${timePart}`;
 }
 
-/** "Monday, 14 December 2026 at 7:00 PM" — the single-line form. */
+/**
+ * "Monday, 14 December 2026 at 7:00 PM" / "सोमवार, 14 दिसंबर 2026, शाम 7:00
+ * बजे" — the single-line form.
+ */
 export function formatWhen(
   eventDate: string,
   eventTime: string,
+  language: CardLanguage,
 ): string | null {
   const instant = eventInstant(eventDate, eventTime);
 
   if (instant === null) {
     return null;
+  }
+
+  if (language === "hi") {
+    const parts = istParts(instant);
+    const datePart = `${HINDI_WEEKDAYS[parts.weekday]}, ${hindiDate(parts)}`;
+
+    return hasTime(eventTime) ? `${datePart}, ${hindiTime(parts)}` : datePart;
   }
 
   const datePart = new Intl.DateTimeFormat("en-IN", FULL_DATE_FORMAT).format(

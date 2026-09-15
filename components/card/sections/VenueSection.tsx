@@ -12,7 +12,9 @@ import {
   resolve,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /** The section's own rhythm, shared with the group the panel covers. */
@@ -24,6 +26,7 @@ export default function VenueSection({
   minHeight,
   pad,
   scratch,
+  language,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -32,11 +35,14 @@ export default function VenueSection({
   pad: number;
   /** Set when this is the section the host chose to hide; null otherwise. */
   scratch: ScratchConfig | null;
+  /** The language the placeholders and the Maps link are written in. */
+  language: CardLanguage;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
-  const venue = resolve(draft.venueName, "Venue name");
-  const address = resolve(draft.venueAddress, "Venue address");
+  const copy = cardCopy(language);
+  const venue = resolve(draft.venueName, copy.venue.namePlaceholder);
+  const address = resolve(draft.venueAddress, copy.venue.addressPlaceholder);
 
   /* Nothing to search for until the host has typed something. */
   const hasLocation = !venue.isPlaceholder || !address.isPlaceholder;
@@ -97,7 +103,7 @@ export default function VenueSection({
             className="rounded text-[1rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
             style={{ color: theme.accent, outlineColor: theme.accent }}
           >
-            Open in Maps
+            {copy.venue.openInMaps}
           </a>
         </div>
       ) : null}

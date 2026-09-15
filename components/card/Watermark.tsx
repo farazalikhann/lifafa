@@ -1,4 +1,6 @@
 import type { ReactElement } from "react";
+import { cardCopy } from "@/lib/cardLanguage";
+import type { CardLanguage } from "@/types/card";
 
 /**
  * The tile grid.
@@ -72,11 +74,18 @@ export const WATERMARK_CLEARANCE = "7rem";
  */
 export default function Watermark({
   show,
+  language,
   accent = "var(--lifafa-marigold)",
   surface = "var(--lifafa-ink-raised)",
 }: {
   /** False on a paid card, where nothing should be drawn at all. */
   show: boolean;
+  /**
+   * The card's language. The pill is on the card a guest opens, so it speaks
+   * the card's language rather than the editor's; the tiled wordmark is a name
+   * and stays one.
+   */
+  language: CardLanguage;
   /** Card accent. Defaults to the app's own, for callers outside a card. */
   accent?: string;
   /** Card surface, tinted translucent for the pill. */
@@ -92,8 +101,14 @@ export default function Watermark({
         Clipped to the card, so the overscan the rotation needs never widens
         anything or shows up as a stray scrollbar.
       */}
+      {/*
+        Tagged English whatever the card is in: the wordmark is a Latin name,
+        and its wide tracking is part of it that the no-tracking rule for Hindi
+        would otherwise take away.
+      */}
       <div
         aria-hidden="true"
+        lang="en"
         className="pointer-events-none absolute inset-0 z-20 overflow-hidden select-none"
       >
         <div
@@ -120,6 +135,7 @@ export default function Watermark({
 
       <p
         aria-hidden="true"
+        lang={cardCopy(language).lang}
         className="pointer-events-none fixed left-1/2 z-30 -translate-x-1/2 rounded-full px-4 py-2 text-center text-[0.75rem] font-medium shadow-[0_8px_24px_-12px_rgba(0,0,0,0.8)] backdrop-blur select-none"
         style={{
           bottom: PILL_OFFSET,
@@ -127,7 +143,7 @@ export default function Watermark({
           backgroundColor: `color-mix(in srgb, ${surface} 88%, transparent)`,
         }}
       >
-        Preview. Pay to remove this watermark.
+        {cardCopy(language).watermark}
       </p>
     </>
   );

@@ -2,8 +2,10 @@
 
 import type { ReactElement } from "react";
 import { formatDateAndTime } from "@/lib/cardFormat";
+import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { getWeatherTheme } from "@/lib/weatherThemes";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherIcon } from "@/types/weather";
 
@@ -17,7 +19,8 @@ import type { EventWeather, WeatherIcon } from "@/types/weather";
  * The wording is the part that matters most here. A forecast and a seasonal
  * average are not the same claim, and a guest deciding what to wear to an
  * outdoor wedding is entitled to know which one they are reading. Nothing in
- * this file lets the two share a phrasing.
+ * this file lets the two share a phrasing — and that holds in every language,
+ * because the sentences themselves live in lib/cardLanguage.ts in pairs.
  */
 
 /* ────────────────────────── Wording ────────────────────────── */
@@ -29,15 +32,15 @@ import type { EventWeather, WeatherIcon } from "@/types/weather";
  * reads as a forecast whatever the numbers actually are, and the seasonal case
  * is the one where that mistake costs somebody a wet afternoon.
  */
-function headingOf(weather: EventWeather): string {
+function headingOf(weather: EventWeather, copy: CardCopy["weather"]): string {
   return weather.kind === "forecast"
-    ? "Forecast for the day"
-    : "Typical for this time of year";
+    ? copy.forecastHeading
+    : copy.seasonalHeading;
 }
 
 /** "29°C high, 21°C low". The unit is stated, once, rather than assumed. */
-function rangeOf(weather: EventWeather): string {
-  return `${weather.highC}°C high, ${weather.lowC}°C low`;
+function rangeOf(weather: EventWeather, copy: CardCopy["weather"]): string {
+  return copy.range(weather.highC, weather.lowC);
 }
 
 /**
@@ -47,22 +50,25 @@ function rangeOf(weather: EventWeather): string {
  * can take as loosely or as literally as they like; "averaged from the last 5
  * years" is a statement they can judge.
  */
-function noteOf(weather: EventWeather): string | null {
+function noteOf(
+  weather: EventWeather,
+  copy: CardCopy["weather"],
+): string | null {
   if (weather.kind === "forecast" || weather.yearsAveraged === null) {
     return null;
   }
 
-  return `Averaged from the last ${weather.yearsAveraged} years. This is not a forecast.`;
+  return copy.seasonalNote(weather.yearsAveraged);
 }
 
 /** The whole reading as one sentence, for the layouts that have room for one line. */
-function sentenceOf(weather: EventWeather): string {
-  const opening =
-    weather.kind === "forecast"
-      ? `Forecast for the day: ${rangeOf(weather)}, ${weather.condition.toLowerCase()}.`
-      : `Typically ${rangeOf(weather)} at this time of year, usually ${weather.condition.toLowerCase()}.`;
+function sentenceOf(weather: EventWeather, copy: CardCopy["weather"]): string {
+  const range = rangeOf(weather, copy);
+  const condition = copy.condition(weather);
 
-  return weather.kind === "forecast" ? opening : `${opening} Not a forecast.`;
+  return weather.kind === "forecast"
+    ? copy.forecastSentence(range, condition)
+    : copy.seasonalSentence(range, condition);
 }
 
 /* ────────────────────────── The icon ────────────────────────── */
@@ -198,17 +204,22 @@ export default function WeatherPanel({
   themeId,
   theme,
   draft,
+  language,
 }: {
   weather: EventWeather;
   /** Raw, as stored. Resolved here so an unknown id cannot reach a switch. */
   themeId: string | null;
   theme: Theme;
   draft: EventDraft;
+  /** The language every line of the reading is written in, the condition included. */
+  language: CardLanguage;
 }): ReactElement {
+  const copy = cardCopy(language).weather;
   const variant = getWeatherTheme(themeId).id;
-  const heading = headingOf(weather);
-  const range = rangeOf(weather);
-  const note = noteOf(weather);
+  const heading = headingOf(weather, copy);
+  const range = rangeOf(weather, copy);
+  const note = noteOf(weather, copy);
+  const condition = copy.condition(weather);
 
   if (variant === "minimal") {
     return (
@@ -217,14 +228,14 @@ export default function WeatherPanel({
           className="mx-auto max-w-[36ch] text-[0.85rem] leading-relaxed text-pretty"
           style={{ color: theme.textMuted }}
         >
-          {sentenceOf(weather)}
+          {sentenceOf(weather, copy)}
         </p>
       </section>
     );
   }
 
   if (variant === "strip") {
-    const when = formatDateAndTime(draft.eventDate, draft.eventTime);
+    const when = formatDateAndTime(draft.eventDate, draft.eventTime, language);
 
     return (
       <section className="px-5 pb-10">
@@ -241,7 +252,7 @@ export default function WeatherPanel({
             style={{ color: theme.accent }}
           >
             <WeatherGlyph icon={weather.icon} size={22} />
-            <p className="text-[0.9rem] font-medium">{weather.condition}</p>
+            <p className="text-[0.9rem] font-medium">{condition}</p>
           </div>
 
           {when !== null ? (
@@ -309,7 +320,7 @@ export default function WeatherPanel({
           </p>
 
           <p className="text-[0.85rem]" style={{ color: theme.textPrimary }}>
-            {weather.condition}
+            {condition}
           </p>
 
           {note !== null ? (
@@ -359,7 +370,7 @@ export default function WeatherPanel({
           </p>
 
           <p className="text-[0.85rem]" style={{ color: theme.textPrimary }}>
-            {weather.condition}
+            {condition}
           </p>
 
           {note !== null ? (

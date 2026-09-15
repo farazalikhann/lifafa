@@ -11,7 +11,9 @@ import {
   mapsSearchUrl,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -49,12 +51,15 @@ export default function TimelineSection({
   theme,
   minHeight,
   pad,
+  language,
 }: {
   draft: EventDraft;
   theme: Theme;
   minHeight: string;
   /** Content inset, top and bottom, in px — see CoverSection for what it is for. */
   pad: number;
+  /** The language the heading, the dates and the map links are written in. */
+  language: CardLanguage;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -68,7 +73,8 @@ export default function TimelineSection({
     return null;
   }
 
-  const entries = timelineEntries(draft);
+  const copy = cardCopy(language);
+  const entries = timelineEntries(draft, language);
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
@@ -87,7 +93,7 @@ export default function TimelineSection({
         className={`text-center text-[0.7rem] tracking-[0.24em] uppercase ${reveal}`}
         style={{ color: theme.textMuted, transitionDelay: "0ms" }}
       >
-        The celebrations
+        {copy.timeline.heading}
       </p>
 
       <ol className="relative flex flex-col" style={{ gap: `calc(1.25rem * var(--card-gap-scale, 1))` }}>
@@ -111,8 +117,8 @@ export default function TimelineSection({
         />
 
         {entries.map((entry, index) => {
-          const when = formatDateAndTime(entry.date, entry.time);
-          const weekday = formatWeekday(entry.date, entry.time);
+          const when = formatDateAndTime(entry.date, entry.time, language);
+          const weekday = formatWeekday(entry.date, entry.time, language);
           const venue = entry.venueName.trim();
           const note = entry.note?.trim() ?? "";
           const hasMap =
@@ -195,7 +201,7 @@ export default function TimelineSection({
                     className="mt-0.5 self-start rounded text-[0.78rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
                     style={{ color: theme.accent, outlineColor: theme.accent }}
                   >
-                    Map
+                    {copy.timeline.mapLink}
                   </a>
                 ) : null}
               </div>

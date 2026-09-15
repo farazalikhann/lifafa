@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { cardCopy, DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { getInviteEvent } from "@/lib/db/inviteEvent";
 
 /**
@@ -16,11 +17,6 @@ import { getInviteEvent } from "@/lib/db/inviteEvent";
  * absolute URL, which is the form WhatsApp and every other scraper require.
  */
 
-const DESCRIPTION =
-  "You are invited. Tap to see the invitation and send your reply.";
-
-const FALLBACK_TITLE = "Invitation — Lifafa";
-
 export async function generateMetadata({
   params,
 }: {
@@ -35,10 +31,26 @@ export async function generateMetadata({
     leaking that the code was invalid into a chat thread's preview.
   */
   if (!result.ok || result.data === null) {
-    return { title: FALLBACK_TITLE, description: DESCRIPTION };
+    /*
+      No card, so no language to speak: English, and the generic promise of a
+      reply form, since there is no card to say otherwise.
+    */
+    const fallback = cardCopy(DEFAULT_CARD_LANGUAGE).invite;
+
+    return {
+      title: fallback.shareTitleFallback,
+      description: fallback.shareDescription(true),
+    };
   }
 
   const { draft, config } = result.data;
+  const copy = cardCopy(config.language).invite;
+
+  /*
+    In the card's language, and honest about the form: a card the host sent
+    without one must not promise the guest a reply they cannot send.
+  */
+  const description = copy.shareDescription(config.rsvpEnabled);
 
   /*
     Flattened from the same resolution the cover runs, so the chat thread and
@@ -47,21 +59,21 @@ export async function generateMetadata({
     and a title that opens with a dash, or announces "Your names" to a guest,
     reads as broken in a WhatsApp preview.
   */
-  const names = resolveCoverNames(draft, config.occasionId);
+  const names = resolveCoverNames(draft, config.occasionId, config.language);
   const nameLine =
     names.kind === "line" && names.isPlaceholder ? "" : coverNameLine(names);
   const title =
     [draft.eventTitle.trim(), nameLine]
       .filter((part) => part.length > 0)
-      .join(" — ") || FALLBACK_TITLE;
+      .join(" — ") || copy.shareTitleFallback;
 
   return {
     title,
-    description: DESCRIPTION,
+    description,
     openGraph: {
       type: "website",
       title,
-      description: DESCRIPTION,
+      description,
     },
   };
 }

@@ -74,10 +74,31 @@ export const FONT_PAIRS: readonly FontPair[] = [
 
 export const DEFAULT_FONT_PAIR_ID: FontPairId = "classic";
 
-/** Builds a usable font-family string from a variable and its fallback. */
+/**
+ * Builds a usable font-family string from a variable and its fallback.
+ *
+ * Noto Sans Devanagari sits second, straight after the pair's own face, and
+ * that is what lets a card be written in Hindi in any of the five pairs. None
+ * of the pairs has a single Devanagari glyph, so without it every Hindi word
+ * on the card fell through to whatever the device had — Nirmala on one phone,
+ * Kohinoor on the next, each with its own metrics. A browser picks a face per
+ * character, so Latin text never reaches the second entry and nothing about an
+ * English card changes; only the characters the pair cannot draw do.
+ */
 export function fontFamilyOf(variable: string, fallback: string): string {
-  return `var(${variable}), ${fallback}`;
+  return `var(${variable}), var(--font-devanagari), ${fallback}`;
 }
+
+/**
+ * The product's display face, for the headings laid out beside a card rather
+ * than on it — the reply form, the confirmation, the guest's pass.
+ *
+ * Those used to name `--font-display` alone, which has no Devanagari, so on a
+ * Hindi card their headings were the one line set in whatever the device had.
+ * Built with the same helper as the card's own faces, so it carries the same
+ * Devanagari fallback and cannot drift from it.
+ */
+export const DISPLAY_FACE = fontFamilyOf("--font-display", "Georgia, serif");
 
 /** Always resolves — an unknown id falls back to the first pair. */
 export function getFontPair(id: FontPairId): FontPair {

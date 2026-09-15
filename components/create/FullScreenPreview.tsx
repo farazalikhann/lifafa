@@ -235,7 +235,7 @@ export default function FullScreenPreview({
   const isCovered = hasCover && !isRevealed;
 
   /* The same line the guest's cover prints. See InviteExperience. */
-  const names = resolveCoverNames(draft, config.occasionId);
+  const names = resolveCoverNames(draft, config.occasionId, config.language);
   const coverTitle =
     names.kind === "line" && names.isPlaceholder
       ? undefined
@@ -589,6 +589,7 @@ export default function FullScreenPreview({
         palette={palette}
         accent={config.style.accentOverride}
         title={coverTitle}
+        language={config.language}
         renderVisual={(state) => <CoverVisual {...state} />}
       >
         {/*
@@ -646,6 +647,7 @@ export default function FullScreenPreview({
 
             <Watermark
               show
+              language={config.language}
               accent={config.style.accentOverride ?? palette.accent}
               surface={palette.surface}
             />

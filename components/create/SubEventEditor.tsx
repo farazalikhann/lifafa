@@ -172,7 +172,8 @@ export default function SubEventEditor({
         <ul className="flex flex-col gap-2">
           {subEvents.map((entry) => {
             const isOpen = entry.id === openId;
-            const when = formatDateAndTime(entry.date, entry.time);
+            /* The editor's own summary line, so English like the rest of it. */
+            const when = formatDateAndTime(entry.date, entry.time, "en");
             const name = entry.label.trim();
             const title = name.length > 0 ? name : "Untitled function";
 

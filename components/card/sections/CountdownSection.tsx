@@ -17,7 +17,9 @@ import {
   lineDelay,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 const SECOND = 1000;
@@ -53,6 +55,13 @@ type Countdown =
 const PENDING = "––";
 
 interface Unit {
+  /**
+   * Which unit this is, apart from what it is called.
+   *
+   * The label used to double as the identity — `digits` asked whether it was
+   * "Days" — and that stopped being true the day the label could be "दिन".
+   */
+  readonly id: "days" | "hours" | "minutes" | "seconds";
   readonly label: string;
   /** null before the first tick — see PENDING. */
   readonly value: number | null;
@@ -107,13 +116,16 @@ function measure(target: Date, now: Date): Countdown {
  * reads "0 days" spends a quarter of the line saying nothing — and the three
  * that remain are the ones a guest is actually watching by then.
  */
-function unitsOf(countdown: Countdown | null): readonly Unit[] {
+function unitsOf(
+  countdown: Countdown | null,
+  copy: CardCopy["countdown"],
+): readonly Unit[] {
   if (countdown === null) {
     return [
-      { label: "Days", value: null, slots: 3 },
-      { label: "Hours", value: null, slots: 2 },
-      { label: "Minutes", value: null, slots: 2 },
-      { label: "Seconds", value: null, slots: 2 },
+      { id: "days", label: copy.days, value: null, slots: 3 },
+      { id: "hours", label: copy.hours, value: null, slots: 2 },
+      { id: "minutes", label: copy.minutes, value: null, slots: 2 },
+      { id: "seconds", label: copy.seconds, value: null, slots: 2 },
     ];
   }
 
@@ -122,13 +134,16 @@ function unitsOf(countdown: Countdown | null): readonly Unit[] {
   }
 
   const inner: readonly Unit[] = [
-    { label: "Hours", value: countdown.hours, slots: 2 },
-    { label: "Minutes", value: countdown.minutes, slots: 2 },
-    { label: "Seconds", value: countdown.seconds, slots: 2 },
+    { id: "hours", label: copy.hours, value: countdown.hours, slots: 2 },
+    { id: "minutes", label: copy.minutes, value: countdown.minutes, slots: 2 },
+    { id: "seconds", label: copy.seconds, value: countdown.seconds, slots: 2 },
   ];
 
   return countdown.days > 0
-    ? [{ label: "Days", value: countdown.days, slots: 3 }, ...inner]
+    ? [
+        { id: "days", label: copy.days, value: countdown.days, slots: 3 },
+        ...inner,
+      ]
     : inner;
 }
 
@@ -138,7 +153,7 @@ function digits(unit: Unit): string {
     return PENDING;
   }
 
-  return unit.label === "Days"
+  return unit.id === "days"
     ? String(unit.value)
     : String(unit.value).padStart(2, "0");
 }
@@ -147,12 +162,15 @@ function digits(unit: Unit): string {
  * The line shown once there is nothing left to count. Rendered in the card's
  * display font, the same weight the details section gives its date.
  */
-function closingLine(countdown: Countdown): string | null {
+function closingLine(
+  countdown: Countdown,
+  copy: CardCopy["countdown"],
+): string | null {
   switch (countdown.kind) {
     case "today":
-      return "Today.";
+      return copy.today;
     case "passed":
-      return "This celebration has taken place.";
+      return copy.passed;
     case "counting":
       return null;
   }
@@ -179,6 +197,7 @@ export default function CountdownSection({
   minHeight,
   pad,
   scratch,
+  language,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -191,6 +210,8 @@ export default function CountdownSection({
    * card still says what is behind the patch.
    */
   scratch: ScratchConfig | null;
+  /** The language the heading, the units and the closing line are written in. */
+  language: CardLanguage;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -295,8 +316,10 @@ export default function CountdownSection({
     return null;
   }
 
-  const units = unitsOf(countdown);
-  const closing = countdown === null ? null : closingLine(countdown);
+  const copy = cardCopy(language);
+  const units = unitsOf(countdown, copy.countdown);
+  const closing =
+    countdown === null ? null : closingLine(countdown, copy.countdown);
 
   /* Three units get the room the fourth gave up. */
   const numberSize =
@@ -310,7 +333,9 @@ export default function CountdownSection({
     closing !== null ? (
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[18ch] text-[1.825rem] leading-[1.2] font-medium tracking-[0.02em] text-balance sm:text-[2.125rem]"
+          className={`max-w-[18ch] text-[1.825rem] font-medium tracking-[0.02em] text-balance sm:text-[2.125rem] ${
+            copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
+          }`}
           style={{
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
@@ -335,7 +360,7 @@ export default function CountdownSection({
         aria-live="off"
       >
         {units.map((unit) => (
-          <div key={unit.label} className="flex flex-col items-center gap-1">
+          <div key={unit.id} className="flex flex-col items-center gap-1">
             <span
               className={`block text-center leading-none font-medium tabular-nums ${numberSize}`}
               style={{
@@ -375,7 +400,7 @@ export default function CountdownSection({
           className="text-[0.84rem] tracking-[0.3em] uppercase"
           style={{ color: theme.textMuted }}
         >
-          The countdown
+          {copy.countdown.heading}
         </p>
       </div>
 

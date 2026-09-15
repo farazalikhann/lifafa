@@ -11,11 +11,13 @@ import {
 } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { RevealGateContext } from "@/hooks/useRevealGate";
+import { cardCopy } from "@/lib/cardLanguage";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
 import { playCoverSound, preloadCoverSound } from "@/lib/coverSound";
 import { enterFullscreen } from "@/lib/fullscreen";
+import type { CardLanguage } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
@@ -113,9 +115,17 @@ export default function CoverShell({
   palette,
   accent,
   title,
+  language,
   renderVisual,
   children,
 }: {
+  /**
+   * The card's language, which the prompt on the cover and the Skip button are
+   * written in. The cover is the first thing a guest reads, so a Hindi card
+   * behind an English "Tap seal to open" would be introduced by the wrong
+   * language.
+   */
+  language: CardLanguage;
   /** The raw value off the saved card. Unknown, null and undefined all mean "no cover". */
   animationId: string | null | undefined;
   /**
@@ -137,6 +147,8 @@ export default function CoverShell({
   const option = getCoverAnimation(animationId);
   const hasCover = option.id !== "none";
   const colors = coverPalette(palette, accent);
+  const copy = cardCopy(language);
+  const prompt = option.openPromptText[language];
 
   /*
     Seeded rather than corrected in an effect. A card saved with no animation
@@ -325,6 +337,11 @@ export default function CoverShell({
       */}
       {covered ? (
         <div
+          /*
+            A sibling of the card rather than inside it, so the card's `lang`
+            never reaches it and it carries its own.
+          */
+          lang={copy.lang}
           data-phase={phase}
           data-animation={option.id}
           /*
@@ -376,9 +393,7 @@ export default function CoverShell({
               opacity: phase === "closed" ? 1 : 0,
               transition: `opacity ${WORDS_FADE_MS}ms ease-out`,
             }}
-            aria-label={
-              title ? `${option.openPromptText}: ${title}` : option.openPromptText
-            }
+            aria-label={title ? `${prompt}: ${title}` : prompt}
             /*
               A visual owns the middle of the screen, so the words move out from
               under it and sit low. With no visual there is nothing to clear and
@@ -401,7 +416,7 @@ export default function CoverShell({
               </span>
             ) : null}
             <span className="text-sm tracking-wide text-[var(--cover-muted)]">
-              {option.openPromptText}
+              {prompt}
             </span>
           </button>
 
@@ -422,7 +437,7 @@ export default function CoverShell({
               onClick={handleSkip}
               className="absolute right-6 bottom-6 rounded-full px-3 py-1.5 text-xs text-[var(--cover-muted)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--cover-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cover-accent)]"
             >
-              Skip
+              {copy.coverSkip}
             </button>
           ) : null}
         </div>

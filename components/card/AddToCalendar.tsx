@@ -7,7 +7,9 @@ import {
   icsFileName,
   type CalendarInvite,
 } from "@/lib/calendar";
+import { cardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -39,19 +41,23 @@ export default function AddToCalendar({
   draft,
   theme,
   invite,
+  language,
 }: {
   draft: EventDraft;
   theme: Theme;
   invite: CalendarInvite;
+  /** The buttons, and the entry they write, are in the card's language. */
+  language: CardLanguage;
 }): ReactElement | null {
-  const googleUrl = buildGoogleCalendarUrl(draft, invite);
+  const copy = cardCopy(language);
+  const googleUrl = buildGoogleCalendarUrl(draft, invite, language);
 
   if (googleUrl === null) {
     return null;
   }
 
   const handleDownload = (): void => {
-    const content = buildIcsContent(draft, invite);
+    const content = buildIcsContent(draft, invite, language);
 
     /*
       Cannot be null here — the Google URL above is built from the same span
@@ -96,7 +102,7 @@ export default function AddToCalendar({
           className={ACTION_CLASS}
           style={{ color: theme.accent, outlineColor: theme.accent }}
         >
-          Add to Google Calendar
+          {copy.calendar.addToGoogle}
         </a>
 
         <button
@@ -105,12 +111,12 @@ export default function AddToCalendar({
           className={ACTION_CLASS}
           style={{ color: theme.accent, outlineColor: theme.accent }}
         >
-          Download for Apple or Outlook
+          {copy.calendar.downloadIcs}
         </button>
       </div>
 
       <p className="text-xs" style={{ color: theme.textMuted }}>
-        Save the date to your calendar.
+        {copy.calendar.hint}
       </p>
     </div>
   );

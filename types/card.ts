@@ -87,6 +87,20 @@ export type ButterflyColour = Exclude<ButterflyStyle, "none" | "mixed">;
 export type ScratchTarget = "none" | "date" | "venue" | "countdown";
 
 /**
+ * The language the card writes its own words in.
+ *
+ * Only the words the card supplies: the headings, the placeholders, the date,
+ * the countdown's units, the calendar buttons, the cover's prompt and the reply
+ * form. What the host types — the names, the venue, the note — is theirs and is
+ * shown exactly as typed, in whatever script they typed it in.
+ *
+ * A two letter code rather than a locale, because it is written into every card
+ * saved from now on and a card has one language, not a region. Where a locale
+ * is needed, lib/cardLanguage.ts derives it.
+ */
+export type CardLanguage = "en" | "hi";
+
+/**
  * Who the card is being drawn for.
  *
  * The guest's card is the live one. The editor's inline preview repaints on
@@ -147,6 +161,28 @@ export interface CardConfig {
   butterflies: ButterflyStyle;
   occasionId: OccasionId;
   traditionId: TraditionId;
+  /**
+   * Which language the card writes its own words in.
+   *
+   * Absent from every card saved before Hindi existed, which is every one of
+   * them so far. toStoredEvent and the editor both read it through
+   * `cardLanguage` in lib/cardLanguage.ts, which turns a missing or unknown
+   * value into English — exactly what those cards have always been.
+   */
+  language: CardLanguage;
+  /**
+   * Whether the reply form follows the card.
+   *
+   * The only way a host collects replies, and not every host wants to: a card
+   * sent to share the date, or to people who will be counted some other way,
+   * is better without a form asking them a question nobody is reading the
+   * answers to.
+   *
+   * Absent from every card saved before the switch existed, and those cards
+   * all had a form, so a missing key means on. Read through `rsvpEnabled` in
+   * lib/cardSections.ts, never with a truthiness test.
+   */
+  rsvpEnabled: boolean;
   /** Which section sits behind a scratch panel, if any. */
   scratchTarget: ScratchTarget;
   /**

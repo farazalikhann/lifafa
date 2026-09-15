@@ -16,10 +16,12 @@ import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorTabs, { type EditorTabId } from "@/components/create/EditorTabs";
 import EventForm from "@/components/create/EventForm";
+import LanguagePicker from "@/components/create/LanguagePicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import MusicPanel from "@/components/create/MusicPanel";
 import OccasionGrid from "@/components/create/OccasionGrid";
 import PreviewBar from "@/components/create/PreviewBar";
+import ReplyFormPanel from "@/components/create/ReplyFormPanel";
 import RevealPanel from "@/components/create/RevealPanel";
 import SectionManager from "@/components/create/SectionManager";
 import SubEventEditor from "@/components/create/SubEventEditor";
@@ -31,6 +33,8 @@ import { butterflyStyle } from "@/lib/butterflies";
 import { deepEqual } from "@/lib/deepEqual";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { cardLanguage, swapJoinerWord } from "@/lib/cardLanguage";
+import { rsvpEnabled as readRsvpEnabled } from "@/lib/cardSections";
 import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { getPalette } from "@/lib/palettes";
@@ -39,6 +43,7 @@ import type {
   ButterflyStyle,
   CardBorderStyle,
   CardConfig,
+  CardLanguage,
   DecorIntensity,
   DecorMotion,
   ScratchTarget,
@@ -98,6 +103,8 @@ interface EditorState {
   butterflies: ButterflyStyle;
   occasionId: OccasionId;
   traditionId: TraditionId;
+  language: CardLanguage;
+  rsvpEnabled: boolean;
   scratchTarget: ScratchTarget;
   borderStyle: CardBorderStyle;
   style: CardStyle;
@@ -131,6 +138,13 @@ function toState(snapshot: EditorSnapshot): EditorState {
     butterflies: butterflyStyle(config.butterflies),
     occasionId: config.occasionId,
     traditionId: config.traditionId,
+    /*
+      Both missing from a card stashed by an older build, which toStoredEvent
+      never sees — so they are resolved again here, to English and to on, the
+      same answers a stored card gets.
+    */
+    language: cardLanguage(config.language),
+    rsvpEnabled: readRsvpEnabled(config.rsvpEnabled),
     scratchTarget: config.scratchTarget,
     borderStyle: config.borderStyle,
     style: config.style,
@@ -177,6 +191,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       butterflies: state.butterflies,
       occasionId: state.occasionId,
       traditionId: state.traditionId,
+      language: state.language,
+      rsvpEnabled: state.rsvpEnabled,
       scratchTarget: state.scratchTarget,
       borderStyle: state.borderStyle,
       style: state.style,
@@ -287,6 +303,9 @@ export default function CardEditor({
   const [traditionId, setTraditionId] = useState<TraditionId>(
     initial.traditionId,
   );
+  const [language, setLanguage] = useState<CardLanguage>(initial.language);
+  /* On unless the host turns it off; see ReplyFormPanel. */
+  const [rsvpEnabled, setRsvpEnabled] = useState<boolean>(initial.rsvpEnabled);
   const [decorMotion, setDecorMotion] = useState(initial.decorMotion);
   const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>(
     initial.decorIntensity,
@@ -401,6 +420,27 @@ export default function CardEditor({
   }, []);
 
   /**
+   * A language click, which rewrites one word of the draft at most.
+   *
+   * The joining word is the only part of the draft the editor offers as a
+   * preset, so it is the only part a language switch may translate — "weds"
+   * becomes "संग" and back — and only while it is still a preset. A word the
+   * host wrote for themselves is left exactly as they wrote it, as is every
+   * name, title and address: the host typed those, in whichever script they
+   * chose, and a switch has no business rewriting them.
+   */
+  const handleLanguageSelect = useCallback(
+    (next: CardLanguage) => {
+      setLanguage(next);
+      setDraft((previous) => ({
+        ...previous,
+        joinerWord: swapJoinerWord(previous.joinerWord, language, next),
+      }));
+    },
+    [language],
+  );
+
+  /**
    * A tradition click is the one thing that can clear the ornament pack.
    *
    * EVERY tradition click resets it, including a click that lands on another
@@ -444,6 +484,8 @@ export default function CardEditor({
     butterflies,
     occasionId,
     traditionId,
+    language,
+    rsvpEnabled,
     scratchTarget,
     borderStyle,
     style,
@@ -524,6 +566,8 @@ export default function CardEditor({
     setDraft(restored.draft);
     setOccasionId(restored.occasionId);
     setTraditionId(restored.traditionId);
+    setLanguage(restored.language);
+    setRsvpEnabled(restored.rsvpEnabled);
     setDecorMotion(restored.decorMotion);
     setDecorIntensity(restored.decorIntensity);
     setButterflies(restored.butterflies);
@@ -856,9 +900,19 @@ export default function CardEditor({
           onSelect={setTab}
           detailsIncomplete={detailsIncomplete}
         >
-          {/* 1 — DETAILS. Who, what, where. */}
+          {/*
+            1 — DETAILS. Which language, then who, what, where.
+
+            The language comes first, above even the occasion: it decides what
+            the host is about to type everything below in, so it is the one
+            choice that cannot sensibly be made afterwards.
+          */}
           {tab === "details" ? (
             <>
+              <LanguagePicker
+                language={language}
+                onLanguageChange={handleLanguageSelect}
+              />
               <OccasionGrid
                 occasionId={occasionId}
                 onOccasionChange={handleOccasionSelect}
@@ -867,6 +921,7 @@ export default function CardEditor({
                 draft={draft}
                 onChange={handleChange}
                 occasionId={occasionId}
+                language={language}
               />
               <SubEventEditor
                 subEvents={draft.subEvents}
@@ -883,7 +938,9 @@ export default function CardEditor({
               <StylePanel
                 style={style}
                 /* Resolved, so the specimen shows the same line the cover will. */
-                hostNames={coverNameLine(resolveCoverNames(draft, occasionId))}
+                hostNames={coverNameLine(
+                  resolveCoverNames(draft, occasionId, language),
+                )}
                 paletteAccent={getPalette(style.paletteId).accent}
                 borderStyle={borderStyle}
                 onFontPairChange={setFontPair}
@@ -917,13 +974,22 @@ export default function CardEditor({
             </>
           ) : null}
 
-          {/* 3 — STRUCTURE. What appears, and in what order. */}
+          {/*
+            3 — STRUCTURE. What appears, and in what order — down to the reply
+            form, which always comes last and which the host can leave off.
+          */}
           {tab === "structure" ? (
-            <SectionManager
-              blocks={blocks}
-              mintCustomId={mintCustomId}
-              onBlocksChange={setBlocks}
-            />
+            <>
+              <SectionManager
+                blocks={blocks}
+                mintCustomId={mintCustomId}
+                onBlocksChange={setBlocks}
+              />
+              <ReplyFormPanel
+                enabled={rsvpEnabled}
+                onEnabledChange={setRsvpEnabled}
+              />
+            </>
           ) : null}
 
           {/*
@@ -964,6 +1030,7 @@ export default function CardEditor({
               <CheckinPanel
                 enabled={qrCheckinEnabled}
                 onEnabledChange={setQrCheckinEnabled}
+                repliesOpen={rsvpEnabled}
               />
             </>
           ) : null}

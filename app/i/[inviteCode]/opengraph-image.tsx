@@ -96,9 +96,22 @@ export default async function Image({
   const accent = event.config.style.accentOverride ?? palette.accent;
 
   const { eventTitle, eventDate, eventTime } = event.draft;
-  /* The same resolution the card runs, so the unfurl cannot disagree with it. */
-  const names = resolveCoverNames(event.draft, event.config.occasionId);
-  const when = formatWhen(eventDate, eventTime);
+  /*
+    The same resolution the card runs, so the unfurl cannot disagree with it —
+    but in English whatever the card is written in, and not by oversight.
+
+    Satori lays text out without OpenType shaping for Indic scripts. It fetches
+    a Devanagari face happily and then sets it wrong: a vowel sign that is
+    written before its consonant is left after it, so दिसंबर comes out as
+    "दसिंबर", and a conjunct like श्री falls apart into a letter with a visible
+    virama. Checked by rendering both through the ImageResponse this imports.
+    The card itself is a browser and shapes Hindi properly; this image is the
+    one place it cannot be, so the words Lifafa writes here — the date, and the
+    placeholder on a card with no names — stay in the script Satori can set.
+    What the host typed is theirs and is drawn as typed.
+  */
+  const names = resolveCoverNames(event.draft, event.config.occasionId, "en");
+  const when = formatWhen(eventDate, eventTime, "en");
 
   const content: ReactElement = (
     <div

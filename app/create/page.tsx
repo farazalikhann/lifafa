@@ -10,6 +10,7 @@ import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNo
 import { createEvent } from "@/lib/db/events";
 import { clearPendingCard, readPendingCard, writePendingCard } from "@/lib/pendingCard";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
@@ -70,6 +71,10 @@ const EMPTY_CONFIG: CardConfig = {
   butterflies: "none",
   occasionId: DEFAULT_OCCASION_ID,
   traditionId: DEFAULT_TRADITION_ID,
+  /* English until the host picks otherwise, at the very top of the editor. */
+  language: DEFAULT_CARD_LANGUAGE,
+  /* On by default: a headcount is what most hosts are here for. */
+  rsvpEnabled: true,
   /* Off by default: a card that hides its own date has to be asked for. */
   scratchTarget: "none",
   /* Off by default: a border is an addition to the card, not a part of it. */

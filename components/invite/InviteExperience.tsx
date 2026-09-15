@@ -10,6 +10,7 @@ import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { cardCopy } from "@/lib/cardLanguage";
 import { effectiveTheme } from "@/lib/cardTheme";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
@@ -69,8 +70,16 @@ export default function InviteExperience({
   const palette = getPalette(config.style.paletteId);
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
+  /*
+    Everything laid out around the card — the cover, the form, the pass — is
+    written in the card's language, read from the same config the card reads
+    it from.
+  */
+  const { language } = config;
+  const copy = cardCopy(language);
+
   /* The same names the card's own cover sets, flattened to one line. */
-  const names = resolveCoverNames(draft, config.occasionId);
+  const names = resolveCoverNames(draft, config.occasionId, language);
   const coverTitle = names.kind === "line" && names.isPlaceholder
     ? undefined
     : coverNameLine(names);
@@ -79,7 +88,7 @@ export default function InviteExperience({
   const passEventName =
     draft.eventTitle.trim().length > 0
       ? draft.eventTitle.trim()
-      : (coverTitle ?? "Invitation");
+      : (coverTitle ?? copy.invite.headingFallback);
 
   /*
     The page's heading, from the same resolution the cover prints. hostNames is
@@ -115,7 +124,26 @@ export default function InviteExperience({
         setIsSending(false);
 
         if (!result.ok) {
-          setSubmitError(result.error);
+          /*
+            The server's sentence is written in English for a host, and in
+            development carries the Postgres code on the end. An English card
+            shows it as it always has; any other card says the same thing in
+            its own language, because a guest reading Hindi cannot act on an
+            English error any better than on no error at all.
+          */
+          setSubmitError(
+            language === "en" ? result.error : copy.invite.replyFailed,
+          );
+          return;
+        }
+
+        /*
+          The host switched replies off after this guest opened the card. Said
+          plainly, with the form left where it is: "try again" would only have
+          them try again.
+        */
+        if (result.data.kind === "closed") {
+          setSubmitError(copy.invite.repliesClosed);
           return;
         }
 
@@ -132,7 +160,7 @@ export default function InviteExperience({
       .catch((cause: unknown) => {
         console.error("[invite] reply failed:", cause);
         setIsSending(false);
-        setSubmitError("Could not send your reply, please try again.");
+        setSubmitError(copy.invite.replyFailed);
       });
   };
 
@@ -148,11 +176,25 @@ export default function InviteExperience({
       palette={palette}
       accent={config.style.accentOverride}
       title={coverTitle}
+      language={language}
       renderVisual={(state) => <CoverVisual {...state} />}
     >
       <main
+        /*
+          The card's language on everything below, the form and the pass
+          included — they sit outside the card's own root, which carries it
+          too. On a Hindi card the page's own face also takes the card's body
+          stack, which is the one with Devanagari in it; the form used to fall
+          through to whatever the phone had for every word. An English card is
+          left on the page face it has always had.
+        */
+        lang={copy.lang}
         className="min-h-screen"
-        style={{ backgroundColor: palette.background }}
+        style={{
+          backgroundColor: palette.background,
+          fontFamily:
+            copy.script === "devanagari" ? cardTheme.fontFamily : undefined,
+        }}
       >
         {/*
           The card opens with names set in display type, but they are a design
@@ -160,7 +202,7 @@ export default function InviteExperience({
           screen reader announces what the page is before the card starts.
         */}
         <h1 className="sr-only">
-          {pageHeading.length > 0 ? pageHeading : "Invitation"}
+          {pageHeading.length > 0 ? pageHeading : copy.invite.headingFallback}
         </h1>
 
         <div
@@ -191,17 +233,29 @@ export default function InviteExperience({
 
           <Watermark
             show={!config.isPaid}
+            language={language}
             accent={config.style.accentOverride ?? palette.accent}
             surface={palette.surface}
           />
         </div>
 
+        {/*
+          Nothing at all when the host switched replies off: no heading, no
+          empty box, no line explaining the absence. The card simply ends where
+          the host's last section ends, which is what a card sent only to share
+          the details should do.
+
+          A host who switches replies off while this page is open does not
+          reach it here — the config was read when the page was — and that
+          guest meets the refusal in addOrUpdateReply instead.
+        */}
         {stage === "confirmed" && submitted !== null ? (
           <RsvpConfirmed
             status={submitted.status}
             partySize={submitted.partySize}
             name={submitted.name}
             theme={cardTheme}
+            language={language}
             onChangeReply={() => setStage("form")}
             pass={
               /*
@@ -217,19 +271,21 @@ export default function InviteExperience({
                   guestName={submitted.name}
                   eventName={passEventName}
                   theme={cardTheme}
+                  language={language}
                 />
               ) : null
             }
           />
-        ) : (
+        ) : config.rsvpEnabled ? (
           <RsvpPanel
             theme={cardTheme}
+            language={language}
             initial={submitted}
             onSubmit={handleSubmit}
             isSending={isSending}
             submitError={submitError}
           />
-        )}
+        ) : null}
       </main>
     </CoverShell>
   );

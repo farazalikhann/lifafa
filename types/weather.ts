@@ -47,6 +47,14 @@ export interface EventWeather {
   lowC: number;
   /** Plain English, already resolved from the WMO code. */
   condition: string;
+  /**
+   * The WMO code `condition` was resolved from, or null when there was none.
+   *
+   * Carried beside the English so a card in another language can say the same
+   * thing in its own words — lib/cardLanguage.ts looks the code up rather than
+   * the sentence, which would break the first time the English was reworded.
+   */
+  conditionCode: number | null;
   icon: WeatherIcon;
   /**
    * How many past years the seasonal figures were averaged over.

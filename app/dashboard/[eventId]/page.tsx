@@ -6,6 +6,7 @@ import GuestTable from "@/components/dashboard/GuestTable";
 import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
 import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import ReminderPanel from "@/components/dashboard/ReminderPanel";
+import RepliesOffNotice from "@/components/dashboard/RepliesOffNotice";
 import SavedNotice from "@/components/dashboard/SavedNotice";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
@@ -58,7 +59,8 @@ export default async function DashboardPage({
 
   const event = eventResult.data;
   const { draft } = event;
-  const when = formatWhen(draft.eventDate, draft.eventTime);
+  /* The host's page, so the host's language, whatever the card is written in. */
+  const when = formatWhen(draft.eventDate, draft.eventTime, "en");
   const title =
     draft.eventTitle.length > 0 ? draft.eventTitle : "Untitled invitation";
   /* One link, built once, shared by the share bar and the reminder message. */
@@ -227,7 +229,7 @@ export default async function DashboardPage({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
             {/* The real link, built from the event's own code. */}
-            <ShareBar inviteUrl={url} />
+            <ShareBar inviteUrl={url} language={event.config.language} />
           </div>
           <div className="flex gap-2">
             <ExportCsvButton guests={guests} eventId={event.id} />
@@ -251,6 +253,17 @@ export default async function DashboardPage({
           guest list. It is a fact about the day, not a fact about who is coming.
         */}
         <WeatherSummary weather={weather} showWeather={event.showWeather} />
+
+        {/*
+          Directly over the headcount it explains. A host who switched the
+          reply form off and forgot, then comes here wondering why nobody has
+          replied, is owed the reason in the place they are looking — not a
+          headcount of zero that reads like a card nobody opened.
+        */}
+        <RepliesOffNotice
+          repliesOpen={event.config.rsvpEnabled}
+          editHref={`/dashboard/${event.id}/edit`}
+        />
 
         <HeadcountSummary guests={guests} />
         <GuestTable guests={guests} />

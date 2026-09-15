@@ -22,9 +22,19 @@ import { useId, type ReactElement } from "react";
 export default function CheckinPanel({
   enabled,
   onEnabledChange,
+  repliesOpen,
 }: {
   enabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
+  /**
+   * Whether the card still ends in a reply form.
+   *
+   * A pass is handed out by the reply form and by nothing else, so with the
+   * form off no new guest can get one. The switch is left working rather than
+   * disabled: a host who closes replies after collecting them still has
+   * guests holding passes, and still needs the scanner on the day.
+   */
+  repliesOpen: boolean;
 }): ReactElement {
   const headingId = useId();
   const hintId = useId();
@@ -79,6 +89,9 @@ export default function CheckinPanel({
       <p id={hintId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
         Turn this on to scan guests in at the entrance on the event day. Leave
         it off for smaller gatherings.
+        {enabled && !repliesOpen
+          ? " Guests get their pass when they reply, and the reply form is off, so only guests who have already replied will have one."
+          : null}
       </p>
     </section>
   );

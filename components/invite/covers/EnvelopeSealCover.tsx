@@ -52,8 +52,27 @@ const SEAL_EASE = "cubic-bezier(0.4,-1.2,0.7,1)";
 /** Everything the envelope is made of falls away on this curve. */
 const DROP_EASE = "cubic-bezier(0.55,0,0.75,0.4)";
 
-/** Words that join two names rather than being one, skipped when taking initials. */
-const JOINERS = new Set(["and", "weds", "with", "the", "of", "to", "&", "+", "x"]);
+/**
+ * Words that join two names rather than being one, skipped when taking initials.
+ *
+ * The Hindi presets are here too, so "आरव संग मीरा" gives आम rather than आसं —
+ * and एवं and व, the two a host writing formally reaches for instead.
+ */
+const JOINERS = new Set([
+  "and",
+  "weds",
+  "with",
+  "the",
+  "of",
+  "to",
+  "&",
+  "+",
+  "x",
+  "संग",
+  "और",
+  "एवं",
+  "व",
+]);
 
 /**
  * Up to two initials for the seal, or an empty string when there is nothing
@@ -67,7 +86,12 @@ function initialsOf(title: string | undefined): string {
   const letters: string[] = [];
 
   for (const word of title.split(/\s+/)) {
-    const cleaned = word.replace(/[^\p{L}\p{N}]/gu, "");
+    /*
+      Marks are kept along with letters. Devanagari writes its vowel signs and
+      the anusvara as combining marks, and stripping them turned "संग" into
+      "सग" — which is not in the joiner list, so it was sealed as an initial.
+    */
+    const cleaned = word.replace(/[^\p{L}\p{M}\p{N}]/gu, "");
 
     if (cleaned.length === 0 || JOINERS.has(cleaned.toLowerCase())) {
       continue;
