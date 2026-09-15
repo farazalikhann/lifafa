@@ -13,12 +13,13 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /** The section's own rhythm, shared with the group the panel covers. */
-const GAP = "calc(1rem * var(--card-gap-scale, 1))";
+const GAP = "calc(1 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))";
 
 export default function DetailsSection({
   draft,
@@ -70,7 +71,7 @@ export default function DetailsSection({
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
-          className="text-[0.84rem] tracking-[0.3em] uppercase"
+          className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.3em] uppercase"
           style={{
             color: theme.textMuted,
             opacity: placeholderOpacity(!hasDate, "muted"),
@@ -86,7 +87,7 @@ export default function DetailsSection({
       */}
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className={`max-w-[16ch] text-[1.825rem] font-medium tracking-[0.02em] break-words text-balance sm:text-[2.125rem] ${
+          className={`max-w-[16ch] text-[1.825rem] font-medium tracking-[0.02em] break-words text-balance sm:text-[calc(2.125*var(--card-rem,1rem))] ${
             copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
           }`}
           style={{
@@ -107,8 +108,8 @@ export default function DetailsSection({
       className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
         gap: GAP,
       }}
     >

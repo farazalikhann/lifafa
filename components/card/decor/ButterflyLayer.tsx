@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactElement } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { BUTTERFLY_ASPECT, butterflySources } from "@/lib/butterflies";
+import { artWidth } from "@/lib/cardScale";
 import type { ButterflyStyle, DecorIntensity } from "@/types/card";
 
 /**
@@ -168,6 +169,8 @@ function Butterfly({
   };
 
   const wing: CSSProperties = {
+    /* The span directly around the image, so a fluid card can grow it. */
+    ...artWidth(flyer.size),
     animationName: "lifafa-butterfly-wing",
     animationDuration: `${flyer.wing}s`,
     /*
@@ -187,7 +190,7 @@ function Butterfly({
         className="block"
         style={{ opacity: OPACITY, transform: `rotate(${flyer.rotate}deg)` }}
       >
-        <span className="block" style={wing}>
+        <span className="lifafa-card-art block" style={wing}>
           <img
             src={src}
             alt=""

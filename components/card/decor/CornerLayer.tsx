@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { artWidth } from "@/lib/cardScale";
 import type { TraditionPack } from "@/lib/traditionPacks";
 import type { TraditionId } from "@/types/occasion";
 import type { AnyOrnamentId } from "@/types/ornament";
@@ -204,8 +205,12 @@ export default function CornerLayer({
           return (
             <span
               key={`${id}-${corner.left}-${corner.top}`}
-              className="absolute block"
+              /* The art class grows the ornament with a fluid card. */
+              className="lifafa-card-art absolute block"
               style={{
+                ...artWidth(
+                  entry.aspect >= 1 ? corner.size : corner.size * entry.aspect,
+                ),
                 left: `${corner.left}%`,
                 top: `${corner.top}%`,
                 /* Ornaments draw with currentColor, so the accent is set here. */

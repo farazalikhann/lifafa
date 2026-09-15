@@ -9,6 +9,7 @@ import {
   lineDelay,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { EventDraft } from "@/types/event";
 
@@ -48,9 +49,9 @@ export default function MessageSection({
       className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
-        gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
+        gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       <div className={reveal} style={lineDelay(0)}>
@@ -63,7 +64,7 @@ export default function MessageSection({
 
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className="max-w-[32ch] text-[1.0625rem] leading-relaxed break-words text-pretty italic"
+          className="max-w-[32ch] text-[calc(1.0625*var(--card-rem,1rem))] leading-relaxed break-words text-pretty italic"
           style={{ color: theme.textMuted }}
         >
           {message}

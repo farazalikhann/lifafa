@@ -11,7 +11,10 @@ import CornerLayer from "@/components/card/decor/CornerLayer";
 import ScrollFade, {
   scrollFadeDepth,
 } from "@/components/card/decor/ScrollFade";
-import DecorLayer, { CardFlourish } from "@/components/card/decor/DecorLayer";
+import DecorLayer, {
+  CardFlourish,
+  MarginDecorLayer,
+} from "@/components/card/decor/DecorLayer";
 import HangingLayer, {
   hangingDepth,
   hangingIdsFor,
@@ -39,6 +42,7 @@ import {
 import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
+import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
@@ -96,6 +100,9 @@ const SECTION_TOP_PAD = 40;
  */
 const SECTION_SIDE_PAD = 28;
 
+/** The pack divider's longer side, in px at the card's 420px design width. */
+const DIVIDER_SIZE = 168;
+
 /**
  * One Arabic line with its transliteration and translation under it, or nothing
  * at all.
@@ -150,7 +157,7 @@ function Blessing({
       {entry.transliteration.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[0.9rem] leading-relaxed wrap-anywhere italic"
+          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem))] leading-relaxed wrap-anywhere italic"
           style={{ color: theme.textMuted }}
         >
           {entry.transliteration}
@@ -160,7 +167,7 @@ function Blessing({
       {entry.translation.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[0.9rem] leading-relaxed wrap-anywhere"
+          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem))] leading-relaxed wrap-anywhere"
           style={{ color: theme.textMuted }}
         >
           {entry.translation}
@@ -456,12 +463,22 @@ export default function CardCanvas({
   invite,
   weather = null,
   weatherTheme = null,
+  fluid = false,
 }: {
   draft: EventDraft;
   theme: Theme;
   config: CardConfig;
   motifs: readonly Motif[];
   sizing: CardSizing;
+  /**
+   * Whether the card grows with a tablet or laptop screen, from 768px up.
+   *
+   * Only the guest's invitation passes it. The editor's frame and its full
+   * screen preview both draw the card inside a phone-sized box of their own,
+   * and a card that sized itself off the screen would burst out of it. Below
+   * 768px it changes nothing at all — see lib/cardScale.ts.
+   */
+  fluid?: boolean;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -740,7 +757,7 @@ export default function CardCanvas({
     "--card-gap-scale": String(DENSITY_GAP_SCALE[style.density]),
   } as CSSProperties;
 
-  return (
+  const card = (
     /*
       `overflow-x-clip`, deliberately, and not `overflow-hidden`.
 
@@ -763,7 +780,11 @@ export default function CardCanvas({
         globals.css all read the nearest `lang` up the tree.
       */
       lang={copy.lang}
-      className="relative mx-auto w-full max-w-[420px] overflow-x-clip"
+      /*
+        `lifafa-card-root` is what a fluid wrapper widens from 768px up; see
+        globals.css. Inert everywhere else.
+      */
+      className="lifafa-card-root relative mx-auto w-full max-w-[420px] overflow-x-clip"
       style={{
         ...cssVariables,
         backgroundColor: effectiveTheme.background,
@@ -887,8 +908,8 @@ export default function CardCanvas({
       <div
         className="relative z-10"
         style={{
-          paddingTop: contentTopInset,
-          paddingInline: contentSideInset,
+          paddingTop: cardPx(contentTopInset),
+          paddingInline: cardPx(contentSideInset),
         }}
       >
         {/*
@@ -991,8 +1012,8 @@ export default function CardCanvas({
                 className="flex flex-col items-center justify-center gap-4 px-7 text-center"
                 style={{
                   minHeight,
-                  paddingTop: headPadTop,
-                  paddingBottom: headPadBottom,
+                  paddingTop: cardPx(headPadTop),
+                  paddingBottom: cardPx(headPadBottom),
                 }}
               >
                 {/*
@@ -1013,7 +1034,7 @@ export default function CardCanvas({
                   <panel.Component
                     key={panel.id}
                     instanceId={`cover-calligraphy-${panel.id}`}
-                    className="block h-auto w-full max-w-[19rem]"
+                    className="block h-auto w-full max-w-[calc(19*var(--card-rem,1rem))]"
                     ground={calligraphyGround(effectiveTheme.background)}
                   />
                 ))}
@@ -1028,7 +1049,7 @@ export default function CardCanvas({
                       address; the blessing is what is being offered, and the
                       card should read in that order of weight.
                     */
-                    sizeClass="text-[1.25rem] leading-[2] sm:text-[1.375rem]"
+                    sizeClass="text-[1.25rem] leading-[2] sm:text-[calc(1.375*var(--card-rem,1rem))]"
                   />
                 ) : null}
 
@@ -1037,7 +1058,7 @@ export default function CardCanvas({
                     entry={blessing}
                     pack={pack}
                     theme={effectiveTheme}
-                    sizeClass="text-[1.375rem] leading-[2.1] sm:text-[1.5rem]"
+                    sizeClass="text-[1.375rem] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem))]"
                   />
                 ) : null}
               </div>
@@ -1060,7 +1081,27 @@ export default function CardCanvas({
                   at its top. Padding here was adding a band of nothing on top
                   of that, which is what left the gap under the names.
                 */
-                <div className="flex justify-center">
+                /*
+                  The art class only when the pack's divider is drawn: the
+                  flourish sizes itself in card pixels already, and the rule
+                  would size it from an --art-width it was never given.
+                */
+                <div
+                  className={
+                    dividerOrnament !== null
+                      ? "lifafa-card-art flex justify-center"
+                      : "flex justify-center"
+                  }
+                  style={
+                    dividerOrnament !== null
+                      ? artWidth(
+                          dividerOrnament.aspect >= 1
+                            ? DIVIDER_SIZE
+                            : DIVIDER_SIZE * dividerOrnament.aspect,
+                        )
+                      : undefined
+                  }
+                >
                   {/*
                     The vine takes the divider's place rather than joining it —
                     two ornaments stacked on one hairline reads as a mistake.
@@ -1070,7 +1111,7 @@ export default function CardCanvas({
                   {dividerOrnament !== null ? (
                     <dividerOrnament.Component
                       instanceId={`divider-${index}`}
-                      size={168}
+                      size={DIVIDER_SIZE}
                       style={{ color: effectiveTheme.accent, opacity: 0.55 }}
                     />
                   ) : (
@@ -1114,9 +1155,9 @@ export default function CardCanvas({
                     style={{
                       color: effectiveTheme.accent,
                       opacity: 0.38,
-                      left: archInsetX,
-                      right: archInsetX,
-                      top: archInsetTop,
+                      left: cardPx(archInsetX),
+                      right: cardPx(archInsetX),
+                      top: cardPx(archInsetTop),
                     }}
                   />
                   <div className="relative">{covered}</div>
@@ -1165,6 +1206,37 @@ export default function CardCanvas({
           />
         ) : null}
       </div>
+    </div>
+  );
+
+  if (!fluid) {
+    return card;
+  }
+
+  return (
+    /*
+      Full width, where the card itself is not, and that is what it is for.
+
+      The scale variables live here rather than on the card so the margin decor
+      beside the card can read the card's width too. Below 768px this is a plain
+      block with nothing in it but the card, which lays out exactly as it would
+      without it: the card still centres itself inside the same width.
+    */
+    <div className="lifafa-card-fluid relative">
+      {/*
+        Before the card in the source, so the card paints over it. The card
+        root is opaque, so the part of the scatter that falls behind it is
+        simply covered and only the margins show.
+      */}
+      <MarginDecorLayer
+        accent={effectiveTheme.accent}
+        motion={config.decorMotion}
+        motifs={motifs}
+        intensity={config.decorIntensity}
+        bandHeight={bandHeight}
+        maxAlpha={decorMaxAlpha}
+      />
+      {card}
     </div>
   );
 }

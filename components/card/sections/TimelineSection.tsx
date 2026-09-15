@@ -12,6 +12,7 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -84,19 +85,19 @@ export default function TimelineSection({
       className="flex flex-col justify-center px-7"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
-        gap: `calc(1.5rem * var(--card-gap-scale, 1))`,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
+        gap: `calc(1.5 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       <p
-        className={`text-center text-[0.7rem] tracking-[0.24em] uppercase ${reveal}`}
+        className={`text-center text-[calc(0.7*var(--card-rem,1rem))] tracking-[0.24em] uppercase ${reveal}`}
         style={{ color: theme.textMuted, transitionDelay: "0ms" }}
       >
         {copy.timeline.heading}
       </p>
 
-      <ol className="relative flex flex-col" style={{ gap: `calc(1.25rem * var(--card-gap-scale, 1))` }}>
+      <ol className="relative flex flex-col" style={{ gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))` }}>
         {/*
           One rail behind every dot rather than a border on each row.
 
@@ -110,7 +111,7 @@ export default function TimelineSection({
           aria-hidden="true"
           className="absolute top-2 bottom-2 w-px"
           style={{
-            left: (RAIL - 1) / 2,
+            left: cardPx((RAIL - 1) / 2),
             backgroundColor: theme.accent,
             opacity: 0.28,
           }}
@@ -138,24 +139,24 @@ export default function TimelineSection({
               <span
                 aria-hidden="true"
                 className="relative shrink-0"
-                style={{ width: RAIL }}
+                style={{ width: cardPx(RAIL) }}
               >
                 <span
                   className="absolute top-1.5 rounded-full"
                   style={{
-                    left: (RAIL - DOT) / 2,
-                    width: DOT,
-                    height: DOT,
+                    left: cardPx((RAIL - DOT) / 2),
+                    width: cardPx(DOT),
+                    height: cardPx(DOT),
                     backgroundColor: theme.accent,
                     /* The card's own ground, so the rail is cut rather than crossed. */
-                    boxShadow: `0 0 0 3px ${theme.background}`,
+                    boxShadow: `0 0 0 ${cardPx(3)} ${theme.background}`,
                   }}
                 />
               </span>
 
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <p
-                  className="text-[1.05rem] leading-snug break-words"
+                  className="text-[calc(1.05*var(--card-rem,1rem))] leading-snug break-words"
                   style={{
                     color: theme.textPrimary,
                     fontFamily: "var(--card-heading)",
@@ -167,7 +168,7 @@ export default function TimelineSection({
 
                 {when !== null ? (
                   <p
-                    className="text-[0.8125rem] leading-relaxed"
+                    className="text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed"
                     style={{ color: theme.accent }}
                   >
                     {weekday !== null ? `${weekday}, ` : ""}
@@ -177,7 +178,7 @@ export default function TimelineSection({
 
                 {venue.length > 0 ? (
                   <p
-                    className="text-[0.8125rem] leading-relaxed break-words"
+                    className="text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed break-words"
                     style={{ color: theme.textMuted }}
                   >
                     {venue}
@@ -186,7 +187,7 @@ export default function TimelineSection({
 
                 {note.length > 0 ? (
                   <p
-                    className="text-[0.78rem] leading-relaxed break-words text-pretty italic"
+                    className="text-[calc(0.78*var(--card-rem,1rem))] leading-relaxed break-words text-pretty italic"
                     style={{ color: theme.textMuted }}
                   >
                     {note}
@@ -198,7 +199,7 @@ export default function TimelineSection({
                     href={mapsSearchUrl(entry.venueName, entry.venueAddress)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-0.5 self-start rounded text-[0.78rem] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
+                    className="mt-0.5 self-start rounded text-[calc(0.78*var(--card-rem,1rem))] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
                     style={{ color: theme.accent, outlineColor: theme.accent }}
                   >
                     {copy.timeline.mapLink}

@@ -9,6 +9,7 @@ import {
   lineDelay,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { EventDraft } from "@/types/event";
 
@@ -58,9 +59,9 @@ export default function FamilySection({
       className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
-        gap: `calc(2rem * var(--card-gap-scale, 1))`,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
+        gap: `calc(2 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       {blocks.map((block, index) => (
@@ -71,7 +72,7 @@ export default function FamilySection({
         >
           {block.name !== null ? (
             <p
-              className="max-w-[24ch] text-[1.25rem] leading-snug break-words"
+              className="max-w-[24ch] text-[calc(1.25*var(--card-rem,1rem))] leading-snug break-words"
               style={{
                 color: theme.textPrimary,
                 fontFamily: "var(--card-heading)",
@@ -84,7 +85,7 @@ export default function FamilySection({
 
           {block.parents !== null ? (
             <p
-              className="max-w-[30ch] text-[0.9375rem] leading-relaxed break-words text-pretty"
+              className="max-w-[30ch] text-[calc(0.9375*var(--card-rem,1rem))] leading-relaxed break-words text-pretty"
               style={{ color: theme.textPrimary }}
             >
               {block.parents}
@@ -93,7 +94,7 @@ export default function FamilySection({
 
           {block.city !== null ? (
             <p
-              className="text-[0.8125rem] tracking-[0.14em] uppercase"
+              className="text-[calc(0.8125*var(--card-rem,1rem))] tracking-[0.14em] uppercase"
               style={{ color: theme.textMuted }}
             >
               {block.city}

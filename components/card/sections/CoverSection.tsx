@@ -14,6 +14,7 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -64,7 +65,7 @@ function HeroName({
 }): ReactElement {
   return (
     <p
-      className={`text-[2.4375rem] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[2.75rem] ${
+      className={`text-[2.4375rem] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[calc(2.75*var(--card-rem,1rem))] ${
         script === "devanagari" ? "leading-[1.45]" : "leading-[1.05]"
       }`}
       style={{
@@ -169,9 +170,9 @@ export default function CoverSection({
       className="relative flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
-        gap: `calc(1.5rem * var(--card-gap-scale, 1))`,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
+        gap: `calc(1.5 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       {names.kind === "pair" ? (
@@ -203,7 +204,7 @@ export default function CoverSection({
               into the name overhead.
             */}
             <p
-              className={`text-[1.1rem] tracking-[0.22em] break-words lowercase sm:text-[1.2rem] ${
+              className={`text-[1.1rem] tracking-[0.22em] break-words lowercase sm:text-[calc(1.2*var(--card-rem,1rem))] ${
                 copy.script === "devanagari" ? "leading-normal" : "leading-none"
               }`}
               style={{ color: theme.accent }}
@@ -232,7 +233,7 @@ export default function CoverSection({
 
       <div className={reveal} style={lineDelay(stepAfterNames)}>
         <p
-          className="text-[0.84rem] tracking-[0.28em] break-words uppercase text-balance"
+          className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.28em] break-words uppercase text-balance"
           style={{
             color: theme.textMuted,
             opacity: placeholderOpacity(title.isPlaceholder, "muted"),
@@ -269,7 +270,7 @@ export default function CoverSection({
         style={cueRetired ? undefined : lineDelay(stepAfterNames + 2)}
       >
         <span
-          className="text-[0.765rem] tracking-[0.3em] uppercase"
+          className="text-[calc(0.765*var(--card-rem,1rem))] tracking-[0.3em] uppercase"
           style={{ color: theme.textMuted }}
         >
           {copy.cover.scrollCue}

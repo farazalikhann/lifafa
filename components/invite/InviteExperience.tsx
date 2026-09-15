@@ -223,6 +223,12 @@ export default function InviteExperience({
             audience="guest"
             invite={invite}
             /*
+              Grows with a tablet or laptop screen from 768px up, and fills the
+              page either side of it. The one card in the app that does: the
+              editor's previews draw it inside a phone-sized box of their own.
+            */
+            fluid
+            /*
               The page resolves the reading on the server and hands it here; it
               used to stop at this component, which took the prop and never
               passed it on. Everything behind it worked — the venue was

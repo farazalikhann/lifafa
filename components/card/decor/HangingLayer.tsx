@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactElement } from "react";
+import { artWidth, cardPx } from "@/lib/cardScale";
 import type { TraditionPack } from "@/lib/traditionPacks";
 import type { TraditionId } from "@/types/occasion";
 import type { AnyOrnamentId, HangingOrnament } from "@/types/ornament";
@@ -280,9 +281,14 @@ export default function HangingLayer({
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-[15] overflow-clip"
     >
+      {/*
+        In card pixels, so on a card that has grown with a tablet screen the
+        band grows with it: every ornament is placed by a percentage of this
+        height, and `hangingDepth` stays true of the card at any width.
+      */}
       <div
         className="sticky top-0 w-full overflow-clip"
-        style={{ height: `${BAND_HEIGHT}px` }}
+        style={{ height: cardPx(BAND_HEIGHT) }}
       >
         {hanging.map((ornament, index) => {
           const entry = pack.findOrnament(ornament.id);
@@ -303,12 +309,22 @@ export default function HangingLayer({
             ? SWING_SECONDS[swingIndex++ % SWING_SECONDS.length]
             : 0;
 
-          const swingStyle: CSSProperties = ornament.swing
-            ? {
-                animationDuration: `${duration}s`,
-                animationDelay: `${ornament.delayMs}ms`,
-              }
-            : {};
+          const size = ornament.sizeRem * ROOT_FONT_PX;
+
+          /*
+            The art width rides with the swing, which is the element directly
+            around the drawing — it is what the fluid card's sizing rule reaches
+            through. `size` is the longer side, so a tall lantern is narrower.
+          */
+          const swingStyle: CSSProperties = {
+            ...artWidth(entry.aspect >= 1 ? size : size * entry.aspect),
+            ...(ornament.swing
+              ? {
+                  animationDuration: `${duration}s`,
+                  animationDelay: `${ornament.delayMs}ms`,
+                }
+              : {}),
+          };
 
           return (
             <span
@@ -329,11 +345,11 @@ export default function HangingLayer({
                 the right the moment the animation took over.
               */}
               <span
-                className={ornament.swing ? "lifafa-hang-swing" : "block"}
+                className={`lifafa-card-art ${ornament.swing ? "lifafa-hang-swing" : "block"}`}
                 style={swingStyle}
               >
                 <Shape
-                  size={ornament.sizeRem * ROOT_FONT_PX}
+                  size={size}
                   /*
                     Stable per slot and unique across the layer, which is what
                     the lantern's and the diya's glow filters need: an id built

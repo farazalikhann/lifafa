@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { formatDateAndTime } from "@/lib/cardFormat";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
+import { cardPx } from "@/lib/cardScale";
 import { getWeatherTheme } from "@/lib/weatherThemes";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
@@ -102,6 +103,8 @@ function WeatherGlyph({
       viewBox="0 0 24 24"
       width={size}
       height={size}
+      /* The same px as the attributes, grown with a fluid card. */
+      style={{ width: cardPx(size), height: cardPx(size) }}
       role="presentation"
       focusable="false"
       aria-hidden
@@ -176,6 +179,7 @@ function FrameRule({ flip }: { flip?: boolean }): ReactElement {
       viewBox="0 0 120 8"
       width="120"
       height="8"
+      style={{ width: cardPx(120), height: cardPx(8) }}
       role="presentation"
       focusable="false"
       aria-hidden
@@ -225,7 +229,7 @@ export default function WeatherPanel({
     return (
       <section className="px-7 pb-10 text-center">
         <p
-          className="mx-auto max-w-[36ch] text-[0.85rem] leading-relaxed text-pretty"
+          className="mx-auto max-w-[36ch] text-[calc(0.85*var(--card-rem,1rem))] leading-relaxed text-pretty"
           style={{ color: theme.textMuted }}
         >
           {sentenceOf(weather, copy)}
@@ -252,12 +256,12 @@ export default function WeatherPanel({
             style={{ color: theme.accent }}
           >
             <WeatherGlyph icon={weather.icon} size={22} />
-            <p className="text-[0.9rem] font-medium">{condition}</p>
+            <p className="text-[calc(0.9*var(--card-rem,1rem))] font-medium">{condition}</p>
           </div>
 
           {when !== null ? (
             <p
-              className="text-[0.75rem] tracking-[0.14em] uppercase"
+              className="text-[calc(0.75*var(--card-rem,1rem))] tracking-[0.14em] uppercase"
               style={{ color: theme.textMuted }}
             >
               {when}
@@ -265,14 +269,14 @@ export default function WeatherPanel({
           ) : null}
 
           <p
-            className="text-[0.95rem] font-medium"
+            className="text-[calc(0.95*var(--card-rem,1rem))] font-medium"
             style={{ color: theme.textPrimary }}
           >
             {range}
           </p>
 
           <p
-            className="max-w-[38ch] text-[0.72rem] leading-relaxed text-pretty"
+            className="max-w-[38ch] text-[calc(0.72*var(--card-rem,1rem))] leading-relaxed text-pretty"
             style={{ color: theme.textMuted }}
           >
             {note ?? heading}
@@ -286,7 +290,7 @@ export default function WeatherPanel({
     return (
       <section className="px-7 pb-10">
         <div
-          className="mx-auto flex max-w-[320px] flex-col items-center gap-3 px-6 py-6 text-center"
+          className="mx-auto flex max-w-[calc(320*var(--card-px,1px))] flex-col items-center gap-3 px-6 py-6 text-center"
           style={{
             backgroundColor: theme.surface,
             border: `1px solid ${theme.accent}55`,
@@ -298,7 +302,7 @@ export default function WeatherPanel({
           </div>
 
           <p
-            className="text-[0.68rem] tracking-[0.22em] uppercase"
+            className="text-[calc(0.68*var(--card-rem,1rem))] tracking-[0.22em] uppercase"
             style={{ color: theme.textMuted }}
           >
             {heading}
@@ -309,7 +313,7 @@ export default function WeatherPanel({
           </div>
 
           <p
-            className="text-[1.05rem] leading-snug"
+            className="text-[calc(1.05*var(--card-rem,1rem))] leading-snug"
             style={{
               color: theme.textPrimary,
               fontFamily: "var(--card-heading)",
@@ -319,13 +323,13 @@ export default function WeatherPanel({
             {range}
           </p>
 
-          <p className="text-[0.85rem]" style={{ color: theme.textPrimary }}>
+          <p className="text-[calc(0.85*var(--card-rem,1rem))]" style={{ color: theme.textPrimary }}>
             {condition}
           </p>
 
           {note !== null ? (
             <p
-              className="max-w-[30ch] text-[0.72rem] leading-relaxed text-pretty"
+              className="max-w-[30ch] text-[calc(0.72*var(--card-rem,1rem))] leading-relaxed text-pretty"
               style={{ color: theme.textMuted }}
             >
               {note}
@@ -344,7 +348,7 @@ export default function WeatherPanel({
   return (
     <section className="px-7 pb-10">
       <div
-        className="mx-auto flex max-w-[320px] items-start gap-4 rounded-2xl px-5 py-4"
+        className="mx-auto flex max-w-[calc(320*var(--card-px,1px))] items-start gap-4 rounded-2xl px-5 py-4"
         style={{
           backgroundColor: theme.surface,
           border: `1px solid ${theme.accent}33`,
@@ -356,26 +360,26 @@ export default function WeatherPanel({
 
         <div className="flex min-w-0 flex-col gap-1 text-left">
           <p
-            className="text-[0.68rem] tracking-[0.18em] uppercase"
+            className="text-[calc(0.68*var(--card-rem,1rem))] tracking-[0.18em] uppercase"
             style={{ color: theme.textMuted }}
           >
             {heading}
           </p>
 
           <p
-            className="text-[0.95rem] font-medium"
+            className="text-[calc(0.95*var(--card-rem,1rem))] font-medium"
             style={{ color: theme.textPrimary }}
           >
             {range}
           </p>
 
-          <p className="text-[0.85rem]" style={{ color: theme.textPrimary }}>
+          <p className="text-[calc(0.85*var(--card-rem,1rem))]" style={{ color: theme.textPrimary }}>
             {condition}
           </p>
 
           {note !== null ? (
             <p
-              className="text-[0.72rem] leading-relaxed text-pretty"
+              className="text-[calc(0.72*var(--card-rem,1rem))] leading-relaxed text-pretty"
               style={{ color: theme.textMuted }}
             >
               {note}

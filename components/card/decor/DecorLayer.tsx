@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactElement } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { artWidth } from "@/lib/cardScale";
 import type { Motif } from "@/lib/motifs";
 import type { DecorIntensity, DecorMotion } from "@/types/card";
 
@@ -377,10 +378,210 @@ export default function DecorLayer({
                 static — nothing in the keyframes touches filter or this
                 element's transform — so the animation is still opacity and
                 transform only, on one element per shape.
+
+                The art class is what grows the motif with a fluid card.
               */}
               <span
-                className="block"
+                className="lifafa-card-art block"
                 style={{
+                  ...artWidth(size),
+                  opacity,
+                  transform: `rotate(${rotation}deg)`,
+                  filter:
+                    size >= BLUR_MIN_SIZE ? `blur(${BLUR_RADIUS})` : undefined,
+                }}
+              >
+                <MotifShape size={size} />
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   The margin.
+
+   On a tablet or a laptop the card is a column down the middle of a screen
+   much wider than it, and the rest of that screen was bare background, which
+   read as a page that had not finished loading. This carries the card's own
+   scatter out into it, at lower strength, so the empty sides read as the table
+   the card is lying on rather than as nothing.
+   --------------------------------------------------------------------------- */
+
+interface MarginShape {
+  /** Which margin the shape sits in. */
+  side: "left" | "right";
+  /**
+   * How far across that margin, as a percentage of its width, measured from
+   * the screen's edge on both sides.
+   *
+   * A percentage of the margin rather than of the screen, because the margin
+   * is what varies: a 104px strip beside a portrait iPad's card and a 360px one
+   * beside a laptop's. A position authored against the screen would land behind
+   * the card on one of them and far out in the empty half on the other.
+   */
+  across: number;
+  top: number;
+  delay: number;
+  duration: number;
+}
+
+/**
+ * Hand authored for the same reason the card's own table is: the server and
+ * the browser must place every shape identically.
+ *
+ * Alternates sides row by row, so any prefix the intensity takes is balanced
+ * between the two margins, and keeps the two sides at different heights so
+ * they do not read as a mirror image of each other.
+ */
+const MARGIN_SHAPES: readonly MarginShape[] = [
+  { side: "left", across: 34, top: 14, delay: 0.6, duration: 17 },
+  { side: "right", across: 58, top: 30, delay: 2.1, duration: 19 },
+  { side: "left", across: 62, top: 56, delay: 3.8, duration: 15 },
+  { side: "right", across: 28, top: 72, delay: 1.2, duration: 18 },
+  /* Rows 5-8 join at "normal". */
+  { side: "left", across: 20, top: 84, delay: 4.9, duration: 20 },
+  { side: "right", across: 70, top: 8, delay: 0.3, duration: 16 },
+  { side: "left", across: 72, top: 30, delay: 5.4, duration: 18 },
+  { side: "right", across: 40, top: 50, delay: 2.9, duration: 21 },
+  /* Rows 9-12 only at "lively". */
+  { side: "left", across: 44, top: 40, delay: 1.7, duration: 16 },
+  { side: "right", across: 18, top: 90, delay: 6.2, duration: 19 },
+  { side: "left", across: 12, top: 4, delay: 3.3, duration: 17 },
+  { side: "right", across: 82, top: 64, delay: 4.4, duration: 15 },
+];
+
+const MARGIN_COUNT: Record<DecorIntensity, number> = {
+  subtle: 4,
+  normal: 8,
+  lively: 12,
+};
+
+/**
+ * How much fainter the margin is than the card.
+ *
+ * Enough below the card's own scatter that the card still reads as the place
+ * the decoration belongs, and the margin as the same pattern trailing off
+ * rather than as a second card beside it.
+ */
+const MARGIN_OPACITY_SCALE = 0.6;
+
+/** Tailwind's `md`: the width from which a guest's card grows. */
+const WIDE_QUERY = "(min-width: 48rem)";
+
+/**
+ * The card's scatter, continued into the page either side of it.
+ *
+ * Mounted by CardCanvas beside a fluid card and nowhere else, and rendered only
+ * from 768px up — below that the card fills the screen and there is no margin
+ * to decorate. Takes exactly what DecorLayer takes, so a host's motion,
+ * intensity and motifs reach the margin unchanged, and a host who switched the
+ * motion off gets a plain margin to match their plain card.
+ *
+ * Positioned against `--card-width`, which the fluid wrapper this sits in
+ * publishes: the card is centred, so its left edge is at 50% less half of it.
+ */
+export function MarginDecorLayer({
+  accent,
+  motion,
+  motifs,
+  intensity,
+  bandHeight,
+  maxAlpha,
+}: {
+  accent: string;
+  motion: DecorMotion;
+  motifs: readonly Motif[];
+  intensity: DecorIntensity;
+  bandHeight: string;
+  maxAlpha: number;
+}): ReactElement | null {
+  const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  /*
+    False on the server and on the first client render, so a phone never
+    receives these shapes in its markup at all and a tablet gains them just
+    after hydration, where they fade in with their own keyframes.
+  */
+  const isWide = useMediaQuery(WIDE_QUERY);
+
+  if (
+    !isWide ||
+    prefersReducedMotion ||
+    motion === "none" ||
+    motifs.length === 0
+  ) {
+    return null;
+  }
+
+  const keyframe = KEYFRAME_NAME[motion];
+  const tier = INTENSITY[intensity];
+  const isRoam = motion === "roam";
+
+  /* Halved under roam, which is the motion that moves a layer across the most screen. */
+  const count = isRoam
+    ? Math.min(MARGIN_COUNT[intensity], ROAM_MAX_COUNT / 2)
+    : MARGIN_COUNT[intensity];
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
+    >
+      <div
+        className="sticky top-0 w-full overflow-clip"
+        style={{ height: bandHeight }}
+      >
+        {MARGIN_SHAPES.slice(0, count).map((shape, index) => {
+          /*
+            Offset into the card's own cycles, so the margin does not open on
+            the same motif and size the card does and read as a copy of it.
+          */
+          const cycle = index + 3;
+          const MotifShape = motifs[cycle % motifs.length];
+          const size = Math.min(
+            SIZE_STEPS[cycle % SIZE_STEPS.length],
+            tier.sizeCap,
+          );
+          const rotation = ROTATIONS[cycle % ROTATIONS.length];
+          const opacity =
+            Math.round(
+              Math.min(maxAlpha, opacityForSize(size) * tier.opacityScale) *
+                MARGIN_OPACITY_SCALE *
+                1000,
+            ) / 1000;
+
+          const margin = "(50% - var(--card-width) / 2)";
+          const fraction = shape.across / 100;
+          const left =
+            shape.side === "left"
+              ? `calc(${margin} * ${fraction})`
+              : `calc(50% + var(--card-width) / 2 + ${margin} * ${fraction})`;
+
+          return (
+            <span
+              key={`${shape.side}-${shape.across}-${shape.top}`}
+              className="absolute block"
+              style={{
+                left,
+                top: `${shape.top}%`,
+                color: accent,
+                animationName: keyframe,
+                animationDuration: isRoam
+                  ? `${roamDuration(shape.duration)}s`
+                  : `${(shape.duration * tier.durationScale).toFixed(2)}s`,
+                animationDelay: `${shape.delay}s`,
+                animationTimingFunction: "ease-in-out",
+                animationIterationCount: "infinite",
+                animationFillMode: "both",
+              }}
+            >
+              <span
+                className="lifafa-card-art block"
+                style={{
+                  ...artWidth(size),
                   opacity,
                   transform: `rotate(${rotation}deg)`,
                   filter:
@@ -416,7 +617,7 @@ export function CardFlourish({
       strokeWidth={1.2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`h-[14px] w-[110px] shrink-0 ${className}`}
+      className={`h-[calc(14*var(--card-px,1px))] w-[calc(110*var(--card-px,1px))] shrink-0 ${className}`}
     >
       <path d="M4 7 H44" />
       <path d="M76 7 H116" />

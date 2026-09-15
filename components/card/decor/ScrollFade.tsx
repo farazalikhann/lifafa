@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { cardPx } from "@/lib/cardScale";
 
 /**
  * The dissolve at the top and bottom edges of the screen.
@@ -131,8 +132,16 @@ export default function ScrollFade({
     the card; as a mask it fades the blur out on the same curve, so the two
     cannot drift apart into a blurred edge with no fade or the reverse.
   */
-  const topStops = `${background} 0px, ${background} ${clearTo}px, transparent ${topFade}px`;
-  const topMask = `#000 0px, #000 ${clearTo}px, transparent ${topFade}px`;
+  /*
+    Every length in card pixels, because the ornaments this clears grow with a
+    fluid card and a fade measured in plain px would stop short of them. The
+    same px as ever on a phone and in the editor.
+  */
+  const clear = cardPx(clearTo);
+  const fade = cardPx(topFade);
+  const bottom = cardPx(BOTTOM_FADE);
+  const topStops = `${background} 0px, ${background} ${clear}, transparent ${fade}`;
+  const topMask = `#000 0px, #000 ${clear}, transparent ${fade}`;
 
   return (
     <div
@@ -146,7 +155,7 @@ export default function ScrollFade({
         <div
           className="absolute inset-x-0 top-0"
           style={{
-            height: topFade,
+            height: fade,
             background: `linear-gradient(to bottom, ${topStops})`,
             /*
               Masked rather than left to cover the whole band: an unmasked
@@ -165,8 +174,8 @@ export default function ScrollFade({
         <div
           className="absolute inset-x-0 bottom-0"
           style={{
-            height: BOTTOM_FADE,
-            background: `linear-gradient(to top, ${background} 0px, transparent ${BOTTOM_FADE}px)`,
+            height: bottom,
+            background: `linear-gradient(to top, ${background} 0px, transparent ${bottom})`,
           }}
         />
       </div>

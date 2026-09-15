@@ -9,6 +9,7 @@ import {
   lineDelay,
   revealClass,
 } from "@/lib/cardFormat";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { CustomSection as CustomSectionData } from "@/types/customSection";
 
@@ -49,15 +50,15 @@ export default function CustomSection({
       className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
-        gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
+        gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       {heading.length > 0 ? (
         <div className={reveal} style={lineDelay(0)}>
           <p
-            className="tracking-[0.28em] break-words text-[0.84rem] uppercase text-balance"
+            className="tracking-[0.28em] break-words text-[calc(0.84*var(--card-rem,1rem))] uppercase text-balance"
             style={{
               color: theme.accent,
               fontFamily: "var(--card-heading)",
@@ -72,7 +73,7 @@ export default function CustomSection({
       {body.length > 0 ? (
         <div className={reveal} style={lineDelay(1)}>
           <p
-            className="max-w-[32ch] text-[1.0625rem] leading-relaxed break-words whitespace-pre-line text-pretty"
+            className="max-w-[32ch] text-[calc(1.0625*var(--card-rem,1rem))] leading-relaxed break-words whitespace-pre-line text-pretty"
             style={{ color: theme.textMuted }}
           >
             {body}

@@ -19,7 +19,7 @@ import type { EventDraft } from "@/types/event";
  */
 const ACTION_CLASS = [
   "flex min-h-11 items-center justify-center rounded-full px-4",
-  "text-[0.8125rem] font-medium tracking-[0.02em] whitespace-nowrap",
+  "text-[calc(0.8125*var(--card-rem,1rem))] font-medium tracking-[0.02em] whitespace-nowrap",
   "underline decoration-transparent underline-offset-4",
   "transition-colors duration-200 hover:decoration-current",
   "focus-visible:outline-2 focus-visible:outline-offset-4",

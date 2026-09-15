@@ -117,6 +117,33 @@
   --lifafa-gurmukhi-leading: 1.75;
 }
 
+/*
+  The landing page's own ink, warmer than the product's.
+
+  The landing page is selling a celebration and read as a dark, serious page, so
+  its three surfaces are pulled from a neutral near-black toward brown. Still
+  deep, still ink; just not cold. Redefined on the landing page's wrapper rather
+  than on :root, so the editor, the dashboard and the sign-in pages — which read
+  the same tokens — keep exactly the surfaces they have.
+
+  Painted here as well as redefined, because the body underneath is still the
+  product's ink and a wrapper that only changed the variable would leave it
+  showing wherever a section has no background of its own.
+*/
+.lifafa-landing {
+  --lifafa-ink: #1b1411;
+  --lifafa-ink-raised: #251c17;
+  --lifafa-hairline: #3a2d26;
+
+  /*
+    Between cream and muted, for the hero's second line: muted read as faint
+    against the hero, and cream would compete with the line above it.
+  */
+  --lifafa-cream-soft: #d9ccbd;
+
+  background-color: var(--lifafa-ink);
+}
+
 /* -------------------------------------------------------------------------
    Utilities.
    ------------------------------------------------------------------------- */
@@ -168,6 +195,63 @@
 .lifafa-parked,
 .lifafa-parked * {
   animation-play-state: paused;
+}
+
+/* -------------------------------------------------------------------------
+   The guest's card on a tablet or a laptop.
+   ------------------------------------------------------------------------- */
+
+/*
+  From 768px up, the card a guest opens grows with the screen instead of
+  staying a 420px column. lib/cardScale.ts explains the mechanism; this is the
+  half of it that has to be CSS.
+
+  THE WIDTH IS SET BY THE SCREEN'S HEIGHT, NOT ITS WIDTH. A laptop is wide and
+  short, and a card as wide as it could be would need a screen far taller than
+  the laptop has for its opening screen to fit. 52svh keeps the richest opening
+  screen the card can have (a Bismillah panel, a greeting, a dua and the string
+  of lights) inside the viewport: that screen is 777px tall at 420px wide, so
+  anything past about 54svh starts pushing it off the bottom. `svh` rather than
+  `dvh` so the whole card does not reflow each time a toolbar slides away.
+
+  The floor is the narrowest phone the card is checked at, so a short landscape
+  tablet gets a phone's card rather than one squeezed below it. The ceiling
+  stops a tall monitor turning the names into a poster. Both are in rem, so a
+  guest who has raised their browser's text size gets a proportionally wider
+  card rather than smaller type.
+
+  Unlayered, like the Hindi rule above, so it outranks the `max-w-[420px]`
+  utility on the card root without an !important.
+*/
+@media (min-width: 48rem) {
+  .lifafa-card-fluid {
+    --card-width: clamp(22.5rem, 52svh, 35rem);
+    /* 420px is 26.25rem, so this is 1rem at the design width. */
+    --card-rem: calc(var(--card-width) / 26.25);
+    --card-px: calc(var(--card-width) / 420);
+
+    /*
+      Tailwind's own scale, redefined for everything inside the card. Every
+      named spacing utility compiles to calc(var(--spacing) * n) and text-xs to
+      var(--text-xs), so these two lines scale all of them at once.
+    */
+    --spacing: calc(var(--card-rem) * 0.25);
+    --text-xs: calc(var(--card-rem) * 0.75);
+  }
+
+  .lifafa-card-fluid > .lifafa-card-root {
+    max-width: var(--card-width);
+  }
+
+  /*
+    Ornaments, motifs and butterflies are sized by width and height attributes.
+    This sizes them in card pixels instead, and lets the height follow the
+    artwork's own aspect ratio. See artWidth in lib/cardScale.ts.
+  */
+  .lifafa-card-fluid .lifafa-card-art > :is(img, svg) {
+    width: calc(var(--art-width) * var(--card-px));
+    height: auto;
+  }
 }
 
 /* -------------------------------------------------------------------------

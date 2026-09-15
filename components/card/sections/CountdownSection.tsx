@@ -18,6 +18,7 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
+import { cardPx } from "@/lib/cardScale";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -324,8 +325,8 @@ export default function CountdownSection({
   /* Three units get the room the fourth gave up. */
   const numberSize =
     units.length === 3
-      ? "text-[2.75rem] sm:text-[3.25rem]"
-      : "text-[2rem] sm:text-[2.5rem]";
+      ? "text-[2.75rem] sm:text-[calc(3.25*var(--card-rem,1rem))]"
+      : "text-[2rem] sm:text-[calc(2.5*var(--card-rem,1rem))]";
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
@@ -333,7 +334,7 @@ export default function CountdownSection({
     closing !== null ? (
       <div className={reveal} style={lineDelay(1)}>
         <p
-          className={`max-w-[18ch] text-[1.825rem] font-medium tracking-[0.02em] text-balance sm:text-[2.125rem] ${
+          className={`max-w-[18ch] text-[1.825rem] font-medium tracking-[0.02em] text-balance sm:text-[calc(2.125*var(--card-rem,1rem))] ${
             copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
           }`}
           style={{
@@ -390,14 +391,14 @@ export default function CountdownSection({
       className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: pad,
-        paddingBottom: pad,
-        gap: `calc(1.25rem * var(--card-gap-scale, 1))`,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(pad),
+        gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       <div className={reveal} style={lineDelay(0)}>
         <p
-          className="text-[0.84rem] tracking-[0.3em] uppercase"
+          className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.3em] uppercase"
           style={{ color: theme.textMuted }}
         >
           {copy.countdown.heading}
