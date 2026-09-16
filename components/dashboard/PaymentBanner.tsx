@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
-
-/** Wired to nothing, deliberately. See the note below. */
-const PRICE = "₹999";
+import PublishButton from "@/components/dashboard/PublishButton";
+import { isRazorpayTestMode, razorpayKeyId } from "@/lib/razorpay/keys";
+import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
 
 /**
  * The unpaid state of one invitation, on that invitation's own dashboard.
@@ -10,63 +10,97 @@ const PRICE = "₹999";
  * decision left to make here, and a banner reading "you are fine" is a banner
  * they learn to scroll past.
  *
- * WHY THE BUTTON DOES NOTHING. There is no payment in Lifafa yet — no gateway,
- * no order, no webhook, no place for ₹999 to go. The structure and the sentence
- * are built now because the watermark on the guest's card is already real and a
- * host meeting it deserves to be told why, in the same words they will later be
- * charged in. A button that opened a half-built checkout would be worse than a
- * disabled one that says so.
+ * WHAT UNPAID MEANS NOW. It used to mean a watermark over a card guests could
+ * still read. It now means guests cannot read the card at all — they get the
+ * "not published yet" screen in components/invite/NotPublished.tsx — so the
+ * sentence below says that instead. This is the more honest arrangement and
+ * also the more consequential one, which is why the banner leads with it.
  *
- * The price is stated in the button rather than only in the sentence, because a
- * host reading "until you pay" should not have to go and find out how much.
- *
- * A server component: nothing here is interactive, and the day it becomes so is
- * the day the checkout exists to make it so.
+ * STILL A SERVER COMPONENT. The price, the key in use and whether it is a test
+ * key are all settled on the server; only the button needs state, and only the
+ * button crosses. See components/dashboard/PublishButton.tsx.
  */
 export default function PaymentBanner({
   isPaid,
+  eventId,
 }: {
   isPaid: boolean;
+  /** Which invitation this publishes. The server action re-checks ownership. */
+  eventId: string;
 }): ReactElement | null {
   if (isPaid) {
     return null;
   }
 
+  const configured = razorpayKeyId() !== null;
+
   return (
     <section
       aria-labelledby="payment-banner-heading"
-      className="flex flex-col gap-4 rounded-2xl border border-[var(--lifafa-marigold)]/30 bg-[var(--lifafa-marigold)]/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+      className="flex flex-col gap-4 rounded-2xl border border-[var(--lifafa-marigold)]/30 bg-[var(--lifafa-marigold)]/[0.06] px-5 py-4"
     >
-      <p
-        id="payment-banner-heading"
-        className="max-w-[52ch] text-sm leading-relaxed text-[var(--lifafa-cream)]"
-      >
-        This invitation is not paid for yet. Guests will see a watermark until
-        you pay.
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <p
+          id="payment-banner-heading"
+          className="max-w-[52ch] text-sm leading-relaxed text-[var(--lifafa-cream)]"
+        >
+          This invitation is not published yet. Guests who open the link will be
+          told it is not ready. Publish it for{" "}
+          {formatInr(INVITATION_PRICE_INR)} to share it.
+        </p>
 
-      <div className="flex shrink-0 items-center gap-3">
-        <button
-          type="button"
-          disabled
-          /*
-            A disabled button is not focusable, so `title` would never be
-            announced. The "Coming soon" text beside it is a real element with
-            an id, which is what aria-describedby needs to reach it in the
-            reading order a screen reader browses in.
-          */
-          aria-describedby="payment-banner-status"
-          className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] opacity-50"
-        >
-          Pay {PRICE}
-        </button>
-        <span
-          id="payment-banner-status"
-          className="text-xs font-medium whitespace-nowrap text-[var(--lifafa-muted)]"
-        >
-          Coming soon
-        </span>
+        <div className="shrink-0">
+          {configured ? (
+            <PublishButton eventId={eventId} />
+          ) : (
+            /*
+              No key, so no checkout to open. A disabled button that says why
+              beats one that opens a window and fails — and this state is a
+              misconfigured deployment, which is a thing for whoever set it up
+              to read rather than a thing to hide.
+            */
+            <p className="text-xs text-[var(--lifafa-muted)]">
+              Payments are not set up on this deployment.
+            </p>
+          )}
+        </div>
       </div>
+
+      <TestModeNote show={configured && isRazorpayTestMode()} />
     </section>
+  );
+}
+
+/**
+ * The line that stops a test payment being mistaken for a real one.
+ *
+ * READ FROM THE KEY, not from NODE_ENV or VERCEL_ENV. The key is what actually
+ * decides whether money moves: a production deployment holding an rzp_test key
+ * takes nothing, and a preview holding a live key takes real money. Deriving
+ * this from the environment would be a guess about which key is in use; see
+ * lib/razorpay/keys.ts.
+ *
+ * Deliberately loud. Everything else in this palette is a hint; this is the one
+ * thing on the page that must not be skimmed past, because the mistake it
+ * prevents is only discovered later, in a bank statement that is missing ₹999.
+ */
+function TestModeNote({ show }: { show: boolean }): ReactElement | null {
+  if (!show) {
+    return null;
+  }
+
+  return (
+    <p
+      role="status"
+      className="flex items-center gap-2 rounded-xl border border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/10 px-3 py-2 text-xs font-medium text-[var(--lifafa-cream)]"
+    >
+      <span
+        aria-hidden="true"
+        className="rounded-full bg-[var(--lifafa-rose)] px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-[var(--lifafa-ink)]"
+      >
+        TEST MODE
+      </span>
+      No real money will be taken. This deployment uses a Razorpay test key.
+    </p>
   );
 }

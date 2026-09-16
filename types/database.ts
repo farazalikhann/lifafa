@@ -197,6 +197,58 @@ export type EventByInviteCodeRow = {
   qr_checkin_enabled: boolean;
 }
 
+/**
+ * One payment attempt against one invitation (0009).
+ *
+ * A row per ORDER, not per invitation: a host who dismisses a checkout and
+ * starts another leaves two rows, at most one of which is ever 'paid'. See the
+ * note at the top of 0009_payments.sql.
+ */
+export type PaymentRow = {
+  id: string;
+  event_id: string;
+  razorpay_order_id: string;
+  /** Null until a payment settles the order. */
+  razorpay_payment_id: string | null;
+  /** Paise, never rupees. ₹999 is 99900. */
+  amount: number;
+  status: PaymentStatus;
+  created_at: string;
+  /** Set at the moment status becomes 'paid', null otherwise. */
+  paid_at: string | null;
+}
+
+/** The three states 0009's check constraint allows. */
+export type PaymentStatus = "created" | "paid" | "failed";
+
+/**
+ * What an insert may carry.
+ *
+ * razorpay_payment_id and paid_at are absent: a row is born unsettled, and both
+ * are the webhook's to write. status is optional because the column defaults to
+ * 'created', which is the only legal value at insert time anyway.
+ */
+export type PaymentInsert = {
+  id?: string;
+  event_id: string;
+  razorpay_order_id: string;
+  amount: number;
+  status?: PaymentStatus;
+}
+
+/**
+ * What the webhook may change, and nothing else may.
+ *
+ * event_id, razorpay_order_id and amount are missing on purpose. The order is
+ * what the row IS; rewriting which event it belongs to, or what was charged, is
+ * not an update, it is a different row. There is no RLS policy permitting any
+ * update at all (0009), so this shape is only ever reachable through the
+ * service-role client in lib/supabase/admin.ts.
+ */
+export type PaymentUpdate = Partial<
+  Pick<PaymentRow, "razorpay_payment_id" | "status" | "paid_at">
+>;
+
 /* ────────────────────── The Database generic ────────────────────── */
 
 /**
@@ -230,6 +282,12 @@ export type Database = {
         Row: GuestRow;
         Insert: GuestInsert;
         Update: GuestUpdate;
+        Relationships: [];
+      };
+      payments: {
+        Row: PaymentRow;
+        Insert: PaymentInsert;
+        Update: PaymentUpdate;
         Relationships: [];
       };
     };

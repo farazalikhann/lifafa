@@ -703,3 +703,57 @@ export async function deleteEvent(id: string): Promise<DbResult<null>> {
 
   return dbSuccess(null);
 }
+
+/**
+ * Whether the signed-in visitor is this event's host.
+ *
+ * WHAT IT IS FOR. The invite page has to tell two visitors apart on an unpaid
+ * invitation: a guest, who gets the "not published yet" screen, and the host
+ * themselves, who must still be able to open their own card and check it. See
+ * the gate in app/i/[inviteCode]/page.tsx.
+ *
+ * WHY IT IS A SEPARATE QUERY rather than a column on the guest read. The guest
+ * read is event_by_invite_code(), a SECURITY DEFINER function whose whole point
+ * is that it projects the guest-facing columns and NOT host_id (see 0001). Any
+ * answer it gave about ownership would mean handing a host's user id to every
+ * anonymous visitor holding a link. So the question is asked separately, under
+ * the visitor's own session, where RLS answers it.
+ *
+ * RLS IS THE CHECK. events_select_own returns no row to anyone who is not the
+ * host, so a visitor who is signed in as a different host gets false for the
+ * same reason an anonymous one does. Nothing here compares ids by hand.
+ *
+ * FALSE FOR EVERY FAILURE, including a database error. This decides whether to
+ * show a card that has not been paid for, so the safe answer when the question
+ * cannot be answered is "no". A host meeting a false negative sees their own
+ * gate screen and can still reach the card through the editor; the opposite
+ * mistake publishes an invitation nobody paid for.
+ *
+ * NO QUERY AT ALL for a visitor with no session, which is almost every guest:
+ * getUser() answers from the cookie and the round trip is skipped entirely.
+ */
+export async function isEventHost(eventId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user === null) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("events")
+    .select("id")
+    .eq("id", eventId)
+    .eq("host_id", user.id)
+    .maybeSingle();
+
+  if (error !== null) {
+    console.error("[db] isEventHost:", error);
+    return false;
+  }
+
+  return data !== null;
+}

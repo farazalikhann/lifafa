@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import InviteExperience from "@/components/invite/InviteExperience";
+import NotPublished from "@/components/invite/NotPublished";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import {
@@ -9,6 +10,7 @@ import {
   inviteLinkIn,
   requestedLanguage,
 } from "@/lib/cardTranslation";
+import { isEventHost } from "@/lib/db/events";
 import { getInviteEvent } from "@/lib/db/inviteEvent";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
@@ -88,6 +90,25 @@ export async function generateMetadata({
     return {};
   }
 
+  /*
+    AN UNPUBLISHED INVITATION UNFURLS AS NOTHING IN PARTICULAR.
+
+    The gate below hides the card from guests; leaving this alone would have
+    WhatsApp hand them the couple's names, the date and a drawn share image
+    anyway, in the preview, before the gate ever ran. That is the gate leaking
+    exactly what it exists to hold back — and a preview is the most public
+    surface this application has, since it is pasted into group chats.
+
+    Returning nothing here falls through to the layout's metadata, which is the
+    generic Lifafa title and description. A host testing their own link still
+    sees the real card; only the preview is withheld, and only until they
+    publish. Unlike the page gate, this does NOT make an exception for the host:
+    a scraper carries no session, so there is nobody to recognise.
+  */
+  if (!result.data.isPaid) {
+    return {};
+  }
+
   const { draft, config, inviteCode: code } = eventInLanguage(result.data, lang);
   const copy = cardCopy(config.language).invite;
 
@@ -162,6 +183,34 @@ export default async function InvitePage({
     language's words and need no idea that a card can hold another.
   */
   const event = eventInLanguage(result.data, lang);
+
+  /*
+    ───────────────────────── THE PUBLISH GATE ─────────────────────────
+
+    An unpaid invitation is not shown to guests at all. This replaced the
+    watermark as the meaning of "unpaid": a watermarked card was still the whole
+    card — names, date, venue, and a reply form that wrote real rows — so the
+    watermark asked for payment while giving away the thing being paid for.
+
+    THE HOST IS THE ONE EXCEPTION, and it has to be an exception rather than a
+    separate preview route: a host checking their card wants to see what a guest
+    will see, on the real link, with the real cover animation and the real
+    scroll. isEventHost asks the database under the visitor's own session, so
+    RLS decides — see the note over it in lib/db/events.ts.
+
+    THE COST IS PAID ONLY BY UNPAID INVITATIONS. The check is inside this
+    branch, so a published card — every card a guest ever opens in normal use —
+    costs not one extra query. An unpaid one costs a session read, and for a
+    guest with no session cookie even that is answered without a round trip.
+
+    A HOST PREVIEWING SEES THE CARD AS IT IS, watermark included. That is
+    deliberate: the watermark in InviteExperience is now only ever seen by the
+    host, and it is the thing telling them what is still unfinished about this
+    invitation. Guests never reach it.
+  */
+  if (!event.isPaid && !(await isEventHost(event.id))) {
+    return <NotPublished language={event.config.language} />;
+  }
 
   /*
     Read here, on the server, and handed down finished.

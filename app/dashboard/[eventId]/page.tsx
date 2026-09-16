@@ -232,7 +232,7 @@ export default async function DashboardPage({
           about to copy the link is the moment they need to know it is there.
           Renders nothing once the event is paid for.
         */}
-        <PaymentBanner isPaid={event.isPaid} />
+        <PaymentBanner isPaid={event.isPaid} eventId={event.id} />
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
