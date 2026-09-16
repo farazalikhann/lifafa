@@ -208,15 +208,30 @@
 
   THE WIDTH IS SET BY THE SCREEN'S HEIGHT, NOT ITS WIDTH. A laptop is wide and
   short, and a card as wide as it could be would need a screen far taller than
-  the laptop has for its opening screen to fit. 52svh keeps the richest opening
-  screen the card can have (a Bismillah panel, a greeting, a dua and the string
-  of lights) inside the viewport: that screen is 777px tall at 420px wide, so
-  anything past about 54svh starts pushing it off the bottom. `svh` rather than
-  `dvh` so the whole card does not reflow each time a toolbar slides away.
+  the laptop has for its opening screen to fit. `svh` rather than `dvh`, so the
+  whole card does not reflow each time a toolbar slides away.
 
-  The floor is the narrowest phone the card is checked at, so a short landscape
-  tablet gets a phone's card rather than one squeezed below it. The ceiling
-  stops a tall monitor turning the names into a poster. Both are in rem, so a
+  TWO WIDTHS, AND THE SECOND ONE IS WHAT LETS THE TYPE GROW. The opening screen
+  is the tightest thing on the card: a calligraphy panel, a greeting and a dua,
+  with the string of lights hanging over them. Measured at the 420px design
+  width, its content is 400px tall and the room it has to leave for those
+  lights — the band they hang in, plus the dissolve below it — is another 380.
+  Scale both by the same number and the type can grow about three percent
+  before the dua is pushed off the bottom of a laptop screen, which is no
+  growth at all.
+
+  So the ornaments and the clearance they demand scale on their own, slower
+  number. The type, the spacing and the column scale on 60svh; the lights,
+  the lanterns, the scatter and every inset measured off them scale on 46svh.
+  Text ends up around a sixth larger on a laptop than it was, the ornaments a
+  little smaller, and the opening screen still fits — 1053px of it on a 1066px
+  screen. `400 * text + 380 * decor <= 420` is the whole constraint; check it
+  against this file's numbers before raising either.
+
+  The floors are the narrowest phone the card is checked at, so a short
+  landscape tablet gets a phone's card rather than one squeezed below it. The
+  ceilings stop a tall monitor turning the names into a poster. The `100vw`
+  guard keeps the column off the border on a portrait tablet. All in rem, so a
   guest who has raised their browser's text size gets a proportionally wider
   card rather than smaller type.
 
@@ -237,10 +252,14 @@
 */
 @media (min-width: 48rem) {
   .lifafa-card-fluid {
-    --card-width: clamp(22.5rem, 52svh, 35rem);
+    /* The reading column: the type, the spacing and everything set in them. */
+    --card-width: clamp(22.5rem, min(60svh, 100vw - 10rem), 44rem);
+    /* The ornaments, and every inset that exists to clear one. */
+    --card-decor-width: clamp(22.5rem, min(46svh, 100vw - 10rem), 32rem);
+
     /* 420px is 26.25rem, so this is 1rem at the design width. */
     --card-rem: calc(var(--card-width) / 26.25);
-    --card-px: calc(var(--card-width) / 420);
+    --card-px: calc(var(--card-decor-width) / 420);
 
     /*
       Tailwind's own scale, redefined for everything inside the card. Every

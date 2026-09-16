@@ -14,13 +14,17 @@ import type { CSSProperties } from "react";
  * screen, sets its text in a centred column, and publishes two lengths in
  * globals.css:
  *
- *   --card-rem   what 1rem is on this card
- *   --card-px    what 1px is on this card
+ *   --card-rem   what 1rem is on this card: the type and the spacing
+ *   --card-px    what 1px is on this card: the ornaments, and the room the
+ *                card leaves to clear one
  *
- * Both are the card's width over its 420px design width, so every size written
- * against them scales by the same factor and the hierarchy between them is
- * exactly what it was at 420px. Every size that should grow reads one of the
- * two with the plain unit as its fallback — `calc(2.75 * var(--card-rem, 1rem))`.
+ * Each is a width over the 420px design width, so every size written against
+ * `--card-rem` grows by one factor and the hierarchy between all of them is
+ * exactly what it was at 420px, and every size written against `--card-px`
+ * grows by the other. They are two numbers rather than one because the type
+ * could otherwise barely grow at all; globals.css has the arithmetic. Every
+ * size that should grow reads one of the two with the plain unit as its
+ * fallback — `calc(2.75 * var(--card-rem, 1rem))`.
  *
  * WHY THE FALLBACK IS THE WHOLE SAFETY STORY. Below 768px, and on every card
  * that is not the guest's (the editor's frame and its full screen preview),
@@ -40,7 +44,11 @@ import type { CSSProperties } from "react";
  *    `artWidth` below.
  */
 
-/** A length in the card's own pixels: `value`px at 420px wide, more on a wider card. */
+/**
+ * A length in the card's own pixels: `value`px at 420px wide, more on a wider
+ * card. The ornament scale — use it for artwork and for anything that exists
+ * to keep clear of some.
+ */
 export function cardPx(value: number): string {
   return `calc(${value} * var(--card-px, 1px))`;
 }
