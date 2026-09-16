@@ -9,6 +9,7 @@
 
 import { eventInstant } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
+import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
@@ -24,8 +25,19 @@ import type { EventDraft } from "@/types/event";
  */
 const ASSUMED_DURATION_MS = 2 * 60 * 60 * 1000;
 
-/** Where a Lifafa invitation lives, for the UID's domain half. */
-const UID_DOMAIN = "getlifafa.co.in";
+/**
+ * The domain half of a calendar UID.
+ *
+ * LIFAFA_DOMAIN rather than the resolved origin, and deliberately so. A UID is
+ * how a calendar recognises an entry it has already got: re-import the same
+ * invitation and it updates that entry rather than adding a second one. Built
+ * from whatever address the file happened to be generated on, the UID for one
+ * event would differ between the live site, a preview and a dev server, and
+ * every host testing a change would hand their guests a duplicate. The domain
+ * is a fixed namespace here, not a location, so it does not follow
+ * NEXT_PUBLIC_SITE_URL.
+ */
+const UID_DOMAIN = LIFAFA_DOMAIN;
 
 /**
  * The invitation these links point back at.

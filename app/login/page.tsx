@@ -6,6 +6,14 @@ import SignInForm from "@/components/auth/SignInForm";
 export const metadata: Metadata = {
   title: "Sign in — Lifafa",
   description: "Sign in to Lifafa to build and manage your invitations.",
+  /*
+    Not indexed. A sign-in form has nothing to rank for, and an indexed one
+    competes with the landing page for the same searches while offering a
+    stranger a dead end. Every route that needs it links to it, which is the
+    only way anyone should arrive. `follow` stays on so the links back to the
+    landing page are still crawled.
+  */
+  robots: { index: false, follow: true },
 };
 
 /**

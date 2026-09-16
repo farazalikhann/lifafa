@@ -106,7 +106,10 @@ export default function nextConfig(phase: string): NextConfig {
     /*
       Inlined like the keys above, so a value that is not an address would not
       fail here either. lib/siteUrl.ts would quietly skip it, and every invite
-      link would be built on the fallback instead of the domain it names.
+      link would be built on the fallback instead of the domain it names —
+      which, since the fallback is now the live domain rather than the request's
+      own host, is a failure that looks entirely healthy in production and shows
+      up only on a preview deploy or a dev server.
     */
     const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim();
 
@@ -128,7 +131,7 @@ export default function nextConfig(phase: string): NextConfig {
           ? `${siteUrl} (NEXT_PUBLIC_SITE_URL)`
           : vercelHost().length > 0
             ? `https://${vercelHost()} (Vercel, ${process.env.VERCEL_ENV})`
-            : "the address each request arrives on (nothing configured)"
+            : "https://getlifafa.co.in (the fallback in lib/siteUrl.ts — nothing configured)"
       }`,
     );
   }

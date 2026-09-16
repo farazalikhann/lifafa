@@ -10,6 +10,7 @@ import {
 } from "react";
 import { cardCopy } from "@/lib/cardLanguage";
 import { DISPLAY_FACE } from "@/lib/fontPairs";
+import { canonicalSiteOrigin, checkinUrl } from "@/lib/siteUrl";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 
@@ -44,11 +45,6 @@ const EVENT_SIZE = 26;
  * without packing the modules so tightly that a cheap phone camera struggles.
  */
 const ERROR_CORRECTION = "M";
-
-/** Where the door scanner will look this guest up. */
-function checkinUrl(origin: string, token: string): string {
-  return `${origin}/checkin/${encodeURIComponent(token)}`;
-}
 
 /** Up to `maxLines` lines of `text` that fit `maxWidth` in the context's current font. */
 function wrapLines(
@@ -215,11 +211,23 @@ function download(blob: Blob): void {
  * runs in the browser, after a tap, and there is no server render for the
  * origin or the canvas to disagree with.
  *
- * THE ORIGIN IS THE PAGE'S OWN. window.location.origin is the address this guest
- * actually opened, so a pass made on a preview deploy points at that deploy and
- * one made on the live site points at the live site. lib/siteUrl.ts resolves the
- * site's configured address, which is right for a link a host sends out and
- * wrong for this: the pass must lead back to the deployment its guest is on.
+ * THE ORIGIN IS THE SITE'S, NOT THE PAGE'S. It used to be
+ * window.location.origin, which was right while every deployment was its own
+ * address and wrong the moment the site gained two: a guest who opened the
+ * card on www.getlifafa.co.in got a QR naming www, and one on the bare domain
+ * got a different QR for the same guest.
+ *
+ * Both would in fact scan — lib/checkinPass.ts reads the token out of the path
+ * and ignores the origin entirely, which is what keeps passes already saved to
+ * a phone working. But the pass is a PICTURE, saved to a photo roll weeks
+ * before the door, and long after that the only address guaranteed not to be a
+ * redirect is the canonical one. A guest whose camera app opens the link
+ * rather than handing it to the host's scanner should land there directly.
+ *
+ * So: canonicalSiteOrigin(), the same address every invite link is built on.
+ * On a preview deploy that is the preview's own host, because LIFAFA_VERCEL_HOST
+ * answers before the fallback does. Locally, set NEXT_PUBLIC_SITE_URL in
+ * .env.local to test a pass against the dev server.
  *
  * THE PICTURE IS BUILT BEFORE THE TAP. Safari only lets navigator.share run
  * close to the gesture that asked for it, and a share that first waits on font
@@ -253,7 +261,7 @@ export default function GuestPass({
     const root = rootRef.current;
 
     return buildPassImage({
-      url: checkinUrl(window.location.origin, token),
+      url: checkinUrl(canonicalSiteOrigin(), token),
       guestName: guestName.trim(),
       eventName,
       accent: theme.accent,
@@ -279,7 +287,7 @@ export default function GuestPass({
     */
     const density = Math.min(3, Math.max(1, Math.round(window.devicePixelRatio || 1)));
 
-    toCanvas(canvas, checkinUrl(window.location.origin, token), {
+    toCanvas(canvas, checkinUrl(canonicalSiteOrigin(), token), {
       errorCorrectionLevel: ERROR_CORRECTION,
       margin: 2,
       width: QR_SIZE * density,

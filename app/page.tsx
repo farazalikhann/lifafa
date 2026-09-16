@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Hero from "@/components/landing/Hero";
 import LandingHeader from "@/components/landing/LandingHeader";
 import Showcase from "@/components/landing/Showcase";
@@ -7,6 +8,19 @@ import Pricing from "@/components/landing/Pricing";
 import Faq from "@/components/landing/Faq";
 import CallToAction from "@/components/landing/CallToAction";
 import HelpFooter from "@/components/landing/HelpFooter";
+
+/*
+  The one address this page should be indexed under.
+
+  The site answers on two hosts — www.getlifafa.co.in redirects to the bare
+  getlifafa.co.in — and a redirect alone leaves a crawler that reached www by
+  some other route to decide for itself which is the real one. This says so.
+  Relative, so the metadataBase in app/layout.tsx resolves it, which means the
+  host comes from lib/siteUrl.ts here as everywhere else.
+*/
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Page() {
   return (

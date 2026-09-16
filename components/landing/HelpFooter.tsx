@@ -1,7 +1,14 @@
 import Link from "next/link";
+import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
 
-/** Change the support address here and every mention follows. */
-export const SUPPORT_EMAIL = "hello@getlifafa.co.in";
+/**
+ * The support mailbox. Change the local part here and every mention follows.
+ *
+ * Built on LIFAFA_DOMAIN rather than the resolved origin: this is a mailbox,
+ * not a page. It stays hello@getlifafa.co.in when the site is opened on a
+ * preview host or a dev server, because that is where the mail actually goes.
+ */
+export const SUPPORT_EMAIL = `hello@${LIFAFA_DOMAIN}`;
 
 /**
  * Pinned to India rather than read off the runtime's clock. `getFullYear()`

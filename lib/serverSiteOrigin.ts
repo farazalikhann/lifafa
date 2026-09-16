@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { configuredSiteOrigin } from "@/lib/siteUrl";
+import { configuredSiteOrigin, DEFAULT_SITE_ORIGIN } from "@/lib/siteUrl";
 
 /**
  * The site's origin, for server code building a link someone will open.
@@ -8,11 +8,16 @@ import { configuredSiteOrigin } from "@/lib/siteUrl";
  * nothing configured, the host this request actually arrived on, which is the
  * server's counterpart to window.location.origin. That is what lets `next dev`
  * hand out working links on whatever port or network address it was opened on,
- * with nothing to edit.
+ * with nothing to edit. Failing that — a request with no readable host at all —
+ * the canonical domain, which is better than an exception on a page a guest is
+ * looking at.
  *
  * On Vercel the configured origin always answers first, and that matters: a
  * host who reaches the dashboard through a per-deployment address would
- * otherwise copy a link to that address, which sits behind Vercel's login.
+ * otherwise copy a link to that address, which sits behind Vercel's login. With
+ * NEXT_PUBLIC_SITE_URL set in Production, a host who arrives on
+ * www.getlifafa.co.in still copies a link on the bare domain, so no invitation
+ * ever goes out naming a host that only redirects.
  *
  * Server only. next/headers fails the build if a Client Component imports this,
  * which is the point of keeping it out of lib/siteUrl.ts.
@@ -36,9 +41,7 @@ export async function serverSiteOrigin(): Promise<string> {
   const scheme = firstEntry(requestHeaders.get("x-forwarded-proto")) ?? "http";
 
   if (host === null || (scheme !== "http" && scheme !== "https")) {
-    throw new Error(
-      "Cannot work out this site's address from the request. Set NEXT_PUBLIC_SITE_URL.",
-    );
+    return DEFAULT_SITE_ORIGIN;
   }
 
   /* Through URL, so a malformed Host header cannot smuggle a path in. */

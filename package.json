@@ -5,14 +5,18 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "hash-admin-password": "node scripts/hash-admin-password.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.114.0",
+    "bcryptjs": "^3.0.3",
     "html5-qrcode": "^2.3.8",
     "next": "^15.3.0",
     "qrcode": "^1.5.4",
+    "razorpay": "^2.9.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

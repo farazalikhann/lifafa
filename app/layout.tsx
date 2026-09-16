@@ -10,7 +10,7 @@ import {
   Noto_Sans_Devanagari,
   Noto_Sans_Gurmukhi,
 } from "next/font/google";
-import { configuredSiteOrigin } from "@/lib/siteUrl";
+import { canonicalSiteOrigin } from "@/lib/siteUrl";
 import "./globals.css";
 
 /*
@@ -138,19 +138,33 @@ const FONT_VARIABLES = [
 ].join(" ");
 
 /*
-  The configured origin, which is fixed at build time and so safe in static
-  metadata. Left unset when nothing is configured, as under `next dev`, where
-  Next falls back to localhost. The invite route, the one page scrapers read,
-  sets its own from the request instead; see app/i/[inviteCode]/layout.tsx.
+  The site's address, fixed at build time and so safe in static metadata.
+
+  metadataBase is what turns a relative image path in any page's metadata into
+  the absolute URL that Open Graph and Twitter both require — a scraper has no
+  page to resolve a relative path against. It is never left undefined now: an
+  unset metadataBase makes Next fall back to localhost and emit a warning, and
+  an og:image on localhost is a preview that never loads.
+
+  The invite route still sets its own from the request, so the image a chat
+  unfurls sits on the same origin as the link it came from even where nothing
+  is configured; see app/i/[inviteCode]/layout.tsx.
 */
-const configuredOrigin = configuredSiteOrigin();
+const siteOrigin = canonicalSiteOrigin();
 
 export const metadata: Metadata = {
-  metadataBase:
-    configuredOrigin === null ? undefined : new URL(configuredOrigin),
+  metadataBase: new URL(siteOrigin),
   title: "Lifafa | Digital invitations with a live guest count",
   description:
     "Create a digital invitation for your celebration, share one link, and know exactly how many guests are coming before the day arrives.",
+  /*
+    NO `alternates.canonical` HERE, deliberately. Metadata is inherited: a
+    canonical set on the root layout becomes every page's canonical, so /create
+    would announce the landing page as its real address and ask to be dropped
+    from the index. Each indexable page names its own — see app/page.tsx and
+    app/create/layout.tsx — and they all resolve against the metadataBase above,
+    so there is still only one host in play.
+  */
 };
 
 export default function RootLayout({
