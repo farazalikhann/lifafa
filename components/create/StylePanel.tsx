@@ -17,7 +17,7 @@ import type {
 } from "@/types/style";
 
 /**
- * The nine borders, in the order the grid lays them out.
+ * The fourteen borders, in the order the grid lays them out.
  *
  * "None" comes first because it is the default and the way back, and the rest
  * run from the lightest to the busiest — so the row a host reads left to right
@@ -25,9 +25,11 @@ import type {
  * frames last, as a row of their own: they are the ones that are not lines, and
  * by some distance the most of anything on offer here.
  *
- * Those three are named by colour because that is the only thing a host is
- * choosing between — the flowers are arranged much the same way in all three,
- * and a name describing the arrangement would fit every one of them.
+ * Those eight are named by colour because that is the only thing a host is
+ * choosing between — the flowers are arranged much the same way in all of them,
+ * and a name describing the arrangement would fit every one. Three of the eight
+ * are reds, which no pair of words would separate cleanly; the chips carry the
+ * real frame, so a host picks by looking rather than by reading.
  */
 const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "none", label: "None" },
@@ -39,6 +41,11 @@ const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "flowerBackground", label: "Flower background" },
   { id: "flowerGold", label: "Flower gold" },
   { id: "flowerPurple", label: "Flower purple" },
+  { id: "flowerRed", label: "Flower red" },
+  { id: "flowerRuby", label: "Flower ruby" },
+  { id: "flowerCrimson", label: "Flower crimson" },
+  { id: "flowerBlue", label: "Flower blue" },
+  { id: "flowerBlush", label: "Flower blush" },
 ];
 
 /** Shared line work for the miniatures below. */
@@ -455,10 +462,13 @@ export default function StylePanel({
           sprigs" mean nothing until they are drawn, and without one the host is
           picking blind and checking the preview after every guess.
 
-          Nine chips, so three even rows, and the three photographs fall into
-          the last one together — which is the right reading of them: they are a
-          set, and a host choosing between them is choosing a colour rather than
-          a different kind of border.
+          Fourteen chips in three columns, so the six drawn styles and "None"
+          take the first two rows and the eight photographs run on from there —
+          which is the right reading of them: they are a set, and a host choosing
+          between them is choosing a colour rather than a different kind of
+          border. The odd chip at the end is left odd rather than padded out; a
+          column narrow enough to square the grid is a column too narrow to read
+          a miniature in.
         */}
         <div className="grid grid-cols-3 gap-2">
           {BORDER_STYLES.map((option) => {

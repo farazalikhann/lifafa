@@ -19,7 +19,7 @@ import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
  * the same promise BorderFrame's tiled edges make, kept the same way.
  *
  * WHERE THE CUTS FALL IS MEASURED, NEVER GUESSED, and each artwork is measured
- * on its own: the three below are the same idea drawn three times, and no two
+ * on its own: the eight below are the same idea drawn eight times, and no two
  * of them put their flowers in the same place.
  *
  * The vertical cuts have to land in the bare channel the artwork leaves between
@@ -27,8 +27,9 @@ import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
  * the corner piece and the other half at the head of the run that repeats — and
  * that half is then printed across the top of the card once for every tile that
  * fits. The channel is the span of columns that is transparent for the whole
- * height of the image, and it is narrow: 450-595 for the rose, 476-546 for the
- * gold, 456-570 for the purple. Both cuts sit inside it.
+ * height of the image, and it is narrow and never in the same place twice:
+ * 450-595 for the rose, 476-546 for the gold, 481-543 for the crimson. Both
+ * cuts sit inside whichever one belongs to the frame being cut.
  *
  * The horizontal cuts answer a different question, and it is the one that shows.
  * The side run is a tile, so when it repeats its last row sits directly above
@@ -38,7 +39,7 @@ import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
  * the row at the top cut against the row at the bottom one across the run's own
  * columns, and taking the pair that matches: the purple's mismatch falls from 48
  * to 12 between 288 and the 388/386 below, and the seam goes with it. Top and
- * bottom need not be equal, and for two of the three they are not.
+ * bottom need not be equal, and for six of the eight they are not.
  *
  * The rose keeps the cuts it shipped with. Its seam was already faint — a couple
  * of clipped berries — and a card that is out and liked is not worth re-cutting
@@ -48,8 +49,8 @@ import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
 /**
  * Every frame is authored at this size, and the table below is measured in it.
  *
- * Shared rather than stored per frame because it is not a coincidence — the
- * three were drawn to the same sheet. A fourth that is not would need its own
+ * Shared rather than stored per frame because it is not a coincidence — all
+ * eight were drawn to the same sheet. A ninth that is not would need its own
  * pair here, or its slice would be converted against the wrong extent and cut
  * somewhere it was never measured.
  */
@@ -71,8 +72,8 @@ interface FrameArt {
    *
    * Both axes matter here, which is what makes these different from the five
    * line-art borders. Their bands are shallower than a section's own padding,
-   * so text clears them by standing still; these paint opaque flowers 40-55px
-   * in down the full height of the screen, and a name set at the section's
+   * so text clears them by standing still; these paint opaque flowers 40 to
+   * 76px in down the full height of the screen, and a name set at the section's
    * usual 28px would be read through one.
    */
   clearance: { x: number; y: number };
@@ -100,16 +101,65 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
     slice: { top: 364, right: 496, bottom: 374, left: 496 },
     clearance: { x: 63, y: 95 },
   },
-  /* Violet and gold. The widest run, and the one that needed the seam match. */
+  /* Violet and gold. The widest run of the first three, and the one that
+     needed the seam match. */
   flowerPurple: {
     src: "/borders/flower-purple.webp",
     slice: { top: 388, right: 480, bottom: 386, left: 480 },
     clearance: { x: 74, y: 82 },
   },
+
+  /*
+    The five below are a later batch, and they are heavier than the first three
+    on purpose — deeper garlands with more in them. That shows up in one number:
+    their runs reach 206 to 254 source pixels in where the first three reached
+    129 to 177, so they stand the card's text 83 to 97px off the edge rather
+    than 60 to 74. A 390px phone is left a 196 to 224px column of writing. That
+    is the cost of a border this full, and it is paid here rather than by
+    letting a name be read through a rose.
+
+    Every pair of cuts below is this artwork's own: the channel each vertical
+    cut lands in differs by 60px across the five, and each horizontal pair was
+    chosen by the row match rather than by reusing a neighbour's.
+  */
+
+  /* Deep red roses on nothing at all — the only one of the eight with no wash
+     behind it, so it sits on the card's own colour rather than tinting it. */
+  flowerRed: {
+    src: "/borders/flower-red.webp",
+    slice: { top: 244, right: 472, bottom: 398, left: 472 },
+    clearance: { x: 83, y: 65 },
+  },
+  /* Red roses and gold scrollwork, on a warm red wash. */
+  flowerRuby: {
+    src: "/borders/flower-ruby.webp",
+    slice: { top: 352, right: 489, bottom: 378, left: 489 },
+    clearance: { x: 92, y: 85 },
+  },
+  /* The same garden with white blooms through it, on gold. The deepest run of
+     the eight, and so the narrowest column. */
+  flowerCrimson: {
+    src: "/borders/flower-crimson.webp",
+    slice: { top: 392, right: 496, bottom: 416, left: 496 },
+    clearance: { x: 97, y: 86 },
+  },
+  /* Blue roses, cream blooms and gold. */
+  flowerBlue: {
+    src: "/borders/flower-blue.webp",
+    slice: { top: 256, right: 499, bottom: 402, left: 499 },
+    clearance: { x: 92, y: 95 },
+  },
+  /* Blush and burgundy with cream peonies. Its corner clusters are the deepest
+     of the eight, which is why it asks for the most room at the top. */
+  flowerBlush: {
+    src: "/borders/flower-blush.webp",
+    slice: { top: 410, right: 494, bottom: 416, left: 494 },
+    clearance: { x: 87, y: 104 },
+  },
 };
 
 /**
- * Rendered CSS pixels per source pixel, on a card. Shared by all three.
+ * Rendered CSS pixels per source pixel, on a card. Shared by all eight.
  *
  * 0.3 is chosen against the *tiling*, not against taste. The side run repeats a
  * whole number of times — `round` rescales it to fit, and rounding 1.4 tiles
