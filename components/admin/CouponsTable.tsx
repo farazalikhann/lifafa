@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactElement } from "react";
 import { setCouponActive } from "@/app/admin/coupons/actions";
+import { EmptyRow } from "@/components/admin/Feedback";
+import { formatIstDate } from "@/lib/admin/format";
 import { describeDiscount } from "@/lib/coupons/quote";
 import type { AdminCoupon } from "@/lib/admin/coupons";
 
@@ -12,26 +14,20 @@ import type { AdminCoupon } from "@/lib/admin/coupons";
  * it works with JavaScript off, and the page re-renders from the database
  * afterwards rather than from something this component guessed.
  *
- * A form and not a link, for the reason AdminHeader's sign-out is a form: a
+ * A form and not a link, for the reason the shell's sign-out is a form: a
  * link is a GET, and a GET that deactivates a coupon is one a prefetch or a
  * link scanner can fire without anyone clicking it.
  */
 
-const DATE_FORMAT = new Intl.DateTimeFormat("en-IN", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  timeZone: "Asia/Kolkata",
-});
-
-function formatDate(iso: string | null): string {
-  if (iso === null) {
-    return "Never";
-  }
-
-  const parsed = new Date(iso);
-
-  return Number.isNaN(parsed.getTime()) ? "—" : DATE_FORMAT.format(parsed);
+/**
+ * An expiry, or the word for not having one.
+ *
+ * "Never" rather than the shared formatter's em dash: a null expires_at means
+ * the code runs forever, which is a fact, where an em dash reads as a value
+ * somebody forgot to fill in.
+ */
+function formatExpiry(iso: string | null): string {
+  return iso === null ? "Never" : formatIstDate(iso);
 }
 
 /** Whether an expiry has already passed, so the row can say so. */
@@ -75,11 +71,11 @@ export default function CouponsTable({
 
         <tbody>
           {coupons.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
-                No codes yet.
-              </td>
-            </tr>
+            <EmptyRow
+              colSpan={7}
+              title="No codes yet."
+              hint="Create one with the form above."
+            />
           ) : (
             coupons.map((coupon) => {
               const expired = hasExpired(coupon.expiresAt);
@@ -134,7 +130,7 @@ export default function CouponsTable({
                   </td>
 
                   <td className="px-4 py-2.5 whitespace-nowrap text-zinc-600">
-                    {formatDate(coupon.expiresAt)}
+                    {formatExpiry(coupon.expiresAt)}
                   </td>
 
                   <td className="px-4 py-2.5">

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
+import AdminShell from "@/components/admin/AdminShell";
+import { adminSession } from "@/lib/admin/auth";
 
 /**
  * The shell every /admin page sits in.
@@ -14,6 +16,23 @@ import type { ReactNode } from "react";
  * The root layout paints the body dark, so this repaints it. `min-h-screen`
  * with its own background is what keeps the dark from showing through beneath
  * short pages.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * THE CHROME MOVED HERE FROM THE PAGES, and that is what makes a slow query
+ * survivable. Every page used to render its own header, so while one was
+ * loading there was no header, no navigation and nothing on screen at all —
+ * indistinguishable from a page that had failed. Now the nav and the header are
+ * rendered by the layout, which Next keeps mounted across a navigation and
+ * across a `loading.tsx`, so a slow page shows a skeleton inside its own frame.
+ *
+ * WHY THE SESSION IS READ HERE AND NOT PASSED DOWN. The shell needs a username.
+ * Reading the cookie in the layout costs one HMAC verification that the page
+ * below is about to perform anyway, and it is not a second gate: `adminSession`
+ * returns null rather than redirecting, and the pages still call
+ * requireAdminSession themselves. A layout is the wrong place to enforce a
+ * gate — Next does not re-run it on every navigation within the segment, so a
+ * check here would be a check that can go stale.
+ * ────────────────────────────────────────────────────────────────────────────
  */
 
 export const metadata: Metadata = {
@@ -32,12 +51,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
-}: Readonly<{ children: ReactNode }>) {
+}: Readonly<{ children: ReactNode }>): Promise<ReactElement> {
+  const session = await adminSession();
+
   return (
     <div className="min-h-screen bg-zinc-50 font-[family-name:var(--font-sans)] text-zinc-900">
-      {children}
+      {/*
+        No session means /admin/login, which is the one page under this layout
+        that is open — and the one page that must not show a sidebar full of
+        links to things the reader cannot open, or a "sign out" button for a
+        session they do not have. Middleware has already refused every other
+        path, so this branch is the login page and nothing else.
+      */}
+      {session === null ? (
+        children
+      ) : (
+        <AdminShell username={session.username}>{children}</AdminShell>
+      )}
     </div>
   );
 }

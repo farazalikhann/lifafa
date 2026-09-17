@@ -1,5 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OCCASIONS } from "@/lib/occasions";
+import {
+  EVENTS_PAGE_SIZE,
+  OVERVIEW_EVENT_LIMIT,
+  type EventsQuery,
+} from "@/lib/admin/eventsQuery";
 import { INVITATION_PRICE_INR } from "@/lib/pricing";
 import {
   dbFailure,
@@ -35,6 +40,9 @@ import type { RsvpStatus } from "@/types/guest";
 
 /** India has no daylight saving, so a fixed offset is exact rather than a guess. */
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/** One day, in milliseconds. Named because it appears in date arithmetic below. */
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** PostgREST's default page size. Anything paged has to step in these. */
 const PAGE_SIZE = 1000;
@@ -135,7 +143,16 @@ export interface AdminOverview {
   };
   /** Every occasion the registry knows, in registry order, plus an "Unknown" bucket. */
   byOccasion: readonly { id: string; label: string; count: number }[];
+  /** Events created per day over the last fourteen IST days, oldest first. */
+  dailyEvents: readonly DailyCount[];
   recentEvents: readonly AdminEventSummary[];
+}
+
+/** One bar on the fourteen-day chart. */
+export interface DailyCount {
+  /** The day as an ISO timestamp at IST midnight, for formatting at the label. */
+  date: string;
+  count: number;
 }
 
 /* ─────────────────────────── Query helpers ─────────────────────────── */
@@ -308,10 +325,11 @@ export async function getAdminOverview(): Promise<DbResult<AdminOverview>> {
       countRows(guestCountQuery(supabase).eq("checked_in", true)),
     ]);
 
-    const [byOccasion, recentEvents, money] = await Promise.all([
+    const [byOccasion, recentEvents, money, dailyEvents] = await Promise.all([
       countByOccasion(supabase, totalEvents),
       getRecentEvents(supabase),
       sumCapturedPayments(supabase),
+      getDailyEvents(supabase),
     ]);
 
     return dbSuccess({
@@ -335,6 +353,7 @@ export async function getAdminOverview(): Promise<DbResult<AdminOverview>> {
         checkedIn,
       },
       byOccasion,
+      dailyEvents,
       recentEvents,
     });
   } catch (cause: unknown) {
@@ -467,6 +486,84 @@ async function sumCapturedPayments(
   }
 }
 
+/** How many days the overview's bar chart covers. */
+const DAILY_WINDOW_DAYS = 14;
+
+/**
+ * Events created per IST day over the last fortnight, oldest first.
+ *
+ * ROWS, NOT FOURTEEN COUNTS. Fourteen head-count queries would each be a round
+ * trip to learn one small number, and the alternative is one query returning a
+ * single timestamp column for a fortnight of events — which for this product is
+ * a handful of rows and for a much larger one is still only a fortnight's
+ * worth. PostgREST has no GROUP BY, so the bucketing happens here either way.
+ *
+ * EVERY DAY IS PRESENT, including the ones with nothing in them. A chart that
+ * skips empty days is a chart that silently redraws its own axis — three bars
+ * in a row look like three consecutive days when they might be a fortnight
+ * apart. The zeroes are the shape of the data.
+ *
+ * Bucketed by shifting each timestamp into IST and taking its date part, which
+ * is the same arithmetic startOfTodayIst does, so the last bar and the "Today"
+ * tile cannot disagree about where the day begins.
+ */
+async function getDailyEvents(
+  supabase: AdminClient,
+): Promise<readonly DailyCount[]> {
+  /*
+    The window starts at IST midnight DAILY_WINDOW_DAYS - 1 days ago, not
+    fourteen times twenty-four hours ago. A rolling window would put a partial
+    day at the far end of the chart and make the oldest bar shorter than it
+    should be for reasons no reader could guess.
+  */
+  const todayMidnightIst = new Date(startOfTodayIst()).getTime();
+  const windowStart = todayMidnightIst - (DAILY_WINDOW_DAYS - 1) * DAY_MS;
+
+  const rows = await fetchAllPages<{ created_at: string }>((from, to) =>
+    supabase
+      .from("events")
+      .select("created_at")
+      .gte("created_at", new Date(windowStart).toISOString())
+      /* A stable order, or two pages can hand back the same row twice. */
+      .order("created_at", { ascending: true })
+      .range(from, to),
+  );
+
+  /* Seeded with every day at zero, so a quiet fortnight still draws a chart. */
+  const buckets = new Map<number, number>();
+
+  for (let index = 0; index < DAILY_WINDOW_DAYS; index += 1) {
+    buckets.set(windowStart + index * DAY_MS, 0);
+  }
+
+  for (const row of rows) {
+    const created = new Date(row.created_at).getTime();
+
+    if (Number.isNaN(created)) {
+      continue;
+    }
+
+    /*
+      Which IST day this fell in: shift into IST, floor to the day, shift back.
+      A row from the future — a clock skew, a hand-edited timestamp — lands
+      outside the seeded range and is dropped rather than growing the chart a
+      fifteenth bar.
+    */
+    const dayStart =
+      Math.floor((created + IST_OFFSET_MS) / DAY_MS) * DAY_MS - IST_OFFSET_MS;
+
+    const current = buckets.get(dayStart);
+
+    if (current !== undefined) {
+      buckets.set(dayStart, current + 1);
+    }
+  }
+
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([day, count]) => ({ date: new Date(day).toISOString(), count }));
+}
+
 /**
  * The fifty most recent events, each with its reply tally.
  *
@@ -485,18 +582,53 @@ async function getRecentEvents(
 ): Promise<readonly AdminEventSummary[]> {
   const { data, error } = await supabase
     .from("events")
-    .select(
-      "id, created_at, is_paid, occasion:card_config->>occasionId, title:event_draft->>eventTitle, partyOne:event_draft->>partyOneName, partyTwo:event_draft->>partyTwoName, hostNames:event_draft->>hostNames",
-    )
+    .select(EVENT_SUMMARY_SELECT)
     .order("created_at", { ascending: false })
-    .limit(RECENT_LIMIT);
+    .limit(OVERVIEW_EVENT_LIMIT);
 
   if (error !== null) {
     throw error;
   }
 
-  const events = data ?? [];
+  return withReplyCounts(supabase, data ?? []);
+}
 
+/**
+ * The columns every event list reads.
+ *
+ * Named once because three call sites want exactly these, and a select string
+ * copied three times is three chances for one list to show a title the others
+ * resolve differently. It names jsonb FIELDS rather than the columns holding
+ * them: a card_config is a large object — every section, every ornament, every
+ * style override — and a list needs one string out of it.
+ */
+const EVENT_SUMMARY_SELECT =
+  "id, created_at, is_paid, occasion:card_config->>occasionId, title:event_draft->>eventTitle, partyOne:event_draft->>partyOneName, partyTwo:event_draft->>partyTwoName, hostNames:event_draft->>hostNames";
+
+/** What EVENT_SUMMARY_SELECT comes back as. */
+interface EventSummaryRow {
+  id: string;
+  created_at: string;
+  is_paid: boolean;
+  occasion: string | null;
+  title: string | null;
+  partyOne: string | null;
+  partyTwo: string | null;
+  hostNames: string | null;
+}
+
+/**
+ * Attaches each event's reply tally.
+ *
+ * TWO QUERIES, NOT ONE PER ROW. The events come in; their guests are read in
+ * one filtered query and tallied here. An embedded aggregate would be neater
+ * SQL and is not available through PostgREST without a view, and fifty
+ * count-per-event requests would be fifty round trips to draw one table.
+ */
+async function withReplyCounts(
+  supabase: AdminClient,
+  events: readonly EventSummaryRow[],
+): Promise<readonly AdminEventSummary[]> {
   if (events.length === 0) {
     return [];
   }
@@ -751,6 +883,183 @@ export async function getAdminEventDetail(
       "admin/getAdminEventDetail",
       cause,
       "Could not load this event.",
+    );
+  }
+}
+
+/* ─────────────────────── The events list page ─────────────────────── */
+
+/** One page of events, plus what the pagination controls need to know. */
+export interface AdminEventPage {
+  events: readonly AdminEventSummary[];
+  /** How many events match the filters, ignoring the page. */
+  total: number;
+  /** Zero-based, echoed back so the controls need not re-parse the URL. */
+  page: number;
+  /** How many pages the filters produce. At least 1, even when empty. */
+  pageCount: number;
+  /** True when the page asked for is past the end, so the page can say so. */
+  outOfRange: boolean;
+}
+
+/**
+ * Every filter the events list applies, as data rather than as calls.
+ *
+ * Described once and applied twice, because the page needs a count and a slice
+ * and the two MUST agree. Expressed as a list rather than as a function over a
+ * query builder because postgrest-js gives a head-count builder and a row
+ * builder different types, and a generic that satisfied both would be more
+ * type gymnastics than the three filters are worth.
+ */
+type EventFilter =
+  | { kind: "eq"; column: string; value: string | boolean }
+  | { kind: "or"; expression: string };
+
+/**
+ * The filters for one query.
+ *
+ * EVERYTHING HERE COMES OUT OF A NARROWED VALUE OBJECT. parseEventsQuery in
+ * lib/admin/eventsQuery.ts has already reduced the sort and paid filters to
+ * unions, checked the type against the occasion registry, clamped the page and
+ * scrubbed the search of the punctuation that would change the meaning of the
+ * `or` expression below. That module carries the argument; this one cannot
+ * accept anything else, because its parameter type will not hold it.
+ */
+function eventFilters(query: EventsQuery): readonly EventFilter[] {
+  const filters: EventFilter[] = [];
+
+  if (query.paid !== "all") {
+    filters.push({ kind: "eq", column: "is_paid", value: query.paid === "paid" });
+  }
+
+  if (query.type !== "all") {
+    /*
+      The occasion lives inside the card_config jsonb, so this filters on the
+      extracted text. `query.type` is a MEMBER of the occasion registry —
+      checked by membership, not by shape — so nothing arbitrary reaches the
+      right-hand side.
+    */
+    filters.push({
+      kind: "eq",
+      column: "card_config->>occasionId",
+      value: query.type,
+    });
+  }
+
+  if (query.search.length > 0) {
+    /*
+      FOUR COLUMNS, because that is what the list displays: summaryTitle falls
+      back from the event's title to the two party names to the host line, and
+      a search that only looked at the title would fail to find a row shown to
+      the reader as "Aarav & Meera".
+
+      `*` is PostgREST's wildcard in an `ilike` pattern, not `%`. The search has
+      had `*`, `%` and `_` scrubbed out of it, so the only wildcards in this
+      expression are the two this line puts there.
+    */
+    const pattern = `*${query.search}*`;
+
+    filters.push({
+      kind: "or",
+      expression: [
+        `event_draft->>eventTitle.ilike.${pattern}`,
+        `event_draft->>partyOneName.ilike.${pattern}`,
+        `event_draft->>partyTwoName.ilike.${pattern}`,
+        `event_draft->>hostNames.ilike.${pattern}`,
+      ].join(","),
+    });
+  }
+
+  return filters;
+}
+
+/**
+ * One page of events, filtered and sorted by the database.
+ *
+ * WHY SERVER-SIDE AT ALL, when the old table sorted fifty rows in the browser:
+ * fifty rows WAS the whole table. Paginating means the browser no longer holds
+ * the rows it would need to sort or filter, and pretending otherwise would mean
+ * loading every event in order to show fifty — which is the thing being moved
+ * away from. The safety that the old arrangement bought is not lost, it is
+ * concentrated: see lib/admin/eventsQuery.ts.
+ */
+export async function getAdminEventPage(
+  query: EventsQuery,
+): Promise<DbResult<AdminEventPage>> {
+  const supabase = createAdminClient();
+  const filters = eventFilters(query);
+
+  try {
+    let countQuery = supabase
+      .from("events")
+      .select("id", { count: "exact", head: true });
+
+    for (const filter of filters) {
+      countQuery =
+        filter.kind === "eq"
+          ? countQuery.eq(filter.column, filter.value)
+          : countQuery.or(filter.expression);
+    }
+
+    const total = await countRows(countQuery);
+    const pageCount = Math.max(1, Math.ceil(total / EVENTS_PAGE_SIZE));
+
+    /*
+      A page past the end is reported rather than silently snapped back to the
+      last one. Someone who bookmarked page 4 and then narrowed the filter
+      should be told their page is empty, not shown page 2 as though that had
+      been what they asked for.
+    */
+    const outOfRange = total > 0 && query.page >= pageCount;
+
+    if (outOfRange) {
+      return dbSuccess({
+        events: [],
+        total,
+        page: query.page,
+        pageCount,
+        outOfRange,
+      });
+    }
+
+    let rowQuery = supabase.from("events").select(EVENT_SUMMARY_SELECT);
+
+    for (const filter of filters) {
+      rowQuery =
+        filter.kind === "eq"
+          ? rowQuery.eq(filter.column, filter.value)
+          : rowQuery.or(filter.expression);
+    }
+
+    const from = query.page * EVENTS_PAGE_SIZE;
+
+    const { data, error } = await rowQuery
+      .order("created_at", { ascending: query.sort === "oldest" })
+      /*
+        A tiebreak on id. Two events created in the same millisecond — a seed
+        script, an import — would otherwise be ordered arbitrarily, and an
+        arbitrary order across two pages can show one row twice and skip
+        another entirely.
+      */
+      .order("id", { ascending: true })
+      .range(from, from + EVENTS_PAGE_SIZE - 1);
+
+    if (error !== null) {
+      throw error;
+    }
+
+    return dbSuccess({
+      events: await withReplyCounts(supabase, data ?? []),
+      total,
+      page: query.page,
+      pageCount,
+      outOfRange,
+    });
+  } catch (cause: unknown) {
+    return dbFailure(
+      "admin/getAdminEventPage",
+      cause,
+      "Could not load the events.",
     );
   }
 }

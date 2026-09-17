@@ -1,10 +1,13 @@
 import Link from "next/link";
 import type { ReactElement, ReactNode } from "react";
-import AdminHeader from "@/components/admin/AdminHeader";
+import { PageHeading } from "@/components/admin/AdminShell";
+import { PaidPill } from "@/components/admin/EventsTable";
+import { EmptyState, ErrorNotice } from "@/components/admin/Feedback";
+import GuestTable from "@/components/admin/GuestTable";
 import { Stat, StatSection } from "@/components/admin/StatGrid";
 import { requireAdminSession } from "@/lib/admin/auth";
-import { getAdminEventDetail, type AdminGuest } from "@/lib/admin/stats";
-import type { RsvpStatus } from "@/types/guest";
+import { formatCount, formatIst } from "@/lib/admin/format";
+import { getAdminEventDetail } from "@/lib/admin/stats";
 
 /**
  * One event in full, with its guest list. Read only.
@@ -18,25 +21,6 @@ import type { RsvpStatus } from "@/types/guest";
  * "a guest says their RSVP did not save" — cannot be answered without them.
  */
 export const dynamic = "force-dynamic";
-
-const DATE_FORMAT = new Intl.DateTimeFormat("en-IN", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Asia/Kolkata",
-});
-
-function formatTimestamp(iso: string | null): string {
-  if (iso === null) {
-    return "—";
-  }
-
-  const parsed = new Date(iso);
-
-  return Number.isNaN(parsed.getTime()) ? "—" : DATE_FORMAT.format(parsed);
-}
 
 /** One labelled line in the details panel. */
 function Field({
@@ -54,59 +38,15 @@ function Field({
   );
 }
 
-const RSVP_STYLES: Record<RsvpStatus, string> = {
-  accepted: "bg-green-100 text-green-800",
-  declined: "bg-red-100 text-red-800",
-  maybe: "bg-amber-100 text-amber-800",
-  pending: "bg-zinc-100 text-zinc-600",
-};
-
-function RsvpBadge({ status }: { status: RsvpStatus }): ReactElement {
+/** Back to the list, in the place every detail page keeps it. */
+function BackLink(): ReactElement {
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${RSVP_STYLES[status]}`}
+    <Link
+      href="/admin/events"
+      className="rounded text-sm text-blue-700 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
     >
-      {status}
-    </span>
-  );
-}
-
-function GuestRow({ guest }: { guest: AdminGuest }): ReactElement {
-  return (
-    <tr className="border-b border-zinc-100 last:border-b-0">
-      <td className="px-4 py-2.5 font-medium">{guest.name}</td>
-      <td className="px-4 py-2.5 whitespace-nowrap text-zinc-600 tabular-nums">
-        {guest.phone.length === 0 ? "—" : guest.phone}
-      </td>
-      <td className="px-4 py-2.5">
-        <RsvpBadge status={guest.rsvp} />
-      </td>
-      <td className="px-4 py-2.5 text-right tabular-nums">
-        {/*
-          The party size as a guest would describe it: themselves plus whoever
-          they are bringing. accompanying_count alone reads as "0 people" for
-          someone who is certainly coming.
-        */}
-        {guest.rsvp === "accepted" ? 1 + guest.accompanyingCount : "—"}
-      </td>
-      <td className="px-4 py-2.5 whitespace-nowrap text-zinc-600">
-        {formatTimestamp(guest.respondedAt)}
-      </td>
-      <td className="px-4 py-2.5 whitespace-nowrap">
-        {guest.checkedIn ? (
-          <span className="text-green-700">
-            {formatTimestamp(guest.checkedInAt)}
-          </span>
-        ) : (
-          <span className="text-zinc-400">Not checked in</span>
-        )}
-      </td>
-      <td className="max-w-[260px] px-4 py-2.5 text-zinc-600">
-        {guest.message === null || guest.message.length === 0
-          ? "—"
-          : guest.message}
-      </td>
-    </tr>
+      ← All events
+    </Link>
   );
 }
 
@@ -115,22 +55,17 @@ export default async function AdminEventPage({
 }: {
   params: Promise<{ id: string }>;
 }): Promise<ReactElement> {
-  const session = await requireAdminSession();
+  await requireAdminSession();
   const { id } = await params;
   const result = await getAdminEventDetail(id);
 
   if (!result.ok) {
     return (
       <>
-        <AdminHeader username={session.username} />
-        <main className="mx-auto max-w-6xl px-5 py-10">
-          <p
-            role="alert"
-            className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
-          >
-            {result.error}
-          </p>
-        </main>
+        <BackLink />
+        <div className="mt-4">
+          <ErrorNotice message={result.error} />
+        </div>
       </>
     );
   }
@@ -140,160 +75,116 @@ export default async function AdminEventPage({
   if (event === null) {
     return (
       <>
-        <AdminHeader username={session.username} />
-        <main className="mx-auto max-w-6xl px-5 py-10">
-          <p className="text-sm text-zinc-600">
-            No event with that id. It may have been deleted.
-          </p>
-          <Link
-            href="/admin"
-            className="mt-4 inline-block rounded text-sm text-blue-700 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-          >
-            Back to the overview
-          </Link>
-        </main>
+        <BackLink />
+        <div className="mt-4">
+          <EmptyState
+            title="No event with that id."
+            hint="It may have been deleted, or the link may be mistyped."
+          />
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <AdminHeader username={session.username} />
+      <BackLink />
 
-      <main className="mx-auto max-w-6xl px-5 py-8">
-        <Link
-          href="/admin"
-          className="rounded text-sm text-blue-700 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-        >
-          ← Overview
-        </Link>
+      <div className="mt-3">
+        <PageHeading
+          title={event.title}
+          description={`${event.occasionLabel} · created ${formatIst(event.createdAt)}`}
+          aside={<PaidPill isPaid={event.isPaid} />}
+        />
+      </div>
 
-        <h1 className="mt-3 text-xl font-semibold tracking-tight">
-          {event.title}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          {event.occasionLabel} · created {formatTimestamp(event.createdAt)}
-        </p>
+      <StatSection title="Replies">
+        {/*
+          Headcount is the primary figure, not "total replies". A caterer, a
+          venue and the host all ask the same question — how many people are
+          turning up — and that is acceptances plus the people they are
+          bringing, which is a different number from how many forms came back.
+        */}
+        <Stat
+          label="Headcount"
+          value={event.tally.headcount}
+          note="Acceptances plus their guests"
+          emphasis="primary"
+        />
+        <Stat label="Total replies" value={event.tally.total} />
+        <Stat label="Accepted" value={event.tally.accepted} />
+        <Stat label="Declined" value={event.tally.declined} />
+        <Stat label="Maybe" value={event.tally.maybe} />
+        <Stat label="Pending" value={event.tally.pending} />
+        <Stat label="Checked in" value={event.tally.checkedIn} />
+      </StatSection>
 
-        <StatSection title="Replies">
-          <Stat label="Total replies" value={event.tally.total} />
-          <Stat label="Accepted" value={event.tally.accepted} />
-          <Stat label="Declined" value={event.tally.declined} />
-          <Stat label="Maybe" value={event.tally.maybe} />
-          <Stat label="Pending" value={event.tally.pending} />
-          <Stat
-            label="Headcount"
-            value={event.tally.headcount}
-            note="Acceptances plus their guests"
-          />
-          <Stat label="Checked in" value={event.tally.checkedIn} />
-        </StatSection>
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+          Event
+        </h2>
 
-        <section className="mt-8">
+        <dl className="mt-3 rounded-lg border border-zinc-200 bg-white">
+          <Field label="Event id">
+            <code className="text-xs">{event.id}</code>
+          </Field>
+          <Field label="Host id">
+            <code className="text-xs">{event.hostId}</code>
+          </Field>
+          <Field label="Invite code">
+            <code className="text-xs">{event.inviteCode}</code>
+          </Field>
+          <Field label="Paid">
+            {event.isPaid ? "Yes" : "No"}
+            {event.paymentId === null ? null : (
+              <span className="text-zinc-500"> · {event.paymentId}</span>
+            )}
+          </Field>
+          <Field label="Date and time">
+            {event.eventDate.length === 0 ? "—" : event.eventDate}
+            {event.eventTime.length === 0 ? "" : ` at ${event.eventTime}`}
+          </Field>
+          <Field label="Venue">
+            {event.venueName.length === 0 ? "—" : event.venueName}
+            {event.venueAddress.length === 0 ? null : (
+              <span className="text-zinc-500"> · {event.venueAddress}</span>
+            )}
+          </Field>
+          <Field label="Other functions">{event.subEventCount}</Field>
+          <Field label="Language">{event.language}</Field>
+          <Field label="Tradition">{event.traditionId}</Field>
+          <Field label="Cover animation">{event.coverAnimation ?? "—"}</Field>
+          <Field label="Weather shown">{event.showWeather ? "Yes" : "No"}</Field>
+          <Field label="QR check-in">
+            {event.qrCheckinEnabled ? "On" : "Off"}
+          </Field>
+          <Field label="Last updated">{formatIst(event.updatedAt)}</Field>
+        </dl>
+      </section>
+
+      <section className="mt-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
-            Event
+            Guests
           </h2>
+          {/*
+            The summary above the table, in words rather than as a second row of
+            tiles. The tiles have already given the breakdown; this is the one
+            line that says what is in the table directly beneath it.
+          */}
+          <p className="text-xs text-zinc-500">
+            {formatCount(event.tally.total)}{" "}
+            {event.tally.total === 1 ? "reply" : "replies"} ·{" "}
+            {formatCount(event.tally.accepted)} accepted ·{" "}
+            {formatCount(event.tally.checkedIn)} checked in ·{" "}
+            {formatCount(event.tally.headcount)} expected at the door
+          </p>
+        </div>
 
-          <dl className="mt-3 rounded-lg border border-zinc-200 bg-white">
-            <Field label="Event id">
-              <code className="text-xs">{event.id}</code>
-            </Field>
-            <Field label="Host id">
-              <code className="text-xs">{event.hostId}</code>
-            </Field>
-            <Field label="Invite code">
-              <code className="text-xs">{event.inviteCode}</code>
-            </Field>
-            <Field label="Paid">
-              {event.isPaid ? "Yes" : "No"}
-              {event.paymentId === null ? null : (
-                <span className="text-zinc-500"> · {event.paymentId}</span>
-              )}
-            </Field>
-            <Field label="Date and time">
-              {event.eventDate.length === 0 ? "—" : event.eventDate}
-              {event.eventTime.length === 0 ? "" : ` at ${event.eventTime}`}
-            </Field>
-            <Field label="Venue">
-              {event.venueName.length === 0 ? "—" : event.venueName}
-              {event.venueAddress.length === 0 ? null : (
-                <span className="text-zinc-500"> · {event.venueAddress}</span>
-              )}
-            </Field>
-            <Field label="Other functions">{event.subEventCount}</Field>
-            <Field label="Language">{event.language}</Field>
-            <Field label="Tradition">{event.traditionId}</Field>
-            <Field label="Cover animation">
-              {event.coverAnimation ?? "—"}
-            </Field>
-            <Field label="Weather shown">
-              {event.showWeather ? "Yes" : "No"}
-            </Field>
-            <Field label="QR check-in">
-              {event.qrCheckinEnabled ? "On" : "Off"}
-            </Field>
-            <Field label="Last updated">
-              {formatTimestamp(event.updatedAt)}
-            </Field>
-          </dl>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
-            Guests ({event.guests.length})
-          </h2>
-
-          <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-            <table className="w-full min-w-[860px] text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
-                <tr>
-                  <th scope="col" className="px-4 py-2.5 font-medium">
-                    Name
-                  </th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">
-                    Phone
-                  </th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">
-                    RSVP
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-right font-medium"
-                  >
-                    Party
-                  </th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">
-                    Replied
-                  </th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">
-                    Checked in
-                  </th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">
-                    Message
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {event.guests.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-4 py-8 text-center text-zinc-500"
-                    >
-                      No replies yet.
-                    </td>
-                  </tr>
-                ) : (
-                  event.guests.map((guest) => (
-                    <GuestRow key={guest.id} guest={guest} />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
+        <div className="mt-3">
+          <GuestTable guests={event.guests} />
+        </div>
+      </section>
     </>
   );
 }
