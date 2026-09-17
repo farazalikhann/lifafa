@@ -726,3 +726,79 @@
     transform: scaleX(0.86);
   }
 }
+
+/* --- The leaves that drift with the butterflies. Driven by ButterflyLayer. --- */
+
+/*
+  Two drift paths, and they are not the butterfly paths reused.
+  
+  A butterfly beats its way somewhere; a leaf is carried. So these are slower,
+  they travel further on the vertical than any butterfly path does, and their
+  rotation is a tumble rather than a heading correction — a leaf turning over as
+  it sinks rather than an insect banking.
+
+  One sinks and one rises, because a card with three leaves all falling reads as
+  autumn, which is not what a wedding invitation is for. Together they read as
+  air moving.
+
+  HELD TO THE SAME 12px ON THE HORIZONTAL as the butterflies, for the same
+  reason: this layer sits above the text, and the margin the table places them
+  in is the only thing keeping them off it.
+*/
+@keyframes lifafa-leaf-a {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translate3d(8px, 26px, 0) rotate(16deg);
+  }
+  45% {
+    transform: translate3d(-6px, 54px, 0) rotate(-12deg);
+  }
+  70% {
+    transform: translate3d(7px, 30px, 0) rotate(10deg);
+  }
+  88% {
+    transform: translate3d(-3px, 12px, 0) rotate(-5deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes lifafa-leaf-b {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  24% {
+    transform: translate3d(-7px, -22px, 0) rotate(-14deg);
+  }
+  52% {
+    transform: translate3d(5px, -46px, 0) rotate(11deg);
+  }
+  76% {
+    transform: translate3d(-6px, -20px, 0) rotate(-8deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+/*
+  The leaf's turn — the same trick as the wingbeat and the same reason for it.
+
+  A flat photograph of a leaf has no edge-on pose in it, and `scaleX` about its
+  own middle is the foreshortening the eye reads as one turning in the air. Far
+  gentler than the wing: a leaf catches the breeze and comes back, so this only
+  narrows to 0.66 and does it symmetrically, where the wing snaps to 0.58 and
+  lingers open. Duration is set inline per leaf.
+*/
+@keyframes lifafa-leaf-turn {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.66);
+  }
+}

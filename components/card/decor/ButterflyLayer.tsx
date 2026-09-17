@@ -2,7 +2,12 @@
 
 import type { CSSProperties, ReactElement } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { BUTTERFLY_ASPECT, butterflySources } from "@/lib/butterflies";
+import {
+  BUTTERFLY_ASPECT,
+  LEAF_ASPECT,
+  LEAF_SRC,
+  butterflySources,
+} from "@/lib/butterflies";
 import { artWidth } from "@/lib/cardScale";
 import type { ButterflyStyle, DecorIntensity } from "@/types/card";
 
@@ -38,6 +43,16 @@ import type { ButterflyStyle, DecorIntensity } from "@/types/card";
  * lifafa-butterfly-wing in globals.css. Briefly: a GIF cannot carry the soft
  * edge this cut-out has, cannot be stopped for a guest who has asked for less
  * movement, and every copy of one beats in the same rhythm at the same moment.
+ *
+ * LEAVES RIDE THE SAME SWITCH, and that is the decision rather than an
+ * oversight. A leaf is not a second thing to choose: it is what the butterflies
+ * are flying through, and a card that offered the two separately would be
+ * asking the host to compose a scene rather than to pick a colour. So the
+ * butterfly switch turns on the air, and one to three leaves drift in it
+ * depending on the same Amount the butterflies read. They take the same margins
+ * and the same shadow, and their paths are cut as short on the horizontal as
+ * the butterflies' are — this layer is above the text, and the margin is all
+ * that keeps either of them off it.
  *
  * WHICH BUTTERFLY IS THE HOST'S, not this file's. A card has a palette, and
  * three colours of insect arriving unasked is a decision made on the host's
@@ -92,14 +107,50 @@ interface Flyer {
  * arranged rather than clustered. Every entry after that keeps the balance.
  */
 const FLYERS: readonly Flyer[] = [
-  { left: 2, top: 22, size: 32, path: "a", travel: 19, wing: 0.72, rotate: 12, delay: 0 },
-  { left: 85, top: 58, size: 29, path: "c", travel: 23, wing: 0.62, rotate: -16, delay: 1.4 },
+  { left: 0, top: 22, size: 38, path: "a", travel: 19, wing: 0.72, rotate: 12, delay: 0 },
+  { left: 85, top: 58, size: 35, path: "c", travel: 23, wing: 0.62, rotate: -16, delay: 1.4 },
   /* Joins at "normal". */
-  { left: 88, top: 14, size: 25, path: "b", travel: 21, wing: 0.84, rotate: 22, delay: 2.6 },
-  { left: 0, top: 70, size: 28, path: "c", travel: 25, wing: 0.68, rotate: -9, delay: 0.8 },
+  { left: 88, top: 14, size: 30, path: "b", travel: 21, wing: 0.84, rotate: 22, delay: 2.6 },
+  { left: -1, top: 70, size: 33, path: "c", travel: 25, wing: 0.68, rotate: -9, delay: 0.8 },
   /* The last two are only reached at "lively". */
-  { left: 90, top: 84, size: 24, path: "a", travel: 22, wing: 0.78, rotate: 7, delay: 3.4 },
-  { left: 3, top: 44, size: 26, path: "b", travel: 26, wing: 0.66, rotate: -20, delay: 2.0 },
+  { left: 90, top: 84, size: 29, path: "a", travel: 22, wing: 0.78, rotate: 7, delay: 3.4 },
+  { left: 2, top: 44, size: 31, path: "b", travel: 26, wing: 0.66, rotate: -20, delay: 2.0 },
+];
+
+interface Drifter {
+  /** Percentages within the band, read the same way a Flyer's are. */
+  left: number;
+  top: number;
+  /** Rendered width in px. */
+  size: number;
+  /** Which of the two drift paths in globals.css it takes. */
+  path: "a" | "b";
+  /** Seconds for one circuit of it. */
+  travel: number;
+  /** Seconds for one turn in the air. */
+  turn: number;
+  rotate: number;
+  delay: number;
+}
+
+/**
+ * The leaves, placed the way the butterflies are and kept out of their way.
+ *
+ * Checked against FLYERS rather than authored beside it: a leaf and a butterfly
+ * that happen to share a side and a height overlap, which reads as one torn
+ * sprite rather than two things in the air. The right-hand leaf sits at 30%
+ * where the right-hand butterflies are at 14, 58 and 84, and the two left-hand
+ * leaves fall between the left-hand butterflies' 22, 44 and 70.
+ *
+ * Fewer than the butterflies at every amount. A leaf is the quieter thing and
+ * there is no reading of a wedding card where it should outnumber them.
+ */
+const LEAVES: readonly Drifter[] = [
+  { left: 0, top: 34, size: 30, path: "a", travel: 28, turn: 4.2, rotate: 18, delay: 1.1 },
+  /* Joins at "normal". */
+  { left: 87, top: 30, size: 26, path: "b", travel: 32, turn: 3.6, rotate: -24, delay: 2.4 },
+  /* Only at "lively". */
+  { left: 4, top: 78, size: 24, path: "b", travel: 30, turn: 4.8, rotate: -12, delay: 3.2 },
 ];
 
 /**
@@ -114,6 +165,13 @@ const COUNT: Record<DecorIntensity, number> = {
   subtle: 2,
   normal: 4,
   lively: 6,
+};
+
+/** How many leaves at each amount — see the note on LEAVES. */
+const LEAF_COUNT: Record<DecorIntensity, number> = {
+  subtle: 1,
+  normal: 2,
+  lively: 3,
 };
 
 /**
@@ -207,6 +265,58 @@ function Butterfly({
   );
 }
 
+/**
+ * A leaf, built the way a butterfly is and for the same reason.
+ *
+ * Three spans: the outer drifts, the middle holds the heading and the alpha,
+ * the inner turns. An animation's transform replaces the element's own, so the
+ * three cannot share one element — see the note on Butterfly above.
+ */
+function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
+  const travel: CSSProperties = {
+    left: `${drifter.left}%`,
+    top: `${drifter.top}%`,
+    animationName: `lifafa-leaf-${drifter.path}`,
+    animationDuration: `${drifter.travel}s`,
+    animationDelay: `${drifter.delay}s`,
+    animationTimingFunction: "ease-in-out",
+    animationIterationCount: "infinite",
+    animationFillMode: "both",
+  };
+
+  const turn: CSSProperties = {
+    animationName: "lifafa-leaf-turn",
+    animationDuration: `${drifter.turn}s`,
+    /* Offset against the drift, so a leaf does not turn on the same beat it sways. */
+    animationDelay: `${drifter.delay * 0.45}s`,
+    animationTimingFunction: "ease-in-out",
+    animationIterationCount: "infinite",
+    animationFillMode: "both",
+  };
+
+  return (
+    <span className="absolute block" style={travel}>
+      <span
+        className="block"
+        style={{ opacity: OPACITY, transform: `rotate(${drifter.rotate}deg)` }}
+      >
+        <span className="block" style={turn}>
+          <img
+            src={LEAF_SRC}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            width={drifter.size}
+            height={Math.round(drifter.size / LEAF_ASPECT)}
+            className="block max-w-none select-none"
+            style={{ filter: SHADOW }}
+          />
+        </span>
+      </span>
+    </span>
+  );
+}
+
 export default function ButterflyLayer({
   style,
   intensity,
@@ -259,6 +369,10 @@ export default function ButterflyLayer({
             */
             src={sources[index % sources.length]}
           />
+        ))}
+
+        {LEAVES.slice(0, LEAF_COUNT[intensity]).map((drifter) => (
+          <Leaf key={`leaf-${drifter.left}-${drifter.top}`} drifter={drifter} />
         ))}
       </div>
     </div>

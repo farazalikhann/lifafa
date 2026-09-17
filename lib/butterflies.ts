@@ -23,6 +23,22 @@ export const BUTTERFLY_SRC: Record<ButterflyColour, string> = {
 /** The artwork's own proportions, so a width is enough to place one. */
 export const BUTTERFLY_ASPECT = 180 / 110;
 
+/**
+ * The leaf that drifts with them.
+ *
+ * One file and no pair, unlike the butterflies: a green leaf is a green leaf on
+ * cream and on ink alike, so there is nothing for the host to choose between
+ * and nothing the card has to decide. It rides the same switch the butterflies
+ * do — see the note in components/card/decor/ButterflyLayer.tsx.
+ *
+ * Supplied as a JPEG on black, so it is cut out on luminance rather than on an
+ * alpha channel it never had. That works here where it would not have worked
+ * for the Devanagari sheet: the background is 0,0,0 and the leaf is a bright
+ * green, with only 4,462 of 175,000 sampled pixels between the two.
+ */
+export const LEAF_SRC = "/decor/leaf.webp";
+export const LEAF_ASPECT = 240 / 138;
+
 /** In the order the panel offers them, coldest first and the mixture last. */
 export const BUTTERFLY_STYLES: readonly {
   id: ButterflyStyle;
