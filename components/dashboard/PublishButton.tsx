@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { createPaymentOrder } from "@/lib/db/payments";
+import CouponField, {
+  type AppliedCoupon,
+} from "@/components/dashboard/CouponField";
 import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 
@@ -107,6 +110,13 @@ export default function PublishButton({
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
 
   /*
+    The applied coupon, held here rather than inside CouponField, because this
+    is the component that opens the checkout and it must send exactly the code
+    that was applied. A code still being typed is not an applied code.
+  */
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+
+  /*
     Whether this component is still on screen. A successful payment refreshes
     the page, which unmounts this — and the grace timer below would otherwise
     call setState on a component that is gone.
@@ -129,7 +139,13 @@ export default function PublishButton({
       Loading the script while the order is still being created would open a
       checkout with nothing to pay for.
     */
-    const result = await createPaymentOrder(eventId);
+    /*
+      THE CODE, NOT THE PRICE. `coupon.finalPaise` is on this component's state
+      and is never sent anywhere — it exists to render a number. The server
+      reads the coupon row again and prices the order itself; see the note on
+      createPaymentOrder.
+    */
+    const result = await createPaymentOrder(eventId, coupon?.code ?? null);
 
     if (!result.ok) {
       setPhase({ kind: "failed", message: result.error });
@@ -221,19 +237,35 @@ export default function PublishButton({
 
     setPhase({ kind: "open" });
     checkout.open();
-  }, [eventId, router]);
+  }, [coupon, eventId, router]);
 
   const busy = phase.kind === "starting" || phase.kind === "open";
 
   return (
-    <div className="flex flex-col items-stretch gap-2 sm:items-end">
+    <div className="flex flex-col items-stretch gap-3 sm:items-end">
+      {/*
+        Above the button, and hidden once there is nothing left to decide. A
+        coupon field beside a checkout that has already been paid is a field
+        offering to change a price that is settled.
+      */}
+      {phase.kind === "confirming" || phase.kind === "pending" ? null : (
+        <div className="w-full sm:max-w-[18rem]">
+          <CouponField
+            eventId={eventId}
+            applied={coupon}
+            onApplied={setCoupon}
+            locked={busy}
+          />
+        </div>
+      )}
+
       <button
         type="button"
         onClick={() => void handleClick()}
         disabled={busy || phase.kind === "confirming"}
         className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50"
       >
-        {buttonLabel(phase)}
+        {buttonLabel(phase, coupon)}
       </button>
 
       <StatusLine phase={phase} onCheckAgain={() => router.refresh()} />
@@ -241,8 +273,21 @@ export default function PublishButton({
   );
 }
 
-/** What the button itself says, which changes only while something is running. */
-function buttonLabel(phase: Phase): string {
+/**
+ * What the button itself says.
+ *
+ * The price on it follows the applied coupon, because a button reading "Publish
+ * for ₹999" above a line reading "you pay ₹499" is a button that contradicts
+ * the screen it is on. It is still only a label: the figure charged is computed
+ * server side from the code, never from this.
+ */
+function buttonLabel(phase: Phase, coupon: AppliedCoupon | null): string {
+  const price = formatInr(
+    coupon === null
+      ? INVITATION_PRICE_INR
+      : Math.round(coupon.finalPaise / 100),
+  );
+
   switch (phase.kind) {
     case "starting":
       return "Starting…";
@@ -253,10 +298,10 @@ function buttonLabel(phase: Phase): string {
     case "dismissed":
     case "failed":
       /* A retry, and labelled as one, so the price is still in view. */
-      return `Try again — ${formatInr(INVITATION_PRICE_INR)}`;
+      return `Try again — ${price}`;
     case "pending":
     case "idle":
-      return `Publish for ${formatInr(INVITATION_PRICE_INR)}`;
+      return `Publish for ${price}`;
   }
 }
 

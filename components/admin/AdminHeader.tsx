@@ -26,6 +26,27 @@ export default function AdminHeader({
           Lifafa admin
         </Link>
 
+        {/*
+          Plain links, no active-state highlighting. Two destinations do not
+          need a navigation component, and making this a client component to
+          read the pathname would ship JavaScript to every admin page for the
+          sake of an underline.
+        */}
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/admin"
+            className="rounded text-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+          >
+            Overview
+          </Link>
+          <Link
+            href="/admin/coupons"
+            className="rounded text-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+          >
+            Coupons
+          </Link>
+        </nav>
+
         <span className="ml-auto text-sm text-zinc-500">{username}</span>
 
         <form action={signOut}>

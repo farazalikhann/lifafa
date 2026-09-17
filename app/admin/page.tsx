@@ -63,20 +63,36 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
         <StatSection title="Revenue">
           <Stat label="Paid events" value={events.paid} />
           <Stat
-            label="Total revenue"
+            label="Net received"
+            value={formatInr(events.netReceivedInr)}
+            /*
+              The figure to trust, and named so it is not mistaken for the one
+              below it. Summed from what each captured payment actually charged,
+              so it stays right through a discount and through a price change.
+            */
+            note="Summed from captured payments"
+          />
+          <Stat
+            label="Discount given"
+            value={formatInr(events.discountGivenInr)}
+            note="Across all captured payments"
+          />
+          <Stat
+            label="Gross at list price"
             value={formatInr(events.revenueInr)}
             /*
-              Said on the tile rather than only in a comment. There is no amount
-              column and no payment webhook yet, so this figure is arithmetic on
-              a flag — and an owner reading a revenue number deserves to know
-              which kind of number it is before they act on it.
+              Kept, and labelled for what it is. Paid events times ₹999 answers
+              "what would these have been worth at full price", which is what a
+              coupon's cost is measured against — but it is not what arrived,
+              and a tile reading "Total revenue" would have started lying the
+              day the first code was used.
             */
-            note="Paid events × ₹999. Derived, not recorded."
+            note="Paid events × ₹999. Before discounts."
           />
           <Stat
             label="Unpaid events"
             value={events.total - events.paid}
-            note="Watermarked cards"
+            note="Not published"
           />
         </StatSection>
 

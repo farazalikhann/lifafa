@@ -1,7 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OCCASIONS } from "@/lib/occasions";
 import { INVITATION_PRICE_INR } from "@/lib/pricing";
-import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
+import {
+  dbFailure,
+  dbSuccess,
+  postgresError,
+  type DbResult,
+} from "@/lib/db/result";
 import type { OccasionId } from "@/types/occasion";
 import type { RsvpStatus } from "@/types/guest";
 
@@ -94,8 +99,31 @@ export interface AdminOverview {
     last7Days: number;
     last30Days: number;
     paid: number;
-    /** Paid invitations times the price. See lib/pricing.ts on why it is derived. */
+    /**
+     * Paid invitations times the LIST price. Gross, before any discount.
+     *
+     * Kept because it answers "what would these have been worth at full price",
+     * which is the question a coupon's cost is measured against. It is NOT what
+     * was received — see netReceivedInr, which is summed from the payments
+     * themselves and is the figure to trust once codes are in use.
+     */
     revenueInr: number;
+    /**
+     * Paise taken off, summed across every captured payment, shown in rupees.
+     *
+     * From payments.discount_amount, which records what one order's coupon
+     * actually did at the moment it was placed — so this stays correct even
+     * after a coupon is deactivated or the list price changes.
+     */
+    discountGivenInr: number;
+    /**
+     * What was actually received: payments.amount summed over captured rows.
+     *
+     * NOT DERIVED FROM A COUNT, unlike revenueInr, and that is the point of
+     * having both. The moment one discounted payment exists, a count times a
+     * price overstates receipts; this reads what was charged.
+     */
+    netReceivedInr: number;
   };
   guests: {
     total: number;
@@ -280,9 +308,10 @@ export async function getAdminOverview(): Promise<DbResult<AdminOverview>> {
       countRows(guestCountQuery(supabase).eq("checked_in", true)),
     ]);
 
-    const [byOccasion, recentEvents] = await Promise.all([
+    const [byOccasion, recentEvents, money] = await Promise.all([
       countByOccasion(supabase, totalEvents),
       getRecentEvents(supabase),
+      sumCapturedPayments(supabase),
     ]);
 
     return dbSuccess({
@@ -293,6 +322,9 @@ export async function getAdminOverview(): Promise<DbResult<AdminOverview>> {
         last30Days: monthEvents,
         paid: paidEvents,
         revenueInr: paidEvents * INVITATION_PRICE_INR,
+        /* Paise on the row, rupees on the tile. Rounded once, here. */
+        discountGivenInr: Math.round(money.discountPaise / 100),
+        netReceivedInr: Math.round(money.receivedPaise / 100),
       },
       guests: {
         total: totalGuests,
@@ -347,6 +379,92 @@ async function countByOccasion(
   return unknown > 0
     ? [...counted, { id: "unknown", label: "Unknown", count: unknown }]
     : counted;
+}
+
+/**
+ * What was actually received, and what was given away, across captured payments.
+ *
+ * ROWS RATHER THAN A COUNT, which is the exception in this file and needs a
+ * reason. Everything else here asks "how many", and PostgREST answers that with
+ * a header and no body. This asks "how much", and PostgREST has no SUM: the
+ * choices are to add an aggregate function to the schema or to read the two
+ * integer columns and add them up here. Two integers per paid order is a small
+ * read, and it keeps the arithmetic somewhere a person can see it.
+ *
+ * Paged, for the reason fetchAllPages exists: PostgREST stops at a thousand
+ * rows without saying so, and a revenue figure that silently stops counting at
+ * the thousandth payment is the worst kind of wrong — it looks fine.
+ *
+ * `status = 'paid'` is the whole filter. A payments row is written when an
+ * order is created, so abandoned checkouts are in this table; counting their
+ * amounts would report money that was never taken.
+ */
+async function sumCapturedPayments(
+  supabase: AdminClient,
+): Promise<{ receivedPaise: number; discountPaise: number }> {
+  /*
+    DROPS THE DISCOUNT COLUMN RATHER THAN FAILING WITHOUT IT.
+
+    A deploy reaches production before somebody pastes 0010 into the SQL
+    editor, and in that window `discount_amount` does not exist. Naming it in
+    a select is not a partial failure — PostgREST refuses the whole request —
+    so without this the entire dashboard would report "could not load" over a
+    column that only one tile needs. The first read asks for both; a read that
+    comes back complaining about the column asks again for the one that has
+    always been there, and the discount reads as zero, which before the
+    migration it genuinely is.
+  */
+  try {
+    const rows = await fetchAllPages<{
+      amount: number;
+      discount_amount: number | null;
+    }>((from, to) =>
+      supabase
+        .from("payments")
+        .select("amount, discount_amount")
+        .eq("status", "paid")
+        /* A stable order, or two pages can hand back the same row twice. */
+        .order("id", { ascending: true })
+        .range(from, to),
+    );
+
+    return rows.reduce(
+      (totals, row) => ({
+        receivedPaise: totals.receivedPaise + row.amount,
+        /* Null on a row written before 0010; no discount was given either way. */
+        discountPaise: totals.discountPaise + (row.discount_amount ?? 0),
+      }),
+      { receivedPaise: 0, discountPaise: 0 },
+    );
+  } catch (cause: unknown) {
+    const pg = postgresError(cause);
+
+    if (
+      pg === null ||
+      (pg.code !== "42703" && pg.code !== "PGRST204") ||
+      !pg.message.includes("discount_amount")
+    ) {
+      throw cause;
+    }
+
+    console.error(
+      "[admin] payments.discount_amount does not exist. Apply supabase/migrations/0010_coupons.sql. Reporting no discounts given.",
+    );
+
+    const rows = await fetchAllPages<{ amount: number }>((from, to) =>
+      supabase
+        .from("payments")
+        .select("amount")
+        .eq("status", "paid")
+        .order("id", { ascending: true })
+        .range(from, to),
+    );
+
+    return {
+      receivedPaise: rows.reduce((sum, row) => sum + row.amount, 0),
+      discountPaise: 0,
+    };
+  }
 }
 
 /**

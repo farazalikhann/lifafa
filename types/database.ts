@@ -213,6 +213,25 @@ export type PaymentRow = {
   /** Paise, never rupees. ₹999 is 99900. */
   amount: number;
   status: PaymentStatus;
+  /**
+   * The coupon this order was placed with, uppercase, or null (0010).
+   *
+   * A copy of the code rather than a reference to the coupon row, and that is
+   * the point: it records what happened at the moment of the order. A coupon
+   * can be deactivated or edited afterwards and this does not move, so an
+   * affiliate's commission is worked out from facts rather than from whatever
+   * the coupons table happens to say today.
+   */
+  coupon_code: string | null;
+  /**
+   * Paise taken off the list price for this order (0010). Zero when no coupon
+   * was used, which is every row written before this column existed.
+   *
+   * `amount` is what was actually charged; this is what was not. The two
+   * together are the whole story of one order, and neither is derivable from
+   * the other once the list price changes.
+   */
+  discount_amount: number;
   created_at: string;
   /** Set at the moment status becomes 'paid', null otherwise. */
   paid_at: string | null;
@@ -234,6 +253,15 @@ export type PaymentInsert = {
   razorpay_order_id: string;
   amount: number;
   status?: PaymentStatus;
+  /*
+    Both optional, because a row written without a coupon is the ordinary case
+    and the columns default to null and 0. Both are written at insert time and
+    never afterwards — there is no path that adds a coupon to an order that has
+    already been placed, which would be a discount applied to a price the host
+    has already been shown.
+  */
+  coupon_code?: string | null;
+  discount_amount?: number;
 }
 
 /**
@@ -248,6 +276,77 @@ export type PaymentInsert = {
 export type PaymentUpdate = Partial<
   Pick<PaymentRow, "razorpay_payment_id" | "status" | "paid_at">
 >;
+
+/**
+ * A coupon or affiliate code (0010).
+ *
+ * ONE TABLE FOR TWO THINGS, because they differ in two fields and agree on
+ * every other. `type` says which it is; `owner_name` and `commission_per_sale`
+ * are the affiliate's half and are null on a plain discount code.
+ *
+ * NOTHING IN THE BROWSER EVER SEES ONE OF THESE. The table has RLS enabled with
+ * no policy at all, so it is unreadable to `anon` and `authenticated` whatever
+ * they send. These types exist for the service-role client alone.
+ */
+export type CouponRow = {
+  id: string;
+  /** Always uppercase — the database has a check constraint saying so. */
+  code: string;
+  type: CouponType;
+  discount_type: CouponDiscountType;
+  /** Whole percent when discount_type is 'percent', paise when it is 'flat'. */
+  discount_value: number;
+  /** Null means unlimited. */
+  max_uses: number | null;
+  /** Advanced only by redeem_coupon(), only on a captured payment. */
+  used_count: number;
+  /** Null means it never expires. */
+  expires_at: string | null;
+  is_active: boolean;
+  /** The affiliate's name. Null on a discount code, required on an affiliate. */
+  owner_name: string | null;
+  /** Paise owed per captured sale. Null on a discount code. */
+  commission_per_sale: number | null;
+  created_at: string;
+}
+
+/** A plain price reduction, or one that also owes somebody a commission. */
+export type CouponType = "discount" | "affiliate";
+
+/** Whether discount_value is read as a percentage or as paise. */
+export type CouponDiscountType = "percent" | "flat";
+
+/**
+ * What creating a code may carry.
+ *
+ * `used_count` is absent on purpose. A code is born unused, and a caller able
+ * to set the starting count is a caller able to create a code that is already
+ * exhausted — or, with a negative number, one that outlives its own limit.
+ */
+export type CouponInsert = {
+  id?: string;
+  code: string;
+  type: CouponType;
+  discount_type: CouponDiscountType;
+  discount_value: number;
+  max_uses?: number | null;
+  expires_at?: string | null;
+  is_active?: boolean;
+  owner_name?: string | null;
+  commission_per_sale?: number | null;
+}
+
+/**
+ * What the admin UI may change, which is one field.
+ *
+ * DELIBERATELY ONLY `is_active`. Editing a live code's discount or its limit
+ * would silently rewrite the terms under anyone who has already been given it,
+ * and the payments that carry the code would no longer be explainable by the
+ * coupon row they name. Deactivate and make a new one; the history stays
+ * readable. `used_count` is absent for the same reason it is absent above —
+ * only redeem_coupon() touches it, and it does so atomically.
+ */
+export type CouponUpdate = Pick<CouponRow, "is_active">;
 
 /* ────────────────────── The Database generic ────────────────────── */
 
@@ -290,6 +389,12 @@ export type Database = {
         Update: PaymentUpdate;
         Relationships: [];
       };
+      coupons: {
+        Row: CouponRow;
+        Insert: CouponInsert;
+        Update: CouponUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -317,6 +422,17 @@ export type Database = {
           p_message: string;
         };
         Returns: string | null;
+      };
+      /*
+        Counts one use of a coupon, atomically, and answers whether it actually
+        counted one (0010). False means the code was exhausted, expired or
+        deactivated between the order being placed and the money arriving — see
+        lib/db/applyPayment.ts, where that is logged and never allowed to refuse
+        a payment that has already been captured.
+      */
+      redeem_coupon: {
+        Args: { p_code: string };
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;

@@ -78,7 +78,7 @@ export async function applyCapturedPayment(
     })
     .eq("razorpay_order_id", orderId)
     .eq("status", "created")
-    .select("id, event_id");
+    .select("id, event_id, coupon_code");
 
   if (paymentError !== null) {
     console.error("[razorpay] could not update the payment row:", paymentError);
@@ -102,6 +102,7 @@ export async function applyCapturedPayment(
   }
 
   const eventId = updated[0].event_id;
+  const couponCode = updated[0].coupon_code;
 
   /*
     The second write, and the one that actually publishes the invitation.
@@ -127,5 +128,73 @@ export async function applyCapturedPayment(
     return { kind: "error", message: "events update failed" };
   }
 
+  /*
+    ──────────────────────────────────────────────────────────────────────────
+    THE COUPON'S USE IS COUNTED HERE AND NOWHERE ELSE.
+
+    Not when the host typed the code, not when the order was created — both of
+    those are intentions, and a limited code consumed by intentions is a code
+    exhausted by people who never paid. This line runs only on the branch where
+    the payments update matched exactly one 'created' row, which is to say only
+    when this delivery is the one that settled the order. A repeat delivery took
+    the `updated.length === 0` path above and never reached it.
+
+    LAST, AND DELIBERATELY. The invitation is published first. A counter that
+    fails to tick is a reporting inaccuracy; an invitation that fails to publish
+    is a host who paid for nothing.
+    ──────────────────────────────────────────────────────────────────────────
+  */
+  if (couponCode !== null) {
+    await countCouponUse(couponCode, paymentId);
+  }
+
   return { kind: "applied", eventId };
+}
+
+/**
+ * Advances a coupon's used_count by one, atomically, and never fails a payment.
+ *
+ * THE INCREMENT IS A DATABASE STATEMENT, NOT A READ AND A WRITE. redeem_coupon()
+ * (0010) puts the limit check inside the UPDATE's own WHERE clause, so two
+ * captures arriving together are serialised by Postgres and the second one
+ * re-evaluates `used_count < max_uses` against the value the first just wrote.
+ * Doing this in TypeScript — select the count, add one, update — would leave a
+ * window between the check and the write that both could walk through.
+ *
+ * A FALSE ANSWER IS LOGGED, NOT ACTED ON, and the reason is worth stating
+ * because it is the one real gap in this feature. `max_uses` is enforced when
+ * the order is created; the use is counted when the money lands. Between those
+ * two moments another host can capture the last remaining use. Both have then
+ * paid a discounted price and only one is counted, so a code with max_uses = 10
+ * can be honoured an eleventh time if two checkouts overlap on the last one.
+ *
+ * The alternative — refusing to publish an invitation whose money has already
+ * been taken — is plainly worse. The overrun is bounded by how many checkouts
+ * can be open at once, it is visible in the log line below, and the affiliate
+ * report counts payments rather than used_count, so commission stays exact
+ * either way.
+ */
+async function countCouponUse(
+  couponCode: string,
+  paymentId: string,
+): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: counted, error } = await admin.rpc("redeem_coupon", {
+    p_code: couponCode,
+  });
+
+  if (error !== null) {
+    console.error(
+      `[razorpay] payment ${paymentId} applied, but coupon ${couponCode} could not be counted:`,
+      error,
+    );
+    return;
+  }
+
+  if (counted !== true) {
+    console.warn(
+      `[razorpay] payment ${paymentId} used coupon ${couponCode} after it stopped being redeemable — the code was honoured and the count was not advanced.`,
+    );
+  }
 }
