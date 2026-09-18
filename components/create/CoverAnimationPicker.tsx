@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CoverDemo from "@/components/create/demos/CoverDemo";
+import FeatureHelp from "@/components/create/FeatureHelp";
 import { COVER_ANIMATIONS } from "@/lib/coverAnimations";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 
@@ -27,9 +29,22 @@ export default function CoverAnimationPicker({
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-          How it opens
-        </h2>
+        {/*
+          The "?" sits on the heading's own line rather than under it, so the
+          line of copy below still reads as one sentence about the list.
+        */}
+        <div className="flex min-w-0 items-center gap-1">
+          <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
+            How it opens
+          </h2>
+
+          <FeatureHelp
+            label="How the opening cover works"
+            description="Your card arrives wrapped. Guests tap the cover once, it opens, and the invitation is underneath — so the first thing they see is not the whole card at once."
+          >
+            <CoverDemo />
+          </FeatureHelp>
+        </div>
         <p className="text-xs text-[var(--lifafa-muted)]">
           Guests see this first and tap to open your card.
         </p>

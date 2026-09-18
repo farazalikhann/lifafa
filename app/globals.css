@@ -802,3 +802,379 @@
     transform: scaleX(0.66);
   }
 }
+
+/* -------------------------------------------------------------------------
+   Feature demos — the looping illustrations inside the editor's "?" popovers.
+
+   WHY THESE ARE CLASSES AND NOT `animate-[…]` UTILITIES. Everywhere else in
+   this codebase a decorative loop is written inline with Tailwind and switched
+   off with `motion-reduce:animate-none`. That is the right answer for the card
+   decor, where stopping the animation leaves the ornament exactly where it was
+   drawn. It is the wrong answer here: every one of these demos *starts* on a
+   hidden or covered state and earns its meaning by ending somewhere else, so
+   `animation: none` alone would leave a host who asked for less motion looking
+   at a shut cover, an un-scratched panel or an empty counter — which is worse
+   than no demo at all. Each class therefore carries its own reduced-motion
+   rule pinning the element to the frame the loop ends on: the card open, the
+   date uncovered, the headcount counted, the guest through the gate.
+
+   Transform and opacity only, throughout. Nothing here animates a width, a
+   height, an inset or a shadow, so all four demos stay on the compositor and
+   cost the editor nothing while they run — and they only run while a popover
+   is open, because FeatureHelp does not mount the demo until then.
+   ------------------------------------------------------------------------- */
+
+/* --- 1. The cover a guest taps. Two halves part, the card is underneath. --- */
+
+@keyframes lifafa-demo-cover-left {
+  0%,
+  15% {
+    transform: translate3d(0, 0, 0);
+  }
+  35%,
+  85% {
+    transform: translate3d(-104%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lifafa-demo-cover-right {
+  0%,
+  15% {
+    transform: translate3d(0, 0, 0);
+  }
+  35%,
+  85% {
+    transform: translate3d(104%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* The tap that opens it: a ring blooming out of the middle of the cover. */
+@keyframes lifafa-demo-tap {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+  22%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* The card's own lines, rising in behind the parted halves. */
+@keyframes lifafa-demo-cover-line {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  46%,
+  85% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+.lifafa-demo-cover-left {
+  animation: lifafa-demo-cover-left 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.lifafa-demo-cover-right {
+  animation: lifafa-demo-cover-right 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.lifafa-demo-tap {
+  animation: lifafa-demo-tap 6s ease-out infinite;
+}
+
+.lifafa-demo-cover-line {
+  animation: lifafa-demo-cover-line 6s ease-out infinite both;
+}
+
+/* --- 2. The scratch panel. A coin crosses, the foil goes, the date is there. --- */
+
+@keyframes lifafa-demo-scrub {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  12% {
+    opacity: 1;
+    transform: translate3d(8%, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(calc(100% - 1.75rem), 0, 0);
+  }
+  60%,
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(100% - 1.75rem), 0, 0);
+  }
+}
+
+/* One tile of foil. Four of these, delayed in turn, clear left to right. */
+@keyframes lifafa-demo-flake {
+  0%,
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  30%,
+  86% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lifafa-demo-scrub {
+  animation: lifafa-demo-scrub 6s ease-in-out infinite;
+}
+
+.lifafa-demo-flake {
+  animation: lifafa-demo-flake 6s ease-out infinite both;
+}
+
+/* --- 3. A reply becoming a number. --- */
+
+/* The ring that settles onto the answer the guest picked. */
+@keyframes lifafa-demo-pick {
+  0%,
+  8% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  18%,
+  88% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/*
+  The reply travelling to the dashboard. The moving element is a full-width
+  track holding the dot at its left edge, so the percentage below is a
+  percentage of the distance rather than of a 6px dot.
+*/
+@keyframes lifafa-demo-send {
+  0%,
+  22% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  28% {
+    opacity: 1;
+  }
+  52% {
+    opacity: 1;
+    transform: translate3d(calc(100% - 0.5rem), 0, 0);
+  }
+  58%,
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(100% - 0.5rem), 0, 0);
+  }
+}
+
+/* The headcount before the reply lands: rises away, returns from below. */
+@keyframes lifafa-demo-count-before {
+  0%,
+  50% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  58%,
+  90% {
+    opacity: 0;
+    transform: translate3d(0, -40%, 0);
+  }
+  91% {
+    opacity: 0;
+    transform: translate3d(0, 40%, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* The headcount after it: comes up from below, leaves the same way it came. */
+@keyframes lifafa-demo-count-after {
+  0%,
+  52% {
+    opacity: 0;
+    transform: translate3d(0, 40%, 0);
+  }
+  60%,
+  88% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  96%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -40%, 0);
+  }
+}
+
+.lifafa-demo-pick {
+  animation: lifafa-demo-pick 6.5s ease-out infinite;
+}
+
+.lifafa-demo-send {
+  animation: lifafa-demo-send 6.5s ease-in-out infinite;
+}
+
+.lifafa-demo-count-before {
+  animation: lifafa-demo-count-before 6.5s ease-in-out infinite;
+}
+
+.lifafa-demo-count-after {
+  animation: lifafa-demo-count-after 6.5s ease-in-out infinite;
+}
+
+/* --- 4. The pass, and the scan at the gate. --- */
+
+/* The scanner's line, down the viewfinder and back once. */
+@keyframes lifafa-demo-beam {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -1.3rem, 0);
+  }
+  8% {
+    opacity: 0.9;
+    transform: translate3d(0, -1.3rem, 0);
+  }
+  30% {
+    opacity: 0.9;
+    transform: translate3d(0, 1.3rem, 0);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate3d(0, -1.3rem, 0);
+  }
+  56%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -1.3rem, 0);
+  }
+}
+
+/* What the viewfinder was holding, clearing out once the code is read. */
+@keyframes lifafa-demo-scanned {
+  0%,
+  54% {
+    opacity: 1;
+  }
+  62%,
+  92% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* The answer the gate gets: a name, a tick and a number of people. */
+@keyframes lifafa-demo-admit {
+  0%,
+  56% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  66%,
+  90% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+.lifafa-demo-beam {
+  animation: lifafa-demo-beam 7s ease-in-out infinite;
+}
+
+.lifafa-demo-scanned {
+  animation: lifafa-demo-scanned 7s ease-in-out infinite;
+}
+
+.lifafa-demo-admit {
+  animation: lifafa-demo-admit 7s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
+}
+
+/*
+  THE STILL FRAME. One rule per class, holding whatever the loop was heading
+  towards. Read it as four sentences: the cover is open and the card is on, the
+  foil is gone, the headcount has counted, the guest is through the gate. The
+  things that only make sense in motion — the tap ring, the coin, the reply in
+  transit, the scanner's line — are the ones that go to nothing, because a
+  frozen coin halfway across a panel explains less than no coin at all.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-demo-cover-left,
+  .lifafa-demo-cover-right,
+  .lifafa-demo-tap,
+  .lifafa-demo-cover-line,
+  .lifafa-demo-scrub,
+  .lifafa-demo-flake,
+  .lifafa-demo-pick,
+  .lifafa-demo-send,
+  .lifafa-demo-count-before,
+  .lifafa-demo-count-after,
+  .lifafa-demo-beam,
+  .lifafa-demo-scanned,
+  .lifafa-demo-admit {
+    animation: none;
+  }
+
+  .lifafa-demo-cover-left {
+    transform: translate3d(-104%, 0, 0);
+  }
+
+  .lifafa-demo-cover-right {
+    transform: translate3d(104%, 0, 0);
+  }
+
+  .lifafa-demo-cover-line,
+  .lifafa-demo-pick,
+  .lifafa-demo-count-after,
+  .lifafa-demo-admit {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lifafa-demo-tap,
+  .lifafa-demo-flake,
+  .lifafa-demo-scrub,
+  .lifafa-demo-send,
+  .lifafa-demo-count-before,
+  .lifafa-demo-scanned {
+    opacity: 0;
+  }
+}

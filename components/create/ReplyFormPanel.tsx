@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, type ReactElement } from "react";
+import FeatureHelp from "@/components/create/FeatureHelp";
+import RsvpDemo from "@/components/create/demos/RsvpDemo";
 
 /**
  * Whether the card ends in a reply form.
@@ -32,12 +34,22 @@ export default function ReplyFormPanel({
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
       <div className="flex items-center justify-between gap-4">
-        <h2
-          id={headingId}
-          className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase"
-        >
-          Reply form (RSVP)
-        </h2>
+        {/* Heading and "?" on the left, switch on the right — as in CheckinPanel. */}
+        <div className="flex min-w-0 items-center gap-1">
+          <h2
+            id={headingId}
+            className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase"
+          >
+            Reply form (RSVP)
+          </h2>
+
+          <FeatureHelp
+            label="How replies become a headcount"
+            description="Guests answer at the end of your card and say how many people they are bringing. Your dashboard adds every yes together into one expected headcount, so you know what to cater for."
+          >
+            <RsvpDemo />
+          </FeatureHelp>
+        </div>
 
         <button
           type="button"

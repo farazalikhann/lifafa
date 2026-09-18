@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
+import FeatureHelp from "@/components/create/FeatureHelp";
+import ScratchDemo from "@/components/create/demos/ScratchDemo";
 import type { ScratchTarget } from "@/types/card";
 
 /*
@@ -44,9 +46,18 @@ export default function RevealPanel({
 }): ReactElement {
   return (
     <section className="flex flex-col gap-2.5 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-        Reveal effect
-      </h2>
+      <div className="flex min-w-0 items-center gap-1">
+        <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
+          Reveal effect
+        </h2>
+
+        <FeatureHelp
+          label="How the reveal effect works"
+          description="The section you pick is covered by a panel on the guest's card. They rub it with a finger to scratch it off, and what you hid is underneath."
+        >
+          <ScratchDemo />
+        </FeatureHelp>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {SCRATCH_TARGETS.map((option) => {

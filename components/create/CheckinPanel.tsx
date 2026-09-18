@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, type ReactElement } from "react";
+import CheckinDemo from "@/components/create/demos/CheckinDemo";
+import FeatureHelp from "@/components/create/FeatureHelp";
 
 /**
  * Whether guests are scanned in at the door on the day.
@@ -42,12 +44,25 @@ export default function CheckinPanel({
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
       <div className="flex items-center justify-between gap-4">
-        <h2
-          id={headingId}
-          className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase"
-        >
-          Guest check-in
-        </h2>
+        {/*
+          The heading and its "?" are one group on the left, so the switch stays
+          where it was on the right and the help sits with the name it explains.
+        */}
+        <div className="flex min-w-0 items-center gap-1">
+          <h2
+            id={headingId}
+            className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase"
+          >
+            Guest check-in
+          </h2>
+
+          <FeatureHelp
+            label="How guest check-in works"
+            description="Every guest who replies gets a QR pass on their phone. On the day you open the scanner from your dashboard, point it at their pass, and see their name and how many people are entering with them."
+          >
+            <CheckinDemo />
+          </FeatureHelp>
+        </div>
 
         <button
           type="button"
