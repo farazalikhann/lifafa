@@ -58,13 +58,52 @@ function safeDestination(raw: string | null): string {
   return raw;
 }
 
+
+/**
+ * Why a sign in came back to the login page. Each one is a message in
+ * components/auth/SignInForm.tsx.
+ */
+type SignInFailure = "cancelled" | "link" | "expired" | "browser";
+
+/**
+ * The two ways out of this route, built once per request around the checked
+ * destination.
+ *
+ * EVERY EXIT CARRIES THE DESTINATION, failures included, and this is the only
+ * place that decides so. A failure used to be a bare /login?error=… on every
+ * branch but one, which dropped the host's `redirectTo` on the floor: they
+ * signed in again from there and landed on the dashboard, not back on /create
+ * where their unsaved card was waiting. Now no branch builds a redirect of its
+ * own, so no branch can leave the destination off.
+ *
+ * `succeed` joins origin and path as a string rather than resolving one against
+ * the other. The destination is only ever a path, and a path handed to
+ * `new URL(path, origin)` can still name a host of its own.
+ */
+function exits(origin: string, destination: string) {
+  return {
+    fail(reason: SignInFailure): NextResponse {
+      const loginUrl = new URL("/login", origin);
+      loginUrl.searchParams.set("error", reason);
+      loginUrl.searchParams.set("redirectTo", destination);
+      return NextResponse.redirect(loginUrl);
+    },
+    succeed(): NextResponse {
+      return NextResponse.redirect(`${origin}${destination}`);
+    },
+  };
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
 
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const destination = safeDestination(searchParams.get("redirectTo"));
+  const { fail, succeed } = exits(
+    origin,
+    safeDestination(searchParams.get("redirectTo")),
+  );
 
   /*
     Supabase reports a refused or expired link with its own error parameters
@@ -79,28 +118,24 @@ export async function GET(request: NextRequest) {
     `access_denied`, and Supabase passes that on with no `error_code`. Supabase
     also uses `access_denied` for a banned user or disabled signups, but always
     adds an `error_code` to those, so they fall through to the error below.
-    The destination is kept so a second attempt still returns them there.
   */
   if (
     searchParams.get("error") === "access_denied" &&
     searchParams.get("error_code") === null
   ) {
-    const loginUrl = new URL("/login", origin);
-    loginUrl.searchParams.set("error", "cancelled");
-    loginUrl.searchParams.set("redirectTo", destination);
-    return NextResponse.redirect(loginUrl);
+    return fail("cancelled");
   }
 
   if (providerError !== null) {
     console.error("[auth] provider returned an error:", providerError);
-    return NextResponse.redirect(`${origin}/login?error=link`);
+    return fail("link");
   }
 
   const supabase = await createClient();
 
   if (tokenHash !== null && type !== null) {
     if (!EMAIL_OTP_TYPES.has(type)) {
-      return NextResponse.redirect(`${origin}/login?error=link`);
+      return fail("link");
     }
 
     const { error } = await supabase.auth.verifyOtp({
@@ -111,14 +146,14 @@ export async function GET(request: NextRequest) {
     if (error !== null) {
       /* Server side only: the message names tokens and internals. */
       console.error("[auth] token verification failed:", error);
-      return NextResponse.redirect(`${origin}/login?error=expired`);
+      return fail("expired");
     }
 
-    return NextResponse.redirect(`${origin}${destination}`);
+    return succeed();
   }
 
   if (code === null) {
-    return NextResponse.redirect(`${origin}/login?error=link`);
+    return fail("link");
   }
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -130,12 +165,12 @@ export async function GET(request: NextRequest) {
     */
     if (isAuthPKCECodeVerifierMissingError(error)) {
       console.error("[auth] code opened in a different browser:", error);
-      return NextResponse.redirect(`${origin}/login?error=browser`);
+      return fail("browser");
     }
 
     console.error("[auth] code exchange failed:", error);
-    return NextResponse.redirect(`${origin}/login?error=expired`);
+    return fail("expired");
   }
 
-  return NextResponse.redirect(`${origin}${destination}`);
+  return succeed();
 }

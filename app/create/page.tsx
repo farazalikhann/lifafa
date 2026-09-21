@@ -1,14 +1,34 @@
 "use client";
 
-import type { ReactElement } from "react";
+import {
+  Component,
+  useState,
+  useSyncExternalStore,
+  type ErrorInfo,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import CardEditor, {
   type EditorSnapshot,
   type SaveOutcome,
 } from "@/components/create/CardEditor";
+import EditorSkeleton from "@/components/create/EditorSkeleton";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
+import PendingCardNotice, {
+  displayHost,
+  type PendingCardProblem,
+} from "@/components/create/PendingCardNotice";
 import { createEvent } from "@/lib/db/events";
-import { clearPendingCard, readPendingCard, writePendingCard } from "@/lib/pendingCard";
+import {
+  clearPendingCard,
+  pendingCardReturnPath,
+  readPendingCard,
+  stashOriginFromUrl,
+  writePendingCard,
+  type PendingCard,
+  type PendingCardRead,
+} from "@/lib/pendingCard";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
@@ -26,7 +46,7 @@ import type { EventDraft } from "@/types/event";
  * A wrapper and nothing else: every control, the four tabs and the preview live
  * in CardEditor, which /dashboard/[eventId]/edit mounts over a saved event in
  * exactly the same way. What belongs here is only what is true of *creating*
- * one — the empty card to start from, the sign-in detour, and what saving does.
+ * one — the card to start from, the sign-in detour, and what saving does.
  *
  * OPEN TO EVERYONE. The middleware lets anyone reach this page; the account is
  * asked for at save time, which is the first moment it is actually needed.
@@ -92,8 +112,174 @@ const EMPTY_CONFIG: CardConfig = {
   isPaid: false,
 };
 
+
+/** The card an empty editor starts from, with the four fields beside it. */
+const EMPTY_SNAPSHOT: EditorSnapshot = {
+  draft: EMPTY_DRAFT,
+  config: EMPTY_CONFIG,
+  coverAnimation: DEFAULT_COVER_ANIMATION,
+  showWeather: false,
+  weatherTheme: DEFAULT_WEATHER_THEME,
+  qrCheckinEnabled: false,
+};
+
+/**
+ * What the host arrives to: an empty card, the card they stashed before
+ * signing in, or an empty card and the reason theirs is not in it.
+ */
+type Arrival =
+  | { kind: "fresh" }
+  | { kind: "restored"; snapshot: EditorSnapshot }
+  | { kind: "lost"; problem: PendingCardProblem };
+
+/**
+ * A stashed card, as the editor takes one.
+ *
+ * The four fields that are not part of CardConfig fall back to this page's own
+ * defaults, because an entry stashed before they existed carries nothing for
+ * them. `isPaid` is not taken from the stash. It is not the stash's to say:
+ * nothing in /create has been paid for.
+ */
+function restoredSnapshot(card: PendingCard): EditorSnapshot {
+  return {
+    draft: card.draft,
+    config: { ...card.config, isPaid: false },
+    coverAnimation: card.coverAnimation ?? DEFAULT_COVER_ANIMATION,
+    showWeather: card.showWeather === true,
+    weatherTheme: card.weatherTheme ?? DEFAULT_WEATHER_THEME,
+    qrCheckinEnabled: card.qrCheckinEnabled === true,
+  };
+}
+
+/**
+ * Decides the arrival from what this browser holds and what the URL says.
+ *
+ * `stashOrigin` is only in the URL when the host is coming back from signing in
+ * with a card stashed — pendingCardReturnPath put it there — so it is what tells
+ * "expected a card and it is not here" apart from an ordinary visit. Only the
+ * first of those is told anything: a card that expired while nobody was
+ * waiting for it is gone quietly, the way a day limit should work.
+ *
+ * The address it names is checked before anything else. A card stashed on
+ * another of the site's addresses is in that address's storage, which this page
+ * cannot read, so whatever this page does find is not the card the host came
+ * back for.
+ */
+function arrivalFor(
+  read: PendingCardRead,
+  stashOrigin: string | null,
+  here: string,
+): Arrival {
+  if (read.kind === "card") {
+    return { kind: "restored", snapshot: restoredSnapshot(read.card) };
+  }
+
+  if (stashOrigin !== null && stashOrigin !== here) {
+    return { kind: "lost", problem: { kind: "elsewhere", origin: stashOrigin } };
+  }
+
+  const expected = stashOrigin !== null;
+
+  switch (read.kind) {
+    /* Always said: it is a card, it is here, and it would not open. */
+    case "damaged":
+      return { kind: "lost", problem: { kind: "damaged" } };
+    case "blocked":
+      return expected
+        ? { kind: "lost", problem: { kind: "blocked" } }
+        : { kind: "fresh" };
+    case "expired":
+      return expected
+        ? { kind: "lost", problem: { kind: "expired" } }
+        : { kind: "fresh" };
+    case "none":
+      return expected
+        ? { kind: "lost", problem: { kind: "missing" } }
+        : { kind: "fresh" };
+  }
+}
+
+const subscribeToNothing = (): (() => void) => () => {};
+
+/**
+ * False on the server and through hydration, true from the first render after.
+ *
+ * The gate the page stands behind. A stashed card is in the browser's storage,
+ * which the server cannot see, so the server draws EditorSkeleton rather than
+ * guess — and an empty editor would be a wrong guess for exactly the host this
+ * page most needs to get right. A page reached by a client-side link skips the
+ * skeleton entirely: there is no hydration to wait through, and this answers
+ * true on the first render.
+ */
+function useIsClient(): boolean {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+}
+
+/**
+ * Catches a restored card the editor cannot render.
+ *
+ * The stash is only checked for its outline — see hasCardOutline — and it
+ * outlives a reload now, so a card with something wrong deep inside would not
+ * fail once: it would take down /create on every visit for a day. This drops
+ * the card instead, and the fallback is the empty editor with the reason said
+ * out loud. Anything the fallback itself throws goes on up to
+ * app/create/error.tsx.
+ */
+class RestoredCardBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown, info: ErrorInfo): void {
+    console.error(
+      "[create] the restored card would not open:",
+      error,
+      info.componentStack,
+    );
+  }
+
+  render(): ReactNode {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 export default function CreatePage(): ReactElement {
+  return useIsClient() ? <CreateEditor /> : <EditorSkeleton />;
+}
+
+/**
+ * The page itself, which only ever renders in the browser.
+ *
+ * The stash is read once, as this mounts, and the card it holds is handed to the
+ * editor as the card to start from. So the first frame the editor ever draws
+ * already has the host's names in it: there is no empty editor for the card to
+ * be dropped into afterwards.
+ */
+function CreateEditor(): ReactElement {
   const router = useRouter();
+
+  /*
+    Read once. A lazy initialiser rather than an effect, so it happens before
+    the first render rather than after the first paint, and state rather than a
+    plain value, so a re-render cannot read the stash again and replace the
+    card under a host who has since typed into it.
+  */
+  const [arrival] = useState<Arrival>(() =>
+    arrivalFor(
+      readPendingCard(),
+      stashOriginFromUrl(window.location.search),
+      window.location.origin,
+    ),
+  );
 
   /**
    * Saves a brand new invitation, or sends the host to sign in first.
@@ -110,10 +296,9 @@ export default function CreatePage(): ReactElement {
     const user = authError === null ? data.user : null;
 
     /*
-      Signed out: stash the card and send them to sign in. The draft has to
-      survive a full round trip out of the browser and back — the magic link
-      often opens in a different tab — so component state is no use and
-      sessionStorage is.
+      Signed out: stash the card and send them to sign in, with the way back
+      naming this address. See lib/pendingCard.ts for why the card is in
+      localStorage and why the address travels too.
     */
     if (user === null) {
       const stashed = writePendingCard({
@@ -137,7 +322,9 @@ export default function CreatePage(): ReactElement {
         };
       }
 
-      router.push(`/login?redirectTo=${encodeURIComponent("/create")}`);
+      router.push(
+        `/login?redirectTo=${encodeURIComponent(pendingCardReturnPath())}`,
+      );
       return { ok: true };
     }
 
@@ -150,55 +337,59 @@ export default function CreatePage(): ReactElement {
     );
 
     if (!result.ok) {
+      /* The stash stays: the card is still not saved anywhere else. */
       return { ok: false, error: result.error };
     }
 
-    /* Saved — the stash has done its job. */
+    /*
+      Saved, so the stash has done its job — and not a moment before. This is
+      the only place it is cleared.
+    */
     clearPendingCard();
     router.push(`/dashboard/${result.data.id}`);
 
     return { ok: true };
   };
 
-  /**
-   * The card that was waiting through the sign-in detour, if there is one.
-   *
-   * Cleared as it is read: restoring it twice would overwrite whatever the host
-   * had started typing in the meantime. The four fields that are not part of
-   * CardConfig fall back to this page's own defaults, because an entry stashed
-   * before they existed carries nothing for them.
-   */
-  const restore = (): EditorSnapshot | null => {
-    const pending = readPendingCard();
-
-    if (pending === null) {
-      return null;
-    }
-
-    clearPendingCard();
-
-    return {
-      draft: pending.draft,
-      config: pending.config,
-      coverAnimation: pending.coverAnimation ?? DEFAULT_COVER_ANIMATION,
-      showWeather: pending.showWeather === true,
-      weatherTheme: pending.weatherTheme ?? DEFAULT_WEATHER_THEME,
-      qrCheckinEnabled: pending.qrCheckinEnabled === true,
-    };
-  };
-
-  return (
+  const editor = (
+    start: EditorSnapshot,
+    problem: PendingCardProblem | null,
+  ): ReactElement => (
     <CardEditor
       mode="create"
-      initialDraft={EMPTY_DRAFT}
-      initialConfig={EMPTY_CONFIG}
-      initialCoverAnimation={DEFAULT_COVER_ANIMATION}
-      initialShowWeather={false}
-      initialWeatherTheme={DEFAULT_WEATHER_THEME}
-      initialQrCheckinEnabled={false}
+      initialDraft={start.draft}
+      initialConfig={start.config}
+      initialCoverAnimation={start.coverAnimation}
+      initialShowWeather={start.showWeather}
+      initialWeatherTheme={start.weatherTheme}
+      initialQrCheckinEnabled={start.qrCheckinEnabled}
       onSave={handleSave}
-      restore={restore}
-      notice={<ExistingInvitationsNotice />}
+      notice={
+        <>
+          {problem !== null ? (
+            <PendingCardNotice
+              problem={problem}
+              here={displayHost(window.location.origin)}
+            />
+          ) : null}
+          <ExistingInvitationsNotice />
+        </>
+      }
     />
+  );
+
+  if (arrival.kind === "restored") {
+    return (
+      <RestoredCardBoundary
+        fallback={editor(EMPTY_SNAPSHOT, { kind: "damaged" })}
+      >
+        {editor(arrival.snapshot, null)}
+      </RestoredCardBoundary>
+    );
+  }
+
+  return editor(
+    EMPTY_SNAPSHOT,
+    arrival.kind === "lost" ? arrival.problem : null,
   );
 }

@@ -233,16 +233,6 @@ type CardEditorProps = {
    * already replied to this one.
    */
   notice?: ReactNode;
-  /**
-   * Recovers a card stashed before a sign-in detour, if there is one.
-   *
-   * Injected rather than reached for, because the stash belongs to /create and
-   * to nothing else: a host editing a saved event is already signed in, took no
-   * detour, and must never have a stale card from some earlier session dropped
-   * over the invitation they came here to fix. The route that has a stash
-   * passes a reader; the route that has none passes nothing.
-   */
-  restore?: () => EditorSnapshot | null;
 } & (
   | { mode: "create"; eventId?: never }
   /* The id is required exactly when editing, so Cancel always has somewhere to go. */
@@ -280,7 +270,6 @@ export default function CardEditor({
   initialQrCheckinEnabled,
   onSave,
   notice,
-  restore,
 }: CardEditorProps): ReactElement {
   const router = useRouter();
 
@@ -578,8 +567,8 @@ export default function CardEditor({
     State rather than a memo, because it moves exactly once: a successful save
     makes what was just written the new baseline, so the guard stops guarding
     something that is now safely in the database. A card recovered from the
-    sign-in stash moves it too — that card is what the host started from, not
-    the empty defaults it replaced.
+    sign-in stash does not move it: /create hands that card over as the initial
+    one, so it is the baseline from the first render.
   */
   const [baseline, setBaseline] = useState<EditorSnapshot>(() =>
     toSnapshot(initial),
@@ -599,59 +588,6 @@ export default function CardEditor({
     this editor has.
   */
   const isDirty = mode === "edit" && !deepEqual(snapshot, baseline);
-
-  /*
-    A card stashed before a sign-in detour comes back here.
-
-    Runs once, after mount rather than during render: sessionStorage does not
-    exist on the server, and seeding useState from it would make the first
-    client render disagree with the HTML and tear hydration. The reader clears
-    the entry as it reads — restoring it twice would overwrite whatever the host
-    had started typing in the meantime.
-
-    Read through a ref so an inline `restore` prop cannot re-run this on a
-    later render and drop the stash over live edits.
-  */
-  const restoreRef = useRef(restore);
-
-  useEffect(() => {
-    const pending = restoreRef.current?.() ?? null;
-
-    if (pending === null) {
-      return;
-    }
-
-    /*
-      Unpacked exactly as the props were, so a card stashed by an older build
-      lands in the same known state a stored one would — and so the baseline
-      below is built from the same values the controls are now showing.
-
-      `isPaid` is not taken from the stash. It is not the stash's to say: only
-      /create has one, and nothing in /create has been paid for.
-    */
-    const restored: EditorState = { ...toState(pending), isPaid: initial.isPaid };
-
-    setDraft(restored.draft);
-    setOccasionId(restored.occasionId);
-    setTraditionId(restored.traditionId);
-    setLanguage(restored.language);
-    setPreviewLanguage(restored.language);
-    setRsvpEnabled(restored.rsvpEnabled);
-    setDecorMotion(restored.decorMotion);
-    setDecorIntensity(restored.decorIntensity);
-    setButterflies(restored.butterflies);
-    setBorderStyle(restored.borderStyle);
-    setScratchTarget(restored.scratchTarget);
-    setMusicUrl(restored.musicUrl);
-    setOrnamentConfig(restored.ornamentConfig);
-    setStyle(restored.style);
-    setBlocks(restored.blocks);
-    setCoverAnimation(restored.coverAnimation);
-    setShowWeather(restored.showWeather);
-    setWeatherTheme(restored.weatherTheme);
-    setQrCheckinEnabled(restored.qrCheckinEnabled);
-    setBaseline(toSnapshot(restored));
-  }, []);
 
   /*
     The browser's own "leave site?" prompt, and the only thing here that can
