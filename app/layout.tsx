@@ -154,7 +154,7 @@ const siteOrigin = canonicalSiteOrigin();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
-  title: "Lifafa | Digital invitations with a live guest count",
+  title: "Lifafa | Digital invitations with an up-to-date guest count",
   description:
     "Create a digital invitation for your celebration, share one link, and know exactly how many guests are coming before the day arrives.",
   /*

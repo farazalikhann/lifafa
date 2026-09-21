@@ -1,0 +1,278 @@
+/*
+  The dashboard demo. Read DemoPhone.module.css first: the units, the loop and
+  the reduced-motion rule are all explained there.
+
+  10 seconds, two visits on one day:
+     0–12%  the phone at rest, 4:10
+     9–44%  the dashboard opened: 46 expected, two replies in the list; closed
+    43–60%  the phone at rest again, 7:45
+    57–93%  opened again: 52 expected, three more replies at the foot of the list
+    88–100% faded, reset, faded back in
+
+  Only whole pages come and go. Nothing on an open page changes — see the note
+  on DashboardDemo for why.
+*/
+
+.stage {
+  --loop: 10s;
+}
+
+/* --- The phone at rest --------------------------------------------------- */
+
+.lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6.5em;
+  opacity: 0;
+}
+
+.time {
+  font-family: var(--font-display);
+  font-size: 3.6em;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.day {
+  margin-top: 0.5em;
+  font-size: 0.75em;
+  color: var(--lifafa-muted);
+}
+
+/* --- One visit to the dashboard ------------------------------------------ */
+
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65em;
+  padding: 2.4em 1em 0;
+  background-color: var(--app-ink);
+}
+
+/* The first visit is only ever seen in motion; the still is the second. */
+.visitFirst {
+  opacity: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.meta {
+  margin-top: 0.1em;
+  font-size: 0.7em;
+  color: var(--lifafa-muted);
+}
+
+.label {
+  font-size: 0.55em;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--lifafa-muted);
+}
+
+/* HeadcountSummary's big number, smaller. */
+.headcount {
+  padding: 0.75em 1em 0.8em;
+  border: 1px solid rgb(232 163 61 / 0.4);
+  border-radius: 1.1em;
+  background-color: var(--app-raised);
+}
+
+.big {
+  margin-top: 0.15em;
+  font-family: var(--font-display);
+  font-size: 2.6em;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--lifafa-marigold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45em;
+}
+
+.tile {
+  padding: 0.55em 0.6em;
+  border: 1px solid var(--app-hairline);
+  border-radius: 0.8em;
+  background-color: var(--app-raised);
+}
+
+.tileCount {
+  font-family: var(--font-display);
+  font-size: 1.35em;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tileLabel {
+  margin-top: 0.3em;
+  font-size: 0.58em;
+  color: var(--lifafa-muted);
+}
+
+.accepted {
+  color: var(--lifafa-marigold);
+}
+
+.declined {
+  color: var(--lifafa-rose);
+}
+
+/* The dashboard's amber for a maybe. */
+.maybe {
+  color: #c99b45;
+}
+
+.list {
+  margin-top: 0.45em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  height: 2.05em;
+  padding: 0 0.3em;
+  border-top: 1px solid var(--app-hairline);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.name {
+  font-size: 0.75em;
+  white-space: nowrap;
+}
+
+.bringing {
+  font-size: 0.65em;
+  color: var(--lifafa-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 0.3em 0.8em;
+  border-radius: 1em;
+  font-size: 0.55em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* GuestTable's STATUS_STYLE. */
+.badgeAccepted {
+  color: #e8a33d;
+  background-color: rgb(232 163 61 / 0.14);
+}
+
+.badgeDeclined {
+  color: #c4566b;
+  background-color: rgb(196 86 107 / 0.14);
+}
+
+.badgeMaybe {
+  color: #c99b45;
+  background-color: rgb(201 155 69 / 0.12);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lockFirst {
+    animation: lock-first var(--loop) infinite var(--demo-play);
+  }
+
+  .visitFirst {
+    animation: visit-first var(--loop) infinite var(--demo-play);
+  }
+
+  .lockSecond {
+    animation: lock-second var(--loop) infinite var(--demo-play);
+  }
+
+  .visitSecond {
+    animation: visit-second var(--loop) infinite var(--demo-play);
+  }
+}
+
+@keyframes lock-first {
+  0%,
+  8% {
+    opacity: 1;
+  }
+  12%,
+  93% {
+    opacity: 0;
+  }
+  94%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* A page opening rises a little as it arrives, and sinks a little as it goes. */
+@keyframes visit-first {
+  0%,
+  9% {
+    opacity: 0;
+    transform: translateY(6%);
+  }
+  15%,
+  38% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  44%,
+  100% {
+    opacity: 0;
+    transform: translateY(6%);
+  }
+}
+
+@keyframes lock-second {
+  0%,
+  43% {
+    opacity: 0;
+  }
+  47%,
+  56% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes visit-second {
+  0%,
+  57% {
+    opacity: 0;
+    transform: translateY(6%);
+  }
+  63%,
+  93% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(6%);
+  }
+}

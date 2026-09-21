@@ -13,7 +13,7 @@ import { useInView } from "@/hooks/useInView";
 */
 const INCLUDED: readonly string[] = [
   "Unlimited guests",
-  "Live headcount as replies arrive",
+  "Your headcount, always up to date when you open it",
   "Every function: mehndi, sangeet, reception",
   "Traditional motifs for six traditions",
   "QR check-in on the event day",

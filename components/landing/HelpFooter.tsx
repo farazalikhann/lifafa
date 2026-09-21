@@ -69,8 +69,8 @@ export default function HelpFooter() {
             Lifafa
           </p>
           <p className="mx-auto mt-3 max-w-[30ch] text-sm leading-relaxed text-[var(--lifafa-muted)] sm:mx-0">
-            Digital invitations with a live guest count, for every Indian
-            celebration.
+            Digital invitations with an up-to-date guest count, for every
+            Indian celebration.
           </p>
         </div>
 

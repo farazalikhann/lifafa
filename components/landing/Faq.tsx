@@ -27,7 +27,7 @@ const QUESTIONS: readonly Question[] = [
   {
     question: "How do I know who is coming?",
     answer:
-      "Every reply appears on your dashboard with a live headcount, and you can export the full guest list.",
+      "Every reply goes to your dashboard. Open it any time for a headcount that is up to date, and export the full guest list whenever you need it.",
   },
   {
     question: "Does it work on an old phone?",

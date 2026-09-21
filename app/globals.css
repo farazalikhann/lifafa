@@ -186,10 +186,9 @@
 
 /*
   Parks every looping animation inside the element, itself included. The
-  landing story hangs this on an illustration while its panel is far from the
-  viewport: five drawings stepping dash offsets and opacities off screen is
-  main-thread work the visitor never sees, and it reads as stutter in the
-  scroll on a phone. Pausing keeps each loop's position, so a drawing picks up
+  landing story hangs this on its line drawing while the panel is far from the
+  viewport: a drawing stepping opacities off screen is main-thread work the
+  visitor never sees, and it reads as stutter in the scroll on a phone. Pausing keeps each loop's position, so a drawing picks up
   where it left off rather than snapping back to its first frame.
 */
 .lifafa-parked,
@@ -391,30 +390,7 @@
   }
 }
 
-/* Dots travelling along a dashed path — dash period is 10, so -40 loops seamlessly. */
-@keyframes lifafa-flow {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: -40;
-  }
-}
-
-/* Scanner beam sweeping the QR code. */
-@keyframes lifafa-beam {
-  0%,
-  100% {
-    transform: translate3d(0, -16px, 0);
-    opacity: 0.35;
-  }
-  50% {
-    transform: translate3d(0, 16px, 0);
-    opacity: 1;
-  }
-}
-
-/* RSVP badges answering one after another. */
+/* The petal-dust cover's glow, breathing while it waits for the tap. */
 @keyframes lifafa-pulse {
   0%,
   100% {
@@ -535,17 +511,6 @@
   .lifafa-hang-swing,
   .lifafa-flame-flicker {
     animation: none;
-  }
-}
-
-/* Headcount bars ticking up. */
-@keyframes lifafa-grow {
-  0%,
-  100% {
-    transform: scaleY(0.8);
-  }
-  50% {
-    transform: scaleY(1);
   }
 }
 

@@ -1,0 +1,517 @@
+/*
+  The cover demo. Read DemoPhone.module.css first: the units, the loop and the
+  reduced-motion rule are all explained there.
+
+  7.5 seconds, in the order EnvelopeSealCover plays them:
+     4–28%  the sealed envelope, its seal breathing
+    20–35%  a fingertip taps the seal
+    29–36%  the seal swells and pops; the words under the envelope go
+    32–44%  the flap swings over towards the guest (edge on at 38%)
+    43–55%  the letter rises out of the pocket
+    56–72%  the envelope falls away and the letter dissolves
+    64–76%  the card is there, once the envelope is mostly gone
+    88–100% held, faded, reset, faded back in
+
+  The box positions are the cover's 400 × 300 grid as percentages, so the
+  envelope keeps its proportions at every size.
+*/
+
+.stage {
+  --loop: 7.5s;
+  --screen: #f7f1e8;
+  /*
+    A dark fingertip, on a cream card. Stronger than the light one: it lands on
+    the seal, which is nearly its own size, and a fainter ring read as part of
+    the wax.
+  */
+  --tap-ring: rgb(43 29 31 / 0.75);
+  --tap-fill: rgb(43 29 31 / 0.24);
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.monogram {
+  font-family: var(--font-display);
+}
+
+/* --- The card ------------------------------------------------------------ */
+
+.card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2em 1.6em;
+  text-align: center;
+  color: #2b1d1f;
+}
+
+/* Clear of the camera cut-out at the top. */
+.cardBorder {
+  position: absolute;
+  inset: 2.2em 0.9em 1.1em;
+  border: 1px solid rgb(178 62 86 / 0.5);
+  border-radius: 0.5em;
+}
+
+.kicker {
+  max-width: 16em;
+  margin-bottom: 1.3em;
+  font-size: 0.55em;
+  line-height: 1.5;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #8b7a72;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 2.3em;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.amp {
+  font-family: var(--font-display);
+  font-size: 1.4em;
+  font-style: italic;
+  line-height: 1.2;
+  color: #b23e56;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 1.1em 0 0.9em;
+  color: #b23e56;
+}
+
+.rule {
+  width: 1.8em;
+  height: 1px;
+  background-color: currentColor;
+  opacity: 0.6;
+}
+
+.diamond {
+  width: 0.5em;
+  height: 0.5em;
+  background-color: currentColor;
+  transform: rotate(45deg);
+}
+
+.date {
+  font-size: 0.78em;
+  font-weight: 500;
+}
+
+.venue {
+  margin-top: 0.3em;
+  font-size: 0.72em;
+  color: #8b7a72;
+}
+
+/* --- The cover ----------------------------------------------------------- */
+
+.words {
+  position: absolute;
+  top: 19.4em;
+  right: 0;
+  left: 0;
+  text-align: center;
+  color: #2b1d1f;
+  opacity: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.45em;
+  font-weight: 600;
+}
+
+.prompt {
+  margin-top: 0.6em;
+  font-size: 0.75em;
+  letter-spacing: 0.03em;
+  color: #8b7a72;
+}
+
+.envelope {
+  position: absolute;
+  top: 5.8em;
+  left: 50%;
+  width: 14em;
+  margin-left: -7em;
+  aspect-ratio: 4 / 3;
+}
+
+/* A shadow stays a shadow on every palette, as on the real cover. */
+.shadow {
+  position: absolute;
+  top: 79.333%;
+  left: 13%;
+  width: 74%;
+  height: 14.667%;
+  background-image: radial-gradient(
+    ellipse at center,
+    rgb(0 0 0 / 0.16) 0%,
+    rgb(0 0 0 / 0) 70%
+  );
+  opacity: 0;
+}
+
+/* Back, back flap and pocket: full-size layers that fall away together. */
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(22%);
+}
+
+.back {
+  z-index: 1;
+}
+
+.backFlapLayer {
+  z-index: 2;
+}
+
+.letter {
+  position: absolute;
+  top: 27.333%;
+  left: 15.5%;
+  z-index: 3;
+  width: 69%;
+  height: 53.333%;
+  opacity: 0;
+  transform: translateY(-8%) scale(1.22);
+}
+
+.letterRise {
+  position: absolute;
+  inset: 0;
+  transform: translateY(-58%);
+}
+
+.pocket {
+  z-index: 4;
+}
+
+/*
+  Hinged on its top edge. The perspective is written into the transform, so
+  the depth depends on nothing above it; 40em is about three envelopes away,
+  the same proportion as the real cover's 1200px.
+*/
+.flap {
+  position: absolute;
+  top: 23.333%;
+  left: 10%;
+  width: 80%;
+  height: 36%;
+  transform-origin: 50% 0;
+}
+
+.flapFront {
+  z-index: 5;
+  opacity: 0;
+  transform: perspective(40em) rotateX(90deg);
+}
+
+.flapBack {
+  transform: perspective(40em) rotateX(180deg);
+}
+
+.seal {
+  position: absolute;
+  top: 49.333%;
+  left: 42.5%;
+  z-index: 6;
+  width: 15%;
+  height: 20%;
+  opacity: 0;
+  transform: scale(0.35) rotate(-24deg);
+}
+
+.sealBreath {
+  position: absolute;
+  inset: 0;
+}
+
+/* The middle of the seal: 200, 178 on the grid. */
+.tapSeal {
+  top: 59.333%;
+  left: 50%;
+  z-index: 7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    animation: card var(--loop) infinite var(--demo-play);
+  }
+
+  .words {
+    animation: words var(--loop) infinite var(--demo-play);
+  }
+
+  .shadow {
+    animation: shadow var(--loop) infinite var(--demo-play);
+  }
+
+  .layer {
+    animation: drop var(--loop) infinite var(--demo-play);
+  }
+
+  .letter {
+    animation: letter var(--loop) infinite var(--demo-play);
+  }
+
+  .letterRise {
+    animation: rise var(--loop) infinite var(--demo-play);
+  }
+
+  .flapFront {
+    animation: flap-front var(--loop) infinite var(--demo-play);
+  }
+
+  .flapBack {
+    animation: flap-back var(--loop) infinite var(--demo-play);
+  }
+
+  .seal {
+    animation: seal var(--loop) infinite var(--demo-play);
+  }
+
+  .sealBreath {
+    animation: breathe var(--loop) infinite var(--demo-play);
+  }
+
+  .tapSeal {
+    animation: tap-seal var(--loop) infinite var(--demo-play);
+  }
+}
+
+@keyframes card {
+  0%,
+  64% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  76%,
+  93% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes words {
+  0%,
+  29% {
+    opacity: 1;
+  }
+  34%,
+  93% {
+    opacity: 0;
+  }
+  94%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes shadow {
+  0%,
+  56% {
+    opacity: 1;
+  }
+  64%,
+  93% {
+    opacity: 0;
+  }
+  94%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* The cover's DROP_EASE: slow to leave, then gone. */
+@keyframes drop {
+  0%,
+  56% {
+    opacity: 1;
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.4);
+  }
+  70%,
+  93% {
+    opacity: 0;
+    transform: translateY(22%);
+  }
+  94%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes letter {
+  0%,
+  58% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  72%,
+  93% {
+    opacity: 0;
+    transform: translateY(-8%) scale(1.22);
+  }
+  94%,
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rise {
+  0%,
+  43% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  55%,
+  93% {
+    transform: translateY(-58%);
+  }
+  94%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/*
+  The two flaps split one half turn between them. The front one speeds up to
+  edge on and goes; the back one appears on that same frame and slows to rest.
+  Ease-in then ease-out, so the pair reads as the one symmetric swing the real
+  flap makes.
+*/
+@keyframes flap-front {
+  0%,
+  32% {
+    opacity: 1;
+    transform: perspective(40em) rotateX(0deg);
+    animation-timing-function: ease-in;
+  }
+  38% {
+    opacity: 1;
+    transform: perspective(40em) rotateX(90deg);
+  }
+  38.1%,
+  93% {
+    opacity: 0;
+    transform: perspective(40em) rotateX(90deg);
+  }
+  94%,
+  100% {
+    opacity: 1;
+    transform: perspective(40em) rotateX(0deg);
+  }
+}
+
+@keyframes flap-back {
+  0%,
+  38% {
+    opacity: 0;
+    transform: perspective(40em) rotateX(90deg);
+  }
+  38.1% {
+    opacity: 1;
+    transform: perspective(40em) rotateX(90deg);
+    animation-timing-function: ease-out;
+  }
+  44%,
+  93% {
+    opacity: 1;
+    transform: perspective(40em) rotateX(180deg);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: perspective(40em) rotateX(90deg);
+  }
+}
+
+/* It swells towards the guest before it shrinks away, as breaking wax does. */
+@keyframes seal {
+  0%,
+  29% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  31% {
+    opacity: 1;
+    transform: scale(1.12) rotate(0deg);
+  }
+  36%,
+  93% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-24deg);
+  }
+  94%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  4%,
+  16%,
+  28%,
+  100% {
+    transform: scale(1);
+  }
+  10%,
+  22% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes tap-seal {
+  0%,
+  20% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(0.8);
+  }
+  31% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  35%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}

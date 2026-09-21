@@ -1,0 +1,354 @@
+/*
+  The check-in demo. Read DemoPhone.module.css first: the units, the loop and
+  the reduced-motion rule are all explained there.
+
+  6.5 seconds:
+     5–16%  the guest's pass comes up into the camera
+    20–41%  the beam sweeps it, top to bottom
+    41–45%  the frame locks on
+    45–56%  the result slides in, and its tick lands
+    56–61%  arrivals roll from 86 to 88: the guest and the one they brought
+    88–100% held, faded, reset, faded back in
+*/
+
+.stage {
+  --loop: 6.5s;
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+  padding: 2.4em 1em 0;
+}
+
+/* ArrivalCounter, smaller. */
+.counter {
+  padding: 0.8em 0.9em 0.9em;
+  border: 1px solid var(--app-hairline);
+  border-radius: 1em;
+  background-color: var(--app-raised);
+}
+
+.arrived {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25em;
+  font-family: var(--font-display);
+  font-size: 1.55em;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The same rolling number as the RSVP demo's headcount. */
+.window {
+  display: block;
+  height: 1.1em;
+  overflow: hidden;
+  color: var(--lifafa-marigold);
+}
+
+.digits {
+  display: block;
+  transform: translateY(-1.1em);
+}
+
+.digits > span {
+  display: block;
+}
+
+.expected {
+  color: var(--lifafa-muted);
+}
+
+.bar {
+  display: block;
+  height: 0.35em;
+  margin-top: 0.7em;
+  overflow: hidden;
+  border-radius: 1em;
+  background-color: var(--app-hairline);
+}
+
+/* Held still: 86 and 88 of 140 are a pixel apart at this size. */
+.fill {
+  display: block;
+  width: 63%;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--lifafa-marigold);
+}
+
+/* The camera: dark, lit a little in the middle where the pass is held. */
+.viewfinder {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--app-hairline);
+  border-radius: 1.4em;
+  background-image: radial-gradient(
+    circle at 50% 42%,
+    #2b221d 0%,
+    #0b0908 78%
+  );
+}
+
+/* The guest's pass: always ink on white, whatever the card's colours. */
+.pass {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7.4em;
+  margin: -4.2em 0 0 -3.7em;
+  padding: 0.55em 0.55em 0.45em;
+  border-radius: 0.55em;
+  background-color: #ffffff;
+  box-shadow: 0 0.8em 1.6em -0.6em rgb(0 0 0 / 0.8);
+  transform: rotate(-4deg);
+}
+
+.qr {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.passName {
+  margin-top: 0.3em;
+  font-size: 0.6em;
+  font-weight: 600;
+  text-align: center;
+  color: #111111;
+}
+
+.beam {
+  position: absolute;
+  top: 1.5em;
+  right: 1.3em;
+  left: 1.3em;
+  height: 0.2em;
+  border-radius: 1em;
+  background-color: var(--lifafa-marigold);
+  box-shadow: 0 0 0.9em 0.2em rgb(232 163 61 / 0.55);
+  opacity: 0;
+}
+
+.brackets {
+  position: absolute;
+  inset: 1.1em;
+  transform: scale(0.92);
+}
+
+.corner {
+  position: absolute;
+  width: 1.7em;
+  height: 1.7em;
+  border: 0 solid var(--lifafa-marigold);
+}
+
+.topLeft {
+  top: 0;
+  left: 0;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: 0.5em;
+}
+
+.topRight {
+  top: 0;
+  right: 0;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  border-top-right-radius: 0.5em;
+}
+
+.bottomLeft {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-left-radius: 0.5em;
+}
+
+.bottomRight {
+  right: 0;
+  bottom: 0;
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+  border-bottom-right-radius: 0.5em;
+}
+
+/* CheckinResult's success state, smaller. */
+.result {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.8em 0.9em;
+  border: 1px solid var(--lifafa-marigold);
+  border-radius: 1em;
+  background-color: var(--app-raised);
+}
+
+.mark {
+  flex-shrink: 0;
+  width: 2.7em;
+  height: 2.7em;
+  color: var(--lifafa-marigold);
+  transform-origin: center;
+}
+
+.who {
+  min-width: 0;
+}
+
+.guest {
+  font-size: 1.1em;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.party {
+  margin-top: 0.2em;
+  font-size: 0.75em;
+  color: var(--lifafa-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pass {
+    animation: pass var(--loop) infinite var(--demo-play);
+  }
+
+  .beam {
+    animation: beam var(--loop) linear infinite var(--demo-play);
+  }
+
+  .brackets {
+    animation: lock var(--loop) infinite var(--demo-play);
+  }
+
+  .result {
+    animation: result var(--loop) infinite var(--demo-play);
+  }
+
+  .mark {
+    animation: mark var(--loop) infinite var(--demo-play);
+  }
+
+  .digits {
+    animation: roll var(--loop) infinite var(--demo-play);
+  }
+}
+
+@keyframes pass {
+  0%,
+  5% {
+    opacity: 0;
+    transform: translateY(9em) rotate(-4deg);
+  }
+  16%,
+  93% {
+    opacity: 1;
+    transform: translateY(0) rotate(-4deg);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(9em) rotate(-4deg);
+  }
+}
+
+/* Linear, and the stops are on that line: the beam sweeps at one speed. */
+@keyframes beam {
+  0%,
+  20% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  23% {
+    opacity: 1;
+    transform: translateY(1.5em);
+  }
+  38% {
+    opacity: 1;
+    transform: translateY(9.2em);
+  }
+  41%,
+  100% {
+    opacity: 0;
+    transform: translateY(10.7em);
+  }
+}
+
+@keyframes lock {
+  0%,
+  41% {
+    transform: scale(1);
+  }
+  45%,
+  93% {
+    transform: scale(0.92);
+  }
+  94%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes result {
+  0%,
+  45% {
+    opacity: 0;
+    transform: translateY(1em);
+  }
+  51%,
+  93% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(1em);
+  }
+}
+
+@keyframes mark {
+  0%,
+  48% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  53% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  56%,
+  93% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+@keyframes roll {
+  0%,
+  56% {
+    transform: translateY(0);
+  }
+  61%,
+  93% {
+    transform: translateY(-1.1em);
+  }
+  94%,
+  100% {
+    transform: translateY(0);
+  }
+}

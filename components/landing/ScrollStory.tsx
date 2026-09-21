@@ -1,6 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CheckinDemo from "@/components/landing/demos/CheckinDemo";
+import CoverDemo from "@/components/landing/demos/CoverDemo";
+import DashboardDemo from "@/components/landing/demos/DashboardDemo";
+import RsvpDemo from "@/components/landing/demos/RsvpDemo";
 import { useInView } from "@/hooks/useInView";
 import { useNearViewport } from "@/hooks/useNearViewport";
 
@@ -9,7 +13,16 @@ type Accent = "marigold" | "rose";
 interface StoryPanelData {
   id: string;
   accent: Accent;
+  /**
+   * The whole of what the panel says. Every demo is hidden from assistive
+   * technology, so this line alone has to explain what its demo shows.
+   */
   text: string;
+  /**
+   * A line drawing fills a square the panel sizes for it. A demo is a phone
+   * that reserves its own box — see components/landing/demos/DemoPhone.tsx.
+   */
+  kind: "drawing" | "demo";
   illustration: ReactElement;
 }
 
@@ -25,8 +38,10 @@ const ACCENT_TEXT: Record<Accent, string> = {
  *
  * `idle` is the slow breathing loop for the drawing as a whole. It lives on the
  * <svg> rather than on the panel wrapper so it cannot fight the wrapper's
- * scale-in transition. Each panel uses a slightly different duration so the
- * five illustrations never fall into step with one another.
+ * scale-in transition.
+ *
+ * One panel still has a drawing: making a card is the step with no screen worth
+ * showing at this size. The other four show the product itself, as demos.
  */
 function Illustration({
   children,
@@ -85,183 +100,41 @@ function EnvelopeArt(): ReactElement {
   );
 }
 
-/* 2 — A phone with a share arrow and a chat bubble. */
-function ShareArt(): ReactElement {
-  return (
-    <Illustration idle="animate-[lifafa-float_8s_ease-in-out_infinite]">
-      <g>
-        {/* phone */}
-        <path d="M62 56 Q62 40 78 40 L132 41 Q148 41 148 57 L146 188 Q146 204 130 204 L76 203 Q60 203 60 187 Z" />
-        <path d="M92 57 L116 57" opacity={0.7} />
-        <path d="M92 186 L116 186" opacity={0.7} />
-        {/* chat bubble on the screen, bobbing gently */}
-        <g className="animate-[lifafa-float_4.5s_ease-in-out_infinite] motion-reduce:animate-none">
-          <path d="M79 92 Q79 82 89 82 L120 83 Q130 83 130 93 L129 118 Q129 128 119 128 L101 127 L88 140 L90 127 Q79 126 79 117 Z" />
-          <path d="M92 100 L117 101" opacity={0.8} />
-          <path d="M92 112 L108 113" opacity={0.8} />
-        </g>
-        {/* share arrow leaving the phone — dots travel up the path */}
-        <path
-          d="M154 128 Q192 126 196 84"
-          strokeDasharray="1 9"
-          className="animate-[lifafa-flow_2.6s_linear_infinite] motion-reduce:animate-none"
-        />
-        <path
-          d="M185 94 L196 78 L207 92"
-          className="animate-[lifafa-pulse_2.6s_ease-in-out_infinite] [transform-box:fill-box] [transform-origin:center] motion-reduce:animate-none"
-        />
-      </g>
-    </Illustration>
-  );
-}
-
-/* 3 — Three guests carrying tick, cross and question badges. */
-function RepliesArt(): ReactElement {
-  return (
-    <Illustration idle="animate-[lifafa-float_7.5s_ease-in-out_infinite]">
-      <g>
-        {/* guest one — yes */}
-        <path d="M52 70 Q73 70 73 90 Q73 110 52 110 Q31 110 31 90 Q31 70 52 70 Z" />
-        <path d="M20 168 Q22 128 52 128 Q82 128 84 168" />
-        <g className="animate-[lifafa-pulse_3.6s_ease-in-out_infinite] [transform-box:fill-box] [transform-origin:center] motion-reduce:animate-none">
-          <circle cx={84} cy={140} r={16} />
-          <path d="M77 140 L82 146 L92 134" />
-        </g>
-
-        {/* guest two — no */}
-        <path d="M116 70 Q137 70 137 90 Q137 110 116 110 Q95 110 95 90 Q95 70 116 70 Z" />
-        <path d="M84 168 Q86 128 116 128 Q146 128 148 168" />
-        <g className="animate-[lifafa-pulse_3.6s_ease-in-out_infinite] [animation-delay:1.2s] [transform-box:fill-box] [transform-origin:center] motion-reduce:animate-none">
-          <circle cx={148} cy={140} r={16} />
-          <path d="M142 134 L154 146 M154 134 L142 146" />
-        </g>
-
-        {/* guest three — maybe */}
-        <path d="M180 70 Q201 70 201 90 Q201 110 180 110 Q159 110 159 90 Q159 70 180 70 Z" />
-        <path d="M148 168 Q150 128 180 128 Q210 128 212 168" />
-        <g className="animate-[lifafa-pulse_3.6s_ease-in-out_infinite] [animation-delay:2.4s] [transform-box:fill-box] [transform-origin:center] motion-reduce:animate-none">
-          <circle cx={212} cy={140} r={16} />
-          <path d="M206 136 Q206 130 212 130 Q218 130 218 136 Q218 140 212 143 L212 146" />
-          <path d="M212 152 L212 152.5" strokeWidth={3.2} />
-        </g>
-
-        {/* ground line */}
-        <path d="M24 190 L216 190" opacity={0.45} />
-      </g>
-    </Illustration>
-  );
-}
-
-/* 4 — A dinner plate with a rising tally beside it. */
-function HeadcountArt(): ReactElement {
-  return (
-    <Illustration idle="animate-[lifafa-float_8.5s_ease-in-out_infinite]">
-      <g>
-        {/* plate */}
-        <path d="M98 88 Q152 88 152 142 Q152 196 98 196 Q44 196 44 142 Q44 88 98 88 Z" />
-        <path
-          d="M98 108 Q132 108 132 142 Q132 176 98 176 Q64 176 64 142 Q64 108 98 108 Z"
-          className="animate-[lifafa-twinkle_5s_ease-in-out_infinite] motion-reduce:animate-none"
-        />
-        {/* fork */}
-        <path d="M18 76 L18 100 M26 76 L26 100 M34 76 L34 100" />
-        <path d="M26 100 Q14 104 16 116 L20 196" />
-        {/* rising tally — bars tick up one after another */}
-        <path d="M166 196 L222 196" opacity={0.45} />
-        <path
-          d="M174 196 L174 168"
-          className="animate-[lifafa-grow_3.4s_ease-in-out_infinite] [transform-box:fill-box] [transform-origin:bottom] motion-reduce:animate-none"
-        />
-        <path
-          d="M192 196 L192 142"
-          className="animate-[lifafa-grow_3.4s_ease-in-out_infinite] [animation-delay:0.35s] [transform-box:fill-box] [transform-origin:bottom] motion-reduce:animate-none"
-        />
-        <path
-          d="M210 196 L210 114"
-          className="animate-[lifafa-grow_3.4s_ease-in-out_infinite] [animation-delay:0.7s] [transform-box:fill-box] [transform-origin:bottom] motion-reduce:animate-none"
-        />
-        {/* trend arrow */}
-        <path
-          d="M168 108 L192 84 L214 60"
-          strokeDasharray="1 9"
-          className="animate-[lifafa-flow_2.8s_linear_infinite] motion-reduce:animate-none"
-        />
-        <path
-          d="M199 58 L216 56 L214 73"
-          className="animate-[lifafa-pulse_2.8s_ease-in-out_infinite] [transform-box:fill-box] [transform-origin:center] motion-reduce:animate-none"
-        />
-      </g>
-    </Illustration>
-  );
-}
-
-/* 5 — A QR code being scanned in a doorway arch. */
-function CheckInArt(): ReactElement {
-  return (
-    <Illustration idle="animate-[lifafa-float_7.2s_ease-in-out_infinite]">
-      <g>
-        {/* doorway arch */}
-        <path d="M50 206 L50 106 Q50 34 120 34 Q190 34 190 106 L190 206" />
-        <path d="M26 206 L214 206" opacity={0.5} />
-        {/* qr code */}
-        <path d="M90 102 L108 102 L108 120 L90 120 Z" />
-        <path d="M96 108 L102 108 L102 114 L96 114 Z" strokeWidth={2} />
-        <path d="M132 102 L150 102 L150 120 L132 120 Z" />
-        <path d="M138 108 L144 108 L144 114 L138 114 Z" strokeWidth={2} />
-        <path d="M90 140 L108 140 L108 158 L90 158 Z" />
-        <path d="M96 146 L102 146 L102 152 L96 152 Z" strokeWidth={2} />
-        <path
-          d="M132 140 L142 140 M132 150 L132 158 M142 150 L150 150 M148 158 L150 158"
-          className="animate-[lifafa-twinkle_2.8s_ease-in-out_infinite] motion-reduce:animate-none"
-        />
-        {/* scanner brackets */}
-        <g className="animate-[lifafa-pulse_4s_ease-in-out_infinite] [transform-box:fill-box] [transform-origin:center] motion-reduce:animate-none">
-          <path d="M72 108 L72 90 L90 90" />
-          <path d="M150 90 L168 90 L168 108" />
-          <path d="M72 152 L72 170 L90 170" />
-          <path d="M150 170 L168 170 L168 152" />
-        </g>
-        {/* scan beam sweeping the code */}
-        <path
-          d="M66 130 L174 130"
-          strokeDasharray="10 8"
-          className="animate-[lifafa-beam_3.4s_ease-in-out_infinite] motion-reduce:animate-none"
-        />
-      </g>
-    </Illustration>
-  );
-}
-
 const PANELS: readonly StoryPanelData[] = [
   {
     id: "create",
     accent: "marigold",
     text: "Create your invitation in minutes.",
+    kind: "drawing",
     illustration: <EnvelopeArt />,
   },
   {
     id: "share",
     accent: "rose",
-    text: "Share one link on WhatsApp. Guests never sign up.",
-    illustration: <ShareArt />,
+    text: "Share one link on WhatsApp. Guests tap it open, and never sign up.",
+    kind: "demo",
+    illustration: <CoverDemo />,
   },
   {
     id: "replies",
     accent: "marigold",
-    text: "Every guest replies yes, no or maybe.",
-    illustration: <RepliesArt />,
+    text: "Every guest replies yes, no or maybe. Each yes adds to your headcount.",
+    kind: "demo",
+    illustration: <RsvpDemo />,
   },
   {
     id: "headcount",
     accent: "rose",
-    text: "See your live headcount and stop wasting catering budget.",
-    illustration: <HeadcountArt />,
+    text: "Your headcount, always up to date when you open it. Stop wasting catering budget.",
+    kind: "demo",
+    illustration: <DashboardDemo />,
   },
   {
     id: "checkin",
     accent: "marigold",
     text: "Scan guests in on the event day.",
-    illustration: <CheckInArt />,
+    kind: "demo",
+    illustration: <CheckinDemo />,
   },
 ];
 
@@ -308,7 +181,19 @@ function StoryPanel({
       >
         <div
           className={[
-            "h-[150px] w-[150px] shrink-0 lg:h-[200px] lg:w-[200px]",
+            "shrink-0",
+            /*
+              A drawing is sized, coloured and parked here. A demo sizes itself
+              and starts and stops on its own observer, which is stricter than
+              this one: on screen, not merely near it.
+            */
+            panel.kind === "drawing"
+              ? [
+                  "h-[150px] w-[150px] lg:h-[200px] lg:w-[200px]",
+                  ACCENT_TEXT[panel.accent],
+                  isNear ? "" : "lifafa-parked",
+                ].join(" ")
+              : "",
             /*
               transform-gpu gives the drawing a layer of its own, so its idle
               loop repaints on its own small surface instead of dirtying the
@@ -316,11 +201,9 @@ function StoryPanel({
             */
             "transform-gpu transition-[opacity,transform] duration-700 ease-out",
             "motion-reduce:transition-none",
-            ACCENT_TEXT[panel.accent],
             isInView
               ? "translate-y-0 scale-100 opacity-100"
               : "translate-y-4 scale-95 opacity-0",
-            isNear ? "" : "lifafa-parked",
           ].join(" ")}
         >
           {panel.illustration}

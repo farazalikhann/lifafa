@@ -1,0 +1,156 @@
+/*
+  The phone every landing demo plays in, and the rules the demos share.
+
+  EVERYTHING IS IN EM. The stage sets one font size and every length inside a
+  demo is written against it: the bezel, the type, how far a number rolls. One
+  number scales the whole phone, and a keyframe's translateY(-1em) means the
+  same thing at every size. rem underneath, so a visitor who has raised their
+  browser's text size gets a proportionally larger phone.
+
+  THE BOX IS RESERVED. The stage's width and height are fixed before anything
+  loads, so the panel is laid out once and nothing moves as the page arrives.
+
+  ONLY TRANSFORM AND OPACITY ARE ANIMATED, in this file and in every demo's.
+  Anything else — a width, a colour, a shadow — is work for the main thread on
+  every frame. Where a demo needs a colour to change, it fades a second copy in
+  over the first.
+
+  ONE LOOP PER DEMO. Every animated piece in a demo runs for the same --loop
+  with its own percentages, so nothing can drift out of step however long the
+  page is open. The shared rhythm is .scene below: the story plays out, is
+  held, fades, resets while nothing is showing, and fades back in on its first
+  frame. Demos put their resets at 94%, inside that dark gap.
+
+  REDUCED MOTION. Nothing is animated outside the no-preference query, and every
+  piece's plain style is its last frame, so a visitor who has asked for less
+  movement is shown the finished story as a still.
+*/
+
+.stage {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--stage-width, 17em);
+  height: 30em;
+  font-size: 0.5rem;
+  line-height: 1.25;
+  color: var(--lifafa-cream);
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+  Small on a phone on purpose: stacked above the caption there, and the caption
+  is the thing to read. Larger once it stands beside the text.
+*/
+@media (min-width: 40rem) {
+  .stage {
+    font-size: 0.5625rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .stage {
+    font-size: 0.6875rem;
+  }
+}
+
+.run {
+  --demo-play: paused;
+
+  position: absolute;
+  inset: 0;
+}
+
+.run[data-playing] {
+  --demo-play: running;
+}
+
+/* The same bezel as the showcase frames, so the two read as one family. */
+.bezel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 17em;
+  margin-left: -8.5em;
+  padding: 0.5em;
+  border: 1px solid var(--lifafa-hairline);
+  border-radius: 2.3em;
+  background-color: var(--lifafa-ink-raised);
+  box-shadow:
+    0 2.2em 4.6em -2.2em rgb(0 0 0 / 0.85),
+    0 1.4em 3.8em -2.4em rgb(196 86 107 / 0.35);
+}
+
+/*
+  The product's own surfaces, not the landing page's warmer ones: this is a
+  picture of the app, and the app is drawn in the :root values of
+  globals.css, which .lifafa-landing redefines for everything around it. A
+  demo showing a card of another colour sets --screen.
+*/
+.screen {
+  --app-ink: #12100e;
+  --app-raised: #1a1714;
+  --app-hairline: #2a2521;
+
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 1.85em;
+  background-color: var(--screen, var(--app-ink));
+}
+
+/* The camera cut-out, over whatever the screen is showing. */
+.screen::after {
+  content: "";
+  position: absolute;
+  top: 0.7em;
+  left: 50%;
+  z-index: 10;
+  width: 3.4em;
+  height: 0.95em;
+  margin-left: -1.7em;
+  border-radius: 1em;
+  background-color: #000;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+}
+
+.tap {
+  position: absolute;
+  z-index: 3;
+  width: 2.6em;
+  height: 2.6em;
+  margin: -1.3em 0 0 -1.3em;
+  border: 1px solid var(--tap-ring, rgb(247 241 232 / 0.85));
+  border-radius: 50%;
+  background-color: var(--tap-fill, rgb(247 241 232 / 0.32));
+  /* A dark ring outside the light one, so the fingertip shows on a pale card too. */
+  box-shadow:
+    0 0 0 1px rgb(18 16 14 / 0.3),
+    0 0.3em 0.9em rgb(18 16 14 / 0.35);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scene {
+    animation: scene var(--loop) linear infinite var(--demo-play);
+  }
+}
+
+@keyframes scene {
+  0%,
+  88% {
+    opacity: 1;
+  }
+  93%,
+  95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

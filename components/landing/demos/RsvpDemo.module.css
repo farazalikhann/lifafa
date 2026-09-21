@@ -1,0 +1,394 @@
+/*
+  The RSVP demo. Read DemoPhone.module.css first: the units, the loop and the
+  reduced-motion rule are all explained there.
+
+  7.5 seconds:
+     5–15%  the reply form rises in under the invitation
+    22–38%  a fingertip taps "Yes, I'll be there", and it fills
+    35–39%  Send lights up, because now there is something to send
+    45–61%  the fingertip taps Send
+    57–62%  the host's headcount rolls from 41 to 42, and +1 appears beside it
+    88–100% held, faded, reset, faded back in
+*/
+
+.stage {
+  --loop: 7.5s;
+  /* Wide enough for the host's tile to stand out past the phone's right edge. */
+  --stage-width: 23em;
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.3em 1.2em 0;
+  text-align: center;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  color: var(--lifafa-marigold);
+}
+
+.rule {
+  width: 1.8em;
+  height: 1px;
+  background-color: currentColor;
+  opacity: 0.6;
+}
+
+.diamond {
+  width: 0.5em;
+  height: 0.5em;
+  background-color: currentColor;
+  transform: rotate(45deg);
+}
+
+.names {
+  margin-top: 0.55em;
+  font-family: var(--font-display);
+  font-size: 1.85em;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.when {
+  margin-top: 0.45em;
+  font-size: 0.8em;
+  color: var(--lifafa-muted);
+}
+
+.reply {
+  width: 100%;
+  margin-top: 1.1em;
+  padding-top: 0.9em;
+  border-top: 1px solid var(--app-hairline);
+}
+
+.question {
+  font-family: var(--font-display);
+  font-size: 1.3em;
+  font-weight: 600;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  margin-top: 0.75em;
+}
+
+/* Unselected and disabled: an outline in the card's muted ink, as on the card. */
+.choice,
+.send {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.1em;
+  border: 1px solid rgb(161 150 138 / 0.33);
+  border-radius: 0.7em;
+}
+
+.send {
+  height: 2.4em;
+  margin-top: 0.7em;
+  color: var(--lifafa-muted);
+}
+
+.label {
+  font-size: 0.78em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/*
+  Selected and ready: the accent filled in, with the card's ground as the ink.
+  A second copy laid over the first and faded in, because a background colour
+  is not something this page animates.
+*/
+.chosen,
+.ready {
+  position: absolute;
+  inset: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background-color: var(--lifafa-marigold);
+  color: var(--app-ink);
+  font-weight: 600;
+}
+
+.tapYes {
+  top: 55%;
+  left: 76%;
+}
+
+.tapSend {
+  top: 55%;
+  left: 64%;
+}
+
+/* The host's side: the dashboard's headcount tile, standing over the phone's edge. */
+.host {
+  position: absolute;
+  right: 0;
+  bottom: 0.6em;
+  width: 10em;
+  padding: 0.75em 0.9em 0.85em;
+  border: 1px solid rgb(232 163 61 / 0.45);
+  border-radius: 1.1em;
+  background-color: var(--lifafa-ink-raised);
+  box-shadow: 0 1.2em 2.4em -0.8em rgb(0 0 0 / 0.75);
+}
+
+.hostLabel {
+  font-size: 0.6em;
+  line-height: 1.35;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lifafa-muted);
+}
+
+.hostCount {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4em;
+  margin-top: 0.3em;
+}
+
+/*
+  A number that rolls rather than being rewritten: both figures are stacked in
+  a strip, and the strip slides up one line behind a window one line tall.
+*/
+.window {
+  display: block;
+  height: 1.1em;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 2.8em;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--lifafa-marigold);
+  font-variant-numeric: tabular-nums;
+}
+
+.digits {
+  display: block;
+  transform: translateY(-1.1em);
+}
+
+.digits > span {
+  display: block;
+}
+
+.plus {
+  margin-bottom: 0.35em;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--lifafa-marigold);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reply {
+    animation: reply var(--loop) infinite var(--demo-play);
+  }
+
+  .tapYes {
+    animation: tap-yes var(--loop) infinite var(--demo-play);
+  }
+
+  .chosen {
+    animation: chosen var(--loop) infinite var(--demo-play);
+  }
+
+  .ready {
+    animation: ready var(--loop) infinite var(--demo-play);
+  }
+
+  .tapSend {
+    animation: tap-send var(--loop) infinite var(--demo-play);
+  }
+
+  .send {
+    animation: press-send var(--loop) infinite var(--demo-play);
+  }
+
+  .host {
+    animation: host var(--loop) infinite var(--demo-play);
+  }
+
+  .digits {
+    animation: roll var(--loop) infinite var(--demo-play);
+  }
+
+  .plus {
+    animation: plus var(--loop) infinite var(--demo-play);
+  }
+}
+
+@keyframes reply {
+  0%,
+  5% {
+    opacity: 0;
+    transform: translateY(1.2em);
+  }
+  15%,
+  93% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(1.2em);
+  }
+}
+
+@keyframes tap-yes {
+  0%,
+  22% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  27% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(0.8);
+  }
+  33% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  38%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes chosen {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  34%,
+  93% {
+    opacity: 1;
+  }
+  94%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ready {
+  0%,
+  35% {
+    opacity: 0;
+  }
+  39%,
+  93% {
+    opacity: 1;
+  }
+  94%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes tap-send {
+  0%,
+  45% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  53% {
+    opacity: 1;
+    transform: scale(0.8);
+  }
+  56% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  61%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes press-send {
+  0%,
+  52% {
+    transform: scale(1);
+  }
+  54% {
+    transform: scale(0.95);
+  }
+  57%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes host {
+  0%,
+  57% {
+    transform: scale(1);
+  }
+  61% {
+    transform: scale(1.07);
+  }
+  67%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes roll {
+  0%,
+  57% {
+    transform: translateY(0);
+  }
+  62%,
+  93% {
+    transform: translateY(-1.1em);
+  }
+  94%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes plus {
+  0%,
+  57% {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+  62%,
+  93% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+}

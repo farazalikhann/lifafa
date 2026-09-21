@@ -23,9 +23,10 @@ const NEAR_OPTIONS: IntersectionObserverInit = {
  * Unlike useInView — which latches the first time it reveals and never looks
  * back — this one keeps reporting, so a caller can park expensive work while
  * the element is far off screen and let it run again when it returns. The
- * landing story uses it to hold its idle loops: five line drawings stepping
- * dash offsets and opacities off screen is main-thread work nobody ever sees,
- * and on a phone it lands as stutter in the scroll.
+ * landing story uses it to hold the idle loop of its line drawing: a drawing
+ * stepping opacities off screen is main-thread work nobody ever sees, and on a
+ * phone it lands as stutter in the scroll. Its demos are stricter still and
+ * keep their own observer; see components/landing/demos/DemoPhone.tsx.
  *
  * Starts `true` so server-rendered markup — and any client that never runs the
  * effect — is never left parked. The observer answers on the first frame.
