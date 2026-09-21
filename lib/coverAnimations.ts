@@ -15,6 +15,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     description: "The card is open the moment the guest arrives.",
     openPromptText: { en: "", hi: "" },
     durationMs: 0,
+    revealAt: 0,
     sound: null,
     supportsReducedMotion: true,
   },
@@ -26,7 +27,15 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       en: "Tap seal to open",
       hi: "खोलने के लिए मुहर पर टैप करें",
     },
-    durationMs: 2200,
+    /*
+      1.8s, from 2.2. The guest has just tapped a link in a chat and is holding
+      the phone waiting; every stage keeps its share of the open, so the seal,
+      the flap and the letter all run a fifth quicker rather than any one of
+      them being cut.
+    */
+    durationMs: 1800,
+    /* As the letter starts towards the guest: EXIT_START in the visual is 0.64. */
+    revealAt: 0.62,
     sound: "seal",
     supportsReducedMotion: true,
   },
@@ -39,6 +48,8 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       hi: "पर्दे हटाने के लिए टैप करें",
     },
     durationMs: 1600,
+    /* As soon as there is a gap between the panels to see the card through. */
+    revealAt: 0.12,
     sound: "curtain",
     supportsReducedMotion: true,
   },
@@ -51,6 +62,8 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       hi: "खोलने के लिए टैप करें",
     },
     durationMs: 1800,
+    /* As the opened card starts to lift away: EXIT_START in the visual is 0.54. */
+    revealAt: 0.5,
     sound: "fold",
     supportsReducedMotion: true,
   },
@@ -63,6 +76,8 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       hi: "पंखुड़ियाँ बिखेरने के लिए टैप करें",
     },
     durationMs: 2000,
+    /* With the first gust: the ground starts clearing at 0.1 in the visual. */
+    revealAt: 0.1,
     sound: "chime",
     supportsReducedMotion: true,
   },

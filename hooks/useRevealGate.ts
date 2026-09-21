@@ -14,8 +14,9 @@ import { createContext, useContext } from "react";
  *
  * `true` is the default, so every surface that has no cover over it — the
  * landing page, the designer's live preview — behaves exactly as before and
- * needs no provider at all. Only CoverShell narrows it, and only while its
- * cover is still up.
+ * needs no provider at all. Only CoverShell narrows it, and only until its
+ * cover starts handing over to the card — part way through the open, at the
+ * option's `revealAt`, so the card is already arriving as the cover leaves.
  */
 export const RevealGateContext = createContext<boolean>(true);
 

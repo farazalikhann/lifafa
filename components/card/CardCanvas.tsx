@@ -84,8 +84,8 @@ const ARCH_INSET_TOP = 20;
 /**
  * The top padding every section already carries, in px — its `py-10`.
  *
- * Subtracted from a border's top clearance so the card only pays for the part
- * the sections were not going to clear on their own.
+ * The least any section insets its content by. The ornaments and a border's
+ * top clearance can only ever raise it — see `sectionPad` and `firstScreenPad`.
  */
 const SECTION_TOP_PAD = 40;
 
@@ -99,6 +99,27 @@ const SECTION_TOP_PAD = 40;
  * height of the screen, and without this the names would be read through them.
  */
 const SECTION_SIDE_PAD = 28;
+
+/**
+ * How far above the middle the card's first screen sets its content, as a
+ * share of the screen.
+ *
+ * Every section centres its content in a box a screen tall, which is right for
+ * all of them but the first. Centred on the geometric middle, the names sat a
+ * third of the way down a phone with the whole top of the card empty above
+ * them, and the card opened looking unfinished at the head. The eye takes the
+ * middle of a page to be a little above where it really is, so the first
+ * screen centres in the top 84% instead and leaves the rest empty below:
+ * the group's middle lands at 42%. It is still exactly one screen tall, so
+ * nothing of the next section comes up into view to crowd it.
+ *
+ * Not under a cover arch. The arch is drawn to the screen from a top edge the
+ * border fixes, and the space above the names is where its dome stands: lifted,
+ * the first name went up into the dome. An arched first screen is already
+ * composed by the arch, so it keeps its centre and takes only the rest of what
+ * the first screen gets — the border's floor, and arriving in one piece.
+ */
+const FIRST_SCREEN_LIFT = 0.16;
 
 /** The pack divider's longer side, in px at the card's 420px design width. */
 const DIVIDER_SIZE = 168;
@@ -663,15 +684,20 @@ export default function CardCanvas({
     360px the dip landed across the first line of them. The four framing styles
     keep to a band shallower than a section's own padding and ask for nothing.
 
-    Applied once, to the head of the column, rather than to every section —
-    the same shape as the blessing's clearance above. Further down the card it
-    is not needed: a section centres its content, so by the time the guest is
-    reading the date it sits around 150px from the top of the screen, well below
-    anything the frame draws. Text passing under the swag mid-scroll is the same
-    accepted behaviour as text passing under the lanterns, and at half opacity
-    it reads as the ornament it is.
+    Applied once, to the first screen only, rather than to every section.
+    Further down the card it is not needed: a section centres its content, so
+    by the time the guest is reading the date it sits around 150px from the top
+    of the screen, well below anything the frame draws. Text passing under the
+    swag mid-scroll is the same accepted behaviour as text passing under the
+    lanterns, and at half opacity it reads as the ornament it is.
+
+    A FLOOR, NOT A PUSH. It used to be padding on the column above the first
+    screen, which moved the whole screen down by the swag's depth whether the
+    names were anywhere near it or not: a garland card opened with its names
+    56px lower than the same card without one. As the least the first screen
+    may inset its content by, it only ever acts when the content is tall enough
+    to reach the swag — see `firstScreenPad`.
   */
-  const contentTopInset = Math.max(0, clearance.y - SECTION_TOP_PAD);
 
   /*
     And room down each side, for a border that stands in the margin.
@@ -715,6 +741,16 @@ export default function CardCanvas({
     section's height — it stays exactly the viewport it is supposed to fill.
   */
   const sectionPad = Math.max(SECTION_TOP_PAD, hangingBand);
+
+  /* The first screen's inset: a section's, or the border's clearance if that is deeper. */
+  const firstScreenPad = Math.max(sectionPad, clearance.y);
+
+  /*
+    The first screen's height, split between the box its content centres in
+    and the empty band under it. See FIRST_SCREEN_LIFT.
+  */
+  const firstScreenBox = `calc(${minHeight} * ${1 - FIRST_SCREEN_LIFT})`;
+  const firstScreenLift = `calc(${minHeight} * ${FIRST_SCREEN_LIFT})`;
 
   /*
     What the head screen insets by, which is not what a section insets by.
@@ -934,7 +970,6 @@ export default function CardCanvas({
       <div
         className="lifafa-card-content relative z-10"
         style={{
-          paddingTop: cardPx(contentTopInset),
           paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
         }}
       >
@@ -992,18 +1027,6 @@ export default function CardCanvas({
                 }
               : null;
 
-          const section = renderBlock(
-            block,
-            draft,
-            effectiveTheme,
-            minHeight,
-            sectionPad,
-            config.occasionId,
-            invite,
-            scratch,
-            language,
-          );
-
           /*
             The greeting and dua head the cover, so they are anchored to the
             cover block rather than to the top of the card. The host can reorder
@@ -1015,9 +1038,31 @@ export default function CardCanvas({
             blessing is never hidden behind a panel a guest has to scratch.
           */
           const isCover = block.kind === "builtin" && block.id === "cover";
+          const hasHead = isCover && (hasBlessing || calligraphy.length > 0);
+
+          /*
+            The screen a guest lands on: the blessing, when the card opens with
+            one, and otherwise this block's own section. Only that screen is
+            lifted and floored; everything after it is spaced as it always was.
+          */
+          const sectionIsFirstScreen = index === 0 && !hasHead;
+          const headIsFirstScreen = index === 0 && hasHead;
+          const liftSection = sectionIsFirstScreen && !(isCover && useArch);
+
+          const section = renderBlock(
+            block,
+            draft,
+            effectiveTheme,
+            liftSection ? firstScreenBox : minHeight,
+            sectionIsFirstScreen ? firstScreenPad : sectionPad,
+            config.occasionId,
+            invite,
+            scratch,
+            language,
+          );
 
           const head =
-            isCover && (hasBlessing || calligraphy.length > 0) ? (
+            hasHead ? (
               /*
                 A screen of its own, not a header sitting on top of the names.
 
@@ -1036,11 +1081,19 @@ export default function CardCanvas({
               */
               <div
                 className="flex flex-col items-center justify-center gap-4 px-7 text-center"
-                style={{
-                  minHeight,
-                  paddingTop: cardPx(headPadTop),
-                  paddingBottom: cardPx(headPadBottom),
-                }}
+                style={
+                  headIsFirstScreen
+                    ? {
+                        minHeight,
+                        paddingTop: cardPx(Math.max(headPadTop, clearance.y)),
+                        paddingBottom: `calc(${cardPx(headPadBottom)} + ${firstScreenLift})`,
+                      }
+                    : {
+                        minHeight,
+                        paddingTop: cardPx(headPadTop),
+                        paddingBottom: cardPx(headPadBottom),
+                      }
+                }
               >
                 {/*
                   Above the greeting, because they open what follows rather than
@@ -1096,6 +1149,43 @@ export default function CardCanvas({
               {section}
             </>
           );
+
+          const framed =
+            isCover && useArch ? (
+              /*
+                The arch frames the cover rather than replacing anything: an
+                outline behind the content, inset from the card's edges, with
+                the content column drawn on top of it. Stretched with
+                preserveAspectRatio="none" because a frame has to match the
+                box it frames, and held well under half opacity so a name set
+                over a jamb still carries.
+
+                Never lifted as a first screen — see FIRST_SCREEN_LIFT.
+              */
+              <div className="relative">
+                <archOrnament.Component
+                  instanceId="cover-frame"
+                  className="pointer-events-none absolute bottom-0"
+                  preserveAspectRatio="none"
+                  /*
+                    Drawn at roughly 3.4x here, which would turn the authored
+                    2 unit line into a 7px band. 0.5 lands back at the ~1.7px
+                    the rest of the card's line work is set in.
+                  */
+                  strokeWidth={0.5}
+                  style={{
+                    color: effectiveTheme.accent,
+                    opacity: 0.38,
+                    left: cardPx(archInsetX),
+                    right: cardPx(archInsetX),
+                    top: cardPx(archInsetTop),
+                  }}
+                />
+                <div className="relative">{covered}</div>
+              </div>
+            ) : (
+              covered
+            );
 
           return (
             <Fragment key={blockKey(block)}>
@@ -1158,38 +1248,32 @@ export default function CardCanvas({
                 from out here; the section it renders has already put the panel
                 over the lines that need it.
               */}
-              {isCover && useArch ? (
+              {sectionIsFirstScreen ? (
                 /*
-                  The arch frames the cover rather than replacing anything: an
-                  outline behind the content, inset from the card's edges, with
-                  the content column drawn on top of it. Stretched with
-                  preserveAspectRatio="none" because a frame has to match the
-                  box it frames, and held well under half opacity so a name set
-                  over a jamb still carries.
+                  The band under the first screen's content, and the one place
+                  the card's line stagger is switched off.
+
+                  THE FIRST SCREEN ARRIVES IN ONE PIECE. Every other section
+                  sets its lines down one after another as the guest scrolls to
+                  it, which is the card being read. The first screen is the card
+                  being opened: a printed invitation does not typeset itself in
+                  front of the person holding it, and names that arrived a word
+                  at a time were the last of what made opening one feel like a
+                  page loading. So its lines rise together, under the cover as
+                  it leaves them — see `revealAt` in types/coverAnimation.ts.
                 */
-                <div className="relative">
-                  <archOrnament.Component
-                    instanceId="cover-frame"
-                    className="pointer-events-none absolute bottom-0"
-                    preserveAspectRatio="none"
-                    /*
-                      Drawn at roughly 3.4x here, which would turn the authored
-                      2 unit line into a 7px band. 0.5 lands back at the ~1.7px
-                      the rest of the card's line work is set in.
-                    */
-                    strokeWidth={0.5}
-                    style={{
-                      color: effectiveTheme.accent,
-                      opacity: 0.38,
-                      left: cardPx(archInsetX),
-                      right: cardPx(archInsetX),
-                      top: cardPx(archInsetTop),
-                    }}
-                  />
-                  <div className="relative">{covered}</div>
+                <div
+                  style={
+                    {
+                      paddingBottom: liftSection ? firstScreenLift : undefined,
+                      "--card-line-stagger": "0ms",
+                    } as CSSProperties
+                  }
+                >
+                  {framed}
                 </div>
               ) : (
-                covered
+                framed
               )}
 
               {/*

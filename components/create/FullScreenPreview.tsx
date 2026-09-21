@@ -6,6 +6,7 @@ import {
   useId,
   useRef,
   useState,
+  type CSSProperties,
   type ReactElement,
   type RefObject,
 } from "react";
@@ -17,6 +18,7 @@ import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import { useRevealGate } from "@/hooks/useRevealGate";
 import { PREVIEW_INVITE } from "@/lib/calendar";
+import { cardChrome } from "@/lib/cardChrome";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import type { Motif } from "@/lib/motifs";
@@ -111,13 +113,27 @@ function devicePillClass(isSelected: boolean): string {
 }
 
 /**
+ * The visible part of a control floated over the card: a 32px chip.
+ *
+ * The button around it is the 44px tap target and draws nothing of its own, so
+ * the control can look small without being small to hit. Below lg it is in the
+ * card's colours, from the `--chip-*` variables the overlay sets; at lg the
+ * controls sit in the header, which is the editor's, and take its colours.
+ */
+const CHIP_CLASS = [
+  "flex h-8 min-w-8 items-center justify-center rounded-full border transition-colors duration-150",
+  "border-[var(--chip-edge)] bg-[var(--chip-fill)] text-[var(--chip-ink)] group-hover:text-[var(--chip-ink-strong)]",
+  "lg:border-[var(--lifafa-hairline)] lg:bg-[var(--lifafa-ink)]/70 lg:text-[var(--lifafa-muted)] lg:group-hover:text-[var(--lifafa-cream)]",
+].join(" ");
+
+/**
  * The cover's reveal gate, reported back out of the cover.
  *
  * CoverShell keeps its phase to itself and offers no callback, but it does
- * publish the gate to everything it wraps: false while the cover is still up,
- * true the moment it has opened. Reading that from a child which draws nothing
- * is how the preview learns the cover has finished, without CoverShell needing
- * to know a preview exists.
+ * publish the gate to everything it wraps: false while the cover is closed,
+ * true from the moment it hands over to the card, part way through the open.
+ * Reading that from a child which draws nothing is how the preview learns the
+ * card is on its way, without CoverShell needing to know a preview exists.
  *
  * Reports the key of the cover instance rather than a bare `true`, so that a
  * remounted cover cannot be mistaken for one that has already opened: the
@@ -227,6 +243,20 @@ export default function FullScreenPreview({
 
   const device = DEVICES.find((entry) => entry.id === deviceId) ?? DEVICES[0];
   const palette = getPalette(config.style.paletteId);
+
+  /*
+    The controls floated over the card wear the card's colours, set here once as
+    variables for the switch, Replay and close to read. See lib/cardChrome.ts
+    for how each is chosen and why none of them can disappear into a background.
+  */
+  const chrome = cardChrome(palette);
+  const chromeVariables = {
+    "--chip-fill": chrome.fill,
+    "--chip-edge": chrome.edge,
+    "--chip-ink": chrome.ink,
+    "--chip-ink-strong": chrome.inkStrong,
+    "--chip-selected": chrome.selectedFill,
+  } as CSSProperties;
 
   const coverOption = getCoverAnimation(coverAnimation);
   const hasCover = coverOption.id !== "none";
@@ -472,6 +502,7 @@ export default function FullScreenPreview({
       aria-modal="true"
       aria-labelledby={titleId}
       className="fixed inset-0 z-50 flex flex-col bg-[var(--lifafa-ink)]"
+      style={chromeVariables}
     >
       <h2 id={titleId} className="sr-only">
         Full screen preview of your invitation
@@ -519,12 +550,14 @@ export default function FullScreenPreview({
         The same switch below lg, where there is no header to hold it: floated
         over the card's top left, opposite the close button, and above the
         cover like it, so a host on a phone can check the other language
-        before the envelope is even open.
+        before the envelope is even open. In the card's colours, and small —
+        see `onCard`.
       */}
       <PreviewLanguageSwitch
         language={config.language}
         onLanguageChange={onPreviewLanguageChange}
-        className="absolute top-3 left-3 z-[60] lg:hidden"
+        onCard
+        className="absolute top-2.5 left-2.5 z-[60] lg:hidden"
       />
 
       {/*
@@ -533,9 +566,12 @@ export default function FullScreenPreview({
         it. Kept after the header in the DOM so Tab still reaches the device
         pills first at lg, where the two are visible together.
 
-        The translucent backdrop is not decoration: this sits over the card, and
-        the card can be cream or near-black depending on the palette, so the
-        button has to carry its own contrast rather than borrow the card's.
+        IN THE CARD'S COLOURS, AND SMALL. Below lg this sits on the invitation,
+        so it is drawn from the card's palette rather than the editor's — a
+        near-black pill on a cream card read as something dropped on top of it.
+        The chip is 32px; the button around it is still 44px, transparent, so
+        it stays as easy to hit as it was. At lg it sits in the header, which is
+        the editor's, and takes the editor's colours back.
 
         The overlay is `fixed` with a z-index of its own, so it opens a stacking
         context and every z-index below is scoped inside it. 60 clears the
@@ -549,19 +585,21 @@ export default function FullScreenPreview({
         type="button"
         aria-label={isFullscreen ? "Exit full screen preview" : "Close preview"}
         onClick={handleClose}
-        className="absolute top-3 right-3 z-[60] flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 text-[var(--lifafa-cream)] backdrop-blur transition-colors duration-150 hover:bg-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+        className="group absolute top-1.5 right-1.5 z-[60] flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-2 lg:focus-visible:outline-[var(--lifafa-marigold)]"
       >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.6}
-          strokeLinecap="round"
-        >
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
+        <span className={CHIP_CLASS}>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </span>
       </button>
 
       {/*
@@ -579,15 +617,17 @@ export default function FullScreenPreview({
         Skip. Never at all under "No animation", where there is no cover.
 
         Low emphasis on purpose: it sits beside the close button in the same
-        floating row, in the editor's muted text rather than the card's colours.
+        floating row, the same size, in the card's muted ink.
       */}
       {hasCover && isRevealed ? (
         <button
           type="button"
           onClick={handleReplay}
-          className="absolute top-3 right-16 z-40 flex h-11 shrink-0 items-center rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/70 px-4 text-[0.8125rem] font-medium text-[var(--lifafa-muted)] backdrop-blur transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          className="group absolute top-1.5 right-12 z-40 flex h-11 shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-14 lg:focus-visible:outline-[var(--lifafa-marigold)]"
         >
-          Replay
+          <span className={`${CHIP_CLASS} px-3 text-[0.75rem] font-medium`}>
+            Replay
+          </span>
         </button>
       ) : null}
 

@@ -39,6 +39,20 @@ export interface CoverAnimationOption {
   /** Total length of the open animation, in milliseconds. */
   durationMs: number;
   /**
+   * When the card starts to show through, as a share of `durationMs`.
+   *
+   * The card's first screen is let go at this moment and settles into place
+   * while the cover is still leaving it — under the letter as the envelope
+   * falls away, between the curtains as they part. Waiting for the cover to
+   * finish instead is what made opening an invitation feel like loading a
+   * page: the cover dissolved onto a card with no words on it, and the words
+   * then arrived one line at a time.
+   *
+   * Each visual's own timings decide it, so it is written beside the duration
+   * those timings are shares of. Zero for "none", which opens on the card.
+   */
+  revealAt: number;
+  /**
    * The sound the cover makes when a guest taps it open — synthesised, or for
    * the curtain a short recording fetched before the tap; see
    * lib/coverSound.ts. Null for a cover that opens in silence, which is what

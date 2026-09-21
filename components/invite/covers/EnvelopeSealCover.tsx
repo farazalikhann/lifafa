@@ -27,18 +27,8 @@ const BACKDROP_START = 0.7;
 const BACKDROP_SHARE = 0.3;
 
 /**
- * The moment the flap is edge on to the guest, and goes behind the letter.
- *
- * Halfway through the flap's own stage, which is only 90° because the flap's
- * curve is symmetric — see FLAP_EASE. Swapping the stacking order on that frame
- * is invisible, because the flap is a line at that angle.
- */
-const FLAP_EDGE_ON = FLAP_START + FLAP_SHARE / 2;
-
-/**
- * Symmetric about its midpoint, so half the time is exactly half the turn.
- * FLAP_EDGE_ON depends on that; a lopsided curve here would swap the flap
- * behind the letter while it was still visibly in front of it.
+ * Slow off the fold, quick through the middle, slow onto the back: paper
+ * lifting and settling rather than a lid on a hinge.
  */
 const FLAP_EASE = "cubic-bezier(0.6,0,0.4,1)";
 
@@ -142,9 +132,17 @@ const HIDE_BACKFACE: CSSProperties = {
  *
  * Back to front: the inside of the envelope, the letter, the pocket and side
  * panels, the flap, the seal. The letter sits between the back and the pocket,
- * so the pocket hides it until it rises, and the flap drops behind it the
- * instant it is edge on (FLAP_EDGE_ON) — which is how a flat stack of layers
- * gets the one change of depth an envelope needs.
+ * so the pocket hides it until it rises.
+ *
+ * THE FLAP IS TWO LAYERS, and nothing ever changes places in the stack. It has
+ * to be in front of the letter while it is shut and behind it once it is over,
+ * and it used to get there by stepping its own z-index on the frame it was
+ * edge on — a property change in the middle of the open, when only transform
+ * and opacity may move. Now the outside face is a layer above the letter and
+ * the inside face a layer below it, both turning through the same half
+ * revolution with their backs hidden. Each face is turned away from the guest
+ * for the half of the swing it does not belong to, so the hand-off is the
+ * browser's own backface culling at 90°, and the stack never changes.
  *
  * It never takes a pointer event — the shell's button is the whole click
  * surface — so this is only ever a picture of what tapping does.
@@ -216,24 +214,11 @@ export default function EnvelopeSealCover({
   });
 
   /*
-    The flap's wrapper is the one that changes places in the stack, so it gets
-    the z-index step on top of the drop everyone shares. A transition with no
-    duration and a delay is a switch on a timer.
-  */
-  const flapDropStyle: CSSProperties = {
-    ...dropStyle(opening ? 1 : 4),
-    transition: transition(
-      stage("transform", EXIT_SHARE, EXIT_START, DROP_EASE),
-      stage("opacity", EXIT_SHARE, EXIT_START, "ease-in-out"),
-      stage("z-index", 0, FLAP_EDGE_ON, "linear"),
-    ),
-  };
-
-  /*
     Hinged on its top edge and swung towards the guest, all the way over. The
     perspective is written into the transform rather than set on a parent, so
-    the 3D depends on nothing above it; preserve-3d is what lets the two faces
-    below take their turn.
+    the 3D depends on nothing above it. Both flap layers turn by this one
+    style, so their two faces cannot drift apart; preserve-3d is what lets the
+    face inside each be culled once it has turned its back.
   */
   const flapStyle: CSSProperties = {
     ...box(40, 70, 320, 108),
@@ -326,6 +311,36 @@ export default function EnvelopeSealCover({
                 strokeWidth="1.5"
               />
             </svg>
+          </div>
+
+          {/*
+            The flap's inside face, behind the letter. Turned away from the
+            guest until the flap passes edge on, and only seen after that —
+            lying open above the envelope, with the letter rising in front of
+            it. Drawn point up and turned half a revolution in place, so after
+            the flap's own half turn it stands upright on the hinge. After the
+            back in the tree, so the same z-index still paints it over the back.
+          */}
+          <div className="absolute inset-0" style={dropStyle(1)}>
+            <div className="absolute" style={flapStyle}>
+              <svg
+                viewBox="0 0 320 108"
+                preserveAspectRatio="none"
+                overflow="visible"
+                className="absolute inset-0 h-full w-full"
+                style={{ ...HIDE_BACKFACE, transform: "rotateX(180deg)" }}
+                role="presentation"
+                focusable="false"
+              >
+                <path
+                  d="M0 108 L320 108 L160 0 Z"
+                  fill={colors.paperLift}
+                  stroke={colors.edge}
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </div>
 
           {/* The letter: the card itself, in the card's own colours. */}
@@ -428,10 +443,13 @@ export default function EnvelopeSealCover({
             </svg>
           </div>
 
-          {/* The flap, shut over the pocket until the seal lets it go. */}
-          <div className="absolute inset-0" style={flapDropStyle}>
+          {/*
+            The flap's outside face, in front of the letter: shut over the
+            pocket until the seal lets it go, and turned away from the guest
+            from the moment it passes edge on.
+          */}
+          <div className="absolute inset-0" style={dropStyle(4)}>
             <div className="absolute" style={flapStyle}>
-              {/* Outside face: what a guest sees while the envelope is sealed. */}
               <svg
                 viewBox="0 0 320 108"
                 preserveAspectRatio="none"
@@ -444,30 +462,6 @@ export default function EnvelopeSealCover({
                 <path
                   d="M0 0 L320 0 L160 108 Z"
                   fill={colors.paperDeep}
-                  stroke={colors.edge}
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              {/*
-                Inside face, turned half a revolution in place so it only faces
-                the guest once the flap is over. Drawn point up for the same
-                reason: two half turns about different edges leave it upright
-                rather than flipped, so the triangle stands on the hinge.
-              */}
-              <svg
-                viewBox="0 0 320 108"
-                preserveAspectRatio="none"
-                overflow="visible"
-                className="absolute inset-0 h-full w-full"
-                style={{ ...HIDE_BACKFACE, transform: "rotateX(180deg)" }}
-                role="presentation"
-                focusable="false"
-              >
-                <path
-                  d="M0 108 L320 108 L160 0 Z"
-                  fill={colors.paperLift}
                   stroke={colors.edge}
                   strokeWidth="1.5"
                   strokeLinejoin="round"

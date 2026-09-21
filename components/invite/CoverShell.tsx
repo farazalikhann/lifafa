@@ -185,10 +185,30 @@ export default function CoverShell({
   /** The pending hand-off from "opening" to "open", so a skip can cancel it. */
   const timerRef = useRef<number | null>(null);
 
+  /*
+    Whether the card underneath has been let go, which happens before the cover
+    has finished: at the option's `revealAt`, part way through the open.
+
+    THE CARD ARRIVES WITH THE COVER, NOT AFTER IT. Its reveals are held behind
+    the gate below while the cover is up, and the gate used to open only when
+    the cover unmounted. So every cover dissolved onto a card with no words on
+    it, and then the words arrived — which is a page loading, not an invitation
+    opening. Letting the card go at the moment it starts to show through means
+    the names are already settling into place under the letter, or between the
+    curtains, as the cover leaves them.
+  */
+  const [cardLetGo, setCardLetGo] = useState<boolean>(false);
+  const letGoTimerRef = useRef<number | null>(null);
+
   const clearTimer = useCallback((): void => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
+    }
+
+    if (letGoTimerRef.current !== null) {
+      window.clearTimeout(letGoTimerRef.current);
+      letGoTimerRef.current = null;
     }
   }, []);
 
@@ -249,9 +269,23 @@ export default function CoverShell({
         setPhase("open");
       }, option.durationMs + UNMOUNT_GRACE_MS);
 
+      /*
+        Cleared before it is set: React may call this updater twice in
+        development, and a second timer would only set the same flag, but a
+        timer this component has lost track of is one a skip cannot cancel.
+      */
+      if (letGoTimerRef.current !== null) {
+        window.clearTimeout(letGoTimerRef.current);
+      }
+
+      letGoTimerRef.current = window.setTimeout(() => {
+        letGoTimerRef.current = null;
+        setCardLetGo(true);
+      }, option.durationMs * option.revealAt);
+
       return "opening";
     });
-  }, [option.durationMs, option.sound, reducedMotion]);
+  }, [option.durationMs, option.revealAt, option.sound, reducedMotion]);
 
   const handleSkip = useCallback((): void => {
     /* Also a tap, so also a gesture the browser will honour. */
@@ -322,9 +356,12 @@ export default function CoverShell({
         now log a warning and be read as false.
 
         The gate beside it is what stops the card's scroll reveals from arming
-        while it is down here out of sight. See hooks/useRevealGate.ts.
+        while it is down here out of sight, and it opens at the hand-off rather
+        than when the cover has gone — see `cardLetGo`. The card stays inert
+        until the cover has actually unmounted: it is arriving, not yet there.
+        See hooks/useRevealGate.ts.
       */}
-      <RevealGateContext value={!covered}>
+      <RevealGateContext value={!covered || cardLetGo}>
         <div className="contents" inert={covered}>
           {children}
         </div>

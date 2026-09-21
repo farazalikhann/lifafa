@@ -172,7 +172,13 @@ export default function CoverSection({
         minHeight,
         paddingTop: cardPx(pad),
         paddingBottom: cardPx(pad),
-        gap: `calc(1.5 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
+        /*
+          1.25rem between the names, the title, the flourish and the cue. It
+          was 1.5, which spaced four short lines as four separate statements
+          and stood the group taller than the names needed; this reads as one
+          composed block while each line still has its own breath.
+        */
+        gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
       {names.kind === "pair" ? (

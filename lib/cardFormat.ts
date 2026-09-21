@@ -497,7 +497,13 @@ export function revealClass(isInView: boolean): string {
  * the section revealed it never un-latches, so a guest who flicks past mid
  * stagger still arrives at a fully visible section. Nothing here can leave a
  * line stranded half revealed.
+ *
+ * The step is read from `--card-line-stagger` where an ancestor sets one, and
+ * the card's first screen sets it to nothing: that screen arrives in one piece
+ * as the invitation is opened, rather than a line at a time. See CardCanvas.
  */
 export function lineDelay(index: number): { transitionDelay: string } {
-  return { transitionDelay: `${index * 80}ms` };
+  return {
+    transitionDelay: `calc(${index} * var(--card-line-stagger, 80ms))`,
+  };
 }
