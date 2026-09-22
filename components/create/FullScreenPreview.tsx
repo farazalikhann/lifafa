@@ -166,9 +166,13 @@ function CoverReveal({
  * gives the host the other half of the answer — the card alone, at the width a
  * guest's device will give it, scrolled the way a guest will scroll it.
  *
- * Watermarked, because the point of showing the finished thing is to sell it.
- * The mark is drawn over the card rather than into it, so nothing about the
- * invitation itself changes when payment removes it.
+ * Watermarked until the invitation is paid for, and not a moment after. The
+ * mark is what tells a host what is still unfinished, so a host who has paid
+ * and still sees it reads it as a payment that failed. Whether to draw it is
+ * `isPaid`, which comes from the event row as the server loaded it — never from
+ * the card's own JSON, which travels through the browser. The mark is drawn
+ * over the card rather than into it, so nothing about the invitation itself
+ * changes when payment removes it.
  *
  * Rendered into `document.body` through a portal, not in place. Its trigger
  * lives inside the editor's `lg:sticky` preview column, and a sticky box opens
@@ -188,7 +192,17 @@ export default function FullScreenPreview({
   triggerRef,
   onClose,
   onPreviewLanguageChange,
+  isPaid,
 }: {
+  /**
+   * Whether this invitation has been paid for, as its event row says.
+   *
+   * Read on the server where the event is loaded and handed down, never taken
+   * from `config.isPaid` — that copy lives in the card's JSON, which the editor
+   * holds and the browser can change. False on /create, where there is no
+   * event yet and so nothing that could have been paid for.
+   */
+  isPaid: boolean;
   /** Already in the language being previewed; `config.language` names it. */
   draft: EventDraft;
   theme: Theme;
@@ -709,7 +723,7 @@ export default function FullScreenPreview({
             </div>
 
             <Watermark
-              show
+              show={!isPaid}
               language={config.language}
               accent={config.style.accentOverride ?? palette.accent}
               surface={palette.surface}

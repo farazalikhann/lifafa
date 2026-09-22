@@ -210,8 +210,14 @@ export default function InviteExperience({
 
         <div
           className="relative"
+          /*
+            The event's own is_paid, as the server page loaded it. The card's
+            JSON carries a copy that toStoredEvent overwrites from the column,
+            so the two agree today; reading the column is what keeps it from
+            depending on that.
+          */
           style={
-            config.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
+            event.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
           }
         >
           <CardCanvas
@@ -241,7 +247,7 @@ export default function InviteExperience({
           />
 
           <Watermark
-            show={!config.isPaid}
+            show={!event.isPaid}
             language={language}
             accent={config.style.accentOverride ?? palette.accent}
             surface={palette.surface}

@@ -364,6 +364,14 @@ function CreateEditor(): ReactElement {
       initialWeatherTheme={start.weatherTheme}
       initialQrCheckinEnabled={start.qrCheckinEnabled}
       onSave={handleSave}
+      /*
+        Always false here, and not taken from anything the browser holds: a
+        card on /create has no event row yet, so there is nothing that could
+        have been paid for, and the preview keeps its watermark. A stashed
+        card's own isPaid is overwritten for the same reason — see
+        restoredSnapshot.
+      */
+      isPaid={false}
       notice={
         <>
           {problem !== null ? (

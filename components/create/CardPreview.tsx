@@ -49,7 +49,10 @@ export default function CardPreview({
   weather,
   weatherTheme,
   onPreviewLanguageChange,
+  isPaid,
 }: {
+  /** The event's paid state as the server read it; see FullScreenPreview. */
+  isPaid: boolean;
   /**
    * The card already in the language being previewed — the editor resolves it
    * through cardInLanguage — so `config.language` is that language.
@@ -159,6 +162,7 @@ export default function CardPreview({
           triggerRef={triggerRef}
           onClose={closePreview}
           onPreviewLanguageChange={onPreviewLanguageChange}
+          isPaid={isPaid}
         />
       ) : null}
     </div>

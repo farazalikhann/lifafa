@@ -107,7 +107,10 @@ export default function PreviewBar({
   weather,
   weatherTheme,
   onPreviewLanguageChange,
+  isPaid,
 }: {
+  /** The event's paid state as the server read it; see FullScreenPreview. */
+  isPaid: boolean;
   /** Already in the language being previewed; see CardPreview. */
   draft: EventDraft;
   config: CardConfig;
@@ -216,6 +219,7 @@ export default function PreviewBar({
           triggerRef={triggerRef}
           onClose={closePreview}
           onPreviewLanguageChange={onPreviewLanguageChange}
+          isPaid={isPaid}
         />
       ) : null}
     </>

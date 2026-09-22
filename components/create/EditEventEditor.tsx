@@ -26,11 +26,14 @@ export default function EditEventEditor({
   eventId,
   initial,
   notice,
+  isPaid,
 }: {
   eventId: string;
   /** The stored event, as the editor takes it. */
   initial: EditorSnapshot;
   notice?: ReactNode;
+  /** The event row's is_paid, read by the server page that loaded it. */
+  isPaid: boolean;
 }): ReactElement {
   const router = useRouter();
 
@@ -102,6 +105,7 @@ export default function EditEventEditor({
       initialQrCheckinEnabled={initial.qrCheckinEnabled}
       onSave={handleSave}
       notice={notice}
+      isPaid={isPaid}
     />
   );
 }

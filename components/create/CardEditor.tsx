@@ -233,6 +233,18 @@ type CardEditorProps = {
    * already replied to this one.
    */
   notice?: ReactNode;
+  /**
+   * Whether this invitation has been paid for, which decides the watermark in
+   * the full screen preview.
+   *
+   * A prop of its own rather than `initialConfig.isPaid`, and the difference is
+   * where it was read. The edit route passes the event row's column as the
+   * server loaded it; /create passes false, because a card with no event yet
+   * has nothing that could have been paid for. The card's JSON also carries a
+   * copy, but that copy is state the browser holds, and a watermark decided by
+   * it is decided by the client.
+   */
+  isPaid: boolean;
 } & (
   | { mode: "create"; eventId?: never }
   /* The id is required exactly when editing, so Cancel always has somewhere to go. */
@@ -270,6 +282,7 @@ export default function CardEditor({
   initialQrCheckinEnabled,
   onSave,
   notice,
+  isPaid,
 }: CardEditorProps): ReactElement {
   const router = useRouter();
 
@@ -1092,6 +1105,7 @@ export default function CardEditor({
             coverAnimation={coverAnimation}
             weather={previewWeather}
             weatherTheme={weatherTheme}
+            isPaid={isPaid}
           />
         </div>
       </main>
@@ -1109,6 +1123,7 @@ export default function CardEditor({
         coverAnimation={coverAnimation}
         weather={previewWeather}
         weatherTheme={weatherTheme}
+        isPaid={isPaid}
       />
 
       {pendingHref !== null ? (

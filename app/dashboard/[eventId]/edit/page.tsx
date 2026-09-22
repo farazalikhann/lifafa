@@ -74,6 +74,13 @@ export default async function EditEventPage({
   return (
     <EditEventEditor
       eventId={event.id}
+      /*
+        The column, as this server page just read it under the host's own
+        session — not the card JSON's copy, which the editor carries in the
+        browser. It decides the watermark in the host's full screen preview, so
+        a host who has paid sees their card as their guests do.
+      */
+      isPaid={event.isPaid}
       initial={{
         draft: event.draft,
         /*
