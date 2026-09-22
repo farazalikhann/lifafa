@@ -41,38 +41,43 @@ interface ShowcaseCard {
 }
 
 /**
- * One row per card. Adding a sixth is one more line here and one more file in
- * /public/showcase.
+ * One row per card, in the order they are shown. Adding a sixth is one more
+ * line here and one more file in /public/showcase.
  *
- * The captions and descriptions name looks the editor really makes, but they
- * are written ahead of the screenshots: each line has to be checked against the
- * image that lands under its file name.
+ * Screenshots of real cards from the editor, with the phone's status bar cut
+ * off the top. Each caption and description is written from the image under
+ * its file name, so a new screenshot means new words here too.
+ *
+ * The two blessing pages lead, the dua first: they are the most finished-
+ * looking screens a card has, and they show the traditions at once. The three
+ * after them show what a guest can do on the card — scratch to find the venue,
+ * save the date — rather than more of how it looks.
  */
 const SHOWCASE: readonly ShowcaseCard[] = [
   {
     file: "card-1.jpg",
-    caption: "Muslim wedding, lantern ornaments",
-    alt: "A Muslim wedding invitation on a midnight blue card, with brass lanterns and a string of lights hanging above the couple's names.",
+    caption: "Muslim wedding, Bismillah and dua",
+    alt: "A Muslim wedding invitation opening with Bismillah in black calligraphy under hanging lanterns, crescent moons and string lights, in a frame of pink and ivory flowers, followed by Assalamu Alaikum and a dua for the couple in Arabic, transliteration and English.",
   },
   {
     file: "card-2.jpg",
-    caption: "Hindu wedding, marigold garland",
-    alt: "A Hindu wedding invitation with a marigold garland strung across the top of the card and the couple's names set beneath it.",
+    caption: "Hindu wedding, Shubh Vivah",
+    alt: "A Hindu wedding invitation in a frame of red roses and gold scrollwork, with Ganesh above Shubh Vivah in gold Devanagari lettering, then Shri Ganeshaya Namah and the Vakratunda shlok with its meaning in English.",
   },
   {
     file: "card-3.jpg",
-    caption: "Anand Karaj, gurudwara arch",
-    alt: "A Sikh Anand Karaj invitation with the couple's names framed by a gurudwara arch and pennants hanging at either side.",
+    caption: "Venue hidden under a scratch panel",
+    alt: "The venue on a Muslim wedding invitation half uncovered from a patterned scratch panel, with a Reveal without scratching link beneath it, under hanging lanterns in a frame of pink flowers.",
   },
   {
     file: "card-4.jpg",
-    caption: "Engagement, gold flower frame",
-    alt: "An engagement invitation on a cream card edged all the way round with a frame of gold flowers.",
+    caption: "Save the date to any calendar",
+    alt: "Add to Google Calendar and Download for Apple or Outlook links on a Muslim wedding invitation, under hanging lanterns in a frame of pink and ivory flowers.",
   },
   {
     file: "card-5.jpg",
-    caption: "Birthday, floating balloons",
-    alt: "A birthday invitation on a dark card with outlined balloons rising behind the name, the date and the venue.",
+    caption: "Red rose frame, scratch to reveal",
+    alt: "A Hindu wedding invitation in a frame of red roses and gold scrollwork, with a patterned scratch panel waiting to be scratched and a Reveal without scratching link below it.",
   },
 ];
 
@@ -104,14 +109,16 @@ const FRAME_WIDTH_PINNED = `min(${FRAME_WIDTH}px, calc((100svh - 142px) * 0.46 +
 const SCREEN_SIZES = "242px";
 
 /**
- * The screenshot's intrinsic size, at twice the size it is shown.
+ * The screenshots' own size: 738 × 1600 from the phone, less the 67px status
+ * bar cut off the top.
  *
  * Only the ratio reaches the layout — the frame fixes the width and the image
- * covers its screen — and a phone screenshot is about 9:19.5, so a capture from
- * a slightly different phone is cropped a few pixels rather than letterboxed.
+ * covers its screen. With the status bar gone these are a little wider than
+ * the frame's 9:19.5, so a few pixels come off each side rather than the card
+ * being letterboxed.
  */
-const IMAGE_WIDTH = 540;
-const IMAGE_HEIGHT = 1170;
+const IMAGE_WIDTH = 738;
+const IMAGE_HEIGHT = 1533;
 
 /** Runs before paint in the browser; an effect on the server, where it never runs. */
 const useIsomorphicLayoutEffect =
