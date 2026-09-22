@@ -2,11 +2,13 @@
 
 import { Fragment, type CSSProperties, type ReactElement } from "react";
 import { calligraphyGround } from "@/lib/calligraphy";
-import { butterflyStyle } from "@/lib/butterflies";
+import { butterflyStyle, leavesOn } from "@/lib/butterflies";
+import { petalStyle, petalsBurst, petalsFall } from "@/lib/petals";
 import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
 import ButterflyLayer from "@/components/card/decor/ButterflyLayer";
+import PetalLayer from "@/components/card/decor/PetalLayer";
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import ScrollFade, {
   scrollFadeDepth,
@@ -713,6 +715,9 @@ export default function CardCanvas({
 
   /* Normalised once here, so the gate below and the layer read the same thing. */
   const butterflies = butterflyStyle(config.butterflies);
+  /* A card saved before leaves had their own switch keeps them with its butterflies. */
+  const leaves = leavesOn(config.leaves, config.butterflies);
+  const petals = petalStyle(config.petals);
 
   /*
     How far down the screen the ornaments reach.
@@ -936,9 +941,29 @@ export default function CardCanvas({
         border paints its flowers, so at any depth below that one the flower
         frames simply swallowed it.
       */}
-      {butterflies !== "none" && config.decorMotion !== "none" ? (
+      {(butterflies !== "none" || leaves) && config.decorMotion !== "none" ? (
         <ButterflyLayer
           style={butterflies}
+          leaves={leaves}
+          intensity={config.decorIntensity}
+          bandHeight={bandHeight}
+        />
+      ) : null}
+
+      {/*
+        The rose petals, beside the butterflies and at their depth.
+
+        Keyed on the choice, so a host who picks it in the editor sees the
+        shower play again rather than only on the first load. The steady fall
+        is gated on the motion style the way the butterflies are; the shower on
+        opening is not, because it is the moment the card opens rather than the
+        card's movement, and it is over in a few seconds either way.
+      */}
+      {petals !== "none" ? (
+        <PetalLayer
+          key={petals}
+          burst={petalsBurst(petals)}
+          fall={petalsFall(petals) && config.decorMotion !== "none"}
           intensity={config.decorIntensity}
           bandHeight={bandHeight}
         />

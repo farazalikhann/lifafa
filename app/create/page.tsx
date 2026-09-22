@@ -89,6 +89,8 @@ const EMPTY_CONFIG: CardConfig = {
   decorMotion: DEFAULT_OCCASION.defaultMotion,
   decorIntensity: "normal",
   butterflies: "none",
+  leaves: false,
+  petals: "none",
   occasionId: DEFAULT_OCCASION_ID,
   traditionId: DEFAULT_TRADITION_ID,
   /* English until the host picks otherwise, at the very top of the editor. */

@@ -84,6 +84,16 @@ export type ButterflyStyle = "none" | "red" | "yellow" | "purple" | "mixed";
 export type ButterflyColour = Exclude<ButterflyStyle, "none" | "mixed">;
 
 /**
+ * Whether, and how, rose petals come down on the card.
+ *
+ * "open" is a single shower at the moment the card opens — as the cover hands
+ * over, or as the page loads on a card without one — that falls away and is
+ * gone within a few seconds. "fall" is a steady fall in the side margins for as
+ * long as the card is open. "both" is the two together.
+ */
+export type PetalStyle = "none" | "open" | "fall" | "both";
+
+/**
  * Which section, if any, a guest has to scratch open before they can read it.
  *
  * At most one. Two scratch panels on a single card turn an ornament into a
@@ -164,6 +174,21 @@ export interface CardConfig {
    * afternoon carry `true` or `false`.
    */
   butterflies: ButterflyStyle;
+  /**
+   * Whether leaves drift in the margins.
+   *
+   * Rode the butterfly switch until hosts asked for one without the other.
+   * Absent from every card saved before then, and on those cards the leaves
+   * came with the butterflies — so read it through `leavesOn` in
+   * lib/butterflies.ts, which gives such a card exactly what it had.
+   */
+  leaves: boolean;
+  /**
+   * Rose petals: a shower when the card opens, a steady fall in the margins,
+   * both, or none. Absent from older cards; read through `petalStyle` in
+   * lib/petals.ts, which turns a missing key into "none".
+   */
+  petals: PetalStyle;
   occasionId: OccasionId;
   traditionId: TraditionId;
   /**

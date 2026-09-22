@@ -28,8 +28,7 @@ export const BUTTERFLY_ASPECT = 180 / 110;
  *
  * One file and no pair, unlike the butterflies: a green leaf is a green leaf on
  * cream and on ink alike, so there is nothing for the host to choose between
- * and nothing the card has to decide. It rides the same switch the butterflies
- * do — see the note in components/card/decor/ButterflyLayer.tsx.
+ * and nothing the card has to decide. A switch of its own now — see `leavesOn`.
  *
  * Supplied as a JPEG on black, so it is cut out on luminance rather than on an
  * alpha channel it never had. That works here where it would not have worked
@@ -99,4 +98,24 @@ export function butterflyStyle(
   }
 
   return "none";
+}
+
+/**
+ * Whether the card's leaves are on, read out of a card config that may predate
+ * the switch.
+ *
+ * Leaves used to ride the butterfly switch, so a card saved before they had
+ * their own has no key here and drifted leaves whenever it flew butterflies.
+ * That is what it keeps doing: a missing key follows the butterflies, and only
+ * a card that has actually been given a value is read by it.
+ */
+export function leavesOn(
+  stored: boolean | null | undefined,
+  storedButterflies: ButterflyStyle | boolean | null | undefined,
+): boolean {
+  if (typeof stored === "boolean") {
+    return stored;
+  }
+
+  return butterflyStyle(storedButterflies) !== "none";
 }

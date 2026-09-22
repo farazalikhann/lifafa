@@ -767,3 +767,73 @@
     transform: scaleX(0.66);
   }
 }
+
+/* --- The rose petals. Driven by PetalLayer. --- */
+
+/*
+  The steady fall, down one margin, top to bottom of the pinned band.
+
+  In `cqh` — shares of the band, which PetalLayer makes a size container — so a
+  petal crosses a phone and a laptop-tall card in the same number of seconds.
+  Starts and ends just outside it, where the band's clip hides the wrap-around.
+  Linear on purpose: the sway beneath it is what gives the fall its give.
+*/
+@keyframes lifafa-petal-fall {
+  from {
+    transform: translate3d(0, -12cqh, 0);
+  }
+  to {
+    transform: translate3d(0, 108cqh, 0);
+  }
+}
+
+/*
+  The drift from side to side as it falls, run alternate so it rocks back.
+  Held to 8px either way — the petal is in the margin, and the text is the far
+  side of it.
+*/
+@keyframes lifafa-petal-sway {
+  from {
+    transform: translate3d(-8px, 0, 0) rotate(-18deg);
+  }
+  to {
+    transform: translate3d(8px, 0, 0) rotate(18deg);
+  }
+}
+
+/*
+  The shower as a card opens: thrown up and out from the middle, then let fall.
+
+  The two halves have different curves, set per keyframe — out fast and slowing
+  toward the top of the throw, then gathering speed as it drops, which is what
+  the eye reads as weight. It fades through the last quarter, so the shower is
+  gone before it has fallen far past the names. The distances come in as
+  unitless custom properties on each petal and are scaled into band units here.
+*/
+@keyframes lifafa-petal-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  8% {
+    opacity: 1;
+  }
+  32% {
+    transform: translate3d(
+        calc(var(--dx) * 0.75cqw),
+        calc(var(--up) * 1cqh),
+        0
+      )
+      scale(1) rotate(calc(var(--spin) * 0.3deg));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6);
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--dx) * 1cqw), calc(var(--down) * 1cqh), 0)
+      scale(0.9) rotate(calc(var(--spin) * 1deg));
+  }
+}

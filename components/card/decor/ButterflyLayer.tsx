@@ -44,15 +44,13 @@ import type { ButterflyStyle, DecorIntensity } from "@/types/card";
  * edge this cut-out has, cannot be stopped for a guest who has asked for less
  * movement, and every copy of one beats in the same rhythm at the same moment.
  *
- * LEAVES RIDE THE SAME SWITCH, and that is the decision rather than an
- * oversight. A leaf is not a second thing to choose: it is what the butterflies
- * are flying through, and a card that offered the two separately would be
- * asking the host to compose a scene rather than to pick a colour. So the
- * butterfly switch turns on the air, and one to three leaves drift in it
- * depending on the same Amount the butterflies read. They take the same margins
- * and the same shadow, and their paths are cut as short on the horizontal as
- * the butterflies' are — this layer is above the text, and the margin is all
- * that keeps either of them off it.
+ * LEAVES ARE DRAWN HERE TOO, on a switch of their own. They rode the butterfly
+ * switch at first, as the air the butterflies fly through; hosts asked for one
+ * without the other, so each is now its own choice and a card may carry either
+ * or both. One to three leaves drift depending on the same Amount the
+ * butterflies read. They take the same margins and the same shadow, and their
+ * paths are cut as short on the horizontal as the butterflies' are — this layer
+ * is above the text, and the margin is all that keeps either of them off it.
  *
  * WHICH BUTTERFLY IS THE HOST'S, not this file's. A card has a palette, and
  * three colours of insect arriving unasked is a decision made on the host's
@@ -319,11 +317,17 @@ function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
 
 export default function ButterflyLayer({
   style,
+  leaves,
   intensity,
   bandHeight,
 }: {
-  /** Which the host picked. "none" never reaches here — the canvas gates on it. */
-  style: Exclude<ButterflyStyle, "none">;
+  /**
+   * Which butterflies the host picked, or "none" on a card that carries only
+   * leaves. The canvas does not mount this layer when both are off.
+   */
+  style: ButterflyStyle;
+  /** Whether leaves drift with them, or on their own. */
+  leaves: boolean;
   /** How many fly — the host's existing "Amount", read rather than duplicated. */
   intensity: DecorIntensity;
   /**
@@ -346,7 +350,9 @@ export default function ButterflyLayer({
     return null;
   }
 
-  const sources = butterflySources(style);
+  const sources = style === "none" ? [] : butterflySources(style);
+  const flyerCount = style === "none" ? 0 : COUNT[intensity];
+  const leafCount = leaves ? LEAF_COUNT[intensity] : 0;
 
   return (
     <div
@@ -357,7 +363,7 @@ export default function ButterflyLayer({
         className="sticky top-0 w-full overflow-clip"
         style={{ height: bandHeight }}
       >
-        {FLYERS.slice(0, COUNT[intensity]).map((flyer, index) => (
+        {FLYERS.slice(0, flyerCount).map((flyer, index) => (
           <Butterfly
             key={`${flyer.left}-${flyer.top}`}
             flyer={flyer}
@@ -371,7 +377,7 @@ export default function ButterflyLayer({
           />
         ))}
 
-        {LEAVES.slice(0, LEAF_COUNT[intensity]).map((drifter) => (
+        {LEAVES.slice(0, leafCount).map((drifter) => (
           <Leaf key={`leaf-${drifter.left}-${drifter.top}`} drifter={drifter} />
         ))}
       </div>

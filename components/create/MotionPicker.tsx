@@ -4,12 +4,16 @@ import { useId, type ReactElement } from "react";
 import {
   BUTTERFLY_ASPECT,
   BUTTERFLY_STYLES,
+  LEAF_ASPECT,
+  LEAF_SRC,
   butterflySources,
 } from "@/lib/butterflies";
+import { PETALS, PETAL_STYLES, petalsBurst, petalsFall } from "@/lib/petals";
 import type {
   ButterflyStyle,
   DecorIntensity,
   DecorMotion,
+  PetalStyle,
 } from "@/types/card";
 
 const MOTIONS: readonly { id: DecorMotion; label: string }[] = [
@@ -63,22 +67,79 @@ function ButterflyChip({ style }: { style: ButterflyStyle }): ReactElement {
   );
 }
 
+/** The leaf on its chip, as the butterflies are on theirs. */
+function LeafChip(): ReactElement {
+  return (
+    <img
+      src={LEAF_SRC}
+      alt=""
+      aria-hidden="true"
+      width={20}
+      height={Math.round(20 / LEAF_ASPECT)}
+      className="block max-w-none"
+    />
+  );
+}
+
+/** Both petals, overlapping, on every chip but "Off". */
+function PetalChip(): ReactElement {
+  return (
+    <span aria-hidden="true" className="flex items-center -space-x-1.5">
+      {PETALS.map((petal) => (
+        <img
+          key={petal.src}
+          src={petal.src}
+          alt=""
+          width={14}
+          height={Math.round(14 / petal.aspect)}
+          className="block max-w-none"
+        />
+      ))}
+    </span>
+  );
+}
+
+function SubHeading({ children }: { children: string }): ReactElement {
+  return (
+    <h4 className="text-[0.625rem] tracking-[0.18em] text-[var(--lifafa-muted)] uppercase">
+      {children}
+    </h4>
+  );
+}
+
 export default function MotionPicker({
   motion,
   intensity,
   butterflies,
+  leaves,
+  petals,
   onMotionChange,
   onIntensityChange,
   onButterfliesChange,
+  onLeavesChange,
+  onPetalsChange,
 }: {
   motion: DecorMotion;
   intensity: DecorIntensity;
   butterflies: ButterflyStyle;
   onMotionChange: (motion: DecorMotion) => void;
   onIntensityChange: (intensity: DecorIntensity) => void;
+  leaves: boolean;
+  petals: PetalStyle;
   onButterfliesChange: (butterflies: ButterflyStyle) => void;
+  onLeavesChange: (leaves: boolean) => void;
+  onPetalsChange: (petals: PetalStyle) => void;
 }): ReactElement {
-  const butterflyHintId = useId();
+  const elementsHintId = useId();
+
+  /*
+    What "Motion style: None" is holding still, named so the host is not left
+    looking for it in the preview. The shower on opening is not among them —
+    it is the card opening, not the card moving.
+  */
+  const held =
+    motion === "none" &&
+    (butterflies !== "none" || leaves || petalsFall(petals));
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
@@ -126,54 +187,99 @@ export default function MotionPicker({
 
       {/*
         In this panel and not in the border grid beside it, because what a host
-        is turning on here is movement. It reads the Amount above rather than
-        bringing a count of its own.
+        is turning on here is movement. Every row reads the Amount above rather
+        than bringing a count of its own.
 
-        Pills with the real cut-out on them, not a switch and not a row of
-        colour swatches: a host is choosing an insect, and the border grid
-        beside this one already settled that the honest control for something
-        you can look at is a picture of it.
+        Pills with the real cut-out on them, not switches and not colour
+        swatches: a host is choosing a butterfly, a leaf or a petal, and the
+        border grid beside this one already settled that the honest control for
+        something you can look at is a picture of it.
       */}
-      <div className="flex flex-col gap-2 border-t border-[var(--lifafa-hairline)] pt-3">
+      <div
+        className="flex flex-col gap-3 border-t border-[var(--lifafa-hairline)] pt-3"
+        aria-describedby={elementsHintId}
+      >
         <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-          Butterflies
+          Floating elements
         </h3>
 
-        <div className="flex flex-wrap gap-2" aria-describedby={butterflyHintId}>
-          {BUTTERFLY_STYLES.map((option) => {
-            const isSelected = option.id === butterflies;
+        <div className="flex flex-col gap-2">
+          <SubHeading>Butterflies</SubHeading>
+          <div className="flex flex-wrap gap-2">
+            {BUTTERFLY_STYLES.map((option) => {
+              const isSelected = option.id === butterflies;
 
-            return (
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onButterfliesChange(option.id)}
+                  className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                >
+                  {option.id === "none" ? null : (
+                    <ButterflyChip style={option.id} />
+                  )}
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <SubHeading>Leaves</SubHeading>
+          <div className="flex flex-wrap gap-2">
+            {[false, true].map((isOn) => (
               <button
-                key={option.id}
+                key={String(isOn)}
                 type="button"
-                aria-pressed={isSelected}
-                onClick={() => onButterfliesChange(option.id)}
-                className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                aria-pressed={leaves === isOn}
+                onClick={() => onLeavesChange(isOn)}
+                className={`flex items-center gap-1.5 ${pillClass(leaves === isOn)}`}
               >
-                {option.id === "none" ? null : (
-                  <ButterflyChip style={option.id} />
-                )}
-                {option.label}
+                {isOn ? <LeafChip /> : null}
+                {isOn ? "On" : "Off"}
               </button>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <SubHeading>Rose petals</SubHeading>
+          <div className="flex flex-wrap gap-2">
+            {PETAL_STYLES.map((option) => {
+              const isSelected = option.id === petals;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onPetalsChange(option.id)}
+                  className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                >
+                  {option.id === "none" ? null : <PetalChip />}
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/*
-          The second sentence only when it is true. A colour picked while
-          nothing flies is the one state a host cannot explain to themselves,
-          and the card is right to hold still — so the panel says so here rather
-          than letting them go looking in the preview.
+          Each sentence only when it is true, so the hint describes the card in
+          front of the host rather than every option at once.
         */}
         <p
-          id={butterflyHintId}
+          id={elementsHintId}
           className="text-xs leading-relaxed text-[var(--lifafa-muted)]"
         >
-          A few small ones fly in the margins, clear of your writing.
-          {motion === "none" && butterflies !== "none"
-            ? " Motion style is None, so they are holding still for now."
+          They stay in the margins, clear of your writing.
+          {petalsBurst(petals)
+            ? " Petals shower once as the card opens, then fall away."
             : ""}
+          {held ? " Motion style is None, so they are holding still for now." : ""}
         </p>
       </div>
     </section>

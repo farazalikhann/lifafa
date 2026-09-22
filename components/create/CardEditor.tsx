@@ -30,7 +30,8 @@ import TranslationPanel from "@/components/create/TranslationPanel";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
-import { butterflyStyle } from "@/lib/butterflies";
+import { butterflyStyle, leavesOn } from "@/lib/butterflies";
+import { petalStyle } from "@/lib/petals";
 import { deepEqual } from "@/lib/deepEqual";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
@@ -49,6 +50,7 @@ import { getPalette } from "@/lib/palettes";
 import { getOccasion } from "@/lib/occasions";
 import type {
   ButterflyStyle,
+  PetalStyle,
   CardBorderStyle,
   CardConfig,
   CardLanguage,
@@ -109,6 +111,8 @@ interface EditorState {
   decorMotion: DecorMotion;
   decorIntensity: DecorIntensity;
   butterflies: ButterflyStyle;
+  leaves: boolean;
+  petals: PetalStyle;
   occasionId: OccasionId;
   traditionId: TraditionId;
   language: CardLanguage;
@@ -144,6 +148,9 @@ function toState(snapshot: EditorSnapshot): EditorState {
     decorIntensity: config.decorIntensity,
     /* A key that may be missing, a boolean, or the colour — see butterflyStyle. */
     butterflies: butterflyStyle(config.butterflies),
+    /* Missing on older cards; see leavesOn and petalStyle. */
+    leaves: leavesOn(config.leaves, config.butterflies),
+    petals: petalStyle(config.petals),
     occasionId: config.occasionId,
     traditionId: config.traditionId,
     /*
@@ -197,6 +204,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       decorMotion: state.decorMotion,
       decorIntensity: state.decorIntensity,
       butterflies: state.butterflies,
+      leaves: state.leaves,
+      petals: state.petals,
       occasionId: state.occasionId,
       traditionId: state.traditionId,
       language: state.language,
@@ -332,6 +341,8 @@ export default function CardEditor({
     initial.decorIntensity,
   );
   const [butterflies, setButterflies] = useState(initial.butterflies);
+  const [leaves, setLeaves] = useState(initial.leaves);
+  const [petals, setPetals] = useState(initial.petals);
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
@@ -552,6 +563,8 @@ export default function CardEditor({
     decorMotion,
     decorIntensity,
     butterflies,
+    leaves,
+    petals,
     occasionId,
     traditionId,
     language,
@@ -1005,9 +1018,13 @@ export default function CardEditor({
                 motion={decorMotion}
                 intensity={decorIntensity}
                 butterflies={butterflies}
+                leaves={leaves}
+                petals={petals}
                 onMotionChange={setDecorMotion}
                 onIntensityChange={setDecorIntensity}
                 onButterfliesChange={setButterflies}
+                onLeavesChange={setLeaves}
+                onPetalsChange={setPetals}
               />
               {/*
                 The ornament had a tab of its own and does not need one. Which
