@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import Image from "next/image";
 import DemoPhone, { Tap } from "@/components/landing/demos/DemoPhone";
 import styles from "./CoverDemo.module.css";
 
@@ -11,6 +12,11 @@ import styles from "./CoverDemo.module.css";
  * paper tones lib/coverPalette.ts works out for the Rose theme. The same
  * stages in the same order: the seal pops, the flap swings over towards the
  * guest, the letter rises, the envelope falls away, and the card is there.
+ *
+ * THE CARD IS A REAL ONE: the dua page from the showcase, a screenshot of a
+ * card made in the editor, so what the envelope opens onto is an invitation
+ * rather than a drawing of one. Its cream ground is close to the Rose theme's,
+ * which is why the paper above still reads as the same card's envelope.
  *
  * The real cover changes which side of the letter the flap is on by stepping
  * its z-index the instant it is edge on. That is not transform or opacity, so
@@ -59,20 +65,20 @@ function FlapShape({ fill }: { fill: string }): ReactElement {
 export default function CoverDemo(): ReactElement {
   return (
     <DemoPhone className={styles.stage}>
-      {/* The card, underneath everything, waiting to be uncovered. */}
+      {/*
+        The card, underneath everything, waiting to be uncovered: Bismillah,
+        Assalamu Alaikum and the dua. No alt text, because the whole demo is
+        hidden from assistive technology and the caption beside it carries the
+        meaning. Sized for the phone's screen, which is at most 176px wide.
+      */}
       <div className={styles.card}>
-        <span className={styles.cardBorder} />
-        <p className={styles.kicker}>Together with their families</p>
-        <p className={styles.name}>Aarav</p>
-        <p className={styles.amp}>&amp;</p>
-        <p className={styles.name}>Meera</p>
-        <div className={styles.divider}>
-          <span className={styles.rule} />
-          <span className={styles.diamond} />
-          <span className={styles.rule} />
-        </div>
-        <p className={styles.date}>Saturday, 12 December</p>
-        <p className={styles.venue}>Rambagh Palace, Jaipur</p>
+        <Image
+          src="/showcase/card-1.jpg"
+          alt=""
+          fill
+          sizes="(min-width: 64rem) 176px, 136px"
+          className={styles.photo}
+        />
       </div>
 
       {/* What the cover prints under the envelope. */}

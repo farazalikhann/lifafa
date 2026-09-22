@@ -9,7 +9,8 @@
     32–44%  the flap swings over towards the guest (edge on at 38%)
     43–55%  the letter rises out of the pocket
     56–72%  the envelope falls away and the letter dissolves
-    64–76%  the card is there, once the envelope is mostly gone
+    64–76%  the card is there — the dua page from the showcase — once the
+          envelope is mostly gone
     88–100% held, faded, reset, faded back in
 
   The box positions are the cover's 400 × 300 grid as percentages, so the
@@ -45,80 +46,15 @@
 .card {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2em 1.6em;
-  text-align: center;
-  color: #2b1d1f;
 }
 
-/* Clear of the camera cut-out at the top. */
-.cardBorder {
-  position: absolute;
-  inset: 2.2em 0.9em 1.1em;
-  border: 1px solid rgb(178 62 86 / 0.5);
-  border-radius: 0.5em;
-}
-
-.kicker {
-  max-width: 16em;
-  margin-bottom: 1.3em;
-  font-size: 0.55em;
-  line-height: 1.5;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #8b7a72;
-}
-
-.name {
-  font-family: var(--font-display);
-  font-size: 2.3em;
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-}
-
-.amp {
-  font-family: var(--font-display);
-  font-size: 1.4em;
-  font-style: italic;
-  line-height: 1.2;
-  color: #b23e56;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 0.45em;
-  margin: 1.1em 0 0.9em;
-  color: #b23e56;
-}
-
-.rule {
-  width: 1.8em;
-  height: 1px;
-  background-color: currentColor;
-  opacity: 0.6;
-}
-
-.diamond {
-  width: 0.5em;
-  height: 0.5em;
-  background-color: currentColor;
-  transform: rotate(45deg);
-}
-
-.date {
-  font-size: 0.78em;
-  font-weight: 500;
-}
-
-.venue {
-  margin-top: 0.3em;
-  font-size: 0.72em;
-  color: #8b7a72;
+/*
+  The screenshot fills the screen from the top, where the lanterns and the
+  Bismillah are; a little of its foot is what gives when the screen is shorter.
+*/
+.photo {
+  object-fit: cover;
+  object-position: top;
 }
 
 /* --- The cover ----------------------------------------------------------- */
