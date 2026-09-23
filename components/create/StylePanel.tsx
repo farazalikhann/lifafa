@@ -46,6 +46,10 @@ const BORDER_STYLES: readonly { id: CardBorderStyle; label: string }[] = [
   { id: "flowerCrimson", label: "Flower crimson" },
   { id: "flowerBlue", label: "Flower blue" },
   { id: "flowerBlush", label: "Flower blush" },
+  { id: "flowerIvory", label: "Slim ivory" },
+  { id: "flowerPearl", label: "Slim pearl" },
+  { id: "flowerNoir", label: "Slim noir" },
+  { id: "flowerRosegold", label: "Slim rose gold" },
 ];
 
 /** Shared line work for the miniatures below. */

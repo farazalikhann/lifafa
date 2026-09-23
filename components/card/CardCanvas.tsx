@@ -32,6 +32,7 @@ import CustomSection from "@/components/card/sections/CustomSection";
 import AddToCalendar from "@/components/card/AddToCalendar";
 import WeatherPanel from "@/components/card/WeatherPanel";
 import MusicToggle from "@/components/card/MusicToggle";
+import ScrollCue from "@/components/card/ScrollCue";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
@@ -1105,7 +1106,7 @@ export default function CardCanvas({
                 one screen, one thing.
               */
               <div
-                className="flex flex-col items-center justify-center gap-4 px-7 text-center"
+                className="relative flex flex-col items-center justify-center gap-4 px-7 text-center"
                 style={
                   headIsFirstScreen
                     ? {
@@ -1163,6 +1164,30 @@ export default function CardCanvas({
                     pack={pack}
                     theme={effectiveTheme}
                     sizeClass="text-[1.375rem] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem))]"
+                  />
+                ) : null}
+
+                {/*
+                  The screen a guest lands on says nothing of what is under it —
+                  the cover and its own cue are a whole swipe away. So the cue
+                  comes up here, in the empty band this screen keeps under its
+                  content (the lift), and just above the bottom dissolve, which
+                  is where `headPadBottom` ends.
+                */}
+                {headIsFirstScreen ? (
+                  <ScrollCue
+                    label={copy.cover.scrollCue}
+                    textColor={effectiveTheme.textMuted}
+                    accent={effectiveTheme.accent}
+                    /*
+                      Centred in the lift band rather than sat on its floor, so
+                      it is clear of anything pinned to the foot of the screen —
+                      the preview's watermark pill among them. 3.5rem is the
+                      cue's own height, word and line together.
+                    */
+                    style={{
+                      bottom: `calc(${cardPx(headPadBottom)} + max(0px, (${firstScreenLift} - 3.5rem) / 2))`,
+                    }}
                   />
                 ) : null}
               </div>

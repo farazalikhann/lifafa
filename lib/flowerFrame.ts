@@ -77,6 +77,11 @@ interface FrameArt {
    * usual 28px would be read through one.
    */
   clearance: { x: number; y: number };
+  /**
+   * Rendered CSS pixels per source pixel on a card, when it is not the shared
+   * FLOWER_FRAME_SCALE. Only the slim frames set it — see their note below.
+   */
+  scale?: number;
 }
 
 const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
@@ -156,6 +161,68 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
     slice: { top: 410, right: 494, bottom: 416, left: 494 },
     clearance: { x: 87, y: 104 },
   },
+
+  /*
+    The four slim frames: corner bouquets on a fine gold rule, drawn to leave
+    the writing its room. Hosts asked for a border that does not cost the card
+    its column, and these are that — at their own 0.2 rather than the shared
+    0.3, each stands the text only 6 to 10px further in than a card with no
+    border at all.
+
+    CUT DIFFERENTLY FROM THE EIGHT ABOVE, because they are drawn differently.
+    Those have garlands the full height of each side, so any stretch of it can
+    repeat. These have a bouquet at each corner, sprigs part way down, and a bare
+    gold rule between — so each horizontal pair is placed around the plainest
+    120-row window of the side (the one whose widest reach is smallest), and
+    nudged a few rows either way for the best seam. That is why the tops and
+    bottoms here differ by so much: the plain stretch is wherever the artwork
+    put it, and everything either side of it is a fixed corner piece.
+
+    THE RULE'S MIDDLE ORNAMENT IS GONE from the published files. The strip
+    between the two vertical cuts is stretched to the card's width, and a gold
+    medallion in it came out as a gold smear; the plain rule beside it was
+    copied across instead, so the top and bottom now stretch cleanly to any
+    width. The side medallions survive, in the corner pieces.
+
+    None of the four came with an alpha channel. Two are painted on cream paper
+    with a warm glow round the flowers, one is on black, one had a checkerboard
+    baked in as though it were transparency. Each was cut on a flood fill from
+    the middle rather than on a threshold — a cream rose is the colour of the
+    paper, and only the fact that it is fenced in by its own shading keeps it —
+    and the glow was grown out from the paper through smooth, warm pixels only,
+    and kept as a soft shadow rather than deleted. The ivory one is dense enough
+    that some paper stays between its flowers; on the cream cards it was drawn
+    for, that reads as the card.
+  */
+
+  /* Crimson and ivory roses with pink blossom and gold scrollwork. */
+  flowerIvory: {
+    src: "/borders/flower-ivory.webp",
+    slice: { top: 614, right: 466, bottom: 797, left: 466 },
+    clearance: { x: 36, y: 67 },
+    scale: 0.2,
+  },
+  /* Ivory and deep red roses, white blossom, gold leaves. */
+  flowerPearl: {
+    src: "/borders/flower-pearl.webp",
+    slice: { top: 932, right: 470, bottom: 504, left: 470 },
+    clearance: { x: 35, y: 61 },
+    scale: 0.2,
+  },
+  /* White roses and sage leaves on a single gold rule. The finest of all. */
+  flowerNoir: {
+    src: "/borders/flower-noir.webp",
+    slice: { top: 289, right: 458, bottom: 1144, left: 458 },
+    clearance: { x: 30, y: 34 },
+    scale: 0.2,
+  },
+  /* Red and blush roses at the corners, a thin gold and white rule between. */
+  flowerRosegold: {
+    src: "/borders/flower-rosegold.webp",
+    slice: { top: 988, right: 464, bottom: 440, left: 464 },
+    clearance: { x: 30, y: 38 },
+    scale: 0.2,
+  },
 };
 
 /**
@@ -188,6 +255,11 @@ export function isPhotoBorder(
   style: CardBorderStyle,
 ): style is PhotoBorderStyle {
   return style in FRAMES;
+}
+
+/** The scale this frame is drawn at on a card. */
+export function flowerFrameScale(style: PhotoBorderStyle): number {
+  return FRAMES[style].scale ?? FLOWER_FRAME_SCALE;
 }
 
 /** How far the rest of the card must stay clear of this frame, in CSS px. */

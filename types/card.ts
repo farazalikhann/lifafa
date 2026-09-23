@@ -69,7 +69,11 @@ export type PhotoBorderStyle =
   | "flowerRuby"
   | "flowerCrimson"
   | "flowerBlue"
-  | "flowerBlush";
+  | "flowerBlush"
+  | "flowerIvory"
+  | "flowerPearl"
+  | "flowerNoir"
+  | "flowerRosegold";
 
 /**
  * The butterflies a host can put on their card.

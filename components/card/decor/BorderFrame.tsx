@@ -2,8 +2,8 @@
 
 import { useId, type ReactElement, type ReactNode } from "react";
 import {
-  FLOWER_FRAME_SCALE,
   flowerFrameClearance,
+  flowerFrameScale,
   flowerFrameStyle,
   isPhotoBorder,
 } from "@/lib/flowerFrame";
@@ -658,7 +658,7 @@ function FlowerFrame({
       <div className="sticky top-0 overflow-clip" style={{ height: bandHeight }}>
         <div
           className="absolute inset-0"
-          style={flowerFrameStyle(style, FLOWER_FRAME_SCALE)}
+          style={flowerFrameStyle(style, flowerFrameScale(style))}
         />
       </div>
     </div>
