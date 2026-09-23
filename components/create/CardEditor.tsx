@@ -31,6 +31,7 @@ import WeatherPicker from "@/components/create/WeatherPicker";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
 import type { Accordion } from "@/components/editor/CollapsibleSection";
+import PresetPicker from "@/components/editor/PresetPicker";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalStyle } from "@/lib/petals";
 import { deepEqual } from "@/lib/deepEqual";
@@ -49,6 +50,8 @@ import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { getPalette } from "@/lib/palettes";
 import { getOccasion } from "@/lib/occasions";
+import type { DesignState } from "@/lib/designDefaults";
+import { applyPreset, type Preset } from "@/lib/presets";
 import type {
   ButterflyStyle,
   PetalStyle,
@@ -408,12 +411,19 @@ export default function CardEditor({
     Which section of each tab is unfolded, lifted here for the same reason as
     `openSubEventId`: the panels unmount on every tab switch, and a host coming
     back to Design should find the section they left open. Each tab starts on
-    its first section. One id per tab, so opening a section closes the last.
-    Nothing here is saved; it is where the host is looking, like `tab`.
+    its first section — Design on the presets for a new card, where starting
+    from a ready-made look is the likeliest first move, and on Typography for a
+    saved one, whose host has come back to change something in particular. One
+    id per tab, so opening a section closes the last. Nothing here is saved; it
+    is where the host is looking, like `tab`.
   */
   const [openSections, setOpenSections] = useState<
     Record<AccordionTabId, string | null>
-  >({ design: "typography", structure: "sections", extras: "cover" });
+  >({
+    design: mode === "create" ? "presets" : "typography",
+    structure: "sections",
+    extras: "cover",
+  });
 
   const accordionFor = (tabId: AccordionTabId): Accordion => ({
     openId: openSections[tabId],
@@ -579,6 +589,46 @@ export default function CardEditor({
   const setAccent = useCallback((accentOverride: string | null) => {
     setStyle((previous) => ({ ...previous, accentOverride }));
   }, []);
+
+  /*
+    The design values, gathered for the presets. A preset reads this and hands
+    back the next one; nothing outside it — the draft, the sections, the
+    replies — is in reach.
+  */
+  const design: DesignState = {
+    style,
+    borderStyle,
+    decorMotion,
+    decorIntensity,
+    butterflies,
+    leaves,
+    petals,
+    coverAnimation,
+    traditionId,
+    ornamentConfig,
+  };
+
+  /**
+   * A preset click: every design value it names, set at once.
+   *
+   * Through the same setters the controls use, so a preset leaves the card in
+   * a state a host could have reached by hand. applyPreset keeps the rule
+   * handleTraditionSelect keeps — a new tradition starts its pack empty.
+   */
+  const handleApplyPreset = (preset: Preset): void => {
+    const next = applyPreset(design, preset);
+
+    setStyle(next.style);
+    setBorderStyle(next.borderStyle);
+    setDecorMotion(next.decorMotion);
+    setDecorIntensity(next.decorIntensity);
+    setButterflies(next.butterflies);
+    setLeaves(next.leaves);
+    setPetals(next.petals);
+    setCoverAnimation(next.coverAnimation);
+    setTraditionId(next.traditionId);
+    setOrnamentConfig(next.ornamentConfig);
+  };
 
   /* The card as it stands, and the only place this component builds one. */
   const snapshot = toSnapshot({
@@ -1029,6 +1079,12 @@ export default function CardEditor({
               would scatter it.
             */
             <div className="flex min-w-0 flex-col gap-3">
+              <PresetPicker
+                design={design}
+                occasionId={occasionId}
+                onApply={handleApplyPreset}
+                accordion={accordionFor("design")}
+              />
               <StylePanel
                 style={style}
                 /* Resolved, so the specimen shows the same line the cover will. */

@@ -83,15 +83,18 @@ const PREVIEW_CORNERS: readonly string[] = [
  * at a size a host can actually read, arranged the way that style arranges
  * itself: all four sides, the corners only, or the top alone.
  */
-function BorderPreview({
+export function BorderPreview({
   id,
+  className = "h-11 w-full",
 }: {
   id: Exclude<CardBorderStyle, PhotoBorderStyle>;
+  /** The chip's size; the preset cards draw it larger. */
+  className?: string;
 }): ReactElement {
   return (
     <svg
       viewBox="0 0 64 44"
-      className="h-11 w-full"
+      className={className}
       preserveAspectRatio="xMidYMid meet"
       role="presentation"
       aria-hidden="true"
@@ -229,13 +232,22 @@ function BorderPreview({
  * cut at different depths and one number would serve none of them — see
  * flowerChipScale.
  */
-function FlowerPreview({ style }: { style: PhotoBorderStyle }): ReactElement {
+export function FlowerPreview({
+  style,
+  className = "block h-11 w-full",
+  scale = flowerChipScale(style),
+}: {
+  style: PhotoBorderStyle;
+  className?: string;
+  /** The chip's scale unless given; the preset cards are taller than a chip. */
+  scale?: number;
+}): ReactElement {
   return (
     <span
       role="presentation"
       aria-hidden="true"
-      className="block h-11 w-full"
-      style={flowerFrameStyle(style, flowerChipScale(style))}
+      className={className}
+      style={flowerFrameStyle(style, scale)}
     />
   );
 }

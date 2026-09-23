@@ -32,11 +32,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
-import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
+import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { DEFAULT_WEATHER_THEME } from "@/lib/weatherThemes";
-import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
-import { DEFAULT_OCCASION_ID, DEFAULT_TRADITION_ID, getOccasion } from "@/lib/occasions";
+import { DEFAULT_OCCASION_ID, getOccasion } from "@/lib/occasions";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
@@ -73,10 +72,12 @@ const EMPTY_DRAFT: EventDraft = {
 /**
  * The card an empty editor starts from.
  *
- * The defaults are all here rather than inside CardEditor, because "what a new
+ * The defaults are here rather than inside CardEditor, because "what a new
  * card looks like" is a fact about creating one: the editor's job is to show
  * whatever it is handed, whether that is this or a wedding somebody saved eight
- * months ago.
+ * months ago. How it looks comes from DEFAULT_DESIGN in lib/designDefaults.ts,
+ * which the quick presets also measure an untouched card against — one copy,
+ * so the two cannot disagree about what "untouched" is.
  */
 const EMPTY_CONFIG: CardConfig = {
   themeId: DEFAULT_OCCASION.defaultThemeId,
@@ -86,28 +87,22 @@ const EMPTY_CONFIG: CardConfig = {
     id,
     enabled: true,
   })),
-  decorMotion: DEFAULT_OCCASION.defaultMotion,
-  decorIntensity: "normal",
-  butterflies: "none",
-  leaves: false,
-  petals: "none",
+  decorMotion: DEFAULT_DESIGN.decorMotion,
+  decorIntensity: DEFAULT_DESIGN.decorIntensity,
+  butterflies: DEFAULT_DESIGN.butterflies,
+  leaves: DEFAULT_DESIGN.leaves,
+  petals: DEFAULT_DESIGN.petals,
   occasionId: DEFAULT_OCCASION_ID,
-  traditionId: DEFAULT_TRADITION_ID,
+  traditionId: DEFAULT_DESIGN.traditionId,
   /* English until the host picks otherwise, at the very top of the editor. */
   language: DEFAULT_CARD_LANGUAGE,
   /* On by default: a headcount is what most hosts are here for. */
   rsvpEnabled: true,
   /* Off by default: a card that hides its own date has to be asked for. */
   scratchTarget: "none",
-  /* Off by default: a border is an addition to the card, not a part of it. */
-  borderStyle: "none",
-  style: {
-    fontPairId: DEFAULT_FONT_PAIR_ID,
-    paletteId: DEFAULT_OCCASION.defaultPaletteId,
-    density: "comfortable",
-    accentOverride: null,
-  },
-  ornamentConfig: DEFAULT_ORNAMENT_CONFIG,
+  borderStyle: DEFAULT_DESIGN.borderStyle,
+  style: DEFAULT_DESIGN.style,
+  ornamentConfig: DEFAULT_DESIGN.ornamentConfig,
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
   musicUrl: null,
   /* Nothing in the editor has been paid for — that is what /create is. */
@@ -119,7 +114,7 @@ const EMPTY_CONFIG: CardConfig = {
 const EMPTY_SNAPSHOT: EditorSnapshot = {
   draft: EMPTY_DRAFT,
   config: EMPTY_CONFIG,
-  coverAnimation: DEFAULT_COVER_ANIMATION,
+  coverAnimation: DEFAULT_DESIGN.coverAnimation,
   showWeather: false,
   weatherTheme: DEFAULT_WEATHER_THEME,
   qrCheckinEnabled: false,
