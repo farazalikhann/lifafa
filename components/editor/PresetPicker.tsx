@@ -171,6 +171,13 @@ function PresetMiniature({
  * start from one and change any of it by hand afterwards. What it may and may
  * not touch is lib/presets.ts's business; this file draws the choice.
  *
+ * ONLY THE CARD'S OWN TRADITION'S PRESETS are offered, found by each preset's
+ * `tradition` field, so a tradition gets a group here by having entries in
+ * lib/presets.ts and nothing else. A tradition with none yet says so rather
+ * than hiding the section, and its header reads "Coming soon". A card with no
+ * tradition chosen is sent to the Details question instead, since there is no
+ * tradition yet to offer designs for.
+ *
  * THE HEADER NAMES THE LOOK THE CARD IS WEARING, worked out from the design
  * rather than remembered: the preset's name while the design is exactly that
  * preset, "Custom" as soon as anything differs, and "None" on a card nobody
@@ -185,6 +192,7 @@ export default function PresetPicker({
   design,
   occasionId,
   onApply,
+  onChooseTradition,
   accordion,
 }: {
   /** The editor's current design values. */
@@ -192,6 +200,8 @@ export default function PresetPicker({
   /** Decides what the untouched design is; see defaultDesign. */
   occasionId: OccasionId;
   onApply: (preset: Preset) => void;
+  /** Takes the host to the Religion / tradition question in Details. */
+  onChooseTradition: () => void;
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
@@ -200,8 +210,19 @@ export default function PresetPicker({
   const confirmTextId = useId();
 
   const active = matchingPreset(design);
-  const isUntouched = sameDesign(design, defaultDesign(occasionId));
+  /*
+    Choosing the tradition, like choosing the occasion, is not designing: a
+    host who has only answered the Details question has nothing to lose.
+  */
+  const isUntouched = sameDesign(design, {
+    ...defaultDesign(occasionId),
+    traditionId: design.traditionId,
+  });
   const hasOwnDesign = !isUntouched && active === null;
+  const noTradition = design.traditionId === "none";
+  const groups = PRESET_GROUPS.filter(
+    (group) => group.tradition === design.traditionId,
+  );
 
   /*
     The question takes the focus when it appears, so a keyboard host answers
@@ -227,14 +248,36 @@ export default function PresetPicker({
   return (
     <CollapsibleSection
       title="Quick presets"
-      summary={active?.name ?? (isUntouched ? "None" : "Custom")}
+      summary={
+        noTradition
+          ? "Choose tradition"
+          : groups.length === 0
+            ? "Coming soon"
+            : (active?.name ?? (isUntouched ? "None" : "Custom"))
+      }
       {...sectionState(accordion, "presets")}
     >
       <p className="text-xs text-[var(--lifafa-muted)]">
-        Start from a ready-made look, then change anything you like below.
+        {noTradition
+          ? "Choose your religion or tradition in Details to see ready-made designs."
+          : groups.length === 0
+            ? "Ready-made designs for this tradition are coming soon. You can design your own using the sections below."
+            : "Start from a ready-made look, then change anything you like below."}
       </p>
 
-      {PRESET_GROUPS.map((group) => (
+      {noTradition ? (
+        <div>
+          <button
+            type="button"
+            onClick={onChooseTradition}
+            className="min-h-11 rounded-full border border-[var(--lifafa-marigold)]/60 px-5 text-[0.8125rem] font-medium text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            Choose tradition
+          </button>
+        </div>
+      ) : null}
+
+      {groups.map((group) => (
         <div
           key={group.tradition}
           role="group"

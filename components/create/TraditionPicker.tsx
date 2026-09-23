@@ -2,6 +2,10 @@
 
 import type { ReactElement } from "react";
 import OrnamentPanel from "@/components/create/OrnamentPanel";
+import {
+  TraditionChangeConfirm,
+  useTraditionChange,
+} from "@/components/create/TraditionChange";
 import CollapsibleSection, {
   sectionState,
   type Accordion,
@@ -18,6 +22,9 @@ import type { OrnamentConfig } from "@/types/ornament";
  * they are apart. It was an h3 under "Occasion", then a group of its own, and
  * is now the last section of the Design tab's accordion. Nothing else about it
  * moved.
+ *
+ * The Details tab asks the same question (TraditionQuestion) over the same
+ * traditionId, and both ask first before a change clears the host's motifs.
  */
 export default function TraditionPicker({
   traditionId,
@@ -39,6 +46,11 @@ export default function TraditionPicker({
   accordion: Accordion;
 }): ReactElement {
   const pack = getTraditionPack(traditionId);
+  const change = useTraditionChange(
+    traditionId,
+    ornamentConfig,
+    onTraditionChange,
+  );
 
   return (
     <CollapsibleSection
@@ -58,19 +70,22 @@ export default function TraditionPicker({
       <div className="flex flex-wrap gap-2">
         {TRADITIONS.map((tradition) => {
           const isSelected = tradition.id === traditionId;
+          const isPending = tradition.id === change.pending;
 
           return (
             <button
               key={tradition.id}
               type="button"
               aria-pressed={isSelected}
-              onClick={() => onTraditionChange(tradition.id)}
+              onClick={() => change.request(tradition.id)}
               className={[
                 "rounded-full border px-3.5 py-2 text-[0.8125rem] font-medium transition-colors duration-150",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
                 isSelected
                   ? "border-transparent bg-[var(--lifafa-marigold)] text-[var(--lifafa-ink)]"
-                  : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)] hover:text-[var(--lifafa-cream)]",
+                  : isPending
+                    ? "border-[var(--lifafa-marigold)] text-[var(--lifafa-cream)]"
+                    : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)] hover:text-[var(--lifafa-cream)]",
               ].join(" ")}
             >
               {tradition.label}
@@ -78,6 +93,13 @@ export default function TraditionPicker({
           );
         })}
       </div>
+
+      {change.pending !== null ? (
+        <TraditionChangeConfirm
+          onConfirm={change.confirm}
+          onCancel={change.cancel}
+        />
+      ) : null}
 
       {/*
         Directly under the pills, because it only exists because of the pill

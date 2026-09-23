@@ -26,6 +26,7 @@ import RevealPanel from "@/components/create/RevealPanel";
 import SectionManager from "@/components/create/SectionManager";
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TraditionPicker from "@/components/create/TraditionPicker";
+import TraditionQuestion from "@/components/create/TraditionQuestion";
 import TranslationPanel from "@/components/create/TranslationPanel";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
@@ -325,6 +326,18 @@ export default function CardEditor({
     they are what a host reopening a saved card has almost always come to fix.
   */
   const [tab, setTab] = useState<EditorTabId>("details");
+  /*
+    Set by Quick presets' "Choose tradition", and cleared by the Details
+    question once it has scrolled itself into view and taken the focus.
+  */
+  const [focusTraditionQuestion, setFocusTraditionQuestion] = useState(false);
+  const handleChooseTradition = useCallback((): void => {
+    setTab("details");
+    setFocusTraditionQuestion(true);
+  }, []);
+  const handleTraditionQuestionFocused = useCallback((): void => {
+    setFocusTraditionQuestion(false);
+  }, []);
   const [occasionId, setOccasionId] = useState<OccasionId>(initial.occasionId);
   const [traditionId, setTraditionId] = useState<TraditionId>(
     initial.traditionId,
@@ -1018,7 +1031,9 @@ export default function CardEditor({
 
             The language comes first, above even the occasion: it decides what
             the host is about to type everything below in, so it is the one
-            choice that cannot sensibly be made afterwards.
+            choice that cannot sensibly be made afterwards. The tradition sits
+            under it: the same traditionId as the Traditional motifs section in
+            Design, through the same handler.
           */}
           {tab === "details" ? (
             <>
@@ -1035,6 +1050,13 @@ export default function CardEditor({
                 <LanguagePicker
                   language={language}
                   onLanguageChange={handleLanguageSelect}
+                />
+                <TraditionQuestion
+                  traditionId={traditionId}
+                  ornamentConfig={ornamentConfig}
+                  onTraditionChange={handleTraditionSelect}
+                  focusRequested={focusTraditionQuestion}
+                  onFocused={handleTraditionQuestionFocused}
                 />
                 <OccasionGrid
                   occasionId={occasionId}
@@ -1083,6 +1105,7 @@ export default function CardEditor({
                 design={design}
                 occasionId={occasionId}
                 onApply={handleApplyPreset}
+                onChooseTradition={handleChooseTradition}
                 accordion={accordionFor("design")}
               />
               <StylePanel
