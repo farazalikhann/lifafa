@@ -11,3 +11,6 @@ build
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store
+# Raw artwork as supplied: unprocessed PNGs and JPEGs, several MB each, that
+# the site never loads. What ships is the cut, compressed WebP in public/.
+/photo border/
