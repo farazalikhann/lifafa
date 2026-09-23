@@ -22,7 +22,7 @@
   /*
     The Arabic stack, used by the greeting and dua and by nothing else.
 
-    --font-arabic is Noto Naskh Arabic, loaded and self-hosted by next/font in
+    --font-arabic is Amiri, loaded and self-hosted by next/font in
     app/layout.tsx and set on <html> — the same element this rule targets, so
     the reference resolves. The system faces behind it cover the swap period
     and any device that fails to fetch the webfont; a Latin default is last, so
@@ -32,7 +32,7 @@
     the editor cannot drift into showing the host two different faces.
   */
   --lifafa-arabic:
-    var(--font-arabic), "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro",
+    var(--font-arabic), "Amiri", "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro",
     "Arabic Typesetting", "Traditional Arabic", "Segoe UI", serif;
 
   /*

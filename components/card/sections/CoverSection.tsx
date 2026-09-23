@@ -38,7 +38,7 @@ const CUE_SENTINEL_OPTIONS: IntersectionObserverInit = {
 };
 
 /**
- * One name, set in the card's display face at the cover's hero size.
+ * One name, set in the pair's names face at the cover's hero size.
  *
  * Pulled out because the pair layout draws it twice and the single-line layout
  * once, and the three have to be the same size to the pixel — a first name a
@@ -65,13 +65,21 @@ function HeroName({
 }): ReactElement {
   return (
     <p
-      className={`text-[2.4375rem] font-semibold tracking-[-0.015em] wrap-anywhere text-balance sm:text-[calc(2.75*var(--card-rem,1rem))] ${
-        script === "devanagari" ? "leading-[1.45]" : "leading-[1.05]"
+      className={`text-[calc(2.4375rem*var(--card-names-scale,1))] wrap-anywhere text-balance sm:text-[calc(2.75*var(--card-rem,1rem)*var(--card-names-scale,1))] ${
+        script === "devanagari" ? "leading-[1.45]" : ""
       }`}
       style={{
         opacity: placeholderOpacity(isPlaceholder, "primary"),
-        fontFamily: "var(--card-heading)",
-        fontWeight: "var(--card-heading-weight)" as unknown as number,
+        /*
+          The pair's names face, which may be a script. Set here and nowhere
+          else on the card — see `names` in lib/fontPairs.ts.
+        */
+        fontFamily: "var(--card-names)",
+        fontWeight: "var(--card-names-weight)" as unknown as number,
+        letterSpacing: "var(--card-names-tracking)",
+        wordSpacing: "var(--card-names-word-spacing)",
+        lineHeight:
+          script === "devanagari" ? undefined : "var(--card-names-leading)",
       }}
     >
       {text}

@@ -47,7 +47,7 @@ import { maxOverlayAlpha } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
-import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
+import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
 import type { EventWeather } from "@/types/weather";
 
@@ -552,6 +552,7 @@ export default function CardCanvas({
   */
   const palette = getPalette(style.paletteId);
   const fontPair = getFontPair(style.fontPairId);
+  const namesFace = namesFaceOf(fontPair);
 
   /*
     Lifted into lib/cardTheme.ts, because the card is no longer the only thing
@@ -796,6 +797,12 @@ export default function CardCanvas({
       fontPair.headingFallback,
     ),
     "--card-heading-weight": String(fontPair.headingWeight),
+    "--card-names": fontFamilyOf(namesFace.variable, namesFace.fallback),
+    "--card-names-weight": String(namesFace.weight),
+    "--card-names-scale": String(namesFace.scale),
+    "--card-names-leading": String(namesFace.leading),
+    "--card-names-tracking": namesFace.tracking,
+    "--card-names-word-spacing": namesFace.wordSpacing,
     "--card-gap-scale": String(DENSITY_GAP_SCALE[style.density]),
   } as CSSProperties;
 

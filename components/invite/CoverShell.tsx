@@ -13,12 +13,14 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
 import { getCoverAnimation } from "@/lib/coverAnimations";
+import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
 import { playCoverSound, preloadCoverSound } from "@/lib/coverSound";
 import { enterFullscreen } from "@/lib/fullscreen";
 import type { CardLanguage } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
+import type { FontPairId } from "@/types/style";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -115,6 +117,7 @@ export default function CoverShell({
   palette,
   accent,
   title,
+  fontPairId,
   language,
   renderVisual,
   children,
@@ -141,6 +144,13 @@ export default function CoverShell({
   accent?: string | null;
   /** The couple, or whatever names the event, shown on the closed cover. */
   title?: string;
+  /**
+   * The card's font pair. The names on the cover are set in its names face,
+   * the same one the card's own cover uses, so the guest meets the couple in
+   * one hand before and after the tap. Required for the same reason the
+   * palette is: a default would be a face the host never chose.
+   */
+  fontPairId: FontPairId;
   renderVisual?: (state: CoverVisualState) => ReactNode;
   children: ReactNode;
 }): ReactElement {
@@ -149,6 +159,7 @@ export default function CoverShell({
   const colors = coverPalette(palette, accent);
   const copy = cardCopy(language);
   const prompt = option.openPromptText[language];
+  const namesFace = namesFaceOf(getFontPair(fontPairId));
 
   /*
     Seeded rather than corrected in an effect. A card saved with no animation
@@ -447,8 +458,34 @@ export default function CoverShell({
                 : "justify-end pb-[12vh]"
             }`}
           >
+            {/*
+              The names alone take the pair's names face; the prompt below
+              keeps the page's own. Sized and spaced as the card's cover does
+              it — a script is scaled up so it carries as much as a serif —
+              with leading of at least 1.3, because the names here run as one
+              line that wraps and a script's capitals and descenders need the
+              room. Devanagari takes the cover's 1.45 for its matras.
+            */}
             {title ? (
-              <span className="text-2xl text-[var(--cover-text)] sm:text-3xl">
+              <span
+                className="text-[calc(1.5rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(1.875rem*var(--cover-names-scale))]"
+                style={
+                  {
+                    "--cover-names-scale": String(namesFace.scale),
+                    fontFamily: fontFamilyOf(
+                      namesFace.variable,
+                      namesFace.fallback,
+                    ),
+                    fontWeight: namesFace.weight,
+                    letterSpacing: namesFace.tracking,
+                    wordSpacing: namesFace.wordSpacing,
+                    lineHeight:
+                      copy.script === "devanagari"
+                        ? 1.45
+                        : Math.max(namesFace.leading, 1.3),
+                  } as CSSProperties
+                }
+              >
                 {title}
               </span>
             ) : null}

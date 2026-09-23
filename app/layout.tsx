@@ -1,23 +1,43 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import {
+  Amiri,
+  Bodoni_Moda,
+  Cinzel,
   Cormorant_Garamond,
   DM_Sans,
   Fraunces,
+  Great_Vibes,
   Inter,
+  Josefin_Sans,
   Lora,
-  Noto_Naskh_Arabic,
+  Marcellus,
   Noto_Sans_Devanagari,
   Noto_Sans_Gurmukhi,
+  Parisienne,
+  Pinyon_Script,
+  Playfair_Display,
 } from "next/font/google";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
 import "./globals.css";
 
 /*
-  Every face the card can use is loaded here, once, and exposed as a CSS
+  Every face the card can use is declared here, once, and exposed as a CSS
   variable on <html>. Components never load fonts: next/font hashes and
-  self-hosts each face at build time, and loading one from a component would
-  lose the preload and risk a flash of fallback text.
+  self-hosts each face at build time.
+
+  Declaring a face costs a guest nothing. It adds an @font-face rule to the
+  stylesheet, and a browser fetches the file behind that rule only when some
+  text on the page is actually set in it — so a card in the Royal pair pulls
+  Great Vibes and Cormorant and never touches Cinzel or Bodoni, even though
+  all of them are declared on every page.
+
+  What would undo that is a preload, which fetches the file whether anything
+  uses it or not. So only the two faces the site itself is set in, Fraunces
+  and Inter, keep next/font's default preload. Every face that is there for a
+  card pair or for a script is `preload: false`: the invite that uses it
+  starts the download as soon as its text is laid out, and `display: "swap"`
+  shows that text in the fallback until the file arrives.
 */
 
 const fraunces = Fraunces({
@@ -32,24 +52,105 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
-/* Not a variable font, so the two weights actually used are named. */
+/*
+  Headings at 600 in Elegant, Royal and Regal, and the body text of Royal and
+  Regal at 400, 500 and 600. Weights are named so only those cuts exist.
+*/
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["500", "600"],
+  weight: ["400", "500", "600"],
   display: "swap",
+  preload: false,
   variable: "--font-cormorant",
 });
 
 const lora = Lora({
   subsets: ["latin"],
   display: "swap",
+  preload: false,
   variable: "--font-lora",
 });
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
+  preload: false,
   variable: "--font-dm-sans",
+});
+
+/*
+  The wedding pairs. The three scripts — Great Vibes, Parisienne, Pinyon
+  Script — set the couple's names on the cover and nothing else; see `names`
+  in lib/fontPairs.ts. Each comes in one weight, and every other face names
+  only the weights its pair asks for.
+*/
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-great-vibes",
+});
+
+const parisienne = Parisienne({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-parisienne",
+});
+
+const pinyonScript = Pinyon_Script({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-pinyon",
+});
+
+/* Regal's names and headings. */
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-cinzel",
+});
+
+/* Romantic's headings; its body is Lora, above. */
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-playfair",
+});
+
+/* Graceful's headings and body. Marcellus has a single weight. */
+const marcellus = Marcellus({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-marcellus",
+});
+
+/* Luxe's names and headings. */
+const bodoniModa = Bodoni_Moda({
+  subsets: ["latin"],
+  weight: ["500"],
+  display: "swap",
+  preload: false,
+  variable: "--font-bodoni",
+});
+
+/* Luxe's body text, at the three weights the card and reply form use. */
+const josefinSans = Josefin_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-josefin",
 });
 
 /*
@@ -59,15 +160,19 @@ const dmSans = DM_Sans({
   Arabic set in a Latin display face falls back to whatever the device happens
   to have, which across phones means anything from a proper naskh to a UI
   sans — and a sans strips the joins and the stacked diacritics that the words
-  are actually made of. Naskh is the standard book face for this text.
+  are actually made of. Amiri is a classical naskh, cut after the Bulaq Press
+  type, and sits with the wedding pairs' serifs far better than a UI naskh.
 
-  The "arabic" subset only: pulling "latin" too would ship a second Latin face
-  the card never sets. It is wired to the Arabic elements alone, through
-  --lifafa-arabic in globals.css, so no Latin text can inherit it.
+  The "arabic" subset and the regular weight only: pulling "latin" too would
+  ship a second Latin face the card never sets, and no Arabic line is set bold.
+  It is wired to the Arabic elements alone, through --lifafa-arabic in
+  globals.css, so no Latin text can inherit it — and it serves every pair.
 */
-const notoNaskhArabic = Noto_Naskh_Arabic({
+const amiri = Amiri({
   subsets: ["arabic"],
+  weight: "400",
   display: "swap",
+  preload: false,
   variable: "--font-arabic",
 });
 
@@ -75,9 +180,11 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
   The second face loaded for a script rather than for a look, on the same terms
   as the Arabic above.
 
-  Not a cut of the Naskh family — Noto Naskh Arabic ships arabic, latin, math
-  and symbols and has no Devanagari, so there is no way to set both scripts in
-  one family and the two are matched by weight and colour instead.
+  Not a cut of the Arabic's family — Amiri has no Devanagari, so there is no
+  way to set both scripts in one family and the two are matched by weight and
+  colour instead. The same face serves every pair: fontFamilyOf in
+  lib/fontPairs.ts puts it straight after the pair's own, so a Hindi word in a
+  script or a serif pair still lands here rather than on a device default.
 
   Devanagari left to a device default lands on whatever is installed: Nirmala UI
   on Windows, Kohinoor on iOS, something arbitrary elsewhere, each with its own
@@ -85,19 +192,20 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
   them and not just for this face.
 
   The "devanagari" subset only. Worth being exact about what that does, because
-  the build output does not look like it at a glance: `subsets` chooses what is
-  PRELOADED, not what is emitted. next/font writes an @font-face for every
-  subset the family publishes — checked against a real build, this one emits
-  three, devanagari plus latin and latin-ext — and only the listed one gets the
-  preload and is fetched eagerly. The Latin cuts are dead weight in the CSS and
-  nothing more: they are downloaded only if some Latin glyph is rendered in this
-  family, and the family reaches the Devanagari elements alone through
-  --lifafa-devanagari. Adding "latin" here would preload one of those for real,
-  which is the thing to avoid.
+  the build output does not look like it at a glance: `subsets` chooses what
+  would be PRELOADED, not what is emitted. next/font writes an @font-face for
+  every subset the family publishes — checked against a real build, this one
+  emits three, devanagari plus latin and latin-ext. The Latin cuts are dead
+  weight in the CSS and nothing more: they are downloaded only if some Latin
+  glyph is rendered in this family, and the family reaches the Devanagari
+  elements alone through --lifafa-devanagari. With `preload: false`, as for
+  every card face, the Devanagari cut itself is fetched only by a page that
+  sets Devanagari.
 */
 const notoSansDevanagari = Noto_Sans_Devanagari({
   subsets: ["devanagari"],
   display: "swap",
+  preload: false,
   variable: "--font-devanagari",
 });
 
@@ -110,9 +218,9 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
   than as a wrong-looking face, which is the failure mode that makes this one
   worth loading rather than optional.
 
-  The "gurmukhi" subset only. As with the other two, `subsets` chooses what is
-  PRELOADED rather than what is emitted: next/font writes an @font-face for
-  every subset the family publishes and preloads just this one. It reaches the
+  The "gurmukhi" subset only. As with the other two, `subsets` chooses what
+  would be PRELOADED rather than what is emitted, and with `preload: false` the
+  file is fetched only by a page that sets Gurmukhi. It reaches the
   Gurmukhi elements alone through --lifafa-gurmukhi, so no Latin text can
   inherit it.
 
@@ -123,6 +231,7 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 const notoSansGurmukhi = Noto_Sans_Gurmukhi({
   subsets: ["gurmukhi"],
   display: "swap",
+  preload: false,
   variable: "--font-gurmukhi",
 });
 
@@ -132,7 +241,15 @@ const FONT_VARIABLES = [
   cormorant.variable,
   lora.variable,
   dmSans.variable,
-  notoNaskhArabic.variable,
+  greatVibes.variable,
+  parisienne.variable,
+  pinyonScript.variable,
+  cinzel.variable,
+  playfair.variable,
+  marcellus.variable,
+  bodoniModa.variable,
+  josefinSans.variable,
+  amiri.variable,
   notoSansDevanagari.variable,
   notoSansGurmukhi.variable,
 ].join(" ");

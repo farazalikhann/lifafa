@@ -1,4 +1,14 @@
-export type FontPairId = "classic" | "modern" | "elegant" | "warm" | "clean";
+export type FontPairId =
+  | "classic"
+  | "modern"
+  | "elegant"
+  | "warm"
+  | "clean"
+  | "royal"
+  | "regal"
+  | "romantic"
+  | "graceful"
+  | "luxe";
 
 export type PaletteId =
   | "ink"

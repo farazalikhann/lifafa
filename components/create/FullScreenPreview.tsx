@@ -666,6 +666,7 @@ export default function FullScreenPreview({
         palette={palette}
         accent={config.style.accentOverride}
         title={coverTitle}
+        fontPairId={config.style.fontPairId}
         language={config.language}
         renderVisual={(state) => <CoverVisual {...state} />}
       >

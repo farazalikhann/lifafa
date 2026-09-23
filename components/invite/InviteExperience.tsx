@@ -179,6 +179,7 @@ export default function InviteExperience({
       palette={palette}
       accent={config.style.accentOverride}
       title={coverTitle}
+      fontPairId={config.style.fontPairId}
       language={language}
       renderVisual={(state) => <CoverVisual {...state} />}
     >

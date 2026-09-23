@@ -5,7 +5,7 @@ import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
-import { FONT_PAIRS, fontFamilyOf } from "@/lib/fontPairs";
+import { FONT_PAIRS, fontFamilyOf, namesFaceOf } from "@/lib/fontPairs";
 import {
   flowerChipScale,
   flowerFrameStyle,
@@ -325,6 +325,7 @@ export default function StylePanel({
         <ul className="flex flex-col gap-2">
           {FONT_PAIRS.map((pair) => {
             const isSelected = pair.id === style.fontPairId;
+            const namesFace = namesFaceOf(pair);
 
             return (
               <li key={pair.id}>
@@ -344,18 +345,40 @@ export default function StylePanel({
                     {pair.label}
                   </span>
 
-                  {/* Rendered in the pair's real heading face. */}
-                  <span
-                    className="min-w-0 truncate text-right text-lg text-[var(--lifafa-cream)]"
-                    style={{
-                      fontFamily: fontFamilyOf(
-                        pair.headingVar,
-                        pair.headingFallback,
-                      ),
-                      fontWeight: pair.headingWeight,
-                    }}
-                  >
-                    Aa {previewName}
+                  <span className="flex min-w-0 items-baseline justify-end gap-2 text-[var(--lifafa-cream)]">
+                    {/* "Aa" in the pair's heading face, the names in its names face. */}
+                    <span
+                      aria-hidden="true"
+                      className="shrink-0 text-lg"
+                      style={{
+                        fontFamily: fontFamilyOf(
+                          pair.headingVar,
+                          pair.headingFallback,
+                        ),
+                        fontWeight: pair.headingWeight,
+                      }}
+                    >
+                      Aa
+                    </span>
+                    {/*
+                      Padded inside its own clip, because a script's swashes
+                      reach past the letters and truncation would cut them.
+                    */}
+                    <span
+                      className="min-w-0 truncate px-1 py-0.5 leading-[1.4]"
+                      style={{
+                        fontFamily: fontFamilyOf(
+                          namesFace.variable,
+                          namesFace.fallback,
+                        ),
+                        fontWeight: namesFace.weight,
+                        letterSpacing: namesFace.tracking,
+                        wordSpacing: namesFace.wordSpacing,
+                        fontSize: `calc(1.125rem * ${namesFace.scale})`,
+                      }}
+                    >
+                      {previewName}
+                    </span>
                   </span>
                 </button>
               </li>
