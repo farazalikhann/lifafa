@@ -30,6 +30,7 @@ import TranslationPanel from "@/components/create/TranslationPanel";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
+import type { Accordion } from "@/components/editor/CollapsibleSection";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalStyle } from "@/lib/petals";
 import { deepEqual } from "@/lib/deepEqual";
@@ -224,6 +225,9 @@ function toSnapshot(state: EditorState): EditorSnapshot {
   };
 }
 
+/* The three tabs whose controls fold into sections; Details is a form. */
+type AccordionTabId = Exclude<EditorTabId, "details">;
+
 type CardEditorProps = {
   initialDraft: EventDraft;
   initialConfig: CardConfig;
@@ -399,6 +403,26 @@ export default function CardEditor({
   */
   const [openSubEventId, setOpenSubEventId] = useState<string | null>(null);
   const nextCustomId = useRef<number>(1);
+
+  /*
+    Which section of each tab is unfolded, lifted here for the same reason as
+    `openSubEventId`: the panels unmount on every tab switch, and a host coming
+    back to Design should find the section they left open. Each tab starts on
+    its first section. One id per tab, so opening a section closes the last.
+    Nothing here is saved; it is where the host is looking, like `tab`.
+  */
+  const [openSections, setOpenSections] = useState<
+    Record<AccordionTabId, string | null>
+  >({ design: "typography", structure: "sections", extras: "cover" });
+
+  const accordionFor = (tabId: AccordionTabId): Accordion => ({
+    openId: openSections[tabId],
+    onToggle: (id) =>
+      setOpenSections((previous) => ({
+        ...previous,
+        [tabId]: previous[tabId] === id ? null : id,
+      })),
+  });
 
   const [blocks, setBlocks] = useState<readonly CardBlock[]>(initial.blocks);
 
@@ -999,7 +1023,12 @@ export default function CardEditor({
 
           {/* 2 — DESIGN. How it looks, ornament included. */}
           {tab === "design" ? (
-            <>
+            /*
+              Sections sit closer together than the tab's own groups do: a
+              stack of headers reads as one list, and a 36px gap between them
+              would scatter it.
+            */
+            <div className="flex min-w-0 flex-col gap-3">
               <StylePanel
                 style={style}
                 /* Resolved, so the specimen shows the same line the cover will. */
@@ -1013,6 +1042,7 @@ export default function CardEditor({
                 onDensityChange={setDensity}
                 onAccentChange={setAccent}
                 onBorderStyleChange={setBorderStyle}
+                accordion={accordionFor("design")}
               />
               <MotionPicker
                 motion={decorMotion}
@@ -1025,6 +1055,7 @@ export default function CardEditor({
                 onButterfliesChange={setButterflies}
                 onLeavesChange={setLeaves}
                 onPetalsChange={setPetals}
+                accordion={accordionFor("design")}
               />
               {/*
                 The ornament had a tab of its own and does not need one. Which
@@ -1039,8 +1070,9 @@ export default function CardEditor({
                 ornamentConfig={ornamentConfig}
                 onTraditionChange={handleTraditionSelect}
                 onOrnamentConfigChange={setOrnamentConfig}
+                accordion={accordionFor("design")}
               />
-            </>
+            </div>
           ) : null}
 
           {/*
@@ -1048,17 +1080,19 @@ export default function CardEditor({
             form, which always comes last and which the host can leave off.
           */}
           {tab === "structure" ? (
-            <>
+            <div className="flex min-w-0 flex-col gap-3">
               <SectionManager
                 blocks={blocks}
                 mintCustomId={mintCustomId}
                 onBlocksChange={setBlocks}
+                accordion={accordionFor("structure")}
               />
               <ReplyFormPanel
                 enabled={rsvpEnabled}
                 onEnabledChange={setRsvpEnabled}
+                accordion={accordionFor("structure")}
               />
-            </>
+            </div>
           ) : null}
 
           {/*
@@ -1080,28 +1114,36 @@ export default function CardEditor({
             at the door.
           */}
           {tab === "extras" ? (
-            <>
+            <div className="flex min-w-0 flex-col gap-3">
               <CoverAnimationPicker
                 coverAnimation={coverAnimation}
                 onChange={setCoverAnimation}
+                accordion={accordionFor("extras")}
               />
               <RevealPanel
                 scratchTarget={scratchTarget}
                 onScratchTargetChange={setScratchTarget}
+                accordion={accordionFor("extras")}
               />
-              <MusicPanel musicUrl={musicUrl} onMusicUrlChange={setMusicUrl} />
+              <MusicPanel
+                musicUrl={musicUrl}
+                onMusicUrlChange={setMusicUrl}
+                accordion={accordionFor("extras")}
+              />
               <WeatherPicker
                 showWeather={showWeather}
                 weatherTheme={weatherTheme}
                 onShowWeatherChange={setShowWeather}
                 onWeatherThemeChange={setWeatherTheme}
+                accordion={accordionFor("extras")}
               />
               <CheckinPanel
                 enabled={qrCheckinEnabled}
                 onEnabledChange={setQrCheckinEnabled}
                 repliesOpen={rsvpEnabled}
+                accordion={accordionFor("extras")}
               />
-            </>
+            </div>
           ) : null}
 
         </EditorTabs>

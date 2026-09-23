@@ -1,6 +1,10 @@
 "use client";
 
 import { useId, type ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 
 /**
  * Whether guests are scanned in at the door on the day.
@@ -13,16 +17,17 @@ import { useId, type ReactElement } from "react";
  *
  * A button with role="switch" rather than WeatherPicker's styled checkbox, so it
  * looks and announces itself the way the section switches in SectionManager
- * do: aria-checked carries the state, and the visible heading is its name
- * through aria-labelledby — the same heading-to-control wiring EditorTabs uses
- * between a tab and its panel — so a screen reader says "Guest check-in,
- * switch, off" rather than a bare "switch". The helper line is attached with
+ * do: aria-checked carries the state, and it is named after its section, so a
+ * screen reader says "Guest check-in, switch, off" rather than a bare
+ * "switch". It used to borrow that name from its visible heading, which is
+ * now the section's header button, a control of its own. The helper line is attached with
  * aria-describedby, so it is read once, after the state.
  */
 export default function CheckinPanel({
   enabled,
   onEnabledChange,
   repliesOpen,
+  accordion,
 }: {
   enabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
@@ -35,25 +40,31 @@ export default function CheckinPanel({
    * guests holding passes, and still needs the scanner on the day.
    */
   repliesOpen: boolean;
+  /** The Extras tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
-  const headingId = useId();
   const hintId = useId();
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <div className="flex items-center justify-between gap-4">
-        <h2
-          id={headingId}
-          className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase"
-        >
-          Guest check-in
-        </h2>
+    <CollapsibleSection
+      title="Guest check-in"
+      summary={enabled ? "On" : "Off"}
+      {...sectionState(accordion, "checkin")}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <p id={hintId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+          Turn this on to scan guests in at the entrance on the event day. Leave
+          it off for smaller gatherings.
+          {enabled && !repliesOpen
+            ? " Guests get their pass when they reply, and the reply form is off, so only guests who have already replied will have one."
+            : null}
+        </p>
 
         <button
           type="button"
           role="switch"
           aria-checked={enabled}
-          aria-labelledby={headingId}
+          aria-label="Guest check-in"
           aria-describedby={hintId}
           onClick={() => onEnabledChange(!enabled)}
           className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
@@ -85,14 +96,6 @@ export default function CheckinPanel({
           </span>
         </button>
       </div>
-
-      <p id={hintId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-        Turn this on to scan guests in at the entrance on the event day. Leave
-        it off for smaller gatherings.
-        {enabled && !repliesOpen
-          ? " Guests get their pass when they reply, and the reply form is off, so only guests who have already replied will have one."
-          : null}
-      </p>
-    </section>
+    </CollapsibleSection>
   );
 }

@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import { CARD_SECTIONS } from "@/lib/cardSections";
 import type { CardBlock, CustomSection } from "@/types/customSection";
 
@@ -80,6 +84,7 @@ export default function SectionManager({
   blocks,
   mintCustomId,
   onBlocksChange,
+  accordion,
 }: {
   blocks: readonly CardBlock[];
   /**
@@ -95,6 +100,8 @@ export default function SectionManager({
    */
   mintCustomId: () => string;
   onBlocksChange: (blocks: readonly CardBlock[]) => void;
+  /** The Structure tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   const editorRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [scrollToId, setScrollToId] = useState<string | null>(null);
@@ -113,6 +120,10 @@ export default function SectionManager({
 
   const customCount = blocks.filter((block) => block.kind === "custom").length;
   const atCap = customCount >= MAX_CUSTOM;
+  /* What the guest will actually see, for the header. */
+  const shownCount = blocks.filter(
+    (block) => block.kind === "custom" || block.enabled,
+  ).length;
 
   const move = (index: number, direction: -1 | 1): void => {
     const target = index + direction;
@@ -172,11 +183,11 @@ export default function SectionManager({
   };
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
-        Card sections
-      </h2>
-
+    <CollapsibleSection
+      title="Card sections"
+      summary={`${shownCount} shown`}
+      {...sectionState(accordion, "sections")}
+    >
       <ul className="flex flex-col gap-2.5">
         {blocks.map((block, index) => {
           const key = blockKey(block);
@@ -352,6 +363,6 @@ export default function SectionManager({
           </p>
         ) : null}
       </div>
-    </section>
+    </CollapsibleSection>
   );
 }

@@ -2,6 +2,10 @@
 
 import type { ReactElement } from "react";
 import OrnamentPanel from "@/components/create/OrnamentPanel";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { TRADITIONS } from "@/lib/occasions";
 import type { TraditionId } from "@/types/occasion";
@@ -11,15 +15,16 @@ import type { OrnamentConfig } from "@/types/ornament";
  * Which tradition's motifs go on the card, and the pack behind them.
  *
  * The other half of what used to be OccasionPicker; see OccasionGrid for why
- * they are apart. The heading was an h3 under "Occasion" and is an h2 here,
- * because this is now a group of its own in the Decoration tab rather than a
- * postscript to the occasion grid. Nothing else about it moved.
+ * they are apart. It was an h3 under "Occasion", then a group of its own, and
+ * is now the last section of the Design tab's accordion. Nothing else about it
+ * moved.
  */
 export default function TraditionPicker({
   traditionId,
   ornamentConfig,
   onTraditionChange,
   onOrnamentConfigChange,
+  accordion,
 }: {
   traditionId: TraditionId;
   /*
@@ -30,19 +35,27 @@ export default function TraditionPicker({
   ornamentConfig: OrnamentConfig;
   onTraditionChange: (id: TraditionId) => void;
   onOrnamentConfigChange: (next: OrnamentConfig) => void;
+  /** The Design tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   const pack = getTraditionPack(traditionId);
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
-        Add traditional motifs
-      </h2>
+    <CollapsibleSection
+      title="Traditional motifs"
+      /* "No religious motifs" is the pill's wording; the header only needs "None". */
+      summary={
+        traditionId === "none"
+          ? "None"
+          : TRADITIONS.find((tradition) => tradition.id === traditionId)?.label
+      }
+      {...sectionState(accordion, "motifs")}
+    >
       <p className="text-xs text-[var(--lifafa-muted)]">
         Optional. Choose what suits your family.
       </p>
 
-      <div className="mt-1 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {TRADITIONS.map((tradition) => {
           const isSelected = tradition.id === traditionId;
 
@@ -80,6 +93,6 @@ export default function TraditionPicker({
           onChange={onOrnamentConfigChange}
         />
       ) : null}
-    </section>
+    </CollapsibleSection>
   );
 }

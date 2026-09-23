@@ -1,6 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import { COVER_ANIMATIONS } from "@/lib/coverAnimations";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 
@@ -20,20 +24,24 @@ import type { CoverAnimationId } from "@/types/coverAnimation";
 export default function CoverAnimationPicker({
   coverAnimation,
   onChange,
+  accordion,
 }: {
   coverAnimation: CoverAnimationId;
   onChange: (id: CoverAnimationId) => void;
+  /** The Extras tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-          How it opens
-        </h2>
-        <p className="text-xs text-[var(--lifafa-muted)]">
-          Guests see this first and tap to open your card.
-        </p>
-      </div>
+    <CollapsibleSection
+      title="How it opens"
+      summary={
+        COVER_ANIMATIONS.find((option) => option.id === coverAnimation)?.label
+      }
+      {...sectionState(accordion, "cover")}
+    >
+      <p className="text-xs text-[var(--lifafa-muted)]">
+        Guests see this first and tap to open your card.
+      </p>
 
       <div className="flex flex-col gap-2">
         {COVER_ANIMATIONS.map((option) => {
@@ -69,6 +77,6 @@ export default function CoverAnimationPicker({
           );
         })}
       </div>
-    </section>
+    </CollapsibleSection>
   );
 }

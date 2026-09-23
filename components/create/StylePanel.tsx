@@ -1,13 +1,17 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import { FONT_PAIRS, fontFamilyOf } from "@/lib/fontPairs";
 import {
   flowerChipScale,
   flowerFrameStyle,
   isPhotoBorder,
 } from "@/lib/flowerFrame";
-import { PALETTES } from "@/lib/palettes";
+import { PALETTES, getPalette } from "@/lib/palettes";
 import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
 import type {
   CardDensity,
@@ -252,14 +256,14 @@ function pillClass(isSelected: boolean): string {
   ].join(" ");
 }
 
-function GroupHeading({ children }: { children: string }): ReactElement {
-  return (
-    <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-      {children}
-    </h3>
-  );
-}
-
+/**
+ * The card's type, colour, length and border: four sections of the Design tab.
+ *
+ * These were four groups under one "Style" heading, stacked open. They are
+ * sections of the tab's accordion now, each with its current choice in its
+ * header, so the border grid is one tap from the top of the tab rather than
+ * three groups down it. The controls inside are the ones that were there.
+ */
 export default function StylePanel({
   style,
   hostNames,
@@ -270,6 +274,7 @@ export default function StylePanel({
   onDensityChange,
   onAccentChange,
   onBorderStyleChange,
+  accordion,
 }: {
   style: CardStyle;
   /** Shown in the typography previews so the host sees their own words. */
@@ -289,21 +294,22 @@ export default function StylePanel({
   onDensityChange: (density: CardDensity) => void;
   onAccentChange: (accent: string | null) => void;
   onBorderStyleChange: (border: CardBorderStyle) => void;
+  /** The Design tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   const previewName =
     hostNames.trim().length > 0 ? hostNames.trim() : "Your names";
   const currentAccent = style.accentOverride ?? paletteAccent;
 
   return (
-    <section className="flex flex-col gap-6 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
-        Style
-      </h2>
-
-      {/* 1 — Typography */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Typography</GroupHeading>
-
+    <>
+      <CollapsibleSection
+        title="Typography"
+        summary={
+          FONT_PAIRS.find((pair) => pair.id === style.fontPairId)?.label
+        }
+        {...sectionState(accordion, "typography")}
+      >
         <ul className="flex flex-col gap-2">
           {FONT_PAIRS.map((pair) => {
             const isSelected = pair.id === style.fontPairId;
@@ -344,12 +350,28 @@ export default function StylePanel({
             );
           })}
         </ul>
-      </div>
+      </CollapsibleSection>
 
-      {/* 2 — Colour */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Colour</GroupHeading>
-
+      <CollapsibleSection
+        title="Colour"
+        summary={
+          /*
+            The dot is the accent the card is actually using, so a custom
+            accent shows here as well as the palette it sits on.
+          */
+          <>
+            <span
+              aria-hidden="true"
+              className="size-3 shrink-0 rounded-full border border-[var(--lifafa-hairline)]"
+              style={{ backgroundColor: currentAccent }}
+            />
+            <span className="truncate">
+              {getPalette(style.paletteId).label}
+            </span>
+          </>
+        }
+        {...sectionState(accordion, "colour")}
+      >
         <div className="grid grid-cols-3 gap-2">
           {PALETTES.map((palette) => {
             const isSelected = palette.id === style.paletteId;
@@ -427,12 +449,13 @@ export default function StylePanel({
             </button>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* 3 — Card length */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Card length</GroupHeading>
-
+      <CollapsibleSection
+        title="Card length"
+        summary={DENSITIES.find((option) => option.id === style.density)?.label}
+        {...sectionState(accordion, "length")}
+      >
         <div className="flex flex-wrap gap-2">
           {DENSITIES.map((option) => {
             const isSelected = option.id === style.density;
@@ -454,12 +477,13 @@ export default function StylePanel({
         <p className="text-xs text-[var(--lifafa-muted)]">
           Controls how much space each section takes.
         </p>
-      </div>
+      </CollapsibleSection>
 
-      {/* 4 — Card border */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Card border</GroupHeading>
-
+      <CollapsibleSection
+        title="Card border"
+        summary={BORDER_STYLES.find((option) => option.id === borderStyle)?.label}
+        {...sectionState(accordion, "border")}
+      >
         {/*
           Three per row on a phone, and still three above it, at every width. A
           miniature is the only honest control here: "Scalloped" and "Corner
@@ -518,7 +542,7 @@ export default function StylePanel({
         <p className="text-xs text-[var(--lifafa-muted)]">
           A decorative frame around the edges of your card.
         </p>
-      </div>
-    </section>
+      </CollapsibleSection>
+    </>
   );
 }

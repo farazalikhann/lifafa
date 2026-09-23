@@ -1,6 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import type { ScratchTarget } from "@/types/card";
 
 /*
@@ -32,22 +36,27 @@ function pillClass(isSelected: boolean): string {
  * the editor's tabs put it under Decoration and left the typography, the
  * palettes and the borders under Design: this is something a guest does to the
  * card, not a way the card looks. The pills and the copy are unchanged; only the
- * wrapper around them is new, and it is the same wrapper the other standalone
- * panels in that tab already wear.
+ * wrapper around them is new, and it is the same collapsible section the other
+ * panels in its tab use.
  */
 export default function RevealPanel({
   scratchTarget,
   onScratchTargetChange,
+  accordion,
 }: {
   scratchTarget: ScratchTarget;
   onScratchTargetChange: (target: ScratchTarget) => void;
+  /** The Extras tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   return (
-    <section className="flex flex-col gap-2.5 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-        Reveal effect
-      </h2>
-
+    <CollapsibleSection
+      title="Reveal effect"
+      summary={
+        SCRATCH_TARGETS.find((option) => option.id === scratchTarget)?.label
+      }
+      {...sectionState(accordion, "reveal")}
+    >
       <div className="flex flex-wrap gap-2">
         {SCRATCH_TARGETS.map((option) => {
           const isSelected = option.id === scratchTarget;
@@ -69,6 +78,6 @@ export default function RevealPanel({
       <p className="text-xs text-[var(--lifafa-muted)]">
         Guests scratch the panel to uncover it.
       </p>
-    </section>
+    </CollapsibleSection>
   );
 }

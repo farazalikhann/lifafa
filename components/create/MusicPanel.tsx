@@ -1,6 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 
 /**
  * The link to a track that plays behind the card.
@@ -12,6 +16,7 @@ import type { ReactElement } from "react";
 export default function MusicPanel({
   musicUrl,
   onMusicUrlChange,
+  accordion,
 }: {
   /*
     A link the host pastes, never a file they upload. Hosting audio needs
@@ -22,13 +27,15 @@ export default function MusicPanel({
   */
   musicUrl: string | null;
   onMusicUrlChange: (url: string | null) => void;
+  /** The Extras tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   return (
-    <section className="flex flex-col gap-2.5 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-        Background music
-      </h2>
-
+    <CollapsibleSection
+      title="Background music"
+      summary={musicUrl === null ? "Off" : "On"}
+      {...sectionState(accordion, "music")}
+    >
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="musicUrl"
@@ -69,6 +76,6 @@ export default function MusicPanel({
         Paste a link to an audio file you have the right to use. Guests choose
         whether to play it.
       </p>
-    </section>
+    </CollapsibleSection>
   );
 }

@@ -1,6 +1,10 @@
 "use client";
 
 import { useId, type ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import {
   BUTTERFLY_ASPECT,
   BUTTERFLY_STYLES,
@@ -101,12 +105,20 @@ function PetalChip(): ReactElement {
 
 function SubHeading({ children }: { children: string }): ReactElement {
   return (
-    <h4 className="text-[0.625rem] tracking-[0.18em] text-[var(--lifafa-muted)] uppercase">
+    <h3 className="text-[0.625rem] tracking-[0.18em] text-[var(--lifafa-muted)] uppercase">
       {children}
-    </h4>
+    </h3>
   );
 }
 
+/**
+ * What moves on the card and how: two sections of the Design tab.
+ *
+ * Motion and the floating elements were one bordered panel with a rule
+ * between them. They are two sections of the tab's accordion now, because they
+ * are two questions — how decoration moves, and which decoration there is —
+ * and a host looking for the butterflies should find them by name.
+ */
 export default function MotionPicker({
   motion,
   intensity,
@@ -118,6 +130,7 @@ export default function MotionPicker({
   onButterfliesChange,
   onLeavesChange,
   onPetalsChange,
+  accordion,
 }: {
   motion: DecorMotion;
   intensity: DecorIntensity;
@@ -129,6 +142,8 @@ export default function MotionPicker({
   onButterfliesChange: (butterflies: ButterflyStyle) => void;
   onLeavesChange: (leaves: boolean) => void;
   onPetalsChange: (petals: PetalStyle) => void;
+  /** The Design tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   const elementsHintId = useId();
 
@@ -141,147 +156,166 @@ export default function MotionPicker({
     motion === "none" &&
     (butterflies !== "none" || leaves || petalsFall(petals));
 
+  /* Which of the three are on, for the header. */
+  const elementsOn = [
+    butterflies !== "none" ? "Butterflies" : null,
+    leaves ? "Leaves" : null,
+    petals !== "none" ? "Petals" : null,
+  ].filter((name) => name !== null);
+
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
-      <div className="flex flex-col gap-2">
-        <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-          Motion style
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {MOTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={option.id === motion}
-              onClick={() => onMotionChange(option.id)}
-              className={pillClass(option.id === motion)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-          Amount
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {INTENSITIES.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={option.id === intensity}
-              onClick={() => onIntensityChange(option.id)}
-              className={pillClass(option.id === intensity)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <p className="text-xs text-[var(--lifafa-muted)]">
-        Decoration moves as guests scroll through your card.
-      </p>
-
-      {/*
-        In this panel and not in the border grid beside it, because what a host
-        is turning on here is movement. Every row reads the Amount above rather
-        than bringing a count of its own.
-
-        Pills with the real cut-out on them, not switches and not colour
-        swatches: a host is choosing a butterfly, a leaf or a petal, and the
-        border grid beside this one already settled that the honest control for
-        something you can look at is a picture of it.
-      */}
-      <div
-        className="flex flex-col gap-3 border-t border-[var(--lifafa-hairline)] pt-3"
-        aria-describedby={elementsHintId}
+    <>
+      <CollapsibleSection
+        title="Motion"
+        summary={
+          motion === "none"
+            ? "None"
+            : [
+                MOTIONS.find((option) => option.id === motion)?.label,
+                INTENSITIES.find((option) => option.id === intensity)?.label,
+              ].join(" · ")
+        }
+        {...sectionState(accordion, "motion")}
       >
-        <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-          Floating elements
-        </h3>
-
         <div className="flex flex-col gap-2">
-          <SubHeading>Butterflies</SubHeading>
+          <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
+            Motion style
+          </h3>
           <div className="flex flex-wrap gap-2">
-            {BUTTERFLY_STYLES.map((option) => {
-              const isSelected = option.id === butterflies;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => onButterfliesChange(option.id)}
-                  className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
-                >
-                  {option.id === "none" ? null : (
-                    <ButterflyChip style={option.id} />
-                  )}
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <SubHeading>Leaves</SubHeading>
-          <div className="flex flex-wrap gap-2">
-            {[false, true].map((isOn) => (
+            {MOTIONS.map((option) => (
               <button
-                key={String(isOn)}
+                key={option.id}
                 type="button"
-                aria-pressed={leaves === isOn}
-                onClick={() => onLeavesChange(isOn)}
-                className={`flex items-center gap-1.5 ${pillClass(leaves === isOn)}`}
+                aria-pressed={option.id === motion}
+                onClick={() => onMotionChange(option.id)}
+                className={pillClass(option.id === motion)}
               >
-                {isOn ? <LeafChip /> : null}
-                {isOn ? "On" : "Off"}
+                {option.label}
               </button>
             ))}
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <SubHeading>Rose petals</SubHeading>
+          <h3 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
+            Amount
+          </h3>
           <div className="flex flex-wrap gap-2">
-            {PETAL_STYLES.map((option) => {
-              const isSelected = option.id === petals;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => onPetalsChange(option.id)}
-                  className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
-                >
-                  {option.id === "none" ? null : <PetalChip />}
-                  {option.label}
-                </button>
-              );
-            })}
+            {INTENSITIES.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={option.id === intensity}
+                onClick={() => onIntensityChange(option.id)}
+                className={pillClass(option.id === intensity)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/*
-          Each sentence only when it is true, so the hint describes the card in
-          front of the host rather than every option at once.
-        */}
-        <p
-          id={elementsHintId}
-          className="text-xs leading-relaxed text-[var(--lifafa-muted)]"
-        >
-          They stay in the margins, clear of your writing.
-          {petalsBurst(petals)
-            ? " Petals shower once as the card opens, then fall away."
-            : ""}
-          {held ? " Motion style is None, so they are holding still for now." : ""}
+        <p className="text-xs text-[var(--lifafa-muted)]">
+          Decoration moves as guests scroll through your card.
         </p>
-      </div>
-    </section>
+      </CollapsibleSection>
+
+      {/*
+        Here and not in the border grid, because what a host is turning on
+        here is movement. Every row reads the Amount in the section above
+        rather than bringing a count of its own.
+
+        Pills with the real cut-out on them, not switches and not colour
+        swatches: a host is choosing a butterfly, a leaf or a petal, and the
+        border grid beside this one already settled that the honest control for
+        something you can look at is a picture of it.
+      */}
+      <CollapsibleSection
+        title="Floating elements"
+        summary={elementsOn.length > 0 ? elementsOn.join(", ") : "Off"}
+        {...sectionState(accordion, "elements")}
+      >
+        <div className="flex flex-col gap-3" aria-describedby={elementsHintId}>
+          <div className="flex flex-col gap-2">
+            <SubHeading>Butterflies</SubHeading>
+            <div className="flex flex-wrap gap-2">
+              {BUTTERFLY_STYLES.map((option) => {
+                const isSelected = option.id === butterflies;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => onButterfliesChange(option.id)}
+                    className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                  >
+                    {option.id === "none" ? null : (
+                      <ButterflyChip style={option.id} />
+                    )}
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <SubHeading>Leaves</SubHeading>
+            <div className="flex flex-wrap gap-2">
+              {[false, true].map((isOn) => (
+                <button
+                  key={String(isOn)}
+                  type="button"
+                  aria-pressed={leaves === isOn}
+                  onClick={() => onLeavesChange(isOn)}
+                  className={`flex items-center gap-1.5 ${pillClass(leaves === isOn)}`}
+                >
+                  {isOn ? <LeafChip /> : null}
+                  {isOn ? "On" : "Off"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <SubHeading>Rose petals</SubHeading>
+            <div className="flex flex-wrap gap-2">
+              {PETAL_STYLES.map((option) => {
+                const isSelected = option.id === petals;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => onPetalsChange(option.id)}
+                    className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                  >
+                    {option.id === "none" ? null : <PetalChip />}
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/*
+            Each sentence only when it is true, so the hint describes the card in
+            front of the host rather than every option at once.
+          */}
+          <p
+            id={elementsHintId}
+            className="text-xs leading-relaxed text-[var(--lifafa-muted)]"
+          >
+            They stay in the margins, clear of your writing.
+            {petalsBurst(petals)
+              ? " Petals shower once as the card opens, then fall away."
+              : ""}
+            {held ? " Motion style is None, so they are holding still for now." : ""}
+          </p>
+        </div>
+      </CollapsibleSection>
+    </>
   );
 }

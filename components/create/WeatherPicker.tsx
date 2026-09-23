@@ -1,6 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
 import { WEATHER_THEMES } from "@/lib/weatherThemes";
 import type { WeatherThemeId } from "@/types/weather";
 
@@ -20,24 +24,31 @@ export default function WeatherPicker({
   weatherTheme,
   onShowWeatherChange,
   onWeatherThemeChange,
+  accordion,
 }: {
   showWeather: boolean;
   weatherTheme: WeatherThemeId;
   onShowWeatherChange: (show: boolean) => void;
   onWeatherThemeChange: (id: WeatherThemeId) => void;
+  /** The Extras tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
 }): ReactElement {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-4 py-4">
+    <CollapsibleSection
+      title="Weather"
+      /* The theme only means something once weather is on. */
+      summary={
+        showWeather
+          ? WEATHER_THEMES.find((option) => option.id === weatherTheme)?.label
+          : "Off"
+      }
+      {...sectionState(accordion, "weather")}
+    >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h2 className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
-            Weather
-          </h2>
-          <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-            Show guests what to expect at your venue. You will still see it on
-            your own dashboard either way.
-          </p>
-        </div>
+        <p className="min-w-0 text-xs leading-relaxed text-[var(--lifafa-muted)]">
+          Show guests what to expect at your venue. You will still see it on
+          your own dashboard either way.
+        </p>
 
         {/*
           A real checkbox, styled rather than replaced. It is the control every
@@ -48,8 +59,14 @@ export default function WeatherPicker({
           <span className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
             {showWeather ? "On" : "Off"}
           </span>
+          {/*
+            Named outright: the visible "On" or "Off" beside it is the state,
+            not a name, and the heading that used to sit over it is now the
+            section's header button.
+          */}
           <input
             type="checkbox"
+            aria-label="Show the weather to guests"
             checked={showWeather}
             onChange={(event) => onShowWeatherChange(event.target.checked)}
             className="size-5 shrink-0 cursor-pointer accent-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
@@ -99,6 +116,6 @@ export default function WeatherPicker({
           </p>
         </div>
       ) : null}
-    </section>
+    </CollapsibleSection>
   );
 }
