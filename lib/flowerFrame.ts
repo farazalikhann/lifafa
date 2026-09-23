@@ -79,7 +79,8 @@ interface FrameArt {
   clearance: { x: number; y: number };
   /**
    * Rendered CSS pixels per source pixel on a card, when it is not the shared
-   * FLOWER_FRAME_SCALE. Only the slim frames set it — see their note below.
+   * FLOWER_FRAME_SCALE. The later five and the slim four set it — see their
+   * notes below.
    */
   scale?: number;
 }
@@ -118,10 +119,19 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
     The five below are a later batch, and they are heavier than the first three
     on purpose — deeper garlands with more in them. That shows up in one number:
     their runs reach 206 to 254 source pixels in where the first three reached
-    129 to 177, so they stand the card's text 83 to 97px off the edge rather
-    than 60 to 74. A 390px phone is left a 196 to 224px column of writing. That
-    is the cost of a border this full, and it is paid here rather than by
-    letting a name be read through a rose.
+    129 to 177.
+
+    SO THEY ARE DRAWN AT 0.2, the slim frames' scale, not the shared 0.3. At 0.3
+    they stood the text 83 to 97px off the edge and left a 390px phone a 196 to
+    224px column — the calligraphy at the head of a Muslim card came out at
+    about half the width it has on a plain one. At 0.2 every rose is two thirds
+    the size, the column gains 40 to 50px, and the tiling gets better rather
+    than worse: a shorter tile lands nearer a whole number, and no side on the
+    four measured screens is pulled past 16%, where at 0.3 two reached 20%.
+
+    Each clearance is the same measured reach at the new scale — reach x 0.2 +
+    20px of air, the reach being (the old clearance - 20) / 0.3 — so the text
+    keeps exactly the air it had and loses only the width the flowers gave up.
 
     Every pair of cuts below is this artwork's own: the channel each vertical
     cut lands in differs by 60px across the five, and each horizontal pair was
@@ -133,33 +143,38 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
   flowerRed: {
     src: "/borders/flower-red.webp",
     slice: { top: 244, right: 472, bottom: 398, left: 472 },
-    clearance: { x: 83, y: 65 },
+    clearance: { x: 62, y: 50 },
+    scale: 0.2,
   },
   /* Red roses and gold scrollwork, on a warm red wash. */
   flowerRuby: {
     src: "/borders/flower-ruby.webp",
     slice: { top: 352, right: 489, bottom: 378, left: 489 },
-    clearance: { x: 92, y: 85 },
+    clearance: { x: 68, y: 63 },
+    scale: 0.2,
   },
   /* The same garden with white blooms through it, on gold. The deepest run of
      the eight, and so the narrowest column. */
   flowerCrimson: {
     src: "/borders/flower-crimson.webp",
     slice: { top: 392, right: 496, bottom: 416, left: 496 },
-    clearance: { x: 97, y: 86 },
+    clearance: { x: 71, y: 64 },
+    scale: 0.2,
   },
   /* Blue roses, cream blooms and gold. */
   flowerBlue: {
     src: "/borders/flower-blue.webp",
     slice: { top: 256, right: 499, bottom: 402, left: 499 },
-    clearance: { x: 92, y: 95 },
+    clearance: { x: 68, y: 70 },
+    scale: 0.2,
   },
   /* Blush and burgundy with cream peonies. Its corner clusters are the deepest
      of the eight, which is why it asks for the most room at the top. */
   flowerBlush: {
     src: "/borders/flower-blush.webp",
     slice: { top: 410, right: 494, bottom: 416, left: 494 },
-    clearance: { x: 87, y: 104 },
+    clearance: { x: 65, y: 76 },
+    scale: 0.2,
   },
 
   /*
@@ -226,7 +241,9 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
 };
 
 /**
- * Rendered CSS pixels per source pixel, on a card. Shared by all eight.
+ * Rendered CSS pixels per source pixel, on a card, for the three frames that
+ * do not set their own — the first batch. The later five and the slim four are
+ * drawn at 0.2; see their notes.
  *
  * 0.3 is chosen against the *tiling*, not against taste. The side run repeats a
  * whole number of times — `round` rescales it to fit, and rounding 1.4 tiles

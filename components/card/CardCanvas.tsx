@@ -1134,12 +1134,22 @@ export default function CardCanvas({
                   ornament that spans the card rather than being placed on it.
                   Which ink it uses is decided from the card's own background;
                   see lib/calligraphy.ts.
+
+                  Wider than the column by 16px a side, into the screen's own
+                  28px padding. Every piece ends in a hairline rule and a
+                  diamond, so the extra width is almost all lettering, and a
+                  line that is read should not be the narrowest thing on the
+                  card. Under a flower border it still keeps clear of the
+                  flowers, which the column already stands 20px off. Capped at
+                  20 card-rem for a card with no border, where the Bismillah —
+                  lettering to its very edges — would otherwise run nearly to
+                  the edges of the card.
                 */}
                 {calligraphy.map((panel) => (
                   <panel.Component
                     key={panel.id}
                     instanceId={`cover-calligraphy-${panel.id}`}
-                    className="block h-auto w-full max-w-[calc(19*var(--card-rem,1rem))]"
+                    className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem))]"
                     ground={calligraphyGround(effectiveTheme.background)}
                   />
                 ))}
