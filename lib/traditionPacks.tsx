@@ -422,7 +422,19 @@ const MUSLIM_PACK: TraditionPack = {
   */
   coverArchId: null,
   dividerId: "arabesqueBorder",
-  calligraphyIds: ["bismillah", "versePairs"],
+  /*
+    This order is the order they stack at the head of a card, so the
+    Bismillah stays first. The four added later go after the original two,
+    which leaves every card already saved with those two exactly as it was.
+  */
+  calligraphyIds: [
+    "bismillah",
+    "versePairs",
+    "verseLoveMercy",
+    "barakallah",
+    "barakallahDua",
+    "alhamdulillah",
+  ],
 };
 
 const HINDU_PACK: TraditionPack = {

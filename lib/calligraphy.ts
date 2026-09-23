@@ -35,6 +35,10 @@ import { relativeLuminance } from "@/lib/contrast";
 export type CalligraphyId =
   | "bismillah"
   | "versePairs"
+  | "verseLoveMercy"
+  | "barakallah"
+  | "barakallahDua"
+  | "alhamdulillah"
   | "shubhVivah"
   | "sadarNimantran"
   | "radheKrishna"
@@ -72,6 +76,25 @@ interface CalligraphyArt {
    * the greeting off the calligraphy is the only thing at the head.
    */
   alt: string;
+}
+
+/**
+ * An Arabic piece published as a black and a white ink, like the verse above.
+ *
+ * Unlike the Devanagari and Gurmukhi artwork, these are one colour, so the
+ * second file really is the same lettering in the other ink rather than an
+ * adjustment of it: both are one alpha mask, filled once with black and once
+ * with white.
+ */
+function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
+  return {
+    src: {
+      light: `/decor/${slug}-black.webp`,
+      dark: `/decor/${slug}-white.webp`,
+    },
+    aspect,
+    alt,
+  };
 }
 
 /**
@@ -161,6 +184,45 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
     aspect: 1024 / 526,
     alt: "And We created you in pairs — Quran 78:8",
   },
+
+  /*
+    Four more, supplied together as black lettering on white paper with no
+    alpha. Each was cut the way the verse was: one mask taken from the sheet's
+    own darkness, cropped to the lettering and scaled to 1024 wide, then filled
+    with black for a light card and white for a dark one — so both inks are the
+    same shape to the pixel. See `arabic` below.
+
+    Like the Gurmukhi pieces, the alt says what each is MEANT to read. The two
+    that carry the letter jeem — "wa ja'ala" in the verse and "wa jama'a" in the
+    dua — were supplied with it drawn undotted, so as published they read with
+    a hah; that is for an Arabic reader to settle against the files, not for
+    the alt to paper over.
+  */
+  /*
+    Surah Ar-Rum 30:21, the verse most often read at a nikah. Its English line
+    and reference are set into the artwork, as the pairs verse's are.
+  */
+  verseLoveMercy: arabic(
+    "verse-love-mercy",
+    1024 / 399,
+    "And He placed between you love and mercy — Quran 30:21",
+  ),
+  barakallah: arabic(
+    "barakallah",
+    1024 / 369,
+    "Barakallahu lakuma — may Allah bless you both",
+  ),
+  /* The full wedding dua, of which the piece above is the opening. */
+  barakallahDua: arabic(
+    "barakallah-dua",
+    1024 / 374,
+    "Barakallahu lakuma wa jama'a baynakuma fi khayr — may Allah bless you both and unite you in goodness",
+  ),
+  alhamdulillah: arabic(
+    "alhamdulillah",
+    1024 / 451,
+    "Alhamdulillah — all praise is due to Allah",
+  ),
 
   /* The nine Devanagari pieces, in the order the sheet set them out. */
   shubhVivah: devanagari(

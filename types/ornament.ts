@@ -24,7 +24,11 @@ export type OrnamentId =
   | "geometricStar"
   | "hangingLights"
   | "bismillah"
-  | "versePairs";
+  | "versePairs"
+  | "verseLoveMercy"
+  | "barakallah"
+  | "barakallahDua"
+  | "alhamdulillah";
 
 /**
  * One ornament pinned to the top edge of the card.

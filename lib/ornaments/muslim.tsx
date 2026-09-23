@@ -70,6 +70,10 @@ export const ORNAMENT_ASPECT: Record<OrnamentId, number> = {
   /* Nor are these: the published crops each pair of inks shares. */
   bismillah: calligraphyAspect("bismillah"),
   versePairs: calligraphyAspect("versePairs"),
+  verseLoveMercy: calligraphyAspect("verseLoveMercy"),
+  barakallah: calligraphyAspect("barakallah"),
+  barakallahDua: calligraphyAspect("barakallahDua"),
+  alhamdulillah: calligraphyAspect("alhamdulillah"),
 };
 
 /** A closed star, alternating between the outer and the inner radius. */
@@ -376,6 +380,10 @@ export const GeometricStar: Ornament = ({
 
 export const Bismillah = calligraphyOrnament("bismillah");
 export const VersePairs = calligraphyOrnament("versePairs");
+export const VerseLoveMercy = calligraphyOrnament("verseLoveMercy");
+export const Barakallah = calligraphyOrnament("barakallah");
+export const BarakallahDua = calligraphyOrnament("barakallahDua");
+export const Alhamdulillah = calligraphyOrnament("alhamdulillah");
 
 /* ---------------------------------------------------------------------------
    Registry
@@ -449,6 +457,36 @@ export const MUSLIM_ORNAMENTS: readonly OrnamentEntry[] = [
     Component: VersePairs,
     chipSize: 76,
   },
+  /*
+    All four are wider than 2.1 to one, so 84 keeps each inside the 40px box.
+    The editor sizes calligraphy chips by their cell rather than by this, but
+    the field is every entry's and a number that would burst the box is a trap
+    for whoever moves one back into the grid.
+  */
+  {
+    id: "verseLoveMercy",
+    label: "Love and mercy",
+    Component: VerseLoveMercy,
+    chipSize: 84,
+  },
+  {
+    id: "barakallah",
+    label: "Barakallahu lakuma",
+    Component: Barakallah,
+    chipSize: 84,
+  },
+  {
+    id: "barakallahDua",
+    label: "Unite you in goodness",
+    Component: BarakallahDua,
+    chipSize: 84,
+  },
+  {
+    id: "alhamdulillah",
+    label: "Alhamdulillah",
+    Component: Alhamdulillah,
+    chipSize: 84,
+  },
 ];
 
 const BY_ID: Record<OrnamentId, Ornament> = {
@@ -460,6 +498,10 @@ const BY_ID: Record<OrnamentId, Ornament> = {
   hangingLights: HangingLights,
   bismillah: Bismillah,
   versePairs: VersePairs,
+  verseLoveMercy: VerseLoveMercy,
+  barakallah: Barakallah,
+  barakallahDua: BarakallahDua,
+  alhamdulillah: Alhamdulillah,
 };
 
 export function getOrnament(id: OrnamentId): Ornament {
