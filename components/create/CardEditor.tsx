@@ -10,6 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AutoTranslate from "@/components/create/AutoTranslate";
 import CardPreview from "@/components/create/CardPreview";
 import CheckinPanel from "@/components/create/CheckinPanel";
 import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
@@ -33,6 +34,11 @@ import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import StylePanel from "@/components/create/StylePanel";
 import type { Accordion } from "@/components/editor/CollapsibleSection";
 import PresetPicker from "@/components/editor/PresetPicker";
+import {
+  applyToBlocks,
+  applyToDraft,
+  type TranslatedWord,
+} from "@/lib/autoTranslate";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalStyle } from "@/lib/petals";
 import { deepEqual } from "@/lib/deepEqual";
@@ -568,6 +574,38 @@ export default function CardEditor({
     [],
   );
 
+  /*
+    Bumped each time the Translate button fills words, so the panel at the end
+    of the tab opens on them. See `revealSignal` in TranslationPanel.
+  */
+  const [translatedSignal, setTranslatedSignal] = useState(0);
+
+  /**
+   * The Translate button's results, written into the other language's words.
+   *
+   * Through updaters, like every keystroke here: the request was in flight
+   * while the host may have kept typing, so each result is checked against the
+   * card as it is now, and one whose source changed meanwhile is dropped. The
+   * preview turns to the language just filled, so the host sees it at once.
+   */
+  const handleTranslated = useCallback(
+    (
+      from: CardLanguage,
+      to: CardLanguage,
+      entries: readonly TranslatedWord[],
+      replaceAll: boolean,
+      markUsed: boolean,
+    ) => {
+      setDraft((previous) =>
+        applyToDraft(previous, from, to, entries, replaceAll, markUsed),
+      );
+      setBlocks((previous) => applyToBlocks(previous, to, entries, replaceAll));
+      setPreviewLanguage(to);
+      setTranslatedSignal((count) => count + 1);
+    },
+    [],
+  );
+
   /**
    * A tradition click is the one thing that can clear the ornament pack.
    *
@@ -1047,10 +1085,24 @@ export default function CardEditor({
                 className="flex min-w-0 flex-col gap-9"
                 onFocusCapture={() => setPreviewLanguage(language)}
               >
-                <LanguagePicker
-                  language={language}
-                  onLanguageChange={handleLanguageSelect}
-                />
+                {/*
+                  The Translate button sits with the language it translates
+                  from, closer than the tab's own gap so the two read as one.
+                */}
+                <div className="flex min-w-0 flex-col gap-4">
+                  <LanguagePicker
+                    language={language}
+                    onLanguageChange={handleLanguageSelect}
+                  />
+                  <AutoTranslate
+                    cardLanguage={language}
+                    draft={draft}
+                    blocks={blocks}
+                    occasionId={occasionId}
+                    eventId={eventId}
+                    onTranslated={handleTranslated}
+                  />
+                </div>
                 <TraditionQuestion
                   traditionId={traditionId}
                   ornamentConfig={ornamentConfig}
@@ -1089,6 +1141,7 @@ export default function CardEditor({
                 onSubEventWord={handleSubEventWord}
                 onSectionWord={handleSectionWord}
                 onFocusLanguage={setPreviewLanguage}
+                revealSignal={translatedSignal}
               />
             </>
           ) : null}

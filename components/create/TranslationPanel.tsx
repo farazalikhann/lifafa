@@ -1,6 +1,12 @@
 "use client";
 
-import { useId, useState, type ReactElement, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { CARD_LANGUAGES, swapJoinerWord } from "@/lib/cardLanguage";
 import { isWritten, wordsWrittenIn } from "@/lib/cardTranslation";
 import { pairsNames } from "@/lib/occasions";
@@ -169,6 +175,7 @@ function LanguageWords({
   onSubEventWord,
   onSectionWord,
   onFocusLanguage,
+  revealSignal,
 }: {
   cardLanguage: CardLanguage;
   language: CardLanguage;
@@ -176,6 +183,13 @@ function LanguageWords({
   const written = wordsWrittenIn(draft, blocks, language);
   const [isOpen, setIsOpen] = useState<boolean>(written > 0);
   const listId = useId();
+
+  /* The Translate button just filled words here: show them to be checked. */
+  useEffect(() => {
+    if (revealSignal !== undefined && revealSignal > 0) {
+      setIsOpen(true);
+    }
+  }, [revealSignal]);
 
   const option = CARD_LANGUAGES.find((entry) => entry.id === language);
   const name = option?.englishLabel ?? language;
@@ -380,6 +394,8 @@ type TranslationPanelProps = {
   ) => void;
   /** Called when the host starts typing in a language, to preview it. */
   onFocusLanguage: (language: CardLanguage) => void;
+  /** Changes each time the Translate button fills words; opens the list. */
+  revealSignal?: number;
 };
 
 /**

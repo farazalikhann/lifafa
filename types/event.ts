@@ -172,6 +172,25 @@ export interface EventDraft {
    * reads exactly as an empty one does.
    */
   translations?: Translations<DraftWords>;
+  /**
+   * The editor's record of the one-click Translate helper. Absent until a host
+   * first uses it. Kept on the draft so it is saved with the invitation and
+   * survives a reload — see lib/autoTranslate.ts. Nothing on the card reads it.
+   */
+  autoTranslation?: AutoTranslation;
+}
+
+/**
+ * Whether an invitation has had its one auto-translate.
+ *
+ * `translationUsed` is set only by a translate that fully succeeded; a failed
+ * request leaves it false. `sources` holds a short fingerprint of the exact
+ * text each field was translated from, keyed by field, so a retry after a
+ * partial failure sends only the fields that are still missing.
+ */
+export interface AutoTranslation {
+  translationUsed: boolean;
+  sources?: Record<string, string>;
 }
 
 /**
