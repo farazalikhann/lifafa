@@ -67,6 +67,14 @@ function TieBack({ side, colors, gradientId }: { side: -1 | 1; colors: CoverPale
     <svg
       viewBox="0 0 70 170"
       className={`absolute top-[58%] h-[150px] w-[62px] -translate-y-1/2 ${side < 0 ? "left-[14%]" : "right-[14%] -scale-x-100"}`}
+      /*
+        At 58% of the screen, unless the names and the prompt reach higher than
+        that: then no lower than their top. The words sit on the velvet here, and
+        on a short phone with long names a tassel at 58% hung into them. 75px is
+        half the tie-back, so its foot stops at --cover-words-h, which already
+        carries a little air above the names; see `wordsRef` in CoverShell.
+      */
+      style={{ top: "min(58%, calc(100% - var(--cover-words-h, 38vh) - 75px))" }}
       role="presentation"
       focusable="false"
     >

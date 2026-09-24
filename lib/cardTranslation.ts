@@ -223,6 +223,34 @@ export function wordsWrittenIn(
 }
 
 /**
+ * Whether the host wrote the card's headline in `language`: the names or the
+ * title, in its translations.
+ *
+ * What the guest page asks before offering a language switch. A card with only
+ * a venue in Hindi would switch to Hindi headings around English names, which
+ * reads as unfinished, so the switch waits for the words a guest reads first.
+ * The card's own language always counts: its words are the ordinary fields.
+ */
+export function hasHeadlineIn(
+  draft: EventDraft,
+  cardLanguageValue: CardLanguage,
+  language: CardLanguage,
+): boolean {
+  if (language === cardLanguageValue) {
+    return true;
+  }
+
+  const words = draft.translations?.[language];
+
+  return (
+    isWritten(words?.partyOneName) ||
+    isWritten(words?.partyTwoName) ||
+    isWritten(words?.hostNames) ||
+    isWritten(words?.eventTitle)
+  );
+}
+
+/**
  * The language a link asked for, if the card can be read in it; the card's own
  * language otherwise.
  *

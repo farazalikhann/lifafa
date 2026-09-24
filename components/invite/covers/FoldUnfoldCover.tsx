@@ -3,6 +3,7 @@
 import { useId, type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import { initialsOf } from "@/components/invite/covers/initials";
+import { ABOVE_WORDS } from "@/components/invite/covers/layout";
 import { stage } from "@/components/invite/covers/timing";
 import type { CoverPalette } from "@/lib/coverPalette";
 
@@ -241,222 +242,233 @@ export default function FoldUnfoldCover({
     <div
       aria-hidden
       style={rootStyle}
-      className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden pb-[14vh]"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
     >
       <div className="absolute inset-0" style={backdropStyle} />
 
-      {/* A soft pool of light behind the card, so it sits in the room. */}
-      <div
-        className="absolute top-[42%] left-1/2 aspect-square w-[120vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 62%)`,
-          opacity: opening ? 0 : colors.isLight ? 0.35 : 0.14,
-          transition: transition(stage("opacity", 0.3, 0.6, "ease-out")),
-        }}
-      />
+      {/* The card takes the space above the names; see ABOVE_WORDS. */}
+      <div style={ABOVE_WORDS}>
 
-      {/*
-        The spread's full width, two panels, of which the closed card is the
-        right half — so the stage is wider than the card, and the slide below
-        is what centres the card while it is shut.
-      */}
-      <div className="relative aspect-[10/7] w-[min(128vw,640px)] shrink-0">
-        <div className="absolute" style={shadowStyle} />
-
+        {/* A soft pool of light behind the card, so it sits in the room. */}
         <div
-          className="absolute inset-0 animate-[lifafa-float_5.5s_ease-in-out_infinite] motion-reduce:animate-none"
-          style={floatStyle}
+          className="absolute top-1/2 left-1/2 aspect-square w-[120vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 62%)`,
+            opacity: opening ? 0 : colors.isLight ? 0.35 : 0.14,
+            transition: transition(stage("opacity", 0.3, 0.6, "ease-out")),
+          }}
+        />
+
+        {/*
+          The spread's full width, two panels, of which the closed card is the
+          right half — so the stage is wider than the card, and the slide below
+          is what centres the card while it is shut.
+        */}
+        {/*
+          The closed card is half this stage wide and 0.7 of it tall, so 120cqh
+          keeps it to 84% of the height it has; see ABOVE_WORDS.
+        */}
+        <div
+          className="relative aspect-[10/7] w-[min(128vw,640px)] shrink-0"
+          style={{ width: "min(128cqw, 640px, 120cqh)" }}
         >
-          <div className="absolute inset-0" style={exitStyle}>
-            <div className="absolute inset-0" style={fitStyle}>
-              <div className="absolute inset-0" style={spreadStyle}>
-                <svg className="absolute h-0 w-0" role="presentation" focusable="false">
-                  <defs>
-                    <linearGradient id={`${uid}-stock`} x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0" stopColor={colors.stockHi} />
-                      <stop offset="0.6" stopColor={colors.stock} />
-                      <stop offset="1" stopColor={colors.stockLo} />
-                    </linearGradient>
-                    <pattern id={`${uid}-liner`} width="24" height="24" patternUnits="userSpaceOnUse">
-                      <rect width="24" height="24" fill={colors.liner} />
-                      <path d="M12 2 C16 8 16 16 12 22 C8 16 8 8 12 2 Z" fill="none" stroke={colors.linerInk} strokeWidth="0.8" opacity="0.6" />
-                      <path d="M2 12 C8 8 16 8 22 12 C16 16 8 16 2 12 Z" fill="none" stroke={colors.linerInk} strokeWidth="0.8" opacity="0.6" />
-                      <circle cx="12" cy="12" r="1.6" fill={colors.linerInk} opacity="0.8" />
-                    </pattern>
-                    <linearGradient id={`${uid}-ribbon`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0" stopColor={colors.waxLo} />
-                      <stop offset="0.3" stopColor={colors.waxHi} />
-                      <stop offset="0.6" stopColor={colors.wax} />
-                      <stop offset="1" stopColor={colors.waxLo} />
-                    </linearGradient>
-                  </defs>
-                </svg>
+          <div className="absolute" style={shadowStyle} />
 
-                {/* Inside right: the invitation, waiting under the cover. */}
-                <div
-                  className="absolute overflow-hidden rounded-r-[4px] [container-type:inline-size]"
-                  style={{
-                    ...box(200, 0, 200, 280),
-                    backgroundColor: colors.ground,
-                    boxShadow: "0 20px 40px -24px rgba(0,0,0,0.6), 0 2px 6px -2px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                    <PanelFrame colors={colors} />
+          <div
+            className="absolute inset-0 animate-[lifafa-float_5.5s_ease-in-out_infinite] motion-reduce:animate-none"
+            style={floatStyle}
+          >
+            <div className="absolute inset-0" style={exitStyle}>
+              <div className="absolute inset-0" style={fitStyle}>
+                <div className="absolute inset-0" style={spreadStyle}>
+                  <svg className="absolute h-0 w-0" role="presentation" focusable="false">
+                    <defs>
+                      <linearGradient id={`${uid}-stock`} x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor={colors.stockHi} />
+                        <stop offset="0.6" stopColor={colors.stock} />
+                        <stop offset="1" stopColor={colors.stockLo} />
+                      </linearGradient>
+                      <pattern id={`${uid}-liner`} width="24" height="24" patternUnits="userSpaceOnUse">
+                        <rect width="24" height="24" fill={colors.liner} />
+                        <path d="M12 2 C16 8 16 16 12 22 C8 16 8 8 12 2 Z" fill="none" stroke={colors.linerInk} strokeWidth="0.8" opacity="0.6" />
+                        <path d="M2 12 C8 8 16 8 22 12 C16 16 8 16 2 12 Z" fill="none" stroke={colors.linerInk} strokeWidth="0.8" opacity="0.6" />
+                        <circle cx="12" cy="12" r="1.6" fill={colors.linerInk} opacity="0.8" />
+                      </pattern>
+                      <linearGradient id={`${uid}-ribbon`} x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" stopColor={colors.waxLo} />
+                        <stop offset="0.3" stopColor={colors.waxHi} />
+                        <stop offset="0.6" stopColor={colors.wax} />
+                        <stop offset="1" stopColor={colors.waxLo} />
+                      </linearGradient>
+                    </defs>
                   </svg>
-                  {/* The crease, darkest at the spine. */}
+
+                  {/* Inside right: the invitation, waiting under the cover. */}
                   <div
-                    className="absolute inset-0"
-                    style={{ backgroundImage: "linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 16%)" }}
-                  />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-[5cqw] px-[16%] text-center">
-                    <svg viewBox="0 0 80 14" className="w-[34%]" role="presentation" focusable="false">
-                      <path d="M2 7 H28 M52 7 H78" stroke={colors.foil} strokeWidth="1" />
-                      <path d="M40 1 L46 7 L40 13 L34 7 Z" fill={colors.foil} />
-                      <circle cx="30" cy="7" r="1.5" fill={colors.foil} />
-                      <circle cx="50" cy="7" r="1.5" fill={colors.foil} />
-                    </svg>
-                    {title !== undefined && title.length > 0 ? (
-                      <span
-                        className="block leading-[1.25] text-balance wrap-anywhere"
-                        style={{ ...namesFont, color: colors.text, fontSize: "clamp(14px, 12cqw, 48px)" }}
-                      >
-                        {title}
-                      </span>
-                    ) : null}
-                    <svg viewBox="0 0 120 10" className="w-[46%]" role="presentation" focusable="false">
-                      <path d="M4 5 H52 M68 5 H116" stroke={colors.foil} strokeWidth="0.9" />
-                      <path d="M60 1 L64 5 L60 9 L56 5 Z" fill={colors.foil} />
-                    </svg>
-                  </div>
-
-                </div>
-
-                {/*
-                  Gold rising off the spine as the card lies open. Beside the
-                  panel rather than in it, so the panel's clip does not cut the
-                  flecks off at its top edge as they rise.
-                */}
-                <div className="absolute" style={box(200, 0, 200, 280)}>
-                  {SPARKS.map((spark, index) => (
-                    <span
-                      key={index}
-                      className="absolute top-[62%] left-0 opacity-0"
-                      style={
-                        {
-                          width: spark.size,
-                          height: spark.size,
-                          marginLeft: -spark.size / 2,
-                          "--dx": `${spark.dx}px`,
-                          "--dy": `${spark.dy}px`,
-                          animation: onOpen(
-                            "lifafa-cover-spark",
-                            SPARK_SHARE,
-                            SPARK_START + spark.delay,
-                            "cubic-bezier(0.15,0.7,0.4,1)",
-                          ),
-                        } as CSSProperties
-                      }
-                    >
-                      <svg viewBox="0 0 10 10" className="h-full w-full" role="presentation" focusable="false">
-                        <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={index % 2 === 0 ? colors.foilHi : colors.foil} />
-                      </svg>
-                    </span>
-                  ))}
-                </div>
-
-                {/* The cover, hinged on the spine: two faces turning together. */}
-                <div className="absolute" style={coverStyle}>
-                  {/* Outside: the front of the card. */}
-                  <div className="absolute inset-0 overflow-hidden rounded-r-[4px]" style={HIDE_BACKFACE}>
+                    className="absolute overflow-hidden rounded-r-[4px] [container-type:inline-size]"
+                    style={{
+                      ...box(200, 0, 200, 280),
+                      backgroundColor: colors.ground,
+                      boxShadow: "0 20px 40px -24px rgba(0,0,0,0.6), 0 2px 6px -2px rgba(0,0,0,0.2)",
+                    }}
+                  >
                     <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                      <rect x="0" y="0" width="200" height="280" fill={stockFill} />
                       <PanelFrame colors={colors} />
-                      {/* The medallion, with the couple's initials in its middle. */}
-                      <g>
-                        <circle cx="100" cy="128" r="40" fill="none" stroke={colors.foil} strokeWidth="1.4" />
-                        <circle cx="100" cy="128" r="34" fill="none" stroke={colors.foil} strokeWidth="0.6" opacity="0.8" />
-                        {Array.from({ length: 16 }, (_, index) => {
-                          const angle = (index / 16) * Math.PI * 2;
-
-                          return (
-                            <circle
-                              key={index}
-                              cx={100 + Math.cos(angle) * 37}
-                              cy={128 + Math.sin(angle) * 37}
-                              r={index % 2 === 0 ? 1.3 : 0.8}
-                              fill={colors.foil}
-                            />
-                          );
-                        })}
-                        {initials.length > 0 ? (
-                          <text
-                            x="100"
-                            y="130"
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            fontSize={initials.length > 1 ? 26 : 32}
-                            fill={colors.foil}
-                            style={namesFont}
-                          >
-                            {initials}
-                          </text>
-                        ) : (
-                          <path d="M100 112 L112 128 L100 144 L88 128 Z" fill={colors.foil} />
-                        )}
-                        <path d="M78 196 H122" stroke={colors.foil} strokeWidth="0.9" />
-                        <path d="M100 190 L105 196 L100 202 L95 196 Z" fill={colors.foil} />
-                        <path d="M86 64 Q100 54 114 64" fill="none" stroke={colors.foil} strokeWidth="1" />
-                        <circle cx="100" cy="58" r="2" fill={colors.foil} />
-                      </g>
                     </svg>
-
-                    {/* A silk ribbon round the card, near the spine, tied in a bow. */}
-                    <div className="absolute inset-0" style={ribbonStyle}>
-                      <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                        <rect x="30" y="0" width="16" height="280" fill={`url(#${uid}-ribbon)`} />
-                        <path d="M30 0 V280 M46 0 V280" stroke={colors.waxLo} strokeWidth="0.8" opacity="0.6" />
-                        <path d="M38 118 C14 98 4 110 12 124 C18 134 30 128 38 122 Z" fill={`url(#${uid}-ribbon)`} stroke={colors.waxLo} strokeWidth="0.8" />
-                        <path d="M38 118 C62 98 72 110 64 124 C58 134 46 128 38 122 Z" fill={`url(#${uid}-ribbon)`} stroke={colors.waxLo} strokeWidth="0.8" />
-                        <path d="M36 124 L24 160 L31 156 L34 164 Z" fill={`url(#${uid}-ribbon)`} />
-                        <path d="M40 124 L52 162 L45 157 L42 165 Z" fill={`url(#${uid}-ribbon)`} />
-                        <ellipse cx="38" cy="121" rx="6" ry="7" fill={colors.wax} stroke={colors.waxLo} strokeWidth="0.8" />
+                    {/* The crease, darkest at the spine. */}
+                    <div
+                      className="absolute inset-0"
+                      style={{ backgroundImage: "linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 16%)" }}
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[5cqw] px-[16%] text-center">
+                      <svg viewBox="0 0 80 14" className="w-[34%]" role="presentation" focusable="false">
+                        <path d="M2 7 H28 M52 7 H78" stroke={colors.foil} strokeWidth="1" />
+                        <path d="M40 1 L46 7 L40 13 L34 7 Z" fill={colors.foil} />
+                        <circle cx="30" cy="7" r="1.5" fill={colors.foil} />
+                        <circle cx="50" cy="7" r="1.5" fill={colors.foil} />
+                      </svg>
+                      {title !== undefined && title.length > 0 ? (
+                        <span
+                          className="block leading-[1.25] text-balance wrap-anywhere"
+                          style={{ ...namesFont, color: colors.text, fontSize: "clamp(14px, 12cqw, 48px)" }}
+                        >
+                          {title}
+                        </span>
+                      ) : null}
+                      <svg viewBox="0 0 120 10" className="w-[46%]" role="presentation" focusable="false">
+                        <path d="M4 5 H52 M68 5 H116" stroke={colors.foil} strokeWidth="0.9" />
+                        <path d="M60 1 L64 5 L60 9 L56 5 Z" fill={colors.foil} />
                       </svg>
                     </div>
 
-                    {/* The sheen on the leaf, now and then. */}
-                    <div className="absolute inset-0 overflow-hidden" style={{ opacity: opening ? 0 : 1 }}>
-                      <div
-                        className="absolute inset-y-0 left-0 w-1/2 animate-[lifafa-cover-sheen_5s_ease-in-out_1s_infinite] motion-reduce:animate-none"
-                        style={{
-                          ...floatStyle,
-                          backgroundImage:
-                            "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)",
-                          mixBlendMode: "soft-light",
-                          transform: "translate3d(-130%, 0, 0)",
-                        }}
-                      />
-                    </div>
-
-                    <div className="absolute inset-0" style={shadeStyle} />
                   </div>
 
                   {/*
-                    Inside: the lining, drawn the right way up once the cover has
-                    turned half a revolution onto the left.
+                    Gold rising off the spine as the card lies open. Beside the
+                    panel rather than in it, so the panel's clip does not cut the
+                    flecks off at its top edge as they rise.
                   */}
-                  <div
-                    className="absolute inset-0 overflow-hidden rounded-l-[4px]"
-                    style={{ ...HIDE_BACKFACE, transform: "rotateY(180deg)" }}
-                  >
-                    <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                      <rect x="0" y="0" width="200" height="280" fill={`url(#${uid}-liner)`} />
-                      <rect x="9" y="9" width="182" height="262" rx="2" fill="none" stroke={colors.linerInk} strokeWidth="1.2" />
-                    </svg>
+                  <div className="absolute" style={box(200, 0, 200, 280)}>
+                    {SPARKS.map((spark, index) => (
+                      <span
+                        key={index}
+                        className="absolute top-[62%] left-0 opacity-0"
+                        style={
+                          {
+                            width: spark.size,
+                            height: spark.size,
+                            marginLeft: -spark.size / 2,
+                            "--dx": `${spark.dx}px`,
+                            "--dy": `${spark.dy}px`,
+                            animation: onOpen(
+                              "lifafa-cover-spark",
+                              SPARK_SHARE,
+                              SPARK_START + spark.delay,
+                              "cubic-bezier(0.15,0.7,0.4,1)",
+                            ),
+                          } as CSSProperties
+                        }
+                      >
+                        <svg viewBox="0 0 10 10" className="h-full w-full" role="presentation" focusable="false">
+                          <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={index % 2 === 0 ? colors.foilHi : colors.foil} />
+                        </svg>
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* The cover, hinged on the spine: two faces turning together. */}
+                  <div className="absolute" style={coverStyle}>
+                    {/* Outside: the front of the card. */}
+                    <div className="absolute inset-0 overflow-hidden rounded-r-[4px]" style={HIDE_BACKFACE}>
+                      <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
+                        <rect x="0" y="0" width="200" height="280" fill={stockFill} />
+                        <PanelFrame colors={colors} />
+                        {/* The medallion, with the couple's initials in its middle. */}
+                        <g>
+                          <circle cx="100" cy="128" r="40" fill="none" stroke={colors.foil} strokeWidth="1.4" />
+                          <circle cx="100" cy="128" r="34" fill="none" stroke={colors.foil} strokeWidth="0.6" opacity="0.8" />
+                          {Array.from({ length: 16 }, (_, index) => {
+                            const angle = (index / 16) * Math.PI * 2;
+
+                            return (
+                              <circle
+                                key={index}
+                                cx={100 + Math.cos(angle) * 37}
+                                cy={128 + Math.sin(angle) * 37}
+                                r={index % 2 === 0 ? 1.3 : 0.8}
+                                fill={colors.foil}
+                              />
+                            );
+                          })}
+                          {initials.length > 0 ? (
+                            <text
+                              x="100"
+                              y="130"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize={initials.length > 1 ? 26 : 32}
+                              fill={colors.foil}
+                              style={namesFont}
+                            >
+                              {initials}
+                            </text>
+                          ) : (
+                            <path d="M100 112 L112 128 L100 144 L88 128 Z" fill={colors.foil} />
+                          )}
+                          <path d="M78 196 H122" stroke={colors.foil} strokeWidth="0.9" />
+                          <path d="M100 190 L105 196 L100 202 L95 196 Z" fill={colors.foil} />
+                          <path d="M86 64 Q100 54 114 64" fill="none" stroke={colors.foil} strokeWidth="1" />
+                          <circle cx="100" cy="58" r="2" fill={colors.foil} />
+                        </g>
+                      </svg>
+
+                      {/* A silk ribbon round the card, near the spine, tied in a bow. */}
+                      <div className="absolute inset-0" style={ribbonStyle}>
+                        <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
+                          <rect x="30" y="0" width="16" height="280" fill={`url(#${uid}-ribbon)`} />
+                          <path d="M30 0 V280 M46 0 V280" stroke={colors.waxLo} strokeWidth="0.8" opacity="0.6" />
+                          <path d="M38 118 C14 98 4 110 12 124 C18 134 30 128 38 122 Z" fill={`url(#${uid}-ribbon)`} stroke={colors.waxLo} strokeWidth="0.8" />
+                          <path d="M38 118 C62 98 72 110 64 124 C58 134 46 128 38 122 Z" fill={`url(#${uid}-ribbon)`} stroke={colors.waxLo} strokeWidth="0.8" />
+                          <path d="M36 124 L24 160 L31 156 L34 164 Z" fill={`url(#${uid}-ribbon)`} />
+                          <path d="M40 124 L52 162 L45 157 L42 165 Z" fill={`url(#${uid}-ribbon)`} />
+                          <ellipse cx="38" cy="121" rx="6" ry="7" fill={colors.wax} stroke={colors.waxLo} strokeWidth="0.8" />
+                        </svg>
+                      </div>
+
+                      {/* The sheen on the leaf, now and then. */}
+                      <div className="absolute inset-0 overflow-hidden" style={{ opacity: opening ? 0 : 1 }}>
+                        <div
+                          className="absolute inset-y-0 left-0 w-1/2 animate-[lifafa-cover-sheen_5s_ease-in-out_1s_infinite] motion-reduce:animate-none"
+                          style={{
+                            ...floatStyle,
+                            backgroundImage:
+                              "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)",
+                            mixBlendMode: "soft-light",
+                            transform: "translate3d(-130%, 0, 0)",
+                          }}
+                        />
+                      </div>
+
+                      <div className="absolute inset-0" style={shadeStyle} />
+                    </div>
+
+                    {/*
+                      Inside: the lining, drawn the right way up once the cover has
+                      turned half a revolution onto the left.
+                    */}
                     <div
-                      className="absolute inset-0"
-                      style={{ backgroundImage: "linear-gradient(270deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 18%)" }}
-                    />
+                      className="absolute inset-0 overflow-hidden rounded-l-[4px]"
+                      style={{ ...HIDE_BACKFACE, transform: "rotateY(180deg)" }}
+                    >
+                      <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
+                        <rect x="0" y="0" width="200" height="280" fill={`url(#${uid}-liner)`} />
+                        <rect x="9" y="9" width="182" height="262" rx="2" fill="none" stroke={colors.linerInk} strokeWidth="1.2" />
+                      </svg>
+                      <div
+                        className="absolute inset-0"
+                        style={{ backgroundImage: "linear-gradient(270deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 18%)" }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

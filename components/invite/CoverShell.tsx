@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -125,6 +126,7 @@ export default function CoverShell({
   title,
   fontPairId,
   language,
+  topClearance,
   renderVisual,
   children,
 }: {
@@ -157,6 +159,13 @@ export default function CoverShell({
    * palette is: a default would be a face the host never chose.
    */
   fontPairId: FontPairId;
+  /**
+   * A band at the top of the screen the drawing must keep clear of, as a CSS
+   * length: the guest page's language switch, when it shows one. Published as
+   * --cover-top-h, which ABOVE_WORDS starts below. Absent, the drawing has the
+   * whole height above the words, as it always had.
+   */
+  topClearance?: string;
   renderVisual?: (state: CoverVisualState) => ReactNode;
   children: ReactNode;
 }): ReactElement {
@@ -241,6 +250,47 @@ export default function CoverShell({
    * the handler itself, where a tap happens exactly as often as it happens.
    */
   const soundedRef = useRef(false);
+
+  /*
+    How much of the bottom of the screen the names and the prompt take, from
+    the top of the names to the foot of the screen, published to the visual as
+    --cover-words-h.
+
+    MEASURED, NOT GUESSED. A visual used to be centred on the whole screen and
+    sized by its width alone, with the words simply printed under it — which
+    held on a tall phone with short names and failed on a short one with long
+    ones: two lines of a script face under a browser's own toolbars, and the
+    folded card sat on top of the couple's names. Now each visual draws its
+    centrepiece in the space above this line and sizes it to that space, so the
+    two cannot meet whatever the names, the face or the phone. Re-measured when
+    the words change size — a font arriving, a line wrapping — and when the
+    screen does.
+  */
+  const layerRef = useRef<HTMLDivElement>(null);
+  const wordsRef = useRef<HTMLSpanElement>(null);
+  const [wordsHeight, setWordsHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    const words = wordsRef.current;
+
+    if (layer === null || words === null || typeof ResizeObserver !== "function") {
+      return;
+    }
+
+    const measure = (): void => {
+      const reach = layer.getBoundingClientRect().bottom - words.getBoundingClientRect().top;
+      /* A little air between the centrepiece and the names. */
+      setWordsHeight(Math.max(0, Math.round(reach + 20)));
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(layer);
+    observer.observe(words);
+
+    return () => observer.disconnect();
+  }, [title, prompt]);
 
   const handleOpen = useCallback((): void => {
     /*
@@ -447,8 +497,15 @@ export default function CoverShell({
               "--cover-text": onVelvet ? colors.onVelvet : colors.text,
               "--cover-muted": onVelvet ? colors.onVelvetMuted : colors.textMuted,
               "--cover-accent": onVelvet ? colors.foilHi : colors.accent,
+              ...(wordsHeight !== null
+                ? { "--cover-words-h": `${wordsHeight}px` }
+                : null),
+              ...(topClearance !== undefined
+                ? { "--cover-top-h": topClearance }
+                : null),
             } as CSSProperties
           }
+          ref={layerRef}
           className="fixed inset-0 z-50 flex min-h-dvh w-full flex-col items-center justify-center"
         >
           {visual}
@@ -477,7 +534,7 @@ export default function CoverShell({
             } focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
               !hasVisual
                 ? "justify-center"
-                : "justify-end pb-[12vh]"
+                : "justify-end pb-[max(9vh,60px)]"
             }`}
           >
             {/*
@@ -487,45 +544,50 @@ export default function CoverShell({
               with leading of at least 1.3, because the names here run as one
               line that wraps and a script's capitals and descenders need the
               room. Devanagari takes the cover's 1.45 for its matras.
+
+              Wrapped together so the shell can measure how far up the screen
+              they reach; see `wordsRef`.
             */}
-            {title ? (
-              <span
-                className="text-[calc(1.875rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(2.375rem*var(--cover-names-scale))]"
-                style={
-                  {
-                    "--cover-names-scale": String(namesFace.scale),
-                    fontFamily: fontFamilyOf(
-                      namesFace.variable,
-                      namesFace.fallback,
-                    ),
-                    fontWeight: namesFace.weight,
-                    letterSpacing: namesFace.tracking,
-                    wordSpacing: namesFace.wordSpacing,
-                    lineHeight:
-                      copy.script === "devanagari"
-                        ? 1.45
-                        : Math.max(namesFace.leading, 1.3),
-                  } as CSSProperties
-                }
-              >
-                {title}
+            <span ref={wordsRef} className="flex flex-col items-center gap-4">
+              {title ? (
+                <span
+                  className="text-[calc(1.875rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(2.375rem*var(--cover-names-scale))]"
+                  style={
+                    {
+                      "--cover-names-scale": String(namesFace.scale),
+                      fontFamily: fontFamilyOf(
+                        namesFace.variable,
+                        namesFace.fallback,
+                      ),
+                      fontWeight: namesFace.weight,
+                      letterSpacing: namesFace.tracking,
+                      wordSpacing: namesFace.wordSpacing,
+                      lineHeight:
+                        copy.script === "devanagari"
+                          ? 1.45
+                          : Math.max(namesFace.leading, 1.3),
+                    } as CSSProperties
+                  }
+                >
+                  {title}
+                </span>
+              ) : null}
+              {/*
+                A rule of the accent between the names and the way in, and the
+                prompt breathing under it, so a guest reads it as the thing to do
+                rather than as a caption. Small caps spacing, as a card's own
+                small print is set.
+              */}
+              <span aria-hidden className="flex items-center gap-2 text-[var(--cover-accent)]">
+                <span className="h-px w-8 bg-current opacity-60" />
+                <svg viewBox="0 0 10 10" className="h-2 w-2" focusable="false">
+                  <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
+                </svg>
+                <span className="h-px w-8 bg-current opacity-60" />
               </span>
-            ) : null}
-            {/*
-              A rule of the accent between the names and the way in, and the
-              prompt breathing under it, so a guest reads it as the thing to do
-              rather than as a caption. Small caps spacing, as a card's own
-              small print is set.
-            */}
-            <span aria-hidden className="flex items-center gap-2 text-[var(--cover-accent)]">
-              <span className="h-px w-8 bg-current opacity-60" />
-              <svg viewBox="0 0 10 10" className="h-2 w-2" focusable="false">
-                <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
-              </svg>
-              <span className="h-px w-8 bg-current opacity-60" />
-            </span>
-            <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-muted)] uppercase motion-reduce:animate-none">
-              {prompt}
+              <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-muted)] uppercase motion-reduce:animate-none">
+                {prompt}
+              </span>
             </span>
           </button>
 

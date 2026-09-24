@@ -1,26 +1,73 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactElement,
+} from "react";
 import CardCanvas from "@/components/card/CardCanvas";
 import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import GuestPass from "@/components/invite/GuestPass";
+import LanguageSwitch, {
+  LANGUAGE_SWITCH_CLEARANCE,
+} from "@/components/invite/LanguageSwitch";
 import RsvpPanel from "@/components/invite/RsvpPanel";
 import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
 import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { cardCopy } from "@/lib/cardLanguage";
+import { CARD_LANGUAGES, cardCopy, cardLanguage } from "@/lib/cardLanguage";
 import { effectiveTheme } from "@/lib/cardTheme";
+import {
+  cardInLanguage,
+  hasHeadlineIn,
+  inviteLinkIn,
+} from "@/lib/cardTranslation";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
 import { getPalette } from "@/lib/palettes";
 import { getTheme } from "@/lib/themes";
+import type { CardLanguage } from "@/types/card";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
 import type { EventWeather } from "@/types/weather";
 
 type InviteStage = "form" | "confirmed";
+
+/**
+ * Why a reply did not go through, kept as a reason rather than a sentence, so
+ * a guest who switches language after a failure reads it in the new one.
+ */
+type ReplyError =
+  | { kind: "failed" }
+  | { kind: "closed" }
+  /* The server's own sentence, which is English; see submitErrorText. */
+  | { kind: "server"; text: string };
+
+/** Where a guest's language choice is remembered, per invitation. */
+function languageKey(inviteCode: string): string {
+  return `lifafa:invite-lang:${inviteCode}`;
+}
+
+function readRememberedLanguage(inviteCode: string): CardLanguage | null {
+  try {
+    const stored = window.localStorage.getItem(languageKey(inviteCode));
+    return stored !== null && cardLanguage(stored) === stored ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberLanguage(inviteCode: string, language: CardLanguage): void {
+  try {
+    window.localStorage.setItem(languageKey(inviteCode), language);
+  } catch {
+    /* Storage blocked; the choice still holds for this visit and in the URL. */
+  }
+}
 
 /**
  * The guest's side of an invitation: the card, then the reply.
@@ -34,27 +81,98 @@ type InviteStage = "form" | "confirmed";
  */
 export default function InviteExperience({
   event,
+  initialLanguage,
+  linkLanguage,
   weather,
   inviteUrl,
 }: {
+  /**
+   * The event as stored: the card in its own language, with its words in the
+   * other language beside it in `translations`. Resolved here, per language,
+   * so the guest can switch without the page being fetched again.
+   */
   event: StoredEvent;
+  /** The language the page opens in: the link's ?lang=, or the card's own. */
+  initialLanguage: CardLanguage;
+  /**
+   * The language the link named, if it named one. A link that says ?lang=hi
+   * opens in Hindi even for a guest who once chose English on the plain link.
+   */
+  linkLanguage: CardLanguage | null;
   /** Resolved by the page, on the server. Null means the card shows none. */
   weather: EventWeather | null;
-  /** This card's own link, built by the page through lib/siteUrl.ts. */
+  /** This card's own link, without a language; see inviteLinkIn below. */
   inviteUrl: string;
 }): ReactElement {
   const [stage, setStage] = useState<InviteStage>("form");
   /** Kept whole, so "Change my reply" returns a filled form. */
   const [submitted, setSubmitted] = useState<RsvpSubmission | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<ReplyError | null>(null);
   /**
    * The guest's own check-in token, as their latest reply handed it back. Null
    * for any reply that is not a yes, and for every reply before 0006 is applied.
    */
   const [checkinToken, setCheckinToken] = useState<string | null>(null);
 
-  const { config, draft } = event;
+  /*
+    THE LANGUAGE.
+
+    State, so a switch redraws everything below from the same stored event: the
+    cover's names and prompt, the card, its fixed words, the reply form, the
+    confirmation and the pass all read `config.language` and the draft that
+    cardInLanguage hands back. Nothing is fetched and the page is not reloaded.
+
+    Offered only when the card can be read in both: the host wrote the names or
+    the title in the other language. Otherwise there is no switch, and the card
+    opens in the link's language or its own, as it always has.
+  */
+  const [language, setLanguage] = useState<CardLanguage>(initialLanguage);
+  const switchable = CARD_LANGUAGES.every((option) =>
+    hasHeadlineIn(event.draft, event.config.language, option.id),
+  );
+
+  /*
+    A guest's earlier choice, read after hydration so the server and the first
+    client render agree, and before paint so the cover never flashes in the
+    other language. A link that names a language outranks it.
+  */
+  useLayoutEffect(() => {
+    if (!switchable || linkLanguage !== null) {
+      return;
+    }
+
+    const remembered = readRememberedLanguage(event.inviteCode);
+
+    if (remembered !== null && remembered !== initialLanguage) {
+      setLanguage(remembered);
+    }
+  }, [event.inviteCode, initialLanguage, linkLanguage, switchable]);
+
+  /*
+    Remembered for this invitation, and written into the address too, so a
+    reload or a link copied from the bar opens in the language on screen.
+  */
+  const handleLanguageChange = useCallback(
+    (next: CardLanguage): void => {
+      setLanguage(next);
+      rememberLanguage(event.inviteCode, next);
+
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("lang", next);
+        window.history.replaceState(window.history.state, "", url);
+      } catch {
+        /* The address is a convenience; the switch has already happened. */
+      }
+    },
+    [event.inviteCode],
+  );
+
+  const { config, draft } = useMemo(
+    () => cardInLanguage(event.draft, event.config, language),
+    [event.draft, event.config, language],
+  );
   const theme = getTheme(config.themeId);
   /*
     What the card is actually painted in, which is not the theme.
@@ -77,7 +195,6 @@ export default function InviteExperience({
     written in the card's language, read from the same config the card reads
     it from.
   */
-  const { language } = config;
   const copy = cardCopy(language);
 
   /* The same names the card's own cover sets, flattened to one line. */
@@ -109,7 +226,11 @@ export default function InviteExperience({
   */
   const invite: CalendarInvite = {
     code: event.inviteCode,
-    url: inviteUrl,
+    /*
+      In the language this card is being read in, so the link written into a
+      guest's calendar brings them back to the card they saved it from.
+    */
+    url: inviteLinkIn(inviteUrl, language),
   };
 
   const handleSubmit = (submission: RsvpSubmission): void => {
@@ -127,16 +248,8 @@ export default function InviteExperience({
         setIsSending(false);
 
         if (!result.ok) {
-          /*
-            The server's sentence is written in English for a host, and in
-            development carries the Postgres code on the end. An English card
-            shows it as it always has; any other card says the same thing in
-            its own language, because a guest reading Hindi cannot act on an
-            English error any better than on no error at all.
-          */
-          setSubmitError(
-            language === "en" ? result.error : copy.invite.replyFailed,
-          );
+          /* Shown in English only on an English card; see submitErrorText. */
+          setSubmitError({ kind: "server", text: result.error });
           return;
         }
 
@@ -146,7 +259,7 @@ export default function InviteExperience({
           them try again.
         */
         if (result.data.kind === "closed") {
-          setSubmitError(copy.invite.repliesClosed);
+          setSubmitError({ kind: "closed" });
           return;
         }
 
@@ -163,146 +276,180 @@ export default function InviteExperience({
       .catch((cause: unknown) => {
         console.error("[invite] reply failed:", cause);
         setIsSending(false);
-        setSubmitError(copy.invite.replyFailed);
+        setSubmitError({ kind: "failed" });
       });
   };
 
+  /*
+    The reason, in the language on screen now. The server's sentence is
+    written in English for a host, and in development carries the Postgres
+    code on the end. An English card shows it as it always has; a Hindi one
+    says the same thing in its own words, because a guest reading Hindi cannot
+    act on an English error any better than on no error at all.
+  */
+  const submitErrorText =
+    submitError === null
+      ? null
+      : submitError.kind === "closed"
+        ? copy.invite.repliesClosed
+        : submitError.kind === "server" && language === "en"
+          ? submitError.text
+          : copy.invite.replyFailed;
+
   return (
-    <CoverShell
-      animationId={event.coverAnimation}
-      /*
-        The card's own colours, so the cover a guest taps is made of the same
-        material as the invitation behind it. The accent is resolved the same
-        way the watermark resolves it, which is what stops a host's overridden
-        accent meeting the product's marigold on the way in.
-      */
-      palette={palette}
-      accent={config.style.accentOverride}
-      title={coverTitle}
-      fontPairId={config.style.fontPairId}
-      language={language}
-      renderVisual={(state) => <CoverVisual {...state} />}
-    >
-      <main
+    <>
+      <CoverShell
+        animationId={event.coverAnimation}
         /*
-          The card's language on everything below, the form and the pass
-          included — they sit outside the card's own root, which carries it
-          too. On a Hindi card the page's own face also takes the card's body
-          stack, which is the one with Devanagari in it; the form used to fall
-          through to whatever the phone had for every word. An English card is
-          left on the page face it has always had.
+          The card's own colours, so the cover a guest taps is made of the same
+          material as the invitation behind it. The accent is resolved the same
+          way the watermark resolves it, which is what stops a host's overridden
+          accent meeting the product's marigold on the way in.
         */
-        lang={copy.lang}
-        className="min-h-screen"
-        style={{
-          backgroundColor: palette.background,
-          fontFamily:
-            copy.script === "devanagari" ? cardTheme.fontFamily : undefined,
-        }}
+        palette={palette}
+        accent={config.style.accentOverride}
+        title={coverTitle}
+        fontPairId={config.style.fontPairId}
+        language={language}
+        /* The cover's drawing keeps clear of the switch above it. */
+        topClearance={switchable ? LANGUAGE_SWITCH_CLEARANCE : undefined}
+        renderVisual={(state) => <CoverVisual {...state} />}
       >
-        {/*
-          The card opens with names set in display type, but they are a design
-          element rather than a document heading. This carries the outline so a
-          screen reader announces what the page is before the card starts.
-        */}
-        <h1 className="sr-only">
-          {pageHeading.length > 0 ? pageHeading : copy.invite.headingFallback}
-        </h1>
-
-        <div
-          className="relative"
+        <main
           /*
-            The event's own is_paid, as the server page loaded it. The card's
-            JSON carries a copy that toStoredEvent overwrites from the column,
-            so the two agree today; reading the column is what keeps it from
-            depending on that.
+            The card's language on everything below, the form and the pass
+            included — they sit outside the card's own root, which carries it
+            too. On a Hindi card the page's own face also takes the card's body
+            stack, which is the one with Devanagari in it; the form used to fall
+            through to whatever the phone had for every word. An English card is
+            left on the page face it has always had.
           */
-          style={
-            event.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
-          }
+          lang={copy.lang}
+          className="min-h-screen"
+          style={{
+            backgroundColor: palette.background,
+            fontFamily:
+              copy.script === "devanagari" ? cardTheme.fontFamily : undefined,
+          }}
         >
-          <CardCanvas
-            draft={draft}
-            theme={theme}
-            config={config}
-            motifs={motifs}
-            sizing="viewport"
-            audience="guest"
-            invite={invite}
+          {/*
+            The card opens with names set in display type, but they are a design
+            element rather than a document heading. This carries the outline so a
+            screen reader announces what the page is before the card starts.
+          */}
+          <h1 className="sr-only">
+            {pageHeading.length > 0 ? pageHeading : copy.invite.headingFallback}
+          </h1>
+
+          <div
+            className="relative"
             /*
-              Grows with a tablet or laptop screen from 768px up, and fills the
-              page either side of it. The one card in the app that does: the
-              editor's previews draw it inside a phone-sized box of their own.
+              The event's own is_paid, as the server page loaded it. The card's
+              JSON carries a copy that toStoredEvent overwrites from the column,
+              so the two agree today; reading the column is what keeps it from
+              depending on that.
             */
-            fluid
-            /*
-              The page resolves the reading on the server and hands it here; it
-              used to stop at this component, which took the prop and never
-              passed it on. Everything behind it worked — the venue was
-              geocoded at save time, the forecast was fetched and cached, the
-              host picked a treatment for it — and CardCanvas fell back to its
-              `weather = null` default, so no invitation has ever shown a sky.
-            */
-            weather={weather}
-            weatherTheme={event.weatherTheme}
-          />
-
-          <Watermark
-            show={!event.isPaid}
-            language={language}
-            accent={config.style.accentOverride ?? palette.accent}
-            surface={palette.surface}
-          />
-        </div>
-
-        {/*
-          Nothing at all when the host switched replies off: no heading, no
-          empty box, no line explaining the absence. The card simply ends where
-          the host's last section ends, which is what a card sent only to share
-          the details should do.
-
-          A host who switches replies off while this page is open does not
-          reach it here — the config was read when the page was — and that
-          guest meets the refusal in addOrUpdateReply instead.
-        */}
-        {stage === "confirmed" && submitted !== null ? (
-          <RsvpConfirmed
-            status={submitted.status}
-            partySize={submitted.partySize}
-            name={submitted.name}
-            theme={cardTheme}
-            language={language}
-            onChangeReply={() => setStage("form")}
-            pass={
-              /*
-                Three gates, and all three must hold: the host switched check-in
-                on, this reply is a yes, and the database issued a token. Any one
-                missing renders nothing at all — no heading, no empty box.
-              */
-              event.qrCheckinEnabled &&
-              submitted.status === "accepted" &&
-              checkinToken !== null ? (
-                <GuestPass
-                  token={checkinToken}
-                  guestName={submitted.name}
-                  eventName={passEventName}
-                  theme={cardTheme}
-                  language={language}
-                />
-              ) : null
+            style={
+              event.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
             }
-          />
-        ) : config.rsvpEnabled ? (
-          <RsvpPanel
-            theme={cardTheme}
-            language={language}
-            initial={submitted}
-            onSubmit={handleSubmit}
-            isSending={isSending}
-            submitError={submitError}
-          />
-        ) : null}
-      </main>
-    </CoverShell>
+          >
+            <CardCanvas
+              draft={draft}
+              theme={theme}
+              config={config}
+              motifs={motifs}
+              sizing="viewport"
+              audience="guest"
+              invite={invite}
+              /*
+                Grows with a tablet or laptop screen from 768px up, and fills the
+                page either side of it. The one card in the app that does: the
+                editor's previews draw it inside a phone-sized box of their own.
+              */
+              fluid
+              /*
+                The page resolves the reading on the server and hands it here; it
+                used to stop at this component, which took the prop and never
+                passed it on. Everything behind it worked — the venue was
+                geocoded at save time, the forecast was fetched and cached, the
+                host picked a treatment for it — and CardCanvas fell back to its
+                `weather = null` default, so no invitation has ever shown a sky.
+              */
+              weather={weather}
+              weatherTheme={event.weatherTheme}
+            />
+
+            <Watermark
+              show={!event.isPaid}
+              language={language}
+              accent={config.style.accentOverride ?? palette.accent}
+              surface={palette.surface}
+            />
+          </div>
+
+          {/*
+            Nothing at all when the host switched replies off: no heading, no
+            empty box, no line explaining the absence. The card simply ends where
+            the host's last section ends, which is what a card sent only to share
+            the details should do.
+
+            A host who switches replies off while this page is open does not
+            reach it here — the config was read when the page was — and that
+            guest meets the refusal in addOrUpdateReply instead.
+          */}
+          {stage === "confirmed" && submitted !== null ? (
+            <RsvpConfirmed
+              status={submitted.status}
+              partySize={submitted.partySize}
+              name={submitted.name}
+              theme={cardTheme}
+              language={language}
+              onChangeReply={() => setStage("form")}
+              pass={
+                /*
+                  Three gates, and all three must hold: the host switched check-in
+                  on, this reply is a yes, and the database issued a token. Any one
+                  missing renders nothing at all — no heading, no empty box.
+                */
+                event.qrCheckinEnabled &&
+                submitted.status === "accepted" &&
+                checkinToken !== null ? (
+                  <GuestPass
+                    token={checkinToken}
+                    guestName={submitted.name}
+                    eventName={passEventName}
+                    theme={cardTheme}
+                    language={language}
+                  />
+                ) : null
+              }
+            />
+          ) : config.rsvpEnabled ? (
+            <RsvpPanel
+              theme={cardTheme}
+              language={language}
+              initial={submitted}
+              onSubmit={handleSubmit}
+              isSending={isSending}
+              submitError={submitErrorText}
+            />
+          ) : null}
+        </main>
+      </CoverShell>
+
+      {/*
+        Outside the cover rather than inside it: everything inside is inert while
+        the cover is up, and a guest should be able to pick their language before
+        they tap in. See LanguageSwitch for where it sits and when it hides.
+      */}
+      {switchable ? (
+        <LanguageSwitch
+          value={language}
+          onChange={handleLanguageChange}
+          palette={palette}
+          accent={config.style.accentOverride ?? palette.accent}
+        />
+      ) : null}
+    </>
   );
 }

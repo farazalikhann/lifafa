@@ -3,6 +3,7 @@
 import { useId, type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import { initialsOf } from "@/components/invite/covers/initials";
+import { ABOVE_WORDS } from "@/components/invite/covers/layout";
 import { stage } from "@/components/invite/covers/timing";
 import type { CoverPalette } from "@/lib/coverPalette";
 import { PETALS } from "@/lib/petals";
@@ -411,28 +412,30 @@ export default function PetalDustCover({
       <div className="absolute inset-0" style={backdropStyle} />
 
       {/* The light under the wreath, breathing, so the middle reads as the place to tap. */}
-      <div
-        className="absolute aspect-square w-[110vmin] -translate-x-1/2 -translate-y-1/2"
-        style={{ left: `${CX}%`, top: `${CY}%` }}
-      >
-        {/*
-          The fade on its own layer: a running keyframe owns the opacity of the
-          element it runs on, and would hold the glow over the card.
-        */}
+      {/* Centred on the wreath, in the space above the names; see ABOVE_WORDS. */}
+      <div style={ABOVE_WORDS}>
         <div
-          className="absolute inset-0"
-          style={{
-            transition: transition(stage("opacity", 0.3, 0, "ease-out")),
-            opacity: opening ? 0 : 1,
-          }}
+          className="absolute top-1/2 left-1/2 aspect-square w-[110vmin] -translate-x-1/2 -translate-y-1/2"
         >
+          {/*
+            The fade on its own layer: a running keyframe owns the opacity of the
+            element it runs on, and would hold the glow over the card.
+          */}
           <div
-            className="absolute inset-0 rounded-full animate-[lifafa-cover-halo_4s_ease-in-out_infinite] motion-reduce:animate-none"
+            className="absolute inset-0"
             style={{
-              backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 58%)`,
-              animationPlayState: opening ? "paused" : "running",
+              transition: transition(stage("opacity", 0.3, 0, "ease-out")),
+              opacity: opening ? 0 : 1,
             }}
-          />
+          >
+            <div
+              className="absolute inset-0 rounded-full animate-[lifafa-cover-halo_4s_ease-in-out_infinite] motion-reduce:animate-none"
+              style={{
+                backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 58%)`,
+                animationPlayState: opening ? "paused" : "running",
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -537,58 +540,61 @@ export default function PetalDustCover({
       </svg>
 
       {/* The wreath, with the couple's initials at its heart. */}
-      <div
-        className="absolute aspect-square w-[min(52vmin,260px)] -translate-x-1/2 -translate-y-1/2"
-        style={{ left: `${CX}%`, top: `${CY}%` }}
-      >
-        {/*
-          Still, not breathing: the glow behind it already says "tap here", and
-          a wreath of this many shapes scaling on a loop was the most expensive
-          thing on the cover — it cost a third of the frame rate on a slow
-          phone for a movement nobody would miss.
-        */}
-        <div className="absolute inset-0" style={wreathStyle}>
-          <Wreath colors={colors} initials={initials} namesFont={namesFont} gradientId={`${uid}-wreath`} />
-        </div>
-
-        {/* The flash as the gust takes it, and the gold thrown off. */}
+      {/* The wreath takes the space above the names; see ABOVE_WORDS. */}
+      <div style={ABOVE_WORDS}>
         <div
-          className="absolute -inset-[40%] rounded-full opacity-0"
-          style={{
-            backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 58%)`,
-            animation: onOpen("lifafa-cover-flash", 0.4, 0, "cubic-bezier(0.2,0.6,0.4,1)"),
-          }}
-        />
-        {SPARKS.map((spark, index) => {
-          const radians = (spark.angle * Math.PI) / 180;
-
-          return (
-            <span
-              key={index}
-              className="absolute top-1/2 left-1/2 opacity-0"
-              style={
-                {
-                  width: spark.size,
-                  height: spark.size,
-                  marginLeft: -spark.size / 2,
-                  marginTop: -spark.size / 2,
-                  "--dx": `${tenth(Math.cos(radians) * spark.distance)}vmin`,
-                  "--dy": `${tenth(Math.sin(radians) * spark.distance)}vmin`,
-                  animation: onOpen(
-                    "lifafa-cover-spark",
-                    SPARK_SHARE,
-                    SPARK_START + spark.delay,
-                    "cubic-bezier(0.15,0.7,0.4,1)",
-                  ),
-                } as CSSProperties
-              }
-            >
-              <svg viewBox="0 0 10 10" className="h-full w-full" role="presentation" focusable="false">
-                <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={index % 3 === 0 ? colors.foilHi : colors.foil} />
-              </svg>
-            </span>
-          );
-        })}
+          className="relative aspect-square w-[min(52vmin,260px)] shrink-0"
+          style={{ width: "min(52vmin, 260px, 64cqh)" }}
+        >
+          {/*
+            Still, not breathing: the glow behind it already says "tap here", and
+            a wreath of this many shapes scaling on a loop was the most expensive
+            thing on the cover — it cost a third of the frame rate on a slow
+            phone for a movement nobody would miss.
+          */}
+          <div className="absolute inset-0" style={wreathStyle}>
+            <Wreath colors={colors} initials={initials} namesFont={namesFont} gradientId={`${uid}-wreath`} />
+          </div>
+  
+          {/* The flash as the gust takes it, and the gold thrown off. */}
+          <div
+            className="absolute -inset-[40%] rounded-full opacity-0"
+            style={{
+              backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 58%)`,
+              animation: onOpen("lifafa-cover-flash", 0.4, 0, "cubic-bezier(0.2,0.6,0.4,1)"),
+            }}
+          />
+          {SPARKS.map((spark, index) => {
+            const radians = (spark.angle * Math.PI) / 180;
+  
+            return (
+              <span
+                key={index}
+                className="absolute top-1/2 left-1/2 opacity-0"
+                style={
+                  {
+                    width: spark.size,
+                    height: spark.size,
+                    marginLeft: -spark.size / 2,
+                    marginTop: -spark.size / 2,
+                    "--dx": `${tenth(Math.cos(radians) * spark.distance)}vmin`,
+                    "--dy": `${tenth(Math.sin(radians) * spark.distance)}vmin`,
+                    animation: onOpen(
+                      "lifafa-cover-spark",
+                      SPARK_SHARE,
+                      SPARK_START + spark.delay,
+                      "cubic-bezier(0.15,0.7,0.4,1)",
+                    ),
+                  } as CSSProperties
+                }
+              >
+                <svg viewBox="0 0 10 10" className="h-full w-full" role="presentation" focusable="false">
+                  <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={index % 3 === 0 ? colors.foilHi : colors.foil} />
+                </svg>
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

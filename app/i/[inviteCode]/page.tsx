@@ -7,7 +7,6 @@ import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import {
   cardInLanguage,
-  inviteLinkIn,
   requestedLanguage,
 } from "@/lib/cardTranslation";
 import { isEventHost } from "@/lib/db/events";
@@ -178,11 +177,14 @@ export default async function InvitePage({
   }
 
   /*
-    Resolved to the link's language before anything is handed down, so the
-    card and everything around it — cover, form, pass — only ever see one
-    language's words and need no idea that a card can hold another.
+    The event goes down as stored, both languages in it, and InviteExperience
+    resolves it in the browser, so a guest can switch language without the page
+    being fetched again. The link only decides where it starts: its ?lang=, or
+    the card's own language when it names none or one Lifafa does not have.
   */
-  const event = eventInLanguage(result.data, lang);
+  const event = result.data;
+  const language = requestedLanguage(lang, event.config.language);
+  const linkLanguage = typeof lang === "string" && lang === language ? language : null;
 
   /*
     ───────────────────────── THE PUBLISH GATE ─────────────────────────
@@ -209,7 +211,7 @@ export default async function InvitePage({
     invitation. Guests never reach it.
   */
   if (!event.isPaid && !(await isEventHost(event.id))) {
-    return <NotPublished language={event.config.language} />;
+    return <NotPublished language={language} />;
   }
 
   /*
@@ -231,15 +233,11 @@ export default async function InvitePage({
   return (
     <InviteExperience
       event={event}
+      initialLanguage={language}
+      linkLanguage={linkLanguage}
       weather={weather}
-      /*
-        In the language this card is being read in, so the link written into a
-        guest's calendar brings them back to the card they saved it from.
-      */
-      inviteUrl={inviteLinkIn(
-        inviteUrl(event.inviteCode, await serverSiteOrigin()),
-        event.config.language,
-      )}
+      /* Without a language: the component adds the one on screen. */
+      inviteUrl={inviteUrl(event.inviteCode, await serverSiteOrigin())}
     />
   );
 }
