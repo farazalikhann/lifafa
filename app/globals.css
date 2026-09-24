@@ -310,6 +310,63 @@
   }
 }
 
+/*
+  THE SAME GROWTH ON A PHONE WIDER THAN THE CARD, held upright.
+
+  The card is drawn at 420px, and on a phone wider than that — a large
+  Android, a curved-edge phone, a foldable's inner screen — it used to stop at
+  420px with bare page either side and phone-sized type in it. From 421px to
+  767px, portrait only, a card marked `.lifafa-card-phone` fills the screen
+  and grows with it, through the same two lengths as the tablet rule above.
+
+  THE SAME FIT RULE. `400 * text + 380 * decor <= screen height`, in the
+  design's own pixels. The decor grows only on 46svh, which on most phones is
+  under 420px, so it usually stays at 1 — and then the type may grow only as
+  far as `(height - 380) / 400`, which is the `105svh - 25rem` term. Where the
+  screen is too short for any growth at all, both floors hold it at 420px,
+  exactly as before.
+
+  THE FLOORS ARE THE DESIGN WIDTH, not the tablet rule's 360px: this only ever
+  makes a card larger than a 420px phone draws it, never smaller. The side
+  inset is left alone, because on a phone the border is still close to the
+  text. Landscape is left alone too; a short, wide phone gets the card it
+  always had.
+*/
+@media (min-width: 26.3125rem) and (max-width: 47.99rem) and (orientation: portrait) {
+  .lifafa-card-phone {
+    --card-width: clamp(26.25rem, min(100vw, 60svh, 105svh - 25rem), 100vw);
+    --card-decor-width: clamp(26.25rem, min(100vw, 46svh), 100vw);
+
+    --card-rem: calc(var(--card-width) / 26.25);
+    --card-px: calc(var(--card-decor-width) / 420);
+
+    --spacing: calc(var(--card-rem) * 0.25);
+    --text-xs: calc(var(--card-rem) * 0.75);
+
+    max-width: none;
+  }
+
+  .lifafa-card-phone .lifafa-card-content {
+    max-width: var(--card-width);
+    margin-inline: auto;
+  }
+
+  .lifafa-card-phone .lifafa-card-column {
+    left: calc(50% - var(--card-width) / 2);
+    right: calc(50% - var(--card-width) / 2);
+  }
+
+  .lifafa-card-phone .lifafa-card-garland {
+    width: calc(var(--card-width) - 16px);
+    margin-inline: auto;
+  }
+
+  .lifafa-card-phone .lifafa-card-art > :is(img, svg) {
+    width: calc(var(--art-width) * var(--card-px));
+    height: auto;
+  }
+}
+
 /* -------------------------------------------------------------------------
    Keyframes. Consumed via arbitrary animation utilities in the components.
    ------------------------------------------------------------------------- */

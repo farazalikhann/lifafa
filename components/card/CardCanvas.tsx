@@ -488,6 +488,7 @@ export default function CardCanvas({
   weather = null,
   weatherTheme = null,
   fluid = false,
+  fillsPhone = false,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -501,8 +502,20 @@ export default function CardCanvas({
    * screen preview both draw the card inside a phone-sized box of their own,
    * and a card that sized itself off the screen would burst out of it. Below
    * 768px it changes nothing at all — see lib/cardScale.ts.
+   *
+   * Implies `fillsPhone`.
    */
   fluid?: boolean;
+  /**
+   * Whether the card fills a phone wider than its 420px design width, and
+   * grows with it, from 421px to 767px.
+   *
+   * The guest's invitation, through `fluid`, and the full screen preview,
+   * which is the whole screen on a phone. Never the editor's frame, which is
+   * a phone-sized box of its own. At 420px and below it changes nothing at
+   * all — see lib/cardScale.ts.
+   */
+  fillsPhone?: boolean;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -833,11 +846,12 @@ export default function CardCanvas({
         `lifafa-card-fluid` is what lets the guest's card fill a tablet or
         laptop screen from 768px up, with its text in a scaled column down the
         middle; see globals.css and lib/cardScale.ts. Below 768px it does
-        nothing at all.
+        nothing at all. `lifafa-card-phone` is the same growth on a phone
+        wider than 420px, and does nothing outside 421px to 767px.
       */
       className={`relative mx-auto w-full max-w-[420px] overflow-x-clip${
-        fluid ? " lifafa-card-fluid" : ""
-      }`}
+        fluid || fillsPhone ? " lifafa-card-phone" : ""
+      }${fluid ? " lifafa-card-fluid" : ""}`}
       style={{
         ...cssVariables,
         backgroundColor: effectiveTheme.background,

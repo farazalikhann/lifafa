@@ -102,6 +102,36 @@ function canRequestFullscreen(
   );
 }
 
+/**
+ * Lets the page draw into the camera cutout, for as long as it is switched on.
+ *
+ * Android Chrome letterboxes a fullscreen page away from the cutout — a black
+ * bar across the top of a punch-hole or notched phone — unless the viewport
+ * says `viewport-fit=cover`. Only this overlay asks for fullscreen, so only
+ * this overlay switches it on, and only while it is fullscreen: the site's own
+ * viewport is untouched everywhere else, including this overlay when windowed.
+ * The controls floated over the card keep clear of the cutout through
+ * `env(safe-area-inset-*)`, which is 0 whenever this is off.
+ *
+ * Returns the switch. It does nothing on a page with no viewport tag, or one
+ * that already names a viewport-fit of its own.
+ */
+function viewportCoverSwitch(): (on: boolean) => void {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+  const original = meta?.getAttribute("content") ?? null;
+
+  if (meta === null || original === null || original.includes("viewport-fit")) {
+    return () => {};
+  }
+
+  return (on) => {
+    meta.setAttribute(
+      "content",
+      on ? `${original}, viewport-fit=cover` : original,
+    );
+  };
+}
+
 function devicePillClass(isSelected: boolean): string {
   return [
     "min-h-11 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors duration-150",
@@ -372,8 +402,16 @@ export default function FullScreenPreview({
   useEffect(() => {
     const overlay = overlayRef.current;
     let active = true;
+    /* See viewportCoverSwitch: on for exactly as long as this is fullscreen. */
+    const setViewportCover = viewportCoverSwitch();
 
     if (canRequestFullscreen(overlay)) {
+      /*
+        Before the request rather than after it, so the browser has the cutout
+        answer at the moment it lays the fullscreen page out.
+      */
+      setViewportCover(true);
+
       /*
         Promise rejection is the documented way this says no, so it is handled
         rather than left to become an unhandled rejection in the console.
@@ -385,13 +423,26 @@ export default function FullScreenPreview({
           }
         },
         () => {
-          /* Declined — windowed is a perfectly good preview. */
+          /*
+            Declined — windowed is a perfectly good preview. Checked rather
+            than assumed: under React's development double mount the first
+            request can land after the second one has been refused.
+          */
+          if (document.fullscreenElement !== overlay) {
+            setViewportCover(false);
+          }
         },
       );
     }
 
     const syncFullscreen = (): void => {
       setIsFullscreen(document.fullscreenElement !== null);
+
+      /*
+        Follows the fullscreen state itself, so it is on whenever this overlay
+        is fullscreen, and off again the moment a system gesture leaves it.
+      */
+      setViewportCover(document.fullscreenElement === overlay);
     };
 
     document.addEventListener("fullscreenchange", syncFullscreen);
@@ -399,6 +450,7 @@ export default function FullScreenPreview({
     return () => {
       active = false;
       document.removeEventListener("fullscreenchange", syncFullscreen);
+      setViewportCover(false);
 
       /*
         Only ours. If something else on the page is the fullscreen element,
@@ -515,7 +567,11 @@ export default function FullScreenPreview({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex flex-col bg-[var(--lifafa-ink)]"
+      /*
+        The side insets are 0 except on a phone held sideways in fullscreen,
+        where they keep the card out from under the camera cutout.
+      */
+      className="fixed inset-0 z-50 flex flex-col bg-[var(--lifafa-ink)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
       style={chromeVariables}
     >
       <h2 id={titleId} className="sr-only">
@@ -571,7 +627,7 @@ export default function FullScreenPreview({
         language={config.language}
         onLanguageChange={onPreviewLanguageChange}
         onCard
-        className="absolute top-2.5 left-2.5 z-[60] lg:hidden"
+        className="absolute top-[calc(0.625rem+env(safe-area-inset-top))] left-[calc(0.625rem+env(safe-area-inset-left))] z-[60] lg:hidden"
       />
 
       {/*
@@ -599,7 +655,7 @@ export default function FullScreenPreview({
         type="button"
         aria-label={isFullscreen ? "Exit full screen preview" : "Close preview"}
         onClick={handleClose}
-        className="group absolute top-1.5 right-1.5 z-[60] flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-2 lg:focus-visible:outline-[var(--lifafa-marigold)]"
+        className="group absolute top-[calc(0.375rem+env(safe-area-inset-top))] right-[calc(0.375rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-2 lg:focus-visible:outline-[var(--lifafa-marigold)]"
       >
         <span className={CHIP_CLASS}>
           <svg
@@ -637,7 +693,7 @@ export default function FullScreenPreview({
         <button
           type="button"
           onClick={handleReplay}
-          className="group absolute top-1.5 right-12 z-40 flex h-11 shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-14 lg:focus-visible:outline-[var(--lifafa-marigold)]"
+          className="group absolute top-[calc(0.375rem+env(safe-area-inset-top))] right-[calc(3rem+env(safe-area-inset-right))] z-40 flex h-11 shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-14 lg:focus-visible:outline-[var(--lifafa-marigold)]"
         >
           <span className={`${CHIP_CLASS} px-3 text-[0.75rem] font-medium`}>
             Replay
@@ -695,25 +751,36 @@ export default function FullScreenPreview({
             frame and removes 112px of dead space at the same time.
           */}
           <div
-            className="relative mx-auto w-full"
-            style={{
-              maxWidth: `${device.width}px`,
-              backgroundColor: palette.background,
-            }}
+            /*
+              The device's width only at lg, where the Phone and Desktop pills
+              are there to choose it. Below lg the screen is the device, so the
+              card takes the whole of it — a 390px column on a 430px phone was
+              a dark bar down each side of the card.
+            */
+            className="relative mx-auto w-full lg:max-w-[var(--device-width)]"
+            style={
+              {
+                "--device-width": `${device.width}px`,
+                backgroundColor: palette.background,
+              } as CSSProperties
+            }
           >
             {/*
               CardCanvas caps itself at 420px, the width of the editor's frame.
-              Desktop is wider than that, so the cap is lifted and the width comes
-              from this wrapper instead — which is also what keeps a 390px phone
-              preview inside a 360px screen.
+              Desktop is wider than that, so at lg the cap is lifted and the
+              width comes from this wrapper instead. Below lg the cap stands,
+              and `fillsPhone` is what lifts it on a phone wider than 420px —
+              the same way the guest's page does, so this stays what a guest
+              on that phone sees.
             */}
-            <div className="[&>*]:max-w-none">
+            <div className="lg:[&>*]:max-w-none">
               <CardCanvas
                 draft={draft}
                 theme={theme}
                 config={config}
                 motifs={motifs}
                 sizing="viewport"
+                fillsPhone
                 /* No code minted yet — the host sees the buttons, not a live link. */
                 invite={PREVIEW_INVITE}
                 /* "Exactly what your guests will see" has to include the doing. */

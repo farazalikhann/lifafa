@@ -26,11 +26,17 @@ import type { CSSProperties } from "react";
  * size that should grow reads one of the two with the plain unit as its
  * fallback — `calc(2.75 * var(--card-rem, 1rem))`.
  *
- * WHY THE FALLBACK IS THE WHOLE SAFETY STORY. Below 768px, and on every card
- * that is not the guest's (the editor's frame and its full screen preview),
- * neither variable exists, so each size computes to exactly the value it had
- * before any of this: `calc(2.75 * 1rem)` is 44px just as `2.75rem` is. The
- * phone card is not a second code path that could drift from this one.
+ * ON A WIDE PHONE TOO. From 421px to 767px, held upright, a card marked
+ * `.lifafa-card-phone` — the guest's, and the full screen preview's — fills
+ * the phone and publishes the same two lengths, floored at the design width so
+ * they only ever grow. Its own rule in globals.css keeps the opening screen
+ * inside the phone's height.
+ *
+ * WHY THE FALLBACK IS THE WHOLE SAFETY STORY. At 420px and below, on a phone
+ * held sideways, and on the editor's own frame, neither variable exists, so
+ * each size computes to exactly the value it had before any of this:
+ * `calc(2.75 * 1rem)` is 44px just as `2.75rem` is. The phone card is not a
+ * second code path that could drift from this one.
  *
  * TWO THINGS DO NOT GO THROUGH THESE HELPERS:
  *
