@@ -95,6 +95,12 @@ export interface CoverVisualState {
    * when the host has not named anyone, and a visual must still draw without it.
    */
   title?: string;
+  /**
+   * The pair's names face, as the names under the drawing are set in it, so a
+   * visual that letters the names into itself — initials pressed into wax, the
+   * couple on the letter — writes them in the same hand.
+   */
+  namesFont: CSSProperties;
 }
 
 /**
@@ -160,6 +166,8 @@ export default function CoverShell({
   const copy = cardCopy(language);
   const prompt = option.openPromptText[language];
   const namesFace = namesFaceOf(getFontPair(fontPairId));
+  /* Words over velvet are set in light ink, with a shadow to lift them off it. */
+  const onVelvet = option.wordsOn === "velvet";
 
   /*
     Seeded rather than corrected in an effect. A card saved with no animation
@@ -347,7 +355,19 @@ export default function CoverShell({
     };
   }, [covered]);
 
-  const visual = renderVisual?.({ phase, option, reducedMotion, colors, title });
+  const namesFont: CSSProperties = {
+    fontFamily: fontFamilyOf(namesFace.variable, namesFace.fallback),
+    fontWeight: namesFace.weight,
+    letterSpacing: namesFace.tracking,
+  };
+  const visual = renderVisual?.({
+    phase,
+    option,
+    reducedMotion,
+    colors,
+    title,
+    namesFont,
+  });
   const hasVisual = visual !== null && visual !== undefined;
 
   return (
@@ -424,9 +444,9 @@ export default function CoverShell({
                 can use them in states an inline style cannot reach — a hover, a
                 focus ring — without each one being handed the palette again.
               */
-              "--cover-text": colors.text,
-              "--cover-muted": colors.textMuted,
-              "--cover-accent": colors.accent,
+              "--cover-text": onVelvet ? colors.onVelvet : colors.text,
+              "--cover-muted": onVelvet ? colors.onVelvetMuted : colors.textMuted,
+              "--cover-accent": onVelvet ? colors.foilHi : colors.accent,
             } as CSSProperties
           }
           className="fixed inset-0 z-50 flex min-h-dvh w-full flex-col items-center justify-center"
@@ -452,7 +472,9 @@ export default function CoverShell({
               ink outline on an ink ground is a focus ring nobody can see, and
               this is the only control a keyboard guest has.
             */
-            className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
+            className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center ${
+              onVelvet ? "[text-shadow:0_1px_12px_rgba(0,0,0,0.55)]" : ""
+            } focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
               !hasVisual
                 ? "justify-center"
                 : "justify-end pb-[12vh]"
@@ -468,7 +490,7 @@ export default function CoverShell({
             */}
             {title ? (
               <span
-                className="text-[calc(1.5rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(1.875rem*var(--cover-names-scale))]"
+                className="text-[calc(1.875rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(2.375rem*var(--cover-names-scale))]"
                 style={
                   {
                     "--cover-names-scale": String(namesFace.scale),
@@ -489,7 +511,20 @@ export default function CoverShell({
                 {title}
               </span>
             ) : null}
-            <span className="text-sm tracking-wide text-[var(--cover-muted)]">
+            {/*
+              A rule of the accent between the names and the way in, and the
+              prompt breathing under it, so a guest reads it as the thing to do
+              rather than as a caption. Small caps spacing, as a card's own
+              small print is set.
+            */}
+            <span aria-hidden className="flex items-center gap-2 text-[var(--cover-accent)]">
+              <span className="h-px w-8 bg-current opacity-60" />
+              <svg viewBox="0 0 10 10" className="h-2 w-2" focusable="false">
+                <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
+              </svg>
+              <span className="h-px w-8 bg-current opacity-60" />
+            </span>
+            <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-muted)] uppercase motion-reduce:animate-none">
               {prompt}
             </span>
           </button>

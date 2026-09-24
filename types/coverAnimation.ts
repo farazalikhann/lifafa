@@ -65,4 +65,10 @@ export interface CoverAnimationOption {
   sound: CoverSoundId | null;
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
+  /**
+   * What the names and the prompt sit on while the cover is closed: the card's
+   * own ground, which is every cover's unless it says otherwise, or velvet,
+   * where the card's text colour would not read and they are set in light ink.
+   */
+  wordsOn?: "ground" | "velvet";
 }

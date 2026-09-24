@@ -1,4 +1,4 @@
-import { contrastRatio, mixHex } from "@/lib/contrast";
+import { contrastRatio, mixHex, relativeLuminance } from "@/lib/contrast";
 import type { Palette } from "@/lib/palettes";
 
 /**
@@ -44,7 +44,48 @@ export interface CoverPalette {
   text: string;
   /** The prompt under them, and the Skip control. */
   textMuted: string;
+
+  /*
+    THE DRESSED TONES. The ones above keep a cover to the card's own two
+    colours, and a cover drawn in nothing else read as grey paper on a grey
+    screen: every fill was the ground with a little of the ink in it. These are
+    what the covers dress it with — card stock that catches the light, a lining,
+    metal leaf, wax and velvet — and every one is still worked out of the same
+    palette, so a Midnight card gets gold on navy and a Blush card gets copper on
+    blush without a colour the host did not choose.
+  */
+
+  /** Whether the ground is light. The tones below lean one way or the other on it. */
+  isLight: boolean;
+  /** Fine card stock: the lit face, the body, and the side turned from the light. */
+  stockHi: string;
+  stock: string;
+  stockLo: string;
+  /** The lining inside an envelope or a folded card, and the pattern printed on it. */
+  liner: string;
+  linerInk: string;
+  /** Metal leaf, from the accent warmed towards gold: its highlight, body and shade. */
+  foilHi: string;
+  foil: string;
+  foilLo: string;
+  /** Sealing wax, in the accent: the lit crown, the body and the pooled edge. */
+  waxHi: string;
+  wax: string;
+  waxLo: string;
+  /** Velvet, the accent taken deep: a fold's crest, its body, and the hollow. */
+  velvetHi: string;
+  velvet: string;
+  velvetLo: string;
+  /** Words printed over velvet, where the card's own text colour would not read. */
+  onVelvet: string;
+  onVelvetMuted: string;
 }
+
+/**
+ * The gold every foil leans towards, so a rose or a green accent still reads
+ * as metal rather than as paint. Close to the Midnight palette's own accent.
+ */
+const LEAF_GOLD = "#C9A25A";
 
 /**
  * How far each piece sits from the ground, towards the card's text colour.
@@ -92,5 +133,59 @@ export function coverPalette(
       contrastRatio(ground, accent) >= contrastRatio(ink, accent) ? ground : ink,
     text: palette.textPrimary,
     textMuted: palette.textMuted,
+    ...dressedTones(palette, accent),
+  };
+}
+
+/**
+ * The dressed tones for one card. See the note on CoverPalette.
+ *
+ * On a light card the stock is whiter than the ground, so an envelope lifts off
+ * it like good paper does; on a dark card it is the card's own surface warmed
+ * by the accent, so it stays a dark envelope on a dark screen rather than a
+ * white one flashing up in front of it.
+ */
+function dressedTones(
+  palette: Palette,
+  accent: string,
+): Omit<
+  CoverPalette,
+  | "ground"
+  | "paper"
+  | "paperDeep"
+  | "paperLift"
+  | "edge"
+  | "accent"
+  | "onAccent"
+  | "text"
+  | "textMuted"
+> {
+  const isLight = relativeLuminance(palette.background) > 0.4;
+  const stock = isLight
+    ? mixHex(palette.surface, "#FFFFFF", 0.45)
+    : mixHex(palette.surface, accent, 0.12);
+  const foil = mixHex(accent, LEAF_GOLD, 0.55);
+  const velvet = mixHex(accent, "#000000", isLight ? 0.3 : 0.55);
+
+  return {
+    isLight,
+    stockHi: isLight ? mixHex(stock, "#FFFFFF", 0.7) : mixHex(stock, "#FFFFFF", 0.07),
+    stock,
+    stockLo: isLight
+      ? mixHex(mixHex(stock, accent, 0.1), "#000000", 0.05)
+      : mixHex(palette.background, "#000000", 0.3),
+    liner: isLight ? mixHex(accent, "#000000", 0.08) : mixHex(accent, "#000000", 0.52),
+    linerInk: mixHex(foil, "#FFFFFF", isLight ? 0.45 : 0.15),
+    foilHi: mixHex(foil, "#FFF4D6", 0.6),
+    foil,
+    foilLo: mixHex(foil, "#000000", 0.4),
+    waxHi: mixHex(accent, "#FFFFFF", 0.32),
+    wax: accent,
+    waxLo: mixHex(accent, "#000000", 0.45),
+    velvetHi: mixHex(velvet, "#FFFFFF", 0.16),
+    velvet,
+    velvetLo: mixHex(velvet, "#000000", 0.55),
+    onVelvet: "#FBF4E6",
+    onVelvetMuted: "rgba(251, 244, 230, 0.78)",
   };
 }

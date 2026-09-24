@@ -47,11 +47,18 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       en: "Tap to draw the curtains",
       hi: "पर्दे हटाने के लिए टैप करें",
     },
-    durationMs: 1600,
+    /*
+      1.9s, from 1.6. The panels gather into the sides now rather than sliding
+      off flat, and a heavy curtain drawn in under a second and a half read as
+      a pair of doors snapping open.
+    */
+    durationMs: 1900,
     /* As soon as there is a gap between the panels to see the card through. */
     revealAt: 0.12,
     sound: "curtain",
     supportsReducedMotion: true,
+    /* The names are printed over the velvet until it is drawn. */
+    wordsOn: "velvet",
   },
   {
     id: "fold-unfold",
@@ -61,9 +68,13 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       en: "Tap to unfold",
       hi: "खोलने के लिए टैप करें",
     },
-    durationMs: 1800,
-    /* As the opened card starts to lift away: EXIT_START in the visual is 0.54. */
-    revealAt: 0.5,
+    /*
+      2s, from 1.8. The card now slips its ribbon and settles to fit the
+      screen as it opens, and at 1.8 the ribbon and the turn ran together.
+    */
+    durationMs: 2000,
+    /* As the opened card starts to come forward: EXIT_START in the visual is 0.56. */
+    revealAt: 0.54,
     sound: "fold",
     supportsReducedMotion: true,
   },

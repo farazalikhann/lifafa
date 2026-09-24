@@ -1,9 +1,11 @@
 "use client";
 
-import { type CSSProperties, type ReactElement } from "react";
+import { useId, type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
+import { initialsOf } from "@/components/invite/covers/initials";
 import { stage } from "@/components/invite/covers/timing";
-import { mixHex } from "@/lib/contrast";
+import type { CoverPalette } from "@/lib/coverPalette";
+import { PETALS } from "@/lib/petals";
 
 /**
  * How the open splits across the shell's timer, as fractions of --cover-ms.
@@ -17,8 +19,9 @@ import { mixHex } from "@/lib/contrast";
 const BURST_SHARE = 0.8;
 const LEAF_FADE_START = 0.34;
 const LEAF_FADE_SHARE = 0.5;
-const GLOW_START = 0;
-const GLOW_SHARE = 0.6;
+const WREATH_SHARE = 0.36;
+const SPARK_START = 0.02;
+const SPARK_SHARE = 0.36;
 const BACKDROP_START = 0.1;
 const BACKDROP_SHARE = 0.7;
 
@@ -30,39 +33,58 @@ const CX = 50;
 const CY = 42;
 
 /**
- * The four shapes a leaf can be, each drawn pointing up in a 24 × 24 box.
- *
- * `vein` is optional: the petal has none, which is what keeps it reading as a
- * petal among the leaves rather than as one more leaf.
+ * What a leaf in the table is drawn as, by its `shape`: a rose petal, the
+ * same two photographs the card's own falling petals use, for 0 and 3; a leaf
+ * of gold, broad or slender, for 1 and 2. Real petals and gilt leaves, rather
+ * than four flat silhouettes in one colour at half strength, which is what
+ * made the field read as dust on the screen rather than as petals on it.
  */
-const SHAPES: readonly { body: string; vein?: string }[] = [
-  /* Petal: the almond the cover has always scattered. */
-  { body: "M12 2 C18 7 18 16 12 22 C6 16 6 7 12 2 Z" },
-  /* Broad leaf, with a midrib and two pairs of veins. */
-  {
+const PETAL_FOR_SHAPE: Readonly<Record<number, number>> = { 0: 0, 3: 1 };
+
+/** A gilt leaf, drawn pointing up in a 24 × 24 box: broad, or slender. */
+const GILT: Readonly<Record<number, { body: string; vein: string }>> = {
+  1: {
     body: "M12 1.5 C19 6 19.5 15 12 22.5 C4.5 15 5 6 12 1.5 Z",
     vein: "M12 4 V21 M12 10 L15.5 7.5 M12 14 L16 11 M12 10 L8.5 7.5 M12 14 L8 11",
   },
-  /* Slender leaf, a willow or a mango leaf. */
-  {
+  2: {
     body: "M12 1 C15.5 7 15.5 15 12 23 C8.5 15 8.5 7 12 1 Z",
     vein: "M12 3 V21",
   },
-  /* Curled leaf, the same drawing the card's own Leaf motif uses. */
-  { body: "M5 19 Q5 8 19 5 Q19 16 5 19 Z", vein: "M5 19 Q11 13 16 9" },
+};
+
+/**
+ * How much larger than the table's own sizes everything is drawn. The table
+ * was written for leaves at half strength; at full strength and full colour
+ * they carry more at a larger size and the field needs no more of them.
+ */
+const GROW = 1.5;
+
+/** Flecks of gold thrown off the wreath as the gust takes it, in vmin. */
+const SPARKS: readonly { angle: number; distance: number; size: number; delay: number }[] = [
+  { angle: -90, distance: 34, size: 12, delay: 0 },
+  { angle: -50, distance: 30, size: 8, delay: 0.02 },
+  { angle: -14, distance: 36, size: 10, delay: 0.01 },
+  { angle: 24, distance: 28, size: 7, delay: 0.04 },
+  { angle: 60, distance: 32, size: 9, delay: 0.02 },
+  { angle: 104, distance: 26, size: 7, delay: 0.05 },
+  { angle: 146, distance: 34, size: 10, delay: 0.01 },
+  { angle: 190, distance: 30, size: 8, delay: 0.03 },
+  { angle: 232, distance: 36, size: 11, delay: 0.02 },
+  { angle: 268, distance: 28, size: 7, delay: 0.04 },
 ];
 
 interface Leaf {
   /** Where it rests, in percent of the screen. */
   x: number;
   y: number;
-  /** Its size on a phone, in pixels; it grows a little on a larger screen. */
+  /** Its size on a phone, in pixels, before GROW; it grows a little on a larger screen. */
   size: number;
   /** Its resting angle. */
   rotate: number;
-  /** An index into SHAPES. */
+  /** What it is drawn as; see PETAL_FOR_SHAPE and GILT. */
   shape: number;
-  /** 0 for the accent, 1 for the accent deepened towards the card's ink. */
+  /** For a gilt leaf: 0 for the leaf's body, 1 for its shade. */
   tone: 0 | 1;
   opacity: number;
   /** The length of its idle sway, in seconds, and how far into it it starts. */
@@ -207,32 +229,139 @@ function sized(px: number): string {
 }
 
 /**
- * A field of leaves and petals blown off the invitation.
+ * Full strength for the table's opacities, which were written for a faint
+ * field: 0.34 comes out at 0.78 and 0.55 at 1, so the depth the table gives
+ * the field is kept and only lifted.
+ */
+function strength(opacity: number): number {
+  return tenth(Math.min(1, 0.78 + (opacity - 0.34) * 1.05));
+}
+
+/** How many leaves each branch of the laurel carries. */
+const LAUREL = 11;
+
+/** A laurel of gilt leaves round the couple's initials: the wreath at the centre of the field. */
+function Wreath({
+  colors,
+  initials,
+  namesFont,
+  gradientId,
+}: {
+  colors: CoverPalette;
+  initials: string;
+  namesFont: CSSProperties;
+  gradientId: string;
+}): ReactElement {
+  return (
+    <svg viewBox="0 0 120 120" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={colors.foilHi} />
+          <stop offset="0.5" stopColor={colors.foil} />
+          <stop offset="1" stopColor={colors.foilLo} />
+        </linearGradient>
+      </defs>
+      {/* The ground inside the wreath, so a petal lying under it does not show through. */}
+      <circle cx="60" cy="60" r="40" fill={colors.ground} opacity="0.96" />
+      <circle cx="60" cy="60" r="36" fill="none" stroke={`url(#${gradientId})`} strokeWidth="1.1" />
+      <circle cx="60" cy="60" r="33" fill="none" stroke={colors.foil} strokeWidth="0.5" opacity="0.7" />
+      {/*
+        Two branches of laurel, rising from a knot at the foot and all but
+        meeting at the crown, each leaf laid along the branch and tilted off it
+        alternately in and out.
+      */}
+      {([-1, 1] as const).map((side) => (
+        <g key={side}>
+          {/* The branch itself, up its own side of the ring. */}
+          <path
+            d={`M${60 + side * 11.9} 104.4 A46 46 0 0 ${side < 0 ? 1 : 0} ${60 + side * 6.4} 14.4`}
+            fill="none"
+            stroke={colors.foilLo}
+            strokeWidth="1"
+          />
+          {Array.from({ length: LAUREL }, (_, index) => {
+            /* Measured from the foot of the ring: 18° just off the knot, 168° just short of the crown. */
+            const theta = ((18 + (index / (LAUREL - 1)) * 150) * Math.PI) / 180;
+            const x = 60 + side * Math.sin(theta) * 46;
+            const y = 60 + Math.cos(theta) * 46;
+            /* Along the branch, pointing the way it grows, and tilted off it in and out in turn. */
+            const along = (Math.atan2(side * Math.cos(theta), Math.sin(theta)) * 180) / Math.PI;
+            const tilt = (index % 2 === 0 ? 1 : -1) * 32;
+            const scale = 1 - (index / LAUREL) * 0.3;
+
+            return (
+              <path
+                key={index}
+                d="M0 -7 C3.6 -2.5 3.6 2.5 0 7 C-3.6 2.5 -3.6 -2.5 0 -7 Z"
+                fill={`url(#${gradientId})`}
+                transform={`translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${(along + tilt).toFixed(1)}) scale(${scale.toFixed(2)}) translate(0 -5)`}
+              />
+            );
+          })}
+        </g>
+      ))}
+      {/* The knot the two branches are tied with. */}
+      {([-1, 1] as const).map((side) => (
+        <g key={side} transform={side < 0 ? undefined : "translate(120 0) scale(-1 1)"}>
+          <path d="M60 105 C53 98 47 102 50 107 C52 111 57 109 60 105 Z" fill={`url(#${gradientId})`} />
+          <path d="M59 106 L53 118 L56.5 116.5 L57.5 120 L60.5 107 Z" fill={colors.foil} />
+        </g>
+      ))}
+      <circle cx="60" cy="105.5" r="2.4" fill={colors.foil} />
+      {initials.length > 0 ? (
+        <text
+          x="60"
+          y="61"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={initials.length > 1 ? 26 : 32}
+          fill={colors.text}
+          style={namesFont}
+        >
+          {initials}
+        </text>
+      ) : (
+        <path d="M60 46 L71 60 L60 74 L49 60 Z" fill={`url(#${gradientId})`} />
+      )}
+      <path d="M44 82 H76" stroke={colors.foil} strokeWidth="0.8" />
+      <path d="M60 78 L64 82 L60 86 L56 82 Z" fill={colors.foil} />
+    </svg>
+  );
+}
+
+/**
+ * Rose petals and gilt leaves blown off the invitation by one gust.
  *
- * ELEMENTS, NOT SHAPES IN ONE SVG. The field used to be one drawing with CSS
- * transforms on its shapes, and browsers do not composite SVG shapes: every
- * frame of the scatter repainted the whole thing on the main thread, which is
- * where a phone drops frames. Each leaf is now its own small element the
- * compositor moves, holding a tiny SVG that is painted once.
+ * DRESSED, NOT FAINT. The field used to be four flat silhouettes in the
+ * accent at half strength, round a muddy glow: dust on the screen. It is rose
+ * petals now — the two photographs the card's own falling petals are — and
+ * leaves of gold, at full strength and half as large again, round a gilt
+ * wreath carrying the couple's initials. The gold is the card's accent worked
+ * towards gold; see the dressed tones in lib/coverPalette.ts.
  *
- * Three layers per leaf, because each one is driving a different transform and
- * one element can only have one: the outer is placed on the screen and carries
- * the burst, the middle carries the idle sway (which keeps going through the
- * burst, so a leaf flutters as it flies), and the SVG inside holds the leaf's
- * resting angle.
+ * THE GUST. The wreath flares and is gone, gold flies off it, and every petal
+ * and leaf is blown out from the middle and up, turning over as it goes, while
+ * the card shows through underneath.
  *
- * Everything is the card's accent — the host's override when they set one — or
- * that accent deepened towards the card's own ink, so the scatter belongs to
- * the invitation underneath it. See lib/coverPalette.ts.
+ * ELEMENTS, NOT SHAPES IN ONE SVG, so the compositor moves each one without
+ * repainting the field. Three layers per leaf, because each drives its own
+ * transform: the outer is placed on the screen and carries the burst, the
+ * middle carries the idle sway (which keeps going through the burst, so a
+ * leaf flutters as it flies), and the art inside holds the resting angle.
  */
 export default function PetalDustCover({
   phase,
   option,
   reducedMotion,
   colors,
+  title,
+  namesFont,
 }: CoverVisualState): ReactElement {
   const opening = phase === "opening";
-  const tones = [colors.accent, mixHex(colors.accent, colors.text, 0.3)] as const;
+  const initials = initialsOf(title);
+  /* Gradient ids are document-wide; anything but a plain name breaks url(#…). */
+  const uid = `petal${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const gilt = [colors.foil, colors.foilLo] as const;
 
   const rootStyle = {
     "--cover-ms": `${option.durationMs}ms`,
@@ -241,78 +370,69 @@ export default function PetalDustCover({
   const transition = (...entries: string[]): string | undefined =>
     reducedMotion ? undefined : entries.join(", ");
 
+  const onOpen = (name: string, share: number, start: number, easing: string): string | undefined =>
+    opening && !reducedMotion
+      ? `${name} calc(var(--cover-ms)*${share}) ${easing} calc(var(--cover-ms)*${start}) both`
+      : undefined;
+
   /* The card's ground, clearing while the leaves are still in the air. */
   const backdropStyle: CSSProperties = {
     backgroundColor: colors.ground,
-    transition: transition(
-      stage("opacity", BACKDROP_SHARE, BACKDROP_START, "ease-in-out"),
-    ),
+    transition: transition(stage("opacity", BACKDROP_SHARE, BACKDROP_START, "ease-in-out")),
     opacity: opening ? 0 : 1,
   };
 
-  /** Out from the centre and up, turning, then fading as it goes. */
-  const burstStyle = (
-    dx: number,
-    dy: number,
-    spin: number,
-    delay: number,
-  ): CSSProperties => ({
+  /** Out from the centre and up, turning over, then fading as it goes. */
+  const burstStyle = (dx: number, dy: number, spin: number, delay: number): CSSProperties => ({
     willChange: "transform, opacity",
     transition: transition(
       stage("transform", BURST_SHARE, delay, BURST_EASE),
       stage("opacity", LEAF_FADE_SHARE, delay + LEAF_FADE_START, "ease-in"),
     ),
     transform: opening
-      ? `translate3d(${dx}vmin, ${dy}vmin, 0) rotate(${spin}deg) scale(0.85)`
+      ? `translate3d(${dx}vmin, ${dy}vmin, 0) rotate3d(1, 0.6, 0.2, ${spin}deg) scale(0.8)`
       : "translate3d(0, 0, 0)",
     opacity: opening ? 0 : 1,
   });
 
-  const glowStyle: CSSProperties = {
+  /* The wreath flaring as the gust takes it. */
+  const wreathStyle: CSSProperties = {
+    willChange: "transform, opacity",
     transition: transition(
-      stage("transform", GLOW_SHARE, GLOW_START, "ease-out"),
-      stage("opacity", GLOW_SHARE, GLOW_START, "ease-out"),
+      stage("transform", WREATH_SHARE, 0, "cubic-bezier(0.2,0.7,0.4,1)"),
+      stage("opacity", WREATH_SHARE * 0.8, WREATH_SHARE * 0.2, "ease-in"),
     ),
-    transform: opening ? "scale(1.7)" : "scale(1)",
+    transform: opening ? "scale(1.35)" : "scale(1)",
     opacity: opening ? 0 : 1,
   };
 
   return (
-    <div
-      aria-hidden
-      style={rootStyle}
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
+    <div aria-hidden style={rootStyle} className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={backdropStyle} />
 
-      {/*
-        The glow sits behind everything, under the words the shell prints. Its
-        idle breath is on an inner element because a CSS animation and a CSS
-        transition cannot both drive transform on one element: the animation
-        wins, and the expansion would never play.
-      */}
+      {/* The light under the wreath, breathing, so the middle reads as the place to tap. */}
       <div
-        className="absolute aspect-square w-[90vmin] -translate-x-1/2 -translate-y-1/2"
+        className="absolute aspect-square w-[110vmin] -translate-x-1/2 -translate-y-1/2"
         style={{ left: `${CX}%`, top: `${CY}%` }}
       >
-        <div className="absolute inset-0" style={glowStyle}>
-          <div className="absolute inset-0 animate-[lifafa-pulse_6s_ease-in-out_infinite] motion-reduce:animate-none">
-            <svg
-              viewBox="0 0 100 100"
-              className="absolute inset-0 h-full w-full"
-              role="presentation"
-              focusable="false"
-            >
-              <defs>
-                <radialGradient id="lifafa-petal-glow">
-                  <stop offset="0%" stopColor={colors.accent} stopOpacity="0.3" />
-                  <stop offset="55%" stopColor={colors.accent} stopOpacity="0.1" />
-                  <stop offset="100%" stopColor={colors.accent} stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <circle cx="50" cy="50" r="50" fill="url(#lifafa-petal-glow)" />
-            </svg>
-          </div>
+        {/*
+          The fade on its own layer: a running keyframe owns the opacity of the
+          element it runs on, and would hold the glow over the card.
+        */}
+        <div
+          className="absolute inset-0"
+          style={{
+            transition: transition(stage("opacity", 0.3, 0, "ease-out")),
+            opacity: opening ? 0 : 1,
+          }}
+        >
+          <div
+            className="absolute inset-0 rounded-full animate-[lifafa-cover-halo_4s_ease-in-out_infinite] motion-reduce:animate-none"
+            style={{
+              backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 58%)`,
+              animationPlayState: opening ? "paused" : "running",
+            }}
+          />
         </div>
       </div>
 
@@ -326,28 +446,31 @@ export default function PetalDustCover({
             className="absolute"
             style={{
               ...burstStyle(dx, dy, 0, speck.delay),
-              left: `calc(${speck.x}% - ${speck.r}px)`,
-              top: `calc(${speck.y}% - ${speck.r}px)`,
-              width: `${speck.r * 2}px`,
-              height: `${speck.r * 2}px`,
+              left: `calc(${speck.x}% - ${speck.r * 1.5}px)`,
+              top: `calc(${speck.y}% - ${speck.r * 1.5}px)`,
+              width: `${speck.r * 3}px`,
+              height: `${speck.r * 3}px`,
             }}
           >
-            {/*
-              The speck's own alpha lives on this inner layer, so the burst's
-              fade on the outer one multiplies it rather than overwriting it.
-            */}
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ backgroundColor: colors.accent, opacity: speck.opacity }}
-            />
+            {/* A glint of gold leaf, its own alpha on this inner layer. */}
+            <svg
+              viewBox="0 0 10 10"
+              className="absolute inset-0 h-full w-full"
+              style={{ opacity: strength(speck.opacity) }}
+              role="presentation"
+              focusable="false"
+            >
+              <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={colors.foilHi} />
+            </svg>
           </div>
         );
       })}
 
       {LEAVES.map((leaf) => {
         const { dx, dy } = burstOf(leaf.x, leaf.y);
-        const size = sized(leaf.size);
-        const shape = SHAPES[leaf.shape];
+        const size = sized(leaf.size * GROW);
+        const petal = PETAL_FOR_SHAPE[leaf.shape];
+        const leafArt = GILT[leaf.shape];
 
         return (
           <div
@@ -369,30 +492,104 @@ export default function PetalDustCover({
                   : `lifafa-leaf-sway ${leaf.sway}s ease-in-out ${leaf.phase}s infinite`,
               }}
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="absolute inset-0 h-full w-full"
-                style={{ transform: `rotate(${leaf.rotate}deg)` }}
-                opacity={leaf.opacity}
-                role="presentation"
-                focusable="false"
-              >
-                <path d={shape.body} fill={tones[leaf.tone]} />
-                {shape.vein !== undefined ? (
+              {petal !== undefined ? (
+                <img
+                  src={PETALS[petal].src}
+                  alt=""
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full object-contain"
+                  style={{ transform: `rotate(${leaf.rotate}deg)`, opacity: strength(leaf.opacity) }}
+                />
+              ) : leafArt !== undefined ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="absolute inset-0 h-full w-full"
+                  style={{ transform: `rotate(${leaf.rotate}deg)`, opacity: strength(leaf.opacity) }}
+                  role="presentation"
+                  focusable="false"
+                >
+                  <path d={leafArt.body} fill={gilt[leaf.tone]} />
+                  <path d={leafArt.body} fill={`url(#${uid}-shine)`} />
                   <path
-                    d={shape.vein}
+                    d={leafArt.vein}
                     fill="none"
-                    stroke={colors.onAccent}
+                    stroke={colors.foilHi}
                     strokeWidth="0.8"
                     strokeLinecap="round"
-                    opacity="0.4"
+                    opacity="0.75"
                   />
-                ) : null}
-              </svg>
+                </svg>
+              ) : null}
             </div>
           </div>
         );
       })}
+
+      {/* The shine every gilt leaf shares: lit at the tip, dark at the stem. */}
+      <svg className="absolute h-0 w-0" role="presentation" focusable="false">
+        <defs>
+          <linearGradient id={`${uid}-shine`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor={colors.foilHi} stopOpacity="0.85" />
+            <stop offset="0.55" stopColor={colors.foilHi} stopOpacity="0" />
+            <stop offset="1" stopColor="#000000" stopOpacity="0.25" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* The wreath, with the couple's initials at its heart. */}
+      <div
+        className="absolute aspect-square w-[min(52vmin,260px)] -translate-x-1/2 -translate-y-1/2"
+        style={{ left: `${CX}%`, top: `${CY}%` }}
+      >
+        {/*
+          Still, not breathing: the glow behind it already says "tap here", and
+          a wreath of this many shapes scaling on a loop was the most expensive
+          thing on the cover — it cost a third of the frame rate on a slow
+          phone for a movement nobody would miss.
+        */}
+        <div className="absolute inset-0" style={wreathStyle}>
+          <Wreath colors={colors} initials={initials} namesFont={namesFont} gradientId={`${uid}-wreath`} />
+        </div>
+
+        {/* The flash as the gust takes it, and the gold thrown off. */}
+        <div
+          className="absolute -inset-[40%] rounded-full opacity-0"
+          style={{
+            backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 58%)`,
+            animation: onOpen("lifafa-cover-flash", 0.4, 0, "cubic-bezier(0.2,0.6,0.4,1)"),
+          }}
+        />
+        {SPARKS.map((spark, index) => {
+          const radians = (spark.angle * Math.PI) / 180;
+
+          return (
+            <span
+              key={index}
+              className="absolute top-1/2 left-1/2 opacity-0"
+              style={
+                {
+                  width: spark.size,
+                  height: spark.size,
+                  marginLeft: -spark.size / 2,
+                  marginTop: -spark.size / 2,
+                  "--dx": `${tenth(Math.cos(radians) * spark.distance)}vmin`,
+                  "--dy": `${tenth(Math.sin(radians) * spark.distance)}vmin`,
+                  animation: onOpen(
+                    "lifafa-cover-spark",
+                    SPARK_SHARE,
+                    SPARK_START + spark.delay,
+                    "cubic-bezier(0.15,0.7,0.4,1)",
+                  ),
+                } as CSSProperties
+              }
+            >
+              <svg viewBox="0 0 10 10" className="h-full w-full" role="presentation" focusable="false">
+                <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={index % 3 === 0 ? colors.foilHi : colors.foil} />
+              </svg>
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -587,6 +587,93 @@
 }
 
 /*
+  THE DRESSED COVERS' OWN MOTION. Transform and opacity only, every one, so the
+  compositor runs them without repainting the drawings under them.
+*/
+
+/*
+  Light running across metal leaf and satin: a band that crosses once, then
+  rests, so it reads as the cover catching the light rather than as a loader.
+*/
+@keyframes lifafa-cover-sheen {
+  0% {
+    transform: translate3d(-130%, 0, 0) skewX(-18deg);
+  }
+  45%,
+  100% {
+    transform: translate3d(130%, 0, 0) skewX(-18deg);
+  }
+}
+
+/* The glow behind the thing to tap, swelling slowly. */
+@keyframes lifafa-cover-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+/*
+  A fleck of gold leaf thrown off as the cover breaks: out along its own line,
+  set per fleck in --dx and --dy, turning as it goes and gone by the end.
+*/
+@keyframes lifafa-cover-spark {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.2) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), var(--dy), 0) scale(1) rotate(160deg);
+  }
+}
+
+/* The light let out as the cover opens: up from nothing, and away. */
+@keyframes lifafa-cover-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+/* A curtain hanging in a still room: the hem drifts, the rod does not. */
+@keyframes lifafa-cover-drape-sway {
+  0%,
+  100% {
+    transform: skewX(0deg);
+  }
+  50% {
+    transform: skewX(0.7deg);
+  }
+}
+
+/* The prompt on a closed cover, breathing so it reads as the way in. */
+@keyframes lifafa-cover-breathe {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
   A leaf on the petal-dust cover, stirring in a breeze before it is blown away.
 
   Driven inline per leaf — duration and a negative delay from the cover's own
