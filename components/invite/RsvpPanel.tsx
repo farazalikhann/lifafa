@@ -170,7 +170,10 @@ export default function RsvpPanel({
     <section className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-12 sm:px-6 sm:pt-12 sm:pb-14">
       <h2
         className="text-center text-2xl font-semibold"
-        style={{ color: theme.textPrimary, fontFamily: DISPLAY_FACE }}
+        style={{
+          color: theme.textPrimary,
+          fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+        }}
       >
         {copy.heading}
       </h2>

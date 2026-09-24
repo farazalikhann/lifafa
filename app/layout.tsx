@@ -1,23 +1,35 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   Amiri,
+  Amita,
   Bodoni_Moda,
   Cinzel,
   Cormorant_Garamond,
   DM_Sans,
+  Eczar,
   Fraunces,
   Great_Vibes,
+  Hind,
   Inter,
   Josefin_Sans,
+  Kurale,
+  Laila,
   Lora,
   Marcellus,
+  Martel,
   Noto_Sans_Devanagari,
   Noto_Sans_Gurmukhi,
+  Noto_Serif_Devanagari,
   Parisienne,
   Pinyon_Script,
   Playfair_Display,
+  Poppins,
+  Rozha_One,
+  Tillana,
+  Tiro_Devanagari_Hindi,
 } from "next/font/google";
+import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
 import "./globals.css";
 
@@ -182,9 +194,11 @@ const amiri = Amiri({
 
   Not a cut of the Arabic's family — Amiri has no Devanagari, so there is no
   way to set both scripts in one family and the two are matched by weight and
-  colour instead. The same face serves every pair: fontFamilyOf in
-  lib/fontPairs.ts puts it straight after the pair's own, so a Hindi word in a
-  script or a serif pair still lands here rather than on a device default.
+  colour instead. Each pair now has Devanagari faces of its own (below), and
+  this is the last Devanagari fallback behind them: fontFamilyOf in
+  lib/fontPairs.ts puts it after the pair's stack, so a glyph the pair's face
+  lacks still lands here rather than on a device default. It is also the
+  Devanagari face of the product's own text and of the shloks.
 
   Devanagari left to a device default lands on whatever is installed: Nirmala UI
   on Windows, Kohinoor on iOS, something arbitrary elsewhere, each with its own
@@ -235,6 +249,130 @@ const notoSansGurmukhi = Noto_Sans_Gurmukhi({
   variable: "--font-gurmukhi",
 });
 
+/*
+  Each pair's own Devanagari faces, so a Hindi card is set as carefully as an
+  English one instead of every pair falling through to Noto Sans. The mapping
+  is `namesHi`, `headingHi` and `bodyHi` in lib/fontPairs.ts; a face is wired to
+  the card only through the pair stacks on <html> below.
+
+  On the same terms as Noto Sans Devanagari above: the "devanagari" subset
+  (the pair's Latin face already draws the Latin letters), `preload: false`,
+  and only the weights a role asks for. Nothing is fetched until a Devanagari
+  character is drawn in the face, so an English card fetches none of these and
+  a Hindi card only its own pair's.
+
+  Weights: names and headings at the pair's own weight, body text at 400 and
+  600 only. The card and the reply form also ask body text for 500; with no 500
+  cut, a browser's own font matching gives it 400, which is where Hindi text
+  lands, while every Latin face keeps its 500. Measured, a 500 is almost
+  exactly halfway between the other two in Hind and Noto Serif, so dropping it
+  costs a step of emphasis and saves a file a card. Tiro, Rozha One and Kurale
+  come in 400 only; the card asks them for more and is stopped from faking a
+  bold by the rules in globals.css.
+*/
+
+/* Classic's names and headings (600). */
+const martel = Martel({
+  subsets: ["devanagari"],
+  weight: ["600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-martel",
+});
+
+/* Modern's names and headings (800). */
+const poppins = Poppins({
+  subsets: ["devanagari"],
+  weight: ["800"],
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-poppins",
+});
+
+/*
+  Clean throughout (700 for its names and headings), and the body text of
+  Classic, Modern, Warm, Romantic and Luxe at 400 and 600.
+*/
+const hind = Hind({
+  subsets: ["devanagari"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-hind",
+});
+
+/* Elegant's names and headings, and Royal's headings. One weight. */
+const tiroDevanagariHindi = Tiro_Devanagari_Hindi({
+  subsets: ["devanagari"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-tiro",
+});
+
+/* Warm's names and headings (600). */
+const laila = Laila({
+  subsets: ["devanagari"],
+  weight: ["600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-laila",
+});
+
+/* A script: Royal's and Graceful's names, and nothing else. */
+const amita = Amita({
+  subsets: ["devanagari"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-amita",
+});
+
+/* Body text of Royal and Regal. */
+const notoSerifDevanagari = Noto_Serif_Devanagari({
+  subsets: ["devanagari"],
+  weight: ["400", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-noto-serif",
+});
+
+/* Regal's names and headings, Luxe's names. One weight. */
+const rozhaOne = Rozha_One({
+  subsets: ["devanagari"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-rozha",
+});
+
+/* A script: Romantic's names, and nothing else. */
+const tillana = Tillana({
+  subsets: ["devanagari"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-tillana",
+});
+
+/* Romantic's headings; Graceful's headings and body. One weight. */
+const kurale = Kurale({
+  subsets: ["devanagari"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-kurale",
+});
+
+/* Luxe's headings (500). */
+const eczar = Eczar({
+  subsets: ["devanagari"],
+  weight: ["500"],
+  display: "swap",
+  preload: false,
+  variable: "--font-hi-eczar",
+});
+
 const FONT_VARIABLES = [
   fraunces.variable,
   inter.variable,
@@ -252,6 +390,17 @@ const FONT_VARIABLES = [
   amiri.variable,
   notoSansDevanagari.variable,
   notoSansGurmukhi.variable,
+  martel.variable,
+  poppins.variable,
+  hind.variable,
+  tiroDevanagariHindi.variable,
+  laila.variable,
+  amita.variable,
+  notoSerifDevanagari.variable,
+  rozhaOne.variable,
+  tillana.variable,
+  kurale.variable,
+  eczar.variable,
 ].join(" ");
 
 /*
@@ -288,7 +437,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en-IN" className={FONT_VARIABLES}>
+    /*
+      The pair stacks sit on the same element as the font variables they
+      name, so each var() resolves here and is inherited already resolved.
+    */
+    <html
+      lang="en-IN"
+      className={FONT_VARIABLES}
+      style={PAIR_FONT_STACKS as CSSProperties}
+    >
       <body className="bg-[var(--lifafa-ink)] font-[family-name:var(--font-sans)] text-[var(--lifafa-cream)] antialiased">
         {children}
       </body>

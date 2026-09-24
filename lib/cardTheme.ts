@@ -1,4 +1,9 @@
-import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
+import {
+  displayFaceFor,
+  fontFamilyOf,
+  getFontPair,
+  pairRoleVar,
+} from "@/lib/fontPairs";
 import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
 import type { CardStyle } from "@/types/style";
@@ -34,6 +39,11 @@ export function effectiveTheme(theme: Theme, style: CardStyle): Theme {
     accent: style.accentOverride ?? palette.accent ?? theme.accent,
     textPrimary: palette.textPrimary ?? theme.textPrimary,
     textMuted: palette.textMuted ?? theme.textMuted,
-    fontFamily: fontFamilyOf(fontPair.bodyVar, fontPair.bodyFallback),
+    /* The pair's body stack: its Latin text face, then its Devanagari one. */
+    fontFamily: fontFamilyOf(
+      pairRoleVar(fontPair, "body"),
+      fontPair.bodyFallback,
+    ),
+    displayFontFamily: displayFaceFor(fontPair),
   };
 }

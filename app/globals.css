@@ -182,6 +182,40 @@
 */
 :lang(hi) {
   letter-spacing: normal;
+  /*
+    No fake bold either. Tiro Devanagari Hindi, Rozha One and Kurale come in
+    one weight, and the pairs that use them ask for 500 or 600 (see
+    lib/fontPairs.ts). A browser meets that by smearing the outline, which
+    thickens the shirorekha and fills the counters of a matra. With synthesis
+    off it sets the real weight instead. A Latin face that has the weight
+    asked for is untouched: synthesis only ever stands in for a missing one.
+  */
+  font-synthesis-weight: none;
+}
+
+/*
+  The same, for Hindi on a card that is not Hindi: a name, a venue or a title
+  written in Devanagari on an English card, such as "Taj Palace, लखनऊ" in the
+  Regal heading face.
+
+  Keyed to the elements set in the names and heading stacks, because those are
+  the only places a card asks for a weight a Devanagari face may not have.
+  Every Latin face in those stacks is loaded at exactly the weight its pair
+  asks for (see lib/fontPairs.ts and app/layout.tsx), so turning synthesis off
+  there changes no English letter; it can only stop a smeared Devanagari one.
+  Not the body stack: body text is asked for 400 or 500, which is never faked,
+  and Graceful's English buttons at 600 rely on Marcellus's synthesised bold.
+
+  By the style attribute, since the card's sections, the cover on the card and
+  the one on the envelope each set these stacks inline: `var(--card-heading)`
+  and `var(--card-names)` on the card, and the names stack itself on the
+  envelope. The card's root defines --card-names from the same stack, and is
+  kept out so the rule is not inherited by the body text under it.
+*/
+[style*="var(--card-heading)"],
+[style*="var(--card-names)"],
+[style*="-names), var(--font-devanagari)"]:not([style*="--card-names"]) {
+  font-synthesis-weight: none;
 }
 
 /*

@@ -363,7 +363,10 @@ export default function GuestPass({
       <div className="flex flex-col gap-1">
         <h3
           className="text-lg font-semibold"
-          style={{ color: theme.textPrimary, fontFamily: DISPLAY_FACE }}
+          style={{
+            color: theme.textPrimary,
+            fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+          }}
         >
           {copy.heading}
         </h3>

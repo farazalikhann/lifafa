@@ -32,6 +32,18 @@ export interface FontPair {
    * glance on a phone. A script face is allowed here and nowhere else.
    */
   names?: NamesFace;
+  /**
+   * The pair's own Devanagari faces, one per role, as next/font variables
+   * declared in app/layout.tsx. Each sits straight after the Latin face of the
+   * same role (see pairRoleVar), so a browser sets Latin letters in the Latin
+   * face and Devanagari letters in these, even inside one line.
+   *
+   * A script face (Amita, Tillana) is allowed in `namesHi` and nowhere else,
+   * for the same reason `names` is kept apart from the heading.
+   */
+  namesHi: string;
+  headingHi: string;
+  bodyHi: string;
 }
 
 export interface NamesFace {
@@ -72,6 +84,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Georgia, serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 600,
+    /* Martel for the names and headings, Hind for the text. */
+    namesHi: "--font-hi-martel",
+    headingHi: "--font-hi-martel",
+    bodyHi: "--font-hi-hind",
   },
   {
     id: "modern",
@@ -81,6 +97,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "system-ui, sans-serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 800,
+    /* Poppins for the names and headings, Hind for the text. */
+    namesHi: "--font-hi-poppins",
+    headingHi: "--font-hi-poppins",
+    bodyHi: "--font-hi-hind",
   },
   {
     id: "elegant",
@@ -90,6 +110,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Garamond, Georgia, serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 600,
+    /* Tiro for the names and headings; the text stays in Noto Sans. */
+    namesHi: "--font-hi-tiro",
+    headingHi: "--font-hi-tiro",
+    bodyHi: "--font-devanagari",
   },
   {
     id: "warm",
@@ -99,6 +123,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Georgia, serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 600,
+    /* Laila for the names and headings, Hind for the text. */
+    namesHi: "--font-hi-laila",
+    headingHi: "--font-hi-laila",
+    bodyHi: "--font-hi-hind",
   },
   {
     id: "clean",
@@ -108,6 +136,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "system-ui, sans-serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 700,
+    /* Hind throughout, as DM Sans is throughout. */
+    namesHi: "--font-hi-hind",
+    headingHi: "--font-hi-hind",
+    bodyHi: "--font-hi-hind",
   },
   {
     id: "royal",
@@ -117,6 +149,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Garamond, Georgia, serif",
     bodyFallback: "Garamond, Georgia, serif",
     headingWeight: 600,
+    /* Amita, a script, for the names only; Tiro for the headings. */
+    namesHi: "--font-hi-amita",
+    headingHi: "--font-hi-tiro",
+    bodyHi: "--font-hi-noto-serif",
     names: {
       variable: "--font-great-vibes",
       fallback: "cursive",
@@ -135,6 +171,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Georgia, serif",
     bodyFallback: "Garamond, Georgia, serif",
     headingWeight: 600,
+    /* Rozha One for the names and headings, Noto Serif for the text. */
+    namesHi: "--font-hi-rozha",
+    headingHi: "--font-hi-rozha",
+    bodyHi: "--font-hi-noto-serif",
     names: {
       variable: "--font-cinzel",
       fallback: "Georgia, serif",
@@ -154,6 +194,13 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Georgia, serif",
     bodyFallback: "Georgia, serif",
     headingWeight: 600,
+    /*
+      Tillana, a script, for the names only; Kurale for the headings, Hind for
+      the text.
+    */
+    namesHi: "--font-hi-tillana",
+    headingHi: "--font-hi-kurale",
+    bodyHi: "--font-hi-hind",
     names: {
       variable: "--font-parisienne",
       fallback: "cursive",
@@ -173,6 +220,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     bodyFallback: "Georgia, serif",
     /* Marcellus comes in one weight; asking for more would fake a bold. */
     headingWeight: 400,
+    /* Amita, a script, for the names only; Kurale for everything else. */
+    namesHi: "--font-hi-amita",
+    headingHi: "--font-hi-kurale",
+    bodyHi: "--font-hi-kurale",
     names: {
       variable: "--font-pinyon",
       fallback: "cursive",
@@ -191,6 +242,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     headingFallback: "Didot, Georgia, serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 500,
+    /* Rozha One for the names, Eczar for the headings, Hind for the text. */
+    namesHi: "--font-hi-rozha",
+    headingHi: "--font-hi-eczar",
+    bodyHi: "--font-hi-hind",
     names: {
       variable: "--font-bodoni",
       fallback: "Didot, Georgia, serif",
@@ -205,35 +260,86 @@ export const FONT_PAIRS: readonly FontPair[] = [
 
 export const DEFAULT_FONT_PAIR_ID: FontPairId = "classic";
 
+/** The three places a pair sets type: the couple's names, headings, text. */
+export type FontRole = "names" | "heading" | "body";
+
+/**
+ * The CSS variable holding one role's stack for a pair: its Latin face, then
+ * its Devanagari face, e.g. `--pair-royal-names` is Great Vibes then Amita.
+ *
+ * Set on <html> from PAIR_FONT_STACKS, so it resolves everywhere a card is
+ * drawn — the card, the cover over it, the editor's specimens — without any
+ * of them having to know the Devanagari face exists. That is also what keeps
+ * the download to the card's own pair: nothing names another pair's variable.
+ */
+export function pairRoleVar(pair: FontPair, role: FontRole): string {
+  return `--pair-${pair.id}-${role}`;
+}
+
+/** The Latin and the Devanagari face of one role, before either is resolved. */
+function roleFaces(pair: FontPair, role: FontRole): [string, string] {
+  switch (role) {
+    case "names":
+      return [pair.names?.variable ?? pair.headingVar, pair.namesHi];
+    case "heading":
+      return [pair.headingVar, pair.headingHi];
+    case "body":
+      return [pair.bodyVar, pair.bodyHi];
+  }
+}
+
+/**
+ * Every pair's role stacks, for the style attribute on <html>.
+ *
+ * Latin first and Devanagari second is the whole mechanism. A browser picks a
+ * face per character: a Latin letter is drawn by the Latin face, and a
+ * Devanagari one falls past it — each next/font face carries a unicode-range —
+ * to the pair's Devanagari face, so "Taj Palace, लखनऊ" is two faces in one
+ * line. It also decides the downloads. A face's file is fetched only when a
+ * character is drawn in it, so an English card never fetches a Devanagari file,
+ * and a Hindi card fetches only the Devanagari faces of its own pair.
+ */
+export const PAIR_FONT_STACKS: Readonly<Record<string, string>> =
+  Object.fromEntries(
+    FONT_PAIRS.flatMap((pair) =>
+      (["names", "heading", "body"] as const).map((role) => {
+        const [latin, devanagari] = roleFaces(pair, role);
+        return [pairRoleVar(pair, role), `var(${latin}), var(${devanagari})`];
+      }),
+    ),
+  );
+
 /**
  * The face the cover names are set in. A pair with no face of its own for the
  * names falls back to its heading face at the settings the cover has always
  * used, so the first five pairs render exactly as before.
+ *
+ * `variable` is the pair's names stack (pairRoleVar), not the bare Latin face,
+ * so the cover on the card and the one on the envelope both set Hindi names
+ * in the pair's own Devanagari names face.
  */
 export function namesFaceOf(pair: FontPair): NamesFace {
-  return (
-    pair.names ?? {
-      variable: pair.headingVar,
-      fallback: pair.headingFallback,
-      weight: pair.headingWeight,
-      scale: 1,
-      leading: 1.05,
-      tracking: "-0.015em",
-      wordSpacing: "normal",
-    }
-  );
+  const face: NamesFace = pair.names ?? {
+    variable: pair.headingVar,
+    fallback: pair.headingFallback,
+    weight: pair.headingWeight,
+    scale: 1,
+    leading: 1.05,
+    tracking: "-0.015em",
+    wordSpacing: "normal",
+  };
+
+  return { ...face, variable: pairRoleVar(pair, "names") };
 }
 
 /**
  * Builds a usable font-family string from a variable and its fallback.
  *
- * Noto Sans Devanagari sits second, straight after the pair's own face, and
- * that is what lets a card be written in Hindi in any pair. None of the
- * pairs has a single Devanagari glyph, so without it every Hindi word
- * on the card fell through to whatever the device had — Nirmala on one phone,
- * Kohinoor on the next, each with its own metrics. A browser picks a face per
- * character, so Latin text never reaches the second entry and nothing about an
- * English card changes; only the characters the pair cannot draw do.
+ * Noto Sans Devanagari sits straight after `variable`. For a pair's role
+ * stack (pairRoleVar) it is the last Devanagari fallback, behind the pair's
+ * own Devanagari face, for a glyph that face lacks or while it downloads. For
+ * a bare Latin face, such as the product's own sans, it is the Devanagari
+ * face. A browser picks a face per character, so Latin text never reaches it.
  */
 export function fontFamilyOf(variable: string, fallback: string): string {
   return `var(${variable}), var(--font-devanagari), ${fallback}`;
@@ -249,6 +355,17 @@ export function fontFamilyOf(variable: string, fallback: string): string {
  * Devanagari fallback and cannot drift from it.
  */
 export const DISPLAY_FACE = fontFamilyOf("--font-display", "Georgia, serif");
+
+/**
+ * DISPLAY_FACE beside one card: the same Fraunces for Latin, and the card's
+ * own Devanagari heading face for Hindi, so the reply form's heading on a
+ * Hindi card matches the card's headings. It also keeps a Hindi card's
+ * downloads to its own pair: set in DISPLAY_FACE, that one heading pulled all
+ * of Noto Sans Devanagari onto every Hindi card. Noto stays last behind it.
+ */
+export function displayFaceFor(pair: FontPair): string {
+  return `var(--font-display), var(${pair.headingHi}), var(--font-devanagari), Georgia, serif`;
+}
 
 /** Always resolves — an unknown id falls back to the first pair. */
 export function getFontPair(id: FontPairId): FontPair {

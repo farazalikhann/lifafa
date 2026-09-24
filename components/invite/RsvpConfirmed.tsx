@@ -90,7 +90,10 @@ export default function RsvpConfirmed({
 
       <h2
         className="text-2xl font-semibold text-balance"
-        style={{ color: theme.textPrimary, fontFamily: DISPLAY_FACE }}
+        style={{
+          color: theme.textPrimary,
+          fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+        }}
       >
         {headline(status, name, copy)}
       </h2>

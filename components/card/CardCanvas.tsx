@@ -47,7 +47,12 @@ import { maxOverlayAlpha } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
-import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
+import {
+  fontFamilyOf,
+  getFontPair,
+  namesFaceOf,
+  pairRoleVar,
+} from "@/lib/fontPairs";
 import type { Motif } from "@/lib/motifs";
 import type { EventWeather } from "@/types/weather";
 
@@ -805,8 +810,12 @@ export default function CardCanvas({
 
   /* Consumed by the sections through inheritance, so a change is instant. */
   const cssVariables = {
+    /*
+      Each is the pair's stack for its role, Latin face then Devanagari face,
+      so a Hindi heading or name is set in the pair's own Devanagari face.
+    */
     "--card-heading": fontFamilyOf(
-      fontPair.headingVar,
+      pairRoleVar(fontPair, "heading"),
       fontPair.headingFallback,
     ),
     "--card-heading-weight": String(fontPair.headingWeight),

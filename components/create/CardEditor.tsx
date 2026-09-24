@@ -1163,10 +1163,15 @@ export default function CardEditor({
               />
               <StylePanel
                 style={style}
-                /* Resolved, so the specimen shows the same line the cover will. */
+                /*
+                  Resolved from the card as the preview shows it, so the
+                  specimen is the same line the cover will set, in the same
+                  language: Hindi names in Hindi mode.
+                */
                 hostNames={coverNameLine(
-                  resolveCoverNames(draft, occasionId, language),
+                  resolveCoverNames(preview.draft, occasionId, previewLanguage),
                 )}
+                language={previewLanguage}
                 paletteAccent={getPalette(style.paletteId).accent}
                 borderStyle={borderStyle}
                 onFontPairChange={setFontPair}

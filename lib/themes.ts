@@ -15,6 +15,12 @@ export interface Theme {
   textPrimary: string;
   textMuted: string;
   fontFamily: string;
+  /**
+   * The heading face for the reply form, confirmation and pass beside a card.
+   * Set only by effectiveTheme, from the card's font pair; absent, they use
+   * DISPLAY_FACE.
+   */
+  displayFontFamily?: string;
 }
 
 const DISPLAY_SERIF = "var(--font-display), Georgia, serif";

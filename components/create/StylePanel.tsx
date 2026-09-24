@@ -5,14 +5,24 @@ import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
-import { FONT_PAIRS, fontFamilyOf, namesFaceOf } from "@/lib/fontPairs";
+import { cardCopy } from "@/lib/cardLanguage";
+import {
+  FONT_PAIRS,
+  fontFamilyOf,
+  namesFaceOf,
+  pairRoleVar,
+} from "@/lib/fontPairs";
 import {
   flowerChipScale,
   flowerFrameStyle,
   isPhotoBorder,
 } from "@/lib/flowerFrame";
 import { PALETTES, getPalette } from "@/lib/palettes";
-import type { CardBorderStyle, PhotoBorderStyle } from "@/types/card";
+import type {
+  CardBorderStyle,
+  CardLanguage,
+  PhotoBorderStyle,
+} from "@/types/card";
 import type {
   CardDensity,
   CardStyle,
@@ -276,9 +286,13 @@ function pillClass(isSelected: boolean): string {
  * header, so the border grid is one tap from the top of the tab rather than
  * three groups down it. The controls inside are the ones that were there.
  */
+/** Any Devanagari letter, to tell a Hindi names line from an English one. */
+const DEVANAGARI_LETTER = /\p{Script=Devanagari}/u;
+
 export default function StylePanel({
   style,
   hostNames,
+  language,
   paletteAccent,
   borderStyle,
   onFontPairChange,
@@ -291,6 +305,12 @@ export default function StylePanel({
   style: CardStyle;
   /** Shown in the typography previews so the host sees their own words. */
   hostNames: string;
+  /**
+   * The language the preview is showing. In Hindi the specimens are set in
+   * each pair's Devanagari faces, so the host sees the Hindi look of a pair
+   * before choosing it.
+   */
+  language: CardLanguage;
   /** The selected palette's own accent, used by the reset control. */
   paletteAccent: string;
   /*
@@ -309,8 +329,20 @@ export default function StylePanel({
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
-  const previewName =
-    hostNames.trim().length > 0 ? hostNames.trim() : "Your names";
+  const isHindi = language === "hi";
+  const written = hostNames.trim();
+  /*
+    In Hindi, a names line with no Devanagari in it (English names with no
+    Hindi written yet) would only show the Latin face, so the Hindi
+    placeholder stands in for it.
+  */
+  const previewName = isHindi
+    ? DEVANAGARI_LETTER.test(written)
+      ? written
+      : cardCopy("hi").cover.namesPlaceholder
+    : written.length > 0
+      ? written
+      : "Your names";
   const currentAccent = style.accentOverride ?? paletteAccent;
 
   return (
@@ -345,20 +377,32 @@ export default function StylePanel({
                     {pair.label}
                   </span>
 
-                  <span className="flex min-w-0 items-baseline justify-end gap-2 text-[var(--lifafa-cream)]">
-                    {/* "Aa" in the pair's heading face, the names in its names face. */}
+                  <span
+                    /*
+                      Tagged Hindi in Hindi, so the :lang(hi) rules in
+                      globals.css (no tracking, no fake bold) apply here as
+                      they do on the card.
+                    */
+                    lang={isHindi ? "hi" : undefined}
+                    className="flex min-w-0 items-baseline justify-end gap-2 text-[var(--lifafa-cream)]"
+                  >
+                    {/*
+                      "Aa" in the pair's heading face, the names in its names
+                      face; in Hindi, "अआ" and the Hindi names, in the pair's
+                      Devanagari faces through the same stacks the card uses.
+                    */}
                     <span
                       aria-hidden="true"
                       className="shrink-0 text-lg"
                       style={{
                         fontFamily: fontFamilyOf(
-                          pair.headingVar,
+                          pairRoleVar(pair, "heading"),
                           pair.headingFallback,
                         ),
                         fontWeight: pair.headingWeight,
                       }}
                     >
-                      Aa
+                      {isHindi ? "अआ" : "Aa"}
                     </span>
                     {/*
                       Padded inside its own clip, because a script's swashes
