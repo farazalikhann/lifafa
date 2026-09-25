@@ -180,6 +180,8 @@ export interface CardCopy {
     repliesClosed: string;
     /** A reply to an invitation that is not paid for yet. */
     notActive: string;
+    /** Where the reply form was, once the event is over. */
+    eventEnded: string;
   };
   rsvp: {
     heading: string;
@@ -345,6 +347,7 @@ const ENGLISH: CardCopy = {
     replyFailed: "Could not send your reply, please try again.",
     repliesClosed: "The hosts are no longer taking replies.",
     notActive: "This invitation is not active yet, so it cannot take replies.",
+    eventEnded: "This event has ended. Thank you for being part of it.",
   },
   rsvp: {
     heading: "Will you join us?",
@@ -488,6 +491,7 @@ const HINDI: CardCopy = {
     replyFailed: "आपका जवाब नहीं भेजा जा सका, कृपया फिर से कोशिश करें।",
     repliesClosed: "मेज़बान अब जवाब नहीं ले रहे हैं।",
     notActive: "यह निमंत्रण अभी सक्रिय नहीं है, इसलिए इस पर जवाब नहीं भेजे जा सकते।",
+    eventEnded: "यह कार्यक्रम संपन्न हो चुका है। इसका हिस्सा बनने के लिए धन्यवाद।",
   },
   rsvp: {
     heading: "क्या आपका आना होगा?",

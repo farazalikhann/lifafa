@@ -12,6 +12,12 @@ import {
   DEFAULT_COVER_ANIMATION,
   isCoverAnimationId,
 } from "@/lib/coverAnimations";
+import {
+  checkPaidEdit,
+  isEditLocked,
+  paidEditMessage,
+  type PaidEditRefusal,
+} from "@/lib/eventLock";
 import { geocodeVenue } from "@/lib/weather";
 import {
   DEFAULT_WEATHER_THEME,
@@ -485,7 +491,8 @@ export async function updateEvent(
   */
   const { data: existing, error: readError } = await supabase
     .from("events")
-    .select("event_draft, latitude, longitude, is_paid")
+    /* The whole row: the lock and its change counts come with it (0013). */
+    .select("*")
     .eq("id", id)
     .eq("host_id", user.id)
     .maybeSingle();
@@ -504,6 +511,40 @@ export async function updateEvent(
       `event ${id} is not available to host ${user.id}`,
       "Could not find that invitation. It may have been deleted, or it belongs to a different account.",
     );
+  }
+
+  /*
+    A PAID INVITATION'S LOCK AND LIMITS (lib/eventLock.ts), asked here so the
+    host is told which rule stopped the save. The database's trigger (0013)
+    asks the same questions again and does the counting, so a request that
+    comes round this action is held to them too.
+  */
+  if (existing.is_paid) {
+    const current = toStoredEvent(existing);
+
+    if (
+      isEditLocked({
+        isPaid: true,
+        draft: current.draft,
+        editUnlockedUntil: current.changes.editUnlockedUntil,
+      })
+    ) {
+      return dbFailure(
+        "updateEvent/ended",
+        `event ${id} has ended`,
+        paidEditMessage("event_ended"),
+      );
+    }
+
+    const refusal = checkPaidEdit(current.draft, patch.draft, current.changes);
+
+    if (refusal !== null) {
+      return dbFailure(
+        `updateEvent/${refusal}`,
+        `event ${id}: ${refusal}`,
+        paidEditMessage(refusal),
+      );
+    }
   }
 
   const venueMoved =
@@ -585,6 +626,20 @@ export async function updateEvent(
   }
 
   const { data, error } = attemptResult;
+
+  /* The database's refusal (0013), which names the rule it applied. */
+  if (error?.code === "PT403") {
+    const rule = error.message as PaidEditRefusal | "event_ended";
+    const known = ["event_ended", "date_required", "date_limit", "name_limit"];
+
+    return dbFailure(
+      "updateEvent/refused",
+      error,
+      known.includes(rule)
+        ? paidEditMessage(rule)
+        : "Could not save your changes, please try again.",
+    );
+  }
 
   if (error !== null || data === null) {
     return dbFailure(

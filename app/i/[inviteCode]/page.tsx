@@ -11,6 +11,7 @@ import {
   requestedLanguage,
 } from "@/lib/cardTranslation";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
+import { hasEnded } from "@/lib/eventLock";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
@@ -267,6 +268,8 @@ export default async function InvitePage({
         event={event}
         initialLanguage={language}
         linkLanguage={linkLanguage}
+        /* Past its end date in India: a keepsake, with the replies closed. */
+        ended={hasEnded(event.isPaid, event.draft)}
         weather={weather}
         /* Without a language: the component adds the one on screen. */
         inviteUrl={inviteUrl(event.inviteCode, await serverSiteOrigin())}

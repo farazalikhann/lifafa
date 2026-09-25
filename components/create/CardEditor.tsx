@@ -16,7 +16,7 @@ import CheckinPanel from "@/components/create/CheckinPanel";
 import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorTabs, { type EditorTabId } from "@/components/create/EditorTabs";
-import EventForm from "@/components/create/EventForm";
+import EventForm, { type PaidLimitNotes } from "@/components/create/EventForm";
 import LanguagePicker from "@/components/create/LanguagePicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import MusicPanel from "@/components/create/MusicPanel";
@@ -42,6 +42,14 @@ import {
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalStyle } from "@/lib/petals";
 import { deepEqual } from "@/lib/deepEqual";
+import {
+  DATE_CHANGE_LIMIT,
+  NAME_CHANGE_LIMIT,
+  dateEditRefusal,
+  nameEditRefusal,
+  paidEditMessage,
+  type ChangeAllowance,
+} from "@/lib/eventLock";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardLanguage } from "@/lib/cardLanguage";
@@ -263,6 +271,18 @@ type CardEditorProps = {
    */
   onSignInRequired?: (snapshot: EditorSnapshot) => string | null;
   /**
+   * The event is over and locked (lib/eventLock.ts): every control is inert
+   * and there is nothing to save. The edit page decides, on the server, and
+   * says why in `notice`; the server and the database refuse a save anyway.
+   */
+  readOnly?: boolean;
+  /**
+   * After payment: the draft as it was saved and the date and name changes it
+   * has used, so each field can say how many are left and refuse, inline, a
+   * change the server would refuse. Absent for an unpaid invitation.
+   */
+  paidLimits?: { baseline: EventDraft; allowance: ChangeAllowance };
+  /**
    * Whether this invitation has been paid for, which decides the watermark in
    * the full screen preview.
    *
@@ -311,6 +331,8 @@ export default function CardEditor({
   initialQrCheckinEnabled,
   onSave,
   onSignInRequired,
+  readOnly = false,
+  paidLimits,
   notice,
   isPaid,
 }: CardEditorProps): ReactElement {
@@ -857,6 +879,32 @@ export default function CardEditor({
   }, [isSaving, onSave, snapshot]);
 
   const motifs = getMotifs(occasionId, traditionId);
+
+  /*
+    After payment, what each allowance has left and whether the change on
+    screen would pass: the same rules the server applies (lib/eventLock.ts).
+  */
+  const limitNotes: PaidLimitNotes | undefined =
+    paidLimits === undefined
+      ? undefined
+      : (() => {
+          const { baseline, allowance } = paidLimits;
+          const dateRefusal = dateEditRefusal(baseline, draft, allowance);
+          const nameRefusal = nameEditRefusal(baseline, draft, allowance);
+
+          return {
+            dates: {
+              left: Math.max(0, DATE_CHANGE_LIMIT - allowance.dateChangeCount),
+              limit: DATE_CHANGE_LIMIT,
+              error: dateRefusal === null ? null : paidEditMessage(dateRefusal),
+            },
+            names: {
+              left: Math.max(0, NAME_CHANGE_LIMIT - allowance.nameChangeCount),
+              limit: NAME_CHANGE_LIMIT,
+              error: nameRefusal === null ? null : paidEditMessage(nameRefusal),
+            },
+          };
+        })();
   const dashboardHref = eventId === undefined ? "/dashboard" : `/dashboard/${eventId}`;
 
   /*
@@ -959,7 +1007,7 @@ export default function CardEditor({
                   onClick={() => leave(dashboardHref)}
                   className="min-h-11 rounded px-1 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
                 >
-                  Cancel
+                  {readOnly ? "Back to dashboard" : "Cancel"}
                 </button>
               ) : null}
 
@@ -969,19 +1017,21 @@ export default function CardEditor({
                 open to everyone. What that means is the route's business; this
                 button only knows that saving is a thing it can start.
               */}
-              <button
-                type="button"
-                onClick={handleSave}
-                /* Only while saving. A signed-out host on /create may still click — that is what sends them to sign in. */
-                disabled={isSaving}
-                className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:opacity-60"
-              >
-                {isSaving
-                  ? "Saving…"
-                  : mode === "edit"
-                    ? "Save changes"
-                    : "Save and get my link"}
-              </button>
+              {readOnly ? null : (
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  /* Only while saving. A signed-out host on /create may still click — that is what sends them to sign in. */
+                  disabled={isSaving}
+                  className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:opacity-60"
+                >
+                  {isSaving
+                    ? "Saving…"
+                    : mode === "edit"
+                      ? "Save changes"
+                      : "Save and get my link"}
+                </button>
+              )}
             </div>
 
             {/*
@@ -1086,237 +1136,246 @@ export default function CardEditor({
           `nextCustomId` for the two pieces that had to be lifted out of their
           editors to make that true.
         */}
-        <EditorTabs
-          selected={tab}
-          onSelect={setTab}
-          detailsIncomplete={detailsIncomplete}
-        >
-          {/*
-            1 — DETAILS. Which language, then who, what, where.
+        {/*
+          Read-only once the event is over: every control inert, so nothing can
+          be focused or changed. `contents` keeps the wrapper out of the grid,
+          so the tabs sit exactly where they always do. The preview beside them
+          stays live.
+        */}
+        <div className="contents" inert={readOnly}>
+          <EditorTabs
+            selected={tab}
+            onSelect={setTab}
+            detailsIncomplete={detailsIncomplete}
+          >
+            {/*
+              1 — DETAILS. Which language, then who, what, where.
 
-            The language comes first, above even the occasion: it decides what
-            the host is about to type everything below in, so it is the one
-            choice that cannot sensibly be made afterwards. The tradition sits
-            under it: the same traditionId as the Traditional motifs section in
-            Design, through the same handler.
-          */}
-          {tab === "details" ? (
-            <>
-              {/*
-                The card's own words, wrapped only so that typing in any of
-                them turns the preview back to the card's own language after
-                the host has been writing the other one below. The same column
-                and gap as the tab panel, so the wrapper changes no layout.
-              */}
-              <div
-                className="flex min-w-0 flex-col gap-9"
-                onFocusCapture={() => setPreviewLanguage(language)}
-              >
+              The language comes first, above even the occasion: it decides what
+              the host is about to type everything below in, so it is the one
+              choice that cannot sensibly be made afterwards. The tradition sits
+              under it: the same traditionId as the Traditional motifs section in
+              Design, through the same handler.
+            */}
+            {tab === "details" ? (
+              <>
                 {/*
-                  The Translate button sits with the language it translates
-                  from, closer than the tab's own gap so the two read as one.
+                  The card's own words, wrapped only so that typing in any of
+                  them turns the preview back to the card's own language after
+                  the host has been writing the other one below. The same column
+                  and gap as the tab panel, so the wrapper changes no layout.
                 */}
-                <div className="flex min-w-0 flex-col gap-4">
-                  <LanguagePicker
-                    language={language}
-                    onLanguageChange={handleLanguageSelect}
+                <div
+                  className="flex min-w-0 flex-col gap-9"
+                  onFocusCapture={() => setPreviewLanguage(language)}
+                >
+                  {/*
+                    The Translate button sits with the language it translates
+                    from, closer than the tab's own gap so the two read as one.
+                  */}
+                  <div className="flex min-w-0 flex-col gap-4">
+                    <LanguagePicker
+                      language={language}
+                      onLanguageChange={handleLanguageSelect}
+                    />
+                    <AutoTranslate
+                      cardLanguage={language}
+                      draft={draft}
+                      blocks={blocks}
+                      occasionId={occasionId}
+                      eventId={eventId}
+                      onTranslated={handleTranslated}
+                      onCardId={handleCardId}
+                      onSignInRequired={
+                        onSignInRequired === undefined
+                          ? undefined
+                          : () => onSignInRequired(snapshot)
+                      }
+                    />
+                  </div>
+                  <TraditionQuestion
+                    traditionId={traditionId}
+                    ornamentConfig={ornamentConfig}
+                    onTraditionChange={handleTraditionSelect}
+                    focusRequested={focusTraditionQuestion}
+                    onFocused={handleTraditionQuestionFocused}
                   />
-                  <AutoTranslate
-                    cardLanguage={language}
-                    draft={draft}
-                    blocks={blocks}
+                  <OccasionGrid
                     occasionId={occasionId}
-                    eventId={eventId}
-                    onTranslated={handleTranslated}
-                    onCardId={handleCardId}
-                    onSignInRequired={
-                      onSignInRequired === undefined
-                        ? undefined
-                        : () => onSignInRequired(snapshot)
-                    }
+                    onOccasionChange={handleOccasionSelect}
+                  />
+                  <EventForm
+                    draft={draft}
+                    onChange={handleChange}
+                    occasionId={occasionId}
+                    language={language}
+                    paidLimits={limitNotes}
+                  />
+                  <SubEventEditor
+                    subEvents={draft.subEvents}
+                    openId={openSubEventId}
+                    onChange={(subEvents) => handleChange("subEvents", subEvents)}
+                    onOpenIdChange={setOpenSubEventId}
                   />
                 </div>
-                <TraditionQuestion
+
+                {/*
+                  Last, under the words it translates. See TranslationPanel for
+                  why it is not a second copy of the form above.
+                */}
+                <TranslationPanel
+                  cardLanguage={language}
+                  draft={draft}
+                  blocks={blocks}
+                  occasionId={occasionId}
+                  onDraftWord={handleDraftWord}
+                  onSubEventWord={handleSubEventWord}
+                  onSectionWord={handleSectionWord}
+                  onFocusLanguage={setPreviewLanguage}
+                  revealSignal={translatedSignal}
+                />
+              </>
+            ) : null}
+
+            {/* 2 — DESIGN. How it looks, ornament included. */}
+            {tab === "design" ? (
+              /*
+                Sections sit closer together than the tab's own groups do: a
+                stack of headers reads as one list, and a 36px gap between them
+                would scatter it.
+              */
+              <div className="flex min-w-0 flex-col gap-3">
+                <PresetPicker
+                  design={design}
+                  occasionId={occasionId}
+                  onApply={handleApplyPreset}
+                  onChooseTradition={handleChooseTradition}
+                  accordion={accordionFor("design")}
+                />
+                <StylePanel
+                  style={style}
+                  /*
+                    Resolved from the card as the preview shows it, so the
+                    specimen is the same line the cover will set, in the same
+                    language: Hindi names in Hindi mode.
+                  */
+                  hostNames={coverNameLine(
+                    resolveCoverNames(preview.draft, occasionId, previewLanguage),
+                  )}
+                  language={previewLanguage}
+                  paletteAccent={getPalette(style.paletteId).accent}
+                  borderStyle={borderStyle}
+                  onFontPairChange={setFontPair}
+                  onPaletteChange={setPalette}
+                  onDensityChange={setDensity}
+                  onAccentChange={setAccent}
+                  onBorderStyleChange={setBorderStyle}
+                  accordion={accordionFor("design")}
+                />
+                <MotionPicker
+                  motion={decorMotion}
+                  intensity={decorIntensity}
+                  butterflies={butterflies}
+                  leaves={leaves}
+                  petals={petals}
+                  onMotionChange={setDecorMotion}
+                  onIntensityChange={setDecorIntensity}
+                  onButterfliesChange={setButterflies}
+                  onLeavesChange={setLeaves}
+                  onPetalsChange={setPetals}
+                  accordion={accordionFor("design")}
+                />
+                {/*
+                  The ornament had a tab of its own and does not need one. Which
+                  motifs a card carries is the same question as which palette and
+                  which faces it is set in — a host deciding how their invitation
+                  should look is on one errand, and making them cross to another
+                  tab for the sprigs was asking them to sort their own taste into
+                  our filing.
+                */}
+                <TraditionPicker
                   traditionId={traditionId}
                   ornamentConfig={ornamentConfig}
                   onTraditionChange={handleTraditionSelect}
-                  focusRequested={focusTraditionQuestion}
-                  onFocused={handleTraditionQuestionFocused}
-                />
-                <OccasionGrid
-                  occasionId={occasionId}
-                  onOccasionChange={handleOccasionSelect}
-                />
-                <EventForm
-                  draft={draft}
-                  onChange={handleChange}
-                  occasionId={occasionId}
-                  language={language}
-                />
-                <SubEventEditor
-                  subEvents={draft.subEvents}
-                  openId={openSubEventId}
-                  onChange={(subEvents) => handleChange("subEvents", subEvents)}
-                  onOpenIdChange={setOpenSubEventId}
+                  onOrnamentConfigChange={setOrnamentConfig}
+                  accordion={accordionFor("design")}
                 />
               </div>
+            ) : null}
 
-              {/*
-                Last, under the words it translates. See TranslationPanel for
-                why it is not a second copy of the form above.
-              */}
-              <TranslationPanel
-                cardLanguage={language}
-                draft={draft}
-                blocks={blocks}
-                occasionId={occasionId}
-                onDraftWord={handleDraftWord}
-                onSubEventWord={handleSubEventWord}
-                onSectionWord={handleSectionWord}
-                onFocusLanguage={setPreviewLanguage}
-                revealSignal={translatedSignal}
-              />
-            </>
-          ) : null}
+            {/*
+              3 — STRUCTURE. What appears, and in what order — down to the reply
+              form, which always comes last and which the host can leave off.
+            */}
+            {tab === "structure" ? (
+              <div className="flex min-w-0 flex-col gap-3">
+                <SectionManager
+                  blocks={blocks}
+                  mintCustomId={mintCustomId}
+                  onBlocksChange={setBlocks}
+                  accordion={accordionFor("structure")}
+                />
+                <ReplyFormPanel
+                  enabled={rsvpEnabled}
+                  onEnabledChange={setRsvpEnabled}
+                  accordion={accordionFor("structure")}
+                />
+              </div>
+            ) : null}
 
-          {/* 2 — DESIGN. How it looks, ornament included. */}
-          {tab === "design" ? (
-            /*
-              Sections sit closer together than the tab's own groups do: a
-              stack of headers reads as one list, and a 36px gap between them
-              would scatter it.
-            */
-            <div className="flex min-w-0 flex-col gap-3">
-              <PresetPicker
-                design={design}
-                occasionId={occasionId}
-                onApply={handleApplyPreset}
-                onChooseTradition={handleChooseTradition}
-                accordion={accordionFor("design")}
-              />
-              <StylePanel
-                style={style}
-                /*
-                  Resolved from the card as the preview shows it, so the
-                  specimen is the same line the cover will set, in the same
-                  language: Hindi names in Hindi mode.
-                */
-                hostNames={coverNameLine(
-                  resolveCoverNames(preview.draft, occasionId, previewLanguage),
-                )}
-                language={previewLanguage}
-                paletteAccent={getPalette(style.paletteId).accent}
-                borderStyle={borderStyle}
-                onFontPairChange={setFontPair}
-                onPaletteChange={setPalette}
-                onDensityChange={setDensity}
-                onAccentChange={setAccent}
-                onBorderStyleChange={setBorderStyle}
-                accordion={accordionFor("design")}
-              />
-              <MotionPicker
-                motion={decorMotion}
-                intensity={decorIntensity}
-                butterflies={butterflies}
-                leaves={leaves}
-                petals={petals}
-                onMotionChange={setDecorMotion}
-                onIntensityChange={setDecorIntensity}
-                onButterfliesChange={setButterflies}
-                onLeavesChange={setLeaves}
-                onPetalsChange={setPetals}
-                accordion={accordionFor("design")}
-              />
-              {/*
-                The ornament had a tab of its own and does not need one. Which
-                motifs a card carries is the same question as which palette and
-                which faces it is set in — a host deciding how their invitation
-                should look is on one errand, and making them cross to another
-                tab for the sprigs was asking them to sort their own taste into
-                our filing.
-              */}
-              <TraditionPicker
-                traditionId={traditionId}
-                ornamentConfig={ornamentConfig}
-                onTraditionChange={handleTraditionSelect}
-                onOrnamentConfigChange={setOrnamentConfig}
-                accordion={accordionFor("design")}
-              />
-            </div>
-          ) : null}
+            {/*
+              4 — EXTRAS. Everything that is off until the host turns it on.
 
-          {/*
-            3 — STRUCTURE. What appears, and in what order — down to the reply
-            form, which always comes last and which the host can leave off.
-          */}
-          {tab === "structure" ? (
-            <div className="flex min-w-0 flex-col gap-3">
-              <SectionManager
-                blocks={blocks}
-                mintCustomId={mintCustomId}
-                onBlocksChange={setBlocks}
-                accordion={accordionFor("structure")}
-              />
-              <ReplyFormPanel
-                enabled={rsvpEnabled}
-                onEnabledChange={setRsvpEnabled}
-                accordion={accordionFor("structure")}
-              />
-            </div>
-          ) : null}
+              These five used to be split between Decoration and Structure by an
+              argument about what each one technically was: the weather was a
+              treatment drawn on the card, the cover and the music were about how
+              the day runs, check-in changed nothing a guest sees. Every one of
+              those readings is defensible and none of them is how a host looks
+              for them. What they actually have in common is the only thing that
+              matters here — a card has none of them until somebody asks for it,
+              and a host who wants to know what they can add should find the
+              answer in one list rather than by opening two tabs and reasoning
+              about our categories.
 
-          {/*
-            4 — EXTRAS. Everything that is off until the host turns it on.
+              In the order a guest meets them: the cover they tap, the panel they
+              scratch, the music behind it, the sky over the venue, and the code
+              at the door.
+            */}
+            {tab === "extras" ? (
+              <div className="flex min-w-0 flex-col gap-3">
+                <CoverAnimationPicker
+                  coverAnimation={coverAnimation}
+                  onChange={setCoverAnimation}
+                  accordion={accordionFor("extras")}
+                />
+                <RevealPanel
+                  scratchTarget={scratchTarget}
+                  onScratchTargetChange={setScratchTarget}
+                  accordion={accordionFor("extras")}
+                />
+                <MusicPanel
+                  musicUrl={musicUrl}
+                  onMusicUrlChange={setMusicUrl}
+                  accordion={accordionFor("extras")}
+                />
+                <WeatherPicker
+                  showWeather={showWeather}
+                  weatherTheme={weatherTheme}
+                  onShowWeatherChange={setShowWeather}
+                  onWeatherThemeChange={setWeatherTheme}
+                  accordion={accordionFor("extras")}
+                />
+                <CheckinPanel
+                  enabled={qrCheckinEnabled}
+                  onEnabledChange={setQrCheckinEnabled}
+                  repliesOpen={rsvpEnabled}
+                  accordion={accordionFor("extras")}
+                />
+              </div>
+            ) : null}
 
-            These five used to be split between Decoration and Structure by an
-            argument about what each one technically was: the weather was a
-            treatment drawn on the card, the cover and the music were about how
-            the day runs, check-in changed nothing a guest sees. Every one of
-            those readings is defensible and none of them is how a host looks
-            for them. What they actually have in common is the only thing that
-            matters here — a card has none of them until somebody asks for it,
-            and a host who wants to know what they can add should find the
-            answer in one list rather than by opening two tabs and reasoning
-            about our categories.
-
-            In the order a guest meets them: the cover they tap, the panel they
-            scratch, the music behind it, the sky over the venue, and the code
-            at the door.
-          */}
-          {tab === "extras" ? (
-            <div className="flex min-w-0 flex-col gap-3">
-              <CoverAnimationPicker
-                coverAnimation={coverAnimation}
-                onChange={setCoverAnimation}
-                accordion={accordionFor("extras")}
-              />
-              <RevealPanel
-                scratchTarget={scratchTarget}
-                onScratchTargetChange={setScratchTarget}
-                accordion={accordionFor("extras")}
-              />
-              <MusicPanel
-                musicUrl={musicUrl}
-                onMusicUrlChange={setMusicUrl}
-                accordion={accordionFor("extras")}
-              />
-              <WeatherPicker
-                showWeather={showWeather}
-                weatherTheme={weatherTheme}
-                onShowWeatherChange={setShowWeather}
-                onWeatherThemeChange={setWeatherTheme}
-                accordion={accordionFor("extras")}
-              />
-              <CheckinPanel
-                enabled={qrCheckinEnabled}
-                onEnabledChange={setQrCheckinEnabled}
-                repliesOpen={rsvpEnabled}
-                accordion={accordionFor("extras")}
-              />
-            </div>
-          ) : null}
-
-        </EditorTabs>
+          </EditorTabs>
+        </div>
 
         {/*
           The preview belongs to no tab and never moves into one. Staying

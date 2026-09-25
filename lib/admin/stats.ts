@@ -6,6 +6,8 @@ import {
   type EventsQuery,
 } from "@/lib/admin/eventsQuery";
 import { INVITATION_PRICE_INR } from "@/lib/pricing";
+import { eventEndDate, hasEnded } from "@/lib/eventLock";
+import { toStoredEvent } from "@/types/database";
 import {
   dbFailure,
   dbSuccess,
@@ -728,6 +730,15 @@ export interface AdminEventDetail {
   coverAnimation: string | null;
   createdAt: string;
   updatedAt: string;
+  /** The lock after the event and the change limits (lib/eventLock.ts). */
+  lock: {
+    endDate: string | null;
+    originalEndDate: string | null;
+    dateChangeCount: number;
+    nameChangeCount: number;
+    editUnlockedUntil: string | null;
+    ended: boolean;
+  };
   guests: readonly AdminGuest[];
   tally: {
     total: number;
@@ -875,6 +886,14 @@ export async function getAdminEventDetail(
       coverAnimation: event.cover_animation,
       createdAt: event.created_at,
       updatedAt: event.updated_at,
+      lock: {
+        endDate: eventEndDate(toStoredEvent(event).draft),
+        originalEndDate: event.original_end_date ?? null,
+        dateChangeCount: event.date_change_count ?? 0,
+        nameChangeCount: event.name_change_count ?? 0,
+        editUnlockedUntil: event.edit_unlocked_until ?? null,
+        ended: hasEnded(event.is_paid, toStoredEvent(event).draft),
+      },
       guests: rows,
       tally,
     });

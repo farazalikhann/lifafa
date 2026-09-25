@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isCheckinToken } from "@/lib/checkinPass";
 import { readEventByInviteCode } from "@/lib/db/inviteEvent";
+import { hasEnded } from "@/lib/eventLock";
 import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
 import { toGuest } from "@/types/database";
 import type { Guest, GuestReply } from "@/types/guest";
@@ -44,7 +45,9 @@ export type ReplyOutcome =
   | { kind: "saved"; checkinToken: string | null }
   | { kind: "closed" }
   /* The invitation is not paid for, so it takes no replies from anyone. */
-  | { kind: "inactive" };
+  | { kind: "inactive" }
+  /* The event is over (lib/eventLock.ts): the card stays, the replies close. */
+  | { kind: "ended" };
 
 /**
  * Records a guest's reply, or replaces the one their phone already left.
@@ -93,6 +96,11 @@ export async function addOrUpdateReply(
     return dbSuccess({ kind: "inactive" });
   }
 
+  /* An event that is over takes no more replies, new or changed. */
+  if (event.ok && event.data !== null && hasEnded(true, event.data.draft)) {
+    return dbSuccess({ kind: "ended" });
+  }
+
   if (event.ok && event.data !== null && !event.data.config.rsvpEnabled) {
     return dbSuccess({ kind: "closed" });
   }
@@ -119,7 +127,9 @@ export async function addOrUpdateReply(
     anyone but its host.
   */
   if (error?.code === "PT403") {
-    return dbSuccess({ kind: "inactive" });
+    return dbSuccess({
+      kind: /ended/i.test(error.message) ? "ended" : "inactive",
+    });
   }
 
   if (error !== null) {
@@ -216,27 +226,31 @@ export async function countGuestsForEvent(
  * policy, so the update touches nothing and reports it.
  */
 /**
- * Whether an event is paid for, read under the caller's own session: RLS lets a
- * host read their own events and nobody else's, so an event the caller does
- * not own reads as unpaid, which refuses. Not exported: every export of this
- * file is an endpoint.
+ * Whether an event's guests may be checked in: it is paid for and not over.
+ * Read under the caller's own session: RLS lets a host read their own events
+ * and nobody else's, so an event the caller does not own reads as unpaid,
+ * which refuses. Not exported: every export of this file is an endpoint.
  */
-async function isEventPaid(
+async function checkInState(
   supabase: Awaited<ReturnType<typeof createClient>>,
   eventId: string,
-): Promise<boolean> {
+): Promise<"open" | "not_active" | "ended"> {
   const { data, error } = await supabase
     .from("events")
-    .select("is_paid")
+    .select("is_paid, event_draft")
     .eq("id", eventId)
     .maybeSingle();
 
   if (error !== null) {
-    console.error("[db] isEventPaid:", error);
-    return false;
+    console.error("[db] checkInState:", error);
+    return "not_active";
   }
 
-  return data?.is_paid === true;
+  if (data?.is_paid !== true) {
+    return "not_active";
+  }
+
+  return hasEnded(true, data.event_draft) ? "ended" : "open";
 }
 
 export async function setCheckedIn(
@@ -256,11 +270,22 @@ export async function setCheckedIn(
       .eq("id", guestId)
       .maybeSingle();
 
-    if (guest !== null && !(await isEventPaid(supabase, guest.event_id))) {
+    const doorState =
+      guest === null ? "open" : await checkInState(supabase, guest.event_id);
+
+    if (doorState === "not_active") {
       return dbFailure(
         "setCheckedIn/notActive",
-        `event ${guest.event_id} is not paid`,
+        `event ${guest?.event_id} is not paid`,
         "This invitation is not active yet, so guests cannot be checked in.",
+      );
+    }
+
+    if (doorState === "ended") {
+      return dbFailure(
+        "setCheckedIn/ended",
+        `event ${guest?.event_id} has ended`,
+        "This event has ended, so guests can no longer be checked in.",
       );
     }
   }
@@ -313,7 +338,9 @@ export type PassCheckIn =
   | { kind: "not_owner" }
   | { kind: "wrong_event" }
   /* The pass is for an invitation that is not paid for. */
-  | { kind: "not_active" };
+  | { kind: "not_active" }
+  /* The event is over (lib/eventLock.ts). */
+  | { kind: "ended" };
 
 /** The one failure sentence the door shows, whichever query it was. */
 const PASS_FAILURE = "Could not check this pass, please try again.";
@@ -455,11 +482,14 @@ async function checkInByToken(
   }
 
   /*
-    An unpaid invitation checks nobody in. Asked as the host, whose own event
-    RLS lets them read; a read that fails refuses rather than admits.
+    An unpaid invitation checks nobody in, and neither does one whose event is
+    over. Asked as the host, whose own event RLS lets them read; a read that
+    fails refuses rather than admits.
   */
-  if (!(await isEventPaid(supabase, row.event_id))) {
-    return dbSuccess({ kind: "not_active" });
+  const doorState = await checkInState(supabase, row.event_id);
+
+  if (doorState !== "open") {
+    return dbSuccess({ kind: doorState });
   }
 
   if (row.checked_in) {

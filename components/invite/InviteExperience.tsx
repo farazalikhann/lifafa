@@ -46,6 +46,8 @@ type ReplyError =
   | { kind: "closed" }
   /* The invitation is not paid for; only its host can be here to see this. */
   | { kind: "inactive" }
+  /* The event ended while the form was open. */
+  | { kind: "ended" }
   /* The server's own sentence, which is English; see submitErrorText. */
   | { kind: "server"; text: string };
 
@@ -85,6 +87,7 @@ export default function InviteExperience({
   event,
   initialLanguage,
   linkLanguage,
+  ended,
   weather,
   inviteUrl,
 }: {
@@ -101,6 +104,11 @@ export default function InviteExperience({
    * opens in Hindi even for a guest who once chose English on the plain link.
    */
   linkLanguage: CardLanguage | null;
+  /**
+   * The event is over (lib/eventLock.ts), decided by the page on the server so
+   * the two renders agree. The card stays as a keepsake; the replies close.
+   */
+  ended: boolean;
   /** Resolved by the page, on the server. Null means the card shows none. */
   weather: EventWeather | null;
   /** This card's own link, without a language; see inviteLinkIn below. */
@@ -270,6 +278,11 @@ export default function InviteExperience({
           return;
         }
 
+        if (result.data.kind === "ended") {
+          setSubmitError({ kind: "ended" });
+          return;
+        }
+
         /*
           Only advanced once the write has actually landed. Showing the
           confirmation optimistically would tell a guest their reply was sent
@@ -301,9 +314,11 @@ export default function InviteExperience({
         ? copy.invite.repliesClosed
         : submitError.kind === "inactive"
           ? copy.invite.notActive
-          : submitError.kind === "server" && language === "en"
-            ? submitError.text
-            : copy.invite.replyFailed;
+          : submitError.kind === "ended"
+            ? copy.invite.eventEnded
+            : submitError.kind === "server" && language === "en"
+              ? submitError.text
+              : copy.invite.replyFailed;
 
   return (
     <>
@@ -440,6 +455,22 @@ export default function InviteExperience({
                 ) : null
               }
             />
+          ) : ended && config.rsvpEnabled ? (
+            /*
+              Where the reply form was, once the event is over: the card is a
+              keepsake now, and the database refuses a reply to it anyway.
+            */
+            <section className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-14 text-center sm:px-6">
+              <p
+                className="text-base leading-relaxed text-balance"
+                style={{
+                  color: cardTheme.textPrimary,
+                  fontFamily: cardTheme.displayFontFamily,
+                }}
+              >
+                {copy.invite.eventEnded}
+              </p>
+            </section>
           ) : config.rsvpEnabled ? (
             <RsvpPanel
               theme={cardTheme}

@@ -7,6 +7,8 @@ import CardEditor, {
   type SaveOutcome,
 } from "@/components/create/CardEditor";
 import { updateEvent } from "@/lib/db/events";
+import type { ChangeAllowance } from "@/lib/eventLock";
+import type { EventDraft } from "@/types/event";
 
 /**
  * The client half of /dashboard/[eventId]/edit.
@@ -27,6 +29,8 @@ export default function EditEventEditor({
   initial,
   notice,
   isPaid,
+  readOnly,
+  paidLimits,
 }: {
   eventId: string;
   /** The stored event, as the editor takes it. */
@@ -34,6 +38,10 @@ export default function EditEventEditor({
   notice?: ReactNode;
   /** The event row's is_paid, read by the server page that loaded it. */
   isPaid: boolean;
+  /** The event is over and locked; see CardEditor. */
+  readOnly: boolean;
+  /** After payment; see CardEditor. */
+  paidLimits?: { baseline: EventDraft; allowance: ChangeAllowance };
 }): ReactElement {
   const router = useRouter();
 
@@ -106,6 +114,8 @@ export default function EditEventEditor({
       onSave={handleSave}
       notice={notice}
       isPaid={isPaid}
+      readOnly={readOnly}
+      paidLimits={paidLimits}
     />
   );
 }

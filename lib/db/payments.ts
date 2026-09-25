@@ -14,6 +14,7 @@ import {
   normaliseCouponCode,
 } from "@/lib/coupons/lookup";
 import { quoteWithCoupon, type CouponQuote } from "@/lib/coupons/quote";
+import { eventEndDate } from "@/lib/eventLock";
 import { dbFailure, dbSuccess, postgresError, type DbResult } from "@/lib/db/result";
 import type { PaymentInsert } from "@/types/database";
 
@@ -193,7 +194,7 @@ async function requireUnpaidOwnedEvent(
 
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id, is_paid")
+    .select("id, is_paid, event_draft")
     .eq("id", eventId)
     .eq("host_id", user.id)
     .maybeSingle();
@@ -214,6 +215,21 @@ async function requireUnpaidOwnedEvent(
 
   if (event.is_paid) {
     return { ok: false, error: "This invitation has already been published." };
+  }
+
+  /*
+    A DATE BEFORE PAYMENT. A paid invitation is locked the day after its event
+    and may only move its date so far (lib/eventLock.ts), and both are measured
+    from the date it was paid with; one paid with no date would be open for
+    ever. So payment waits for one, here, on the server, for the order and the
+    coupon preview alike.
+  */
+  if (eventEndDate(event.event_draft) === null) {
+    return {
+      ok: false,
+      error:
+        "Add the event date before you publish. It is shown on the invitation, and the invitation closes after it.",
+    };
   }
 
   return { ok: true, hostId: user.id };

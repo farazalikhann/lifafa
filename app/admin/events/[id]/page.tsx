@@ -5,9 +5,19 @@ import { PaidPill } from "@/components/admin/EventsTable";
 import { EmptyState, ErrorNotice } from "@/components/admin/Feedback";
 import GuestTable from "@/components/admin/GuestTable";
 import { Stat, StatSection } from "@/components/admin/StatGrid";
+import {
+  resetEventChangeCounts,
+  unlockEventEditing,
+} from "@/app/admin/events/actions";
 import { requireAdminSession } from "@/lib/admin/auth";
 import { formatCount, formatIst } from "@/lib/admin/format";
-import { getAdminEventDetail } from "@/lib/admin/stats";
+import { getAdminEventDetail, type AdminEventDetail } from "@/lib/admin/stats";
+import {
+  ADMIN_UNLOCK_HOURS,
+  DATE_CHANGE_LIMIT,
+  NAME_CHANGE_LIMIT,
+  isUnlocked,
+} from "@/lib/eventLock";
 
 /**
  * One event in full, with its guest list. Read only.
@@ -15,6 +25,11 @@ import { getAdminEventDetail } from "@/lib/admin/stats";
  * NO CONTROLS, AND THAT IS THE STEP. There is no edit, no delete, no refund
  * and no way to mark anything paid from here. A dashboard that can only look
  * is a dashboard whose worst bug is a wrong number on a screen.
+ *
+ * THE ONE EXCEPTION is the lock after the event (lib/eventLock.ts): unlocking
+ * an ended invitation for ADMIN_UNLOCK_HOURS, and giving a paid invitation its
+ * date and name changes back. Both are support's answer to "our event moved",
+ * and neither touches the card, the guests or any money. See EditingPanel.
  *
  * The guest list shows names and phone numbers, which are a host's guests'
  * details and not the owner's to browse idly. They are here because support —
@@ -47,6 +62,67 @@ function BackLink(): ReactElement {
     >
       ← All events
     </Link>
+  );
+}
+
+/**
+ * Where the invitation stands with the lock and its change limits, and the
+ * admin's two overrides of them. Posts to app/admin/events/actions.ts.
+ */
+function EditingPanel({ event }: { event: AdminEventDetail }): ReactElement {
+  const { lock } = event;
+  const unlocked = isUnlocked(lock.editUnlockedUntil);
+  const status = !event.isPaid
+    ? "Unpaid: no lock and no limits"
+    : lock.ended
+      ? unlocked
+        ? `Ended, unlocked until ${formatIst(lock.editUnlockedUntil ?? "")}`
+        : "Ended: locked"
+      : "Paid: editable";
+  const button =
+    "min-h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900";
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+        Editing
+      </h2>
+      <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Status" value={status} />
+        <Stat label="End date" value={lock.endDate ?? "No date"} />
+        <Stat
+          label="Date changes used"
+          value={`${lock.dateChangeCount} of ${DATE_CHANGE_LIMIT}`}
+          note={
+            lock.originalEndDate === null
+              ? undefined
+              : `Paid with end date ${lock.originalEndDate}`
+          }
+        />
+        <Stat
+          label="Name changes used"
+          value={`${lock.nameChangeCount} of ${NAME_CHANGE_LIMIT}`}
+        />
+      </dl>
+      {event.isPaid ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {lock.ended ? (
+            <form action={unlockEventEditing}>
+              <input type="hidden" name="eventId" value={event.id} />
+              <button type="submit" className={button}>
+                Unlock editing for {ADMIN_UNLOCK_HOURS} hours
+              </button>
+            </form>
+          ) : null}
+          <form action={resetEventChangeCounts}>
+            <input type="hidden" name="eventId" value={event.id} />
+            <button type="submit" className={button}>
+              Reset date and name changes
+            </button>
+          </form>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -97,6 +173,8 @@ export default async function AdminEventPage({
           aside={<PaidPill isPaid={event.isPaid} />}
         />
       </div>
+
+      <EditingPanel event={event} />
 
       <StatSection title="Replies">
         {/*

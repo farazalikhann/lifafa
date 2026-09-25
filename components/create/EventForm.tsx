@@ -66,6 +66,46 @@ function Field({
 
 const HOST_HINT = "Used only when the two name fields are empty.";
 
+/** One of the two allowances a paid invitation has; see lib/eventLock.ts. */
+export interface ChangeNote {
+  left: number;
+  limit: number;
+  /** Why the change on screen cannot be saved, or null when it can. */
+  error: string | null;
+}
+
+/** The date and name allowances, after payment. Absent before it. */
+export interface PaidLimitNotes {
+  dates: ChangeNote;
+  names: ChangeNote;
+}
+
+/**
+ * "1 of 2 date changes left", or the reason the change on screen will not be
+ * saved. The server counts and refuses; this only says so before the host
+ * presses Save.
+ */
+function LimitNote({
+  note,
+  noun,
+}: {
+  note: ChangeNote;
+  noun: string;
+}): ReactElement {
+  return note.error !== null ? (
+    <p
+      role="alert"
+      className="rounded-xl border border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/10 px-3 py-2 text-xs leading-relaxed text-[var(--lifafa-cream)]"
+    >
+      {note.error}
+    </p>
+  ) : (
+    <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+      {note.left} of {note.limit} {noun} changes left
+    </p>
+  );
+}
+
 /**
  * The example in each field that goes on the card, in the card's language.
  *
@@ -293,6 +333,7 @@ export default function EventForm({
   onChange,
   occasionId,
   language,
+  paidLimits,
 }: {
   draft: EventDraft;
   onChange: DraftChangeHandler;
@@ -311,6 +352,8 @@ export default function EventForm({
   occasionId: OccasionId;
   /** The card's language, which the examples and the joining words follow. */
   language: CardLanguage;
+  /** After payment: how many date and name changes remain. */
+  paidLimits?: PaidLimitNotes;
 }): ReactElement {
   const remaining = MESSAGE_LIMIT - draft.message.length;
   const isPair = pairsNames(occasionId);
@@ -429,6 +472,10 @@ export default function EventForm({
           />
         </Field>
 
+        {paidLimits !== undefined ? (
+          <LimitNote note={paidLimits.names} noun="name" />
+        ) : null}
+
         {/*
           The families, under the names they belong to.
 
@@ -511,6 +558,10 @@ export default function EventForm({
             />
           </Field>
         </div>
+
+        {paidLimits !== undefined ? (
+          <LimitNote note={paidLimits.dates} noun="date" />
+        ) : null}
       </Section>
 
       <Section label="Where">

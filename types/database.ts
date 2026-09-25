@@ -80,6 +80,18 @@ export type EventRow = {
    * why toStoredEvent tests it with `=== true` rather than reading it straight.
    */
   qr_checkin_enabled: boolean;
+  /*
+    The lock and change limits (0013; see lib/eventLock.ts). Optional because
+    a row read before 0013 is applied has none of them, and the guest's read
+    (event_by_invite_code) never projects them. Written only by the database
+    trigger and the admin: the trigger puts back any value a host sends.
+  */
+  /** The end date the invitation was paid with. */
+  original_end_date?: string | null;
+  date_change_count?: number;
+  name_change_count?: number;
+  /** Until when an admin has lifted the lock on an ended invitation. */
+  edit_unlocked_until?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -122,6 +134,13 @@ export type EventUpdate = Partial<
     | "longitude"
     | "weather_theme"
     | "qr_checkin_enabled"
+    /*
+      The admin's, through the service role. A host's value for any of these
+      is put back by the events_guard_card_edits trigger (0013).
+    */
+    | "edit_unlocked_until"
+    | "date_change_count"
+    | "name_change_count"
   >
 >;
 
@@ -518,6 +537,17 @@ export interface StoredEvent {
   weatherTheme: string | null;
   /** False unless the host has switched QR check-in on. */
   qrCheckinEnabled: boolean;
+  /**
+   * How far a paid invitation has been changed, for the lock and its limits
+   * (0013; see lib/eventLock.ts). Zeros and nulls on a guest's read, which
+   * does not carry them, and before 0013 is applied.
+   */
+  changes: {
+    originalEndDate: string | null;
+    dateChangeCount: number;
+    nameChangeCount: number;
+    editUnlockedUntil: string | null;
+  };
 }
 
 /** An event as the index page needs it: the event plus its reply tally. */
@@ -648,6 +678,16 @@ export function toStoredEvent(
       either way a missing key has to mean off.
     */
     qrCheckinEnabled: row.qr_checkin_enabled === true,
+    changes: {
+      originalEndDate:
+        "original_end_date" in row ? (row.original_end_date ?? null) : null,
+      dateChangeCount:
+        "date_change_count" in row ? (row.date_change_count ?? 0) : 0,
+      nameChangeCount:
+        "name_change_count" in row ? (row.name_change_count ?? 0) : 0,
+      editUnlockedUntil:
+        "edit_unlocked_until" in row ? (row.edit_unlocked_until ?? null) : null,
+    },
   };
 }
 

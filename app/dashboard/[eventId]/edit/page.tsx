@@ -1,10 +1,12 @@
 import type { ReactElement } from "react";
 import EditEventEditor from "@/components/create/EditEventEditor";
+import EventEndedNotice from "@/components/create/EventEndedNotice";
 import GuestsRepliedNotice from "@/components/create/GuestsRepliedNotice";
 import EventNotFound from "@/components/dashboard/EventNotFound";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { countGuestsForEvent } from "@/lib/db/guests";
 import { getEventById } from "@/lib/db/events";
+import { isEditLocked } from "@/lib/eventLock";
 import { getWeatherTheme } from "@/lib/weatherThemes";
 
 /**
@@ -68,6 +70,16 @@ export default async function EditEventPage({
     take the union and would otherwise be handed a value that matches none of
     their choices, which is a control with nothing selected.
   */
+  /*
+    Over, and not unlocked by an admin: read-only (lib/eventLock.ts). Decided
+    here on the server; updateEvent and the database refuse a save regardless.
+  */
+  const locked = isEditLocked({
+    isPaid: event.isPaid,
+    draft: event.draft,
+    editUnlockedUntil: event.changes.editUnlockedUntil,
+  });
+
   const coverAnimation = getCoverAnimation(event.coverAnimation).id;
   const weatherTheme = getWeatherTheme(event.weatherTheme).id;
 
@@ -95,8 +107,22 @@ export default async function EditEventPage({
         weatherTheme,
         qrCheckinEnabled: event.qrCheckinEnabled,
       }}
+      readOnly={locked}
+      /*
+        After payment, the draft as saved and the changes it has used, so the
+        date and name fields can say how many are left.
+      */
+      paidLimits={
+        event.isPaid
+          ? { baseline: event.draft, allowance: event.changes }
+          : undefined
+      }
       notice={
-        <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
+        locked ? (
+          <EventEndedNotice eventId={event.id} />
+        ) : (
+          <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
+        )
       }
     />
   );
