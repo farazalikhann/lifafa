@@ -143,6 +143,12 @@ export interface CardCopy {
     heading: string;
     /** The directions link under a function with a venue of its own. */
     directions: string;
+    /** The calendar action on each function's card. */
+    addToCalendar: string;
+    /** On the next function still to come. */
+    upNext: string;
+    /** On a function that has already taken place. */
+    celebrated: string;
     /** What the main event is called in the list when the host has not titled it. */
     primaryFallback: string;
   };
@@ -338,6 +344,9 @@ const ENGLISH: CardCopy = {
   timeline: {
     heading: "The celebrations",
     directions: "Get directions",
+    addToCalendar: "Add to calendar",
+    upNext: "Up next",
+    celebrated: "Celebrated",
     primaryFallback: "Main function",
   },
   scratch: {
@@ -500,6 +509,9 @@ const HINDI: CardCopy = {
   timeline: {
     heading: "सभी कार्यक्रम",
     directions: "रास्ता देखें",
+    addToCalendar: "कैलेंडर में जोड़ें",
+    upNext: "अगला",
+    celebrated: "संपन्न",
     primaryFallback: "मुख्य कार्यक्रम",
   },
   scratch: {

@@ -1,4 +1,4 @@
-import { eventInstant } from "@/lib/cardFormat";
+import { eventInstant, hasEventTime } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import type { CardLanguage, CardSectionId } from "@/types/card";
 import type { CustomSection } from "@/types/customSection";
@@ -273,4 +273,68 @@ export function hasCountdown(draft: EventDraft): boolean {
  */
 export function rsvpEnabled(value: unknown): boolean {
   return value !== false;
+}
+
+/* ---------------------------------------------------------------------------
+   Where each function stands, for the timeline's chips.
+   --------------------------------------------------------------------------- */
+
+/**
+ * How long a function is taken to last when deciding it is over: the same
+ * two hours the calendar entry assumes (lib/calendar.ts), and the whole day
+ * for one with no time.
+ */
+const FUNCTION_DURATION_MS = 2 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ *   past     over: faded, with "Celebrated"
+ *   next     the first one not yet over, which may be under way: "Up next"
+ *   later    still to come after that
+ *   undated  no date, so no chip at all
+ */
+export type TimelinePhase = "past" | "next" | "later" | "undated";
+
+/** When a function stops being "up next", or null with no date. */
+function functionEnd(entry: TimelineEntry): number | null {
+  const start = eventInstant(entry.date, entry.time);
+
+  if (start === null) {
+    return null;
+  }
+
+  return start.getTime() + (hasEventTime(entry.time) ? FUNCTION_DURATION_MS : DAY_MS);
+}
+
+/**
+ * Each function's phase at `now`, by id. `now` is a parameter for the same
+ * reason the countdown's is: the section asks only after mount, so the server
+ * and the first paint agree on a timeline with no chips.
+ *
+ * The entries are already in date order (timelineEntries), so "next" is the
+ * first whose end is still ahead.
+ */
+export function timelinePhases(
+  entries: readonly TimelineEntry[],
+  now: Date,
+): ReadonlyMap<string, TimelinePhase> {
+  const phases = new Map<string, TimelinePhase>();
+  let nextTaken = false;
+
+  for (const entry of entries) {
+    const end = functionEnd(entry);
+
+    if (end === null) {
+      phases.set(entry.id, "undated");
+    } else if (end <= now.getTime()) {
+      phases.set(entry.id, "past");
+    } else if (!nextTaken) {
+      phases.set(entry.id, "next");
+      nextTaken = true;
+    } else {
+      phases.set(entry.id, "later");
+    }
+  }
+
+  return phases;
 }

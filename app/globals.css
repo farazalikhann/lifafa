@@ -1550,9 +1550,139 @@
   }
 }
 
+/* -------------------------------------------------------------------------
+   The Celebrations timeline. See components/card/sections/TimelineSection.
+
+   A phone, and the editor's phone frame: one column, the thread down the
+   left through the medallions. A laptop, 1024px and wider, with a timeline
+   at least 440px wide: the thread down the middle and the cards alternating
+   either side of it.
+   ------------------------------------------------------------------------- */
+
+.lifafa-tl {
+  container-type: inline-size;
+  container-name: timeline;
+}
+
+.lifafa-tl-line {
+  position: absolute;
+  top: calc(var(--tl-medal) / 2);
+  bottom: calc(var(--tl-medal) / 2);
+  left: calc(var(--tl-medal) / 2 - 1px);
+  width: 2px;
+  border-radius: 1px;
+}
+
+/* Drawn by the scroll; transformed only, so nothing is laid out again. */
+.lifafa-tl-thread {
+  transform-origin: 50% 0%;
+  will-change: transform;
+}
+
+.lifafa-tl-row {
+  display: grid;
+  grid-template-columns: var(--tl-medal) minmax(0, 1fr);
+  column-gap: calc(0.85 * var(--card-rem, 1rem));
+  align-items: start;
+}
+
+.lifafa-tl-medal {
+  grid-column: 1;
+  grid-row: 1;
+  transition:
+    opacity 480ms ease-out var(--tl-delay, 0ms),
+    transform 480ms cubic-bezier(0.2, 0.8, 0.3, 1.2) var(--tl-delay, 0ms);
+}
+
+.lifafa-tl-card {
+  grid-column: 2;
+  grid-row: 1;
+  transition:
+    opacity 520ms ease-out var(--tl-delay, 0ms),
+    transform 520ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--tl-delay, 0ms);
+}
+
+/* Waiting to be scrolled to: the card a step off to the side, the medallion small. */
+.lifafa-tl-row[data-shown="false"] .lifafa-tl-card {
+  opacity: 0;
+  transform: translate3d(18px, 6px, 0);
+}
+
+.lifafa-tl-row[data-shown="false"] .lifafa-tl-medal {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* Over: the medallion steps back. The words keep their full contrast. */
+.lifafa-tl-row[data-phase="past"][data-shown="true"] .lifafa-tl-medal {
+  opacity: 0.55;
+}
+
+/* Up next: a ring breathes out from the medallion. */
+.lifafa-tl-medal[data-next="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--tl-accent);
+  animation: lifafa-tl-pulse 2.4s ease-out infinite;
+}
+
+@keyframes lifafa-tl-pulse {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@media (min-width: 1024px) {
+  /*
+    On the guest's card on a laptop, the timeline steps out of the reading
+    column, which is sized for a line of text, not for two cards side by side:
+    up to 48rem, centred on the column. The editor's phone frame is not a
+    fluid card and never gets this.
+  */
+  .lifafa-card-fluid .lifafa-tl {
+    --tl-wide: min(calc(100vw - 8rem), 48rem);
+    width: var(--tl-wide);
+    margin-inline: calc((100% - var(--tl-wide)) / 2);
+  }
+
+  @container timeline (min-width: 440px) {
+    .lifafa-tl-line {
+      left: calc(50% - 1px);
+    }
+
+    .lifafa-tl-row {
+      grid-template-columns: minmax(0, 1fr) var(--tl-medal) minmax(0, 1fr);
+    }
+
+    .lifafa-tl-medal {
+      grid-column: 2;
+    }
+
+    .lifafa-tl-row[data-side="left"] .lifafa-tl-card {
+      grid-column: 1;
+    }
+
+    .lifafa-tl-row[data-side="right"] .lifafa-tl-card {
+      grid-column: 3;
+    }
+
+    .lifafa-tl-row[data-side="left"][data-shown="false"] .lifafa-tl-card {
+      transform: translate3d(-18px, 6px, 0);
+    }
+  }
+}
+
 /*
   Reduced motion: the clock's cards show the new digit flat, with nothing
-  folding, and there is no confetti.
+  folding; no confetti; the thread drawn; the cards simply there; the ring
+  still.
 */
 @media (prefers-reduced-motion: reduce) {
   .lifafa-flip-fold-top {
@@ -1566,5 +1696,26 @@
 
   .lifafa-confetti {
     display: none;
+  }
+
+  .lifafa-tl-thread {
+    transform: none !important;
+  }
+
+  .lifafa-tl-row[data-shown] .lifafa-tl-card,
+  .lifafa-tl-row[data-shown] .lifafa-tl-medal {
+    transition: none;
+  }
+
+  .lifafa-tl-row[data-shown="false"] .lifafa-tl-card,
+  .lifafa-tl-row[data-shown="false"] .lifafa-tl-medal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lifafa-tl-medal[data-next="true"]::after {
+    animation: none;
+    opacity: 0.6;
+    transform: none;
   }
 }

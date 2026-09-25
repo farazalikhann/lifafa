@@ -752,3 +752,21 @@ export function lineDelay(index: number): { transitionDelay: string } {
     transitionDelay: `calc(${index} * var(--card-line-stagger, 80ms))`,
   };
 }
+
+/**
+ * A date as the timeline's chip prints it: "13 Dec" / "13 दिसंबर", or null
+ * with no usable date. Built from calendarPageText, so it is the same table
+ * and the same Indian day as everything else on the card.
+ */
+export function formatDateChip(
+  eventDate: string,
+  language: CardLanguage,
+): string | null {
+  const page = calendarPageText(eventDate, "", language);
+
+  if (page === null) {
+    return null;
+  }
+
+  return `${page.day} ${language === "hi" ? page.month : page.month.slice(0, 3)}`;
+}

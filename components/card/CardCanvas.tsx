@@ -469,6 +469,8 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
           language={language}
+          invite={invite}
+          occasionId={occasionId}
         />
       );
     case "family":
