@@ -71,12 +71,23 @@ export default function FamilySection({
           style={lineDelay(index * 2)}
         >
           {block.name !== null ? (
+            /*
+              In the pair's names face, the one the cover sets them in, so the
+              two people read as the same two people further down the card. A
+              script at this size is still a name and not a paragraph: it is
+              given the face's own scale, leading and word spacing, and allowed
+              to wrap, which is what keeps "Mohammad Abdul Rahman" inside a
+              375px phone, or a photo frame's narrower column, in Great Vibes.
+            */
             <p
-              className="max-w-[24ch] text-[calc(1.25*var(--card-rem,1rem))] leading-snug break-words"
+              className="max-w-full text-[calc(1.75*var(--card-rem,1rem)*var(--card-names-scale,1))] break-words text-balance"
               style={{
                 color: theme.textPrimary,
-                fontFamily: "var(--card-heading)",
-                fontWeight: "var(--card-heading-weight)" as unknown as number,
+                fontFamily: "var(--card-names)",
+                fontWeight: "var(--card-names-weight)" as unknown as number,
+                lineHeight: "var(--card-names-leading)",
+                letterSpacing: "var(--card-names-tracking)",
+                wordSpacing: "var(--card-names-word-spacing)",
               }}
             >
               {block.name}

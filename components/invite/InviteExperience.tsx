@@ -348,10 +348,9 @@ export default function InviteExperience({
           /*
             The card's language on everything below, the form and the pass
             included — they sit outside the card's own root, which carries it
-            too. On a Hindi card the page's own face also takes the card's body
-            stack, which is the one with Devanagari in it; the form used to fall
-            through to whatever the phone had for every word. An English card is
-            left on the page face it has always had.
+            too. The card's body stack goes with it, in every language: the
+            form under a Royal card is set in Royal's text face, not in the
+            product's own Inter, which is what an English card used to get.
           */
           lang={copy.lang}
           className="min-h-screen"
@@ -359,8 +358,7 @@ export default function InviteExperience({
             /* Room for the host's preview banner; 0 for every guest. */
             paddingTop: "var(--lifafa-preview-h, 0px)",
             backgroundColor: palette.background,
-            fontFamily:
-              copy.script === "devanagari" ? cardTheme.fontFamily : undefined,
+            fontFamily: cardTheme.fontFamily,
           }}
         >
           {/*

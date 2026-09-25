@@ -173,6 +173,7 @@ export default function RsvpPanel({
         style={{
           color: theme.textPrimary,
           fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+          fontWeight: theme.displayFontWeight,
         }}
       >
         {copy.heading}
@@ -231,8 +232,12 @@ export default function RsvpPanel({
 
             <output
               aria-live="polite"
-              className="min-w-12 text-center font-[family-name:var(--font-display)] text-3xl font-semibold tabular-nums"
-              style={{ color: theme.textPrimary }}
+              className="min-w-12 text-center text-3xl font-semibold tabular-nums"
+              style={{
+                color: theme.textPrimary,
+                fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+                fontWeight: theme.displayFontWeight,
+              }}
             >
               {partySize}
             </output>

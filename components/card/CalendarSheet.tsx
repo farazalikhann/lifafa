@@ -508,7 +508,10 @@ export default function CalendarSheet({
           <h2
             id={titleId}
             className="pt-2 text-[1.35rem] leading-tight font-medium"
-            style={{ fontFamily: theme.displayFontFamily ?? theme.fontFamily }}
+            style={{
+              fontFamily: theme.displayFontFamily ?? theme.fontFamily,
+              fontWeight: theme.displayFontWeight,
+            }}
           >
             {copy.calendar.sheetTitle}
           </h2>

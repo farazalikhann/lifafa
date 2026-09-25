@@ -14,6 +14,11 @@ import {
   Inter,
   Josefin_Sans,
   Kurale,
+  Lato,
+  Manrope,
+  Montserrat,
+  Nunito,
+  Raleway,
   Laila,
   Lora,
   Marcellus,
@@ -65,8 +70,8 @@ const inter = Inter({
 });
 
 /*
-  Headings at 600 in Elegant, Royal and Regal, and the body text of Royal and
-  Regal at 400, 500 and 600. Weights are named so only those cuts exist.
+  Headings at 600 in Elegant, Royal and Regal, and the body text of Regal at
+  400, 500 and 600. Weights are named so only those cuts exist.
 */
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -163,6 +168,55 @@ const josefinSans = Josefin_Sans({
   display: "swap",
   preload: false,
   variable: "--font-josefin",
+});
+
+/*
+  Body faces of their own for five pairs that used to share one: Modern,
+  Elegant and Warm set their text in Inter, the same as Classic, and Royal and
+  Graceful set it in their heading face. Switching between those changed the
+  headings and nothing else. Each is named at the weights the card and the
+  reply form set text in (400, 500, 600), and none is preloaded: a face is
+  fetched only by a card whose pair uses it.
+*/
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-manrope",
+});
+
+const raleway = Raleway({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-raleway",
+});
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-nunito",
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-montserrat",
+});
+
+/* Lato is cut at 400 and 700 only; a 600 asked of it is drawn from the 700. */
+const lato = Lato({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-lato",
 });
 
 /*
@@ -387,6 +441,11 @@ const FONT_VARIABLES = [
   marcellus.variable,
   bodoniModa.variable,
   josefinSans.variable,
+  manrope.variable,
+  raleway.variable,
+  nunito.variable,
+  montserrat.variable,
+  lato.variable,
   amiri.variable,
   notoSansDevanagari.variable,
   notoSansGurmukhi.variable,

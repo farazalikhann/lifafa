@@ -93,6 +93,7 @@ export default function RsvpConfirmed({
         style={{
           color: theme.textPrimary,
           fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+          fontWeight: theme.displayFontWeight,
         }}
       >
         {headline(status, name, copy)}

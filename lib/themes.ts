@@ -21,6 +21,8 @@ export interface Theme {
    * DISPLAY_FACE.
    */
   displayFontFamily?: string;
+  /** The pair's heading weight, to go with displayFontFamily. */
+  displayFontWeight?: number;
 }
 
 const DISPLAY_SERIF = "var(--font-display), Georgia, serif";

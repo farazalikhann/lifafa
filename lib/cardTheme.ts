@@ -45,5 +45,6 @@ export function effectiveTheme(theme: Theme, style: CardStyle): Theme {
       fontPair.bodyFallback,
     ),
     displayFontFamily: displayFaceFor(fontPair),
+    displayFontWeight: fontPair.headingWeight,
   };
 }

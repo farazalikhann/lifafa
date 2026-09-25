@@ -93,7 +93,8 @@ export const FONT_PAIRS: readonly FontPair[] = [
     id: "modern",
     label: "Modern",
     headingVar: "--font-sans",
-    bodyVar: "--font-sans",
+    /* Manrope, so the text is not Classic's Inter under a heavier heading. */
+    bodyVar: "--font-manrope",
     headingFallback: "system-ui, sans-serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 800,
@@ -106,7 +107,8 @@ export const FONT_PAIRS: readonly FontPair[] = [
     id: "elegant",
     label: "Elegant",
     headingVar: "--font-cormorant",
-    bodyVar: "--font-sans",
+    /* Raleway: a fine, open sans to sit under Cormorant's thin serif. */
+    bodyVar: "--font-raleway",
     headingFallback: "Garamond, Georgia, serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 600,
@@ -119,7 +121,8 @@ export const FONT_PAIRS: readonly FontPair[] = [
     id: "warm",
     label: "Warm",
     headingVar: "--font-lora",
-    bodyVar: "--font-sans",
+    /* Nunito: rounded terminals, the warmth the pair is named for. */
+    bodyVar: "--font-nunito",
     headingFallback: "Georgia, serif",
     bodyFallback: "system-ui, sans-serif",
     headingWeight: 600,
@@ -145,9 +148,13 @@ export const FONT_PAIRS: readonly FontPair[] = [
     id: "royal",
     label: "Royal",
     headingVar: "--font-cormorant",
-    bodyVar: "--font-cormorant",
+    /*
+      Montserrat under Cormorant and Great Vibes: three distinct voices, where
+      Cormorant set the text as well and the card read as one face throughout.
+    */
+    bodyVar: "--font-montserrat",
     headingFallback: "Garamond, Georgia, serif",
-    bodyFallback: "Garamond, Georgia, serif",
+    bodyFallback: "system-ui, sans-serif",
     headingWeight: 600,
     /* Amita, a script, for the names only; Tiro for the headings. */
     namesHi: "--font-hi-amita",
@@ -215,9 +222,10 @@ export const FONT_PAIRS: readonly FontPair[] = [
     id: "graceful",
     label: "Graceful",
     headingVar: "--font-marcellus",
-    bodyVar: "--font-marcellus",
+    /* Lato: Marcellus is a titling face, and read poorly as running text. */
+    bodyVar: "--font-lato",
     headingFallback: "Georgia, serif",
-    bodyFallback: "Georgia, serif",
+    bodyFallback: "system-ui, sans-serif",
     /* Marcellus comes in one weight; asking for more would fake a bold. */
     headingWeight: 400,
     /* Amita, a script, for the names only; Kurale for everything else. */
@@ -357,14 +365,16 @@ export function fontFamilyOf(variable: string, fallback: string): string {
 export const DISPLAY_FACE = fontFamilyOf("--font-display", "Georgia, serif");
 
 /**
- * DISPLAY_FACE beside one card: the same Fraunces for Latin, and the card's
- * own Devanagari heading face for Hindi, so the reply form's heading on a
- * Hindi card matches the card's headings. It also keeps a Hindi card's
- * downloads to its own pair: set in DISPLAY_FACE, that one heading pulled all
- * of Noto Sans Devanagari onto every Hindi card. Noto stays last behind it.
+ * The heading face for what is laid out beside one card: the reply form, the
+ * confirmation, the guest's pass, the calendar sheet.
+ *
+ * The pair's own heading stack, Latin then Devanagari, so the form under a
+ * Royal card is headed in Cormorant and the one under a Luxe card in Bodoni.
+ * It used to be Fraunces for every pair, which made the reply form the one
+ * part of the page that did not change when the host changed the pair.
  */
 export function displayFaceFor(pair: FontPair): string {
-  return `var(--font-display), var(${pair.headingHi}), var(--font-devanagari), Georgia, serif`;
+  return fontFamilyOf(pairRoleVar(pair, "heading"), pair.headingFallback);
 }
 
 /** Always resolves — an unknown id falls back to the first pair. */

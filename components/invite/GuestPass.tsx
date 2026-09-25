@@ -366,6 +366,7 @@ export default function GuestPass({
           style={{
             color: theme.textPrimary,
             fontFamily: theme.displayFontFamily ?? DISPLAY_FACE,
+            fontWeight: theme.displayFontWeight,
           }}
         >
           {copy.heading}
