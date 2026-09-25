@@ -152,6 +152,8 @@ export interface CardCopy {
     add: string;
     /** The button once the guest has chosen a calendar, for the rest of the visit. */
     added: string;
+    /** Under the calendar page while its date is still behind a scratch panel. */
+    scratchHint: string;
     /** Read out for the tear-off page, which is drawn rather than written. */
     pageLabel: (weekday: string, day: string, month: string, year: string) => string;
     /** The sheet of calendar choices. */
@@ -339,6 +341,7 @@ const ENGLISH: CardCopy = {
     subline: "Mark your calendar. We cannot wait to celebrate with you.",
     add: "Add to my calendar",
     added: "Added to calendar",
+    scratchHint: "Scratch to reveal",
     pageLabel: (weekday, day, month, year) =>
       `${weekday}, ${day} ${month} ${year}`,
     sheetTitle: "Add to your calendar",
@@ -497,6 +500,7 @@ const HINDI: CardCopy = {
     subline: "अपने कैलेंडर में जोड़ लीजिए, हमें आपका इंतज़ार रहेगा।",
     add: "मेरे कैलेंडर में जोड़ें",
     added: "कैलेंडर में जुड़ गया",
+    scratchHint: "देखने के लिए खुरचें",
     pageLabel: (weekday, day, month, year) =>
       `${weekday}, ${day} ${month} ${year}`,
     sheetTitle: "अपना कैलेंडर चुनिए",

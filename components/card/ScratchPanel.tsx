@@ -8,6 +8,10 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import {
+  useScratchReveal,
+  type RevealTarget,
+} from "@/components/card/ScratchReveal";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { contrastRatio } from "@/lib/contrast";
 
@@ -134,6 +138,13 @@ export interface ScratchConfig {
    * their own spelling.
    */
   preCleared: boolean;
+  /**
+   * What this panel hides, for the card's shared reveal state (see
+   * ScratchReveal.tsx). Every panel with the same target opens when any one of
+   * them is scratched, and stays open for the rest of the session. Absent, the
+   * panel is on its own.
+   */
+  target?: RevealTarget;
 }
 
 /**
@@ -305,7 +316,9 @@ export default function ScratchPanel({
   label,
   phrases,
   preCleared,
+  target,
   onCoveredChange,
+  showRevealButton = true,
   children,
 }: ScratchConfig & {
   /**
@@ -317,6 +330,12 @@ export default function ScratchPanel({
    * caller hides text that does not change.
    */
   onCoveredChange?: (covered: boolean) => void;
+  /**
+   * The "Reveal without scratching" button under the patch. Off only where the
+   * caller puts that button somewhere else, because a patch inside something
+   * that clips would clip the button with it.
+   */
+  showRevealButton?: boolean;
   children: ReactNode;
 }): ReactElement {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -325,6 +344,8 @@ export default function ScratchPanel({
 
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const interactive = !preCleared && !prefersReducedMotion;
+  const shared = useScratchReveal(target);
+  const sharedReveal = shared.reveal;
 
   const [phase, setPhase] = useState<ScratchPhase>(
     interactive ? "hiding" : "gone",
@@ -350,9 +371,24 @@ export default function ScratchPanel({
     Setting the value it already holds is a no-op React bails out of.
   */
   useEffect(() => {
-    setPhase(interactive ? "hiding" : "gone");
-    setAnnouncement("");
-  }, [interactive]);
+    if (!interactive || shared.revealed === "restored") {
+      setPhase("gone");
+      return;
+    }
+
+    if (shared.revealed === null) {
+      setPhase("hiding");
+      setAnnouncement("");
+      return;
+    }
+
+    /*
+      Revealed live somewhere else on the card: the same 400ms fade a scratch
+      of this panel would have ended in. A panel already fading or gone was the
+      one that did it, and is left alone.
+    */
+    setPhase((current) => (current === "hiding" ? "fading" : current));
+  }, [interactive, shared.revealed]);
 
   /* Fires on mount as well as on reveal, so a caller never has to guess. */
   useEffect(() => {
@@ -363,12 +399,14 @@ export default function ScratchPanel({
   const handleCleared = useCallback((): void => {
     setPhase("fading");
     setAnnouncement(phrases.revealed);
-  }, [phrases.revealed]);
+    sharedReveal();
+  }, [phrases.revealed, sharedReveal]);
 
   const revealNow = useCallback((): void => {
     setPhase("gone");
     setAnnouncement(phrases.revealed);
-  }, [phrases.revealed]);
+    sharedReveal();
+  }, [phrases.revealed, sharedReveal]);
 
   /* The fade itself is a CSS transition; this is only the unmount after it. */
   useEffect(() => {
@@ -853,7 +891,7 @@ export default function ScratchPanel({
         are, since the guests most likely to need it are the ones least able to
         hit something smaller.
       */}
-      {showCanvas ? (
+      {showCanvas && showRevealButton ? (
         <div
           className="absolute left-1/2 z-10 flex -translate-x-1/2 justify-center whitespace-nowrap"
           style={{

@@ -9,7 +9,10 @@ import {
   type ReactElement,
 } from "react";
 import CalendarSheet from "@/components/card/CalendarSheet";
+import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
+import { useScratchReveal } from "@/components/card/ScratchReveal";
 import { useInView } from "@/hooks/useInView";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { calendarEvent, type CalendarInvite } from "@/lib/calendar";
 import {
   REVEAL_BASE,
@@ -96,6 +99,41 @@ function CheckIcon(): ReactElement {
   );
 }
 
+/** The day, large, and the weekday under it: the writing on the page's body. */
+function PageDay({
+  text,
+  theme,
+  isDevanagari,
+}: {
+  text: CalendarPageText;
+  theme: Theme;
+  isDevanagari: boolean;
+}): ReactElement {
+  return (
+    <div className="flex flex-col items-center">
+      <span
+        className="block leading-[1.05] tabular-nums"
+        style={{
+          fontSize: cardRem(3.6),
+          color: theme.textPrimary,
+          fontFamily: "var(--card-heading)",
+          fontWeight: "var(--card-heading-weight)" as unknown as number,
+        }}
+      >
+        {text.day}
+      </span>
+      <span
+        className={`text-[calc(0.8*var(--card-rem,1rem))] tracking-[0.12em] uppercase ${
+          isDevanagari ? "mt-1.5 leading-[1.5]" : "mt-0.5 leading-tight"
+        }`}
+        style={{ color: theme.textMuted }}
+      >
+        {text.weekday}
+      </span>
+    </div>
+  );
+}
+
 /**
  * The tear-off page: the month on a strip in the card's accent, the day large
  * in the pair's heading face, the weekday under it.
@@ -111,6 +149,7 @@ function CalendarPage({
   shown,
   label,
   isDevanagari,
+  scratch,
 }: {
   text: CalendarPageText;
   theme: Theme;
@@ -118,6 +157,17 @@ function CalendarPage({
   label: string;
   /** Devanagari needs room above for its headstroke and matras. */
   isDevanagari: boolean;
+  /**
+   * Set when the date is behind a scratch panel. The page is drawn all the
+   * same, strip and rings and paper; only its writing is covered, the month
+   * on the strip and the day and weekday under it, each by a patch in the
+   * card's scratch style. Both carry the "date" target, so scratching either
+   * one, or the date's own panel elsewhere on the card, opens all three.
+   *
+   * Neither patch has a reveal button of its own: the sheet clips, and would
+   * clip the button with it. SaveTheDate puts one under the page instead.
+   */
+  scratch: ScratchConfig | null;
 }): ReactElement {
   const grainId = useId();
   const onAccent = readableOn(theme.accent, [theme.background, theme.textPrimary]);
@@ -145,29 +195,29 @@ function CalendarPage({
           }`}
           style={{ backgroundColor: theme.accent, color: onAccent }}
         >
-          {text.month} {text.year}
+          {scratch === null ? (
+            `${text.month} ${text.year}`
+          ) : (
+            /* No words on a strip this thin; the hint under the page says what to do. */
+            <ScratchPanel
+              {...scratch}
+              label=""
+              phrases={{ ...scratch.phrases, short: "" }}
+              showRevealButton={false}
+            >
+              {text.month} {text.year}
+            </ScratchPanel>
+          )}
         </div>
 
         <div className="relative flex flex-col items-center px-2 pt-2 pb-4">
-          <span
-            className="block leading-[1.05] tabular-nums"
-            style={{
-              fontSize: cardRem(3.6),
-              color: theme.textPrimary,
-              fontFamily: "var(--card-heading)",
-              fontWeight: "var(--card-heading-weight)" as unknown as number,
-            }}
-          >
-            {text.day}
-          </span>
-          <span
-            className={`text-[calc(0.8*var(--card-rem,1rem))] tracking-[0.12em] uppercase ${
-              isDevanagari ? "mt-1.5 leading-[1.5]" : "mt-0.5 leading-tight"
-            }`}
-            style={{ color: theme.textMuted }}
-          >
-            {text.weekday}
-          </span>
+          {scratch === null ? (
+            <PageDay text={text} theme={theme} isDevanagari={isDevanagari} />
+          ) : (
+            <ScratchPanel {...scratch} showRevealButton={false}>
+              <PageDay text={text} theme={theme} isDevanagari={isDevanagari} />
+            </ScratchPanel>
+          )}
           {/* The page before this one, flipping up and away over the hinge. */}
           <div
             aria-hidden="true"
@@ -221,9 +271,12 @@ function CalendarPage({
  * RESPECTS THE SCRATCH PANEL. A host can hide the date or the venue behind a
  * panel the guest scratches off, and a tear-off page printing the date in
  * 56px type would give the surprise away one screen later. So a hidden date
- * takes the page and the time line with it, and a hidden venue leaves the
- * line with the time alone. The button still works: what the guest adds is
- * theirs to see once it is in their calendar.
+ * is hidden on the page too, under patches in the same scratch style, and the
+ * time waits with it; a hidden venue is left out of the line. The page itself
+ * is always there. It is one secret wherever it is shown: scratching the page
+ * or the date's own panel opens both, with the same fade, and a reload in the
+ * same session finds it open (ScratchReveal.tsx). The button works throughout:
+ * what the guest adds is theirs to see once it is in their calendar.
  *
  * Renders nothing when the event has no date, matching the countdown above.
  */
@@ -233,8 +286,8 @@ export default function SaveTheDate({
   invite,
   occasionId,
   language,
-  hideDate,
-  hideVenue,
+  dateScratch,
+  venueScratched,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -242,12 +295,19 @@ export default function SaveTheDate({
   occasionId: OccasionId;
   /** The block, and the entry it writes, are in the card's language. */
   language: CardLanguage;
-  /** The date is behind a scratch panel elsewhere on the card. */
-  hideDate: boolean;
+  /** Set when the date is behind a scratch panel: the page's patches use it. */
+  dateScratch: ScratchConfig | null;
   /** The venue is behind a scratch panel elsewhere on the card. */
-  hideVenue: boolean;
+  venueScratched: boolean;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLDivElement>(SECTION_REVEAL_OPTIONS);
+  /*
+    A panel covers nothing under reduced motion (ScratchPanel shows its content
+    outright), so nothing here waits for one either.
+  */
+  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  const dateReveal = useScratchReveal(dateScratch === null ? undefined : "date");
+  const venueReveal = useScratchReveal(venueScratched ? "venue" : undefined);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -285,14 +345,17 @@ export default function SaveTheDate({
   const onAccent = readableOn(theme.accent, [theme.background, theme.textPrimary]);
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
-  const venue = hideVenue
+  const dateHidden =
+    dateScratch !== null && !reducedMotion && dateReveal.revealed === null;
+  const venueHidden =
+    venueScratched && !reducedMotion && venueReveal.revealed === null;
+
+  const venue = venueHidden
     ? ""
     : draft.venueName.trim() || draft.venueAddress.trim();
-  const whenWhere = hideDate
-    ? []
-    : [page.time, venue].filter(
-        (part): part is string => part !== null && part.length > 0,
-      );
+  const whenWhere = [dateHidden ? null : page.time, venue].filter(
+    (part): part is string => part !== null && part.length > 0,
+  );
 
   const later = (callback: () => void, delay: number): void => {
     timers.current.push(window.setTimeout(callback, delay));
@@ -366,17 +429,39 @@ export default function SaveTheDate({
         </h3>
       </div>
 
-      {hideDate ? null : (
-        <div className="py-2">
-          <CalendarPage
-            text={page}
-            theme={theme}
-            shown={isInView}
-            label={copy.pageLabel(page.weekday, page.day, page.month, page.year)}
-            isDevanagari={language === "hi"}
-          />
+      <div className="py-2">
+        <CalendarPage
+          text={page}
+          theme={theme}
+          shown={isInView}
+          label={copy.pageLabel(page.weekday, page.day, page.month, page.year)}
+          isDevanagari={language === "hi"}
+          scratch={dateScratch}
+        />
+      </div>
+
+      {dateHidden ? (
+        /*
+          What each patch on the page would have carried under it, said once:
+          what to do, and the way round it for a guest who cannot drag.
+        */
+        <div className={`-mt-2 flex flex-col items-center ${reveal}`} style={lineDelay(1)}>
+          <p
+            className="text-[calc(0.8125*var(--card-rem,1rem))] tracking-[0.04em]"
+            style={{ color: theme.textMuted }}
+          >
+            {copy.scratchHint}
+          </p>
+          <button
+            type="button"
+            onClick={dateReveal.reveal}
+            className="min-h-11 rounded-full px-3 text-xs font-medium underline decoration-transparent underline-offset-4 opacity-70 transition-opacity duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ color: theme.accent, outlineColor: theme.accent }}
+          >
+            {cardCopy(language).scratch.reveal}
+          </button>
         </div>
-      )}
+      ) : null}
 
       {whenWhere.length > 0 ? (
         <div className={reveal} style={lineDelay(1)}>
@@ -385,7 +470,8 @@ export default function SaveTheDate({
             style={{ color: theme.textPrimary }}
           >
             {whenWhere.map((part, index) => (
-              <span key={part}>
+              /* A part that arrives with a reveal fades in rather than appears. */
+              <span key={part} className="lifafa-reveal-in">
                 {index > 0 ? (
                   <span aria-hidden="true" className="mx-2" style={{ color: theme.accent }}>
                     ·

@@ -1187,3 +1187,19 @@
     animation: none;
   }
 }
+
+/*
+  A part of the Save the date line that arrives with a scratch reveal, the time
+  or the venue, fades in on the same 400ms the panel fades out on. On first
+  paint it is part of a line still hidden by the section's own reveal, so the
+  fade there is never seen.
+*/
+.lifafa-reveal-in {
+  animation: lifafa-sheet-fade 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-reveal-in {
+    animation: none;
+  }
+}

@@ -34,6 +34,7 @@ import WeatherPanel from "@/components/card/WeatherPanel";
 import MusicToggle from "@/components/card/MusicToggle";
 import ScrollCue from "@/components/card/ScrollCue";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
+import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
   hasCountdown,
@@ -608,6 +609,10 @@ export default function CardCanvas({
     Whenever the event has a date, whether or not the countdown is on. It
     returns null by itself for a card without one, and it never takes a
     divider of its own, so an empty one leaves nothing behind.
+
+    A date behind a panel is behind one on the calendar page too, in the same
+    colours, and the two are one secret: see ScratchReveal.tsx. The venue has
+    no panel there, only a line that waits for the venue's own.
   */
   const calendarAnchor = saveTheDateAnchor(visible);
   const saveTheDate = (
@@ -617,8 +622,19 @@ export default function CardCanvas({
       invite={invite}
       occasionId={config.occasionId}
       language={language}
-      hideDate={concealed === "date"}
-      hideVenue={concealed === "venue"}
+      dateScratch={
+        concealed === "date"
+          ? {
+              accent: effectiveTheme.accent,
+              surface: effectiveTheme.surface,
+              label: copy.scratch.short,
+              phrases: copy.scratch,
+              preCleared: false,
+              target: "date",
+            }
+          : null
+      }
+      venueScratched={concealed === "venue"}
     />
   );
 
@@ -873,51 +889,67 @@ export default function CardCanvas({
 
   return (
     /*
-      `overflow-x-clip`, deliberately, and not `overflow-hidden`.
-
-      The horizontal clip is what it always was: motifs are authored to run off
-      the sides and be cut by the card's edge, and a long unbroken name has to
-      be cut rather than widen the page. What changed is the vertical axis.
-      `hidden` makes an element a scroll container on *both* axes, and a sticky
-      descendant sticks to the nearest scroll container — so with `hidden` here,
-      every pinned band below was sticking to this box, which never scrolls, and
-      the decor and the lanterns simply travelled up the screen with the
-      content. `clip` clips without creating a scroll container, so those bands
-      resolve against the real scrollport: the guest's screen, or the editor's
-      phone frame. Nothing escapes sideways, and each layer clips itself.
+      Every scratch panel on the card reads and writes one reveal state, kept
+      for the session under the invitation's code. The editor's previews have
+      no code (their invite has no link) and remember nothing.
     */
-    <div
-      /*
-        On the card's own root rather than left to <html>, which says en-IN on
-        every page. A Hindi card inside the English editor is still Hindi, and
-        the line breaker, a screen reader's voice and the no-tracking rule in
-        globals.css all read the nearest `lang` up the tree.
-      */
-      lang={copy.lang}
-      /*
-        `lifafa-card-fluid` is what lets the guest's card fill a tablet or
-        laptop screen from 768px up, with its text in a scaled column down the
-        middle; see globals.css and lib/cardScale.ts. Below 768px it does
-        nothing at all. `lifafa-card-phone` is the same growth on a phone
-        wider than 420px, and does nothing outside 421px to 767px.
-      */
-      className={`relative mx-auto w-full max-w-[420px] overflow-x-clip${
-        fluid || fillsPhone ? " lifafa-card-phone" : ""
-      }${fluid ? " lifafa-card-fluid" : ""}`}
-      style={{
-        ...cssVariables,
-        backgroundColor: effectiveTheme.background,
-        color: effectiveTheme.textPrimary,
-        fontFamily: effectiveTheme.fontFamily,
-      }}
-    >
+    <ScratchRevealProvider persistKey={invite.url === null ? null : invite.code}>
       {/*
-        The sides of a card that fills a laptop screen, first so everything
-        else paints over them. Mounts only on the guest's card, and draws
-        nothing until the screen is 768px wide.
+        `overflow-x-clip`, deliberately, and not `overflow-hidden`.
+
+        The horizontal clip is what it always was: motifs are authored to run off
+        the sides and be cut by the card's edge, and a long unbroken name has to
+        be cut rather than widen the page. What changed is the vertical axis.
+        `hidden` makes an element a scroll container on *both* axes, and a sticky
+        descendant sticks to the nearest scroll container — so with `hidden` here,
+        every pinned band below was sticking to this box, which never scrolls, and
+        the decor and the lanterns simply travelled up the screen with the
+        content. `clip` clips without creating a scroll container, so those bands
+        resolve against the real scrollport: the guest's screen, or the editor's
+        phone frame. Nothing escapes sideways, and each layer clips itself.
       */}
-      {fluid ? (
-        <MarginDecorLayer
+      <div
+        /*
+          On the card's own root rather than left to <html>, which says en-IN on
+          every page. A Hindi card inside the English editor is still Hindi, and
+          the line breaker, a screen reader's voice and the no-tracking rule in
+          globals.css all read the nearest `lang` up the tree.
+        */
+        lang={copy.lang}
+        /*
+          `lifafa-card-fluid` is what lets the guest's card fill a tablet or
+          laptop screen from 768px up, with its text in a scaled column down the
+          middle; see globals.css and lib/cardScale.ts. Below 768px it does
+          nothing at all. `lifafa-card-phone` is the same growth on a phone
+          wider than 420px, and does nothing outside 421px to 767px.
+        */
+        className={`relative mx-auto w-full max-w-[420px] overflow-x-clip${
+          fluid || fillsPhone ? " lifafa-card-phone" : ""
+        }${fluid ? " lifafa-card-fluid" : ""}`}
+        style={{
+          ...cssVariables,
+          backgroundColor: effectiveTheme.background,
+          color: effectiveTheme.textPrimary,
+          fontFamily: effectiveTheme.fontFamily,
+        }}
+      >
+        {/*
+          The sides of a card that fills a laptop screen, first so everything
+          else paints over them. Mounts only on the guest's card, and draws
+          nothing until the screen is 768px wide.
+        */}
+        {fluid ? (
+          <MarginDecorLayer
+            accent={effectiveTheme.accent}
+            motion={config.decorMotion}
+            motifs={motifs}
+            intensity={config.decorIntensity}
+            bandHeight={bandHeight}
+            maxAlpha={decorMaxAlpha}
+          />
+        ) : null}
+
+        <DecorLayer
           accent={effectiveTheme.accent}
           motion={config.decorMotion}
           motifs={motifs}
@@ -925,530 +957,523 @@ export default function CardCanvas({
           bandHeight={bandHeight}
           maxAlpha={decorMaxAlpha}
         />
-      ) : null}
 
-      <DecorLayer
-        accent={effectiveTheme.accent}
-        motion={config.decorMotion}
-        motifs={motifs}
-        intensity={config.decorIntensity}
-        bandHeight={bandHeight}
-        maxAlpha={decorMaxAlpha}
-      />
-
-      {/*
-        Where "stars" and "geometricStar" are drawn, and the only place either
-        one is: they do not hang, they do not divide and they do not frame, so
-        before this layer existed a host could switch them on and nothing at all
-        appeared. Gated on the tradition exactly as HangingLayer is, and given
-        the same measured alpha ceiling as the scattered motifs, because it sits
-        behind the same text.
-      */}
-      {pack !== null ? (
-        <CornerLayer
-          pack={pack}
-          scatterIds={scatterIds}
-          enabledOrnaments={ornaments}
-          accent={effectiveTheme.accent}
-          bandHeight={bandHeight}
-          maxAlpha={decorMaxAlpha}
-        />
-      ) : null}
-
-      {/*
-        Mounted only when the tradition has an ornament pack. Not merely handed
-        an empty list — the component is absent from the tree entirely on a card
-        with no pack, which is the difference between "renders nothing" and
-        "cannot render".
-
-        Sits above the fade at `z-[15]`, which is a change of order and a
-        deliberate one: the ornaments used to hang behind the text, and text
-        crossing them was the collision this release is fixing. Now the text
-        dissolves before it arrives and the lanterns are the thing left drawn,
-        so they have to be the ones on top. `pointer-events-none` throughout,
-        so it can never take a tap or a scroll meant for the card underneath.
-      */}
-      {pack !== null ? (
-        <HangingLayer
-          pack={pack}
-          enabledOrnaments={ornaments}
-          accent={effectiveTheme.accent}
-        />
-      ) : null}
-
-      {/*
-        The border, over every other layer of decor and over the text with it.
-
-        `z-[16]` against the hanging layer's `z-[15]`, because a frame is the
-        outermost thing on a piece of stationery: a lantern that swung across
-        the border would read as being outside the card. Above the fade as well,
-        so the frame keeps full opacity at the very edges where the dissolve is
-        strongest. Independent of the tradition — no `isMuslim` gate here,
-        unlike the two layers above it — and it returns null on its own when the
-        style is "none".
-
-        Outermost of the decor until the butterflies, which are the one thing
-        that had to come out in front of it — the note under them says why.
-      */}
-      <BorderFrame
-        borderStyle={config.borderStyle}
-        accent={effectiveTheme.accent}
-        bandHeight={bandHeight}
-      />
-
-      {/*
-        The butterflies, if the host asked for any.
-
-        Read through `butterflyStyle` because card_config is a jsonb snapshot
-        and three different shapes come back out of it: no key at all on a card
-        saved before butterflies existed, `true` or `false` on one saved while
-        the field was a switch, and the colour on everything since.
-
-        Gated on the motion style as well as on its own switch. "Motion style:
-        None" is two controls above this one in the same panel, and a host who
-        has just asked the card to hold still would read four insects flying
-        over it as a bug rather than as a second opinion.
-
-        Last of the decor and the only thing above the frame — see the note on
-        the layer itself. A butterfly is the nearest thing to the guest, and it
-        has to be: it flies in the margin, which is exactly where a photographic
-        border paints its flowers, so at any depth below that one the flower
-        frames simply swallowed it.
-      */}
-      {(butterflies !== "none" || leaves) && config.decorMotion !== "none" ? (
-        <ButterflyLayer
-          style={butterflies}
-          leaves={leaves}
-          intensity={config.decorIntensity}
-          bandHeight={bandHeight}
-        />
-      ) : null}
-
-      {/*
-        The rose petals, beside the butterflies and at their depth.
-
-        Keyed on the choice, so a host who picks it in the editor sees the
-        shower play again rather than only on the first load. The steady fall
-        is gated on the motion style the way the butterflies are; the shower on
-        opening is not, because it is the moment the card opens rather than the
-        card's movement, and it is over in a few seconds either way.
-      */}
-      {petals !== "none" ? (
-        <PetalLayer
-          key={petals}
-          burst={petalsBurst(petals)}
-          fall={petalsFall(petals) && config.decorMotion !== "none"}
-          intensity={config.decorIntensity}
-          bandHeight={bandHeight}
-        />
-      ) : null}
-
-      {/*
-        The dissolve at the top and bottom of the screen.
-
-        Ordered deliberately: this is `z-[12]`, the content column below it at
-        `z-10`, and the hanging ornaments and the border above it at `z-[15]`
-        and `z-[16]`. A layer fades what is painted beneath it and nothing
-        above, so that ordering is the whole specification — text dissolves, the
-        lanterns it is dissolving to avoid stay at full opacity, and so does the
-        frame.
-      */}
-      <ScrollFade
-        background={effectiveTheme.background}
-        hangingBand={hangingBand}
-        bandHeight={bandHeight}
-      />
-
-      {/* Content rides above the decor layer. */}
-      {/*
-        `lifafa-card-content` is the reading column a fluid card centres at
-        its scaled width. The side inset is multiplied by --card-side-inset,
-        which a fluid card sets to 0 from 768px up: its border is at the edge of
-        the screen by then, nowhere near the text.
-      */}
-      <div
-        className="lifafa-card-content relative z-10"
-        style={{
-          paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
-        }}
-      >
         {/*
-          First in the column and no height of its own, so it sticks to the top
-          of the scrollport without pushing the cover down a pixel. Renders
-          nothing at all when the host pasted no link, which is most cards.
-
-          `?? null` because card_config is a jsonb snapshot: a card saved before
-          this field existed has no key here, and `undefined` is not a value
-          MusicToggle should have to know about.
+          Where "stars" and "geometricStar" are drawn, and the only place either
+          one is: they do not hang, they do not divide and they do not frame, so
+          before this layer existed a host could switch them on and nothing at all
+          appeared. Gated on the tradition exactly as HangingLayer is, and given
+          the same measured alpha ceiling as the scattered motifs, because it sits
+          behind the same text.
         */}
-        <MusicToggle
-          musicUrl={config.musicUrl ?? null}
+        {pack !== null ? (
+          <CornerLayer
+            pack={pack}
+            scatterIds={scatterIds}
+            enabledOrnaments={ornaments}
+            accent={effectiveTheme.accent}
+            bandHeight={bandHeight}
+            maxAlpha={decorMaxAlpha}
+          />
+        ) : null}
+
+        {/*
+          Mounted only when the tradition has an ornament pack. Not merely handed
+          an empty list — the component is absent from the tree entirely on a card
+          with no pack, which is the difference between "renders nothing" and
+          "cannot render".
+
+          Sits above the fade at `z-[15]`, which is a change of order and a
+          deliberate one: the ornaments used to hang behind the text, and text
+          crossing them was the collision this release is fixing. Now the text
+          dissolves before it arrives and the lanterns are the thing left drawn,
+          so they have to be the ones on top. `pointer-events-none` throughout,
+          so it can never take a tap or a scroll meant for the card underneath.
+        */}
+        {pack !== null ? (
+          <HangingLayer
+            pack={pack}
+            enabledOrnaments={ornaments}
+            accent={effectiveTheme.accent}
+          />
+        ) : null}
+
+        {/*
+          The border, over every other layer of decor and over the text with it.
+
+          `z-[16]` against the hanging layer's `z-[15]`, because a frame is the
+          outermost thing on a piece of stationery: a lantern that swung across
+          the border would read as being outside the card. Above the fade as well,
+          so the frame keeps full opacity at the very edges where the dissolve is
+          strongest. Independent of the tradition — no `isMuslim` gate here,
+          unlike the two layers above it — and it returns null on its own when the
+          style is "none".
+
+          Outermost of the decor until the butterflies, which are the one thing
+          that had to come out in front of it — the note under them says why.
+        */}
+        <BorderFrame
+          borderStyle={config.borderStyle}
           accent={effectiveTheme.accent}
-          surface={effectiveTheme.surface}
-          language={language}
+          bandHeight={bandHeight}
         />
 
         {/*
-          Dividers are driven off `visible`, never off `config.blocks`: an
-          index > 0 test on the filtered list is what guarantees no divider can
-          appear before the first rendered section, after the last, or beside a
-          section that returned null. A section that hides itself is absent from
-          this list, so its divider is absent with it.
+          The butterflies, if the host asked for any.
+
+          Read through `butterflyStyle` because card_config is a jsonb snapshot
+          and three different shapes come back out of it: no key at all on a card
+          saved before butterflies existed, `true` or `false` on one saved while
+          the field was a switch, and the colour on everything since.
+
+          Gated on the motion style as well as on its own switch. "Motion style:
+          None" is two controls above this one in the same panel, and a host who
+          has just asked the card to hold still would read four insects flying
+          over it as a bug rather than as a second opinion.
+
+          Last of the decor and the only thing above the frame — see the note on
+          the layer itself. A butterfly is the nearest thing to the guest, and it
+          has to be: it flies in the margin, which is exactly where a photographic
+          border paints its flowers, so at any depth below that one the flower
+          frames simply swallowed it.
         */}
-        {visible.map((block, index) => {
-          /*
-            At most one panel per card, and only over a built-in section: the
-            target names "date", "venue" or "countdown", none of which a custom
-            block can ever be. A card with the target set to a section the host
-            has since switched off simply has no panel, because that section is
-            not in `visible` at all.
-          */
-          const isHidden =
-            block.kind === "builtin" &&
-            block.id === hiddenSection &&
-            panelLabel !== null;
+        {(butterflies !== "none" || leaves) && config.decorMotion !== "none" ? (
+          <ButterflyLayer
+            style={butterflies}
+            leaves={leaves}
+            intensity={config.decorIntensity}
+            bandHeight={bandHeight}
+          />
+        ) : null}
 
-          /*
-            Built here and handed to the section, which decides which of its own
-            lines go behind it. The canvas is where the palette, the audience
-            and the chosen target are all in scope at once, and the section is
-            where the content is — so this is the object those two meet in.
-          */
-          const scratch: ScratchConfig | null =
-            isHidden && panelLabel !== null
-              ? {
-                  accent: effectiveTheme.accent,
-                  surface: effectiveTheme.surface,
-                  label: panelLabel,
-                  phrases: copy.scratch,
-                  /* The host edits; the guest scratches. */
-                  preCleared: isHostPreview,
-                }
-              : null;
+        {/*
+          The rose petals, beside the butterflies and at their depth.
 
-          /*
-            The greeting and dua head the cover, so they are anchored to the
-            cover block rather than to the top of the card. The host can reorder
-            sections, and a blessing left pinned to position zero would end up
-            introducing the venue.
+          Keyed on the choice, so a host who picks it in the editor sees the
+          shower play again rather than only on the first load. The steady fall
+          is gated on the motion style the way the butterflies are; the shower on
+          opening is not, because it is the moment the card opens rather than the
+          card's movement, and it is over in a few seconds either way.
+        */}
+        {petals !== "none" ? (
+          <PetalLayer
+            key={petals}
+            burst={petalsBurst(petals)}
+            fall={petalsFall(petals) && config.decorMotion !== "none"}
+            intensity={config.decorIntensity}
+            bandHeight={bandHeight}
+          />
+        ) : null}
 
-            Never the same block as `isHidden` above: the scratch target names
-            "date", "venue" or "countdown" and can never name the cover, so a
-            blessing is never hidden behind a panel a guest has to scratch.
-          */
-          const isCover = block.kind === "builtin" && block.id === "cover";
-          const hasHead = isCover && (hasBlessing || calligraphy.length > 0);
+        {/*
+          The dissolve at the top and bottom of the screen.
 
-          /*
-            The screen a guest lands on: the blessing, when the card opens with
-            one, and otherwise this block's own section. Only that screen is
-            lifted and floored; everything after it is spaced as it always was.
-          */
-          const sectionIsFirstScreen = index === 0 && !hasHead;
-          const headIsFirstScreen = index === 0 && hasHead;
-          const liftSection = sectionIsFirstScreen && !(isCover && useArch);
+          Ordered deliberately: this is `z-[12]`, the content column below it at
+          `z-10`, and the hanging ornaments and the border above it at `z-[15]`
+          and `z-[16]`. A layer fades what is painted beneath it and nothing
+          above, so that ordering is the whole specification — text dissolves, the
+          lanterns it is dissolving to avoid stay at full opacity, and so does the
+          frame.
+        */}
+        <ScrollFade
+          background={effectiveTheme.background}
+          hangingBand={hangingBand}
+          bandHeight={bandHeight}
+        />
 
-          const section = renderBlock(
-            block,
-            draft,
-            effectiveTheme,
-            liftSection ? firstScreenBox : minHeight,
-            sectionIsFirstScreen ? firstScreenPad : sectionPad,
-            config.occasionId,
-            scratch,
-            language,
-          );
+        {/* Content rides above the decor layer. */}
+        {/*
+          `lifafa-card-content` is the reading column a fluid card centres at
+          its scaled width. The side inset is multiplied by --card-side-inset,
+          which a fluid card sets to 0 from 768px up: its border is at the edge of
+          the screen by then, nowhere near the text.
+        */}
+        <div
+          className="lifafa-card-content relative z-10"
+          style={{
+            paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
+          }}
+        >
+          {/*
+            First in the column and no height of its own, so it sticks to the top
+            of the scrollport without pushing the cover down a pixel. Renders
+            nothing at all when the host pasted no link, which is most cards.
 
-          const head =
-            hasHead ? (
-              /*
-                A screen of its own, not a header sitting on top of the names.
+            `?? null` because card_config is a jsonb snapshot: a card saved before
+            this field existed has no key here, and `undefined` is not a value
+            MusicToggle should have to know about.
+          */}
+          <MusicToggle
+            musicUrl={config.musicUrl ?? null}
+            accent={effectiveTheme.accent}
+            surface={effectiveTheme.surface}
+            language={language}
+          />
 
-                It used to be a block of whatever height the Arabic came to,
-                stacked above the cover with a single top inset, which put it in
-                the top band of the screen — inside the dissolve, so the first
-                thing a guest read was a blurred Bismillah, with the names
-                already crowding in underneath.
+          {/*
+            Dividers are driven off `visible`, never off `config.blocks`: an
+            index > 0 test on the filtered list is what guarantees no divider can
+            appear before the first rendered section, after the last, or beside a
+            section that returned null. A section that hides itself is absent from
+            this list, so its divider is absent with it.
+          */}
+          {visible.map((block, index) => {
+            /*
+              At most one panel per card, and only over a built-in section: the
+              target names "date", "venue" or "countdown", none of which a custom
+              block can ever be. A card with the target set to a section the host
+              has since switched off simply has no panel, because that section is
+              not in `visible` at all.
+            */
+            const isHidden =
+              block.kind === "builtin" &&
+              block.id === hiddenSection &&
+              panelLabel !== null;
 
-                Given the same `minHeight` and the same symmetric padding every
-                section gets, it becomes what it should have been all along: one
-                swipe that shows the blessing, centred, at full strength and
-                clear of both the ornaments and the fade, and a second swipe that
-                brings the names up whole. Same rule as the rest of the card —
-                one screen, one thing.
-              */
-              <div
-                className="relative flex flex-col items-center justify-center gap-4 px-7 text-center"
-                style={
-                  headIsFirstScreen
-                    ? {
-                        minHeight,
-                        paddingTop: cardPx(Math.max(headPadTop, clearance.y)),
-                        paddingBottom: `calc(${cardPx(headPadBottom)} + ${firstScreenLift})`,
-                      }
-                    : {
-                        minHeight,
-                        paddingTop: cardPx(headPadTop),
-                        paddingBottom: cardPx(headPadBottom),
-                      }
-                }
-              >
-                {/*
-                  Above the greeting, because they open what follows rather than
-                  sitting beside it: a card that carries the lot reads Bismillah,
-                  then the verse, then the address, then the dua, which is the
-                  order they are said in. Pack order, not the order the host
-                  switched them on in — an opening does not become a closing
-                  because it was chosen second.
+            /*
+              Built here and handed to the section, which decides which of its own
+              lines go behind it. The canvas is where the palette, the audience
+              and the chosen target are all in scope at once, and the section is
+              where the content is — so this is the object those two meet in.
+            */
+            const scratch: ScratchConfig | null =
+              isHidden && panelLabel !== null
+                ? {
+                    accent: effectiveTheme.accent,
+                    surface: effectiveTheme.surface,
+                    label: panelLabel,
+                    phrases: copy.scratch,
+                    /* The host edits; the guest scratches. */
+                    preCleared: isHostPreview,
+                    /* One secret wherever it is hidden; see ScratchReveal.tsx. */
+                    target: config.scratchTarget === "none" ? undefined : config.scratchTarget,
+                  }
+                : null;
 
-                  `className` rather than `size`, so the width is the column's
-                  and not a number chosen here — calligraphy is the only
-                  ornament that spans the card rather than being placed on it.
-                  Which ink it uses is decided from the card's own background;
-                  see lib/calligraphy.ts.
+            /*
+              The greeting and dua head the cover, so they are anchored to the
+              cover block rather than to the top of the card. The host can reorder
+              sections, and a blessing left pinned to position zero would end up
+              introducing the venue.
 
-                  Wider than the column by 16px a side, into the screen's own
-                  28px padding. Every piece ends in a hairline rule and a
-                  diamond, so the extra width is almost all lettering, and a
-                  line that is read should not be the narrowest thing on the
-                  card. Under a flower border it still keeps clear of the
-                  flowers, which the column already stands 20px off. Capped at
-                  20 card-rem for a card with no border, where the Bismillah —
-                  lettering to its very edges — would otherwise run nearly to
-                  the edges of the card.
-                */}
-                {calligraphy.map((panel) => (
-                  <panel.Component
-                    key={panel.id}
-                    instanceId={`cover-calligraphy-${panel.id}`}
-                    className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem))]"
-                    ground={calligraphyGround(effectiveTheme.background)}
-                  />
-                ))}
+              Never the same block as `isHidden` above: the scratch target names
+              "date", "venue" or "countdown" and can never name the cover, so a
+              blessing is never hidden behind a panel a guest has to scratch.
+            */
+            const isCover = block.kind === "builtin" && block.id === "cover";
+            const hasHead = isCover && (hasBlessing || calligraphy.length > 0);
 
-                {greeting !== null && pack !== null ? (
-                  <Blessing
-                    entry={greeting}
-                    pack={pack}
-                    theme={effectiveTheme}
-                    /*
-                      The greeting is the smaller of the two. It is a form of
-                      address; the blessing is what is being offered, and the
-                      card should read in that order of weight.
-                    */
-                    sizeClass="text-[1.25rem] leading-[2] sm:text-[calc(1.375*var(--card-rem,1rem))]"
-                  />
-                ) : null}
+            /*
+              The screen a guest lands on: the blessing, when the card opens with
+              one, and otherwise this block's own section. Only that screen is
+              lifted and floored; everything after it is spaced as it always was.
+            */
+            const sectionIsFirstScreen = index === 0 && !hasHead;
+            const headIsFirstScreen = index === 0 && hasHead;
+            const liftSection = sectionIsFirstScreen && !(isCover && useArch);
 
-                {blessing !== null && pack !== null ? (
-                  <Blessing
-                    entry={blessing}
-                    pack={pack}
-                    theme={effectiveTheme}
-                    sizeClass="text-[1.375rem] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem))]"
-                  />
-                ) : null}
-
-                {/*
-                  The screen a guest lands on says nothing of what is under it —
-                  the cover and its own cue are a whole swipe away. So the cue
-                  comes up here, in the empty band this screen keeps under its
-                  content (the lift), and just above the bottom dissolve, which
-                  is where `headPadBottom` ends.
-                */}
-                {headIsFirstScreen ? (
-                  <ScrollCue
-                    label={copy.cover.scrollCue}
-                    textColor={effectiveTheme.textMuted}
-                    accent={effectiveTheme.accent}
-                    /*
-                      Centred in the lift band rather than sat on its floor, so
-                      it is clear of anything pinned to the foot of the screen —
-                      the preview's watermark pill among them. 3.5rem is the
-                      cue's own height, word and line together.
-                    */
-                    style={{
-                      bottom: `calc(${cardPx(headPadBottom)} + max(0px, (${firstScreenLift} - 3.5rem) / 2))`,
-                    }}
-                  />
-                ) : null}
-              </div>
-            ) : null;
-
-          const covered = (
-            <>
-              {head}
-              {section}
-              {blockKey(block) === calendarAnchor ? saveTheDate : null}
-            </>
-          );
-
-          const framed =
-            isCover && useArch ? (
-              /*
-                The arch frames the cover rather than replacing anything: an
-                outline behind the content, inset from the card's edges, with
-                the content column drawn on top of it. Stretched with
-                preserveAspectRatio="none" because a frame has to match the
-                box it frames, and held well under half opacity so a name set
-                over a jamb still carries.
-
-                Never lifted as a first screen — see FIRST_SCREEN_LIFT.
-              */
-              <div className="relative">
-                <archOrnament.Component
-                  instanceId="cover-frame"
-                  className="pointer-events-none absolute bottom-0"
-                  preserveAspectRatio="none"
-                  /*
-                    Drawn at roughly 3.4x here, which would turn the authored
-                    2 unit line into a 7px band. 0.5 lands back at the ~1.7px
-                    the rest of the card's line work is set in.
-                  */
-                  strokeWidth={0.5}
-                  style={{
-                    color: effectiveTheme.accent,
-                    opacity: 0.38,
-                    left: cardPx(archInsetX),
-                    right: cardPx(archInsetX),
-                    top: cardPx(archInsetTop),
-                  }}
-                />
-                <div className="relative">{covered}</div>
-              </div>
-            ) : (
-              covered
+            const section = renderBlock(
+              block,
+              draft,
+              effectiveTheme,
+              liftSection ? firstScreenBox : minHeight,
+              sectionIsFirstScreen ? firstScreenPad : sectionPad,
+              config.occasionId,
+              scratch,
+              language,
             );
 
-          return (
-            <Fragment key={blockKey(block)}>
-              {index > 0 ? (
+            const head =
+              hasHead ? (
                 /*
-                  No padding of its own. The sections above and below each end
-                  in their own `py-10`, so the divider already sits 40px clear
-                  of the content on both sides — the same inset a section keeps
-                  at its top. Padding here was adding a band of nothing on top
-                  of that, which is what left the gap under the names.
-                */
-                /*
-                  The art class only when the pack's divider is drawn: the
-                  flourish sizes itself in card pixels already, and the rule
-                  would size it from an --art-width it was never given.
+                  A screen of its own, not a header sitting on top of the names.
+
+                  It used to be a block of whatever height the Arabic came to,
+                  stacked above the cover with a single top inset, which put it in
+                  the top band of the screen — inside the dissolve, so the first
+                  thing a guest read was a blurred Bismillah, with the names
+                  already crowding in underneath.
+
+                  Given the same `minHeight` and the same symmetric padding every
+                  section gets, it becomes what it should have been all along: one
+                  swipe that shows the blessing, centred, at full strength and
+                  clear of both the ornaments and the fade, and a second swipe that
+                  brings the names up whole. Same rule as the rest of the card —
+                  one screen, one thing.
                 */
                 <div
-                  className={
-                    dividerOrnament !== null
-                      ? "lifafa-card-art flex justify-center"
-                      : "flex justify-center"
-                  }
+                  className="relative flex flex-col items-center justify-center gap-4 px-7 text-center"
                   style={
-                    dividerOrnament !== null
-                      ? artWidth(
-                          dividerOrnament.aspect >= 1
-                            ? DIVIDER_SIZE
-                            : DIVIDER_SIZE * dividerOrnament.aspect,
-                        )
-                      : undefined
+                    headIsFirstScreen
+                      ? {
+                          minHeight,
+                          paddingTop: cardPx(Math.max(headPadTop, clearance.y)),
+                          paddingBottom: `calc(${cardPx(headPadBottom)} + ${firstScreenLift})`,
+                        }
+                      : {
+                          minHeight,
+                          paddingTop: cardPx(headPadTop),
+                          paddingBottom: cardPx(headPadBottom),
+                        }
                   }
                 >
                   {/*
-                    The vine takes the divider's place rather than joining it —
-                    two ornaments stacked on one hairline reads as a mistake.
-                    Sized wider than the flourish because it is a repeating band
-                    and needs the width to show more than one repeat.
+                    Above the greeting, because they open what follows rather than
+                    sitting beside it: a card that carries the lot reads Bismillah,
+                    then the verse, then the address, then the dua, which is the
+                    order they are said in. Pack order, not the order the host
+                    switched them on in — an opening does not become a closing
+                    because it was chosen second.
+
+                    `className` rather than `size`, so the width is the column's
+                    and not a number chosen here — calligraphy is the only
+                    ornament that spans the card rather than being placed on it.
+                    Which ink it uses is decided from the card's own background;
+                    see lib/calligraphy.ts.
+
+                    Wider than the column by 16px a side, into the screen's own
+                    28px padding. Every piece ends in a hairline rule and a
+                    diamond, so the extra width is almost all lettering, and a
+                    line that is read should not be the narrowest thing on the
+                    card. Under a flower border it still keeps clear of the
+                    flowers, which the column already stands 20px off. Capped at
+                    20 card-rem for a card with no border, where the Bismillah —
+                    lettering to its very edges — would otherwise run nearly to
+                    the edges of the card.
                   */}
-                  {dividerOrnament !== null ? (
-                    <dividerOrnament.Component
-                      instanceId={`divider-${index}`}
-                      size={DIVIDER_SIZE}
-                      style={{ color: effectiveTheme.accent, opacity: 0.55 }}
+                  {calligraphy.map((panel) => (
+                    <panel.Component
+                      key={panel.id}
+                      instanceId={`cover-calligraphy-${panel.id}`}
+                      className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem))]"
+                      ground={calligraphyGround(effectiveTheme.background)}
                     />
-                  ) : (
-                    <CardFlourish
+                  ))}
+
+                  {greeting !== null && pack !== null ? (
+                    <Blessing
+                      entry={greeting}
+                      pack={pack}
+                      theme={effectiveTheme}
+                      /*
+                        The greeting is the smaller of the two. It is a form of
+                        address; the blessing is what is being offered, and the
+                        card should read in that order of weight.
+                      */
+                      sizeClass="text-[1.25rem] leading-[2] sm:text-[calc(1.375*var(--card-rem,1rem))]"
+                    />
+                  ) : null}
+
+                  {blessing !== null && pack !== null ? (
+                    <Blessing
+                      entry={blessing}
+                      pack={pack}
+                      theme={effectiveTheme}
+                      sizeClass="text-[1.375rem] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem))]"
+                    />
+                  ) : null}
+
+                  {/*
+                    The screen a guest lands on says nothing of what is under it —
+                    the cover and its own cue are a whole swipe away. So the cue
+                    comes up here, in the empty band this screen keeps under its
+                    content (the lift), and just above the bottom dissolve, which
+                    is where `headPadBottom` ends.
+                  */}
+                  {headIsFirstScreen ? (
+                    <ScrollCue
+                      label={copy.cover.scrollCue}
+                      textColor={effectiveTheme.textMuted}
                       accent={effectiveTheme.accent}
-                      className="opacity-50"
+                      /*
+                        Centred in the lift band rather than sat on its floor, so
+                        it is clear of anything pinned to the foot of the screen —
+                        the preview's watermark pill among them. 3.5rem is the
+                        cue's own height, word and line together.
+                      */
+                      style={{
+                        bottom: `calc(${cardPx(headPadBottom)} + max(0px, (${firstScreenLift} - 3.5rem) / 2))`,
+                      }}
                     />
-                  )}
+                  ) : null}
                 </div>
-              ) : null}
+              ) : null;
 
-              {/*
-                Two ways a block can be drawn now that the scratch panel has
-                moved inside the sections. It used to be three, with a panel
-                wrapped around the whole block here — which is precisely what
-                made it a screen-tall slab rather than a sticker over the words.
-                A block that is hidden is still drawn exactly like any other
-                from out here; the section it renders has already put the panel
-                over the lines that need it.
-              */}
-              {sectionIsFirstScreen ? (
+            const covered = (
+              <>
+                {head}
+                {section}
+                {blockKey(block) === calendarAnchor ? saveTheDate : null}
+              </>
+            );
+
+            const framed =
+              isCover && useArch ? (
                 /*
-                  The band under the first screen's content, and the one place
-                  the card's line stagger is switched off.
+                  The arch frames the cover rather than replacing anything: an
+                  outline behind the content, inset from the card's edges, with
+                  the content column drawn on top of it. Stretched with
+                  preserveAspectRatio="none" because a frame has to match the
+                  box it frames, and held well under half opacity so a name set
+                  over a jamb still carries.
 
-                  THE FIRST SCREEN ARRIVES IN ONE PIECE. Every other section
-                  sets its lines down one after another as the guest scrolls to
-                  it, which is the card being read. The first screen is the card
-                  being opened: a printed invitation does not typeset itself in
-                  front of the person holding it, and names that arrived a word
-                  at a time were the last of what made opening one feel like a
-                  page loading. So its lines rise together, under the cover as
-                  it leaves them — see `revealAt` in types/coverAnimation.ts.
+                  Never lifted as a first screen — see FIRST_SCREEN_LIFT.
                 */
-                <div
-                  style={
-                    {
-                      paddingBottom: liftSection ? firstScreenLift : undefined,
-                      "--card-line-stagger": "0ms",
-                    } as CSSProperties
-                  }
-                >
-                  {framed}
+                <div className="relative">
+                  <archOrnament.Component
+                    instanceId="cover-frame"
+                    className="pointer-events-none absolute bottom-0"
+                    preserveAspectRatio="none"
+                    /*
+                      Drawn at roughly 3.4x here, which would turn the authored
+                      2 unit line into a 7px band. 0.5 lands back at the ~1.7px
+                      the rest of the card's line work is set in.
+                    */
+                    strokeWidth={0.5}
+                    style={{
+                      color: effectiveTheme.accent,
+                      opacity: 0.38,
+                      left: cardPx(archInsetX),
+                      right: cardPx(archInsetX),
+                      top: cardPx(archInsetTop),
+                    }}
+                  />
+                  <div className="relative">{covered}</div>
                 </div>
               ) : (
-                framed
-              )}
+                covered
+              );
 
-              {/*
-                Said only in the editor, and only under the panel it describes:
-                the host is looking at an uncovered section and would otherwise
-                have no way to tell that their guests will not be.
+            return (
+              <Fragment key={blockKey(block)}>
+                {index > 0 ? (
+                  /*
+                    No padding of its own. The sections above and below each end
+                    in their own `py-10`, so the divider already sits 40px clear
+                    of the content on both sides — the same inset a section keeps
+                    at its top. Padding here was adding a band of nothing on top
+                    of that, which is what left the gap under the names.
+                  */
+                  /*
+                    The art class only when the pack's divider is drawn: the
+                    flourish sizes itself in card pixels already, and the rule
+                    would size it from an --art-width it was never given.
+                  */
+                  <div
+                    className={
+                      dividerOrnament !== null
+                        ? "lifafa-card-art flex justify-center"
+                        : "flex justify-center"
+                    }
+                    style={
+                      dividerOrnament !== null
+                        ? artWidth(
+                            dividerOrnament.aspect >= 1
+                              ? DIVIDER_SIZE
+                              : DIVIDER_SIZE * dividerOrnament.aspect,
+                          )
+                        : undefined
+                    }
+                  >
+                    {/*
+                      The vine takes the divider's place rather than joining it —
+                      two ornaments stacked on one hairline reads as a mistake.
+                      Sized wider than the flourish because it is a repeating band
+                      and needs the width to show more than one repeat.
+                    */}
+                    {dividerOrnament !== null ? (
+                      <dividerOrnament.Component
+                        instanceId={`divider-${index}`}
+                        size={DIVIDER_SIZE}
+                        style={{ color: effectiveTheme.accent, opacity: 0.55 }}
+                      />
+                    ) : (
+                      <CardFlourish
+                        accent={effectiveTheme.accent}
+                        className="opacity-50"
+                      />
+                    )}
+                  </div>
+                ) : null}
 
-                In English whatever the card is written in, and tagged so: it
-                is the editor talking to the host, not the card to a guest.
-              */}
-              {isHidden && isHostPreview ? (
-                <p
-                  lang="en-IN"
-                  className="px-7 pb-6 text-center text-xs"
-                  style={{ color: effectiveTheme.textMuted }}
-                >
-                  Guests will need to scratch this.
-                </p>
-              ) : null}
-            </Fragment>
-          );
-        })}
+                {/*
+                  Two ways a block can be drawn now that the scratch panel has
+                  moved inside the sections. It used to be three, with a panel
+                  wrapped around the whole block here — which is precisely what
+                  made it a screen-tall slab rather than a sticker over the words.
+                  A block that is hidden is still drawn exactly like any other
+                  from out here; the section it renders has already put the panel
+                  over the lines that need it.
+                */}
+                {sectionIsFirstScreen ? (
+                  /*
+                    The band under the first screen's content, and the one place
+                    the card's line stagger is switched off.
 
-        {/*
-          After the last section rather than inside one.
+                    THE FIRST SCREEN ARRIVES IN ONE PIECE. Every other section
+                    sets its lines down one after another as the guest scrolls to
+                    it, which is the card being read. The first screen is the card
+                    being opened: a printed invitation does not typeset itself in
+                    front of the person holding it, and names that arrived a word
+                    at a time were the last of what made opening one feel like a
+                    page loading. So its lines rise together, under the cover as
+                    it leaves them — see `revealAt` in types/coverAnimation.ts.
+                  */
+                  <div
+                    style={
+                      {
+                        paddingBottom: liftSection ? firstScreenLift : undefined,
+                        "--card-line-stagger": "0ms",
+                      } as CSSProperties
+                    }
+                  >
+                    {framed}
+                  </div>
+                ) : (
+                  framed
+                )}
 
-          The weather belongs to the whole invitation, not to the venue block or
-          the date block, and pinning it inside either would mean a host who
-          switched that section off silently lost it. It is also the one thing
-          on the card that is not the host's own words, so it reads better as a
-          footnote under the card than as a screen of its own in the middle.
-        */}
-        {weather !== null ? (
-          <WeatherPanel
-            weather={weather}
-            themeId={weatherTheme}
-            theme={effectiveTheme}
-            draft={draft}
-            language={language}
-          />
-        ) : null}
+                {/*
+                  Said only in the editor, and only under the panel it describes:
+                  the host is looking at an uncovered section and would otherwise
+                  have no way to tell that their guests will not be.
+
+                  In English whatever the card is written in, and tagged so: it
+                  is the editor talking to the host, not the card to a guest.
+                */}
+                {isHidden && isHostPreview ? (
+                  <p
+                    lang="en-IN"
+                    className="px-7 pb-6 text-center text-xs"
+                    style={{ color: effectiveTheme.textMuted }}
+                  >
+                    Guests will need to scratch this.
+                  </p>
+                ) : null}
+              </Fragment>
+            );
+          })}
+
+          {/*
+            After the last section rather than inside one.
+
+            The weather belongs to the whole invitation, not to the venue block or
+            the date block, and pinning it inside either would mean a host who
+            switched that section off silently lost it. It is also the one thing
+            on the card that is not the host's own words, so it reads better as a
+            footnote under the card than as a screen of its own in the middle.
+          */}
+          {weather !== null ? (
+            <WeatherPanel
+              weather={weather}
+              themeId={weatherTheme}
+              theme={effectiveTheme}
+              draft={draft}
+              language={language}
+            />
+          ) : null}
+        </div>
       </div>
-    </div>
+    </ScratchRevealProvider>
   );
 }
