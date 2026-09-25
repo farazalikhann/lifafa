@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import type { ReactElement } from "react";
 
 /**
- * Overview, Events, Coupons — as a sidebar on a laptop and a top bar on a
- * phone.
+ * Overview, Events, Coupons, Free activation — as a sidebar on a laptop and a
+ * top bar on a phone.
  *
  * ────────────────────────────────────────────────────────────────────────────
  * ONE COMPONENT, TWO LAYOUTS, NO JAVASCRIPT DECIDING WHICH. The wrapper in
  * AdminShell switches between a column and a row with Tailwind's `lg:`
  * breakpoint, so there is no "is the sidebar open" state, no toggle button, no
- * hamburger and nothing to get stuck open after a navigation. Three
+ * hamburger and nothing to get stuck open after a navigation. Four
  * destinations do not need a drawer; they need to be visible.
  *
  * The narrow layout scrolls horizontally rather than wrapping, so the bar is
@@ -42,6 +42,7 @@ const ITEMS: readonly NavItem[] = [
   { href: "/admin", label: "Overview", exact: true },
   { href: "/admin/events", label: "Events", exact: false },
   { href: "/admin/coupons", label: "Coupons", exact: false },
+  { href: "/admin/complimentary", label: "Free activation", exact: false },
 ];
 
 function isCurrent(pathname: string, item: NavItem): boolean {

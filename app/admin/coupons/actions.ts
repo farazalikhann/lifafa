@@ -5,6 +5,8 @@ import { adminSession } from "@/lib/admin/auth";
 import type { CouponFormState } from "@/lib/admin/couponForm";
 import { generateCouponCode } from "@/lib/coupons/generate";
 import { isPossibleCouponCode, normaliseCouponCode } from "@/lib/coupons/lookup";
+import { isFreeDiscount } from "@/lib/coupons/quote";
+import { INVITATION_PRICE_PAISE } from "@/lib/razorpay/pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CouponInsert, CouponType } from "@/types/database";
 
@@ -125,6 +127,23 @@ export async function createCoupon(
   if (maxUses !== null && (!Number.isFinite(maxUses) || maxUses <= 0)) {
     return {
       error: "Leave the usage limit blank for unlimited, or enter a number above zero.",
+      created: null,
+    };
+  }
+
+  /*
+    A code that makes the invitation free must have a usage limit: an unlimited
+    one is free invitations for anyone it is passed to. 0014 refuses a 100% code
+    with no limit, and redeem_free_coupon never honours a free code without one
+    (a flat code's worth depends on the price, which the database does not know).
+  */
+  if (
+    maxUses === null &&
+    isFreeDiscount(discountType, discountValue, INVITATION_PRICE_PAISE)
+  ) {
+    return {
+      error:
+        "A code that makes the invitation free needs a usage limit. Enter how many times it can be used.",
       created: null,
     };
   }

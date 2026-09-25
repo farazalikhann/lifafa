@@ -226,7 +226,8 @@ export type EventByInviteCodeRow = {
 export type PaymentRow = {
   id: string;
   event_id: string;
-  razorpay_order_id: string;
+  /** Null on a free row (0014): no Razorpay order was made. */
+  razorpay_order_id: string | null;
   /** Null until a payment settles the order. */
   razorpay_payment_id: string | null;
   /** Paise, never rupees. ₹999 is 99900. */
@@ -254,7 +255,19 @@ export type PaymentRow = {
   created_at: string;
   /** Set at the moment status becomes 'paid', null otherwise. */
   paid_at: string | null;
+  /**
+   * How the invitation was paid for (0014). 'razorpay' is money captured; the
+   * other two are free, with amount 0 and discount_amount the full price.
+   */
+  method: PaymentMethod;
+  /** Why an admin gave it away. 'complimentary' rows only. */
+  reason: string | null;
+  /** The admin username that gave it away. 'complimentary' rows only. */
+  granted_by: string | null;
 }
+
+/** The three values 0014's check constraint allows. */
+export type PaymentMethod = "razorpay" | "complimentary" | "coupon";
 
 /** The three states 0009's check constraint allows. */
 export type PaymentStatus = "created" | "paid" | "failed";
@@ -499,6 +512,40 @@ export type Database = {
       redeem_coupon: {
         Args: { p_code: string };
         Returns: boolean;
+      };
+      /*
+        Free activation (0014). Each writes the ₹0 payment row and marks the
+        event paid in one transaction, and answers 'ok' or the reason it
+        refused. Service role only. See lib/admin/complimentary.ts and
+        lib/db/payments.ts for the reasons each can give.
+      */
+      grant_complimentary: {
+        Args: {
+          p_event_id: string;
+          p_reason: string;
+          p_granted_by: string;
+          p_list_price: number;
+        };
+        Returns: string;
+      };
+      redeem_free_coupon: {
+        Args: { p_event_id: string; p_code: string; p_list_price: number };
+        Returns: string;
+      };
+      /* The admin's search by invite code, event id or host email (0014). */
+      admin_find_events: {
+        Args: { p_query: string };
+        Returns: {
+          id: string;
+          invite_code: string;
+          is_paid: boolean;
+          created_at: string;
+          title: string | null;
+          party_one: string | null;
+          party_two: string | null;
+          host_names: string | null;
+          host_email: string | null;
+        }[];
       };
     };
     Enums: Record<string, never>;

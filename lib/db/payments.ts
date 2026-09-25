@@ -13,7 +13,11 @@ import {
   findUsableCoupon,
   normaliseCouponCode,
 } from "@/lib/coupons/lookup";
-import { quoteWithCoupon, type CouponQuote } from "@/lib/coupons/quote";
+import {
+  RAZORPAY_MINIMUM_PAISE,
+  quoteWithCoupon,
+  type CouponQuote,
+} from "@/lib/coupons/quote";
 import { eventEndDate } from "@/lib/eventLock";
 import { dbFailure, dbSuccess, postgresError, type DbResult } from "@/lib/db/result";
 import type { PaymentInsert } from "@/types/database";
@@ -342,6 +346,19 @@ export async function createPaymentOrder(
   const discountAmount = quote?.discountPaise ?? 0;
   const couponCode = quote?.code ?? null;
 
+  /*
+    A code that covers the whole price is activated by activateWithFreeCoupon,
+    not paid for; Razorpay would refuse a ₹0 order anyway. Reaching here with
+    one means the page's applied code is out of date.
+  */
+  if (amount < RAZORPAY_MINIMUM_PAISE) {
+    return dbFailure(
+      "createPaymentOrder/free",
+      new Error(`Coupon ${couponCode ?? "(none)"} makes event ${eventId} free`),
+      "This code makes the invitation free. Apply it again to activate it.",
+    );
+  }
+
   let orderId: string;
 
   try {
@@ -471,4 +488,111 @@ export async function createPaymentOrder(
     couponCode,
     discountAmount,
   });
+}
+
+/**
+ * Activates an invitation with a code that covers the whole price. No Razorpay.
+ *
+ * The same two arguments as the order path, and the same rule: the browser
+ * names a code and the server decides what it is worth. Ownership is checked
+ * under the host's own session first, exactly as for an order.
+ *
+ * THE DATABASE DOES THE REST, IN ONE TRANSACTION. redeem_free_coupon (0014)
+ * locks the coupon row, re-checks that it is active, unexpired, limited and has
+ * a use left, that it really covers the list price, and that the invitation is
+ * still unpaid and has a date — then writes a ₹0 'coupon' payment row, marks
+ * the event paid as the webhook does, and counts the use. Two hosts redeeming
+ * the last use at once: the second waits on the lock and is refused.
+ *
+ * The lookup and quote below run first only so the host gets the same messages
+ * as on the order path; the function does not trust them.
+ */
+export async function activateWithFreeCoupon(
+  eventId: string,
+  rawCouponCode: string,
+): Promise<DbResult<{ code: string }>> {
+  const owned = await requireUnpaidOwnedEvent(eventId);
+
+  if (!owned.ok) {
+    return dbFailure(
+      "activateWithFreeCoupon/event",
+      new Error(`Event ${eventId} is not available for activation`),
+      owned.error,
+    );
+  }
+
+  const lookup = await findUsableCoupon(rawCouponCode);
+
+  if (lookup.kind !== "ok") {
+    return dbFailure(
+      "activateWithFreeCoupon/coupon",
+      new Error(`Coupon ${normaliseCouponCode(rawCouponCode)}: ${lookup.kind}`),
+      couponRefusalMessage(lookup.kind),
+    );
+  }
+
+  const quote = quoteWithCoupon(lookup.coupon, INVITATION_PRICE_PAISE);
+
+  if (quote.finalPaise !== 0) {
+    return dbFailure(
+      "activateWithFreeCoupon/not-free",
+      new Error(`Coupon ${quote.code} leaves ${quote.finalPaise} paise to pay`),
+      "That code does not cover the full price.",
+    );
+  }
+
+  /* Reached only now, with the host identified and the event confirmed theirs. */
+  const { data: outcome, error } = await createAdminClient().rpc(
+    "redeem_free_coupon",
+    {
+      p_event_id: eventId,
+      p_code: quote.code,
+      p_list_price: INVITATION_PRICE_PAISE,
+    },
+  );
+
+  if (error !== null) {
+    return dbFailure(
+      "activateWithFreeCoupon/rpc",
+      error,
+      "Could not activate the invitation, please try again.",
+    );
+  }
+
+  if (outcome === "ok") {
+    console.info(
+      `[payments] event ${eventId} activated free with coupon ${quote.code}`,
+    );
+    return dbSuccess({ code: quote.code });
+  }
+
+  return dbFailure(
+    "activateWithFreeCoupon/refused",
+    new Error(`redeem_free_coupon(${quote.code}) answered ${String(outcome)}`),
+    freeCouponRefusalMessage(outcome),
+  );
+}
+
+/** The host's sentence for each reason redeem_free_coupon (0014) can refuse. */
+function freeCouponRefusalMessage(outcome: string | null): string {
+  switch (outcome) {
+    case "unknown":
+    case "inactive":
+    case "expired":
+    case "exhausted":
+      return couponRefusalMessage(outcome);
+    /* A free code with no usage limit is never honoured; see 0014. */
+    case "no_limit":
+      return couponRefusalMessage("inactive");
+    case "not_free":
+      return "That code does not cover the full price.";
+    case "not_found":
+      return "This invitation could not be found.";
+    case "already_paid":
+      return "This invitation has already been published.";
+    case "no_date":
+      return "Add the event date before you publish. It is shown on the invitation, and the invitation closes after it.";
+    default:
+      return "Could not activate the invitation, please try again.";
+  }
 }

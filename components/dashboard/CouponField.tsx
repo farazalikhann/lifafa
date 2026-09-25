@@ -180,8 +180,9 @@ export default function CouponField({
           role="status"
           className="mt-1.5 text-xs text-[var(--lifafa-marigold)]"
         >
-          {applied.code} applied — {paiseToInr(applied.discountPaise)} off. You
-          pay {paiseToInr(applied.finalPaise)}.
+          {applied.finalPaise === 0
+            ? `${applied.code} applied — your invitation is free.`
+            : `${applied.code} applied — ${paiseToInr(applied.discountPaise)} off. You pay ${paiseToInr(applied.finalPaise)}.`}
         </p>
       ) : null}
 

@@ -14,6 +14,7 @@ import {
   postgresError,
   type DbResult,
 } from "@/lib/db/result";
+import type { PaymentMethod } from "@/types/database";
 import type { OccasionId } from "@/types/occasion";
 import type { RsvpStatus } from "@/types/guest";
 
@@ -730,6 +731,18 @@ export interface AdminEventDetail {
   coverAnimation: string | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * The payment that activated it, or null when unpaid — or when the row could
+   * not be read, which costs this one field and not the page.
+   */
+  payment: {
+    method: PaymentMethod;
+    amountPaise: number;
+    couponCode: string | null;
+    reason: string | null;
+    grantedBy: string | null;
+    paidAt: string | null;
+  } | null;
   /** The lock after the event and the change limits (lib/eventLock.ts). */
   lock: {
     endDate: string | null;
@@ -860,6 +873,7 @@ export async function getAdminEventDetail(
 
     const occasionId: string = event.card_config.occasionId ?? "unknown";
     const draft = event.event_draft;
+    const payment = event.is_paid ? await activatingPayment(supabase, id) : null;
 
     return dbSuccess({
       id: event.id,
@@ -875,6 +889,7 @@ export async function getAdminEventDetail(
       inviteCode: event.invite_code,
       isPaid: event.is_paid,
       paymentId: event.payment_id,
+      payment,
       language: event.card_config.language ?? "en",
       eventDate: draft.eventDate ?? "",
       eventTime: draft.eventTime ?? "",
@@ -904,6 +919,98 @@ export async function getAdminEventDetail(
       "Could not load this event.",
     );
   }
+}
+
+/**
+ * The latest captured payment row for one event: how it was paid for.
+ *
+ * Null rather than a throw on error, so a deployment without 0014's `method`
+ * column still shows the rest of the event.
+ */
+async function activatingPayment(
+  supabase: AdminClient,
+  eventId: string,
+): Promise<AdminEventDetail["payment"]> {
+  const { data, error } = await supabase
+    .from("payments")
+    .select("method, amount, coupon_code, reason, granted_by, paid_at")
+    .eq("event_id", eventId)
+    .eq("status", "paid")
+    .order("paid_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error !== null) {
+    console.error(`[admin] could not read the payment for event ${eventId}:`, error);
+    return null;
+  }
+
+  return data === null
+    ? null
+    : {
+        method: data.method,
+        amountPaise: data.amount,
+        couponCode: data.coupon_code,
+        reason: data.reason,
+        grantedBy: data.granted_by,
+        paidAt: data.paid_at,
+      };
+}
+
+/* ─────────────────────── Finding one event ─────────────────────── */
+
+/** One search result on the free activation page. */
+export interface AdminFoundEvent {
+  id: string;
+  title: string;
+  inviteCode: string;
+  hostEmail: string | null;
+  isPaid: boolean;
+  createdAt: string;
+}
+
+/** The longest search worth sending: an email address is at most 254. */
+const MAX_FIND_LENGTH = 254;
+
+/**
+ * Events matching an invite code, an event id or a host's email, exactly.
+ *
+ * Exact rather than partial on purpose: this page exists to find the one event
+ * about to be given away, not to browse. admin_find_events (0014) runs the
+ * match, because the email is in auth.users, which only the database can join.
+ */
+export async function findAdminEvents(
+  rawQuery: string,
+): Promise<DbResult<readonly AdminFoundEvent[]>> {
+  const query = rawQuery.trim().slice(0, MAX_FIND_LENGTH);
+
+  if (query.length === 0) {
+    return dbSuccess([]);
+  }
+
+  const { data, error } = await createAdminClient().rpc("admin_find_events", {
+    p_query: query,
+  });
+
+  if (error !== null) {
+    return dbFailure("admin/findAdminEvents", error, "Could not search events.");
+  }
+
+  return dbSuccess(
+    (data ?? []).map((row) => ({
+      id: row.id,
+      title: summaryTitle({
+        title: row.title,
+        partyOne: row.party_one,
+        partyTwo: row.party_two,
+        hostNames: row.host_names,
+      }),
+      inviteCode: row.invite_code,
+      hostEmail: row.host_email,
+      isPaid: row.is_paid,
+      createdAt: row.created_at,
+    })),
+  );
 }
 
 /* ─────────────────────── The events list page ─────────────────────── */

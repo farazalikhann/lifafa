@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactElement, ReactNode } from "react";
+import ActivateFreeButton from "@/components/admin/ActivateFreeButton";
 import { PageHeading } from "@/components/admin/AdminShell";
 import { PaidPill } from "@/components/admin/EventsTable";
 import { EmptyState, ErrorNotice } from "@/components/admin/Feedback";
@@ -10,7 +11,7 @@ import {
   unlockEventEditing,
 } from "@/app/admin/events/actions";
 import { requireAdminSession } from "@/lib/admin/auth";
-import { formatCount, formatIst } from "@/lib/admin/format";
+import { formatCount, formatIst, formatPaise } from "@/lib/admin/format";
 import { getAdminEventDetail, type AdminEventDetail } from "@/lib/admin/stats";
 import {
   ADMIN_UNLOCK_HOURS,
@@ -26,10 +27,12 @@ import {
  * and no way to mark anything paid from here. A dashboard that can only look
  * is a dashboard whose worst bug is a wrong number on a screen.
  *
- * THE ONE EXCEPTION is the lock after the event (lib/eventLock.ts): unlocking
+ * THE EXCEPTIONS are the lock after the event (lib/eventLock.ts): unlocking
  * an ended invitation for ADMIN_UNLOCK_HOURS, and giving a paid invitation its
  * date and name changes back. Both are support's answer to "our event moved",
  * and neither touches the card, the guests or any money. See EditingPanel.
+ * And activating an unpaid invitation for free, which records a ₹0
+ * complimentary payment and moves no money. See ActivateFreeButton.
  *
  * The guest list shows names and phone numbers, which are a host's guests'
  * details and not the owner's to browse idly. They are here because support —
@@ -51,6 +54,22 @@ function Field({
       <dd className="mt-0.5 text-sm break-words sm:mt-0">{children}</dd>
     </div>
   );
+}
+
+/** How the invitation was paid for, in one line. */
+function describePayment(payment: NonNullable<AdminEventDetail["payment"]>): string {
+  const when = payment.paidAt === null ? "" : ` · ${formatIst(payment.paidAt)}`;
+
+  switch (payment.method) {
+    case "complimentary":
+      return `Complimentary, ₹0 received · ${payment.reason ?? "no reason"} · by ${payment.grantedBy ?? "unknown"}${when}`;
+    case "coupon":
+      return `Free with coupon ${payment.couponCode ?? "?"}, ₹0 received${when}`;
+    case "razorpay":
+      return `Razorpay, ${formatPaise(payment.amountPaise)}${
+        payment.couponCode === null ? "" : ` with coupon ${payment.couponCode}`
+      }${when}`;
+  }
 }
 
 /** Back to the list, in the place every detail page keeps it. */
@@ -174,6 +193,21 @@ export default async function AdminEventPage({
         />
       </div>
 
+      {event.isPaid ? null : (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+            Activation
+          </h2>
+          <p className="mt-2 text-sm text-zinc-600">
+            Unpaid. Guests cannot open it until the host pays, or you activate
+            it for free.
+          </p>
+          <div className="mt-3">
+            <ActivateFreeButton eventId={event.id} />
+          </div>
+        </section>
+      )}
+
       <EditingPanel event={event} />
 
       <StatSection title="Replies">
@@ -218,6 +252,9 @@ export default async function AdminEventPage({
               <span className="text-zinc-500"> · {event.paymentId}</span>
             )}
           </Field>
+          {event.payment === null ? null : (
+            <Field label="Paid with">{describePayment(event.payment)}</Field>
+          )}
           <Field label="Date and time">
             {event.eventDate.length === 0 ? "—" : event.eventDate}
             {event.eventTime.length === 0 ? "" : ` at ${event.eventTime}`}

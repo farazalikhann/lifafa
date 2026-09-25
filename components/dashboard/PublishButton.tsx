@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
-import { createPaymentOrder } from "@/lib/db/payments";
+import { activateWithFreeCoupon, createPaymentOrder } from "@/lib/db/payments";
 import CouponField, {
   type AppliedCoupon,
 } from "@/components/dashboard/CouponField";
@@ -28,6 +28,12 @@ const CHECKOUT_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
  * a way to check again.
  */
 const CONFIRM_GRACE_MS = 4000;
+
+/**
+ * How long "Your invitation is now active." stays up before the page refreshes.
+ * The refresh removes this banner, so without a pause the host would not see it.
+ */
+const ACTIVATED_PAUSE_MS = 1500;
 
 /**
  * Loads checkout.js once per page, whatever asks for it.
@@ -79,6 +85,10 @@ type Phase =
   | { kind: "pending" }
   /** Closed without paying. Not an error — say so gently. */
   | { kind: "dismissed" }
+  /** A code covering the whole price is being redeemed. No Razorpay. */
+  | { kind: "activating" }
+  /** Redeemed; the invitation is paid. The page refreshes in a moment. */
+  | { kind: "activated" }
   /** Anything that went wrong, with a sentence for the host. */
   | { kind: "failed"; message: string };
 
@@ -132,6 +142,40 @@ export default function PublishButton({
   }, []);
 
   const handleClick = useCallback(async (): Promise<void> => {
+    /*
+      A code that covers the whole price: no checkout. The server re-checks the
+      code and activates the invitation itself (activateWithFreeCoupon); this
+      only decides which of the two server actions to ask.
+    */
+    if (coupon !== null && coupon.finalPaise === 0) {
+      setPhase({ kind: "activating" });
+
+      try {
+        const activated = await activateWithFreeCoupon(eventId, coupon.code);
+
+        if (!activated.ok) {
+          setPhase({ kind: "failed", message: activated.error });
+          return;
+        }
+      } catch (cause: unknown) {
+        console.error("[publish] could not activate with the code:", cause);
+        setPhase({
+          kind: "failed",
+          message: "Could not activate the invitation, please try again.",
+        });
+        return;
+      }
+
+      setPhase({ kind: "activated" });
+
+      window.setTimeout(() => {
+        if (mounted.current) {
+          router.refresh();
+        }
+      }, ACTIVATED_PAUSE_MS);
+      return;
+    }
+
     setPhase({ kind: "starting" });
 
     /*
@@ -239,7 +283,10 @@ export default function PublishButton({
     checkout.open();
   }, [coupon, eventId, router]);
 
-  const busy = phase.kind === "starting" || phase.kind === "open";
+  const busy =
+    phase.kind === "starting" ||
+    phase.kind === "open" ||
+    phase.kind === "activating";
 
   return (
     <div className="flex flex-col items-stretch gap-3 sm:items-end">
@@ -248,7 +295,9 @@ export default function PublishButton({
         coupon field beside a checkout that has already been paid is a field
         offering to change a price that is settled.
       */}
-      {phase.kind === "confirming" || phase.kind === "pending" ? null : (
+      {phase.kind === "confirming" ||
+      phase.kind === "pending" ||
+      phase.kind === "activated" ? null : (
         <div className="w-full sm:max-w-[18rem]">
           <CouponField
             eventId={eventId}
@@ -262,7 +311,9 @@ export default function PublishButton({
       <button
         type="button"
         onClick={() => void handleClick()}
-        disabled={busy || phase.kind === "confirming"}
+        disabled={
+          busy || phase.kind === "confirming" || phase.kind === "activated"
+        }
         className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50"
       >
         {buttonLabel(phase, coupon)}
@@ -282,6 +333,7 @@ export default function PublishButton({
  * server side from the code, never from this.
  */
 function buttonLabel(phase: Phase, coupon: AppliedCoupon | null): string {
+  const free = coupon !== null && coupon.finalPaise === 0;
   const price = formatInr(
     coupon === null
       ? INVITATION_PRICE_INR
@@ -289,6 +341,10 @@ function buttonLabel(phase: Phase, coupon: AppliedCoupon | null): string {
   );
 
   switch (phase.kind) {
+    case "activating":
+      return "Activating…";
+    case "activated":
+      return "Activated";
     case "starting":
       return "Starting…";
     case "open":
@@ -298,10 +354,10 @@ function buttonLabel(phase: Phase, coupon: AppliedCoupon | null): string {
     case "dismissed":
     case "failed":
       /* A retry, and labelled as one, so the price is still in view. */
-      return `Try again — ${price}`;
+      return free ? "Try again — free" : `Try again — ${price}`;
     case "pending":
     case "idle":
-      return `Publish for ${price}`;
+      return free ? "Activate for free" : `Publish for ${price}`;
   }
 }
 
@@ -319,8 +375,21 @@ function StatusLine({
   phase: Phase;
   onCheckAgain: () => void;
 }): ReactElement | null {
-  if (phase.kind === "idle" || phase.kind === "starting" || phase.kind === "open") {
+  if (
+    phase.kind === "idle" ||
+    phase.kind === "starting" ||
+    phase.kind === "open" ||
+    phase.kind === "activating"
+  ) {
     return null;
+  }
+
+  if (phase.kind === "activated") {
+    return (
+      <p role="status" className="max-w-[40ch] text-xs text-[var(--lifafa-marigold)]">
+        Your invitation is now active.
+      </p>
+    );
   }
 
   if (phase.kind === "confirming") {

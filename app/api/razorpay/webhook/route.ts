@@ -9,7 +9,9 @@ import {
 /**
  * Where Razorpay tells us a payment actually happened.
  *
- * THIS ROUTE IS THE ONLY THING IN LIFAFA THAT MAY PUBLISH AN INVITATION. The
+ * THIS ROUTE IS THE ONLY THING THAT MAY PUBLISH AN INVITATION FOR MONEY. (The
+ * two free paths — an admin's complimentary activation and a code covering the
+ * whole price — are 0014's functions, and move no money.) The
  * browser's success callback does not, and must never: it runs on the guest's
  * — here, the host's — own machine, where the code is readable, the network is
  * theirs and a fetch can be replayed by hand. A checkout that "succeeded"

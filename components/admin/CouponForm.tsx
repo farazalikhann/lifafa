@@ -7,6 +7,8 @@ import {
   COUPON_FORM_INITIAL_STATE,
   type CouponFormState,
 } from "@/lib/admin/couponForm";
+import { isFreeDiscount } from "@/lib/coupons/quote";
+import { INVITATION_PRICE_PAISE } from "@/lib/razorpay/pricing";
 
 /**
  * The "new code" form.
@@ -20,6 +22,10 @@ import {
  * Hiding is not validating. The server checks the affiliate fields itself (see
  * createCoupon), and the database has coupons_affiliate_has_owner underneath
  * that. This just keeps the form honest about what it is asking for.
+ *
+ * The same goes for a free code: once the discount covers the whole price the
+ * usage limit is required and starts at 1, and createCoupon refuses one without
+ * a limit whatever this form sends.
  */
 
 const INPUT_CLASS =
@@ -46,7 +52,17 @@ function SubmitButton(): ReactElement {
 
 export default function CouponForm(): ReactElement {
   const [state, formAction] = useActionState<CouponFormState, FormData>(
-    createCoupon,
+    async (previous, formData) => {
+      const next = await createCoupon(previous, formData);
+
+      /* React resets the uncontrolled fields after a submit; these two it does not. */
+      if (next.created !== null) {
+        setDiscountValue("");
+        setMaxUses("");
+      }
+
+      return next;
+    },
     COUPON_FORM_INITIAL_STATE,
   );
 
@@ -54,6 +70,25 @@ export default function CouponForm(): ReactElement {
   const [discountType, setDiscountType] = useState<"percent" | "flat">(
     "percent",
   );
+  const [discountValue, setDiscountValue] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+
+  /* Rupees in the form, paise in the arithmetic, as in createCoupon. */
+  const free = makesFree(discountType, discountValue);
+
+  /*
+    Crossing into free fills an empty limit with 1, so the safe default is the
+    one already typed. Done in the change handlers rather than an effect: it is
+    a consequence of what the admin typed, not of rendering.
+  */
+  const fillLimitIfFree = (
+    nextType: "percent" | "flat",
+    nextValue: string,
+  ): void => {
+    if (makesFree(nextType, nextValue) && maxUses.trim().length === 0) {
+      setMaxUses("1");
+    }
+  };
 
   return (
     <form
@@ -111,9 +146,11 @@ export default function CouponForm(): ReactElement {
             id="coupon-discount-type"
             name="discountType"
             value={discountType}
-            onChange={(event) =>
-              setDiscountType(event.target.value as "percent" | "flat")
-            }
+            onChange={(event) => {
+              const next = event.target.value as "percent" | "flat";
+              setDiscountType(next);
+              fillLimitIfFree(next, discountValue);
+            }}
             className={INPUT_CLASS}
           >
             <option value="percent">Percentage</option>
@@ -130,6 +167,11 @@ export default function CouponForm(): ReactElement {
             name="discountValue"
             type="number"
             required
+            value={discountValue}
+            onChange={(event) => {
+              setDiscountValue(event.target.value);
+              fillLimitIfFree(discountType, event.target.value);
+            }}
             min={1}
             max={discountType === "percent" ? 100 : undefined}
             step={1}
@@ -151,13 +193,21 @@ export default function CouponForm(): ReactElement {
             id="coupon-max-uses"
             name="maxUses"
             type="number"
+            required={free}
             min={1}
             step={1}
             inputMode="numeric"
-            placeholder="Unlimited"
+            placeholder={free ? undefined : "Unlimited"}
+            value={maxUses}
+            onChange={(event) => setMaxUses(event.target.value)}
+            aria-describedby="coupon-max-uses-hint"
             className={INPUT_CLASS}
           />
-          <p className={HINT_CLASS}>Counted on captured payments only.</p>
+          <p id="coupon-max-uses-hint" className={HINT_CLASS}>
+            {free
+              ? "Required: this code makes the invitation free. Counted when a host activates with it."
+              : "Counted on captured payments only."}
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -234,5 +284,20 @@ export default function CouponForm(): ReactElement {
         ) : null}
       </div>
     </form>
+  );
+}
+
+/** Whether the typed discount makes the invitation free. */
+function makesFree(discountType: "percent" | "flat", rawValue: string): boolean {
+  const value = Number.parseInt(rawValue, 10);
+
+  if (!Number.isFinite(value) || value <= 0) {
+    return false;
+  }
+
+  return isFreeDiscount(
+    discountType,
+    discountType === "percent" ? value : value * 100,
+    INVITATION_PRICE_PAISE,
   );
 }
