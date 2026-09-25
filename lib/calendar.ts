@@ -19,7 +19,7 @@ import {
 import { cardCopy } from "@/lib/cardLanguage";
 import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
 import type { CardLanguage } from "@/types/card";
-import type { EventDraft } from "@/types/event";
+import type { EventDraft, SubEvent } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
 
 /**
@@ -237,6 +237,45 @@ export function calendarEvent(
     timing,
   };
 }
+
+/**
+ * One of the timeline's functions as a calendar entry: the draft with the
+ * function's own name, date, time and venue in place of the main event's.
+ *
+ * The UID gets the function's id, so a guest who adds the Sangeet and the
+ * Reception has two entries rather than one overwriting the other. The main
+ * event, which the timeline lists as "primary", is the card's own entry,
+ * the same one Save the date writes.
+ */
+export function functionCalendarEvent(
+  draft: EventDraft,
+  entry: SubEvent,
+  occasionId: OccasionId,
+  invite: CalendarInvite,
+  language: CardLanguage,
+): CalendarEvent | null {
+  if (entry.id === PRIMARY_ID) {
+    return calendarEvent(draft, occasionId, invite, language);
+  }
+
+  return calendarEvent(
+    {
+      ...draft,
+      eventTitle: entry.label,
+      eventDate: entry.date,
+      eventTime: entry.time,
+      venueName: entry.venueName,
+      venueAddress: entry.venueAddress,
+      venueMapsLink: entry.mapsLink,
+    },
+    occasionId,
+    { code: `${invite.code}-${entry.id}`, url: invite.url },
+    language,
+  );
+}
+
+/** The id the timeline gives the main event; see primaryEntry in cardSections. */
+const PRIMARY_ID = "primary";
 
 /* ---------------------------------------------------------------------------
    Google Calendar, on the web.
@@ -460,8 +499,14 @@ export function icsPath(
   code: string,
   language: CardLanguage,
   download: boolean,
+  /** A timeline function's id, for that function's entry; absent for the main event. */
+  functionId?: string,
 ): string {
-  const query = `lang=${language}${download ? "&dl=1" : ""}`;
+  const query = `lang=${language}${download ? "&dl=1" : ""}${
+    functionId === undefined || functionId === PRIMARY_ID
+      ? ""
+      : `&fn=${encodeURIComponent(functionId)}`
+  }`;
 
   return `/i/${encodeURIComponent(code)}/calendar.ics?${query}`;
 }

@@ -191,6 +191,7 @@ const ICONS: Record<Choice, () => ReactElement> = {
 export default function CalendarSheet({
   event,
   inviteCode,
+  functionId,
   isPreview,
   theme,
   language,
@@ -199,6 +200,8 @@ export default function CalendarSheet({
 }: {
   event: CalendarEvent;
   inviteCode: string;
+  /** A timeline function's id when the entry is that function's, not the main event's. */
+  functionId?: string;
   /** The editor's previews: no route to fetch the file from. */
   isPreview: boolean;
   theme: Theme;
@@ -463,7 +466,7 @@ export default function CalendarSheet({
     return (
       <a
         ref={ref}
-        href={icsPath(inviteCode, language, !inline)}
+        href={icsPath(inviteCode, language, !inline, functionId)}
         download={inline ? undefined : icsFileName(event)}
         onClick={() => onAdded()}
         className={className}

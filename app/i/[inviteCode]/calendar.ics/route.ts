@@ -1,5 +1,10 @@
 import type { NextRequest } from "next/server";
-import { calendarEvent, icsContent, icsFileName } from "@/lib/calendar";
+import {
+  calendarEvent,
+  functionCalendarEvent,
+  icsContent,
+  icsFileName,
+} from "@/lib/calendar";
 import {
   cardInLanguage,
   inviteLinkIn,
@@ -24,6 +29,8 @@ import { inviteUrl } from "@/lib/siteUrl";
  * a guest saving the keepsake is not a reason to refuse.
  *
  *   ?lang=  The language the entry is written in, as on the page.
+ *   ?fn=    One of the timeline's functions, by id, for its own entry. A
+ *           function that is not on the card is a 404, never the main event.
  *   ?dl=1   Sent as an attachment, for browsers that should save it. Without
  *           it the file is sent inline, which is what makes Safari on an
  *           iPhone show the event instead of a download prompt.
@@ -69,18 +76,28 @@ export async function GET(
   );
   const { draft, config } = cardInLanguage(event.draft, event.config, language);
 
-  const entry = calendarEvent(
-    draft,
-    config.occasionId,
-    {
-      code: event.inviteCode,
-      url: inviteLinkIn(
-        inviteUrl(event.inviteCode, await serverSiteOrigin()),
-        language,
-      ),
-    },
-    language,
-  );
+  const invite = {
+    code: event.inviteCode,
+    url: inviteLinkIn(
+      inviteUrl(event.inviteCode, await serverSiteOrigin()),
+      language,
+    ),
+  };
+
+  const functionId = searchParams.get("fn");
+  const fn =
+    functionId === null
+      ? null
+      : (draft.subEvents.find((entry) => entry.id === functionId) ?? null);
+
+  if (functionId !== null && fn === null) {
+    return notAvailable(404);
+  }
+
+  const entry =
+    fn === null
+      ? calendarEvent(draft, config.occasionId, invite, language)
+      : functionCalendarEvent(draft, fn, config.occasionId, invite, language);
 
   /* No date, so no calendar entry; the card shows no button for this either. */
   if (entry === null) {
