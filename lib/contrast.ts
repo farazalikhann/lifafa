@@ -132,3 +132,26 @@ export function maxOverlayAlpha(
 
   return safe;
 }
+
+/**
+ * Which colour to set text in on a solid `fill`.
+ *
+ * The card's own colours first, in the order given, taking whichever reads
+ * best: a button filled with the accent keeps the card's cream or ink on it
+ * rather than a stark white. Only when neither clears 4.5:1 — a host's own
+ * accent can land anywhere — does it fall back to plain white or near-black.
+ */
+export function readableOn(fill: string, preferred: readonly string[]): string {
+  const best = (candidates: readonly string[]): string =>
+    candidates.reduce((winner, candidate) =>
+      contrastRatio(candidate, fill) > contrastRatio(winner, fill)
+        ? candidate
+        : winner,
+    );
+
+  const fromCard = best(preferred);
+
+  return contrastRatio(fromCard, fill) >= SMALL_TEXT_RATIO
+    ? fromCard
+    : best([fromCard, "#FFFFFF", "#141414"]);
+}

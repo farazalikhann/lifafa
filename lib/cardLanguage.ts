@@ -146,9 +146,32 @@ export interface CardCopy {
     revealed: string;
   };
   calendar: {
-    addToGoogle: string;
-    downloadIcs: string;
-    hint: string;
+    /** The "Save the date" block under the countdown. */
+    heading: string;
+    subline: string;
+    add: string;
+    /** The button once the guest has chosen a calendar, for the rest of the visit. */
+    added: string;
+    /** Read out for the tear-off page, which is drawn rather than written. */
+    pageLabel: (weekday: string, day: string, month: string, year: string) => string;
+    /** The sheet of calendar choices. */
+    sheetTitle: string;
+    close: string;
+    /** Marks the choice that suits the guest's device. */
+    recommended: string;
+    google: string;
+    /** Under "Google Calendar" on an Android phone, where it opens the app. */
+    googleNoteApp: string;
+    /** Under "Google Calendar" everywhere else, where it opens a new tab. */
+    googleNoteWeb: string;
+    apple: string;
+    appleNote: string;
+    other: string;
+    otherNote: string;
+    /** Shown when an Android calendar app did not open after a tap. */
+    notOpened: string;
+    /** Shown up front inside WhatsApp, Instagram and other in-app browsers. */
+    inAppBrowser: string;
     /** The entry's title when the host gave the event none. */
     titleFallback: string;
     hostedBy: (hosts: string) => string;
@@ -312,9 +335,26 @@ const ENGLISH: CardCopy = {
     revealed: "Revealed.",
   },
   calendar: {
-    addToGoogle: "Add to Google Calendar",
-    downloadIcs: "Download for Apple or Outlook",
-    hint: "Save the date to your calendar.",
+    heading: "Save the date",
+    subline: "Mark your calendar. We cannot wait to celebrate with you.",
+    add: "Add to my calendar",
+    added: "Added to calendar",
+    pageLabel: (weekday, day, month, year) =>
+      `${weekday}, ${day} ${month} ${year}`,
+    sheetTitle: "Add to your calendar",
+    close: "Close",
+    recommended: "Best for this device",
+    google: "Google Calendar",
+    googleNoteApp: "Opens the calendar app on this phone",
+    googleNoteWeb: "Opens in a new tab",
+    apple: "Apple Calendar",
+    appleNote: "iPhone, iPad and Mac",
+    other: "Other calendar (.ics file)",
+    otherNote: "Outlook, Samsung Calendar and others",
+    notOpened:
+      "Nothing opened? Choose the .ics file below, or open this page in Chrome and try again.",
+    inAppBrowser:
+      "Viewing this inside WhatsApp or Instagram? If nothing opens, use the menu to open this page in your browser.",
     titleFallback: "Celebration",
     hostedBy: (hosts) => `Hosted by ${hosts}.`,
     invitationLink: (url) => `Invitation: ${url}`,
@@ -453,9 +493,26 @@ const HINDI: CardCopy = {
     revealed: "दिख गया।",
   },
   calendar: {
-    addToGoogle: "Google Calendar में जोड़ें",
-    downloadIcs: "Apple या Outlook के लिए डाउनलोड करें",
-    hint: "यह तारीख़ अपने कैलेंडर में सहेज लें।",
+    heading: "तारीख़ याद रखिए",
+    subline: "अपने कैलेंडर में जोड़ लीजिए, हमें आपका इंतज़ार रहेगा।",
+    add: "मेरे कैलेंडर में जोड़ें",
+    added: "कैलेंडर में जुड़ गया",
+    pageLabel: (weekday, day, month, year) =>
+      `${weekday}, ${day} ${month} ${year}`,
+    sheetTitle: "अपना कैलेंडर चुनिए",
+    close: "बंद करें",
+    recommended: "इस डिवाइस के लिए सबसे अच्छा",
+    google: "Google Calendar",
+    googleNoteApp: "इस फ़ोन का कैलेंडर ऐप खुलेगा",
+    googleNoteWeb: "नए टैब में खुलेगा",
+    apple: "Apple Calendar",
+    appleNote: "iPhone, iPad और Mac",
+    other: "दूसरा कैलेंडर (.ics फ़ाइल)",
+    otherNote: "Outlook, Samsung Calendar और दूसरे",
+    notOpened:
+      "कुछ नहीं खुला? नीचे .ics फ़ाइल चुनिए, या यह पेज Chrome में खोलकर फिर कोशिश कीजिए।",
+    inAppBrowser:
+      "WhatsApp या Instagram के अंदर देख रहे हैं? अगर कुछ न खुले, तो मेनू से यह पेज अपने ब्राउज़र में खोलिए।",
     titleFallback: "समारोह",
     hostedBy: (hosts) => `आयोजक: ${hosts}`,
     invitationLink: (url) => `निमंत्रण: ${url}`,

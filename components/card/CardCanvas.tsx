@@ -29,7 +29,7 @@ import TimelineSection from "@/components/card/sections/TimelineSection";
 import FamilySection from "@/components/card/sections/FamilySection";
 import MessageSection from "@/components/card/sections/MessageSection";
 import CustomSection from "@/components/card/sections/CustomSection";
-import AddToCalendar from "@/components/card/AddToCalendar";
+import SaveTheDate from "@/components/card/SaveTheDate";
 import WeatherPanel from "@/components/card/WeatherPanel";
 import MusicToggle from "@/components/card/MusicToggle";
 import ScrollCue from "@/components/card/ScrollCue";
@@ -322,6 +322,35 @@ function blockKey(block: CardBlock): string {
 }
 
 /**
+ * The rendered block "Save the date" hangs under, as its blockKey.
+ *
+ * The countdown when it is on, because the block answers the question it
+ * raises. Otherwise the date section, then the venue, which are the next best
+ * neighbours for a calendar page; and failing all three, the last thing on the
+ * card, so a host who switched the countdown off still gives their guests the
+ * button. Null only for a card with nothing on it at all.
+ *
+ * Not a section of its own: it carries no minHeight and takes no screen, so it
+ * sits directly under its anchor, above the divider that closes it off.
+ */
+const SAVE_THE_DATE_ANCHORS: readonly CardSectionId[] = [
+  "countdown",
+  "details",
+  "venue",
+];
+
+function saveTheDateAnchor(visible: readonly CardBlock[]): string | null {
+  for (const id of SAVE_THE_DATE_ANCHORS) {
+    if (visible.some((block) => block.kind === "builtin" && block.id === id)) {
+      return id;
+    }
+  }
+
+  const last = visible.at(-1);
+  return last === undefined ? null : blockKey(last);
+}
+
+/**
  * Which built-in section a scratch target names, if any.
  *
  * The target is phrased in the host's words — what is being hidden — and the
@@ -367,7 +396,6 @@ function renderBlock(
   minHeight: string,
   pad: number,
   occasionId: OccasionId,
-  invite: CalendarInvite,
   scratch: ScratchConfig | null,
   language: CardLanguage,
 ): ReactElement | null {
@@ -405,33 +433,16 @@ function renderBlock(
           language={language}
         />
       );
-    /*
-      The one built-in that renders two things. The calendar links belong to
-      the countdown — they answer the question it raises — but they are not a
-      section: they carry no minHeight, take no screen of their own, and sit
-      directly under it, above the divider that closes the countdown off.
-
-      They also need the invite code and link, which no section is given and
-      only the canvas is handed, so this is the one place the two can meet.
-    */
     case "countdown":
       return (
-        <>
-          <CountdownSection
-            draft={draft}
-            theme={theme}
-            minHeight={minHeight}
-            pad={pad}
-            scratch={scratch}
-            language={language}
-          />
-          <AddToCalendar
-            draft={draft}
-            theme={theme}
-            invite={invite}
-            language={language}
-          />
-        </>
+        <CountdownSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+          scratch={scratch}
+          language={language}
+        />
       );
     case "venue":
       return (
@@ -562,6 +573,20 @@ export default function CardCanvas({
   const panelLabel = scratchLabel(config.scratchTarget, copy.scratch);
 
   /*
+    What a guest cannot see yet: the target, when its section is on the card
+    to carry the panel. The host's preview clears every panel, so nothing is
+    concealed from them.
+  */
+  const concealed: ScratchTarget =
+    !isHostPreview &&
+    panelLabel !== null &&
+    visible.some(
+      (block) => block.kind === "builtin" && block.id === hiddenSection,
+    )
+      ? config.scratchTarget
+      : "none";
+
+  /*
     Colour resolution order: the host's accent override, then the selected
     palette, then the theme as the last resort. Sections read colours from the
     theme object they are handed, so composing one effective theme here is what
@@ -578,6 +603,24 @@ export default function CardCanvas({
     reading the raw theme, which put cream labels on a cream card.
   */
   const effectiveTheme: Theme = composeCardTheme(theme, style);
+
+  /*
+    Whenever the event has a date, whether or not the countdown is on. It
+    returns null by itself for a card without one, and it never takes a
+    divider of its own, so an empty one leaves nothing behind.
+  */
+  const calendarAnchor = saveTheDateAnchor(visible);
+  const saveTheDate = (
+    <SaveTheDate
+      draft={draft}
+      theme={effectiveTheme}
+      invite={invite}
+      occasionId={config.occasionId}
+      language={language}
+      hideDate={concealed === "date"}
+      hideVenue={concealed === "venue"}
+    />
+  );
 
   /*
     How strong the decor is allowed to get on this particular card.
@@ -1112,7 +1155,6 @@ export default function CardCanvas({
             liftSection ? firstScreenBox : minHeight,
             sectionIsFirstScreen ? firstScreenPad : sectionPad,
             config.occasionId,
-            invite,
             scratch,
             language,
           );
@@ -1237,6 +1279,7 @@ export default function CardCanvas({
             <>
               {head}
               {section}
+              {blockKey(block) === calendarAnchor ? saveTheDate : null}
             </>
           );
 

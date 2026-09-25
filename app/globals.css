@@ -1015,3 +1015,175 @@
       scale(0.9) rotate(calc(var(--spin) * 1deg));
   }
 }
+
+/* -------------------------------------------------------------------------
+   Save the date: the tear-off calendar page under the countdown, the sparkle
+   on its button, and the sheet of calendars. See components/card/SaveTheDate
+   and CalendarSheet.
+   ------------------------------------------------------------------------- */
+
+/*
+  The page at rest: tilted a touch, lifted off the card by a shadow that
+  follows the torn edge (a drop-shadow, not a box-shadow, which the mask
+  below would cut off square).
+*/
+.lifafa-cal {
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 8px 12px rgb(0 0 0 / 0.16))
+    drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.14));
+}
+
+.lifafa-cal[data-shown="false"] {
+  opacity: 0;
+}
+
+.lifafa-cal[data-shown="true"] {
+  animation: lifafa-cal-drop 900ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/*
+  The torn lower edge: the page is solid down to 4px from the bottom, and the
+  last 4px is a row of half-circle bites where the page came off its pad.
+*/
+.lifafa-cal-sheet {
+  --tear: 4px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear)) no-repeat,
+    radial-gradient(circle var(--tear) at 50% 100%, #0000 96%, #000)
+      bottom / calc(var(--tear) * 2.5) calc(var(--tear) * 2) repeat-x;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear)) no-repeat,
+    radial-gradient(circle var(--tear) at 50% 100%, #0000 96%, #000)
+      bottom / calc(var(--tear) * 2.5) calc(var(--tear) * 2) repeat-x;
+}
+
+/*
+  Yesterday's page, covering the date until the drop has landed, then turning
+  up over the strip and away. Transparent once it has gone, and never in the
+  way of a tap.
+*/
+.lifafa-cal-flip {
+  pointer-events: none;
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+}
+
+.lifafa-cal[data-shown="true"] .lifafa-cal-flip {
+  animation: lifafa-cal-flip 650ms 620ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+
+@keyframes lifafa-cal-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -40px, 0) rotate(-9deg);
+  }
+  45% {
+    opacity: 1;
+  }
+  62% {
+    transform: translate3d(0, 5px, 0) rotate(1deg);
+  }
+  82% {
+    transform: translate3d(0, -2px, 0) rotate(-2.8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-2deg);
+  }
+}
+
+@keyframes lifafa-cal-flip {
+  0% {
+    opacity: 1;
+    transform: perspective(420px) rotateX(0deg);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(420px) rotateX(-108deg);
+  }
+}
+
+/* One particle of the burst on "Add to my calendar". */
+.lifafa-sparkle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  opacity: 0;
+  animation: lifafa-sparkle 700ms cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+
+@keyframes lifafa-sparkle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(-50%, -50%)
+      translate3d(calc(var(--sx) * 0.8), calc(var(--sy) * 0.8), 0) scale(1.1)
+      rotate(calc(var(--sr) * 0.6));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(var(--sx), var(--sy), 0)
+      scale(0.4) rotate(var(--sr));
+  }
+}
+
+/* The calendar sheet: the card dims, the sheet rises. */
+.lifafa-sheet-backdrop {
+  animation: lifafa-sheet-fade 200ms ease-out both;
+}
+
+.lifafa-sheet {
+  animation: lifafa-sheet-rise 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes lifafa-sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lifafa-sheet-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/*
+  Reduced motion gets the static design: the page is simply there, tilted and
+  shadowed, the flip never covers it, nothing sparkles and the sheet appears
+  in place. The same selectors as above, later in the file, so they win.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-cal[data-shown="false"],
+  .lifafa-cal[data-shown="true"] {
+    opacity: 1;
+    animation: none;
+  }
+
+  .lifafa-cal-flip,
+  .lifafa-sparkle {
+    display: none;
+  }
+
+  .lifafa-sheet-backdrop,
+  .lifafa-sheet {
+    animation: none;
+  }
+}

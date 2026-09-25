@@ -214,6 +214,17 @@ function hasTime(eventTime: string): boolean {
   return TIME_PATTERN.test(eventTime.trim());
 }
 
+/**
+ * Whether the host gave the event a time of day as well as a date.
+ *
+ * Exported for the calendar export, which has to tell "7 PM on the 14th" from
+ * "the 14th": `eventInstant` fills a missing time with midnight, and an entry
+ * written at midnight is a different thing from an all-day one.
+ */
+export function hasEventTime(eventTime: string): boolean {
+  return hasTime(eventTime);
+}
+
 /** ICU uses a narrow no-break space and may lower case the day period. */
 function normaliseTime(formatted: string): string {
   return formatted
@@ -427,6 +438,86 @@ export function formatWhen(
   );
 
   return `${datePart} at ${timePart}`;
+}
+
+/** English month names, written down for the same reason as the Hindi ones. */
+const ENGLISH_MONTHS: readonly string[] = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const ENGLISH_WEEKDAYS: readonly string[] = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+/** What the tear-off calendar page under the countdown prints. */
+export interface CalendarPageText {
+  /** "December" / "दिसंबर". */
+  month: string;
+  year: string;
+  /** "14". Latin digits in both languages, as the rest of the card writes them. */
+  day: string;
+  /** "Monday" / "सोमवार". */
+  weekday: string;
+  /** "7:00 PM" / "शाम 7:00 बजे", or null when the host set no time. */
+  time: string | null;
+}
+
+/**
+ * The event's date broken into the pieces a wall calendar page shows, or null
+ * when there is no usable date.
+ *
+ * Built from the table and the IST arithmetic in both languages, not from
+ * Intl, so the server and the browser print the same page to the character.
+ */
+export function calendarPageText(
+  eventDate: string,
+  eventTime: string,
+  language: CardLanguage,
+): CalendarPageText | null {
+  const instant = eventInstant(eventDate, eventTime);
+
+  if (instant === null) {
+    return null;
+  }
+
+  const parts = istParts(instant);
+  const isHindi = language === "hi";
+
+  let time: string | null = null;
+
+  if (hasTime(eventTime)) {
+    const hour = parts.hour % 12 === 0 ? 12 : parts.hour % 12;
+    const minute = String(parts.minute).padStart(2, "0");
+
+    time = isHindi
+      ? hindiTime(parts)
+      : `${hour}:${minute} ${parts.hour < 12 ? "AM" : "PM"}`;
+  }
+
+  return {
+    month: (isHindi ? HINDI_MONTHS : ENGLISH_MONTHS)[parts.month],
+    year: String(parts.year),
+    day: String(parts.day),
+    weekday: (isHindi ? HINDI_WEEKDAYS : ENGLISH_WEEKDAYS)[parts.weekday],
+    time,
+  };
 }
 
 /** Google Maps search URL for a venue. */
