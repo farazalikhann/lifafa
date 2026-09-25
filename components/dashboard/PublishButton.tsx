@@ -274,8 +274,8 @@ export default function PublishButton({
         kind: "failed",
         message:
           described !== undefined && described.length > 0
-            ? `${described} No money has been taken — you can try again.`
-            : "The payment did not go through. No money has been taken — you can try again.",
+            ? `${described} No money has been taken. You can try again.`
+            : "The payment did not go through. No money has been taken. You can try again.",
       });
     });
 
@@ -354,7 +354,7 @@ function buttonLabel(phase: Phase, coupon: AppliedCoupon | null): string {
     case "dismissed":
     case "failed":
       /* A retry, and labelled as one, so the price is still in view. */
-      return free ? "Try again — free" : `Try again — ${price}`;
+      return free ? "Try again · free" : `Try again · ${price}`;
     case "pending":
     case "idle":
       return free ? "Activate for free" : `Publish for ${price}`;

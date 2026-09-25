@@ -256,11 +256,11 @@ export default async function AdminEventPage({
             <Field label="Paid with">{describePayment(event.payment)}</Field>
           )}
           <Field label="Date and time">
-            {event.eventDate.length === 0 ? "—" : event.eventDate}
+            {event.eventDate.length === 0 ? "–" : event.eventDate}
             {event.eventTime.length === 0 ? "" : ` at ${event.eventTime}`}
           </Field>
           <Field label="Venue">
-            {event.venueName.length === 0 ? "—" : event.venueName}
+            {event.venueName.length === 0 ? "–" : event.venueName}
             {event.venueAddress.length === 0 ? null : (
               <span className="text-zinc-500"> · {event.venueAddress}</span>
             )}
@@ -268,7 +268,7 @@ export default async function AdminEventPage({
           <Field label="Other functions">{event.subEventCount}</Field>
           <Field label="Language">{event.language}</Field>
           <Field label="Tradition">{event.traditionId}</Field>
-          <Field label="Cover animation">{event.coverAnimation ?? "—"}</Field>
+          <Field label="Cover animation">{event.coverAnimation ?? "–"}</Field>
           <Field label="Weather shown">{event.showWeather ? "Yes" : "No"}</Field>
           <Field label="QR check-in">
             {event.qrCheckinEnabled ? "On" : "Off"}

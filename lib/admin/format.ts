@@ -58,12 +58,12 @@ function format(
   formatter: Intl.DateTimeFormat,
 ): string {
   if (iso === null || iso === undefined || iso.length === 0) {
-    return "—";
+    return "–";
   }
 
   const parsed = new Date(iso);
 
-  return Number.isNaN(parsed.getTime()) ? "—" : formatter.format(parsed);
+  return Number.isNaN(parsed.getTime()) ? "–" : formatter.format(parsed);
 }
 
 /** Date and time, IST. The one to reach for unless the time is noise. */

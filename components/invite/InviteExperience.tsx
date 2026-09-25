@@ -222,11 +222,11 @@ export default function InviteExperience({
   /*
     The page's heading, from the same resolution the cover prints. hostNames is
     only the fallback line and is empty on most pair cards, so reading it here
-    announced "Wedding — " with nobody's name after the dash.
+    announced "Wedding: " with nobody's name after the colon.
   */
   const pageHeading = [draft.eventTitle.trim(), coverTitle]
     .filter((part): part is string => part !== undefined && part.length > 0)
-    .join(" — ");
+    .join(": ");
 
   /*
     The link arrives from the server rather than being built here: this

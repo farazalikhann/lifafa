@@ -117,10 +117,10 @@ function GuestRow({ guest }: { guest: AdminGuest }): ReactElement {
         <RsvpBadge status={guest.rsvp} />
       </td>
       <td className="px-4 py-2.5 text-right tabular-nums text-zinc-600">
-        {attending ? formatCount(guest.accompanyingCount) : "—"}
+        {attending ? formatCount(guest.accompanyingCount) : "–"}
       </td>
       <td className="px-4 py-2.5 text-right tabular-nums">
-        {attending ? formatCount(1 + guest.accompanyingCount) : "—"}
+        {attending ? formatCount(1 + guest.accompanyingCount) : "–"}
       </td>
       <td className="px-4 py-2.5 whitespace-nowrap">
         {guest.checkedIn ? (
@@ -132,14 +132,14 @@ function GuestRow({ guest }: { guest: AdminGuest }): ReactElement {
         )}
       </td>
       <td className="px-4 py-2.5 whitespace-nowrap text-zinc-600 tabular-nums">
-        {guest.phone.length === 0 ? "—" : guest.phone}
+        {guest.phone.length === 0 ? "–" : guest.phone}
       </td>
       <td className="px-4 py-2.5 whitespace-nowrap text-zinc-600">
         {formatIst(guest.respondedAt)}
       </td>
       <td className="max-w-[260px] px-4 py-2.5 text-zinc-600">
         {guest.message === null || guest.message.length === 0
-          ? "—"
+          ? "–"
           : guest.message}
       </td>
     </tr>

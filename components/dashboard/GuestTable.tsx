@@ -89,11 +89,11 @@ function CheckedInMark({ checkedIn }: { checkedIn: boolean }): ReactElement {
  * number, which they are entitled to do.
  */
 function phoneLabel(phone: string): string {
-  return phone.length > 0 ? phone : "—";
+  return phone.length > 0 ? phone : "–";
 }
 
 function bringingLabel(count: number): string {
-  return count === 0 ? "—" : `+${count}`;
+  return count === 0 ? "–" : `+${count}`;
 }
 
 /**
@@ -227,7 +227,7 @@ export default function GuestTable({
                     */}
                     <td className="max-w-[18rem] px-4 py-3.5 text-sm text-[var(--lifafa-muted)]">
                       {messageText(guest.message) === null ? (
-                        <span aria-hidden="true">—</span>
+                        <span aria-hidden="true">–</span>
                       ) : (
                         <span
                           className="block truncate"
@@ -286,7 +286,7 @@ export default function GuestTable({
                           className="text-[var(--lifafa-muted)]"
                           aria-hidden="true"
                         >
-                          —
+                          –
                         </span>
                       )}
                     </dd>

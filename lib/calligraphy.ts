@@ -168,7 +168,7 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
       dark: "/decor/bismillah-white.webp",
     },
     aspect: 1024 / 436,
-    alt: "Bismillah ir-Rahman ir-Rahim — In the name of Allah, the Most Gracious, the Most Merciful",
+    alt: "Bismillah ir-Rahman ir-Rahim: In the name of Allah, the Most Gracious, the Most Merciful",
   },
   /*
     Surah An-Naba 78:8, which is a verse about marriage and the reason it is
@@ -182,7 +182,7 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
       dark: "/decor/verse-pairs-white.webp",
     },
     aspect: 1024 / 526,
-    alt: "And We created you in pairs — Quran 78:8",
+    alt: "And We created you in pairs (Quran 78:8)",
   },
 
   /*
@@ -205,46 +205,46 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
   verseLoveMercy: arabic(
     "verse-love-mercy",
     1024 / 399,
-    "And He placed between you love and mercy — Quran 30:21",
+    "And He placed between you love and mercy (Quran 30:21)",
   ),
   barakallah: arabic(
     "barakallah",
     1024 / 369,
-    "Barakallahu lakuma — may Allah bless you both",
+    "Barakallahu lakuma: may Allah bless you both",
   ),
   /* The full wedding dua, of which the piece above is the opening. */
   barakallahDua: arabic(
     "barakallah-dua",
     1024 / 374,
-    "Barakallahu lakuma wa jama'a baynakuma fi khayr — may Allah bless you both and unite you in goodness",
+    "Barakallahu lakuma wa jama'a baynakuma fi khayr: may Allah bless you both and unite you in goodness",
   ),
   alhamdulillah: arabic(
     "alhamdulillah",
     1024 / 451,
-    "Alhamdulillah — all praise is due to Allah",
+    "Alhamdulillah: all praise is due to Allah",
   ),
 
   /* The nine Devanagari pieces, in the order the sheet set them out. */
   shubhVivah: devanagari(
     "shubh-vivah",
     460 / 342,
-    "Shubh Vivah — an auspicious marriage",
+    "Shubh Vivah: an auspicious marriage",
   ),
   sadarNimantran: devanagari(
     "sadar-nimantran",
     458 / 235,
-    "Sadar Nimantran — a respectful invitation",
+    "Sadar Nimantran: a respectful invitation",
   ),
   radheKrishna: devanagari("radhe-krishna", 376 / 320, "Radhe Krishna"),
   shriGaneshaya: devanagari(
     "shri-ganeshaya",
     443 / 310,
-    "Shri Ganeshaya Namah — salutations to Shri Ganesha",
+    "Shri Ganeshaya Namah: salutations to Shri Ganesha",
   ),
   vivahotsav: devanagari(
     "vivahotsav",
     476 / 282,
-    "Vivahotsav — the wedding celebration",
+    "Vivahotsav: the wedding celebration",
   ),
   togetherForever: devanagari(
     "together-forever",
@@ -254,17 +254,17 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
   mangalParinay: devanagari(
     "mangal-parinay",
     483 / 343,
-    "Mangal Parinay — an auspicious union",
+    "Mangal Parinay: an auspicious union",
   ),
   madhurMilan: devanagari(
     "madhur-milan",
     439 / 229,
-    "Madhur Milan — a sweet union",
+    "Madhur Milan: a sweet union",
   ),
   shubhLabh: devanagari(
     "shubh-labh",
     424 / 253,
-    "Shubh Labh — auspiciousness and prosperity",
+    "Shubh Labh: auspiciousness and prosperity",
   ),
 
   /*
@@ -278,7 +278,7 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
   ikOnkarCalligraphy: gurmukhi(
     "ik-onkar",
     434 / 324,
-    "Ik Onkar — One Creator",
+    "Ik Onkar: One Creator",
   ),
   satnamWaheguru: gurmukhi(
     "satnam-waheguru",
@@ -288,33 +288,33 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
   shubhVivaah: gurmukhi(
     "shubh-vivaah",
     471 / 359,
-    "Shubh Vivaah — an auspicious marriage",
+    "Shubh Vivaah: an auspicious marriage",
   ),
   guruKirpa: gurmukhi(
     "guru-kirpa",
     453 / 270,
-    "Guru Kirpa Sada Rahe — with the Guru's blessings always",
+    "Guru Kirpa Sada Rahe: with the Guru's blessings always",
   ),
   anandKaraj: gurmukhi(
     "anand-karaj",
     491 / 295,
-    "Anand Karaj — the Sikh wedding ceremony",
+    "Anand Karaj: the Sikh wedding ceremony",
   ),
   ikDoojeDeSang: gurmukhi(
     "ik-dooje-de-sang",
     442 / 269,
-    "Ik Dooje De Sang — together, in faith",
+    "Ik Dooje De Sang: together, in faith",
   ),
   doRoohanIkRaah: gurmukhi(
     "do-roohan-ik-raah",
     513 / 241,
-    "Do Roohan Ik Raah — two souls, one journey",
+    "Do Roohan Ik Raah: two souls, one journey",
   ),
-  waheguru: gurmukhi("waheguru", 392 / 289, "Waheguru — always with us"),
+  waheguru: gurmukhi("waheguru", 392 / 289, "Waheguru: always with us"),
   sarbatDaBhala: gurmukhi(
     "sarbat-da-bhala",
     471 / 182,
-    "Sarbat Da Bhala — may all be well",
+    "Sarbat Da Bhala: may all be well",
   ),
 };
 

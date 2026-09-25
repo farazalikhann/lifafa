@@ -27,7 +27,7 @@ export default function CreateError({
       reset={reset}
       context="app/create/error.tsx"
       title="The editor could not load"
-      description="Something went wrong while opening your card, so anything you had started is not here. Try again — and if the editor still will not open, it is a problem at our end rather than anything you did."
+      description="Something went wrong while opening your card, so anything you had started is not here. Try again, and if the editor still will not open, it is a problem at our end rather than anything you did."
     />
   );
 }

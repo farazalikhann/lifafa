@@ -81,7 +81,7 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
           will conclude money has gone missing. Saying which is which here is
           cheaper than the afternoon that assumption costs.
         */
-        description="Received and discount are summed from captured payments. Paid events and gross count the is_paid flag, which also covers invitations published before payments existed — so the two do not reconcile."
+        description="Received and discount are summed from captured payments. Paid events and gross count the is_paid flag, which also covers invitations published before payments existed, so the two do not reconcile."
       >
         <Stat
           label="Net received"

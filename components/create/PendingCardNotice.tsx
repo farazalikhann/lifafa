@@ -55,7 +55,7 @@ function messageFor(problem: PendingCardProblem, here: string): Message {
     case "missing":
       return {
         title: "Your card is not in this browser.",
-        body: `A card you are working on is kept in the browser you were using when you pressed Save. If you signed in from a different app or browser — email apps often open links in their own — go back to the one you started in and open ${here}/create there. Or start again below.`,
+        body: `A card you are working on is kept in the browser you were using when you pressed Save. If you signed in from a different app or browser (email apps often open links in their own), go back to the one you started in and open ${here}/create there. Or start again below.`,
       };
     case "expired":
       return {

@@ -80,7 +80,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("Lifafa — admin password hash\n");
+  console.log("Lifafa admin password hash\n");
 
   const password = await askSecret("New admin password: ");
 

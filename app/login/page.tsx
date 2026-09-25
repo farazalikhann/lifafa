@@ -4,7 +4,7 @@ import Link from "next/link";
 import SignInForm from "@/components/auth/SignInForm";
 
 export const metadata: Metadata = {
-  title: "Sign in — Lifafa",
+  title: "Sign in · Lifafa",
   description: "Sign in to Lifafa to build and manage your invitations.",
   /*
     Not indexed. A sign-in form has nothing to rank for, and an indexed one

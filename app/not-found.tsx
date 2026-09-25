@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Page not found — Lifafa",
+  title: "Page not found · Lifafa",
 };
 
 /**

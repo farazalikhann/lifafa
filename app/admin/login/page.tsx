@@ -16,7 +16,7 @@ import AdminLoginForm from "@/components/admin/AdminLoginForm";
  */
 
 export const metadata: Metadata = {
-  title: "Sign in — Lifafa admin",
+  title: "Sign in · Lifafa admin",
   robots: { index: false, follow: false },
 };
 

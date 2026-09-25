@@ -116,7 +116,7 @@ function Row({
         lang={cardLanguage}
         className="text-xs leading-relaxed break-words whitespace-pre-line text-[var(--lifafa-muted)]"
       >
-        {isWritten(row.original) ? row.original : "—"}
+        {isWritten(row.original) ? row.original : "–"}
       </p>
 
       {row.multiline === true ? (

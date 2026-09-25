@@ -30,7 +30,7 @@ export default function AppError({
       reset={reset}
       context="app/error.tsx"
       title="Something went wrong"
-      description="This page did not load properly. Nothing you have saved is affected — try again, and if it keeps happening, come back in a few minutes."
+      description="This page did not load properly. Nothing you have saved is affected. Try again, and if it keeps happening, come back in a few minutes."
     />
   );
 }

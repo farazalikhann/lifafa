@@ -165,7 +165,7 @@ export async function generateMetadata({
   const title =
     [draft.eventTitle.trim(), nameLine]
       .filter((part) => part.length > 0)
-      .join(" — ") || copy.shareTitleFallback;
+      .join(": ") || copy.shareTitleFallback;
 
   return {
     title,

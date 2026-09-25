@@ -379,7 +379,7 @@ const ENGLISH: CardCopy = {
   coverSkip: "Skip",
   invite: {
     headingFallback: "Invitation",
-    shareTitleFallback: "Invitation — Lifafa",
+    shareTitleFallback: "Invitation · Lifafa",
     shareDescription: (repliesOpen) =>
       repliesOpen
         ? "You are invited. Tap to see the invitation and send your reply."
@@ -434,7 +434,7 @@ const ENGLISH: CardCopy = {
     saveFailed:
       "Could not save your pass. A screenshot of this code works just as well.",
     codeLabel: (guestName) => `Check-in code for ${guestName}`,
-    shareTitle: (eventName) => `${eventName} — pass`,
+    shareTitle: (eventName) => `${eventName} · pass`,
   },
   shareMessage: "You are invited! Here are the details:",
 };
@@ -540,7 +540,7 @@ const HINDI: CardCopy = {
   coverSkip: "छोड़ें",
   invite: {
     headingFallback: "निमंत्रण",
-    shareTitleFallback: "निमंत्रण — Lifafa",
+    shareTitleFallback: "निमंत्रण · Lifafa",
     shareDescription: (repliesOpen) =>
       repliesOpen
         ? "आप सादर आमंत्रित हैं। निमंत्रण देखने और अपना जवाब भेजने के लिए टैप करें।"
@@ -595,7 +595,7 @@ const HINDI: CardCopy = {
     saveFailed:
       "पास सहेजा नहीं जा सका। इस कोड का स्क्रीनशॉट भी उतना ही काम करेगा।",
     codeLabel: (guestName) => `${guestName} का चेक-इन कोड`,
-    shareTitle: (eventName) => `${eventName} — प्रवेश पास`,
+    shareTitle: (eventName) => `${eventName} · प्रवेश पास`,
   },
   shareMessage: "आप सादर आमंत्रित हैं! पूरी जानकारी यहाँ देखें:",
 };

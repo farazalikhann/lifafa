@@ -36,7 +36,7 @@ import { adminSession } from "@/lib/admin/auth";
  */
 
 export const metadata: Metadata = {
-  title: "Admin — Lifafa",
+  title: "Admin · Lifafa",
   /*
     The third of the three fences described in app/robots.ts. Next turns this
     into <meta name="robots" content="noindex, nofollow"> — which is what a

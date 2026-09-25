@@ -69,7 +69,7 @@ function PaymentRow({ payment }: { payment: CouponPayment }): ReactElement {
         {formatIst(payment.paidAt)}
       </td>
       <td className="px-4 py-2.5 font-mono text-xs text-zinc-500">
-        {payment.razorpayPaymentId ?? "—"}
+        {payment.razorpayPaymentId ?? "–"}
       </td>
     </tr>
   );
@@ -162,7 +162,7 @@ export default async function AdminCouponPage({
             label="Commission owed"
             value={
               totals.commissionOwedPaise === null
-                ? "—"
+                ? "–"
                 : formatPaise(totals.commissionOwedPaise)
             }
             note={
