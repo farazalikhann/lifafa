@@ -31,7 +31,7 @@ const SWITCH_FACE = "var(--font-sans), system-ui, sans-serif";
  * inset and a border, and a little air. See `topClearance` on CoverShell.
  */
 export const LANGUAGE_SWITCH_CLEARANCE =
-  "calc(max(12px, env(safe-area-inset-top)) + 64px)";
+  "calc(max(12px, env(safe-area-inset-top)) + 64px + var(--lifafa-preview-h, 0px))";
 
 /** Scrolled less than this, the switch always shows: the top of the page is its place. */
 const ALWAYS_SHOWN_ABOVE_PX = 96;
@@ -105,7 +105,8 @@ export default function LanguageSwitch({
       onFocusCapture={() => setIsTucked(false)}
       className="fixed z-[60] flex rounded-full border p-1 shadow-[0_4px_18px_rgba(0,0,0,0.25)] backdrop-blur-md transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
-        top: "max(12px, env(safe-area-inset-top))",
+        /* Below the host's preview banner when there is one; see HostPreviewBanner. */
+        top: "calc(max(12px, env(safe-area-inset-top)) + var(--lifafa-preview-h, 0px))",
         right: "max(12px, env(safe-area-inset-right))",
         transform: isTucked ? "translateY(calc(-100% - 24px))" : "none",
         backgroundColor: withAlpha(palette.surface, "E6"),

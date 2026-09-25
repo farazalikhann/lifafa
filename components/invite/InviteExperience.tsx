@@ -44,6 +44,8 @@ type InviteStage = "form" | "confirmed";
 type ReplyError =
   | { kind: "failed" }
   | { kind: "closed" }
+  /* The invitation is not paid for; only its host can be here to see this. */
+  | { kind: "inactive" }
   /* The server's own sentence, which is English; see submitErrorText. */
   | { kind: "server"; text: string };
 
@@ -263,6 +265,11 @@ export default function InviteExperience({
           return;
         }
 
+        if (result.data.kind === "inactive") {
+          setSubmitError({ kind: "inactive" });
+          return;
+        }
+
         /*
           Only advanced once the write has actually landed. Showing the
           confirmation optimistically would tell a guest their reply was sent
@@ -292,9 +299,11 @@ export default function InviteExperience({
       ? null
       : submitError.kind === "closed"
         ? copy.invite.repliesClosed
-        : submitError.kind === "server" && language === "en"
-          ? submitError.text
-          : copy.invite.replyFailed;
+        : submitError.kind === "inactive"
+          ? copy.invite.notActive
+          : submitError.kind === "server" && language === "en"
+            ? submitError.text
+            : copy.invite.replyFailed;
 
   return (
     <>
@@ -311,8 +320,13 @@ export default function InviteExperience({
         title={coverTitle}
         fontPairId={config.style.fontPairId}
         language={language}
-        /* The cover's drawing keeps clear of the switch above it. */
-        topClearance={switchable ? LANGUAGE_SWITCH_CLEARANCE : undefined}
+        /*
+          The cover's drawing keeps clear of the switch above it, and of the
+          host's preview banner when there is one (0 for every guest).
+        */
+        topClearance={
+          switchable ? LANGUAGE_SWITCH_CLEARANCE : "var(--lifafa-preview-h, 0px)"
+        }
         renderVisual={(state) => <CoverVisual {...state} />}
       >
         <main
@@ -327,6 +341,8 @@ export default function InviteExperience({
           lang={copy.lang}
           className="min-h-screen"
           style={{
+            /* Room for the host's preview banner; 0 for every guest. */
+            paddingTop: "var(--lifafa-preview-h, 0px)",
             backgroundColor: palette.background,
             fontFamily:
               copy.script === "devanagari" ? cardTheme.fontFamily : undefined,

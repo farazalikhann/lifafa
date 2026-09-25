@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { cardCopy, DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
-import { getInviteEvent } from "@/lib/db/inviteEvent";
+import { getGuestEvent } from "@/lib/db/inviteEvent";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 
 /**
@@ -29,8 +29,8 @@ export async function generateMetadata({
   params: Promise<{ inviteCode: string }>;
 }): Promise<Metadata> {
   const { inviteCode } = await params;
-  const [result, origin] = await Promise.all([
-    getInviteEvent(inviteCode),
+  const [guest, origin] = await Promise.all([
+    getGuestEvent(inviteCode),
     serverSiteOrigin(),
   ]);
   const metadataBase = new URL(origin);
@@ -45,7 +45,7 @@ export async function generateMetadata({
     layout is never handed the query string. The page's metadata is merged over
     this, so it wins wherever it speaks.
   */
-  if (!result.ok || result.data === null) {
+  if (guest.kind === "missing" || guest.kind === "failed") {
     /*
       No card, so no language to speak: English, and the generic promise of a
       reply form, since there is no card to say otherwise.

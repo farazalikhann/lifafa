@@ -3,7 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isCheckinToken } from "@/lib/checkinPass";
-import { getEventByInviteCode } from "@/lib/db/events";
+import { readEventByInviteCode } from "@/lib/db/inviteEvent";
 import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
 import { toGuest } from "@/types/database";
 import type { Guest, GuestReply } from "@/types/guest";
@@ -42,7 +42,9 @@ export interface ReplyInput {
  */
 export type ReplyOutcome =
   | { kind: "saved"; checkinToken: string | null }
-  | { kind: "closed" };
+  | { kind: "closed" }
+  /* The invitation is not paid for, so it takes no replies from anyone. */
+  | { kind: "inactive" };
 
 /**
  * Records a guest's reply, or replaces the one their phone already left.
@@ -80,7 +82,16 @@ export async function addOrUpdateReply(
     with the anon key can still reply. That is no more than such a caller could
     already do, and the reply lands in the host's list like any other.
   */
-  const event = await getEventByInviteCode(inviteCode);
+  const event = await readEventByInviteCode(inviteCode);
+
+  /*
+    AN UNPAID INVITATION TAKES NO REPLIES, the host's own test reply included.
+    Its page is closed to guests, and this is the same rule for anyone calling
+    the action directly with the code. See lib/db/inviteEvent.ts.
+  */
+  if (event.ok && event.data !== null && !event.data.isPaid) {
+    return dbSuccess({ kind: "inactive" });
+  }
 
   if (event.ok && event.data !== null && !event.data.config.rsvpEnabled) {
     return dbSuccess({ kind: "closed" });
@@ -101,6 +112,15 @@ export async function addOrUpdateReply(
     p_accompanying_count: Math.min(9, Math.max(0, reply.partySize - 1)),
     p_message: reply.message.trim(),
   });
+
+  /*
+    The database's own refusal of an unpaid card (0012). Reached when the read
+    above could not see the card, which from 0012 is every unpaid card for
+    anyone but its host.
+  */
+  if (error?.code === "PT403") {
+    return dbSuccess({ kind: "inactive" });
+  }
 
   if (error !== null) {
     return dbFailure(
@@ -195,11 +215,55 @@ export async function countGuestsForEvent(
  * Host-scoped by guests_update_host: a row on someone else's event matches no
  * policy, so the update touches nothing and reports it.
  */
+/**
+ * Whether an event is paid for, read under the caller's own session: RLS lets a
+ * host read their own events and nobody else's, so an event the caller does
+ * not own reads as unpaid, which refuses. Not exported: every export of this
+ * file is an endpoint.
+ */
+async function isEventPaid(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  eventId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("is_paid")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (error !== null) {
+    console.error("[db] isEventPaid:", error);
+    return false;
+  }
+
+  return data?.is_paid === true;
+}
+
 export async function setCheckedIn(
   guestId: string,
   value: boolean,
 ): Promise<DbResult<Guest>> {
   const supabase = await createClient();
+
+  /*
+    Checking a guest in is refused on an unpaid invitation, as the scanner's
+    is; unchecking is allowed, so a mistake can always be undone.
+  */
+  if (value) {
+    const { data: guest } = await supabase
+      .from("guests")
+      .select("event_id")
+      .eq("id", guestId)
+      .maybeSingle();
+
+    if (guest !== null && !(await isEventPaid(supabase, guest.event_id))) {
+      return dbFailure(
+        "setCheckedIn/notActive",
+        `event ${guest.event_id} is not paid`,
+        "This invitation is not active yet, so guests cannot be checked in.",
+      );
+    }
+  }
 
   const { data, error } = await supabase
     .from("guests")
@@ -247,7 +311,9 @@ export type PassCheckIn =
   | { kind: "already"; guest: Guest; eventId: string }
   | { kind: "not_found" }
   | { kind: "not_owner" }
-  | { kind: "wrong_event" };
+  | { kind: "wrong_event" }
+  /* The pass is for an invitation that is not paid for. */
+  | { kind: "not_active" };
 
 /** The one failure sentence the door shows, whichever query it was. */
 const PASS_FAILURE = "Could not check this pass, please try again.";
@@ -386,6 +452,14 @@ async function checkInByToken(
 
   if (expectedEventId !== undefined && row.event_id !== expectedEventId) {
     return dbSuccess({ kind: "wrong_event" });
+  }
+
+  /*
+    An unpaid invitation checks nobody in. Asked as the host, whose own event
+    RLS lets them read; a read that fails refuses rather than admits.
+  */
+  if (!(await isEventPaid(supabase, row.event_id))) {
+    return dbSuccess({ kind: "not_active" });
   }
 
   if (row.checked_in) {

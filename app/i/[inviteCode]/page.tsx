@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import HostPreviewBanner from "@/components/invite/HostPreviewBanner";
 import InviteExperience from "@/components/invite/InviteExperience";
 import NotPublished from "@/components/invite/NotPublished";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
@@ -9,8 +10,7 @@ import {
   cardInLanguage,
   requestedLanguage,
 } from "@/lib/cardTranslation";
-import { isEventHost } from "@/lib/db/events";
-import { getInviteEvent } from "@/lib/db/inviteEvent";
+import { getGuestEvent } from "@/lib/db/inviteEvent";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
@@ -29,6 +29,23 @@ import type { StoredEvent } from "@/types/database";
  * the language it was written in, which is what every link sent before this
  * existed does.
  */
+
+/*
+  Rendered for every request, never from a cache. Whether the card opens
+  depends on whether it is paid and on who is asking, and both can change
+  between one request and the next: the moment a payment lands, the next guest
+  must get the card. (Reading the visitor's session already makes this route
+  dynamic; this says so, so a later change cannot quietly make it static.)
+*/
+export const dynamic = "force-dynamic";
+
+/**
+ * What an unpaid invitation unfurls as, for everyone: no names, no date, no
+ * image of the card. A scraper carries no session, so the host gets this too.
+ * Kept out of search results while it is not active.
+ */
+const INACTIVE_TITLE = "Lifafa invitation";
+const INACTIVE_DESCRIPTION = "This invitation is not active yet.";
 
 type InviteParams = {
   params: Promise<{ inviteCode: string }>;
@@ -83,9 +100,9 @@ export async function generateMetadata({
   searchParams,
 }: InviteParams): Promise<Metadata> {
   const [{ inviteCode }, { lang }] = await Promise.all([params, searchParams]);
-  const result = await getInviteEvent(inviteCode);
+  const guest = await getGuestEvent(inviteCode);
 
-  if (!result.ok || result.data === null) {
+  if (guest.kind === "missing" || guest.kind === "failed") {
     return {};
   }
 
@@ -98,17 +115,34 @@ export async function generateMetadata({
     exactly what it exists to hold back — and a preview is the most public
     surface this application has, since it is pasted into group chats.
 
-    Returning nothing here falls through to the layout's metadata, which is the
-    generic Lifafa title and description. A host testing their own link still
-    sees the real card; only the preview is withheld, and only until they
-    publish. Unlike the page gate, this does NOT make an exception for the host:
-    a scraper carries no session, so there is nobody to recognise.
+    So an unpaid card unfurls as a generic "Lifafa invitation", with the share
+    image's plain wordmark, until it is paid. Unlike the page gate, this does
+    NOT make an exception for the host ("preview" is treated as inactive): a
+    scraper carries no session, so there is nobody to recognise.
   */
-  if (!result.data.isPaid) {
-    return {};
+  if (guest.kind !== "active") {
+    return {
+      title: INACTIVE_TITLE,
+      description: INACTIVE_DESCRIPTION,
+      robots: { index: false, follow: false },
+      openGraph: {
+        type: "website",
+        title: INACTIVE_TITLE,
+        description: INACTIVE_DESCRIPTION,
+        /* The share image draws only the Lifafa wordmark for an unpaid card. */
+        images: [
+          {
+            url: `/i/${encodeURIComponent(inviteCode)}/share-image`,
+            width: 1200,
+            height: 630,
+            alt: INACTIVE_TITLE,
+          },
+        ],
+      },
+    };
   }
 
-  const { draft, config, inviteCode: code } = eventInLanguage(result.data, lang);
+  const { draft, config, inviteCode: code } = eventInLanguage(guest.event, lang);
   const copy = cardCopy(config.language).invite;
 
   /*
@@ -156,24 +190,45 @@ export default async function InvitePage({
   searchParams,
 }: InviteParams): Promise<ReactElement> {
   const [{ inviteCode }, { lang }] = await Promise.all([params, searchParams]);
-  /* Shared with the metadata above and the layout's, so this is not another query. */
-  const result = await getInviteEvent(inviteCode);
+  /*
+    Decided on the server, once for the request and shared with the metadata
+    above: paid, the host previewing their unpaid card, or closed. See
+    getGuestEvent in lib/db/inviteEvent.ts.
+  */
+  const guest = await getGuestEvent(inviteCode);
 
   /*
     A failed read and an unknown code are shown the same way. A guest can do
     nothing about either, and the difference is only meaningful in the server
     log — where dbFailure has already written it.
   */
-  if (!result.ok) {
+  if (guest.kind === "failed") {
     return (
       <InviteNotFound reason="Something went wrong opening this invitation. Please try the link again in a moment." />
     );
   }
 
-  if (result.data === null) {
+  if (guest.kind === "missing") {
     return (
       <InviteNotFound reason="The link may have been mistyped, or this invitation may have been removed by the host." />
     );
+  }
+
+  /*
+    ───────────────────────── THE PUBLISH GATE ─────────────────────────
+
+    An unpaid invitation does not open for guests. Not a watermarked card: a
+    watermarked card is still the whole card — names, date, venue, and a reply
+    form — so it would ask for payment while giving away what is being paid for.
+    This page renders no event at all, so nothing about it reaches the HTML.
+
+    THE HOST IS THE ONE EXCEPTION ("preview" below): a host checking their card
+    wants to see what a guest will see, on the real link, with the real cover
+    and the real scroll. They get it watermarked, under a banner that says
+    guests cannot open it yet and takes them to payment.
+  */
+  if (guest.kind === "inactive") {
+    return <NotPublished />;
   }
 
   /*
@@ -182,37 +237,10 @@ export default async function InvitePage({
     being fetched again. The link only decides where it starts: its ?lang=, or
     the card's own language when it names none or one Lifafa does not have.
   */
-  const event = result.data;
+  const { event } = guest;
   const language = requestedLanguage(lang, event.config.language);
   const linkLanguage = typeof lang === "string" && lang === language ? language : null;
 
-  /*
-    ───────────────────────── THE PUBLISH GATE ─────────────────────────
-
-    An unpaid invitation is not shown to guests at all. This replaced the
-    watermark as the meaning of "unpaid": a watermarked card was still the whole
-    card — names, date, venue, and a reply form that wrote real rows — so the
-    watermark asked for payment while giving away the thing being paid for.
-
-    THE HOST IS THE ONE EXCEPTION, and it has to be an exception rather than a
-    separate preview route: a host checking their card wants to see what a guest
-    will see, on the real link, with the real cover animation and the real
-    scroll. isEventHost asks the database under the visitor's own session, so
-    RLS decides — see the note over it in lib/db/events.ts.
-
-    THE COST IS PAID ONLY BY UNPAID INVITATIONS. The check is inside this
-    branch, so a published card — every card a guest ever opens in normal use —
-    costs not one extra query. An unpaid one costs a session read, and for a
-    guest with no session cookie even that is answered without a round trip.
-
-    A HOST PREVIEWING SEES THE CARD AS IT IS, watermark included. That is
-    deliberate: the watermark in InviteExperience is now only ever seen by the
-    host, and it is the thing telling them what is still unfinished about this
-    invitation. Guests never reach it.
-  */
-  if (!event.isPaid && !(await isEventHost(event.id))) {
-    return <NotPublished language={language} />;
-  }
 
   /*
     Read here, on the server, and handed down finished.
@@ -231,13 +259,18 @@ export default async function InvitePage({
     : null;
 
   return (
-    <InviteExperience
-      event={event}
-      initialLanguage={language}
-      linkLanguage={linkLanguage}
-      weather={weather}
-      /* Without a language: the component adds the one on screen. */
-      inviteUrl={inviteUrl(event.inviteCode, await serverSiteOrigin())}
-    />
+    <>
+      {guest.kind === "preview" ? (
+        <HostPreviewBanner eventId={event.id} />
+      ) : null}
+      <InviteExperience
+        event={event}
+        initialLanguage={language}
+        linkLanguage={linkLanguage}
+        weather={weather}
+        /* Without a language: the component adds the one on screen. */
+        inviteUrl={inviteUrl(event.inviteCode, await serverSiteOrigin())}
+      />
+    </>
   );
 }

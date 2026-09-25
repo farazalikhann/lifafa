@@ -27,7 +27,7 @@ const TONE_COLOUR: Record<Tone, string> = {
 
 /** Every refusal, in words someone at a door can act on without asking anyone. */
 const REFUSAL: Record<
-  "not_found" | "not_owner" | "wrong_event",
+  "not_found" | "not_owner" | "wrong_event" | "not_active",
   { title: string; detail: string }
 > = {
   not_found: {
@@ -43,6 +43,11 @@ const REFUSAL: Record<
     title: "Pass for a different invitation",
     detail:
       "This guest is on another of your invitations. Check them in from that event's scanner.",
+  },
+  not_active: {
+    title: "Invitation not active yet",
+    detail:
+      "Guests can be checked in once payment for this invitation is complete.",
   },
 };
 

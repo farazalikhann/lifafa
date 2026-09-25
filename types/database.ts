@@ -407,6 +407,16 @@ export type Database = {
         Returns: boolean;
       };
       /*
+        Whether an unpaid invitation exists for this code, and nothing else
+        (0012). From 0012 event_by_invite_code returns an unpaid card only to
+        its host, so this is how the page tells "not active yet" from "not
+        found".
+      */
+      invite_is_pending: {
+        Args: { p_invite_code: string };
+        Returns: boolean;
+      };
+      /*
         The caller's own check-in token when the reply is accepted, null
         otherwise (0006) — one value, never a row, so the guest write path still
         cannot read the list it writes to. Before 0006 it returns void, which

@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import type { CSSProperties, ReactElement } from "react";
 import { formatWhen, resolveCoverNames } from "@/lib/cardFormat";
 import { cardInLanguage, requestedLanguage } from "@/lib/cardTranslation";
-import { getEventByInviteCode } from "@/lib/db/events";
+import { readEventByInviteCode } from "@/lib/db/inviteEvent";
 import { getPalette } from "@/lib/palettes";
 
 /**
@@ -29,6 +29,9 @@ import { getPalette } from "@/lib/palettes";
  * than left beside this.
  */
 const size = { width: 1200, height: 630 };
+
+/* Per request: the answer changes the moment an invitation is paid for. */
+export const dynamic = "force-dynamic";
 
 /**
  * A system stack, resolved by Satori's bundled default face.
@@ -67,15 +70,24 @@ export async function GET(
   { params }: { params: Promise<{ inviteCode: string }> },
 ): Promise<Response> {
   const { inviteCode } = await params;
-  const result = await getEventByInviteCode(inviteCode);
+  const result = await readEventByInviteCode(inviteCode);
 
   /*
     An unknown code still gets an image: a scraper asks for this before anyone
     opens the link, and returning nothing leaves a broken thumbnail in the chat
     thread. A plain marigold-on-ink card says nothing about the event, which is
     the right amount to say about one that could not be found.
+
+    AN UNPAID INVITATION GETS THE SAME PLAIN CARD. Its page does not open for
+    guests, and an image of its names and date would be the card leaking out
+    through the chat preview. Nobody is exempt, the host included: a scraper
+    carries no session, so there is nobody to recognise.
+
+    Never cached. ImageResponse otherwise marks every image immutable for a
+    year, which would keep this blank card in front of the link long after the
+    host had paid.
   */
-  if (!result.ok || result.data === null) {
+  if (!result.ok || result.data === null || !result.data.isPaid) {
     return new ImageResponse(
       (
         <div
@@ -95,7 +107,7 @@ export async function GET(
           Lifafa
         </div>
       ),
-      size,
+      { ...size, headers: { "cache-control": "no-store, max-age=0" } },
     );
   }
 

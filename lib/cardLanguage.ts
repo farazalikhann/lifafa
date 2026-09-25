@@ -178,6 +178,8 @@ export interface CardCopy {
     shareDescription: (repliesOpen: boolean) => string;
     replyFailed: string;
     repliesClosed: string;
+    /** A reply to an invitation that is not paid for yet. */
+    notActive: string;
   };
   rsvp: {
     heading: string;
@@ -342,6 +344,7 @@ const ENGLISH: CardCopy = {
         : "You are invited. Tap to see the invitation.",
     replyFailed: "Could not send your reply, please try again.",
     repliesClosed: "The hosts are no longer taking replies.",
+    notActive: "This invitation is not active yet, so it cannot take replies.",
   },
   rsvp: {
     heading: "Will you join us?",
@@ -484,6 +487,7 @@ const HINDI: CardCopy = {
         : "आप सादर आमंत्रित हैं। निमंत्रण देखने के लिए टैप करें।",
     replyFailed: "आपका जवाब नहीं भेजा जा सका, कृपया फिर से कोशिश करें।",
     repliesClosed: "मेज़बान अब जवाब नहीं ले रहे हैं।",
+    notActive: "यह निमंत्रण अभी सक्रिय नहीं है, इसलिए इस पर जवाब नहीं भेजे जा सकते।",
   },
   rsvp: {
     heading: "क्या आपका आना होगा?",

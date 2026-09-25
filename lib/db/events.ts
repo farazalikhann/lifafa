@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { generateInviteCode, isValidInviteCode } from "@/lib/inviteCode";
+import { generateInviteCode } from "@/lib/inviteCode";
 import {
   dbFailure,
   dbSuccess,
@@ -238,47 +238,11 @@ export async function createEvent(
   );
 }
 
-/**
- * The guest-facing read, and the only anonymous path into events.
- *
- * Goes through the event_by_invite_code() function rather than a table select,
- * because anon has no SELECT policy on events at all — see the long note in
- * 0001_initial.sql. The function takes the code as an argument, so holding one
- * code reveals one event and the table cannot be walked.
- *
- * Returns null for an unknown code. That is a not-found, not a failure: most
- * unknown codes are a typo in a pasted link.
- */
-export async function getEventByInviteCode(
-  code: string,
-): Promise<DbResult<StoredEvent | null>> {
-  /*
-    Rejected before the round trip. Anything outside the code alphabet cannot
-    match a real row, so this turns a mangled URL into a not-found without
-    troubling the database.
-  */
-  if (!isValidInviteCode(code)) {
-    return dbSuccess(null);
-  }
-
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc("event_by_invite_code", {
-    p_invite_code: code,
-  });
-
-  if (error !== null) {
-    return dbFailure(
-      "getEventByInviteCode",
-      error,
-      "Could not open this invitation, please try again.",
-    );
-  }
-
-  const row = data?.[0];
-
-  return dbSuccess(row === undefined ? null : toStoredEvent(row));
-}
+/*
+  The guest-facing read by invite code lives in lib/db/inviteEvent.ts, not here:
+  every export of this "use server" file is an endpoint a browser can call, and
+  that read hands back any card, paid or not.
+*/
 
 /**
  * The signed-in host's events, newest first, each with how many people have
