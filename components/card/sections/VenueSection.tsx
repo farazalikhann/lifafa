@@ -157,7 +157,11 @@ export default function VenueSection({
     readableAddress(draft.venueAddress),
     copy.venue.addressPlaceholder,
   );
-  const directions = directionsUrl(draft.venueName, draft.venueAddress);
+  const directions = directionsUrl(
+    draft.venueName,
+    draft.venueAddress,
+    draft.venueMapsLink,
+  );
 
   /*
     Covered while there is a panel a guest could still scratch. The host's

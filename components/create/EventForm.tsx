@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
+import MapsLinkField from "@/components/create/MapsLinkField";
 import { JOINER_PRESETS } from "@/lib/cardLanguage";
 import { pairsNames } from "@/lib/occasions";
 import type { CardLanguage } from "@/types/card";
@@ -588,6 +589,13 @@ export default function EventForm({
             className={INPUT_CLASS}
           />
         </Field>
+
+        <MapsLinkField
+          id="venueMapsLink"
+          value={draft.venueMapsLink ?? ""}
+          onChange={(value) => onChange("venueMapsLink", value)}
+          inputClass={INPUT_CLASS}
+        />
       </Section>
 
       <Section label="Message">

@@ -117,6 +117,7 @@ function primaryEntry(
     time: draft.eventTime,
     venueName: draft.venueName,
     venueAddress: draft.venueAddress,
+    mapsLink: draft.venueMapsLink,
   };
 }
 

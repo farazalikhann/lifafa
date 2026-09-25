@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, type ReactElement } from "react";
+import MapsLinkField from "@/components/create/MapsLinkField";
 import { formatDateAndTime } from "@/lib/cardFormat";
 import type { SubEvent } from "@/types/event";
 
@@ -324,6 +325,23 @@ export default function SubEventEditor({
                         className={INPUT_CLASS}
                       />
                     </Field>
+
+                    {/*
+                      Only once the function has a venue: a link to nowhere in
+                      particular is not something a host should be offered.
+                    */}
+                    {entry.venueName.trim().length > 0 ||
+                    entry.venueAddress.trim().length > 0 ||
+                    (entry.mapsLink ?? "").trim().length > 0 ? (
+                      <MapsLinkField
+                        id={`${entry.id}-mapsLink`}
+                        value={entry.mapsLink ?? ""}
+                        onChange={(value) =>
+                          handleField(entry.id, "mapsLink", value)
+                        }
+                        inputClass={INPUT_CLASS}
+                      />
+                    ) : null}
 
                     <Field id={`${entry.id}-note`} label="Note (optional)">
                       <input

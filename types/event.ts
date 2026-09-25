@@ -87,6 +87,12 @@ export interface SubEvent {
   time: string;
   venueName: string;
   venueAddress: string;
+  /**
+   * The function's own Google Maps link or "lat, lng", for exact directions.
+   * Optional, like the main venue's venueMapsLink, and read only through
+   * parseMapsLink, so anything else in it is ignored.
+   */
+  mapsLink?: string;
   /** One short line, e.g. "Lunch will be served". Absent when unused. */
   note?: string;
   /**
@@ -128,6 +134,18 @@ export interface EventDraft {
   eventTime: string;
   venueName: string;
   venueAddress: string;
+  /**
+   * A Google Maps link to the venue, or its "lat, lng", pasted by the host for
+   * exact directions. Absent on every draft saved before it existed, and on
+   * any the host leaves blank.
+   *
+   * Never printed on the card: Get directions and the map use it as their
+   * link, and the address the host typed is what guests read. Read only
+   * through parseMapsLink (lib/cardFormat.ts), which accepts Google Maps and
+   * coordinates and nothing else, so a value that is not one of those is
+   * never turned into a link, whatever reached the stored draft.
+   */
+  venueMapsLink?: string;
   /** Optional short note from the host — empty string when unused. */
   message: string;
   themeId: ThemeId;

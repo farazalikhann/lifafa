@@ -571,18 +571,101 @@ export function readableAddress(venueAddress: string): string {
     .replace(/^[\s,]+|[\s,]+$/g, "");
 }
 
+/** A place the host pinned exactly, read from the Google Maps link field. */
+export type MapsLink =
+  | { readonly kind: "link"; readonly url: string }
+  | { readonly kind: "coordinates"; readonly latitude: number; readonly longitude: number };
+
+/** google.com, google.co.in, www.google.com: every country's Google, with /maps. */
+const GOOGLE_HOST = /^(?:www\.)?google\.[a-z]{2,3}(?:\.[a-z]{2})?$/;
+/** maps.google.com and its country versions. */
+const MAPS_GOOGLE_HOST = /^maps\.google\.[a-z]{2,3}(?:\.[a-z]{2})?$/;
+
+/**
+ * What the host typed in the Google Maps link field, if it is one of the
+ * accepted forms, or null for anything else, including nothing.
+ *
+ *   maps.app.goo.gl/…          the share link the Maps app copies
+ *   goo.gl/maps/…              the older share link
+ *   google.com/maps/…          the website's address bar, any country's Google
+ *   maps.google.com/…
+ *   19.1036, 72.8747           coordinates, in range
+ *
+ * A link with no scheme gets https, and http becomes https. The result is
+ * always an https URL on a Google Maps host, which is what makes it safe to
+ * put in an href on a guest's page: nothing else survives this.
+ */
+export function parseMapsLink(value: string | undefined): MapsLink | null {
+  const text = (value ?? "").trim();
+
+  if (text.length === 0) {
+    return null;
+  }
+
+  const pair = COORDINATE_PAIR.exec(text);
+
+  if (pair !== null) {
+    const latitude = Number(pair[1]);
+    const longitude = Number(pair[2]);
+
+    return Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
+      ? { kind: "coordinates", latitude, longitude }
+      : null;
+  }
+
+  let url: URL;
+
+  try {
+    url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return null;
+  }
+
+  const host = url.hostname.toLowerCase();
+  const path = url.pathname.toLowerCase();
+
+  const isMaps =
+    (host === "maps.app.goo.gl" && path.length > 1) ||
+    (host === "goo.gl" && path.startsWith("/maps")) ||
+    (GOOGLE_HOST.test(host) && path.startsWith("/maps")) ||
+    MAPS_GOOGLE_HOST.test(host);
+
+  if (!isMaps || url.username !== "" || url.password !== "") {
+    return null;
+  }
+
+  url.protocol = "https:";
+  return { kind: "link", url: url.toString() };
+}
+
 /**
  * A Google Maps directions link to the venue, or null with nothing to go on.
  *
  * `/maps/dir/?api=1&destination=` is Google's documented cross-platform form:
  * on a phone with the Maps app it opens the app with the destination filled
- * in, and elsewhere the website. A pasted Maps link is used as it is, and a
- * typed "lat, lng" becomes the destination exactly.
+ * in, and elsewhere the website.
+ *
+ * In order: the host's Google Maps link field, used as it is, or its
+ * coordinates as the exact destination; then a Maps link or "lat, lng" pasted
+ * into the address itself, from before that field existed; then the words.
  */
 export function directionsUrl(
   venueName: string,
   venueAddress: string,
+  mapsLink?: string,
 ): string | null {
+  const pinned = parseMapsLink(mapsLink);
+
+  if (pinned !== null) {
+    return pinned.kind === "link"
+      ? pinned.url
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${pinned.latitude},${pinned.longitude}`)}`;
+  }
+
   const link = pastedMapsLink(venueName, venueAddress);
 
   if (link !== null) {

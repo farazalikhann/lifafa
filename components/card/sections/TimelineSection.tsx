@@ -160,7 +160,7 @@ export default function TimelineSection({
           const note = entry.note?.trim() ?? "";
           const directions = hideWhere
             ? null
-            : directionsUrl(entry.venueName, entry.venueAddress);
+            : directionsUrl(entry.venueName, entry.venueAddress, entry.mapsLink);
           /* What arrives with a reveal fades in, as it does under Save the date. */
           const arrives = isPrimary ? " lifafa-reveal-in" : "";
 
