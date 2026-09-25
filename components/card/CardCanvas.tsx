@@ -398,6 +398,9 @@ function renderBlock(
   pad: number,
   occasionId: OccasionId,
   scratch: ScratchConfig | null,
+  /** The date's panel, for the countdown, which would otherwise give it away. */
+  dateScratch: ScratchConfig | null,
+  invite: CalendarInvite,
   language: CardLanguage,
 ): ReactElement | null {
   if (block.kind === "custom") {
@@ -442,6 +445,8 @@ function renderBlock(
           minHeight={minHeight}
           pad={pad}
           scratch={scratch}
+          dateScratch={dateScratch}
+          sessionKey={invite.url === null ? null : invite.code}
           language={language}
         />
       );
@@ -615,6 +620,22 @@ export default function CardCanvas({
     no panel there, only a line that waits for the venue's own.
   */
   const calendarAnchor = saveTheDateAnchor(visible);
+  /*
+    The date's panel wherever else the date would show: the calendar page
+    under the countdown, and the countdown itself, whose "80 days" would give
+    a hidden date away. All carry the "date" target, so any one opens all.
+  */
+  const dateScratch: ScratchConfig | null =
+    concealed === "date"
+      ? {
+          accent: effectiveTheme.accent,
+          surface: effectiveTheme.surface,
+          label: copy.scratch.short,
+          phrases: copy.scratch,
+          preCleared: false,
+          target: "date",
+        }
+      : null;
   const saveTheDate = (
     <SaveTheDate
       draft={draft}
@@ -622,18 +643,7 @@ export default function CardCanvas({
       invite={invite}
       occasionId={config.occasionId}
       language={language}
-      dateScratch={
-        concealed === "date"
-          ? {
-              accent: effectiveTheme.accent,
-              surface: effectiveTheme.surface,
-              label: copy.scratch.short,
-              phrases: copy.scratch,
-              preCleared: false,
-              target: "date",
-            }
-          : null
-      }
+      dateScratch={dateScratch}
       venueScratched={concealed === "venue"}
     />
   );
@@ -1183,6 +1193,8 @@ export default function CardCanvas({
               sectionIsFirstScreen ? firstScreenPad : sectionPad,
               config.occasionId,
               scratch,
+              dateScratch,
+              invite,
               language,
             );
 

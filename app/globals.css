@@ -1391,3 +1391,180 @@
     animation: none;
   }
 }
+
+/* -------------------------------------------------------------------------
+   The countdown's flip clock. See components/card/FlipClock.tsx.
+
+   Each card takes an equal share of the clock's own width (a container
+   query), capped at the size the card's type scale would give it, so the
+   clock fits a 375px phone and a photo frame's narrower column alike.
+   ------------------------------------------------------------------------- */
+
+.lifafa-flipclock {
+  container-type: inline-size;
+  --flip-unit-gap: calc(0.85 * var(--card-rem, 1rem));
+  --flip-digit-gap: calc(0.22 * var(--card-rem, 1rem));
+  --flip-w: min(
+    calc(2.6 * var(--card-rem, 1rem)),
+    calc(
+      (100cqw - (var(--flip-units) - 1) * var(--flip-unit-gap) -
+          (var(--flip-count) - var(--flip-units)) * var(--flip-digit-gap)) /
+        var(--flip-count)
+    )
+  );
+  --flip-h: calc(var(--flip-w) * 1.42);
+}
+
+.lifafa-flip {
+  position: relative;
+  display: block;
+  width: var(--flip-w);
+  height: var(--flip-h);
+  perspective: calc(var(--flip-h) * 5);
+  border-radius: calc(var(--flip-w) * 0.16);
+  box-shadow:
+    0 calc(var(--flip-h) * 0.08) calc(var(--flip-h) * 0.16) -0.2em rgb(0 0 0 / 0.28),
+    inset 0 0 0 1px var(--flip-edge);
+  font-family: var(--card-heading);
+  font-weight: var(--card-heading-weight);
+  font-size: calc(var(--flip-h) * 0.66);
+  /*
+    Lining figures: Cormorant and its kind draw old-style numerals by default,
+    which rise and sink, and on a row of flip cards read as misprints.
+  */
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--flip-ink);
+}
+
+/* The line across the middle, where the card folds. */
+.lifafa-flip::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% - 0.5px);
+  height: 1px;
+  background: var(--flip-line);
+  z-index: 3;
+}
+
+.lifafa-flip-half {
+  position: absolute;
+  inset-inline: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--flip-face);
+  backface-visibility: hidden;
+}
+
+.lifafa-flip-top {
+  top: 0;
+  border-radius: calc(var(--flip-w) * 0.16) calc(var(--flip-w) * 0.16) 0 0;
+  background: var(--flip-face-top);
+}
+
+.lifafa-flip-bottom {
+  bottom: 0;
+  border-radius: 0 0 calc(var(--flip-w) * 0.16) calc(var(--flip-w) * 0.16);
+}
+
+/* The digit, twice the half's height, so each half shows its own half of it. */
+.lifafa-flip-half > span {
+  position: absolute;
+  inset-inline: 0;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.lifafa-flip-top > span {
+  top: 0;
+}
+
+.lifafa-flip-bottom > span {
+  bottom: 0;
+}
+
+.lifafa-flip-fold-top {
+  z-index: 2;
+  transform-origin: 50% 100%;
+  animation: lifafa-flip-down 280ms cubic-bezier(0.55, 0, 0.9, 0.5) both;
+}
+
+.lifafa-flip-fold-bottom {
+  z-index: 2;
+  transform-origin: 50% 0%;
+  animation: lifafa-flip-land 280ms 280ms cubic-bezier(0.1, 0.5, 0.45, 1) both;
+}
+
+@keyframes lifafa-flip-down {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes lifafa-flip-land {
+  from {
+    transform: rotateX(90deg);
+  }
+  to {
+    transform: rotateX(0deg);
+  }
+}
+
+/* One piece of the confetti on the day. */
+.lifafa-confetti {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  animation-name: lifafa-confetti;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@keyframes lifafa-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  8% {
+    opacity: 1;
+  }
+  35% {
+    transform: translate3d(calc(var(--cx) * 0.7), var(--cup), 0)
+      rotate(calc(var(--cspin) * 0.35));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cx), var(--cdown), 0) rotate(var(--cspin));
+  }
+}
+
+/*
+  Reduced motion: the clock's cards show the new digit flat, with nothing
+  folding, and there is no confetti.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-flip-fold-top {
+    display: none;
+  }
+
+  .lifafa-flip-fold-bottom {
+    animation: none;
+    transform: none;
+  }
+
+  .lifafa-confetti {
+    display: none;
+  }
+}

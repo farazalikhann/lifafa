@@ -6,8 +6,11 @@ import {
   useState,
   type ReactElement,
 } from "react";
+import Confetti from "@/components/card/Confetti";
+import FlipClock, { type FlipUnit } from "@/components/card/FlipClock";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useInView } from "@/hooks/useInView";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { hasCountdown } from "@/lib/cardSections";
 import {
   REVEAL_BASE,
@@ -19,6 +22,7 @@ import {
 } from "@/lib/cardFormat";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { cardPx } from "@/lib/cardScale";
+import { mixHex } from "@/lib/contrast";
 import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -27,6 +31,13 @@ const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+/** Where "the confetti has been thrown" is remembered, per invitation, for the visit. */
+function confettiKey(sessionKey: string): string {
+  return `lifafa:countdown-confetti:${sessionKey}`;
+}
 
 /**
  * What the section has to say, once it knows what time it is.
@@ -47,39 +58,6 @@ type Countdown =
   | { readonly kind: "passed" };
 
 /**
- * The state of the card between the first paint and the first tick.
- *
- * Rendered as its own thing rather than as a zeroed countdown, so nothing on
- * screen ever claims a number it has not measured. The units keep their real
- * boxes, so the tick that replaces them changes the digits and not the layout.
- */
-const PENDING = "––";
-
-interface Unit {
-  /**
-   * Which unit this is, apart from what it is called.
-   *
-   * The label used to double as the identity — `digits` asked whether it was
-   * "Days" — and that stopped being true the day the label could be "दिन".
-   */
-  readonly id: "days" | "hours" | "minutes" | "seconds";
-  readonly label: string;
-  /** null before the first tick — see PENDING. */
-  readonly value: number | null;
-  /**
-   * Digit slots the number is held to, in `ch`.
-   *
-   * The reason the reveal does not move anything. A unit that sized itself to
-   * its content would be one width holding the placeholder and another holding
-   * the number that replaces it, and on a scratched countdown those two arrive
-   * in consecutive frames — the row would visibly jump the moment the cover
-   * came off. Hours, minutes and seconds are always two digits; days are given
-   * three, which covers every event anyone would send an invitation for.
-   */
-  readonly slots: number;
-}
-
-/**
  * Where the countdown stands, measured against an explicit `now`.
  *
  * `now` is a parameter rather than a `new Date()` inside, which is the whole
@@ -87,110 +65,81 @@ interface Unit {
  * having gone and found a clock first, and the only thing that does is the
  * effect below.
  *
- * The four states are checked in the order a guest meets them. The last two
- * are decided by the Indian calendar day rather than by the remaining
- * milliseconds, because they are calendar questions: a reception that began an
- * hour ago is still happening today, and the card should say so until the day
- * itself is over rather than announcing it in the past tense while the guests
- * are still on the dance floor.
+ * The day itself comes first, and is decided by the Indian calendar day: from
+ * the morning of the celebration to midnight the card says "Today is the day"
+ * rather than counting the last hours, and a reception that began an hour ago
+ * is still today. After that day, it says thank you.
  */
 function measure(target: Date, now: Date): Countdown {
-  const remaining = target.getTime() - now.getTime();
-
-  if (remaining > 0) {
-    return {
-      kind: "counting",
-      days: Math.floor(remaining / DAY),
-      hours: Math.floor(remaining / HOUR) % 24,
-      minutes: Math.floor(remaining / MINUTE) % 60,
-      seconds: Math.floor(remaining / SECOND) % 60,
-    };
+  if (istDayKey(now) === istDayKey(target)) {
+    return { kind: "today" };
   }
 
-  return istDayKey(now) === istDayKey(target)
-    ? { kind: "today" }
-    : { kind: "passed" };
+  const remaining = target.getTime() - now.getTime();
+
+  if (remaining <= 0) {
+    return { kind: "passed" };
+  }
+
+  return {
+    kind: "counting",
+    days: Math.floor(remaining / DAY),
+    hours: Math.floor(remaining / HOUR) % 24,
+    minutes: Math.floor(remaining / MINUTE) % 60,
+    seconds: Math.floor(remaining / SECOND) % 60,
+  };
 }
 
 /**
- * The units on show. Days are dropped inside the last day, because a row that
- * reads "0 days" spends a quarter of the line saying nothing — and the three
- * that remain are the ones a guest is actually watching by then.
+ * The four units as the flip clock draws them. Days are at least two cards and
+ * grow to three past 99, which every celebration anyone sends a card for fits.
+ * Before the first tick every card shows a dash, so the server and the first
+ * paint agree and nothing claims a number it has not measured.
  */
 function unitsOf(
   countdown: Countdown | null,
   copy: CardCopy["countdown"],
-): readonly Unit[] {
-  if (countdown === null) {
-    return [
-      { id: "days", label: copy.days, value: null, slots: 3 },
-      { id: "hours", label: copy.hours, value: null, slots: 2 },
-      { id: "minutes", label: copy.minutes, value: null, slots: 2 },
-      { id: "seconds", label: copy.seconds, value: null, slots: 2 },
-    ];
-  }
+): readonly FlipUnit[] {
+  const pad = (value: number): string => String(value).padStart(2, "0");
+  const counting = countdown !== null && countdown.kind === "counting" ? countdown : null;
 
-  if (countdown.kind !== "counting") {
-    return [];
-  }
-
-  const inner: readonly Unit[] = [
-    { id: "hours", label: copy.hours, value: countdown.hours, slots: 2 },
-    { id: "minutes", label: copy.minutes, value: countdown.minutes, slots: 2 },
-    { id: "seconds", label: copy.seconds, value: countdown.seconds, slots: 2 },
+  return [
+    { id: "days", label: copy.days, digits: counting === null ? "––" : pad(counting.days) },
+    { id: "hours", label: copy.hours, digits: counting === null ? "––" : pad(counting.hours) },
+    { id: "minutes", label: copy.minutes, digits: counting === null ? "––" : pad(counting.minutes) },
+    { id: "seconds", label: copy.seconds, digits: counting === null ? "––" : pad(counting.seconds) },
   ];
-
-  return countdown.days > 0
-    ? [
-        { id: "days", label: copy.days, value: countdown.days, slots: 3 },
-        ...inner,
-      ]
-    : inner;
 }
 
-/** Two digits everywhere except days, which can legitimately run to three. */
-function digits(unit: Unit): string {
-  if (unit.value === null) {
-    return PENDING;
-  }
-
-  return unit.id === "days"
-    ? String(unit.value)
-    : String(unit.value).padStart(2, "0");
+/** What a screen reader is told in place of the drawn cards. */
+function spokenCountdown(units: readonly FlipUnit[]): string {
+  return units
+    .filter((unit) => !unit.digits.includes("–"))
+    .map((unit) => `${Number(unit.digits)} ${unit.label}`)
+    .join(", ");
 }
 
 /**
- * The line shown once there is nothing left to count. Rendered in the card's
- * display font, the same weight the details section gives its date.
- */
-function closingLine(
-  countdown: Countdown,
-  copy: CardCopy["countdown"],
-): string | null {
-  switch (countdown.kind) {
-    case "today":
-      return copy.today;
-    case "passed":
-      return copy.passed;
-    case "counting":
-      return null;
-  }
-}
-
-/**
- * A live count down to the celebration.
+ * A live count down to the celebration, as a split-flap clock.
  *
  * Renders nothing at all when the host has not set a date — CardCanvas filters
  * the section out of the running order in that case, so its divider goes with
- * it, exactly as MessageSection behaves for an unwritten note. Both sides ask
- * `hasCountdown`, so neither can leave a divider stranded beside nothing.
+ * it. On the day it says "Today is the day", with a short burst of confetti
+ * once a visit, and from the next day "Thank you for celebrating with us".
  *
  * THE CLOCK IS NEVER READ DURING RENDER. The server has no idea what time it
  * is where the guest is, and a browser that disagreed with it by a single
- * second would throw a hydration error on a card whose whole job is to be
- * opened on a phone. So the first paint shows a placeholder that is identical
- * on both sides of the wire, and the counting starts in an effect, after mount,
- * where only the browser is watching.
+ * second would throw a hydration error. So the first paint shows dashes on
+ * both sides of the wire, and the counting starts in an effect, after mount.
+ * One interval drives the whole clock, and it stops while the tab is hidden
+ * or the clock is covered.
+ *
+ * TWO PANELS CAN COVER IT. The host's own "countdown" panel, as before, and —
+ * new — the date's: a countdown that says "80 days" beside a date the guest has
+ * been asked to scratch for is the date given away. So with the date hidden,
+ * the clock is too, under a patch that is one more way to reveal the date:
+ * scratching it opens the date everywhere on the card, and scratching the
+ * date anywhere opens this (ScratchReveal.tsx).
  */
 export default function CountdownSection({
   draft,
@@ -198,6 +147,8 @@ export default function CountdownSection({
   minHeight,
   pad,
   scratch,
+  dateScratch,
+  sessionKey,
   language,
 }: {
   draft: EventDraft;
@@ -205,30 +156,32 @@ export default function CountdownSection({
   minHeight: string;
   /** Content inset, top and bottom, in px — see CoverSection for what it is for. */
   pad: number;
-  /**
-   * Set when the host chose to hide the countdown. Covers the units only — the
-   * heading above them and the calendar links below stay in plain sight, so the
-   * card still says what is behind the patch.
-   */
+  /** Set when the host chose to hide the countdown. Covers the clock only. */
   scratch: ScratchConfig | null;
+  /** Set when the host chose to hide the date, which the clock would give away. */
+  dateScratch: ScratchConfig | null;
+  /** The invitation's code, for "confetti once a visit"; null in the editor's previews. */
+  sessionKey: string | null;
   /** The language the heading, the units and the closing line are written in. */
   language: CardLanguage;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
+  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
 
   /** null until the first tick. Never seeded from the clock. */
   const [countdown, setCountdown] = useState<Countdown | null>(null);
+  const [confetti, setConfetti] = useState(false);
+
+  /* Whichever panel covers the clock: the countdown's own, or the date's. */
+  const panel = scratch ?? dateScratch;
 
   /*
-    Whether the units are still behind a panel.
-
-    Seeded from the props alone so the server and the first client paint agree:
-    a panel that is present and not pre-cleared is covering something. Reduced
-    motion can make that wrong, but only the browser knows, and ScratchPanel
-    corrects it through `onCoveredChange` on its first commit.
+    Whether the clock is still behind a panel. Seeded from the props alone so
+    the server and the first client paint agree; ScratchPanel corrects it
+    through `onCoveredChange` on its first commit.
   */
   const [isCovered, setIsCovered] = useState<boolean>(
-    scratch !== null && !scratch.preCleared,
+    panel !== null && !panel.preCleared,
   );
 
   /* Stable, so it is not a dependency that re-fires the panel's effect. */
@@ -245,14 +198,9 @@ export default function CountdownSection({
   const targetTime = target === null ? null : target.getTime();
 
   /*
-    The interval is gated on the cover, not merely on the date.
-
-    A per second setState behind an opaque canvas is spent battery for nobody,
-    and the number it leaves in the DOM is stale by exactly as long as the
-    guest took to scratch — so the first thing they would see on reveal is the
-    wrong time, corrected a second later. Starting on reveal instead means the
-    `tick()` inside `start()` runs while the canvas is still fading, and the
-    first legible frame is already right.
+    The one interval, gated on the cover: a per second setState behind an
+    opaque canvas is spent battery for nobody, and starting it on reveal means
+    the first legible frame is already right.
   */
   useEffect(() => {
     if (targetTime === null || isCovered) {
@@ -271,13 +219,6 @@ export default function CountdownSection({
         return;
       }
 
-      /*
-        Measured before the interval is armed, not a second after it. This is
-        also what makes waking up correct: a phone that slept through the night
-        with the tab open has a count frozen at whatever it was when the screen
-        went off, and this line replaces it in the same frame the guest looks
-        at it rather than after one more tick.
-      */
       tick();
       timer = setInterval(tick, SECOND);
     };
@@ -291,11 +232,6 @@ export default function CountdownSection({
       timer = null;
     };
 
-    /*
-      A hidden tab is a tab nobody is reading, and a once-a-second setState on
-      one is pure battery. Browsers throttle background timers, but they
-      throttle rather than stop them, and a throttled tick still re-renders.
-    */
     const handleVisibility = (): void => {
       if (document.visibilityState === "hidden") {
         stop();
@@ -313,6 +249,35 @@ export default function CountdownSection({
     };
   }, [targetTime, isCovered]);
 
+  /*
+    Confetti, once a visit, the first time "Today is the day" is actually on
+    screen and legible: in view, not behind a panel, and not for a guest who
+    has asked for less motion.
+  */
+  const isToday = countdown !== null && countdown.kind === "today";
+
+  useEffect(() => {
+    if (!isToday || !isInView || isCovered || reducedMotion) {
+      return;
+    }
+
+    try {
+      if (sessionKey !== null) {
+        const key = confettiKey(sessionKey);
+
+        if (window.sessionStorage.getItem(key) === "1") {
+          return;
+        }
+
+        window.sessionStorage.setItem(key, "1");
+      }
+    } catch {
+      /* Storage blocked: the burst still happens, once for this page. */
+    }
+
+    setConfetti(true);
+  }, [isToday, isInView, isCovered, reducedMotion, sessionKey]);
+
   if (!hasCountdown(draft)) {
     return null;
   }
@@ -320,68 +285,53 @@ export default function CountdownSection({
   const copy = cardCopy(language);
   const units = unitsOf(countdown, copy.countdown);
   const closing =
-    countdown === null ? null : closingLine(countdown, copy.countdown);
-
-  /* Three units get the room the fourth gave up. */
-  const numberSize =
-    units.length === 3
-      ? "text-[2.75rem] sm:text-[calc(3.25*var(--card-rem,1rem))]"
-      : "text-[2rem] sm:text-[calc(2.5*var(--card-rem,1rem))]";
+    countdown === null || countdown.kind === "counting"
+      ? null
+      : countdown.kind === "today"
+        ? copy.countdown.today
+        : copy.countdown.passed;
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
   const counter =
     closing !== null ? (
-      <div className={reveal} style={lineDelay(1)}>
+      <div className={`relative ${reveal}`} style={lineDelay(1)}>
         <p
           className={`max-w-[18ch] text-[1.825rem] font-medium tracking-[0.02em] text-balance sm:text-[calc(2.125*var(--card-rem,1rem))] ${
             copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
           }`}
           style={{
+            color: isToday ? theme.accent : theme.textPrimary,
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}
         >
           {closing}
         </p>
+        {confetti ? (
+          <Confetti
+            colors={[
+              theme.accent,
+              mixHex(theme.accent, "#FFFFFF", 0.45),
+              theme.textPrimary,
+              mixHex(theme.accent, theme.textMuted, 0.5),
+            ]}
+          />
+        ) : null}
       </div>
     ) : (
       <div
-        className={`flex items-start justify-center gap-5 sm:gap-7 ${reveal}`}
+        className={`w-full ${reveal}`}
         style={lineDelay(1)}
         /*
-          A timer that never announces itself. `role="timer"` names the row
-          for a screen reader that navigates onto it, and the explicit "off"
-          is the point: a live region re-read every second — four numbers,
-          sixty times a minute — would make the rest of the card unreachable.
-          The date itself is stated in full by the details section, so
-          nothing here is the only copy of anything.
+          A timer that never announces itself: `role="timer"` names it for a
+          screen reader that navigates onto it, and "off" stops a live region
+          re-reading four numbers every second.
         */
         role="timer"
         aria-live="off"
       >
-        {units.map((unit) => (
-          <div key={unit.id} className="flex flex-col items-center gap-1">
-            <span
-              className={`block text-center leading-none font-medium tabular-nums ${numberSize}`}
-              style={{
-                /* Tabular figures make a `ch` exactly one digit wide. */
-                minWidth: `${unit.slots}ch`,
-                color: theme.accent,
-                fontFamily: "var(--card-heading)",
-                fontWeight: "var(--card-heading-weight)" as unknown as number,
-              }}
-            >
-              {digits(unit)}
-            </span>
-            <span
-              className="text-[0.6875rem] tracking-[0.2em] uppercase sm:text-xs"
-              style={{ color: theme.textMuted }}
-            >
-              {unit.label}
-            </span>
-          </div>
-        ))}
+        <FlipClock units={units} theme={theme} label={spokenCountdown(units)} />
       </div>
     );
 
@@ -406,16 +356,24 @@ export default function CountdownSection({
       </div>
 
       {/*
-        The units, or the line that replaces them once there is nothing left to
-        count. One slot either way, which is what lets the panel cover "the
-        numbers" without having to know which of the two is in there today.
+        The clock, or the line that replaces it on the day and after. One slot
+        either way, which is what lets a panel cover "the countdown" without
+        having to know which of the two is in there today.
       */}
-      {scratch === null ? (
+      {panel === null ? (
         counter
       ) : (
-        <ScratchPanel {...scratch} onCoveredChange={handleCoveredChange}>
-          {counter}
-        </ScratchPanel>
+        <div className="w-full">
+          <ScratchPanel
+            {...panel}
+            label={panel === dateScratch ? copy.scratch.hint : panel.label}
+            fit={closing === null ? "box" : "ink"}
+            fill={closing === null}
+            onCoveredChange={handleCoveredChange}
+          >
+            {counter}
+          </ScratchPanel>
+        </div>
       )}
 
       <div className={reveal} style={lineDelay(2)}>

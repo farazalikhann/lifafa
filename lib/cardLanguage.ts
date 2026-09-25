@@ -123,7 +123,9 @@ export interface CardCopy {
     hours: string;
     minutes: string;
     seconds: string;
+    /** Instead of the clock, all day on the day of the celebration. */
     today: string;
+    /** Instead of the clock, from the day after. */
     passed: string;
   };
   venue: {
@@ -322,8 +324,8 @@ const ENGLISH: CardCopy = {
     hours: "Hours",
     minutes: "Minutes",
     seconds: "Seconds",
-    today: "Today.",
-    passed: "This celebration has taken place.",
+    today: "Today is the day",
+    passed: "Thank you for celebrating with us",
   },
   venue: {
     namePlaceholder: "Venue name",
@@ -484,8 +486,8 @@ const HINDI: CardCopy = {
     hours: "घंटे",
     minutes: "मिनट",
     seconds: "सेकंड",
-    today: "आज ही है।",
-    passed: "यह समारोह संपन्न हो चुका है।",
+    today: "आज वो ख़ास दिन है",
+    passed: "हमारी ख़ुशी में शामिल होने के लिए शुक्रिया",
   },
   venue: {
     namePlaceholder: "स्थान का नाम",

@@ -320,6 +320,7 @@ export default function ScratchPanel({
   onCoveredChange,
   showRevealButton = true,
   fit = "ink",
+  fill = false,
   children,
 }: ScratchConfig & {
   /**
@@ -344,6 +345,12 @@ export default function ScratchPanel({
    * coloured band reaches past its name would otherwise show at both ends.
    */
   fit?: "ink" | "box";
+  /**
+   * Take the full width rather than shrinking to the content. For content
+   * that sizes itself from its container, the countdown's flip clock, which
+   * inside a shrink-to-fit box would have no width to size from.
+   */
+  fill?: boolean;
   children: ReactNode;
 }): ReactElement {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -843,7 +850,11 @@ export default function ScratchPanel({
     */
     <div
       ref={hostRef}
-      className="relative inline-block w-fit max-w-full align-top"
+      className={
+        fill
+          ? "relative block w-full"
+          : "relative inline-block w-fit max-w-full align-top"
+      }
     >
       {/*
         A plain wrapper, and the only reason it exists is that `fitToInk` needs
