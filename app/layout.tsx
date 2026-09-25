@@ -13,7 +13,6 @@ import {
   Hind,
   Inter,
   Josefin_Sans,
-  Kurale,
   Lato,
   Manrope,
   Montserrat,
@@ -320,8 +319,8 @@ const notoSansGurmukhi = Noto_Sans_Gurmukhi({
   cut, a browser's own font matching gives it 400, which is where Hindi text
   lands, while every Latin face keeps its 500. Measured, a 500 is almost
   exactly halfway between the other two in Hind and Noto Serif, so dropping it
-  costs a step of emphasis and saves a file a card. Tiro, Rozha One and Kurale
-  come in 400 only; the card asks them for more and is stopped from faking a
+  costs a step of emphasis and saves a file a card. Tiro and Rozha One come in
+  400 only; the card asks them for more and is stopped from faking a
   bold by the rules in globals.css.
 */
 
@@ -355,7 +354,10 @@ const hind = Hind({
   variable: "--font-hi-hind",
 });
 
-/* Elegant's names and headings, and Royal's headings. One weight. */
+/*
+  Elegant's names and headings, and the headings of Royal, Romantic and
+  Graceful. One weight.
+*/
 const tiroDevanagariHindi = Tiro_Devanagari_Hindi({
   subsets: ["devanagari"],
   weight: "400",
@@ -382,7 +384,7 @@ const amita = Amita({
   variable: "--font-hi-amita",
 });
 
-/* Body text of Royal and Regal. */
+/* Body text of Royal, Regal and Graceful. */
 const notoSerifDevanagari = Noto_Serif_Devanagari({
   subsets: ["devanagari"],
   weight: ["400", "600"],
@@ -407,15 +409,6 @@ const tillana = Tillana({
   display: "swap",
   preload: false,
   variable: "--font-hi-tillana",
-});
-
-/* Romantic's headings; Graceful's headings and body. One weight. */
-const kurale = Kurale({
-  subsets: ["devanagari"],
-  weight: "400",
-  display: "swap",
-  preload: false,
-  variable: "--font-hi-kurale",
 });
 
 /* Luxe's headings (500). */
@@ -458,7 +451,6 @@ const FONT_VARIABLES = [
   notoSerifDevanagari.variable,
   rozhaOne.variable,
   tillana.variable,
-  kurale.variable,
   eczar.variable,
 ].join(" ");
 

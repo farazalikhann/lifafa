@@ -202,11 +202,12 @@ export const FONT_PAIRS: readonly FontPair[] = [
     bodyFallback: "Georgia, serif",
     headingWeight: 600,
     /*
-      Tillana, a script, for the names only; Kurale for the headings, Hind for
-      the text.
+      Tillana, a script, for the names only; Tiro for the headings, Hind for
+      the text. The headings were Kurale, which does not form श्र or the reph:
+      "श्री" came out as "शरी" and "शर्मा" with a visible halant.
     */
     namesHi: "--font-hi-tillana",
-    headingHi: "--font-hi-kurale",
+    headingHi: "--font-hi-tiro",
     bodyHi: "--font-hi-hind",
     names: {
       variable: "--font-parisienne",
@@ -228,10 +229,14 @@ export const FONT_PAIRS: readonly FontPair[] = [
     bodyFallback: "system-ui, sans-serif",
     /* Marcellus comes in one weight; asking for more would fake a bold. */
     headingWeight: 400,
-    /* Amita, a script, for the names only; Kurale for everything else. */
+    /*
+      Amita, a script, for the names only; Tiro, a pen-drawn serif that sits
+      beside Amita's calligraphy, for the headings; Noto Serif for the text.
+      All three were Kurale, which breaks conjuncts — see Romantic.
+    */
     namesHi: "--font-hi-amita",
-    headingHi: "--font-hi-kurale",
-    bodyHi: "--font-hi-kurale",
+    headingHi: "--font-hi-tiro",
+    bodyHi: "--font-hi-noto-serif",
     names: {
       variable: "--font-pinyon",
       fallback: "cursive",

@@ -183,8 +183,8 @@
 :lang(hi) {
   letter-spacing: normal;
   /*
-    No fake bold either. Tiro Devanagari Hindi, Rozha One and Kurale come in
-    one weight, and the pairs that use them ask for 500 or 600 (see
+    No fake bold either. Tiro Devanagari Hindi and Rozha One come in one
+    weight, and the pairs that use them ask for 500 or 600 (see
     lib/fontPairs.ts). A browser meets that by smearing the outline, which
     thickens the shirorekha and fills the counters of a matra. With synthesis
     off it sets the real weight instead. A Latin face that has the weight
