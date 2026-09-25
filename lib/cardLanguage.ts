@@ -129,11 +129,18 @@ export interface CardCopy {
   venue: {
     namePlaceholder: string;
     addressPlaceholder: string;
-    openInMaps: string;
+    /** The location card's primary button, and what the map itself does. */
+    getDirections: string;
+    copyAddress: string;
+    /** Shown for two seconds after the address is copied. */
+    addressCopied: string;
+    /** Under the disabled buttons while the venue is behind a scratch panel. */
+    revealFirst: string;
   };
   timeline: {
     heading: string;
-    mapLink: string;
+    /** The directions link under a function with a venue of its own. */
+    directions: string;
     /** What the main event is called in the list when the host has not titled it. */
     primaryFallback: string;
   };
@@ -144,6 +151,8 @@ export interface CardCopy {
     reveal: string;
     /** Announced to a screen reader once the patch is gone. */
     revealed: string;
+    /** The hint on or under a patch that covers a whole block. */
+    hint: string;
   };
   calendar: {
     /** The "Save the date" block under the countdown. */
@@ -152,8 +161,6 @@ export interface CardCopy {
     add: string;
     /** The button once the guest has chosen a calendar, for the rest of the visit. */
     added: string;
-    /** Under the calendar page while its date is still behind a scratch panel. */
-    scratchHint: string;
     /** Read out for the tear-off page, which is drawn rather than written. */
     pageLabel: (weekday: string, day: string, month: string, year: string) => string;
     /** The sheet of calendar choices. */
@@ -321,11 +328,14 @@ const ENGLISH: CardCopy = {
   venue: {
     namePlaceholder: "Venue name",
     addressPlaceholder: "Venue address",
-    openInMaps: "Open in Maps",
+    getDirections: "Get directions",
+    copyAddress: "Copy address",
+    addressCopied: "Address copied",
+    revealFirst: "Reveal the venue first",
   },
   timeline: {
     heading: "The celebrations",
-    mapLink: "Map",
+    directions: "Get directions",
     primaryFallback: "Main function",
   },
   scratch: {
@@ -335,13 +345,13 @@ const ENGLISH: CardCopy = {
     short: "Scratch",
     reveal: "Reveal without scratching",
     revealed: "Revealed.",
+    hint: "Scratch to reveal",
   },
   calendar: {
     heading: "Save the date",
     subline: "Mark your calendar. We cannot wait to celebrate with you.",
     add: "Add to my calendar",
     added: "Added to calendar",
-    scratchHint: "Scratch to reveal",
     pageLabel: (weekday, day, month, year) =>
       `${weekday}, ${day} ${month} ${year}`,
     sheetTitle: "Add to your calendar",
@@ -480,11 +490,14 @@ const HINDI: CardCopy = {
   venue: {
     namePlaceholder: "स्थान का नाम",
     addressPlaceholder: "स्थान का पता",
-    openInMaps: "मैप में खोलें",
+    getDirections: "रास्ता देखें",
+    copyAddress: "पता कॉपी करें",
+    addressCopied: "पता कॉपी हो गया",
+    revealFirst: "पहले स्थान देख लीजिए",
   },
   timeline: {
     heading: "सभी कार्यक्रम",
-    mapLink: "मैप",
+    directions: "रास्ता देखें",
     primaryFallback: "मुख्य कार्यक्रम",
   },
   scratch: {
@@ -494,13 +507,13 @@ const HINDI: CardCopy = {
     short: "खुरचें",
     reveal: "बिना खुरचे देखें",
     revealed: "दिख गया।",
+    hint: "देखने के लिए खुरचें",
   },
   calendar: {
     heading: "तारीख़ याद रखिए",
     subline: "अपने कैलेंडर में जोड़ लीजिए, हमें आपका इंतज़ार रहेगा।",
     add: "मेरे कैलेंडर में जोड़ें",
     added: "कैलेंडर में जुड़ गया",
-    scratchHint: "देखने के लिए खुरचें",
     pageLabel: (weekday, day, month, year) =>
       `${weekday}, ${day} ${month} ${year}`,
     sheetTitle: "अपना कैलेंडर चुनिए",

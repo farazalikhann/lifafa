@@ -10,6 +10,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { ScratchTarget } from "@/types/card";
 
 /** The three things a panel can hide. "none" is never revealed, so never stored. */
@@ -29,6 +30,8 @@ export type RevealKind = "live" | "restored";
 interface ScratchRevealValue {
   revealed: Readonly<Partial<Record<RevealTarget, RevealKind>>>;
   reveal: (target: RevealTarget) => void;
+  /** What this card hides behind a panel a guest can scratch, or "none". */
+  concealed: ScratchTarget;
 }
 
 /*
@@ -38,6 +41,7 @@ interface ScratchRevealValue {
 const ScratchRevealContext = createContext<ScratchRevealValue>({
   revealed: {},
   reveal: () => {},
+  concealed: "none",
 });
 
 function storageKey(key: string): string {
@@ -60,9 +64,17 @@ const TARGETS: readonly RevealTarget[] = ["date", "venue", "countdown"];
  */
 export function ScratchRevealProvider({
   persistKey,
+  concealed,
   children,
 }: {
   persistKey: string | null;
+  /**
+   * What the card hides behind a panel a guest can actually scratch: the
+   * host's target when its section is on the card and the guest is not the
+   * host previewing. Anything that repeats that thing elsewhere on the card
+   * asks useStillHidden before showing it.
+   */
+  concealed: ScratchTarget;
   children: ReactNode;
 }): ReactElement {
   const [revealed, setRevealed] = useState<
@@ -130,7 +142,10 @@ export function ScratchRevealProvider({
     [persistKey],
   );
 
-  const value = useMemo(() => ({ revealed, reveal }), [revealed, reveal]);
+  const value = useMemo(
+    () => ({ revealed, reveal, concealed }),
+    [revealed, reveal, concealed],
+  );
 
   return (
     <ScratchRevealContext.Provider value={value}>
@@ -160,4 +175,22 @@ export function useScratchReveal(target: RevealTarget | undefined): {
     revealed: target === undefined ? null : (revealed[target] ?? null),
     reveal: revealThis,
   };
+}
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+/**
+ * Whether `target` is still behind a panel on this card: concealed, not yet
+ * revealed anywhere, and not a guest with reduced motion, for whom
+ * ScratchPanel draws no panel at all.
+ *
+ * For the places that repeat what a panel hides without being a panel
+ * themselves — the timeline's own line for the main event — so they hold it
+ * back until the panel opens rather than printing it one screen further down.
+ */
+export function useStillHidden(target: RevealTarget): boolean {
+  const { revealed, concealed } = useContext(ScratchRevealContext);
+  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+
+  return concealed === target && revealed[target] === undefined && !reducedMotion;
 }

@@ -893,7 +893,10 @@ export default function CardCanvas({
       for the session under the invitation's code. The editor's previews have
       no code (their invite has no link) and remember nothing.
     */
-    <ScratchRevealProvider persistKey={invite.url === null ? null : invite.code}>
+    <ScratchRevealProvider
+      persistKey={invite.url === null ? null : invite.code}
+      concealed={concealed}
+    >
       {/*
         `overflow-x-clip`, deliberately, and not `overflow-hidden`.
 

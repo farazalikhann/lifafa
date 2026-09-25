@@ -450,7 +450,7 @@ export default function SaveTheDate({
             className="text-[calc(0.8125*var(--card-rem,1rem))] tracking-[0.04em]"
             style={{ color: theme.textMuted }}
           >
-            {copy.scratchHint}
+            {cardCopy(language).scratch.hint}
           </p>
           <button
             type="button"

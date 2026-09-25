@@ -1,14 +1,15 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { useStillHidden } from "@/components/card/ScratchReveal";
 import { useInView } from "@/hooks/useInView";
 import { hasTimeline, timelineEntries } from "@/lib/cardSections";
 import {
   REVEAL_BASE,
   SECTION_REVEAL_OPTIONS,
+  directionsUrl,
   formatDateAndTime,
   formatWeekday,
-  mapsSearchUrl,
   revealClass,
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
@@ -47,6 +48,25 @@ const ROW_STAGGER_MS = 120;
 const RAIL = 28;
 const DOT = 9;
 
+/** A small map pin before a function's venue, the location card's in miniature. */
+function PinIcon({ color }: { color: string }): ReactElement {
+  return (
+    <svg
+      viewBox="0 0 12 16"
+      width="0.7em"
+      height="0.95em"
+      aria-hidden="true"
+      className="mt-[0.3em] shrink-0"
+    >
+      <path
+        d="M6 15.5S1 9.6 1 6a5 5 0 0 1 10 0c0 3.6-5 9.5-5 9.5Z"
+        fill={color}
+      />
+      <circle cx="6" cy="6" r="1.9" fill="#FFFFFF" fillOpacity="0.9" />
+    </svg>
+  );
+}
+
 export default function TimelineSection({
   draft,
   theme,
@@ -63,6 +83,15 @@ export default function TimelineSection({
   language: CardLanguage;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
+
+  /*
+    The main event's row repeats its date and its venue. When the host hid
+    either behind a scratch panel, the row holds it back until the panel is
+    scratched, rather than printing the secret one screen further down; the
+    other functions are not what the panel hides and show theirs as ever.
+  */
+  const dateHidden = useStillHidden("date");
+  const venueHidden = useStillHidden("venue");
 
   /*
     Asked of hasTimeline, not of the row count. The two are no longer the same
@@ -118,12 +147,22 @@ export default function TimelineSection({
         />
 
         {entries.map((entry, index) => {
-          const when = formatDateAndTime(entry.date, entry.time, language);
-          const weekday = formatWeekday(entry.date, entry.time, language);
-          const venue = entry.venueName.trim();
+          const isPrimary = entry.id === "primary";
+          const hideWhen = isPrimary && dateHidden;
+          const hideWhere = isPrimary && venueHidden;
+          const when = hideWhen
+            ? null
+            : formatDateAndTime(entry.date, entry.time, language);
+          const weekday = hideWhen
+            ? null
+            : formatWeekday(entry.date, entry.time, language);
+          const venue = hideWhere ? "" : entry.venueName.trim();
           const note = entry.note?.trim() ?? "";
-          const hasMap =
-            venue.length > 0 || entry.venueAddress.trim().length > 0;
+          const directions = hideWhere
+            ? null
+            : directionsUrl(entry.venueName, entry.venueAddress);
+          /* What arrives with a reveal fades in, as it does under Save the date. */
+          const arrives = isPrimary ? " lifafa-reveal-in" : "";
 
           return (
             <li
@@ -168,7 +207,7 @@ export default function TimelineSection({
 
                 {when !== null ? (
                   <p
-                    className="text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed"
+                    className={`text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed${arrives}`}
                     style={{ color: theme.accent }}
                   >
                     {weekday !== null ? `${weekday}, ` : ""}
@@ -178,10 +217,11 @@ export default function TimelineSection({
 
                 {venue.length > 0 ? (
                   <p
-                    className="text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed break-words"
+                    className={`flex items-start gap-1.5 text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed break-words${arrives}`}
                     style={{ color: theme.textMuted }}
                   >
-                    {venue}
+                    <PinIcon color={theme.accent} />
+                    <span className="min-w-0">{venue}</span>
                   </p>
                 ) : null}
 
@@ -194,15 +234,20 @@ export default function TimelineSection({
                   </p>
                 ) : null}
 
-                {hasMap ? (
+                {directions !== null ? (
+                  /*
+                    The same Google Maps directions link as the location card.
+                    44px tall however small the words, pulled back up by the
+                    same amount so the row keeps its rhythm.
+                  */
                   <a
-                    href={mapsSearchUrl(entry.venueName, entry.venueAddress)}
+                    href={directions}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-0.5 self-start rounded text-[calc(0.78*var(--card-rem,1rem))] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4"
+                    className="-my-2.5 inline-flex min-h-11 items-center self-start rounded text-[calc(0.78*var(--card-rem,1rem))] font-medium underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={{ color: theme.accent, outlineColor: theme.accent }}
                   >
-                    {copy.timeline.mapLink}
+                    {copy.timeline.directions}
                   </a>
                 ) : null}
               </div>

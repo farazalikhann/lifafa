@@ -319,6 +319,7 @@ export default function ScratchPanel({
   target,
   onCoveredChange,
   showRevealButton = true,
+  fit = "ink",
   children,
 }: ScratchConfig & {
   /**
@@ -336,6 +337,13 @@ export default function ScratchPanel({
    * that clips would clip the button with it.
    */
   showRevealButton?: boolean;
+  /**
+   * What the covering is sized to. "ink", the default, is the words, which is
+   * right for a line of text in a block wider than it. "box" is the whole
+   * content box, for content that is more than its words — a ribbon whose
+   * coloured band reaches past its name would otherwise show at both ends.
+   */
+  fit?: "ink" | "box";
   children: ReactNode;
 }): ReactElement {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -513,7 +521,7 @@ export default function ScratchPanel({
       }
 
       const inkWidth = inkRight - inkLeft;
-      const fits = inkWidth >= 1 && inkWidth <= hostRect.width;
+      const fits = fit === "ink" && inkWidth >= 1 && inkWidth <= hostRect.width;
 
       const left = fits ? inkLeft - hostRect.left - PAD_X : -PAD_X;
       const width = (fits ? inkWidth : hostRect.width) + PAD_X * 2;
@@ -814,7 +822,7 @@ export default function ScratchPanel({
       mid-session — must be painted rather than left as a transparent sheet over
       the content.
     */
-  }, [accent, surface, label, phrases.short, handleCleared, showCanvas]);
+  }, [accent, surface, label, phrases.short, handleCleared, showCanvas, fit]);
 
   return (
     /*

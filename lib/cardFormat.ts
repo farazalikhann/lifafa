@@ -520,13 +520,84 @@ export function calendarPageText(
   };
 }
 
-/** Google Maps search URL for a venue. */
-export function mapsSearchUrl(venueName: string, venueAddress: string): string {
-  const query = [venueName.trim(), venueAddress.trim()]
-    .filter((part) => part.length > 0)
-    .join(", ");
+/* ---------------------------------------------------------------------------
+   Where the venue is, for directions.
 
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+   The host types a venue name and an address, and nothing else: there is no
+   field for a pin. Some hosts paste a Google Maps link, or a "lat, lng" pair,
+   into the address instead, because that is the only exact location they
+   have. Both are honoured, since either is more exact than a search for the
+   words. The coordinates on the stored event are not used: they come from the
+   weather's place-name geocoder, which finds the town, not the venue.
+   --------------------------------------------------------------------------- */
+
+/** A Google Maps link anywhere in a field: google.*\/maps, maps.google.*, maps.app.goo.gl, goo.gl/maps. */
+const MAPS_LINK =
+  /https?:\/\/(?:www\.)?(?:google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps)[^\s,]*/i;
+
+/** A whole field that is a "lat, lng" pair. */
+const COORDINATE_PAIR = /^\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/;
+
+/** The Google Maps link the host pasted into the name or address, if any. */
+function pastedMapsLink(venueName: string, venueAddress: string): string | null {
+  const match = MAPS_LINK.exec(venueAddress) ?? MAPS_LINK.exec(venueName);
+  return match === null ? null : match[0];
+}
+
+/** The "lat,lng" the host typed as the address, if that is what it is. */
+function typedCoordinates(venueAddress: string): string | null {
+  const match = COORDINATE_PAIR.exec(venueAddress);
+
+  if (match === null) {
+    return null;
+  }
+
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+
+  return Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
+    ? `${latitude},${longitude}`
+    : null;
+}
+
+/**
+ * The address as a guest should read it: with a pasted Maps link taken out,
+ * because a 60 character URL printed on an invitation is not an address.
+ */
+export function readableAddress(venueAddress: string): string {
+  return venueAddress
+    .replace(MAPS_LINK, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[\s,]+|[\s,]+$/g, "");
+}
+
+/**
+ * A Google Maps directions link to the venue, or null with nothing to go on.
+ *
+ * `/maps/dir/?api=1&destination=` is Google's documented cross-platform form:
+ * on a phone with the Maps app it opens the app with the destination filled
+ * in, and elsewhere the website. A pasted Maps link is used as it is, and a
+ * typed "lat, lng" becomes the destination exactly.
+ */
+export function directionsUrl(
+  venueName: string,
+  venueAddress: string,
+): string | null {
+  const link = pastedMapsLink(venueName, venueAddress);
+
+  if (link !== null) {
+    return link;
+  }
+
+  const destination =
+    typedCoordinates(venueAddress) ??
+    [venueName.trim(), readableAddress(venueAddress)]
+      .filter((part) => part.length > 0)
+      .join(", ");
+
+  return destination.length === 0
+    ? null
+    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 }
 
 /* ---------------------------------------------------------------------------
