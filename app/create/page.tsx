@@ -279,6 +279,39 @@ function CreateEditor(): ReactElement {
   );
 
   /**
+   * Stashes the card and sends the host to sign in, with the way back naming
+   * this address. See lib/pendingCard.ts for why the card is in localStorage
+   * and why the address travels too.
+   *
+   * Shared by Save and by the Translate button, which both need an account and
+   * both must not cost a signed-out host the card they have made. Returns the
+   * error to show when the card could not be kept, and null once on the way.
+   */
+  const sendToSignIn = (snapshot: EditorSnapshot): string | null => {
+    const stashed = writePendingCard({
+      draft: snapshot.draft,
+      config: snapshot.config,
+      coverAnimation: snapshot.coverAnimation,
+      showWeather: snapshot.showWeather,
+      weatherTheme: snapshot.weatherTheme,
+      qrCheckinEnabled: snapshot.qrCheckinEnabled,
+    });
+
+    if (!stashed) {
+      /*
+        Storage can be unavailable or full. Saying so beats sending them off
+        to sign in and losing everything they typed on the way back.
+      */
+      return "Your browser would not let us hold onto this card. Please try again, or check your privacy settings.";
+    }
+
+    router.push(
+      `/login?redirectTo=${encodeURIComponent(pendingCardReturnPath())}`,
+    );
+    return null;
+  };
+
+  /**
    * Saves a brand new invitation, or sends the host to sign in first.
    *
    * The session is read here rather than taken from a hook, and that is
@@ -292,37 +325,11 @@ function CreateEditor(): ReactElement {
     const { data, error: authError } = await supabase.auth.getUser();
     const user = authError === null ? data.user : null;
 
-    /*
-      Signed out: stash the card and send them to sign in, with the way back
-      naming this address. See lib/pendingCard.ts for why the card is in
-      localStorage and why the address travels too.
-    */
+    /* Signed out: keep the card and send them to sign in; see sendToSignIn. */
     if (user === null) {
-      const stashed = writePendingCard({
-        draft: snapshot.draft,
-        config: snapshot.config,
-        coverAnimation: snapshot.coverAnimation,
-        showWeather: snapshot.showWeather,
-        weatherTheme: snapshot.weatherTheme,
-        qrCheckinEnabled: snapshot.qrCheckinEnabled,
-      });
+      const problem = sendToSignIn(snapshot);
 
-      if (!stashed) {
-        /*
-          Storage can be unavailable or full. Saying so beats sending them off
-          to sign in and losing everything they typed on the way back.
-        */
-        return {
-          ok: false,
-          error:
-            "Your browser would not let us hold onto this card. Please try again, or check your privacy settings.",
-        };
-      }
-
-      router.push(
-        `/login?redirectTo=${encodeURIComponent(pendingCardReturnPath())}`,
-      );
-      return { ok: true };
+      return problem === null ? { ok: true } : { ok: false, error: problem };
     }
 
     const result = await createEvent(
@@ -354,6 +361,7 @@ function CreateEditor(): ReactElement {
   ): ReactElement => (
     <CardEditor
       mode="create"
+      onSignInRequired={sendToSignIn}
       initialDraft={start.draft}
       initialConfig={start.config}
       initialCoverAnimation={start.coverAnimation}

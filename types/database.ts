@@ -348,6 +348,37 @@ export type CouponInsert = {
  */
 export type CouponUpdate = Pick<CouponRow, "is_active">;
 
+/* ─────────────────────────── translation_usage ─────────────────────────── */
+
+/**
+ * One successful AI translate in the editor (0011). See the migration for the
+ * two rules it lets the server hold, and app/api/translate/route.ts for where
+ * it is read and written.
+ */
+export type TranslationUsageRow = {
+  id: string;
+  user_id: string;
+  /** The saved invitation, or null for a card still being made on /create. */
+  event_id: string | null;
+  /** The editor's id for the card: event_draft.autoTranslation.cardId. */
+  draft_id: string;
+  /** Characters actually sent to Sarvam. Never the text. */
+  chars_sent: number;
+  created_at: string;
+};
+
+/** Written only by the route, through the service role; no client may insert. */
+export type TranslationUsageInsert = {
+  id?: string;
+  user_id: string;
+  event_id?: string | null;
+  draft_id: string;
+  chars_sent: number;
+};
+
+/** Nothing about a usage row is ever changed after it is written. */
+export type TranslationUsageUpdate = Record<string, never>;
+
 /* ────────────────────── The Database generic ────────────────────── */
 
 /**
@@ -393,6 +424,12 @@ export type Database = {
         Row: CouponRow;
         Insert: CouponInsert;
         Update: CouponUpdate;
+        Relationships: [];
+      };
+      translation_usage: {
+        Row: TranslationUsageRow;
+        Insert: TranslationUsageInsert;
+        Update: TranslationUsageUpdate;
         Relationships: [];
       };
     };

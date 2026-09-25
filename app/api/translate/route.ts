@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requestIp } from "@/lib/admin/rateLimit";
 import {
+  checkTranslateAllowance,
+  recordTranslation,
+} from "@/lib/db/translationUsage";
+import { createClient } from "@/lib/supabase/server";
+import {
   TRANSLATE_MAX_FIELD_CHARS,
   TRANSLATE_MAX_TOTAL_CHARS,
   splitByGlossary,
@@ -8,6 +13,7 @@ import {
   type TranslateErrorResponse,
   type TranslateItem,
   type TranslateMode,
+  type TranslateRefusal,
   type TranslateRequest,
   type TranslateResponse,
 } from "@/lib/autoTranslate";
@@ -26,15 +32,18 @@ import type { CardLanguage } from "@/types/card";
  * Only a host's click in the editor reaches this route. A guest opening an
  * invitation reads the words already saved on it and never calls this.
  *
- * TODO: require a signed-in host once the editor is behind auth. /create is
- * open to signed-out visitors today, so this route is too, and the limits
- * below are all that stands between it and the credits.
+ * WHO MAY CALL IT, decided here and not in the browser:
  *
- * TODO: enforce one auto-translate per invitation here once auth is added.
- * Today the once-only rule is the editor's (`translationUsed` on the draft),
- * and a request sent by hand skips it. With a signed-in host, look up the
- * event, refuse when its saved draft is already marked used, and mark it
- * from here after a successful translate.
+ *   Signed in, or 401 before anything else is read.
+ *   One translate per card, and no card while another of the host's cards
+ *   used AI translate and is still unpaid. See lib/db/translationUsage.ts.
+ *   Ten requests an hour per address, as a backstop under both.
+ *
+ * A usage row is written only when every field came back. A request that
+ * failed, or failed in part, records nothing, so the host can try again.
+ *
+ * TRANSLATE_MOCK=1 answers without calling Sarvam, for testing the rules
+ * without spending credits; see sarvamCaller. Never set it in production.
  */
 
 export const runtime = "nodejs";
@@ -110,6 +119,13 @@ function isLanguage(value: unknown): value is CardLanguage {
   return value === "en" || value === "hi";
 }
 
+function isUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  );
+}
+
 function isMode(value: unknown): value is TranslateMode {
   return value === "transliterate" || value === "translate";
 }
@@ -122,10 +138,14 @@ function readRequest(
     return { ok: false, error: "The request was not understood." };
   }
 
-  const { from, to, items } = body as Record<string, unknown>;
+  const { from, to, items, cardId, eventId } = body as Record<string, unknown>;
 
   if (!isLanguage(from) || !isLanguage(to) || from === to) {
     return { ok: false, error: "Choose two different languages." };
+  }
+
+  if (!isUuid(cardId) || (eventId !== null && !isUuid(eventId))) {
+    return { ok: false, error: "The request was not understood." };
   }
 
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEMS) {
@@ -166,7 +186,7 @@ function readRequest(
     read.push({ id, mode, text, keepCeremonyWords: keepCeremonyWords === true });
   }
 
-  return { ok: true, request: { from, to, items: read } };
+  return { ok: true, request: { from, to, items: read, cardId, eventId } };
 }
 
 /* ---------------------------------------------------------------------------
@@ -180,6 +200,17 @@ function readRequest(
  * drops or rewrites markers. See translateAroundMarkers.
  */
 type SarvamMode = TranslateMode | "translate-held";
+
+/**
+ * Whether Sarvam is stood in for (TRANSLATE_MOCK=1). A mock answer is the
+ * input tagged with the target language, and an input containing MOCKFAIL
+ * fails, so both outcomes of a request can be tested for free.
+ */
+function isMocked(): boolean {
+  return (
+    process.env.TRANSLATE_MOCK === "1" && process.env.NODE_ENV !== "production"
+  );
+}
 
 /** Sarvam calls one request may have in flight at once. */
 const MAX_CONCURRENT_CALLS = 8;
@@ -218,6 +249,14 @@ function sarvamCaller(apiKey: string, from: CardLanguage, to: CardLanguage) {
     try {
       stats.calls += 1;
       stats.chars += input.length;
+
+      if (isMocked()) {
+        if (input.includes("MOCKFAIL")) {
+          throw new Error(`Sarvam ${mode} mock failure`);
+        }
+
+        return `[${LOCALE[to]}] ${input}`;
+      }
 
       const response = await fetch(
         isTransliterate ? SARVAM_TRANSLITERATE_URL : SARVAM_TRANSLATE_URL,
@@ -455,8 +494,9 @@ async function translateItem(
 function fail(
   status: number,
   error: string,
+  refusal?: { code: TranslateRefusal; pendingEventId?: string | null },
 ): NextResponse<TranslateErrorResponse> {
-  return NextResponse.json({ error }, { status });
+  return NextResponse.json({ error, ...refusal }, { status });
 }
 
 /**
@@ -466,10 +506,20 @@ function fail(
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<TranslateResponse | TranslateErrorResponse>> {
-  /* First, so a server without the key spends nothing and counts nothing. */
+  /* First of all: nobody signed out gets past here, or costs anything. */
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user === null) {
+    return fail(401, "Sign in to use AI translate.", { code: "signed_out" });
+  }
+
+  /* Before the rules are read, so a server without the key spends nothing. */
   const apiKey = process.env.SARVAM_API_KEY?.trim() ?? "";
 
-  if (apiKey.length === 0) {
+  if (apiKey.length === 0 && !isMocked()) {
     console.error("[translate] SARVAM_API_KEY is not set.");
     return fail(
       503,
@@ -491,13 +541,41 @@ export async function POST(
     return fail(400, read.error);
   }
 
-  const { from, to, items } = read.request;
+  const { from, to, items, cardId } = read.request;
   const totalChars = items.reduce((total, item) => total + item.text.length, 0);
 
   if (totalChars > TRANSLATE_MAX_TOTAL_CHARS) {
     return fail(
       413,
       `That is ${totalChars} characters, over the ${TRANSLATE_MAX_TOTAL_CHARS} a single translation can take. Shorten the longest text and try again.`,
+    );
+  }
+
+  const allowance = await checkTranslateAllowance(
+    supabase,
+    user.id,
+    cardId,
+    read.request.eventId,
+  );
+
+  if (allowance.kind === "error") {
+    return fail(
+      503,
+      "AI translate is not available right now. Please try again, or type the text yourself.",
+    );
+  }
+
+  if (allowance.kind === "used") {
+    return fail(409, "AI translate has already been used on this invitation.", {
+      code: "already_used",
+    });
+  }
+
+  if (allowance.kind === "blocked") {
+    return fail(
+      403,
+      "AI translate is available on one unpaid invitation at a time. Complete payment for your earlier invitation to use it here. You can still fill the other language manually.",
+      { code: "unpaid_card_pending", pendingEventId: allowance.pendingEventId },
     );
   }
 
@@ -521,7 +599,7 @@ export async function POST(
     the spaces and punctuation between romanized words not at all.
   */
   console.info(
-    `[translate] ${from}->${to}: ${items.length} fields, ${totalChars} characters requested, ${stats.chars} characters sent to Sarvam in ${stats.calls} calls.`,
+    `[translate] ${from}->${to}: ${items.length} fields, ${totalChars} characters requested, ${stats.chars} characters sent to Sarvam in ${stats.calls} calls${isMocked() ? " (MOCK, nothing sent)" : ""}.`,
   );
 
   const results: TranslateResponse["results"] = [];
@@ -547,6 +625,16 @@ export async function POST(
       502,
       "The translation service did not respond. Please try again, or type the text yourself.",
     );
+  }
+
+  /*
+    The card's one translate is used only when every field came back, which is
+    also when the editor marks it used. A partial answer records nothing, so
+    the host can fill the rest; the fields that did come back are not sent
+    again, because the editor skips a field it already translated.
+  */
+  if (failed.length === 0) {
+    await recordTranslation(user.id, cardId, allowance.eventId, stats.chars);
   }
 
   return NextResponse.json({ results, failed });

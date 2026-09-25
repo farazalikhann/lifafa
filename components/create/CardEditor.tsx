@@ -257,6 +257,12 @@ type CardEditorProps = {
    */
   notice?: ReactNode;
   /**
+   * Sends a signed-out host to sign in with this card kept, for the Translate
+   * button; returns an error to show if the card could not be kept. Only
+   * /create passes it: the edit page is behind sign-in already.
+   */
+  onSignInRequired?: (snapshot: EditorSnapshot) => string | null;
+  /**
    * Whether this invitation has been paid for, which decides the watermark in
    * the full screen preview.
    *
@@ -304,6 +310,7 @@ export default function CardEditor({
   initialWeatherTheme,
   initialQrCheckinEnabled,
   onSave,
+  onSignInRequired,
   notice,
   isPaid,
 }: CardEditorProps): ReactElement {
@@ -605,6 +612,26 @@ export default function CardEditor({
     },
     [],
   );
+
+  /*
+    The Translate button's id for this card, kept on the draft before its first
+    request so it travels through the sign-in stash and into the saved card.
+    Never replaced once set.
+  */
+  const handleCardId = useCallback((cardId: string) => {
+    setDraft((previous) =>
+      previous.autoTranslation?.cardId !== undefined
+        ? previous
+        : {
+            ...previous,
+            autoTranslation: {
+              translationUsed: previous.autoTranslation?.translationUsed ?? false,
+              ...previous.autoTranslation,
+              cardId,
+            },
+          },
+    );
+  }, []);
 
   /**
    * A tradition click is the one thing that can clear the ornament pack.
@@ -1101,6 +1128,12 @@ export default function CardEditor({
                     occasionId={occasionId}
                     eventId={eventId}
                     onTranslated={handleTranslated}
+                    onCardId={handleCardId}
+                    onSignInRequired={
+                      onSignInRequired === undefined
+                        ? undefined
+                        : () => onSignInRequired(snapshot)
+                    }
                   />
                 </div>
                 <TraditionQuestion

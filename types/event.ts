@@ -190,6 +190,12 @@ export interface EventDraft {
  */
 export interface AutoTranslation {
   translationUsed: boolean;
+  /**
+   * The editor's id for this card, minted on its first translate request. The
+   * server records usage against it (translation_usage.draft_id), and it rides
+   * with the draft through the sign-in stash and into the saved invitation.
+   */
+  cardId?: string;
   sources?: Record<string, string>;
 }
 

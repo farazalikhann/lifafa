@@ -64,6 +64,13 @@ export interface TranslateRequest {
   from: CardLanguage;
   to: CardLanguage;
   items: TranslateItem[];
+  /**
+   * The editor's id for this card, minted on its first translate and kept in
+   * `autoTranslation.cardId`. What the server's one-per-card rule counts.
+   */
+  cardId: string;
+  /** The saved invitation, on the edit page; null on /create. */
+  eventId: string | null;
 }
 
 export interface TranslateResponse {
@@ -72,8 +79,17 @@ export interface TranslateResponse {
   failed: string[];
 }
 
+/**
+ * Why the server said no, for the editor to act on rather than only print:
+ * sign the host in, mark the card used, or point at the unpaid card.
+ */
+export type TranslateRefusal = "signed_out" | "already_used" | "unpaid_card_pending";
+
 export interface TranslateErrorResponse {
   error: string;
+  code?: TranslateRefusal;
+  /** With "unpaid_card_pending": the unpaid invitation, when it was saved. */
+  pendingEventId?: string | null;
 }
 
 /* ---------------------------------------------------------------------------
@@ -413,6 +429,11 @@ export function isUpToDate(
   );
 }
 
+/** The editor's id for this card, if it has had one minted. */
+export function cardIdOf(draft: EventDraft): string | undefined {
+  return draft.autoTranslation?.cardId;
+}
+
 /** Whether this invitation has had its one auto-translate. */
 export function translationUsed(draft: EventDraft): boolean {
   return draft.autoTranslation?.translationUsed === true;
@@ -498,7 +519,9 @@ export function applyToDraft(
 
   return {
     ...next,
+    /* The card id, minted before the request, is carried through as it is. */
     autoTranslation: {
+      ...next.autoTranslation,
       translationUsed: translationUsed(next) || markUsed,
       sources,
     },

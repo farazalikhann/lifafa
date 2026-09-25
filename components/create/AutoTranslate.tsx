@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactElement } from "react";
+import Link from "next/link";
 import {
   TRANSLATE_MAX_TOTAL_CHARS,
   cacheKey,
+  cardIdOf,
   isUpToDate,
   sourceWords,
   translationUsed,
@@ -16,6 +18,7 @@ import {
 import { CARD_LANGUAGES } from "@/lib/cardLanguage";
 import { isWritten } from "@/lib/cardTranslation";
 import { pairsNames } from "@/lib/occasions";
+import { createClient } from "@/lib/supabase/client";
 import type { CardLanguage } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
@@ -105,6 +108,10 @@ function emptySentence(fields: readonly MainField[]): string {
 
 type Stage = "idle" | "confirm" | "replace";
 
+/** Word for word as the host is shown it when another card holds the translate. */
+const UNPAID_CARD_NOTE =
+  "AI translate is available on one unpaid invitation at a time. Complete payment for your earlier invitation to use it here. You can still fill the other language manually.";
+
 const USED_NOTE =
   "Auto-translated. Please check names and details before sharing. You can edit any text manually.";
 
@@ -123,6 +130,13 @@ const USED_NOTE =
  *
  * Only this button ever calls the service. A guest opening the invitation
  * reads the saved words and nothing else.
+ *
+ * SIGNED IN, AND ONE UNPAID CARD AT A TIME. The server decides both (see
+ * app/api/translate/route.ts); this component only acts on its answer. A
+ * signed-out host is sent to sign in with their card kept, a card that has
+ * had its translate is marked used, and a host whose earlier unpaid card
+ * holds the translate is told so and shown the way to it. Every field stays
+ * editable whatever the answer.
  */
 export default function AutoTranslate({
   cardLanguage,
@@ -131,6 +145,8 @@ export default function AutoTranslate({
   occasionId,
   eventId,
   onTranslated,
+  onCardId,
+  onSignInRequired,
 }: {
   /** The language the host is filling in; the source. */
   cardLanguage: CardLanguage;
@@ -148,6 +164,14 @@ export default function AutoTranslate({
     replaceAll: boolean,
     markUsed: boolean,
   ) => void;
+  /** Keeps the card id minted for this card's first request on its draft. */
+  onCardId: (cardId: string) => void;
+  /**
+   * Sends a signed-out host to sign in with the card kept, and returns an
+   * error to show if it could not. Absent on the edit page, which is behind
+   * sign-in already.
+   */
+  onSignInRequired?: () => string | null;
 }): ReactElement {
   const hintId = useId();
   const confirmId = useId();
@@ -166,6 +190,14 @@ export default function AutoTranslate({
   const [conflicts, setConflicts] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
+  /*
+    Set when the server holds the translate for an earlier unpaid card. The id
+    is that card, to link to; null when it was never saved.
+  */
+  const [unpaidCard, setUnpaidCard] = useState<{ eventId: string | null } | null>(
+    null,
+  );
 
   /* After mount only: localStorage does not exist on the server render. */
   useEffect(() => {
@@ -181,9 +213,40 @@ export default function AutoTranslate({
     setInfo(null);
   }, [cardLanguage]);
 
-  const ask = (): void => {
+  /** Off to sign in, keeping the card; an error in place if that failed. */
+  const signIn = (): void => {
+    const problem =
+      onSignInRequired?.() ?? "Please sign in again to use AI translate.";
+
+    if (problem !== null) {
+      setError(problem);
+    }
+  };
+
+  /*
+    The session is asked for at the click, not read from a hook: a hook that
+    has not answered yet says "signed out", and a session can expire while a
+    card is being made. The server checks again; this saves a wasted trip.
+  */
+  const ask = async (): Promise<void> => {
     setError(null);
     setInfo(null);
+    setUnpaidCard(null);
+    setIsCheckingSession(true);
+
+    try {
+      const { data, error: authError } = await createClient().auth.getUser();
+
+      if (authError !== null || data.user === null) {
+        signIn();
+        return;
+      }
+    } catch {
+      /* Unsure is not signed out; the server will say if it is. */
+    } finally {
+      setIsCheckingSession(false);
+    }
+
     setStage("confirm");
   };
 
@@ -258,6 +321,16 @@ export default function AutoTranslate({
       return;
     }
 
+    /*
+      Minted and kept on the draft before the request, so a retry after a lost
+      answer names the same card and the server recognises it.
+    */
+    const cardId = cardIdOf(draft) ?? crypto.randomUUID();
+
+    if (cardIdOf(draft) === undefined) {
+      onCardId(cardId);
+    }
+
     const totalChars = toSend.reduce((total, word) => total + word.text.length, 0);
 
     if (totalChars > TRANSLATE_MAX_TOTAL_CHARS) {
@@ -276,6 +349,8 @@ export default function AutoTranslate({
         text: word.text,
         keepCeremonyWords: word.keepCeremonyWords,
       })),
+      cardId,
+      eventId: eventId ?? null,
     };
 
     setIsLoading(true);
@@ -290,6 +365,31 @@ export default function AutoTranslate({
         | TranslateResponse
         | TranslateErrorResponse
         | null;
+
+      const refusal =
+        payload !== null && "code" in payload ? payload.code : undefined;
+
+      if (refusal === "signed_out") {
+        signIn();
+        return;
+      }
+
+      /* Used already, perhaps in another tab: show this card as used. */
+      if (refusal === "already_used") {
+        onTranslated(from, to, [], false, true);
+        finish();
+        return;
+      }
+
+      if (refusal === "unpaid_card_pending") {
+        setUnpaidCard({
+          eventId:
+            payload !== null && "pendingEventId" in payload
+              ? (payload.pendingEventId ?? null)
+              : null,
+        });
+        return;
+      }
 
       /* A failed request does not use up the one translate. */
       if (!response.ok || payload === null || !("results" in payload)) {
@@ -356,9 +456,11 @@ export default function AutoTranslate({
 
         <button
           type="button"
-          onClick={ask}
-          disabled={isLoading || isUsed || stage !== "idle"}
-          aria-busy={isLoading}
+          onClick={() => void ask()}
+          disabled={
+            isLoading || isCheckingSession || isUsed || stage !== "idle"
+          }
+          aria-busy={isLoading || isCheckingSession}
           aria-describedby={hintId}
           className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-marigold)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:bg-[var(--lifafa-marigold)]/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -456,6 +558,23 @@ export default function AutoTranslate({
               Cancel
             </button>
           </div>
+        </div>
+      ) : null}
+
+      {unpaidCard !== null ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-2 rounded-xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/10 px-3.5 py-3 text-xs leading-relaxed text-[var(--lifafa-cream)]"
+        >
+          <p>{UNPAID_CARD_NOTE}</p>
+          {unpaidCard.eventId !== null ? (
+            <Link
+              href={`/dashboard/${unpaidCard.eventId}`}
+              className="self-start font-semibold text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              Open your earlier invitation
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
