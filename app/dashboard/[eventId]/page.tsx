@@ -17,8 +17,10 @@ import { wordsWrittenIn } from "@/lib/cardTranslation";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
+import { buildShareMessage } from "@/lib/shareMessage";
 import { inviteUrl } from "@/lib/siteUrl";
 import { geocodeVenue, getEventWeather } from "@/lib/weather";
+import type { CardLanguage } from "@/types/card";
 
 /**
  * One event's dashboard.
@@ -252,6 +254,20 @@ export default async function DashboardPage({
                 ]),
               )}
               editHref={`/dashboard/${event.id}/edit`}
+              eventId={event.id}
+              isPaid={event.isPaid}
+              /*
+                The WhatsApp message in every language, built here from the
+                stored card so the sheet only holds text, and the host's own
+                wording of any they rewrote.
+              */
+              defaultMessages={Object.fromEntries(
+                CARD_LANGUAGES.map((option) => [
+                  option.id,
+                  buildShareMessage(draft, event.config, url, option.id),
+                ]),
+              ) as Record<CardLanguage, string>}
+              savedMessages={event.config.shareMessages ?? {}}
             />
           </div>
           <div className="flex gap-2">

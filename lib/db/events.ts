@@ -29,7 +29,12 @@ import {
   type HostEvent,
   type StoredEvent,
 } from "@/types/database";
-import type { CardConfig } from "@/types/card";
+import { cardLanguage } from "@/lib/cardLanguage";
+import type {
+  CardConfig,
+  CardLanguage,
+  SavedShareMessage,
+} from "@/types/card";
 import type { EventInsert, EventUpdate } from "@/types/database";
 import type { EventDraft } from "@/types/event";
 
@@ -588,7 +593,16 @@ export async function updateEvent(
       changes nothing a guest sees; it keeps a stored config from contradicting
       its own row because a request claimed a payment that never happened.
     */
-    card_config: { ...patch.cardConfig, isPaid: existing.is_paid },
+    card_config: {
+      ...patch.cardConfig,
+      /*
+        The editor never holds the host's WhatsApp wording (it builds its
+        config from its own controls), so the stored one is carried across
+        rather than lost on every save. See saveShareMessage.
+      */
+      shareMessages: existing.card_config.shareMessages,
+      isPaid: existing.is_paid,
+    },
     event_draft: patch.draft,
     cover_animation: chosenCover,
     show_weather: patch.weather.showWeather === true,
@@ -650,6 +664,108 @@ export async function updateEvent(
   }
 
   return dbSuccess(toStoredEvent(data));
+}
+
+/** Far longer than any message a host would send, and short enough to store. */
+const MAX_SHARE_MESSAGE_LENGTH = 4000;
+
+/**
+ * Keeps the host's own wording of the WhatsApp message for one language, or
+ * forgets it (null) so the message built from the card is sent again.
+ *
+ * Only card_config.shareMessages changes. The draft is written back exactly
+ * as it was read, so the paid-edit trigger (0013) counts nothing: rewording a
+ * chat message is not a change of date or names. An ended, locked invitation
+ * refuses the write like any other, which is the right answer for a card
+ * nobody should be sending any more.
+ */
+export async function saveShareMessage(
+  eventId: string,
+  language: CardLanguage,
+  message: SavedShareMessage | null,
+): Promise<DbResult<null>> {
+  /* Checked here, not trusted: a server action's arguments are whatever crossed the wire. */
+  if (cardLanguage(language) !== language) {
+    return dbFailure(
+      "saveShareMessage/language",
+      `unknown language ${String(language)}`,
+      "Could not save your message, please try again.",
+    );
+  }
+
+  if (
+    message !== null &&
+    (typeof message.text !== "string" ||
+      typeof message.basedOn !== "string" ||
+      message.text.length > MAX_SHARE_MESSAGE_LENGTH ||
+      message.basedOn.length > MAX_SHARE_MESSAGE_LENGTH)
+  ) {
+    return dbFailure(
+      "saveShareMessage/shape",
+      "message is not a pair of strings within the limit",
+      "This message is too long to save. Please shorten it.",
+    );
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError !== null || user === null) {
+    return dbFailure(
+      "saveShareMessage/auth",
+      authError,
+      "You need to be signed in to save this message.",
+    );
+  }
+
+  const { data: existing, error: readError } = await supabase
+    .from("events")
+    .select("card_config")
+    .eq("id", eventId)
+    .eq("host_id", user.id)
+    .maybeSingle();
+
+  if (readError !== null || existing === null) {
+    return dbFailure(
+      "saveShareMessage/read",
+      readError ?? `event ${eventId} is not available to host ${user.id}`,
+      "Could not save your message, please try again.",
+    );
+  }
+
+  const messages = { ...existing.card_config.shareMessages };
+
+  if (message === null) {
+    delete messages[language];
+  } else {
+    messages[language] = { text: message.text, basedOn: message.basedOn };
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({
+      card_config: {
+        ...existing.card_config,
+        shareMessages:
+          Object.keys(messages).length === 0 ? undefined : messages,
+      },
+    })
+    .eq("id", eventId)
+    .eq("host_id", user.id);
+
+  if (error !== null) {
+    return dbFailure(
+      "saveShareMessage",
+      error,
+      "Could not save your message, please try again.",
+    );
+  }
+
+  return dbSuccess(null);
 }
 
 /**

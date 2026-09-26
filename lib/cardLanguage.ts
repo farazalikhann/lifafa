@@ -270,8 +270,48 @@ export interface CardCopy {
     codeLabel: (guestName: string) => string;
     shareTitle: (eventName: string) => string;
   };
-  /** The line a host's WhatsApp share opens with, ahead of the link. */
-  shareMessage: string;
+  /**
+   * The message a host sends with the link on WhatsApp.
+   *
+   * lib/shareMessage.ts decides which lines are used and in what order; every
+   * word of them is here. Plain text for a chat: short lines, no emojis and no
+   * em dashes, because WhatsApp shows it exactly as written.
+   */
+  whatsapp: {
+    greeting: Record<WhatsAppGreeting, string>;
+    /**
+     * The opening sentence, then the names on a line of their own when there
+     * are any. `title` is the event's title or null; `pairs` is whether the
+     * occasion is about a couple (a wedding) rather than one host's event.
+     */
+    invite: (
+      title: string | null,
+      names: string | null,
+      pairs: boolean,
+    ) => readonly string[];
+    /** Between the two names of a couple: "Aarav and Meera". */
+    namesJoiner: string;
+    date: string;
+    time: string;
+    venue: string;
+    /** In place of the date and time while the date is behind a scratch panel. */
+    dateHidden: string;
+    /** In place of the venue while it is behind a scratch panel. */
+    venueHidden: string;
+    celebrations: string;
+    /** After the fifth function, when there are more. */
+    moreCelebrations: string;
+    closing: string;
+    signOff: string;
+  };
+}
+
+/** Which greeting opens a WhatsApp message, from the card's tradition. */
+export type WhatsAppGreeting = "muslim" | "hindu" | "sikh" | "other";
+
+/** "the Wedding", but not "the The Wedding". */
+function withThe(title: string): string {
+  return /^the\s/i.test(title) ? title : `the ${title}`;
 }
 
 /**
@@ -470,7 +510,50 @@ const ENGLISH: CardCopy = {
     codeLabel: (guestName) => `Check-in code for ${guestName}`,
     shareTitle: (eventName) => `${eventName} · pass`,
   },
-  shareMessage: "You are invited! Here are the details:",
+  whatsapp: {
+    greeting: {
+      muslim: "Assalamu Alaikum,",
+      hindu: "Namaste,",
+      sikh: "Sat Sri Akal,",
+      other: "Dear friends and family,",
+    },
+    invite: (title, names, pairs) => {
+      if (names === null) {
+        if (title === null) {
+          return ["With great joy, we invite you to our celebration."];
+        }
+
+        return pairs
+          ? [`With great joy, we invite you to ${withThe(title)}.`]
+          : [`With great joy, we invite you to celebrate ${title}.`];
+      }
+
+      if (pairs) {
+        return [
+          `With great joy, we invite you to ${withThe(title ?? "celebration")} of`,
+          `${names}.`,
+        ];
+      }
+
+      return [
+        title === null
+          ? "With great joy, we invite you to celebrate with"
+          : `With great joy, we invite you to celebrate ${title} with`,
+        `${names}.`,
+      ];
+    },
+    namesJoiner: "and",
+    date: "Date:",
+    time: "Time:",
+    venue: "Venue:",
+    dateHidden: "Open the invitation to reveal the date",
+    venueHidden: "Open the invitation to reveal the venue",
+    celebrations: "Celebrations:",
+    moreCelebrations: "And more in the invitation",
+    closing:
+      "Your presence would make our celebration truly special. Please open the invitation to see all the details and let us know if you can join us.",
+    signOff: "With love,",
+  },
 };
 
 /**
@@ -641,7 +724,35 @@ const HINDI: CardCopy = {
     codeLabel: (guestName) => `${guestName} का चेक-इन कोड`,
     shareTitle: (eventName) => `${eventName} · प्रवेश पास`,
   },
-  shareMessage: "आप सादर आमंत्रित हैं! पूरी जानकारी यहाँ देखें:",
+  whatsapp: {
+    greeting: {
+      muslim: "अस्सलामु अलैकुम,",
+      hindu: "नमस्ते,",
+      sikh: "सत श्री अकाल,",
+      other: "प्रिय मित्रों और परिवारजनों,",
+    },
+    /*
+      One sentence for every occasion, with the names under it as a caption,
+      the way a printed card sets them under "शुभ विवाह". Joining them into the
+      sentence ("आरव और मीरा के/की …") would need the gender of whatever title
+      the host typed, which nothing here knows.
+    */
+    invite: (title, names) => [
+      `बड़ी ख़ुशी के साथ हम आपको ${title ?? "समारोह"} में आमंत्रित करते हैं।`,
+      ...(names === null ? [] : [names]),
+    ],
+    namesJoiner: "और",
+    date: "तारीख़:",
+    time: "समय:",
+    venue: "स्थान:",
+    dateHidden: "तारीख़ देखने के लिए निमंत्रण खोलें",
+    venueHidden: "स्थान देखने के लिए निमंत्रण खोलें",
+    celebrations: "कार्यक्रम:",
+    moreCelebrations: "और भी कार्यक्रम निमंत्रण में देखें",
+    closing:
+      "आपकी उपस्थिति हमारी ख़ुशी को और ख़ास बना देगी। पूरी जानकारी के लिए निमंत्रण खोलें और हमें बताएं कि आप आ पाएंगे या नहीं।",
+    signOff: "प्यार सहित,",
+  },
 };
 
 const COPY: Readonly<Record<CardLanguage, CardCopy>> = {

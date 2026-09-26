@@ -250,4 +250,25 @@ export interface CardConfig {
    * by definition today, and the editor's own draft is not.
    */
   isPaid: boolean;
+  /**
+   * The host's own wording of the WhatsApp message, per language, kept from
+   * the share sheet on the dashboard. Absent until a host edits one, and a
+   * language with no entry sends the message built from the card.
+   *
+   * Written only by saveShareMessage, never by the editor: the editor builds
+   * its config from its own controls, so updateEvent carries this across from
+   * the stored row. Stripped from the guest's read, since it is the host's.
+   */
+  shareMessages?: Partial<Record<CardLanguage, SavedShareMessage>>;
+}
+
+/** A WhatsApp message the host rewrote. See CardConfig.shareMessages. */
+export interface SavedShareMessage {
+  text: string;
+  /**
+   * The message the card built when the host edited it. When the card
+   * builds a different one now (the date or venue moved), the share sheet
+   * says the host's version may be out of date.
+   */
+  basedOn: string;
 }

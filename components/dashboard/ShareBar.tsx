@@ -2,10 +2,11 @@
 
 import { useId, useRef, useState, type ReactElement } from "react";
 import Link from "next/link";
-import { CARD_LANGUAGES, cardCopy } from "@/lib/cardLanguage";
+import ShareMessageSheet from "@/components/dashboard/ShareMessageSheet";
+import { CARD_LANGUAGES } from "@/lib/cardLanguage";
 import { inviteLinkIn } from "@/lib/cardTranslation";
 import { fontFamilyOf } from "@/lib/fontPairs";
-import type { CardLanguage } from "@/types/card";
+import type { CardLanguage, SavedShareMessage } from "@/types/card";
 
 type CopyState = "idle" | "copied" | "unavailable";
 
@@ -24,7 +25,7 @@ const LABEL_FACE = fontFamilyOf("--font-sans", "system-ui, sans-serif");
  * ONE INVITATION, ONE LINK PER LANGUAGE. A host with relatives who read Hindi
  * and colleagues who read English sends each the same card, opened in their own
  * language: the language pills change the link in the box, what Copy copies and
- * what the WhatsApp message says, and nothing else. There is no second
+ * which WhatsApp message the sheet opens with, and nothing else. There is no second
  * invitation to keep in step, and every reply lands in the one guest list.
  *
  * Every language is always offered. A card the host never translated still
@@ -37,6 +38,10 @@ export default function ShareBar({
   language,
   wordsWritten,
   editHref,
+  eventId,
+  isPaid,
+  defaultMessages,
+  savedMessages,
 }: {
   /** The card's link with no language on it. */
   inviteUrl: string;
@@ -46,9 +51,18 @@ export default function ShareBar({
   wordsWritten: Partial<Record<CardLanguage, number>>;
   /** The editor, where those words are added. */
   editHref: string;
+  eventId: string;
+  isPaid: boolean;
+  /** The WhatsApp message built from the card, in each language. */
+  defaultMessages: Record<CardLanguage, string>;
+  /** The host's own wording, in each language they rewrote it in. */
+  savedMessages: Partial<Record<CardLanguage, SavedShareMessage>>;
 }): ReactElement {
   const [shareLanguage, setShareLanguage] = useState<CardLanguage>(language);
   const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  /* Updated by the sheet as it saves, so reopening it shows the latest edit. */
+  const [saved, setSaved] = useState(savedMessages);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickerLabelId = useId();
@@ -84,11 +98,6 @@ export default function ShareBar({
       flash("unavailable");
     }
   };
-
-  /* In the language being shared in: it is the guests who read it. */
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(
-    `${cardCopy(shareLanguage).shareMessage} ${link}`,
-  )}`;
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] p-3">
@@ -158,14 +167,15 @@ export default function ShareBar({
             {COPY_LABEL[copyState]}
           </button>
 
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* The message is shown, and can be changed, before it is sent. */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setSheetOpen(true)}
             className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:flex-none sm:text-sm"
           >
             Share on WhatsApp
-          </a>
+          </button>
         </div>
       </div>
 
@@ -187,6 +197,33 @@ export default function ShareBar({
             Add {option?.englishLabel} words
           </Link>
         </p>
+      ) : null}
+
+      {/* Keyed by language, so switching language never shows the other's edit. */}
+      {sheetOpen ? (
+        <ShareMessageSheet
+          key={shareLanguage}
+          eventId={eventId}
+          language={shareLanguage}
+          link={link}
+          defaultMessage={defaultMessages[shareLanguage]}
+          saved={saved[shareLanguage]}
+          isPaid={isPaid}
+          onSaved={(message) =>
+            setSaved((current) => {
+              const next = { ...current };
+
+              if (message === null) {
+                delete next[shareLanguage];
+              } else {
+                next[shareLanguage] = message;
+              }
+
+              return next;
+            })
+          }
+          onClose={() => setSheetOpen(false)}
+        />
       ) : null}
     </section>
   );

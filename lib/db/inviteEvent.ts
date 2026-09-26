@@ -50,7 +50,18 @@ export async function readEventByInviteCode(
 
   const row = data?.[0];
 
-  return dbSuccess(row === undefined ? null : toStoredEvent(row));
+  if (row === undefined) {
+    return dbSuccess(null);
+  }
+
+  /*
+    The host's WhatsApp wording is theirs, not the card's: it goes no further
+    than this server, whatever the card is rendered for.
+  */
+  const event = toStoredEvent(row);
+  const { shareMessages: _hostOnly, ...config } = event.config;
+
+  return dbSuccess({ ...event, config });
 }
 
 /**
