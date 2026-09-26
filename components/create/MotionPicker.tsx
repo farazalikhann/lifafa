@@ -1,10 +1,11 @@
 "use client";
 
-import { useId, type ReactElement } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
+import ToggleSwitch from "@/components/editor/ToggleSwitch";
 import {
   BUTTERFLY_ASPECT,
   BUTTERFLY_STYLES,
@@ -13,7 +14,6 @@ import {
   butterflySources,
 } from "@/lib/butterflies";
 import {
-  FALL_PIECES,
   FLOWER_CHIPS,
   PETAL_FLOWERS,
   PETAL_STYLES,
@@ -131,9 +131,73 @@ function PetalChip({
 
 function SubHeading({ children }: { children: string }): ReactElement {
   return (
-    <h3 className="text-[0.625rem] tracking-[0.18em] text-[var(--lifafa-muted)] uppercase">
+    <h4 className="text-[0.625rem] tracking-[0.18em] text-[var(--lifafa-muted)] uppercase">
       {children}
-    </h3>
+    </h4>
+  );
+}
+
+/**
+ * Options that open below a row when it is switched on, and are gone when it
+ * is off — not greyed out, gone.
+ *
+ * Height and opacity over 200ms. The height is a grid row going from 0fr to
+ * 1fr, which a browser can animate where it cannot animate to `height: auto`.
+ * `inert` while closed, so a keyboard cannot tab into chips nobody can see.
+ * The padding inside keeps the selected chip's ring and the focus outline
+ * clear of the clip.
+ */
+function Reveal({
+  open,
+  children,
+}: {
+  open: boolean;
+  children: ReactNode;
+}): ReactElement {
+  return (
+    <div
+      inert={!open}
+      className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
+        open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="-mx-1 flex flex-col gap-3 px-1 pt-1 pb-3">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One floating element: its picture, its name and a switch on the right, and
+ * whatever it offers below that while it is on. Butterflies, leaves and petals
+ * all take this one shape, so a host who has worked one out has worked out
+ * all three.
+ */
+function ElementRow({
+  icon,
+  name,
+  on,
+  onToggle,
+  children,
+}: {
+  icon: ReactNode;
+  name: string;
+  on: boolean;
+  onToggle: (on: boolean) => void;
+  children?: ReactNode;
+}): ReactElement {
+  return (
+    <div className="flex flex-col">
+      <div className="flex min-h-12 items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2.5 text-sm font-medium text-[var(--lifafa-cream)]">
+          <span className="flex w-9 justify-center">{icon}</span>
+          {name}
+        </h3>
+        <ToggleSwitch checked={on} onChange={onToggle} label={name} />
+      </div>
+      {children === undefined ? null : <Reveal open={on}>{children}</Reveal>}
+    </div>
   );
 }
 
@@ -158,6 +222,8 @@ export default function MotionPicker({
   onLeavesChange,
   onPetalsChange,
   onPetalFlowerChange,
+  lastButterflies,
+  lastPetals,
   accordion,
 }: {
   motion: DecorMotion;
@@ -173,6 +239,14 @@ export default function MotionPicker({
   /** Which flower the petals are. Kept while petals are off, for when they return. */
   petalFlower: PetalFlower;
   onPetalFlowerChange: (flower: PetalFlower) => void;
+  /**
+   * What each switch turns back on to: the colour and the mode last chosen,
+   * Mixed and Both before any were. Kept by the editor, because this panel
+   * unmounts with its tab. The flower needs no such memory — it stays in the
+   * card while petals are off.
+   */
+  lastButterflies: Exclude<ButterflyStyle, "none">;
+  lastPetals: Exclude<PetalStyle, "none">;
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
@@ -195,7 +269,17 @@ export default function MotionPicker({
       ? `${PETAL_FLOWERS.find((option) => option.id === petalFlower)?.label ?? "Rose"} petals`
       : null,
   ].filter((name) => name !== null);
-  const petalsOff = petals === "none";
+
+  const butterfliesOn = butterflies !== "none";
+  const petalsOn = petals !== "none";
+  const hint = [
+    petalsBurst(petals)
+      ? petalFlower === "rose"
+        ? "Petals shower once as the card opens, then fall away."
+        : "Flowers and petals shower once as the card opens, then fall away."
+      : null,
+    held ? "Motion style is None, so they are holding still for now." : null,
+  ].filter((sentence) => sentence !== null);
 
   return (
     <>
@@ -259,124 +343,137 @@ export default function MotionPicker({
         here is movement. Every row reads the Amount in the section above
         rather than bringing a count of its own.
 
-        Pills with the real cut-out on them, not switches and not colour
-        swatches: a host is choosing a butterfly, a leaf or a petal, and the
-        border grid beside this one already settled that the honest control for
-        something you can look at is a picture of it.
+        A switch per element, and pills only for what the element offers once
+        it is on — each with the real cut-out on it, because a host is choosing
+        a butterfly or a flower, and the honest control for something you can
+        look at is a picture of it.
       */}
       <CollapsibleSection
         title="Floating elements"
-        summary={elementsOn.length > 0 ? elementsOn.join(", ") : "Off"}
+        summary={
+          elementsOn.length === 0 ? (
+            "Off"
+          ) : (
+            <>
+              {/*
+                A count on a phone, where three names would be cut off after
+                the first; the names themselves from 480px up.
+              */}
+              <span className="truncate min-[480px]:hidden">
+                {elementsOn.length} on
+              </span>
+              <span className="hidden truncate min-[480px]:block">
+                {elementsOn.join(", ")}
+              </span>
+            </>
+          )
+        }
         {...sectionState(accordion, "elements")}
       >
-        <div className="flex flex-col gap-3" aria-describedby={elementsHintId}>
-          <div className="flex flex-col gap-2">
-            <SubHeading>Butterflies</SubHeading>
+        <div
+          className="flex flex-col divide-y divide-[var(--lifafa-hairline)]"
+          aria-describedby={hint.length > 0 ? elementsHintId : undefined}
+        >
+          <ElementRow
+            icon={<ButterflyChip style={butterfliesOn ? butterflies : lastButterflies} />}
+            name="Butterflies"
+            on={butterfliesOn}
+            onToggle={(on) => onButterfliesChange(on ? lastButterflies : "none")}
+          >
             <div className="flex flex-wrap gap-2">
-              {BUTTERFLY_STYLES.map((option) => {
-                const isSelected = option.id === butterflies;
+              {BUTTERFLY_STYLES.filter((option) => option.id !== "none").map(
+                (option) => {
+                  const isSelected = option.id === butterflies;
 
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => onButterfliesChange(option.id)}
-                    className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
-                  >
-                    {option.id === "none" ? null : (
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => onButterfliesChange(option.id)}
+                      className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                    >
                       <ButterflyChip style={option.id} />
-                    )}
-                    {option.label}
-                  </button>
-                );
-              })}
+                      {option.label}
+                    </button>
+                  );
+                },
+              )}
             </div>
-          </div>
+          </ElementRow>
 
-          <div className="flex flex-col gap-2">
-            <SubHeading>Leaves</SubHeading>
-            <div className="flex flex-wrap gap-2">
-              {[false, true].map((isOn) => (
-                <button
-                  key={String(isOn)}
-                  type="button"
-                  aria-pressed={leaves === isOn}
-                  onClick={() => onLeavesChange(isOn)}
-                  className={`flex items-center gap-1.5 ${pillClass(leaves === isOn)}`}
-                >
-                  {isOn ? <LeafChip /> : null}
-                  {isOn ? "On" : "Off"}
-                </button>
-              ))}
+          <ElementRow
+            icon={<LeafChip />}
+            name="Leaves"
+            on={leaves}
+            onToggle={onLeavesChange}
+          />
+
+          <ElementRow
+            icon={<PetalChip pieces={FLOWER_CHIPS[petalFlower]} width={16} />}
+            name="Flower petals"
+            on={petalsOn}
+            onToggle={(on) => onPetalsChange(on ? lastPetals : "none")}
+          >
+            <div className="flex flex-col gap-2">
+              <SubHeading>Flower</SubHeading>
+              <div className="flex flex-wrap gap-2">
+                {PETAL_FLOWERS.map((option) => {
+                  const isSelected = option.id === petalFlower;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => onPetalFlowerChange(option.id)}
+                      className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                    >
+                      <PetalChip pieces={FLOWER_CHIPS[option.id]} width={16} />
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <SubHeading>Flower petals</SubHeading>
             {/*
-              Which flower, above when it comes down. Disabled rather than
-              hidden while petals are off, so the host can see there is a
-              choice waiting — and the pick is kept for when they turn it on.
+              Words only: the flower is chosen just above, and a picture of it
+              on every one of these would say the same thing three more times.
             */}
-            <div className="flex flex-wrap gap-2">
-              {PETAL_FLOWERS.map((option) => {
-                const isSelected = option.id === petalFlower;
-
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    disabled={petalsOff}
-                    onClick={() => onPetalFlowerChange(option.id)}
-                    className={`flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-40 ${pillClass(isSelected)}`}
-                  >
-                    <PetalChip pieces={FLOWER_CHIPS[option.id]} width={16} />
-                    {option.label}
-                  </button>
-                );
-              })}
+            <div className="flex flex-col gap-2">
+              <SubHeading>When</SubHeading>
+              <div className="flex flex-wrap gap-2">
+                {PETAL_STYLES.filter((option) => option.id !== "none").map(
+                  (option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={option.id === petals}
+                      onClick={() => onPetalsChange(option.id)}
+                      className={pillClass(option.id === petals)}
+                    >
+                      {option.label}
+                    </button>
+                  ),
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {PETAL_STYLES.map((option) => {
-                const isSelected = option.id === petals;
+          </ElementRow>
+        </div>
 
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => onPetalsChange(option.id)}
-                    className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
-                  >
-                    {option.id === "none" ? null : (
-                      <PetalChip pieces={FALL_PIECES[petalFlower]} width={14} />
-                    )}
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/*
-            Each sentence only when it is true, so the hint describes the card in
-            front of the host rather than every option at once.
-          */}
+        {/*
+          Each sentence only when it is true, so the hint describes the card in
+          front of the host rather than every option at once.
+        */}
+        {hint.length > 0 ? (
           <p
             id={elementsHintId}
             className="text-xs leading-relaxed text-[var(--lifafa-muted)]"
           >
-            They stay in the margins, clear of your writing.
-            {petalsBurst(petals)
-              ? petalFlower === "rose"
-                ? " Petals shower once as the card opens, then fall away."
-                : " Flowers and petals shower once as the card opens, then fall away."
-              : ""}
-            {held ? " Motion style is None, so they are holding still for now." : ""}
+            {hint.join(" ")}
           </p>
-        </div>
+        ) : null}
       </CollapsibleSection>
     </>
   );

@@ -404,6 +404,26 @@ export default function CardEditor({
   const [leaves, setLeaves] = useState(initial.leaves);
   const [petals, setPetals] = useState(initial.petals);
   const [petalFlower, setPetalFlower] = useState(initial.petalFlower);
+  /*
+    What the Butterflies and Flower petals switches turn back on to: the last
+    colour and the last mode the card had, however it got them — a chip, a
+    preset or the saved card. Mixed and Both before there was one. Display
+    memory only, never saved; kept here rather than in MotionPicker because
+    that unmounts with the Design tab. Updated while rendering, React's
+    pattern for state that follows other state, so it is never a frame behind.
+  */
+  const [lastButterflies, setLastButterflies] = useState<
+    Exclude<ButterflyStyle, "none">
+  >(initial.butterflies === "none" ? "mixed" : initial.butterflies);
+  const [lastPetals, setLastPetals] = useState<Exclude<PetalStyle, "none">>(
+    initial.petals === "none" ? "both" : initial.petals,
+  );
+  if (butterflies !== "none" && butterflies !== lastButterflies) {
+    setLastButterflies(butterflies);
+  }
+  if (petals !== "none" && petals !== lastPetals) {
+    setLastPetals(petals);
+  }
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
@@ -1294,6 +1314,8 @@ export default function CardEditor({
                   onLeavesChange={setLeaves}
                   onPetalsChange={setPetals}
                   onPetalFlowerChange={setPetalFlower}
+                  lastButterflies={lastButterflies}
+                  lastPetals={lastPetals}
                   accordion={accordionFor("design")}
                 />
                 {/*

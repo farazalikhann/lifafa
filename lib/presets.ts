@@ -7,6 +7,7 @@ import type {
   CardBorderStyle,
   DecorIntensity,
   DecorMotion,
+  PetalFlower,
   PetalStyle,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -47,6 +48,12 @@ export interface PresetSettings {
   butterflies: ButterflyStyle;
   leaves: boolean;
   petals: PetalStyle;
+  /**
+   * The flower, on a preset that turns petals on. Left out of one that does
+   * not, so applying it keeps whichever flower the host had picked for when
+   * they turn petals back on themselves.
+   */
+  petalFlower?: PetalFlower;
   coverAnimation: CoverAnimationId;
   /**
    * The pack's shapes to switch on: what hangs, what sits in the corners, the
@@ -106,6 +113,8 @@ export const PRESETS: readonly Preset[] = [
       butterflies: "red",
       leaves: false,
       petals: "open",
+      /* Rose, as it had before there was a choice: blush and red butterflies. */
+      petalFlower: "rose",
       coverAnimation: "petal-dust",
       ornaments: ["lantern", "arabesqueBorder"],
       calligraphyIfNone: ["bismillah"],
@@ -278,11 +287,7 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     butterflies: settings.butterflies ?? design.butterflies,
     leaves: settings.leaves ?? design.leaves,
     petals: settings.petals ?? design.petals,
-    /*
-      No preset names a flower, so the host's stays: a preset that turns petals
-      on turns on whichever flower they picked, rose until they pick another.
-    */
-    petalFlower: design.petalFlower,
+    petalFlower: settings.petalFlower ?? design.petalFlower,
     coverAnimation: settings.coverAnimation ?? design.coverAnimation,
     traditionId: preset.tradition,
     ornamentConfig,
