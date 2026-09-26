@@ -1121,9 +1121,10 @@ export default function CardCanvas({
 
           Last of the decor and the only thing above the frame — see the note on
           the layer itself. A butterfly is the nearest thing to the guest, and it
-          has to be: it flies in the margin, which is exactly where a photographic
-          border paints its flowers, so at any depth below that one the flower
-          frames simply swallowed it.
+          has to be: it flies over the margin, which is exactly where a
+          photographic border paints its flowers, so at any depth below that one
+          the flower frames simply swallowed it. It never blocks a tap either —
+          the layer is pointer-events-none and shoos from passive listeners.
         */}
         {(butterflies !== "none" || leaves) && config.decorMotion !== "none" ? (
           <ButterflyLayer
