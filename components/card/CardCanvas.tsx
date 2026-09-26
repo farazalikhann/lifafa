@@ -3,7 +3,12 @@
 import { Fragment, type CSSProperties, type ReactElement } from "react";
 import { calligraphyGround } from "@/lib/calligraphy";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
-import { petalStyle, petalsBurst, petalsFall } from "@/lib/petals";
+import {
+  petalFlowerType,
+  petalStyle,
+  petalsBurst,
+  petalsFall,
+} from "@/lib/petals";
 import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
@@ -833,6 +838,8 @@ export default function CardCanvas({
   /* A card saved before leaves had their own switch keeps them with its butterflies. */
   const leaves = leavesOn(config.leaves, config.butterflies);
   const petals = petalStyle(config.petals);
+  /* Rose on every card saved before there was a choice of flower. */
+  const petalFlower = petalFlowerType(config.petalFlower);
 
   /*
     How far down the screen the ornaments reach.
@@ -1136,17 +1143,18 @@ export default function CardCanvas({
         ) : null}
 
         {/*
-          The rose petals, beside the butterflies and at their depth.
+          The flower petals, beside the butterflies and at their depth.
 
-          Keyed on the choice, so a host who picks it in the editor sees the
-          shower play again rather than only on the first load. The steady fall
+          Keyed on the choice and the flower, so a host who picks either in the
+          editor sees the shower play again rather than only on the first load. The steady fall
           is gated on the motion style the way the butterflies are; the shower on
           opening is not, because it is the moment the card opens rather than the
           card's movement, and it is over in a few seconds either way.
         */}
         {petals !== "none" ? (
           <PetalLayer
-            key={petals}
+            key={`${petals}-${petalFlower}`}
+            flower={petalFlower}
             burst={petalsBurst(petals)}
             fall={petalsFall(petals) && config.decorMotion !== "none"}
             intensity={config.decorIntensity}

@@ -40,7 +40,7 @@ import {
   type TranslatedWord,
 } from "@/lib/autoTranslate";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
-import { petalStyle } from "@/lib/petals";
+import { petalFlowerType, petalStyle } from "@/lib/petals";
 import { deepEqual } from "@/lib/deepEqual";
 import {
   DATE_CHANGE_LIMIT,
@@ -69,6 +69,7 @@ import type { DesignState } from "@/lib/designDefaults";
 import { applyPreset, type Preset } from "@/lib/presets";
 import type {
   ButterflyStyle,
+  PetalFlower,
   PetalStyle,
   CardBorderStyle,
   CardConfig,
@@ -132,6 +133,7 @@ interface EditorState {
   butterflies: ButterflyStyle;
   leaves: boolean;
   petals: PetalStyle;
+  petalFlower: PetalFlower;
   occasionId: OccasionId;
   traditionId: TraditionId;
   language: CardLanguage;
@@ -170,6 +172,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     /* Missing on older cards; see leavesOn and petalStyle. */
     leaves: leavesOn(config.leaves, config.butterflies),
     petals: petalStyle(config.petals),
+    /* Missing on every card saved before the choice; those are roses. */
+    petalFlower: petalFlowerType(config.petalFlower),
     occasionId: config.occasionId,
     traditionId: config.traditionId,
     /*
@@ -225,6 +229,7 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       butterflies: state.butterflies,
       leaves: state.leaves,
       petals: state.petals,
+      petalFlower: state.petalFlower,
       occasionId: state.occasionId,
       traditionId: state.traditionId,
       language: state.language,
@@ -398,6 +403,7 @@ export default function CardEditor({
   const [butterflies, setButterflies] = useState(initial.butterflies);
   const [leaves, setLeaves] = useState(initial.leaves);
   const [petals, setPetals] = useState(initial.petals);
+  const [petalFlower, setPetalFlower] = useState(initial.petalFlower);
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
@@ -703,6 +709,7 @@ export default function CardEditor({
     butterflies,
     leaves,
     petals,
+    petalFlower,
     coverAnimation,
     traditionId,
     ornamentConfig,
@@ -725,6 +732,7 @@ export default function CardEditor({
     setButterflies(next.butterflies);
     setLeaves(next.leaves);
     setPetals(next.petals);
+    setPetalFlower(next.petalFlower);
     setCoverAnimation(next.coverAnimation);
     setTraditionId(next.traditionId);
     setOrnamentConfig(next.ornamentConfig);
@@ -739,6 +747,7 @@ export default function CardEditor({
     butterflies,
     leaves,
     petals,
+    petalFlower,
     occasionId,
     traditionId,
     language,
@@ -1278,11 +1287,13 @@ export default function CardEditor({
                   butterflies={butterflies}
                   leaves={leaves}
                   petals={petals}
+                  petalFlower={petalFlower}
                   onMotionChange={setDecorMotion}
                   onIntensityChange={setDecorIntensity}
                   onButterfliesChange={setButterflies}
                   onLeavesChange={setLeaves}
                   onPetalsChange={setPetals}
+                  onPetalFlowerChange={setPetalFlower}
                   accordion={accordionFor("design")}
                 />
                 {/*

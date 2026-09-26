@@ -954,6 +954,20 @@
 }
 
 /*
+  A slow turn for a falling marigold, mogra or lotus piece, on a span of its
+  own between the heading and the flutter. Not on the rose petals, which fall
+  exactly as they always did. Duration and direction are set per piece.
+*/
+@keyframes lifafa-petal-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
   The shower as a card opens: thrown up and out from the middle, then let fall.
 
   The two halves have different curves, set per keyframe — out fast and slowing

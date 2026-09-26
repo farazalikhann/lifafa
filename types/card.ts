@@ -98,6 +98,12 @@ export type ButterflyColour = Exclude<ButterflyStyle, "none" | "mixed">;
 export type PetalStyle = "none" | "open" | "fall" | "both";
 
 /**
+ * Which flower the petals are: the rose they always were, one of three more,
+ * or a mixture. The mode above is when they come down; this is what does.
+ */
+export type PetalFlower = "rose" | "marigold" | "mogra" | "lotus" | "mixed";
+
+/**
  * Which section, if any, a guest has to scratch open before they can read it.
  *
  * At most one. Two scratch panels on a single card turn an ornament into a
@@ -188,11 +194,17 @@ export interface CardConfig {
    */
   leaves: boolean;
   /**
-   * Rose petals: a shower when the card opens, a steady fall in the margins,
+   * Flower petals: a shower when the card opens, a steady fall in the margins,
    * both, or none. Absent from older cards; read through `petalStyle` in
    * lib/petals.ts, which turns a missing key into "none".
    */
   petals: PetalStyle;
+  /**
+   * Which flower `petals` brings. Absent from every card saved before there
+   * was a choice, all of which had rose petals — so read it through
+   * `petalFlowerType` in lib/petals.ts, which turns a missing key into "rose".
+   */
+  petalFlower: PetalFlower;
   occasionId: OccasionId;
   traditionId: TraditionId;
   /**

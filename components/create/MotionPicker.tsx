@@ -12,11 +12,20 @@ import {
   LEAF_SRC,
   butterflySources,
 } from "@/lib/butterflies";
-import { PETALS, PETAL_STYLES, petalsBurst, petalsFall } from "@/lib/petals";
+import {
+  FALL_PIECES,
+  FLOWER_CHIPS,
+  PETAL_FLOWERS,
+  PETAL_STYLES,
+  petalsBurst,
+  petalsFall,
+  type FlowerPiece,
+} from "@/lib/petals";
 import type {
   ButterflyStyle,
   DecorIntensity,
   DecorMotion,
+  PetalFlower,
   PetalStyle,
 } from "@/types/card";
 
@@ -85,17 +94,34 @@ function LeafChip(): ReactElement {
   );
 }
 
-/** Both petals, overlapping, on every chip but "Off". */
-function PetalChip(): ReactElement {
+/**
+ * Flower pieces, overlapping, on a chip.
+ *
+ * The mode chips show what falls for the chosen flower — the two rose petals,
+ * as they always did, until another flower is picked — and each flower chip
+ * shows its own flower, the way a butterfly chip shows its insect.
+ */
+function PetalChip({
+  pieces,
+  width,
+}: {
+  pieces: readonly FlowerPiece[];
+  width: number;
+}): ReactElement {
+  /* The same file twice (Mogra's stand-in bud) is one picture, not two. */
+  const unique = pieces.filter(
+    (piece, index) => pieces.findIndex((other) => other.src === piece.src) === index,
+  );
+
   return (
     <span aria-hidden="true" className="flex items-center -space-x-1.5">
-      {PETALS.map((petal) => (
+      {unique.map((piece) => (
         <img
-          key={petal.src}
-          src={petal.src}
+          key={piece.src}
+          src={piece.src}
           alt=""
-          width={14}
-          height={Math.round(14 / petal.aspect)}
+          width={width}
+          height={Math.round(width / piece.aspect)}
           className="block max-w-none"
         />
       ))}
@@ -125,11 +151,13 @@ export default function MotionPicker({
   butterflies,
   leaves,
   petals,
+  petalFlower,
   onMotionChange,
   onIntensityChange,
   onButterfliesChange,
   onLeavesChange,
   onPetalsChange,
+  onPetalFlowerChange,
   accordion,
 }: {
   motion: DecorMotion;
@@ -142,6 +170,9 @@ export default function MotionPicker({
   onButterfliesChange: (butterflies: ButterflyStyle) => void;
   onLeavesChange: (leaves: boolean) => void;
   onPetalsChange: (petals: PetalStyle) => void;
+  /** Which flower the petals are. Kept while petals are off, for when they return. */
+  petalFlower: PetalFlower;
+  onPetalFlowerChange: (flower: PetalFlower) => void;
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
@@ -160,8 +191,11 @@ export default function MotionPicker({
   const elementsOn = [
     butterflies !== "none" ? "Butterflies" : null,
     leaves ? "Leaves" : null,
-    petals !== "none" ? "Petals" : null,
+    petals !== "none"
+      ? `${PETAL_FLOWERS.find((option) => option.id === petalFlower)?.label ?? "Rose"} petals`
+      : null,
   ].filter((name) => name !== null);
+  const petalsOff = petals === "none";
 
   return (
     <>
@@ -279,7 +313,31 @@ export default function MotionPicker({
           </div>
 
           <div className="flex flex-col gap-2">
-            <SubHeading>Rose petals</SubHeading>
+            <SubHeading>Flower petals</SubHeading>
+            {/*
+              Which flower, above when it comes down. Disabled rather than
+              hidden while petals are off, so the host can see there is a
+              choice waiting — and the pick is kept for when they turn it on.
+            */}
+            <div className="flex flex-wrap gap-2">
+              {PETAL_FLOWERS.map((option) => {
+                const isSelected = option.id === petalFlower;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    disabled={petalsOff}
+                    onClick={() => onPetalFlowerChange(option.id)}
+                    className={`flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-40 ${pillClass(isSelected)}`}
+                  >
+                    <PetalChip pieces={FLOWER_CHIPS[option.id]} width={16} />
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex flex-wrap gap-2">
               {PETAL_STYLES.map((option) => {
                 const isSelected = option.id === petals;
@@ -292,7 +350,9 @@ export default function MotionPicker({
                     onClick={() => onPetalsChange(option.id)}
                     className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
                   >
-                    {option.id === "none" ? null : <PetalChip />}
+                    {option.id === "none" ? null : (
+                      <PetalChip pieces={FALL_PIECES[petalFlower]} width={14} />
+                    )}
                     {option.label}
                   </button>
                 );
@@ -310,7 +370,9 @@ export default function MotionPicker({
           >
             They stay in the margins, clear of your writing.
             {petalsBurst(petals)
-              ? " Petals shower once as the card opens, then fall away."
+              ? petalFlower === "rose"
+                ? " Petals shower once as the card opens, then fall away."
+                : " Flowers and petals shower once as the card opens, then fall away."
               : ""}
             {held ? " Motion style is None, so they are holding still for now." : ""}
           </p>

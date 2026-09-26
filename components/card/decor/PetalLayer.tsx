@@ -1,15 +1,25 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
+import { preload } from "react-dom";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRevealGate } from "@/hooks/useRevealGate";
 import { artWidth } from "@/lib/cardScale";
-import { PETALS } from "@/lib/petals";
-import type { DecorIntensity } from "@/types/card";
+import { BURST_PIECES, FALL_PIECES, type FlowerPiece } from "@/lib/petals";
+import type { DecorIntensity, PetalFlower } from "@/types/card";
 
 /**
- * Rose petals, in two ways a host can ask for them: a shower when the card
+ * Flower petals, in two ways a host can ask for them: a shower when the card
  * opens, and a steady fall down the margins.
+ *
+ * WHICH FLOWER is the host's choice, and lib/petals.ts turns it into the
+ * pieces each table cycles: rose petals, or marigold, mogra or lotus — loose
+ * pieces falling, whole flowers among their petals in the shower. ROSE IS
+ * DRAWN EXACTLY AS IT ALWAYS WAS, size for size and angle for angle, so every
+ * card saved before there was a choice looks the same as the day it was made.
+ * The other flowers vary each piece ±20% in size and give it a heading and a
+ * slow spin of its own (see the jitter tables), because one photograph of a
+ * marigold petal falling ten times at the table's sizes reads as copies.
  *
  * THE FALL KEEPS TO THE MARGINS, for the reason the butterflies do. This layer
  * sits at `z-[17]` beside ButterflyLayer, above the text, so the position table
@@ -82,6 +92,15 @@ const FALL_COUNT: Record<DecorIntensity, number> = {
   lively: 10,
 };
 
+interface Jitter {
+  /** Multiplies the slot's size: 0.8 to 1.2. */
+  size: number;
+  /** The heading it falls at, in degrees, in place of the table's. */
+  rotate: number;
+  /** Seconds for one slow turn; negative turns the other way. */
+  spin: number;
+}
+
 interface Thrown {
   /** Where it lands, across, in cqw from the middle. */
   dx: number;
@@ -138,6 +157,26 @@ const THROWN: readonly Thrown[] = (() => {
   return petals;
 })();
 
+/**
+ * The variety every flower but the rose is given, drawn from fixed seeds like
+ * the shower so the server and the browser agree. One entry per fall slot and
+ * one size per shower slot.
+ */
+const FALL_JITTER: readonly Jitter[] = (() => {
+  const random = seeded(20260927);
+
+  return FALLERS.map(() => ({
+    size: 0.8 + random() * 0.4,
+    rotate: Math.round(random() * 360),
+    spin: (random() < 0.5 ? -1 : 1) * (10 + random() * 8),
+  }));
+})();
+
+const BURST_SIZE: readonly number[] = (() => {
+  const random = seeded(20260928);
+  return THROWN.map(() => 0.8 + random() * 0.4);
+})();
+
 const BURST_COUNT: Record<DecorIntensity, number> = {
   subtle: 12,
   normal: 18,
@@ -153,22 +192,20 @@ const SHADOW = "drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.32))";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 function PetalImage({
-  index,
+  piece,
   size,
 }: {
-  index: number;
+  piece: FlowerPiece;
   size: number;
 }): ReactElement {
-  const petal = PETALS[index % PETALS.length];
-
   return (
     <img
-      src={petal.src}
+      src={piece.src}
       alt=""
       aria-hidden="true"
       decoding="async"
       width={size}
-      height={Math.round(size / petal.aspect)}
+      height={Math.round(size / piece.aspect)}
       className="block max-w-none select-none"
       style={{ filter: SHADOW }}
     />
@@ -178,15 +215,41 @@ function PetalImage({
 /**
  * Four spans, each owning one thing, for the reason a butterfly has three: an
  * animation's transform replaces the element's own. The outer falls, the next
- * sways, the next holds the heading, the inner turns.
+ * sways, the next holds the heading, the inner turns. A jittered piece has a
+ * fifth, between the heading and the turn, that spins it slowly.
  */
 function FallingPetal({
   faller,
-  index,
+  piece,
+  jitter,
 }: {
   faller: Faller;
-  index: number;
+  piece: FlowerPiece;
+  /** Null for the rose, which falls exactly as the table says. */
+  jitter: Jitter | null;
 }): ReactElement {
+  const size =
+    jitter === null
+      ? faller.size
+      : Math.round(faller.size * piece.scale * jitter.size);
+  const rotate = jitter === null ? faller.rotate : jitter.rotate;
+
+  const turn = (
+    <span
+      className="lifafa-card-art block"
+      style={{
+        ...artWidth(size),
+        animationTimingFunction: "ease-in-out",
+        animationIterationCount: "infinite",
+        animationFillMode: "both",
+        animationName: "lifafa-leaf-turn",
+        animationDuration: `${faller.turn}s`,
+      }}
+    >
+      <PetalImage piece={piece} size={size} />
+    </span>
+  );
+
   const loop = {
     animationTimingFunction: "ease-in-out",
     animationIterationCount: "infinite",
@@ -216,19 +279,24 @@ function FallingPetal({
       >
         <span
           className="block"
-          style={{ opacity: 0.92, transform: `rotate(${faller.rotate}deg)` }}
+          style={{ opacity: 0.92, transform: `rotate(${rotate}deg)` }}
         >
-          <span
-            className="lifafa-card-art block"
-            style={{
-              ...artWidth(faller.size),
-              ...loop,
-              animationName: "lifafa-leaf-turn",
-              animationDuration: `${faller.turn}s`,
-            }}
-          >
-            <PetalImage index={index} size={faller.size} />
-          </span>
+          {jitter === null ? (
+            turn
+          ) : (
+            <span
+              className="block"
+              style={{
+                animationName: "lifafa-petal-spin",
+                animationDuration: `${Math.abs(jitter.spin)}s`,
+                animationDirection: jitter.spin < 0 ? "reverse" : "normal",
+                animationTimingFunction: "linear",
+                animationIterationCount: "infinite",
+              }}
+            >
+              {turn}
+            </span>
+          )}
         </span>
       </span>
     </span>
@@ -238,10 +306,17 @@ function FallingPetal({
 function ThrownPetal({
   thrown,
   index,
+  piece,
+  sizeScale,
 }: {
   thrown: Thrown;
   index: number;
+  piece: FlowerPiece;
+  /** 1 for the rose; the piece's own scale and its jitter for the rest. */
+  sizeScale: number;
 }): ReactElement {
+  const size = Math.round(thrown.size * sizeScale);
+
   return (
     <span
       className="absolute block"
@@ -264,25 +339,28 @@ function ThrownPetal({
       <span
         className="lifafa-card-art block"
         style={{
-          ...artWidth(thrown.size),
+          ...artWidth(size),
           animationName: "lifafa-leaf-turn",
           animationDuration: `${0.9 + (index % 5) * 0.2}s`,
           animationTimingFunction: "ease-in-out",
           animationIterationCount: "infinite",
         }}
       >
-        <PetalImage index={index} size={thrown.size} />
+        <PetalImage piece={piece} size={size} />
       </span>
     </span>
   );
 }
 
 export default function PetalLayer({
+  flower,
   burst,
   fall,
   intensity,
   bandHeight,
 }: {
+  /** Which flower comes down. Rose on every card saved before the choice. */
+  flower: PetalFlower;
   /** Whether a shower plays as the card opens. */
   burst: boolean;
   /**
@@ -313,6 +391,24 @@ export default function PetalLayer({
   }, [isBursting]);
 
   /*
+    Fetched as the page loads, not when the shower mounts. Under a cover the
+    shower only mounts as the envelope hands over, and pieces still arriving
+    then pop in part way through their flight. A preload hint in the head —
+    emitted with the server's HTML — has them in cache long before the guest
+    taps. Deduplicated by React, so calling it on every render costs nothing.
+  */
+  if (!prefersReducedMotion) {
+    const pieces = [
+      ...(burst ? BURST_PIECES[flower] : []),
+      ...(fall ? FALL_PIECES[flower] : []),
+    ];
+
+    for (const src of new Set(pieces.map((piece) => piece.src))) {
+      preload(src, { as: "image" });
+    }
+  }
+
+  /*
     Nothing to leave behind under reduced motion: a petal is nothing but its
     fall. `motion-reduce:hidden` below covers the first paint, as it does on
     the other layers.
@@ -331,19 +427,37 @@ export default function PetalLayer({
         style={{ height: bandHeight, containerType: "size" }}
       >
         {fall
-          ? FALLERS.slice(0, FALL_COUNT[intensity]).map((faller, index) => (
-              <FallingPetal
-                key={`fall-${faller.left}-${faller.delay}`}
-                faller={faller}
-                index={index}
-              />
-            ))
+          ? FALLERS.slice(0, FALL_COUNT[intensity]).map((faller, index) => {
+              const pieces = FALL_PIECES[flower];
+
+              return (
+                <FallingPetal
+                  key={`fall-${faller.left}-${faller.delay}`}
+                  faller={faller}
+                  piece={pieces[index % pieces.length]}
+                  jitter={flower === "rose" ? null : FALL_JITTER[index]}
+                />
+              );
+            })
           : null}
 
         {isBursting
-          ? THROWN.slice(0, BURST_COUNT[intensity]).map((thrown, index) => (
-              <ThrownPetal key={`burst-${index}`} thrown={thrown} index={index} />
-            ))
+          ? THROWN.slice(0, BURST_COUNT[intensity]).map((thrown, index) => {
+              const pieces = BURST_PIECES[flower];
+              const piece = pieces[index % pieces.length];
+
+              return (
+                <ThrownPetal
+                  key={`burst-${index}`}
+                  thrown={thrown}
+                  index={index}
+                  piece={piece}
+                  sizeScale={
+                    flower === "rose" ? 1 : piece.scale * BURST_SIZE[index]
+                  }
+                />
+              );
+            })
           : null}
       </div>
     </div>

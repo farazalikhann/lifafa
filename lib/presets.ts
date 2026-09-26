@@ -278,6 +278,11 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     butterflies: settings.butterflies ?? design.butterflies,
     leaves: settings.leaves ?? design.leaves,
     petals: settings.petals ?? design.petals,
+    /*
+      No preset names a flower, so the host's stays: a preset that turns petals
+      on turns on whichever flower they picked, rose until they pick another.
+    */
+    petalFlower: design.petalFlower,
     coverAnimation: settings.coverAnimation ?? design.coverAnimation,
     traditionId: preset.tradition,
     ornamentConfig,

@@ -11,6 +11,7 @@ import type {
   CardBorderStyle,
   DecorIntensity,
   DecorMotion,
+  PetalFlower,
   PetalStyle,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -35,6 +36,7 @@ export interface DesignState {
   butterflies: ButterflyStyle;
   leaves: boolean;
   petals: PetalStyle;
+  petalFlower: PetalFlower;
   coverAnimation: CoverAnimationId;
   traditionId: TraditionId;
   ornamentConfig: OrnamentConfig;
@@ -64,6 +66,8 @@ export const DEFAULT_DESIGN: DesignState = {
   butterflies: "none",
   leaves: false,
   petals: "none",
+  /* What every card had before there was a choice. */
+  petalFlower: "rose",
   coverAnimation: DEFAULT_COVER_ANIMATION,
   traditionId: DEFAULT_TRADITION_ID,
   ornamentConfig: DEFAULT_ORNAMENT_CONFIG,

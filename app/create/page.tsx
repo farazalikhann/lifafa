@@ -92,6 +92,7 @@ const EMPTY_CONFIG: CardConfig = {
   butterflies: DEFAULT_DESIGN.butterflies,
   leaves: DEFAULT_DESIGN.leaves,
   petals: DEFAULT_DESIGN.petals,
+  petalFlower: DEFAULT_DESIGN.petalFlower,
   occasionId: DEFAULT_OCCASION_ID,
   traditionId: DEFAULT_DESIGN.traditionId,
   /* English until the host picks otherwise, at the very top of the editor. */
