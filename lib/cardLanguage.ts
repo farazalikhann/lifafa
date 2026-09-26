@@ -111,7 +111,6 @@ export interface CardCopy {
   cover: {
     namesPlaceholder: string;
     titlePlaceholder: string;
-    scrollCue: string;
   };
   details: {
     dayPlaceholder: string;
@@ -210,6 +209,14 @@ export interface CardCopy {
   };
   watermark: string;
   coverSkip: string;
+  /**
+   * The cue pinned to the foot of the guest's first screen, telling them this
+   * is an invitation and that it goes on below. See InvitedCue.
+   */
+  scrollCue: {
+    heading: string;
+    prompt: string;
+  };
   invite: {
     /** The page's heading when the card names neither an event nor anyone in it. */
     headingFallback: string;
@@ -318,7 +325,6 @@ const ENGLISH: CardCopy = {
   cover: {
     namesPlaceholder: "Your names",
     titlePlaceholder: "Event title",
-    scrollCue: "Scroll",
   },
   details: {
     dayPlaceholder: "The day",
@@ -401,6 +407,10 @@ const ENGLISH: CardCopy = {
   },
   watermark: "Preview. Pay to remove this watermark.",
   coverSkip: "Skip",
+  scrollCue: {
+    heading: "You are invited",
+    prompt: "Scroll to view the invitation",
+  },
   invite: {
     headingFallback: "Invitation",
     shareTitleFallback: "Invitation · Lifafa",
@@ -483,7 +493,6 @@ const HINDI: CardCopy = {
   cover: {
     namesPlaceholder: "आपके नाम",
     titlePlaceholder: "समारोह का नाम",
-    scrollCue: "नीचे देखें",
   },
   details: {
     dayPlaceholder: "दिन",
@@ -569,6 +578,10 @@ const HINDI: CardCopy = {
   },
   watermark: "पूर्वावलोकन। वॉटरमार्क हटाने के लिए भुगतान करें।",
   coverSkip: "छोड़ें",
+  scrollCue: {
+    heading: "आप सादर आमंत्रित हैं",
+    prompt: "निमंत्रण देखने के लिए नीचे स्क्रॉल करें",
+  },
   invite: {
     headingFallback: "निमंत्रण",
     shareTitleFallback: "निमंत्रण · Lifafa",

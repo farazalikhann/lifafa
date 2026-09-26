@@ -137,8 +137,12 @@ export default function ScrollFade({
     fluid card and a fade measured in plain px would stop short of them. The
     same px as ever on a phone and in the editor.
   */
-  const clear = cardPx(clearTo);
-  const fade = cardPx(topFade);
+  /*
+    Scaled with the ornaments on a short screen (--card-opening, globals.css),
+    so the dissolve stays exactly as deep as what it clears.
+  */
+  const clear = `calc(${cardPx(clearTo)} * var(--card-opening, 1))`;
+  const fade = `calc(${cardPx(topFade)} * var(--card-opening, 1))`;
   const bottom = cardPx(BOTTOM_FADE);
   const topStops = `${background} 0px, ${background} ${clear}, transparent ${fade}`;
   const topMask = `#000 0px, #000 ${clear}, transparent ${fade}`;

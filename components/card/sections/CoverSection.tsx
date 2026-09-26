@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { CardFlourish } from "@/components/card/decor/DecorLayer";
 import {
   REVEAL_BASE,
@@ -19,23 +18,6 @@ import type { Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-/**
- * Observer settings for the scroll cue's sentinel.
- *
- * The sentinel sits at the very bottom of the cover, so a plain "is it on
- * screen" test would be true before the guest has scrolled at all — the cover
- * is only 60–100svh tall and its own foot is already in view. Insetting the
- * root's bottom edge by 70% narrows the trigger to the top third of the
- * screen, which the sentinel can only reach once the guest has genuinely
- * pulled the cover up and away.
- */
-const CUE_SENTINEL_OPTIONS: IntersectionObserverInit = {
-  threshold: 0,
-  rootMargin: "0px 0px -70% 0px",
-};
 
 /**
  * One name, set in the pair's names face at the cover's hero size.
@@ -97,7 +79,7 @@ export default function CoverSection({
 }: {
   draft: EventDraft;
   theme: Theme;
-  /** The language the placeholders and the scroll cue are written in. */
+  /** The language the placeholders are written in. */
   language: CardLanguage;
   /**
    * Which occasion this is, and so whether the cover joins two names.
@@ -125,33 +107,6 @@ export default function CoverSection({
   pad: number;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
-
-  /*
-    The cue has done its job the moment the guest starts scrolling, so it is
-    retired rather than left sitting on the card forever. useInView latches, so
-    once the sentinel has been reached the cue stays gone for the rest of the
-    visit — it does not blink back on when the guest scrolls up to re-read the
-    cover.
-  */
-  const { ref: sentinelRef, isInView: hasScrolledPast } = useInView<HTMLDivElement>(
-    CUE_SENTINEL_OPTIONS,
-    /*
-      false, unlike every reveal on the card. A reveal defaults to visible so
-      that markup which never runs JavaScript is still readable; this observer
-      answers "has the guest scrolled past the cover yet?", and defaulting that
-      to yes would ship a server-rendered cue that was already retired before
-      the guest had done anything at all.
-    */
-    false,
-  );
-
-  /*
-    useInView reports "in view" outright under reduced motion — it never arms
-    an observer there — which would retire the cue before the guest had seen
-    it. Reduced motion means no fade, not no cue, so the cue simply stays.
-  */
-  const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const cueRetired = !prefersReducedMotion && hasScrolledPast;
 
   const copy = cardCopy(language);
   const names = resolveCoverNames(draft, occasionId, language);
@@ -181,7 +136,7 @@ export default function CoverSection({
         paddingTop: cardPx(pad),
         paddingBottom: cardPx(pad),
         /*
-          1.25rem between the names, the title, the flourish and the cue. It
+          1.25rem between the names, the title and the flourish. It
           was 1.5, which spaced four short lines as four separate statements
           and stood the group taller than the names needed; this reads as one
           composed block while each line still has its own breath.
@@ -260,55 +215,6 @@ export default function CoverSection({
       <div className={reveal} style={lineDelay(stepAfterNames + 1)}>
         <CardFlourish accent={theme.accent} />
       </div>
-
-      {/*
-        Scroll cue — this is the section that has to teach the gesture.
-
-        Its visible state is the same `revealClass` the rest of the card uses,
-        driven by one boolean rather than by stacking an `opacity-0` class on
-        top of an `opacity-100` one: two utilities of equal specificity are
-        settled by stylesheet order, not by the order they appear in the class
-        attribute, so the override would be a coin toss. Retiring it therefore
-        runs the reveal backwards — fades out and drifts down — which is the
-        same motion vocabulary as everything else on the card.
-
-        The stagger delay is dropped on the way out: 240ms of nothing happening
-        after the guest has already started scrolling reads as a stuck cue.
-      */}
-      <div
-        className={`mt-2 flex flex-col items-center gap-2 ${REVEAL_BASE} ${revealClass(
-          isInView && !cueRetired,
-        )}`}
-        /* Transparent is not enough — a retired cue must also stop being read out. */
-        aria-hidden={cueRetired}
-        style={cueRetired ? undefined : lineDelay(stepAfterNames + 2)}
-      >
-        <span
-          className="text-[calc(0.765*var(--card-rem,1rem))] tracking-[0.3em] uppercase"
-          style={{ color: theme.textMuted }}
-        >
-          {copy.cover.scrollCue}
-        </span>
-        <span
-          aria-hidden="true"
-          className="h-9 w-px animate-[lifafa-cue_2.4s_ease-in-out_infinite] motion-reduce:animate-none"
-          style={{
-            backgroundImage: `linear-gradient(to bottom, ${theme.accent}, transparent)`,
-          }}
-        />
-      </div>
-
-      {/*
-        Zero-height marker, not a scroll listener: the guest's position is read
-        once by the observer when it crosses, rather than on every frame of
-        every scroll. Positioned out of flow so it adds neither height nor a
-        flex gap — the cover's spacing is identical with and without it.
-      */}
-      <div
-        ref={sentinelRef}
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-px"
-      />
     </section>
   );
 }

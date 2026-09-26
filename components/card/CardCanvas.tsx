@@ -32,7 +32,10 @@ import CustomSection from "@/components/card/sections/CustomSection";
 import SaveTheDate from "@/components/card/SaveTheDate";
 import WeatherPanel from "@/components/card/WeatherPanel";
 import MusicToggle from "@/components/card/MusicToggle";
-import ScrollCue from "@/components/card/ScrollCue";
+import {
+  FIRST_SCREEN_ATTRIBUTE,
+  INVITED_CUE_HEIGHT,
+} from "@/components/invite/InvitedCue";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
@@ -110,25 +113,30 @@ const SECTION_TOP_PAD = 40;
 const SECTION_SIDE_PAD = 28;
 
 /**
- * How far above the middle the card's first screen sets its content, as a
- * share of the screen.
+ * How much shorter than the screen the card's first screen is, in px.
  *
- * Every section centres its content in a box a screen tall, which is right for
- * all of them but the first. Centred on the geometric middle, the names sat a
- * third of the way down a phone with the whole top of the card empty above
- * them, and the card opened looking unfinished at the head. The eye takes the
- * middle of a page to be a little above where it really is, so the first
- * screen centres in the top 84% instead and leaves the rest empty below:
- * the group's middle lands at 42%. It is still exactly one screen tall, so
- * nothing of the next section comes up into view to crowd it.
+ * The guest page pins "You are invited" to the foot of the screen (see
+ * InvitedCue), and the first screen stops short of it by the cue's height and
+ * a little over, so the divider that opens the next section shows between the
+ * content and the cue. A first screen that filled the phone exactly looked
+ * finished: a Bismillah, a greeting and a dua, centred and complete, with no
+ * sign that anything was under them.
  *
- * Not under a cover arch. The arch is drawn to the screen from a top edge the
- * border fixes, and the space above the names is where its dome stands: lifted,
- * the first name went up into the dome. An arched first screen is already
- * composed by the arch, so it keeps its centre and takes only the rest of what
- * the first screen gets — the border's floor, and arriving in one piece.
+ * It also does what a lift band used to: centred in the shorter box, the
+ * group's middle sits a little above the middle of the phone, which is where
+ * the eye takes the middle of a page to be. And it holds under a cover arch,
+ * which the old lift could not: the arch spans the box, so a shorter box
+ * brings the dome down with the names rather than lifting them into it.
  */
-const FIRST_SCREEN_LIFT = 0.16;
+const FIRST_SCREEN_PEEK = INVITED_CUE_HEIGHT + 36;
+
+/**
+ * Under the opening on the first screen, the least room left before the
+ * divider, in px. Small, because the peek above is what keeps it off the cue;
+ * the opening's own inset at the foot was a screen's worth of symmetry that a
+ * first screen with a cue under it no longer wants.
+ */
+const FIRST_SCREEN_FOOT = 8;
 
 /** The pack divider's longer side, in px at the card's 420px design width. */
 const DIVIDER_SIZE = 168;
@@ -187,7 +195,7 @@ function Blessing({
       {entry.transliteration.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem))] leading-relaxed wrap-anywhere italic"
+          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-relaxed wrap-anywhere italic"
           style={{ color: theme.textMuted }}
         >
           {entry.transliteration}
@@ -197,7 +205,7 @@ function Blessing({
       {entry.translation.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem))] leading-relaxed wrap-anywhere"
+          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-relaxed wrap-anywhere"
           style={{ color: theme.textMuted }}
         >
           {entry.translation}
@@ -280,6 +288,22 @@ function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
  */
 function scrollportHeight(sizing: CardSizing): string {
   return sizing === "viewport" ? "100dvh" : `${PREVIEW_FRAME_HEIGHT}px`;
+}
+
+/**
+ * The first screen's height: the section's own, but never more than the screen
+ * less FIRST_SCREEN_PEEK, whatever the density. An airy card is taller than the
+ * screen everywhere else and still has to show where it goes on from here.
+ *
+ * `svh` like the sections, so the peek holds with the browser's bars showing,
+ * and the safe area taken off too, because the cue sits above it. The cue's
+ * height is read from --lifafa-cue-h, which is shorter on a short screen,
+ * where the cue drops its second line (see globals.css).
+ */
+function firstScreenHeight(sizing: CardSizing, minHeight: string): string {
+  return sizing === "viewport"
+    ? `min(${minHeight}, calc(100svh - var(--lifafa-cue-h, ${INVITED_CUE_HEIGHT}px) - ${FIRST_SCREEN_PEEK - INVITED_CUE_HEIGHT}px - env(safe-area-inset-bottom, 0px)))`
+    : `min(${minHeight}, ${PREVIEW_FRAME_HEIGHT - FIRST_SCREEN_PEEK}px)`;
 }
 
 /**
@@ -841,12 +865,8 @@ export default function CardCanvas({
   /* The first screen's inset: a section's, or the border's clearance if that is deeper. */
   const firstScreenPad = Math.max(sectionPad, clearance.y);
 
-  /*
-    The first screen's height, split between the box its content centres in
-    and the empty band under it. See FIRST_SCREEN_LIFT.
-  */
-  const firstScreenBox = `calc(${minHeight} * ${1 - FIRST_SCREEN_LIFT})`;
-  const firstScreenLift = `calc(${minHeight} * ${FIRST_SCREEN_LIFT})`;
+  /* See FIRST_SCREEN_PEEK. */
+  const firstScreenBox = firstScreenHeight(sizing, minHeight);
 
   /*
     What the head screen insets by, which is not what a section insets by.
@@ -899,6 +919,55 @@ export default function CardCanvas({
     "--card-gap-scale": String(DENSITY_GAP_SCALE[style.density]),
   } as CSSProperties;
 
+  /*
+    The rule between two sections: the pack's divider when the host switched
+    it on, the card's flourish otherwise.
+
+    No padding of its own. The sections above and below each end in their own
+    `py-10`, so the divider already sits 40px clear of the content on both
+    sides — the same inset a section keeps at its top. Padding here was adding
+    a band of nothing on top of that, which is what left the gap under the
+    names.
+
+    The art class only when the pack's divider is drawn: the flourish sizes
+    itself in card pixels already, and the rule would size it from an
+    --art-width it was never given.
+  */
+  const divider = (key: string): ReactElement => (
+    <div
+      className={
+        dividerOrnament !== null
+          ? "lifafa-card-art flex justify-center"
+          : "flex justify-center"
+      }
+      style={
+        dividerOrnament !== null
+          ? artWidth(
+              dividerOrnament.aspect >= 1
+                ? DIVIDER_SIZE
+                : DIVIDER_SIZE * dividerOrnament.aspect,
+            )
+          : undefined
+      }
+    >
+      {/*
+        The vine takes the divider's place rather than joining it — two
+        ornaments stacked on one hairline reads as a mistake. Sized wider than
+        the flourish because it is a repeating band and needs the width to show
+        more than one repeat.
+      */}
+      {dividerOrnament !== null ? (
+        <dividerOrnament.Component
+          instanceId={`divider-${key}`}
+          size={DIVIDER_SIZE}
+          style={{ color: effectiveTheme.accent, opacity: 0.55 }}
+        />
+      ) : (
+        <CardFlourish accent={effectiveTheme.accent} className="opacity-50" />
+      )}
+    </div>
+  );
+
   return (
     /*
       Every scratch panel on the card reads and writes one reveal state, kept
@@ -937,10 +1006,14 @@ export default function CardCanvas({
           middle; see globals.css and lib/cardScale.ts. Below 768px it does
           nothing at all. `lifafa-card-phone` is the same growth on a phone
           wider than 420px, and does nothing outside 421px to 767px.
+          `lifafa-card-viewport` lets a screen under 700px tall bring the
+          religious opening down a size; see --card-opening in globals.css.
         */
         className={`relative mx-auto w-full max-w-[420px] overflow-x-clip${
           fluid || fillsPhone ? " lifafa-card-phone" : ""
-        }${fluid ? " lifafa-card-fluid" : ""}`}
+        }${fluid ? " lifafa-card-fluid" : ""}${
+          sizing === "viewport" ? " lifafa-card-viewport" : ""
+        }`}
         style={{
           ...cssVariables,
           backgroundColor: effectiveTheme.background,
@@ -1185,13 +1258,12 @@ export default function CardCanvas({
             */
             const sectionIsFirstScreen = index === 0 && !hasHead;
             const headIsFirstScreen = index === 0 && hasHead;
-            const liftSection = sectionIsFirstScreen && !(isCover && useArch);
 
             const section = renderBlock(
               block,
               draft,
               effectiveTheme,
-              liftSection ? firstScreenBox : minHeight,
+              sectionIsFirstScreen ? firstScreenBox : minHeight,
               sectionIsFirstScreen ? firstScreenPad : sectionPad,
               config.occasionId,
               scratch,
@@ -1218,14 +1290,30 @@ export default function CardCanvas({
                   brings the names up whole. Same rule as the rest of the card —
                   one screen, one thing.
                 */
+                /*
+                  As the first screen it stops FIRST_SCREEN_PEEK short of the
+                  phone and keeps almost nothing under its content, so the
+                  divider after it shows above the cue. Set a step tighter
+                  there too: the full opening, lanterns and all, is the tallest
+                  first screen the card has, and on a 360x740 phone those 8px
+                  are what keep the divider clear of the cue.
+                */
                 <div
-                  className="relative flex flex-col items-center justify-center gap-4 px-7 text-center"
+                  {...(headIsFirstScreen ? { [FIRST_SCREEN_ATTRIBUTE]: "" } : null)}
+                  className={`relative flex flex-col items-center justify-center px-7 text-center ${
+                    headIsFirstScreen ? "gap-3" : "gap-4"
+                  }`}
                   style={
                     headIsFirstScreen
                       ? {
-                          minHeight,
-                          paddingTop: cardPx(Math.max(headPadTop, clearance.y)),
-                          paddingBottom: `calc(${cardPx(headPadBottom)} + ${firstScreenLift})`,
+                          minHeight: firstScreenBox,
+                          /*
+                            Comes down with the ornaments and the dissolve on a
+                            short screen, which is what --card-opening scales;
+                            never above a border's own clearance, which does not.
+                          */
+                          paddingTop: `max(${cardPx(clearance.y)}, ${cardPx(headPadTop)} * var(--card-opening, 1))`,
+                          paddingBottom: cardPx(FIRST_SCREEN_FOOT),
                         }
                       : {
                           minHeight,
@@ -1262,7 +1350,7 @@ export default function CardCanvas({
                     <panel.Component
                       key={panel.id}
                       instanceId={`cover-calligraphy-${panel.id}`}
-                      className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem))]"
+                      className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem)*var(--card-opening,1))]"
                       ground={calligraphyGround(effectiveTheme.background)}
                     />
                   ))}
@@ -1277,7 +1365,7 @@ export default function CardCanvas({
                         address; the blessing is what is being offered, and the
                         card should read in that order of weight.
                       */
-                      sizeClass="text-[1.25rem] leading-[2] sm:text-[calc(1.375*var(--card-rem,1rem))]"
+                      sizeClass="text-[calc(1.25rem*var(--card-opening-text,1))] leading-[2] sm:text-[calc(1.375*var(--card-rem,1rem)*var(--card-opening-text,1))]"
                     />
                   ) : null}
 
@@ -1286,39 +1374,23 @@ export default function CardCanvas({
                       entry={blessing}
                       pack={pack}
                       theme={effectiveTheme}
-                      sizeClass="text-[1.375rem] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem))]"
+                      sizeClass="text-[calc(1.375rem*var(--card-opening-text,1))] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]"
                     />
                   ) : null}
 
-                  {/*
-                    The screen a guest lands on says nothing of what is under it —
-                    the cover and its own cue are a whole swipe away. So the cue
-                    comes up here, in the empty band this screen keeps under its
-                    content (the lift), and just above the bottom dissolve, which
-                    is where `headPadBottom` ends.
-                  */}
-                  {headIsFirstScreen ? (
-                    <ScrollCue
-                      label={copy.cover.scrollCue}
-                      textColor={effectiveTheme.textMuted}
-                      accent={effectiveTheme.accent}
-                      /*
-                        Centred in the lift band rather than sat on its floor, so
-                        it is clear of anything pinned to the foot of the screen —
-                        the preview's watermark pill among them. 3.5rem is the
-                        cue's own height, word and line together.
-                      */
-                      style={{
-                        bottom: `calc(${cardPx(headPadBottom)} + max(0px, (${firstScreenLift} - 3.5rem) / 2))`,
-                      }}
-                    />
-                  ) : null}
                 </div>
               ) : null;
 
             const covered = (
               <>
                 {head}
+                {/*
+                  The opening and the names are one block, and so had no rule
+                  between them. On the first screen they get one: it is the top
+                  of the next screen, showing above the cue, and the one thing
+                  on the opening that says the card goes on.
+                */}
+                {headIsFirstScreen ? divider("head") : null}
                 {section}
                 {blockKey(block) === calendarAnchor ? saveTheDate : null}
               </>
@@ -1334,7 +1406,8 @@ export default function CardCanvas({
                   box it frames, and held well under half opacity so a name set
                   over a jamb still carries.
 
-                  Never lifted as a first screen — see FIRST_SCREEN_LIFT.
+                  As a first screen it is as short as any other, and the arch
+                  comes down with it — see FIRST_SCREEN_PEEK.
                 */
                 <div className="relative">
                   <archOrnament.Component
@@ -1363,55 +1436,7 @@ export default function CardCanvas({
 
             return (
               <Fragment key={blockKey(block)}>
-                {index > 0 ? (
-                  /*
-                    No padding of its own. The sections above and below each end
-                    in their own `py-10`, so the divider already sits 40px clear
-                    of the content on both sides — the same inset a section keeps
-                    at its top. Padding here was adding a band of nothing on top
-                    of that, which is what left the gap under the names.
-                  */
-                  /*
-                    The art class only when the pack's divider is drawn: the
-                    flourish sizes itself in card pixels already, and the rule
-                    would size it from an --art-width it was never given.
-                  */
-                  <div
-                    className={
-                      dividerOrnament !== null
-                        ? "lifafa-card-art flex justify-center"
-                        : "flex justify-center"
-                    }
-                    style={
-                      dividerOrnament !== null
-                        ? artWidth(
-                            dividerOrnament.aspect >= 1
-                              ? DIVIDER_SIZE
-                              : DIVIDER_SIZE * dividerOrnament.aspect,
-                          )
-                        : undefined
-                    }
-                  >
-                    {/*
-                      The vine takes the divider's place rather than joining it —
-                      two ornaments stacked on one hairline reads as a mistake.
-                      Sized wider than the flourish because it is a repeating band
-                      and needs the width to show more than one repeat.
-                    */}
-                    {dividerOrnament !== null ? (
-                      <dividerOrnament.Component
-                        instanceId={`divider-${index}`}
-                        size={DIVIDER_SIZE}
-                        style={{ color: effectiveTheme.accent, opacity: 0.55 }}
-                      />
-                    ) : (
-                      <CardFlourish
-                        accent={effectiveTheme.accent}
-                        className="opacity-50"
-                      />
-                    )}
-                  </div>
-                ) : null}
+                {index > 0 ? divider(String(index)) : null}
 
                 {/*
                   Two ways a block can be drawn now that the scratch panel has
@@ -1424,7 +1449,7 @@ export default function CardCanvas({
                 */}
                 {sectionIsFirstScreen ? (
                   /*
-                    The band under the first screen's content, and the one place
+                    What the cue scrolls past when it is tapped, and the one place
                     the card's line stagger is switched off.
 
                     THE FIRST SCREEN ARRIVES IN ONE PIECE. Every other section
@@ -1437,12 +1462,8 @@ export default function CardCanvas({
                     it leaves them — see `revealAt` in types/coverAnimation.ts.
                   */
                   <div
-                    style={
-                      {
-                        paddingBottom: liftSection ? firstScreenLift : undefined,
-                        "--card-line-stagger": "0ms",
-                      } as CSSProperties
-                    }
+                    {...{ [FIRST_SCREEN_ATTRIBUTE]: "" }}
+                    style={{ "--card-line-stagger": "0ms" } as CSSProperties}
                   >
                     {framed}
                   </div>

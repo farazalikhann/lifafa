@@ -337,7 +337,12 @@ export default function HangingLayer({
               className="absolute block -translate-x-1/2"
               style={{
                 left: `${ornament.xPercent}%`,
-                top: `${ornament.topPercent}%`,
+                /*
+                  Brought up with the ornament's own size on a short screen
+                  (--card-opening, globals.css), so the whole arrangement
+                  hangs 15% shallower and `hangingDepth` scales with it.
+                */
+                top: `calc(${ornament.topPercent}% * var(--card-opening, 1))`,
                 /* Ornaments draw with currentColor, so the accent is set here. */
                 color: accent,
               }}
@@ -349,9 +354,14 @@ export default function HangingLayer({
                 would drop the -50% and shunt every ornament half its width to
                 the right the moment the animation took over.
               */}
+              {/*
+                `scale`, not a transform: it composes with the swing's rotation
+                rather than replacing it, and both turn about the top centre,
+                so a smaller lantern still hangs from the same point.
+              */}
               <span
-                className={`lifafa-card-art ${ornament.swing ? "lifafa-hang-swing" : "block"}`}
-                style={swingStyle}
+                className={`lifafa-card-art origin-top ${ornament.swing ? "lifafa-hang-swing" : "block"}`}
+                style={{ ...swingStyle, scale: "var(--card-opening, 1)" }}
               >
                 <Shape
                   size={size}

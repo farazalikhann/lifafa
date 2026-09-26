@@ -427,6 +427,43 @@
   }
 }
 
+/*
+  A short screen: under 700px tall, which is a phone with its browser's bars
+  showing (390x664, 360x640).
+
+  The full opening — lanterns, string lights, a Bismillah, a greeting and a dua —
+  runs past the foot of such a screen, and the cue pinned there sat over the
+  dua. So the cue drops its second line and the opening comes down a size:
+  what hangs and the calligraphy by 15%, the lines of the greeting and dua by
+  10%, and the insets that clear them with them. Only a card sized to the
+  screen (`lifafa-card-viewport`); the editor's frame is its own height.
+
+  --lifafa-cue-h is how far up the screen the cue's words reach; the card's
+  first screen stops short of it. The full-height default lives beside the cue
+  as INVITED_CUE_HEIGHT.
+*/
+@media (max-height: 699px) {
+  :root {
+    --lifafa-cue-h: 48px;
+  }
+
+  .lifafa-card-viewport {
+    --card-opening: 0.85;
+    --card-opening-text: 0.9;
+  }
+}
+
+/* The invitation cue's chevron: a small, slow drop. See InvitedCue. */
+@keyframes lifafa-cue-bounce {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 4px, 0);
+  }
+}
+
 /* --- Idle motion for the story illustrations. Small amplitudes, slow loops. --- */
 
 /* Whole drawing breathing in place. */

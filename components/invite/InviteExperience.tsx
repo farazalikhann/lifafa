@@ -8,10 +8,14 @@ import {
   type ReactElement,
 } from "react";
 import CardCanvas from "@/components/card/CardCanvas";
-import Watermark, { WATERMARK_CLEARANCE } from "@/components/card/Watermark";
+import Watermark, {
+  WATERMARK_CLEARANCE,
+  WATERMARK_PILL_SELECTOR,
+} from "@/components/card/Watermark";
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import GuestPass from "@/components/invite/GuestPass";
+import InvitedCue from "@/components/invite/InvitedCue";
 import LanguageSwitch, {
   LANGUAGE_SWITCH_CLEARANCE,
 } from "@/components/invite/LanguageSwitch";
@@ -415,6 +419,19 @@ export default function InviteExperience({
               surface={palette.surface}
             />
           </div>
+
+          {/*
+            "You are invited", pinned to the foot of the screen until the guest
+            scrolls. Inside the cover's children so it knows when the cover has
+            gone; fixed, so where it sits in the tree changes nothing on screen.
+            Above the watermark pill on a card that shows one, which is only
+            ever the host's own preview.
+          */}
+          <InvitedCue
+            language={language}
+            theme={cardTheme}
+            clearOf={event.isPaid ? undefined : WATERMARK_PILL_SELECTOR}
+          />
 
           {/*
             Nothing at all when the host switched replies off: no heading, no

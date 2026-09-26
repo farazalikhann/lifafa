@@ -57,6 +57,9 @@ const PILL_OFFSET = "3.5rem";
  */
 export const WATERMARK_CLEARANCE = "7rem";
 
+/** On the pill, so something else fixed to the screen can stand clear of it. */
+export const WATERMARK_PILL_SELECTOR = "[data-watermark-pill]";
+
 /**
  * "Pay to unlock" made visible on the card itself.
  *
@@ -134,6 +137,7 @@ export default function Watermark({
       </div>
 
       <p
+        data-watermark-pill=""
         aria-hidden="true"
         lang={cardCopy(language).lang}
         className="pointer-events-none fixed left-1/2 z-30 -translate-x-1/2 rounded-full px-4 py-2 text-center text-[0.75rem] font-medium shadow-[0_8px_24px_-12px_rgba(0,0,0,0.8)] backdrop-blur select-none"

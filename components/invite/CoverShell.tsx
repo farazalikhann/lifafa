@@ -10,6 +10,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { CoverOpenContext } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
@@ -443,9 +444,12 @@ export default function CoverShell({
         See hooks/useRevealGate.ts.
       */}
       <RevealGateContext value={!covered || cardLetGo}>
-        <div className="contents" inert={covered}>
-          {children}
-        </div>
+        {/* Later than the gate: only once the cover has unmounted. */}
+        <CoverOpenContext value={!covered}>
+          <div className="contents" inert={covered}>
+            {children}
+          </div>
+        </CoverOpenContext>
       </RevealGateContext>
 
       {/*
