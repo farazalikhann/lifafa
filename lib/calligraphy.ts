@@ -348,8 +348,10 @@ const RETIRED_CALLIGRAPHY: Readonly<Record<string, CalligraphyId>> = {
 
 /**
  * A card's ornament list with retired calligraphy mapped to its replacement,
- * each id once. Anything else it does not know it passes through untouched —
- * the card skips an id its pack cannot find rather than failing on it.
+ * each id once, where it last appears — the list's order is the order the host
+ * chose in, which is what withOneCalligraphy reads. Anything else it does not
+ * know it passes through untouched — the card skips an id its pack cannot find
+ * rather than failing on it.
  */
 export function withoutRetiredCalligraphy<T extends string>(
   ids: readonly T[],
@@ -358,13 +360,43 @@ export function withoutRetiredCalligraphy<T extends string>(
     return ids;
   }
 
-  const mapped: T[] = [];
-  for (const id of ids) {
-    const next = (RETIRED_CALLIGRAPHY[id] ?? id) as T;
-    if (!mapped.includes(next)) {
-      mapped.push(next);
-    }
+  const mapped = ids.map((id) => (RETIRED_CALLIGRAPHY[id] ?? id) as T);
+  return mapped.filter((id, index) => mapped.lastIndexOf(id) === index);
+}
+
+/**
+ * A card's ornament list with at most one piece of calligraphy in it.
+ *
+ * A card heads with one line of calligraphy, never two stacked. A card saved
+ * while the panel still allowed several keeps the one added last — the panel
+ * has always appended as it adds, so the last in the list is the host's most
+ * recent choice — and everything that is not calligraphy passes through in
+ * its order. Works for any tradition: the pack's own list says what counts.
+ */
+export function withOneCalligraphy<T extends string>(
+  ids: readonly T[],
+  calligraphyIds: readonly string[],
+): readonly T[] {
+  const pieces = ids.filter((id) => calligraphyIds.includes(id));
+
+  if (pieces.length <= 1) {
+    return ids;
   }
 
-  return mapped;
+  const kept = pieces[pieces.length - 1];
+  return ids.filter((id) => id === kept || !calligraphyIds.includes(id));
+}
+
+/**
+ * The ornament list after a tap on a calligraphy tile: the tapped piece
+ * replaces whichever one the card had, and tapping the chosen piece again
+ * takes it off, so a card can head with none.
+ */
+export function tapCalligraphy<T extends string>(
+  ids: readonly T[],
+  calligraphyIds: readonly string[],
+  id: T,
+): readonly T[] {
+  const others = ids.filter((current) => !calligraphyIds.includes(current));
+  return ids.includes(id) ? others : [...others, id];
 }

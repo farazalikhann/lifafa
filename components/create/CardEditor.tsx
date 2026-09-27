@@ -41,7 +41,8 @@ import {
 } from "@/lib/autoTranslate";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalFlowerType, petalStyle } from "@/lib/petals";
-import { withoutRetiredCalligraphy } from "@/lib/calligraphy";
+import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
+import { getTraditionPack } from "@/lib/traditionPacks";
 import { deepEqual } from "@/lib/deepEqual";
 import {
   DATE_CHANGE_LIMIT,
@@ -188,13 +189,15 @@ function toState(snapshot: EditorSnapshot): EditorState {
     borderStyle: config.borderStyle,
     style: config.style,
     /*
-      A retired calligraphy id is shown as its replacement, and saved as it on
-      the next save — see withoutRetiredCalligraphy.
+      A retired calligraphy id is shown as its replacement, and a card saved
+      with several pieces keeps only the one added last; both are saved that way
+      on the next save — see withoutRetiredCalligraphy and withOneCalligraphy.
     */
     ornamentConfig: {
       ...config.ornamentConfig,
-      enabledOrnaments: withoutRetiredCalligraphy(
-        config.ornamentConfig.enabledOrnaments,
+      enabledOrnaments: withOneCalligraphy(
+        withoutRetiredCalligraphy(config.ornamentConfig.enabledOrnaments),
+        getTraditionPack(config.traditionId)?.calligraphyIds ?? [],
       ),
     },
     /* Null on every card saved before this field existed. */

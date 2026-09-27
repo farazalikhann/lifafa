@@ -11,6 +11,7 @@ import { useOnScreen } from "@/hooks/useOnScreen";
 import {
   calligraphyGround,
   calligraphyMask,
+  withOneCalligraphy,
   withoutRetiredCalligraphy,
   type CalligraphyId,
 } from "@/lib/calligraphy";
@@ -789,11 +790,15 @@ export default function CardCanvas({
   /*
     Read through the retired-calligraphy map, so a card saved with a piece that
     has since left its pack opens with the piece that replaced it rather than
-    with nothing at its head.
+    with nothing at its head — and down to one piece of calligraphy, so a card
+    saved when several were allowed never heads with two.
   */
   const ornaments: readonly AnyOrnamentId[] =
     pack !== null
-      ? withoutRetiredCalligraphy(config.ornamentConfig.enabledOrnaments)
+      ? withOneCalligraphy(
+          withoutRetiredCalligraphy(config.ornamentConfig.enabledOrnaments),
+          pack.calligraphyIds,
+        )
       : [];
 
   const greeting = pack?.findGreeting(config.ornamentConfig.greetingId) ?? null;
@@ -837,8 +842,8 @@ export default function CardCanvas({
           );
 
   /*
-    The calligraphy that heads the card: whichever of the pack's panels the host
-    switched on, in the pack's own order.
+    The calligraphy that heads the card: the one panel the host switched on,
+    if any — `ornaments` holds at most one.
 
     Resolved here beside the divider and the arch, because those three are the
     claims that keep an ornament out of the scatter — and a claim made in one

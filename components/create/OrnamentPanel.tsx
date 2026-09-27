@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { tapCalligraphy } from "@/lib/calligraphy";
 import { chosenIn, tapSlotted } from "@/lib/ornaments/slots";
 import type {
   PackBlessing,
@@ -269,6 +270,18 @@ export default function OrnamentPanel({
     });
   };
 
+  /* One piece of calligraphy at a time: a tap swaps it, a second tap clears it. */
+  const tapCalligraphyTile = (id: AnyOrnamentId): void => {
+    onChange({
+      ...config,
+      enabledOrnaments: tapCalligraphy(
+        config.enabledOrnaments,
+        pack.calligraphyIds,
+        id,
+      ),
+    });
+  };
+
   const toggleOrnament = (id: AnyOrnamentId): void => {
     const isOn = config.enabledOrnaments.includes(id);
 
@@ -354,7 +367,7 @@ export default function OrnamentPanel({
                   key={id}
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => toggleOrnament(id)}
+                  onClick={() => tapCalligraphyTile(id)}
                   className={[
                     "flex flex-col items-center justify-center gap-2 rounded-xl border px-2.5 py-3 transition-colors duration-150",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",

@@ -253,11 +253,12 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
   if (pack !== null) {
     const isCalligraphy = (id: AnyOrnamentId): boolean =>
       pack.calligraphyIds.includes(id);
+    /* One piece at most: the card's latest, or else the preset's first. */
     const keptCalligraphy = kept.enabledOrnaments.filter(isCalligraphy);
     const calligraphy =
       keptCalligraphy.length > 0
-        ? keptCalligraphy
-        : (settings.calligraphyIfNone ?? []);
+        ? keptCalligraphy.slice(-1)
+        : (settings.calligraphyIfNone ?? []).slice(0, 1);
     const shapes =
       settings.ornaments ??
       kept.enabledOrnaments.filter((id) => !isCalligraphy(id));
