@@ -146,7 +146,7 @@ function ScriptLine({
 
   return (
     <ScriptRun
-      className={`w-full wrap-anywhere text-[var(--lifafa-cream)] ${pack.panelScriptClass}`}
+      className={`w-full wrap-anywhere whitespace-pre-line text-[var(--lifafa-cream)] ${pack.panelScriptClass}`}
     >
       {entry.script}
     </ScriptRun>

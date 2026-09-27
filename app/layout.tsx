@@ -82,6 +82,13 @@ const cormorant = Cormorant_Garamond({
 
 const lora = Lora({
   subsets: ["latin"],
+  /*
+    The italic too, for the transliteration under the Hindu opening mantra,
+    which is set in Lora (see CardHeadType). Without it the browser slants the
+    upright letters instead. Not preloaded, so it is fetched only by a card
+    that sets it.
+  */
+  style: ["normal", "italic"],
   display: "swap",
   preload: false,
   variable: "--font-lora",

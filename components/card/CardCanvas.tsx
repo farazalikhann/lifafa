@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { preload } from "react-dom";
+import { useOnScreen } from "@/hooks/useOnScreen";
 import {
   calligraphyGround,
   calligraphyMask,
@@ -179,11 +180,14 @@ function Blessing({
   pack,
   theme,
   sizeClass,
+  kind,
 }: {
   entry: PackBlessing;
   pack: TraditionPack;
   theme: Theme;
+  /** The script line's size where the pack sets no block of its own. */
   sizeClass: string;
+  kind: "greeting" | "blessing";
 }): ReactElement | null {
   if (entry.script.length === 0) {
     return null;
@@ -191,8 +195,51 @@ function Blessing({
 
   const { ScriptRun } = pack;
 
+  /*
+    A pack that composes its opening as one block (see CardHeadType) brings its
+    own face, sizes and leading. The face and leading are handed to the script
+    component as the two variables it already reads, so it keeps doing its own
+    job — lang, dir, the leading travelling with the face — in the pack's
+    chosen face. Regular weight, because the block's face has only that one.
+  */
+  const head = pack.cardHead;
+  const scriptClass =
+    head === null
+      ? sizeClass
+      : kind === "greeting"
+        ? head.greetingClass
+        : head.blessingClass;
+  const scriptStyle = {
+    color: theme.accent,
+    ...(head === null
+      ? null
+      : {
+          fontWeight: 400,
+          "--lifafa-devanagari": head.scriptFace,
+          "--lifafa-devanagari-leading":
+            kind === "greeting" ? head.greetingLeading : head.blessingLeading,
+        }),
+  } as CSSProperties;
+  const englishClass =
+    head?.englishClass ??
+    "text-[calc(0.9*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-relaxed";
+  /* The block's own serif where it has one; the card's body face otherwise. */
+  const englishStyle: CSSProperties = {
+    color: theme.textMuted,
+    ...(head === null ? null : { fontFamily: head.englishFace }),
+  };
+
   return (
-    <div className="flex w-full flex-col items-center gap-1.5">
+    /*
+      The blessing starts a second group under the greeting, a step further
+      down than the greeting's own lines are apart, where the pack composes
+      the two as one block.
+    */
+    <div
+      className={`flex w-full flex-col items-center gap-1.5 ${
+        head !== null && kind === "blessing" ? "mt-2" : ""
+      }`}
+    >
       {/*
         The pack draws its own script line, because `dir` and `lang` belong on
         the element that actually holds the text — the bidi algorithm and the
@@ -202,9 +249,10 @@ function Blessing({
         leading with their face. `wrap-anywhere` is what keeps a long unbroken
         run inside a 360px card, which is the width this was checked at.
       */}
+      {/* `whitespace-pre-line` so a verse supplied as two lines is set as two. */}
       <ScriptRun
-        className={`w-full text-center wrap-anywhere ${sizeClass}`}
-        style={{ color: theme.accent }}
+        className={`w-full text-center wrap-anywhere whitespace-pre-line ${scriptClass}`}
+        style={scriptStyle}
       >
         {entry.script}
       </ScriptRun>
@@ -218,8 +266,8 @@ function Blessing({
       {entry.transliteration.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-relaxed wrap-anywhere italic"
-          style={{ color: theme.textMuted }}
+          className={`w-full text-center wrap-anywhere italic ${englishClass}`}
+          style={englishStyle}
         >
           {entry.transliteration}
         </p>
@@ -228,8 +276,8 @@ function Blessing({
       {entry.translation.length > 0 ? (
         <p
           dir="ltr"
-          className="w-full text-center text-[calc(0.9*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-relaxed wrap-anywhere"
-          style={{ color: theme.textMuted }}
+          className={`w-full text-center wrap-anywhere ${englishClass}`}
+          style={englishStyle}
         >
           {entry.translation}
         </p>
@@ -854,6 +902,21 @@ export default function CardCanvas({
   const scatterMotifs = motifsWithout(motifs, ornaments);
 
   /*
+    The opening screen — calligraphy, mantra, shlok — reads as one composed
+    block, and the faint scatter drifting behind it read as noise through the
+    lettering. So the scatter is faded out while that screen is the one on
+    screen, and back in as the guest moves on to the names. Only on a card that
+    has such a screen: the cover block renders and carries a head.
+  */
+  const cardHasHead =
+    (hasBlessing || calligraphy.length > 0) &&
+    visible.some((block) => block.kind === "builtin" && block.id === "cover");
+  const { ref: headRef, isOnScreen: headOnScreen } = useOnScreen<HTMLDivElement>(
+    0.5,
+    cardHasHead,
+  );
+
+  /*
     The chosen calligraphy's mask, fetched as the page loads. A CSS mask image
     is fetched in CORS mode, so the hint says so too — a hint in the default
     mode would be a second, unused download of the same file.
@@ -1160,6 +1223,7 @@ export default function CardCanvas({
           intensity={config.decorIntensity}
           bandHeight={bandHeight}
           maxAlpha={decorMaxAlpha}
+          hidden={headOnScreen}
         />
 
         {/*
@@ -1418,9 +1482,19 @@ export default function CardCanvas({
                   are what keep the divider clear of the cue.
                 */
                 <div
+                  ref={headRef}
                   {...(headIsFirstScreen ? { [FIRST_SCREEN_ATTRIBUTE]: "" } : null)}
-                  className={`relative flex flex-col items-center justify-center px-7 text-center ${
+                  className={`relative flex flex-col items-center px-7 text-center ${
                     headIsFirstScreen ? "gap-3" : "gap-4"
+                  } ${
+                    /*
+                      From the top of its space on the opening screen, for a
+                      pack that composes its block that way — the padding above
+                      already clears the border and the fade.
+                    */
+                    headIsFirstScreen && pack?.cardHead?.alignTop === true
+                      ? "justify-start"
+                      : "justify-center"
                   }`}
                   style={
                     headIsFirstScreen
@@ -1482,6 +1556,7 @@ export default function CardCanvas({
 
                   {greeting !== null && pack !== null ? (
                     <Blessing
+                      kind="greeting"
                       entry={greeting}
                       pack={pack}
                       theme={effectiveTheme}
@@ -1496,6 +1571,7 @@ export default function CardCanvas({
 
                   {blessing !== null && pack !== null ? (
                     <Blessing
+                      kind="blessing"
                       entry={blessing}
                       pack={pack}
                       theme={effectiveTheme}

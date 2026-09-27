@@ -264,6 +264,7 @@ export default function DecorLayer({
   intensity,
   bandHeight,
   maxAlpha,
+  hidden = false,
 }: {
   accent: string;
   motion: DecorMotion;
@@ -291,6 +292,12 @@ export default function DecorLayer({
    * overrides the accent moves the answer again.
    */
   maxAlpha: number;
+  /**
+   * Faded out, for a screen that has to read clean — the card's opening block.
+   * Opacity on the layer only, so the shapes keep their places and their loops
+   * and come back where they were.
+   */
+  hidden?: boolean;
 }): ReactElement | null {
   /* Read before any early return — a hook may not sit behind a branch. */
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -320,7 +327,8 @@ export default function DecorLayer({
         keeps to the reading column it was composed for, and MarginDecorLayer
         takes the sides. The whole card everywhere else.
       */
-      className="lifafa-card-column pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden"
+      className="lifafa-card-column pointer-events-none absolute inset-0 overflow-clip transition-opacity duration-500 ease-out motion-reduce:hidden"
+      style={{ opacity: hidden ? 0 : 1 }}
     >
       {/*
         Pinned flush to the top of the scrollport and exactly as tall as it, so

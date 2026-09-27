@@ -165,6 +165,42 @@ export interface OrnamentSlots {
 }
 
 /**
+ * How the card sets a pack's greeting and blessing, for a pack that sets them
+ * as one composed block rather than at the default sizes.
+ *
+ * The Hindu opening is a mantra, its reading and its meaning, then a shlok and
+ * its meaning, under brush calligraphy. Set at the default sizes, each line was
+ * a different face and weight and the shlok out-shouted the mantra. So: one
+ * traditional serif for every Devanagari line, the card's body face for every
+ * English one (inherited, never named here), the mantra at a medium size and
+ * the shlok smaller, both regular.
+ */
+export interface CardHeadType {
+  /** The font stack for the script lines, in place of the script's text face. */
+  scriptFace: string;
+  /** Size classes for the greeting's and the blessing's script line. */
+  greetingClass: string;
+  blessingClass: string;
+  /** Their leading. The blessing's is looser: it runs to two lines. */
+  greetingLeading: string;
+  blessingLeading: string;
+  /** Size class for the English lines under each. */
+  englishClass: string;
+  /**
+   * The font stack for those English lines, in place of the card's body face.
+   * A serif beside the serif Devanagari, inside this block and nowhere else.
+   */
+  englishFace: string;
+  /**
+   * Whether the opening screen sets its block from the top of the space it
+   * has, rather than centred in it. The top is already held clear of the
+   * hanging border and the fade, so this only closes the extra gap centring
+   * adds under a tall block.
+   */
+  alignTop: boolean;
+}
+
+/**
  * One row in a greeting or blessing list, with the script field named for its
  * role rather than for its alphabet.
  *
@@ -271,6 +307,8 @@ export interface TraditionPack {
    * whose ornaments hang, frame and scatter as they always have.
    */
   slots: OrnamentSlots | null;
+  /** How the card sets the greeting and blessing, or null for the default. */
+  cardHead: CardHeadType | null;
 }
 
 /**
@@ -461,6 +499,7 @@ const MUSLIM_PACK: TraditionPack = {
   coverArchId: null,
   dividerId: "arabesqueBorder",
   slots: null,
+  cardHead: null,
   /*
     This order is the order they stack at the head of a card, so the
     Bismillah stays first. The four added later go after the original two,
@@ -504,6 +543,27 @@ const HINDU_PACK: TraditionPack = {
     aboveNames: ["ganesh", "om", "swastik"],
     corners: ["diya", "kalash"],
   },
+  /*
+    Tiro Devanagari Hindi, the traditional serif the app already loads for
+    Hindi names and headings (--font-hi-tiro, app/layout.tsx), so nothing new is
+    fetched. It has conjuncts for क्र, र्य, र्व, ग्न and र्ये drawn as ligatures,
+    and one weight, so "regular" is what it has.
+  */
+  cardHead: {
+    scriptFace:
+      'var(--font-hi-tiro), var(--font-devanagari), "Noto Serif Devanagari", serif',
+    greetingClass:
+      "text-[calc(1.375rem*var(--card-opening-text,1))] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+    blessingClass:
+      "text-[calc(1.0625rem*var(--card-opening-text,1))] sm:text-[calc(1.1875*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+    greetingLeading: "1.6",
+    blessingLeading: "1.9",
+    englishClass:
+      "text-[calc(0.875*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-[1.5]",
+    /* Lora, already loaded by app/layout.tsx for the card's pairs. */
+    englishFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
+    alignTop: true,
+  },
   calligraphyIds: [
     "shubhVivah",
     "sadarNimantran",
@@ -541,6 +601,7 @@ const SIKH_PACK: TraditionPack = {
   coverArchId: "gurudwaraArch",
   dividerId: "kandaFloralBorder",
   slots: null,
+  cardHead: null,
   /*
     Ik Onkar first, because it opens everything that follows it; then the
     ceremony's own name. The rest in the order a card would say them.
@@ -577,6 +638,7 @@ const CHRISTIAN_PACK: TraditionPack = {
   coverArchId: "gothicArch",
   dividerId: "oliveBranch",
   slots: null,
+  cardHead: null,
   calligraphyIds: [],
 };
 
@@ -599,6 +661,7 @@ const JAIN_PACK: TraditionPack = {
   coverArchId: null,
   dividerId: null,
   slots: null,
+  cardHead: null,
   calligraphyIds: [],
 };
 
@@ -621,6 +684,7 @@ const BUDDHIST_PACK: TraditionPack = {
   coverArchId: null,
   dividerId: null,
   slots: null,
+  cardHead: null,
   calligraphyIds: [],
 };
 

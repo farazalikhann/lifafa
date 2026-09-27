@@ -27,16 +27,25 @@ const BAND_HEIGHT = 200;
 const ROOT_FONT_PX = 16;
 
 /**
- * Where a full-width top border hangs from, in card px: below the controls
- * that float at the top of the screen — the preview's language switch, Replay
- * and close, the guest's music button — which sit 6 to 12px down and are 44px
- * tall. Not scaled down on a short screen the way the hanging rows are, because
- * the controls are not either.
+ * Where a top border's cord is tied, in card px: the very top of the card, so
+ * it reads as hanging from the edge rather than floating below it.
+ *
+ * The controls that float at the top of the screen — the preview's language
+ * switch, Replay and close, the guest's language switch and music button —
+ * sit above this layer on pills of their own (z-40 to z-60 against its z-15),
+ * so a garland passing behind one neither moves it nor is moved by it.
  */
-const TOP_SAFE = 56;
+const TOP_SAFE = 4;
 
-/** The card's design width, which a full-width border is drawn at and never past. */
+/** The card's design width, which a top border is measured against. */
 const DESIGN_WIDTH = 420;
+
+/**
+ * A top border is drawn at this share of the card's width, and so of its own
+ * natural depth: scaled whole rather than squashed, so the flowers stay round,
+ * and 15% shallower so what hangs beneath it has room.
+ */
+const TOP_BORDER_SCALE = 0.85;
 
 /**
  * WHICH ORNAMENTS HANG, AND WHERE, DECLARED PER TRADITION.
@@ -235,7 +244,10 @@ export function hangingDepth(
 
     /* Drawn at the design width at most, so that is as deep as it can reach. */
     if (ornament.fullWidth === true) {
-      deepest = Math.max(deepest, TOP_SAFE + DESIGN_WIDTH / entry.aspect);
+      deepest = Math.max(
+        deepest,
+        TOP_SAFE + (DESIGN_WIDTH * TOP_BORDER_SCALE) / entry.aspect,
+      );
       continue;
     }
 
@@ -326,9 +338,9 @@ export default function HangingLayer({
           const Shape = entry.Component;
 
           /*
-            A top border: edge to edge across the card up to its design width,
-            below the controls, still and at full strength. Sized by CSS so it
-            is exactly the card's width at every width; a drawing's pen is
+            A top border: centred across the card at TOP_BORDER_SCALE of its
+            width, tied to the top edge, still and at full strength. Sized by
+            CSS so it keeps that share at every width; a drawing's pen is
             thinned for the scale it is drawn at here, and a picture ignores it.
           */
           if (ornament.fullWidth === true) {
@@ -340,7 +352,9 @@ export default function HangingLayer({
               >
                 <span
                   className="block"
-                  style={{ width: `min(100%, ${cardPx(DESIGN_WIDTH)})` }}
+                  style={{
+                    width: `min(${TOP_BORDER_SCALE * 100}%, ${cardPx(DESIGN_WIDTH * TOP_BORDER_SCALE)})`,
+                  }}
                 >
                   <Shape
                     instanceId={`hang-${index}-${ornament.id}`}

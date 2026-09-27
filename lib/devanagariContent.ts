@@ -129,7 +129,12 @@ export const SHLOKS: readonly Shlok[] = [
   {
     id: "vakratunda",
     label: "Vakratunda Mahakaya",
-    devanagari: "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ",
+    /*
+      Both lines of the shlok, as supplied in full; the first had been supplied
+      alone. The line break is part of the value: the card sets the shlok as two
+      lines, one to each half.
+    */
+    devanagari: "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ ।\nनिर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा ॥",
     transliteration: "",
     translation:
       "O Lord of the curved trunk and mighty form, remove all obstacles from my endeavours",
