@@ -54,13 +54,13 @@ import type { HinduOrnamentId } from "@/types/hinduOrnament";
  * the call site would let the two drift the moment a viewBox changed.
  */
 export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
-  /* The three pictures: their published sizes, not viewBoxes. See PICTURES. */
+  /* The seven pictures: their published sizes, not viewBoxes. See PICTURES. */
   diya: 368 / 320,
-  kalash: 64 / 80,
-  ganesh: 64 / 72,
+  kalash: 274 / 320,
+  ganesh: 249 / 260,
   om: 263 / 260,
-  swastik: 1,
-  toran: 160 / 40,
+  swastik: 257 / 260,
+  toran: 1200 / 211,
   marigold: 1200 / 302,
   /*
     Not viewBoxes: the published crops each calligraphy's pair of files shares.
@@ -609,17 +609,20 @@ export interface HinduOrnamentEntry {
    --------------------------------------------------------------------------- */
 
 /**
- * The gold ornaments that replace a drawing, where one survived its cut.
+ * The gold ornaments that replace the drawings, one for each of the seven.
  *
- * Seven were supplied and three are here. The diya arrived on black and cut
- * cleanly; the om and the marigold garland arrived on a checkerboard painted
- * into the JPEG and came out of scripts/cut-flowers.mjs with nothing left
- * behind. The toran, the kalash and Ganesh came out with squares still caught
- * in pockets the ornament closes off — under the toran's cord, in the
- * coconut's tuft, inside Ganesh's tusks — which the cut deliberately does not
- * reach into, and the swastik was not supplied. Those four keep their drawings
- * until a version on black arrives; adding one is a line in the script and a
- * line here.
+ * All cut by scripts/cut-flowers.mjs, which says how each was cut and why.
+ * The om and the garland came on a checkerboard painted into the JPEG; the
+ * rest on black, the toran, the kalash and Ganesh on their second attempt
+ * after their checkerboard copies left squares in their closed-off pockets.
+ * Their gold is within the same range of brightness, so they read as one set.
+ *
+ * The drawings stay in this file as the fallback: an ornament whose picture
+ * is taken out of this table goes back to its drawing everywhere at once.
+ *
+ * The swastik is published exactly as supplied — upright, turning clockwise,
+ * four dots — and nothing here or in any placer turns or mirrors it; see its
+ * `uprightOnly` flag and the drawing's note.
  */
 const PICTURES: Partial<Record<HinduOrnamentId, { src: string; Component: Ornament }>> = {
   diya: {
@@ -633,6 +636,22 @@ const PICTURES: Partial<Record<HinduOrnamentId, { src: string; Component: Orname
   marigold: {
     src: "/decor/ornaments/marigold-garland.webp",
     Component: imageOrnament("/decor/ornaments/marigold-garland.webp", 1200 / 302),
+  },
+  toran: {
+    src: "/decor/ornaments/toran.webp",
+    Component: imageOrnament("/decor/ornaments/toran.webp", 1200 / 211),
+  },
+  kalash: {
+    src: "/decor/ornaments/kalash.webp",
+    Component: imageOrnament("/decor/ornaments/kalash.webp", 274 / 320),
+  },
+  ganesh: {
+    src: "/decor/ornaments/ganesh.webp",
+    Component: imageOrnament("/decor/ornaments/ganesh.webp", 249 / 260),
+  },
+  swastik: {
+    src: "/decor/ornaments/swastik.webp",
+    Component: imageOrnament("/decor/ornaments/swastik.webp", 257 / 260),
   },
 };
 

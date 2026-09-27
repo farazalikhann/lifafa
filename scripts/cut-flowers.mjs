@@ -6,6 +6,7 @@
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
  *   node scripts/cut-flowers.mjs ornaments    just the ornaments
+ *   node scripts/cut-flowers.mjs ornaments toran kalash   just those two
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -60,7 +61,7 @@ const FLOWERS = [
   { name: "marigold-flower", file: "WhatsApp Image 2026-09-26 at 11.43.32 PM (1).jpeg", fit: { long: FLOWER } },
 ].map((entry) => ({ ...entry, background: "black", out: join("public", "decor", "flowers") }));
 
-/** The Hindu pack's ornaments. The swastik is not supplied yet. */
+/** The Hindu pack's ornaments. */
 const ORNAMENTS = [
   {
     name: "diya",
@@ -85,16 +86,46 @@ const ORNAMENTS = [
     light: { x0: 960, y0: 100, x1: 1225, y1: 500, feather: 40 },
   },
   /*
-    HELD: these three came out of the checkerboard cut with squares still caught
-    in pockets the ornament closes off — the coconut's tuft, inside Ganesh's
-    tusks, under the toran's cord — so the card keeps their drawings. Kept here
-    so a black-background replacement is one file name away; `hold` stops a
-    re-run publishing the failed cut in the meantime.
+    The kalash, Ganesh and the toran first came on a painted checkerboard and
+    failed their cut — squares caught in pockets the ornament closes off. These
+    are their replacements on black, with the swastik, which had none. Each
+    keeps its own dark shading solid, as the diya's bowl does.
   */
-  { name: "kalash", file: "WhatsApp Image 2026-09-27 at 2.45.33 PM (1).jpeg", background: "checker", fit: { height: 320 }, hold: true },
-  { name: "ganesh", file: "WhatsApp Image 2026-09-27 at 2.45.33 PM (2).jpeg", background: "checker", fit: { height: 260 }, hold: true },
+  { name: "kalash", file: "ChatGPT Image Sep 27, 2026, 10_27_44 PM.png", background: "black", fit: { height: 320 }, solidInside: true },
+  {
+    name: "ganesh",
+    file: "ChatGPT Image Sep 27, 2026, 10_27_49 PM.png",
+    background: "black",
+    fit: { height: 260 },
+    solidInside: true,
+    /*
+      The gap between the trunk's curl and the right earring is closed off;
+      see the toran. Ganesh's own dark hair at the temples is true black too,
+      in patches up to about 60px, so only an area far bigger than those is
+      taken for background — the gap is over 13,000.
+    */
+    pocketMin: 500,
+  },
+  { name: "swastik", file: "ChatGPT Image Sep 27, 2026, 10_27_55 PM.png", background: "black", fit: { height: 260 }, solidInside: true },
   { name: "om", file: "WhatsApp Image 2026-09-27 at 2.45.32 PM (1).jpeg", background: "checker", fit: { height: 260 } },
-  { name: "toran", file: "WhatsApp Image 2026-09-27 at 2.45.34 PM.jpeg", background: "checker", fit: { width: 1200 }, hold: true },
+  {
+    name: "toran",
+    file: "ChatGPT Image Sep 27, 2026, 10_27_37 PM.png",
+    background: "black",
+    fit: { width: 1200 },
+    solidInside: true,
+    /*
+      Two things the diya's rule gets wrong here. The cord closes off pockets
+      of background under its swags, which "solid inside" fills with black;
+      and the leaves' shaded edges are dark enough that a flood from the edges
+      through anything below HIGH runs deep into them and washes them out.
+      So the flood from the edges stops at a darker level, and an enclosed
+      area of true black counts as background when it is big enough to be a
+      pocket — the leaves' own black specks are far smaller, and stay solid.
+    */
+    floodBelow: 30,
+    pocketMin: 40,
+  },
   { name: "marigold-garland", file: "WhatsApp Image 2026-09-27 at 2.45.32 PM.jpeg", background: "checker", fit: { width: 1200 } },
 ].map((entry) => ({ ...entry, out: join("public", "decor", "ornaments") }));
 
@@ -126,8 +157,9 @@ function cutOnBlack(data, width, height, options = {}) {
   if (options.solidInside) {
     outside = new Uint8Array(count);
     const stack = [];
+    const floodBelow = options.floodBelow ?? HIGH;
     const seed = (pixel) => {
-      if (!outside[pixel] && bright[pixel] < HIGH) {
+      if (!outside[pixel] && bright[pixel] < floodBelow) {
         outside[pixel] = 1;
         stack.push(pixel);
       }
@@ -142,6 +174,40 @@ function cutOnBlack(data, width, height, options = {}) {
       if (x < width - 1) seed(pixel + 1);
       if (y > 0) seed(pixel - width);
       if (y < height - 1) seed(pixel + width);
+    }
+
+    /* Enclosed true black big enough to be a pocket of background, not a shadow. */
+    if (options.pocketMin) {
+      const seen = new Uint8Array(count);
+      for (let start = 0; start < count; start += 1) {
+        if (seen[start] || outside[start] || bright[start] >= LOW) continue;
+        const region = [start];
+        seen[start] = 1;
+        for (let i = 0; i < region.length; i += 1) {
+          const pixel = region[i];
+          const x = pixel % width;
+          const y = (pixel - x) / width;
+          for (const near of [x > 0 ? pixel - 1 : -1, x < width - 1 ? pixel + 1 : -1, y > 0 ? pixel - width : -1, y < height - 1 ? pixel + width : -1]) {
+            if (near >= 0 && !seen[near] && !outside[near] && bright[near] < LOW) {
+              seen[near] = 1;
+              region.push(near);
+            }
+          }
+        }
+        if (region.length >= options.pocketMin) {
+          for (const pixel of region) stack.push(pixel), (outside[pixel] = 1);
+          /* And the pocket's soft rim with it, as far as the flood would go. */
+          while (stack.length > 0) {
+            const pixel = stack.pop();
+            const x = pixel % width;
+            const y = (pixel - x) / width;
+            if (x > 0) seed(pixel - 1);
+            if (x < width - 1) seed(pixel + 1);
+            if (y > 0) seed(pixel - width);
+            if (y < height - 1) seed(pixel + width);
+          }
+        }
+      }
     }
   }
 
@@ -171,6 +237,7 @@ function cutOnBlack(data, width, height, options = {}) {
         if (nearBackground && localMax > HIGH) {
           coverage = Math.min(coverage, (bright[pixel] - LOW) / (localMax - LOW));
         }
+
       }
 
       if (outside !== null && !outside[pixel]) {
@@ -455,10 +522,12 @@ async function publish(entry) {
 }
 
 const which = process.argv[2] ?? "all";
+/* Named ones only, when named — so re-cutting one never re-encodes the rest. */
+const only = process.argv.slice(3);
 const sets = [
   ...(which === "all" || which === "flowers" ? FLOWERS : []),
   ...(which === "all" || which === "ornaments" ? ORNAMENTS : []),
-];
+].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {
   if (entry.hold === true) {
