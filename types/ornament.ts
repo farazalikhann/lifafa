@@ -56,6 +56,12 @@ export interface HangingOrnament {
   /** Stagger for the pendulum animation, so no two swing in unison. */
   delayMs: number;
   swing: boolean;
+  /**
+   * Spans the card edge to edge instead of being sized by `sizeRem`, and hangs
+   * just below the controls at the top of the screen rather than at
+   * `topPercent`. For a top border — see OrnamentSlots.
+   */
+  fullWidth?: boolean;
 }
 
 /**

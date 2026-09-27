@@ -575,6 +575,36 @@ const TRADITION_MOTIFS: Record<TraditionId, readonly Motif[]> = {
   buddhist: [DharmaWheel, Lotus, BodhiLeaf, EndlessKnot],
 };
 
+/**
+ * The scatter motif that is a small line drawing of an ornament a host can add
+ * to the card, by the ornament's id.
+ *
+ * A diya in the bottom corner and three faint diyas scattered over the names
+ * is the same lamp twice, the second time as clutter over the writing — so an
+ * ornament the host has put on the card takes its motif out of the scatter.
+ */
+const MOTIF_FOR_ORNAMENT: Readonly<Record<string, Motif>> = {
+  diya: Diya,
+  kalash: Kalash,
+  om: Om,
+  swastik: Swastika,
+  toran: MangoToran,
+};
+
+/** The scatter without the motifs of ornaments already on the card. */
+export function motifsWithout(
+  motifs: readonly Motif[],
+  ornamentIds: readonly string[],
+): readonly Motif[] {
+  const onCard = ornamentIds
+    .map((id) => MOTIF_FOR_ORNAMENT[id])
+    .filter((motif) => motif !== undefined);
+
+  return onCard.length === 0
+    ? motifs
+    : motifs.filter((motif) => !onCard.includes(motif));
+}
+
 /** Neutral ornament, used as the fallback so a scatter is never empty. */
 const NEUTRAL_MOTIFS: readonly Motif[] = [Petal, Star, Dot, Floral];
 

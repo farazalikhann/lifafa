@@ -129,6 +129,39 @@ export interface PackOrnament {
    * rotation, so without this flag the placer would quietly do it.
    */
   uprightOnly?: boolean;
+  /**
+   * The published file, for an ornament that is a picture rather than a
+   * drawing. The card preloads the ones in use, so a chosen picture is in hand
+   * before the envelope opens rather than arriving after it.
+   */
+  src?: string;
+}
+
+/**
+ * The fixed places a pack's ornaments go, one ornament to a place.
+ *
+ * FOR A PACK WHOSE ORNAMENTS HAVE PLACES OF THEIR OWN. A garland hangs, a
+ * murti heads the invitation, a lamp stands at the foot — and letting each be
+ * put anywhere is how a Ganesh ended up beside the venue and two garlands
+ * ended up on one card. A pack that declares slots gets them: the panel groups
+ * its tiles by place and keeps one to each, and the card draws each place in
+ * its own spot and nowhere else.
+ *
+ * STORED AS IT ALWAYS WAS, in `enabledOrnaments`. A slot is a reading of that
+ * list, not a new field — so every card saved before there were slots still
+ * loads, and where one of those has two ornaments in a place that now holds
+ * one, the one picked last is the one drawn (see lib/ornaments/slots.ts).
+ */
+export interface OrnamentSlots {
+  /** Hangs the full width of the card, just below the controls at its top. */
+  top: readonly AnyOrnamentId[];
+  /** Centred above the names. The only place a figure of a deity is drawn. */
+  aboveNames: readonly AnyOrnamentId[];
+  /**
+   * The two bottom corners of the names' screen: the first stands at the
+   * left, the second at the right, and either alone stands in both.
+   */
+  corners: readonly [AnyOrnamentId, AnyOrnamentId];
 }
 
 /**
@@ -233,6 +266,11 @@ export interface TraditionPack {
    * put in them, and not before.
    */
   calligraphyIds: readonly AnyOrnamentId[];
+  /**
+   * Where this pack's ornaments go, if they have fixed places. Null for a pack
+   * whose ornaments hang, frame and scatter as they always have.
+   */
+  slots: OrnamentSlots | null;
 }
 
 /**
@@ -422,6 +460,7 @@ const MUSLIM_PACK: TraditionPack = {
   */
   coverArchId: null,
   dividerId: "arabesqueBorder",
+  slots: null,
   /*
     This order is the order they stack at the head of a card, so the
     Bismillah stays first. The four added later go after the original two,
@@ -454,7 +493,17 @@ const HINDU_PACK: TraditionPack = {
   findBlessing: (id) => find(HINDU_SHLOK_ROWS, id),
   findOrnament: (id) => HINDU_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
-  dividerId: "toran",
+  /*
+    No divider. The toran was the rule between sections and is now one of the
+    two things that can hang across the top — one ornament cannot be in two
+    places — so the sections are divided by the card's plain hairline.
+  */
+  dividerId: null,
+  slots: {
+    top: ["toran", "marigold"],
+    aboveNames: ["ganesh", "om", "swastik"],
+    corners: ["diya", "kalash"],
+  },
   calligraphyIds: [
     "shubhVivah",
     "shriGaneshaya",
@@ -495,6 +544,7 @@ const SIKH_PACK: TraditionPack = {
   findOrnament: (id) => SIKH_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: "gurudwaraArch",
   dividerId: "kandaFloralBorder",
+  slots: null,
   /*
     Ik Onkar first, because it opens everything that follows it; then the
     ceremony's own name. The rest in the order a card would say them.
@@ -530,6 +580,7 @@ const CHRISTIAN_PACK: TraditionPack = {
   findOrnament: (id) => CHRISTIAN_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: "gothicArch",
   dividerId: "oliveBranch",
+  slots: null,
   calligraphyIds: [],
 };
 
@@ -551,6 +602,7 @@ const JAIN_PACK: TraditionPack = {
   findOrnament: (id) => JAIN_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: null,
+  slots: null,
   calligraphyIds: [],
 };
 
@@ -572,6 +624,7 @@ const BUDDHIST_PACK: TraditionPack = {
   findOrnament: (id) => BUDDHIST_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: null,
+  slots: null,
   calligraphyIds: [],
 };
 

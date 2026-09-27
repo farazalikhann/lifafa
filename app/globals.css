@@ -631,13 +631,43 @@
 }
 
 /*
+  The glow over the diya picture's flame. A photograph has no flame element to
+  flicker, so a warm glow laid over it breathes instead — opacity only, uneven
+  so it never settles into a pulse. Held at its middle value when motion is off.
+*/
+@keyframes lifafa-diya-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  23% {
+    opacity: 0.9;
+  }
+  41% {
+    opacity: 0.62;
+  }
+  67% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 0.7;
+  }
+}
+
+.lifafa-diya-glow {
+  opacity: 0.75;
+  animation: lifafa-diya-glow 2.8s ease-in-out infinite;
+}
+
+/*
   Reduced motion switches both off outright rather than slowing them down. The
   ornaments themselves stay — a guest who has asked for less movement still
   wants the card to look like a card.
 */
 @media (prefers-reduced-motion: reduce) {
   .lifafa-hang-swing,
-  .lifafa-flame-flicker {
+  .lifafa-flame-flicker,
+  .lifafa-diya-glow {
     animation: none;
   }
 }

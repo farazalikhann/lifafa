@@ -298,6 +298,46 @@ export function cordPath(
  * host opening the panel should not be made to fetch every one of them before
  * they have scrolled to it.
  */
+/**
+ * An ornament that is a picture rather than a drawing: a cut-out published by
+ * scripts/cut-flowers.mjs, in its own colours.
+ *
+ * The same shape as every drawn Ornament, so a pack can swap one in for a
+ * line-art drawing without its placer, its chip or its layer learning the
+ * difference — and swap back, which is what happens to any picture that fails
+ * its cut. `size` measures the longer side, as it does everywhere; `className`
+ * hands sizing to CSS, the way the full-width top border uses it. The svg-only
+ * props are taken and ignored, as the calligraphy's are.
+ *
+ * Empty alt and aria-hidden: these are decoration, like the drawings they
+ * replace. Not lazy, unlike the calligraphy — a chosen one sits in the first
+ * screen and is preloaded besides.
+ */
+export function imageOrnament(src: string, aspect: number): Ornament {
+  const Picture: Ornament = ({ size = DEFAULT_SIZE, className, style }) => (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+      width={
+        className === undefined
+          ? Math.round(aspect >= 1 ? size : size * aspect)
+          : undefined
+      }
+      height={
+        className === undefined
+          ? Math.round(aspect >= 1 ? size / aspect : size)
+          : undefined
+      }
+      className={className ?? "block max-w-none select-none"}
+      style={style}
+    />
+  );
+
+  return Picture;
+}
+
 export function calligraphyOrnament(id: CalligraphyId): Ornament {
   const Panel: Ornament = ({ size = 120, className, style, ground = "dark" }) => (
     <img

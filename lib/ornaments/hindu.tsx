@@ -1,6 +1,7 @@
 import {
   Frame,
   calligraphyOrnament,
+  imageOrnament,
   cordPath,
   flowerPath,
   leafPath,
@@ -53,13 +54,14 @@ import type { HinduOrnamentId } from "@/types/hinduOrnament";
  * the call site would let the two drift the moment a viewBox changed.
  */
 export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
-  diya: 1,
+  /* The three pictures: their published sizes, not viewBoxes. See PICTURES. */
+  diya: 368 / 320,
   kalash: 64 / 80,
   ganesh: 64 / 72,
-  om: 72 / 64,
+  om: 263 / 260,
   swastik: 1,
   toran: 160 / 40,
-  marigold: 160 / 34,
+  marigold: 1200 / 302,
   /*
     Not viewBoxes: the published crops each calligraphy's pair of files shares.
     Asked of lib/calligraphy.ts rather than copied, so the sheet can be re-cut
@@ -590,6 +592,8 @@ export interface HinduOrnamentEntry {
   topRegionOnly: boolean;
   /** Never rotate or tilt this shape. See the note on the swastik. */
   uprightOnly?: boolean;
+  /** The published file, for an ornament that is a picture; the card preloads it. */
+  src?: string;
 }
 
 /**
@@ -600,6 +604,45 @@ export interface HinduOrnamentEntry {
  * order supplied — the muted line under the grid names the diya, the kalash and
  * the toran wherever they land in it.
  */
+/* ---------------------------------------------------------------------------
+   Pictures
+   --------------------------------------------------------------------------- */
+
+/**
+ * The gold ornaments that replace a drawing, where one survived its cut.
+ *
+ * Seven were supplied and three are here. The diya arrived on black and cut
+ * cleanly; the om and the marigold garland arrived on a checkerboard painted
+ * into the JPEG and came out of scripts/cut-flowers.mjs with nothing left
+ * behind. The toran, the kalash and Ganesh came out with squares still caught
+ * in pockets the ornament closes off — under the toran's cord, in the
+ * coconut's tuft, inside Ganesh's tusks — which the cut deliberately does not
+ * reach into, and the swastik was not supplied. Those four keep their drawings
+ * until a version on black arrives; adding one is a line in the script and a
+ * line here.
+ */
+const PICTURES: Partial<Record<HinduOrnamentId, { src: string; Component: Ornament }>> = {
+  diya: {
+    src: "/decor/ornaments/diya.webp",
+    Component: imageOrnament("/decor/ornaments/diya.webp", 368 / 320),
+  },
+  om: {
+    src: "/decor/ornaments/om.webp",
+    Component: imageOrnament("/decor/ornaments/om.webp", 263 / 260),
+  },
+  marigold: {
+    src: "/decor/ornaments/marigold-garland.webp",
+    Component: imageOrnament("/decor/ornaments/marigold-garland.webp", 1200 / 302),
+  },
+};
+
+/**
+ * Where the diya's flame sits in its picture, as shares of the picture, for the
+ * glow that flickers over it. Measured off the published file's brightest
+ * pixels; a new diya picture wants these measured again.
+ */
+export const DIYA_FLAME = { x: 0.9, y: 0.28 } as const;
+
 /* ---------------------------------------------------------------------------
    Calligraphy
    --------------------------------------------------------------------------- */
@@ -622,7 +665,7 @@ export const MangalParinay = calligraphyOrnament("mangalParinay");
 export const MadhurMilan = calligraphyOrnament("madhurMilan");
 export const ShubhLabh = calligraphyOrnament("shubhLabh");
 
-export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = [
+const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
   { id: "diya", label: "Diya", Component: Diya, chipSize: 38, topRegionOnly: false },
   {
     id: "kalash",
@@ -746,9 +789,23 @@ export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = [
   },
 ];
 
+/**
+ * The pack as the card and the editor see it: a picture wherever one survived
+ * its cut, the drawing everywhere else. One list, so the chip, the placer and
+ * the preload can never disagree about which the card is showing.
+ */
+export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = HINDU_ENTRIES.map(
+  (entry) => {
+    const picture = PICTURES[entry.id];
+    return picture === undefined
+      ? entry
+      : { ...entry, Component: picture.Component, src: picture.src };
+  },
+);
+
 /** Sits under the ornament grid in the editor. */
 export const HINDU_ORNAMENTS_NOTE =
-  "Marigold garlands hang from the top of your card.";
+  "One for each place on your card. Tap a chosen one again to take it off.";
 
 const BY_ID: Record<HinduOrnamentId, Ornament> = {
   diya: Diya,

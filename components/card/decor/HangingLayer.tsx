@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactElement } from "react";
 import { artWidth, cardPx } from "@/lib/cardScale";
+import { chosenIn } from "@/lib/ornaments/slots";
 import type { TraditionPack } from "@/lib/traditionPacks";
 import type { TraditionId } from "@/types/occasion";
 import type { AnyOrnamentId, HangingOrnament } from "@/types/ornament";
@@ -24,6 +25,18 @@ const BAND_HEIGHT = 200;
  * the client disagree about how big a lantern is.
  */
 const ROOT_FONT_PX = 16;
+
+/**
+ * Where a full-width top border hangs from, in card px: below the controls
+ * that float at the top of the screen — the preview's language switch, Replay
+ * and close, the guest's music button — which sit 6 to 12px down and are 44px
+ * tall. Not scaled down on a short screen the way the hanging rows are, because
+ * the controls are not either.
+ */
+const TOP_SAFE = 56;
+
+/** The card's design width, which a full-width border is drawn at and never past. */
+const DESIGN_WIDTH = 420;
 
 /**
  * WHICH ORNAMENTS HANG, AND WHERE, DECLARED PER TRADITION.
@@ -75,32 +88,19 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   ],
 
   /*
-    THE JHALAR, AND ONLY THE JHALAR. This pack had no hanging row at all until
-    now, and picking which of its seven ornaments earned one is the whole of the
-    decision. A marigold string is hung — that is what it is for. A diya is not:
-    lib/ornaments/hindu.tsx draws it with a flared foot and says in as many
-    words that the foot is there so it reads as a lamp standing rather than as a
-    bowl, and hanging it would be arguing with its own drawing. The kalash sits
-    for the same reason, and Ganesh, Om and the swastik are symbols rather than
-    objects — nothing hangs a swastik from a string.
+    THE TOP BORDER, ONE OF TWO. The Hindu pack's ornaments have places (see
+    OrnamentSlots), and the top of the card is the garland's or the toran's:
+    whichever the host picked, never both, edge to edge below the controls.
+    Both rows are here and the slot picks between them.
 
-    The toran is the other thing that hangs in life, and it stays the divider,
-    because it is already doing that job well and one ornament cannot be in two
-    places. So the garland does the hanging, three lengths of it: one across the
-    card and two shorter ones beneath its ends, which is how a mandap is dressed.
-
-    The two short ones hang at 14 and 19 percent rather than tucked up under the
-    long one, so they read as separate strands instead of thickening it — and
-    both still finish above its own 71px, so the whole jhalar costs the card the
-    same clearance a single garland would.
-
-    Checked at 360px: the long one spans 12 to 348, and the two short ones are
-    clear of each other at 7-151 and 217-345.
+    It used to be three lengths of garland — one across the card and two
+    shorter ones beneath its ends — which read as the same garland drawn
+    twice, and the toran was the rule between sections. The toran hangs now,
+    and the sections are divided by the card's hairline.
   */
   hindu: [
-    { id: "marigold", xPercent: 50, topPercent: 0, sizeRem: 21, delayMs: 0, swing: false },
-    { id: "marigold", xPercent: 22, topPercent: 14, sizeRem: 9, delayMs: 0, swing: false },
-    { id: "marigold", xPercent: 78, topPercent: 19, sizeRem: 8, delayMs: 0, swing: false },
+    { id: "marigold", xPercent: 50, topPercent: 0, sizeRem: 0, delayMs: 0, swing: false, fullWidth: true },
+    { id: "toran", xPercent: 50, topPercent: 0, sizeRem: 0, delayMs: 0, swing: false, fullWidth: true },
   ],
 
   /*
@@ -170,6 +170,26 @@ function rowsFor(pack: TraditionPack | null): readonly HangingOrnament[] {
 }
 
 /**
+ * The rows that actually hang on this card: the switched-on ones, and of a
+ * pack's top-border slot only the one in it. Both the drawing and the depth
+ * read this, so a border the slot has not chosen can neither be drawn nor
+ * push the sections down.
+ */
+function hangingRows(
+  pack: TraditionPack | null,
+  enabledOrnaments: readonly AnyOrnamentId[],
+): readonly HangingOrnament[] {
+  const top = pack?.slots?.top ?? [];
+  const chosenTop = chosenIn(top, enabledOrnaments);
+
+  return rowsFor(pack).filter(
+    (row) =>
+      enabledOrnaments.includes(row.id) &&
+      (!top.includes(row.id) || row.id === chosenTop),
+  );
+}
+
+/**
  * Every ornament id this tradition may hang.
  *
  * Read by the canvas to work out what is left over for CornerLayer to scatter,
@@ -205,15 +225,17 @@ export function hangingDepth(
 ): number {
   let deepest = 0;
 
-  for (const ornament of rowsFor(pack)) {
-    if (!enabledOrnaments.includes(ornament.id)) {
-      continue;
-    }
-
+  for (const ornament of hangingRows(pack, enabledOrnaments)) {
     const entry = pack?.findOrnament(ornament.id) ?? null;
 
     /* An id the pack does not know is skipped rather than guessed at. */
     if (entry === null) {
+      continue;
+    }
+
+    /* Drawn at the design width at most, so that is as deep as it can reach. */
+    if (ornament.fullWidth === true) {
+      deepest = Math.max(deepest, TOP_SAFE + DESIGN_WIDTH / entry.aspect);
       continue;
     }
 
@@ -262,9 +284,7 @@ export default function HangingLayer({
   enabledOrnaments: readonly AnyOrnamentId[];
   accent: string;
 }): ReactElement | null {
-  const hanging = rowsFor(pack).filter((ornament) =>
-    enabledOrnaments.includes(ornament.id),
-  );
+  const hanging = hangingRows(pack, enabledOrnaments);
 
   if (hanging.length === 0 || pack === null) {
     return null;
@@ -304,6 +324,33 @@ export default function HangingLayer({
           }
 
           const Shape = entry.Component;
+
+          /*
+            A top border: edge to edge across the card up to its design width,
+            below the controls, still and at full strength. Sized by CSS so it
+            is exactly the card's width at every width; a drawing's pen is
+            thinned for the scale it is drawn at here, and a picture ignores it.
+          */
+          if (ornament.fullWidth === true) {
+            return (
+              <span
+                key={`${ornament.id}-full`}
+                className="absolute inset-x-0 flex justify-center"
+                style={{ top: cardPx(TOP_SAFE), color: accent }}
+              >
+                <span
+                  className="block"
+                  style={{ width: `min(100%, ${cardPx(DESIGN_WIDTH)})` }}
+                >
+                  <Shape
+                    instanceId={`hang-${index}-${ornament.id}`}
+                    className="block h-auto w-full"
+                    strokeWidth={0.7}
+                  />
+                </span>
+              </span>
+            );
+          }
 
           /*
             Counted over the swinging ornaments only, not over the whole table:

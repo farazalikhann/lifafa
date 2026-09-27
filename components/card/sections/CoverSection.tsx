@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useInView } from "@/hooks/useInView";
 import { CardFlourish } from "@/components/card/decor/DecorLayer";
 import {
@@ -76,6 +76,9 @@ export default function CoverSection({
   pad,
   occasionId,
   language,
+  aboveNames = null,
+  corners = null,
+  bottomClearance = 0,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -105,6 +108,18 @@ export default function CoverSection({
    * never adds to `minHeight` — the section still fills its viewport exactly.
    */
   pad: number;
+  /**
+   * The pack's ornament for the place above the names, already drawn — see
+   * SlotOrnaments. In the column's flow, so the names make room for it.
+   */
+  aboveNames?: ReactNode;
+  /** The pair for this screen's bottom corners, already drawn and positioned. */
+  corners?: ReactNode;
+  /**
+   * The bottom inset the corners need, in card px. The section keeps the
+   * larger of this and `pad`, so its content always ends above them.
+   */
+  bottomClearance?: number;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -134,7 +149,7 @@ export default function CoverSection({
       style={{
         minHeight,
         paddingTop: cardPx(pad),
-        paddingBottom: cardPx(pad),
+        paddingBottom: cardPx(Math.max(pad, bottomClearance)),
         /*
           1.25rem between the names, the title and the flourish. It
           was 1.5, which spaced four short lines as four separate statements
@@ -144,6 +159,12 @@ export default function CoverSection({
         gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
       }}
     >
+      {aboveNames !== null ? (
+        <div className={reveal} style={lineDelay(0)}>
+          {aboveNames}
+        </div>
+      ) : null}
+
       {names.kind === "pair" ? (
         /*
           Three lines, one unit. The gap here is deliberately far tighter than
@@ -215,6 +236,8 @@ export default function CoverSection({
       <div className={reveal} style={lineDelay(stepAfterNames + 1)}>
         <CardFlourish accent={theme.accent} />
       </div>
+
+      {corners}
     </section>
   );
 }

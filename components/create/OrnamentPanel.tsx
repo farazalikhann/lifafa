@@ -1,7 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
+import { chosenIn, tapSlotted } from "@/lib/ornaments/slots";
+import type {
+  PackBlessing,
+  PackOrnament,
+  TraditionPack,
+} from "@/lib/traditionPacks";
 import type { AnyOrnamentId, OrnamentConfig } from "@/types/ornament";
 
 function GroupHeading({ children }: { children: string }): ReactElement {
@@ -14,6 +19,65 @@ function GroupHeading({ children }: { children: string }): ReactElement {
 
 function MutedNote({ children }: { children: string }): ReactElement {
   return <p className="text-xs text-[var(--lifafa-muted)]">{children}</p>;
+}
+
+/** A place on the card, over its own group of tiles. */
+function SlotHeading({ children }: { children: string }): ReactElement {
+  return (
+    <h4 className="text-[0.625rem] tracking-[0.18em] text-[var(--lifafa-muted)] uppercase">
+      {children}
+    </h4>
+  );
+}
+
+/**
+ * One ornament tile: its picture or drawing over its name.
+ *
+ * Fixed height box with the artwork centred in it, so a 0.55:1 lantern and a
+ * 6.7:1 vine sit on the same baseline and every tile comes out one size. Each
+ * ornament brings its own `chipSize` — see the note on the pack's entry type.
+ * A picture shows in its own colours; a drawing takes the tile's ink.
+ */
+function OrnamentTile({
+  entry,
+  isSelected,
+  onTap,
+}: {
+  entry: PackOrnament;
+  isSelected: boolean;
+  onTap: () => void;
+}): ReactElement {
+  const { id, label, Component, chipSize } = entry;
+
+  return (
+    <button
+      type="button"
+      aria-pressed={isSelected}
+      onClick={onTap}
+      className={[
+        "flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border px-2 py-3 transition-colors duration-150",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
+        isSelected
+          ? "border-transparent bg-[var(--lifafa-ink-raised)] ring-2 ring-[var(--lifafa-marigold)]"
+          : "border-[var(--lifafa-hairline)] hover:border-[var(--lifafa-marigold)]/60",
+      ].join(" ")}
+    >
+      <span
+        aria-hidden="true"
+        className={`flex h-10 items-center justify-center ${
+          isSelected
+            ? "text-[var(--lifafa-marigold)]"
+            : "text-[var(--lifafa-muted)]"
+        }`}
+      >
+        <Component size={chipSize} instanceId={`chip-${id}`} />
+      </span>
+
+      <span className="text-center text-[0.75rem] font-medium text-[var(--lifafa-cream)]">
+        {label}
+      </span>
+    </button>
+  );
 }
 
 /**
@@ -174,6 +238,37 @@ export default function OrnamentPanel({
     (entry) => !pack.calligraphyIds.includes(entry.id),
   );
 
+  /*
+    A pack with slots groups its shapes by the place each goes, one to a place
+    — see OrnamentSlots. Anything a pack offers outside its slots still gets
+    the plain grid below them.
+  */
+  const slots = pack.slots;
+  const slotted: readonly AnyOrnamentId[] =
+    slots === null ? [] : [...slots.top, ...slots.aboveNames, ...slots.corners];
+  const loose = shapes.filter((entry) => !slotted.includes(entry.id));
+  const slotGroups =
+    slots === null
+      ? []
+      : [
+          { title: "Top border", ids: slots.top, oneOnly: true, columns: "grid-cols-2" },
+          { title: "Above names", ids: slots.aboveNames, oneOnly: true, columns: "grid-cols-3" },
+          { title: "Bottom corners", ids: slots.corners, oneOnly: false, columns: "grid-cols-2" },
+        ];
+
+  /* A place that holds one shows the one the card draws, even on an older card holding two. */
+  const isShown = (ids: readonly AnyOrnamentId[], oneOnly: boolean, id: AnyOrnamentId): boolean =>
+    oneOnly
+      ? chosenIn(ids, config.enabledOrnaments) === id
+      : config.enabledOrnaments.includes(id);
+
+  const tapInSlot = (id: AnyOrnamentId): void => {
+    onChange({
+      ...config,
+      enabledOrnaments: tapSlotted(pack, config.enabledOrnaments, id),
+    });
+  };
+
   const toggleOrnament = (id: AnyOrnamentId): void => {
     const isOn = config.enabledOrnaments.includes(id);
 
@@ -195,48 +290,38 @@ export default function OrnamentPanel({
       <div className="flex flex-col gap-2.5">
         <GroupHeading>Add to your card</GroupHeading>
 
-        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-          {shapes.map(({ id, label, Component, chipSize }) => {
-            const isSelected = config.enabledOrnaments.includes(id);
+        {slotGroups.map((group) => (
+          <div key={group.title} className="flex flex-col gap-2">
+            <SlotHeading>{group.title}</SlotHeading>
+            <div className={`grid gap-2.5 ${group.columns}`}>
+              {group.ids.map((id) => {
+                const entry = pack.findOrnament(id);
 
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => toggleOrnament(id)}
-                className={[
-                  "flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border px-2 py-3 transition-colors duration-150",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
-                  isSelected
-                    ? "border-transparent bg-[var(--lifafa-ink-raised)] ring-2 ring-[var(--lifafa-marigold)]"
-                    : "border-[var(--lifafa-hairline)] hover:border-[var(--lifafa-marigold)]/60",
-                ].join(" ")}
-              >
-                {/*
-                  Fixed height box with the drawing centred in it, so a 0.55:1
-                  lantern and a 6.7:1 vine sit on the same baseline and every
-                  chip comes out one size. Each ornament brings its own
-                  `chipSize` — see the note on the pack's entry type.
-                */}
-                <span
-                  aria-hidden="true"
-                  className={`flex h-10 items-center justify-center ${
-                    isSelected
-                      ? "text-[var(--lifafa-marigold)]"
-                      : "text-[var(--lifafa-muted)]"
-                  }`}
-                >
-                  <Component size={chipSize} instanceId={`chip-${id}`} />
-                </span>
+                return entry === null ? null : (
+                  <OrnamentTile
+                    key={id}
+                    entry={entry}
+                    isSelected={isShown(group.ids, group.oneOnly, id)}
+                    onTap={() => tapInSlot(id)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
-                <span className="text-center text-[0.75rem] font-medium text-[var(--lifafa-cream)]">
-                  {label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {loose.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            {loose.map((entry) => (
+              <OrnamentTile
+                key={entry.id}
+                entry={entry}
+                isSelected={config.enabledOrnaments.includes(entry.id)}
+                onTap={() => toggleOrnament(entry.id)}
+              />
+            ))}
+          </div>
+        ) : null}
 
         <MutedNote>{pack.ornamentsNote}</MutedNote>
       </div>

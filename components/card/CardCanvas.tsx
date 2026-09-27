@@ -1,6 +1,12 @@
 "use client";
 
-import { Fragment, type CSSProperties, type ReactElement } from "react";
+import {
+  Fragment,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { preload } from "react-dom";
 import { calligraphyGround } from "@/lib/calligraphy";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import {
@@ -27,6 +33,13 @@ import HangingLayer, {
   hangingIdsFor,
 } from "@/components/card/decor/HangingLayer";
 import CoverSection from "@/components/card/sections/CoverSection";
+import {
+  AboveNames,
+  CORNER_INSET,
+  CornerPieces,
+  cornerClearance,
+} from "@/components/card/decor/SlotOrnaments";
+import { resolveSlots, slottedIds } from "@/lib/ornaments/slots";
 import DetailsSection from "@/components/card/sections/DetailsSection";
 import CountdownSection from "@/components/card/sections/CountdownSection";
 import VenueSection from "@/components/card/sections/VenueSection";
@@ -62,7 +75,7 @@ import {
   namesFaceOf,
   pairRoleVar,
 } from "@/lib/fontPairs";
-import type { Motif } from "@/lib/motifs";
+import { motifsWithout, type Motif } from "@/lib/motifs";
 import type { EventWeather } from "@/types/weather";
 
 import { getPalette } from "@/lib/palettes";
@@ -419,6 +432,13 @@ function scratchLabel(
  * the Maps link that would otherwise give it away, the countdown's units but
  * neither its heading nor the calendar buttons under it.
  */
+/** The slotted ornaments the names' screen carries, already drawn. See SlotOrnaments. */
+interface CoverDecor {
+  aboveNames: ReactNode;
+  corners: ReactNode;
+  bottomClearance: number;
+}
+
 function renderBlock(
   block: CardBlock,
   draft: EventDraft,
@@ -431,6 +451,7 @@ function renderBlock(
   dateScratch: ScratchConfig | null,
   invite: CalendarInvite,
   language: CardLanguage,
+  coverDecor: CoverDecor | null,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -453,6 +474,9 @@ function renderBlock(
           pad={pad}
           occasionId={occasionId}
           language={language}
+          aboveNames={coverDecor?.aboveNames ?? null}
+          corners={coverDecor?.corners ?? null}
+          bottomClearance={coverDecor?.bottomClearance ?? 0}
         />
       );
     case "details":
@@ -732,6 +756,12 @@ export default function CardCanvas({
     claims is an ornament the host can switch on and never see.
   */
   const hangingIds = hangingIdsFor(pack);
+  /*
+    A fourth claim, for a pack whose ornaments have places: whatever its slots
+    hold is drawn in its slot and nowhere else. This is what keeps a Ganesh out
+    of the scatter, where it used to land beside the venue.
+  */
+  const slotIds = slottedIds(pack);
   const scatterIds =
     pack === null
       ? []
@@ -740,6 +770,7 @@ export default function CardCanvas({
           .filter(
             (id) =>
               !hangingIds.includes(id) &&
+              !slotIds.includes(id) &&
               id !== pack.coverArchId &&
               id !== pack.dividerId &&
               !pack.calligraphyIds.includes(id),
@@ -780,6 +811,35 @@ export default function CardCanvas({
       ? (pack?.findOrnament(archId) ?? null)
       : null;
   const useArch = archOrnament !== null;
+
+  /*
+    The slots, read once. The top border is HangingLayer's and reads the same
+    list; the other two are the names' screen's, handed to it below.
+  */
+  const slots = resolveSlots(pack, ornaments);
+
+  /*
+    Every chosen picture fetched as the page loads. Under a cover the card is
+    mounted from the first paint, so its images already start then; this puts
+    them at the front of the queue, so none is still arriving as the envelope
+    opens. React deduplicates the hints, so it costs nothing per render.
+  */
+  for (const entry of [
+    slots.top,
+    slots.aboveNames,
+    slots.corners?.left ?? null,
+    slots.corners?.right ?? null,
+  ]) {
+    if (entry?.src !== undefined) {
+      preload(entry.src, { as: "image" });
+    }
+  }
+
+  /*
+    An ornament on the card is not also a motif in the scatter over the
+    writing — see motifsWithout.
+  */
+  const scatterMotifs = motifsWithout(motifs, ornaments);
 
   /*
     Where the arch has to sit so it does not cross the border.
@@ -832,6 +892,31 @@ export default function CardCanvas({
     for their own, measured off their own artwork.
   */
   const contentSideInset = Math.max(0, clearance.x - SECTION_SIDE_PAD);
+
+  /*
+    What the names' screen carries. The corners stand no nearer the edges than
+    a border's own clearance, so a flower frame is never drawn over.
+  */
+  const cornerInset = Math.max(CORNER_INSET, clearance.x);
+  const coverDecor: CoverDecor | null =
+    slots.aboveNames === null && slots.corners === null
+      ? null
+      : {
+          aboveNames:
+            slots.aboveNames !== null ? (
+              <AboveNames entry={slots.aboveNames} accent={effectiveTheme.accent} />
+            ) : null,
+          corners:
+            slots.corners !== null ? (
+              <CornerPieces
+                corners={slots.corners}
+                accent={effectiveTheme.accent}
+                inset={cornerInset}
+              />
+            ) : null,
+          bottomClearance:
+            slots.corners !== null ? cornerClearance(cornerInset) : 0,
+        };
 
   /* Normalised once here, so the gate below and the layer read the same thing. */
   const butterflies = butterflyStyle(config.butterflies);
@@ -1037,7 +1122,7 @@ export default function CardCanvas({
           <MarginDecorLayer
             accent={effectiveTheme.accent}
             motion={config.decorMotion}
-            motifs={motifs}
+            motifs={scatterMotifs}
             intensity={config.decorIntensity}
             bandHeight={bandHeight}
             maxAlpha={decorMaxAlpha}
@@ -1047,7 +1132,7 @@ export default function CardCanvas({
         <DecorLayer
           accent={effectiveTheme.accent}
           motion={config.decorMotion}
-          motifs={motifs}
+          motifs={scatterMotifs}
           intensity={config.decorIntensity}
           bandHeight={bandHeight}
           maxAlpha={decorMaxAlpha}
@@ -1279,6 +1364,7 @@ export default function CardCanvas({
               dateScratch,
               invite,
               language,
+              isCover ? coverDecor : null,
             );
 
             const head =
