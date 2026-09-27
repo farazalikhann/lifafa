@@ -41,6 +41,7 @@ import {
 } from "@/lib/autoTranslate";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalFlowerType, petalStyle } from "@/lib/petals";
+import { withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { deepEqual } from "@/lib/deepEqual";
 import {
   DATE_CHANGE_LIMIT,
@@ -186,7 +187,16 @@ function toState(snapshot: EditorSnapshot): EditorState {
     scratchTarget: config.scratchTarget,
     borderStyle: config.borderStyle,
     style: config.style,
-    ornamentConfig: config.ornamentConfig,
+    /*
+      A retired calligraphy id is shown as its replacement, and saved as it on
+      the next save — see withoutRetiredCalligraphy.
+    */
+    ornamentConfig: {
+      ...config.ornamentConfig,
+      enabledOrnaments: withoutRetiredCalligraphy(
+        config.ornamentConfig.enabledOrnaments,
+      ),
+    },
     /* Null on every card saved before this field existed. */
     musicUrl: config.musicUrl ?? null,
     /*

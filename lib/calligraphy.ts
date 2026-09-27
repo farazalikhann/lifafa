@@ -15,11 +15,12 @@ import { relativeLuminance } from "@/lib/contrast";
  * ornament works. The rest are strokes in `currentColor` and take whatever
  * colour the card hands them; these are rasters, so the ink is fixed at the
  * point of publishing and the only way to have it both ways is to publish it
- * both ways. For the Arabic pieces that is black and white. For the Devanagari
- * and Gurmukhi ones it cannot be — they are coloured artwork — so the second
- * file is the artwork adjusted for a dark ground rather than recoloured; see
- * `devanagari` and `gurmukhi` below, which adjust it in two different ways for
- * two different reasons.
+ * both ways. For the Arabic pieces that is black and white. For the Gurmukhi
+ * ones it cannot be — they are coloured artwork — so the second file is the
+ * artwork adjusted for a dark ground rather than recoloured; see `gurmukhi`.
+ * The Devanagari pieces are the exception to the exception: supplied as one
+ * colour, they are published as a single shape the card tints itself — see
+ * `devanagari`.
  *
  * BOTH INKS OF A PIECE ARE THE SAME SHAPE, to the pixel, and that is not a
  * detail. The card picks between them on the fly, so a pair that disagreed on
@@ -44,10 +45,6 @@ export type CalligraphyId =
   | "radheKrishna"
   | "shriGaneshaya"
   | "vivahotsav"
-  | "togetherForever"
-  | "mangalParinay"
-  | "madhurMilan"
-  | "shubhLabh"
   | "ikOnkarCalligraphy"
   | "satnamWaheguru"
   | "shubhVivaah"
@@ -64,6 +61,13 @@ export type CalligraphyGround = "light" | "dark";
 interface CalligraphyArt {
   /** The published file for each ground. */
   src: Record<CalligraphyGround, string>;
+  /**
+   * For a piece drawn as a shape rather than a picture: the one file whose
+   * alpha is the lettering, which the card fills with its own accent through
+   * a CSS mask. Both grounds get the same file, and the colour follows the
+   * card's theme instead of being fixed at publishing. See `devanagari`.
+   */
+  mask?: string;
   /** The published box, width over height. Both inks share it exactly. */
   aspect: number;
   /**
@@ -98,36 +102,24 @@ function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
 }
 
 /**
- * The Devanagari pieces, cut from one supplied sheet of nine.
+ * The Devanagari pieces: five, each supplied as white lettering on black.
  *
- * Their two files are not two inks the way the Arabic ones are — this artwork
- * is gold and maroon, not black, so there is no second colour it could simply
- * be set in. The light file is the artwork as drawn. The dark file is that
- * artwork with each pixel's channels scaled up together until its brightest
- * reaches 215 and then mixed three parts in ten toward gold: scaling all three
- * channels by one factor holds the hue exactly, the ceiling leaves the gold
- * that was already bright alone, and the gold mix keeps the lifted maroon from
- * arriving as neon orange. Without it "Mangal Parinay" and "Madhur Milan" were
- * very nearly invisible on ink, forest and midnight.
- *
- * Both files are cut from ONE box — the light one's trim, applied to both — for
- * the reason the Bismillah's pair shares a crop: the card picks between them on
- * the fly, and a pair that disagreed on proportion would have a host watching
- * the lettering resize when they tried another palette.
+ * NOT TWO INKS, AND NOT A FIXED COLOUR, unlike every other piece in this file.
+ * scripts/cut-flowers.mjs turns each into one white shape whose alpha is the
+ * lettering's brightness, and the card draws it as a CSS mask filled with the
+ * card's accent — so the lettering is the card's gold on a dark palette and the
+ * card's own accent on a cream one, and changes with the theme without a
+ * second file. The soft edge of every stroke is the mask's own, so it is as
+ * sharp on cream as on ink.
  */
 function devanagari(
   slug: string,
   aspect: number,
   alt: string,
 ): CalligraphyArt {
-  return {
-    src: {
-      light: `/decor/hindu/${slug}-light.webp`,
-      dark: `/decor/hindu/${slug}-dark.webp`,
-    },
-    aspect,
-    alt,
-  };
+  const mask = `/decor/calligraphy/${slug}.webp`;
+
+  return { src: { light: mask, dark: mask }, aspect, alt, mask };
 }
 
 /**
@@ -224,48 +216,28 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
     "Alhamdulillah: all praise is due to Allah",
   ),
 
-  /* The nine Devanagari pieces, in the order the sheet set them out. */
+  /* The five Devanagari pieces, in the order the panel offers them. */
   shubhVivah: devanagari(
     "shubh-vivah",
-    460 / 342,
+    900 / 643,
     "Shubh Vivah: an auspicious marriage",
   ),
   sadarNimantran: devanagari(
     "sadar-nimantran",
-    458 / 235,
+    900 / 433,
     "Sadar Nimantran: a respectful invitation",
   ),
-  radheKrishna: devanagari("radhe-krishna", 376 / 320, "Radhe Krishna"),
   shriGaneshaya: devanagari(
-    "shri-ganeshaya",
-    443 / 310,
+    "shri-ganeshaya-namah",
+    900 / 472,
     "Shri Ganeshaya Namah: salutations to Shri Ganesha",
   ),
   vivahotsav: devanagari(
     "vivahotsav",
-    476 / 282,
+    900 / 531,
     "Vivahotsav: the wedding celebration",
   ),
-  togetherForever: devanagari(
-    "together-forever",
-    426 / 280,
-    "Together Forever",
-  ),
-  mangalParinay: devanagari(
-    "mangal-parinay",
-    483 / 343,
-    "Mangal Parinay: an auspicious union",
-  ),
-  madhurMilan: devanagari(
-    "madhur-milan",
-    439 / 229,
-    "Madhur Milan: a sweet union",
-  ),
-  shubhLabh: devanagari(
-    "shubh-labh",
-    424 / 253,
-    "Shubh Labh: auspiciousness and prosperity",
-  ),
+  radheKrishna: devanagari("radhe-krishna", 900 / 706, "Radhe Krishna"),
 
   /*
     The nine Gurmukhi pieces, in the order the sheet set them out.
@@ -350,4 +322,49 @@ export function calligraphyAspect(id: CalligraphyId): number {
 
 export function calligraphyAlt(id: CalligraphyId): string {
   return ART[id].alt;
+}
+
+/** The mask file for a piece drawn as a shape, or null for one drawn as a picture. */
+export function calligraphyMask(id: CalligraphyId): string | null {
+  return ART[id].mask ?? null;
+}
+
+/**
+ * Hindu calligraphy that has been taken out of the pack, and what a card that
+ * chose one gets instead.
+ *
+ * Nine pieces became five. A card saved with one of the four that went still
+ * has its id in `enabledOrnaments`, and would otherwise lose its heading
+ * without a word — so it is read as Shubh Vivah, the piece every one of the
+ * four stood nearest to. Read, not rewritten: the stored card changes only
+ * when its host next saves it.
+ */
+const RETIRED_CALLIGRAPHY: Readonly<Record<string, CalligraphyId>> = {
+  togetherForever: "shubhVivah",
+  mangalParinay: "shubhVivah",
+  madhurMilan: "shubhVivah",
+  shubhLabh: "shubhVivah",
+};
+
+/**
+ * A card's ornament list with retired calligraphy mapped to its replacement,
+ * each id once. Anything else it does not know it passes through untouched —
+ * the card skips an id its pack cannot find rather than failing on it.
+ */
+export function withoutRetiredCalligraphy<T extends string>(
+  ids: readonly T[],
+): readonly T[] {
+  if (!ids.some((id) => id in RETIRED_CALLIGRAPHY)) {
+    return ids;
+  }
+
+  const mapped: T[] = [];
+  for (const id of ids) {
+    const next = (RETIRED_CALLIGRAPHY[id] ?? id) as T;
+    if (!mapped.includes(next)) {
+      mapped.push(next);
+    }
+  }
+
+  return mapped;
 }

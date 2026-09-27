@@ -363,7 +363,14 @@ export default function OrnamentPanel({
                       : "border-[var(--lifafa-hairline)] hover:border-[var(--lifafa-marigold)]/60",
                   ].join(" ")}
                 >
-                  <span aria-hidden="true" className="block w-full">
+                  {/*
+                    Gold on the tile. A piece drawn as a shape fills with this
+                    colour; one drawn as a picture keeps its own ink.
+                  */}
+                  <span
+                    aria-hidden="true"
+                    className="block w-full text-[var(--lifafa-marigold)]"
+                  >
                     <Component
                       instanceId={`chip-${id}`}
                       className="block h-auto w-full"

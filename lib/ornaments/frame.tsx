@@ -2,6 +2,7 @@ import type { CSSProperties, ReactElement, ReactNode } from "react";
 import {
   calligraphyAlt,
   calligraphyAspect,
+  calligraphyMask,
   calligraphySrc,
   type CalligraphyId,
 } from "@/lib/calligraphy";
@@ -339,6 +340,42 @@ export function imageOrnament(src: string, aspect: number): Ornament {
 }
 
 export function calligraphyOrnament(id: CalligraphyId): Ornament {
+  const mask = calligraphyMask(id);
+
+  /*
+    A piece published as a shape: a block of `currentColor` cut to the
+    lettering by a CSS mask, so it takes whatever colour its wrapper sets — the
+    card's accent on the card, the editor's gold on a tile. Its height comes
+    from its own proportions, so it sizes exactly as the picture it replaced.
+    The -webkit- properties are for the Android WebViews and older Safari that
+    still want them. A span with role="img" and a label, because a mask has no
+    alt of its own and these are lines that are read.
+  */
+  if (mask !== null) {
+    const Shape: Ornament = ({ size = 120, className, style }) => (
+      <span
+        role="img"
+        aria-label={calligraphyAlt(id)}
+        className={className ?? "block"}
+        style={{
+          display: "block",
+          aspectRatio: String(calligraphyAspect(id)),
+          ...(className === undefined ? { width: Math.round(size) } : null),
+          backgroundColor: "currentColor",
+          WebkitMaskImage: `url(${mask})`,
+          maskImage: `url(${mask})`,
+          WebkitMaskSize: "100% 100%",
+          maskSize: "100% 100%",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          ...style,
+        }}
+      />
+    );
+
+    return Shape;
+  }
+
   const Panel: Ornament = ({ size = 120, className, style, ground = "dark" }) => (
     <img
       src={calligraphySrc(id, ground)}

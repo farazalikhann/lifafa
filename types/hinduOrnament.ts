@@ -29,21 +29,19 @@ export type HinduOrnamentId =
   | "toran"
   | "marigold"
   /*
-    The nine below are calligraphy rather than shapes — Devanagari word-marks
-    cut from one supplied sheet. They are ids in this union like any other
-    because the host switches them on from the same panel and they travel in the
-    same `enabledOrnaments` list; what makes them different is where the pack
-    sends them, which is `calligraphyIds` and the head of the card.
+    The five below are calligraphy rather than shapes — Devanagari word-marks.
+    They are ids in this union like any other because the host switches them on
+    from the same panel and they travel in the same `enabledOrnaments` list;
+    what makes them different is where the pack sends them, which is
+    `calligraphyIds` and the head of the card. Four more were retired; a card
+    that still carries one is read through `withoutRetiredCalligraphy` in
+    lib/calligraphy.ts.
   */
   | "shubhVivah"
   | "sadarNimantran"
   | "radheKrishna"
   | "shriGaneshaya"
-  | "vivahotsav"
-  | "togetherForever"
-  | "mangalParinay"
-  | "madhurMilan"
-  | "shubhLabh";
+  | "vivahotsav";
 
 /*
   There is no HinduOrnamentConfig. The host's choices live in OrnamentConfig in

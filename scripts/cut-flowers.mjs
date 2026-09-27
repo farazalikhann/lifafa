@@ -7,6 +7,7 @@
  *   node scripts/cut-flowers.mjs flowers      just the flowers
  *   node scripts/cut-flowers.mjs ornaments    just the ornaments
  *   node scripts/cut-flowers.mjs ornaments toran kalash   just those two
+ *   node scripts/cut-flowers.mjs calligraphy  just the calligraphy
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -128,6 +129,36 @@ const ORNAMENTS = [
   },
   { name: "marigold-garland", file: "WhatsApp Image 2026-09-27 at 2.45.32 PM.jpeg", background: "checker", fit: { width: 1200 } },
 ].map((entry) => ({ ...entry, out: join("public", "decor", "ornaments") }));
+
+/**
+ * The Hindu calligraphy: white lettering on black, published as a white shape
+ * whose alpha is the lettering's brightness. The card uses it as a CSS mask and
+ * fills it with the card's accent, so only the alpha matters — see "mask" below.
+ */
+const CALLIGRAPHY = [
+  {
+    name: "shubh-vivah",
+    file: "ChatGPT Image Sep 28, 2026, 01_43_47 AM.png",
+    /*
+      The supplied art has a small white smudge on the left of the ु under
+      शु. It touches the stroke, so it is not a separate speck the cut could
+      drop: it is erased in the published file, left of the stroke's own edge
+      as the clean rows above and below it place that edge, and nothing the
+      stroke is solid in is touched. In published pixels.
+    */
+    touchUp: { rows: [479, 490], edgeFrom: [478, 238.5], edgeTo: [491, 248.5], left: 234 },
+  },
+  { name: "sadar-nimantran", file: "ChatGPT Image Sep 28, 2026, 01_43_52 AM.png" },
+  { name: "radhe-krishna", file: "ChatGPT Image Sep 28, 2026, 01_43_57 AM.png" },
+  /* The second supply, which spells गणेशाय; the first was lettered गणराय. */
+  { name: "shri-ganeshaya-namah", file: "ChatGPT Image Sep 28, 2026, 02_07_37 AM.png" },
+  { name: "vivahotsav", file: "ChatGPT Image Sep 28, 2026, 01_44_07 AM.png" },
+].map((entry) => ({
+  ...entry,
+  background: "mask",
+  fit: { width: 900 },
+  out: join("public", "decor", "calligraphy"),
+}));
 
 /* --- On black ---------------------------------------------------------- */
 
@@ -480,6 +511,38 @@ function cutFromChecker(data, width, height) {
   return { rgba, report };
 }
 
+/* --- White lettering on black, as a mask -------------------------------- */
+
+/** Below this the black is the sheet, not the lettering's soft edge. */
+const MASK_FLOOR = 12;
+/** At and above this the lettering is solid. */
+const MASK_SOLID = 232;
+
+/**
+ * Brightness as coverage, everything else white. Black is fully transparent,
+ * white fully solid, and the anti-aliased edge in between keeps its ramp — so
+ * a thin stroke stays as thin and as soft as it was drawn. The floor is what
+ * takes the sheet's near-black noise out, so nothing speckles once the mask is
+ * filled with a colour.
+ */
+function cutMask(data, width, height) {
+  const count = width * height;
+  const rgba = Buffer.alloc(count * 4);
+
+  for (let pixel = 0; pixel < count; pixel += 1) {
+    const lum =
+      0.2126 * data[pixel * 3] + 0.7152 * data[pixel * 3 + 1] + 0.0722 * data[pixel * 3 + 2];
+    const coverage = Math.min(1, Math.max(0, (lum - MASK_FLOOR) / (MASK_SOLID - MASK_FLOOR)));
+
+    rgba[pixel * 4] = 255;
+    rgba[pixel * 4 + 1] = 255;
+    rgba[pixel * 4 + 2] = 255;
+    rgba[pixel * 4 + 3] = Math.round(coverage * 255);
+  }
+
+  return { rgba, report: "" };
+}
+
 /* --- Crop, size, publish ------------------------------------------------ */
 
 async function publish(entry) {
@@ -492,12 +555,14 @@ async function publish(entry) {
   const { rgba, report } =
     entry.background === "black"
       ? cutOnBlack(data, width, height, entry)
-      : cutFromChecker(data, width, height);
+      : entry.background === "mask"
+        ? cutMask(data, width, height)
+        : cutFromChecker(data, width, height);
 
   /* Cropped to what is left — a stray pixel below 10% coverage does not stretch the box. */
   let top = height, bottom = -1, left = width, right = -1;
   for (let pixel = 0; pixel < width * height; pixel += 1) {
-    if (rgba[pixel * 4 + 3] > (entry.background === "black" ? 0 : 25)) {
+    if (rgba[pixel * 4 + 3] > (entry.background === "black" ? 0 : entry.background === "mask" ? 8 : 25)) {
       const x = pixel % width;
       const y = (pixel - x) / width;
       top = Math.min(top, y); bottom = Math.max(bottom, y);
@@ -512,9 +577,33 @@ async function publish(entry) {
 
   mkdirSync(entry.out, { recursive: true });
   const target = join(entry.out, `${entry.name}.webp`);
-  const result = await sharp(rgba, { raw: { width, height, channels: 4 } })
+  let sized = sharp(rgba, { raw: { width, height, channels: 4 } })
     .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
-    .resize(resize)
+    .resize(resize);
+
+  /*
+    A hand touch-up in published pixels: in each row of `rows`, whatever lies
+    left of the stroke's edge — a straight line through the clean rows either
+    side — and right of `left` is cleared, the pixel astride the edge keeps a
+    soft half, and anything the stroke is solid in is left alone.
+  */
+  if (entry.touchUp) {
+    const { data: px, info: size } = await sized.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { rows, edgeFrom, edgeTo, left: from } = entry.touchUp;
+    const slope = (edgeTo[1] - edgeFrom[1]) / (edgeTo[0] - edgeFrom[0]);
+    for (let y = rows[0]; y <= rows[1]; y += 1) {
+      const edge = edgeFrom[1] + slope * (y - edgeFrom[0]);
+      for (let x = from; x < Math.ceil(edge); x += 1) {
+        const at = (y * size.width + x) * 4 + 3;
+        if (px[at] >= 240) continue;
+        const keep = Math.max(0, Math.min(1, x + 1 - edge + 0.5));
+        px[at] = Math.min(px[at], Math.round(keep * 255));
+      }
+    }
+    sized = sharp(px, { raw: { width: size.width, height: size.height, channels: 4 } });
+  }
+
+  const result = await sized
     .webp({ quality: 86, alphaQuality: 100, effort: 6 })
     .toFile(target);
 
@@ -527,6 +616,7 @@ const only = process.argv.slice(3);
 const sets = [
   ...(which === "all" || which === "flowers" ? FLOWERS : []),
   ...(which === "all" || which === "ornaments" ? ORNAMENTS : []),
+  ...(which === "all" || which === "calligraphy" ? CALLIGRAPHY : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

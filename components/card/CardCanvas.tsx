@@ -7,7 +7,12 @@ import {
   type ReactNode,
 } from "react";
 import { preload } from "react-dom";
-import { calligraphyGround } from "@/lib/calligraphy";
+import {
+  calligraphyGround,
+  calligraphyMask,
+  withoutRetiredCalligraphy,
+  type CalligraphyId,
+} from "@/lib/calligraphy";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import {
   petalFlowerType,
@@ -733,8 +738,15 @@ export default function CardCanvas({
     branches that could disagree, and no tradition named anywhere below.
   */
   const pack = getTraditionPack(config.traditionId);
+  /*
+    Read through the retired-calligraphy map, so a card saved with a piece that
+    has since left its pack opens with the piece that replaced it rather than
+    with nothing at its head.
+  */
   const ornaments: readonly AnyOrnamentId[] =
-    pack !== null ? config.ornamentConfig.enabledOrnaments : [];
+    pack !== null
+      ? withoutRetiredCalligraphy(config.ornamentConfig.enabledOrnaments)
+      : [];
 
   const greeting = pack?.findGreeting(config.ornamentConfig.greetingId) ?? null;
   const blessing = pack?.findBlessing(config.ornamentConfig.blessingId) ?? null;
@@ -840,6 +852,18 @@ export default function CardCanvas({
     writing — see motifsWithout.
   */
   const scatterMotifs = motifsWithout(motifs, ornaments);
+
+  /*
+    The chosen calligraphy's mask, fetched as the page loads. A CSS mask image
+    is fetched in CORS mode, so the hint says so too — a hint in the default
+    mode would be a second, unused download of the same file.
+  */
+  for (const panel of calligraphy) {
+    const mask = calligraphyMask(panel.id as CalligraphyId);
+    if (mask !== null) {
+      preload(mask, { as: "image", crossOrigin: "anonymous" });
+    }
+  }
 
   /*
     Where the arch has to sit so it does not cross the border.
@@ -1447,6 +1471,12 @@ export default function CardCanvas({
                       instanceId={`cover-calligraphy-${panel.id}`}
                       className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem)*var(--card-opening,1))]"
                       ground={calligraphyGround(effectiveTheme.background)}
+                      /*
+                        What a piece drawn as a shape is filled with: the
+                        card's accent, so it follows the theme. A piece drawn
+                        as a picture keeps its own ink and ignores it.
+                      */
+                      style={{ color: effectiveTheme.accent }}
                     />
                   ))}
 

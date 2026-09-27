@@ -72,10 +72,6 @@ export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
   radheKrishna: calligraphyAspect("radheKrishna"),
   shriGaneshaya: calligraphyAspect("shriGaneshaya"),
   vivahotsav: calligraphyAspect("vivahotsav"),
-  togetherForever: calligraphyAspect("togetherForever"),
-  mangalParinay: calligraphyAspect("mangalParinay"),
-  madhurMilan: calligraphyAspect("madhurMilan"),
-  shubhLabh: calligraphyAspect("shubhLabh"),
 };
 
 /* ---------------------------------------------------------------------------
@@ -667,22 +663,17 @@ export const DIYA_FLAME = { x: 0.9, y: 0.28 } as const;
    --------------------------------------------------------------------------- */
 
 /**
- * The nine Devanagari word-marks, all from one shared factory.
+ * The five Devanagari word-marks, all from one shared factory.
  *
- * Photographs of lettering rather than drawings, which is why they come from
- * lib/ornaments/frame.tsx alongside the Frame and not from a path table here —
- * see the note on `calligraphyOrnament`. lib/calligraphy.ts holds which files
- * each one has, what it says and how the dark version was made.
+ * Shapes cut from white lettering and filled with the card's accent — see
+ * `devanagari` in lib/calligraphy.ts, which holds each one's file and what it
+ * says, and `calligraphyOrnament` in lib/ornaments/frame.tsx, which draws them.
  */
 export const ShubhVivah = calligraphyOrnament("shubhVivah");
 export const SadarNimantran = calligraphyOrnament("sadarNimantran");
 export const RadheKrishna = calligraphyOrnament("radheKrishna");
 export const ShriGaneshaya = calligraphyOrnament("shriGaneshaya");
 export const Vivahotsav = calligraphyOrnament("vivahotsav");
-export const TogetherForever = calligraphyOrnament("togetherForever");
-export const MangalParinay = calligraphyOrnament("mangalParinay");
-export const MadhurMilan = calligraphyOrnament("madhurMilan");
-export const ShubhLabh = calligraphyOrnament("shubhLabh");
 
 const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
   { id: "diya", label: "Diya", Component: Diya, chipSize: 38, topRegionOnly: false },
@@ -734,6 +725,7 @@ const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
     chipSize: 84,
     topRegionOnly: false,
   },
+  /* In the order the panel offers them. */
   {
     id: "shubhVivah",
     label: "Shubh Vivah",
@@ -746,14 +738,6 @@ const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
     id: "sadarNimantran",
     label: "Sadar Nimantran",
     Component: SadarNimantran,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "radheKrishna",
-    label: "Radhe Krishna",
-    Component: RadheKrishna,
     /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
     chipSize: 84,
     topRegionOnly: false,
@@ -775,33 +759,9 @@ const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
     topRegionOnly: false,
   },
   {
-    id: "togetherForever",
-    label: "Together Forever",
-    Component: TogetherForever,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "mangalParinay",
-    label: "Mangal Parinay",
-    Component: MangalParinay,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "madhurMilan",
-    label: "Madhur Milan",
-    Component: MadhurMilan,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "shubhLabh",
-    label: "Shubh Labh",
-    Component: ShubhLabh,
+    id: "radheKrishna",
+    label: "Radhe Krishna",
+    Component: RadheKrishna,
     /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
     chipSize: 84,
     topRegionOnly: false,
@@ -839,10 +799,6 @@ const BY_ID: Record<HinduOrnamentId, Ornament> = {
   radheKrishna: RadheKrishna,
   shriGaneshaya: ShriGaneshaya,
   vivahotsav: Vivahotsav,
-  togetherForever: TogetherForever,
-  mangalParinay: MangalParinay,
-  madhurMilan: MadhurMilan,
-  shubhLabh: ShubhLabh,
 };
 
 export function getHinduOrnament(id: HinduOrnamentId): Ornament {

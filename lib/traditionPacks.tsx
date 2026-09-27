@@ -506,14 +506,10 @@ const HINDU_PACK: TraditionPack = {
   },
   calligraphyIds: [
     "shubhVivah",
-    "shriGaneshaya",
-    "mangalParinay",
     "sadarNimantran",
+    "shriGaneshaya",
     "vivahotsav",
-    "madhurMilan",
     "radheKrishna",
-    "togetherForever",
-    "shubhLabh",
   ],
 };
 
