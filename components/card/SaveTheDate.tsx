@@ -342,7 +342,6 @@ export default function SaveTheDate({
   }
 
   const copy = cardCopy(language).calendar;
-  const onAccent = readableOn(theme.accent, [theme.background, theme.textPrimary]);
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
   const dateHidden =
@@ -500,12 +499,17 @@ export default function SaveTheDate({
           onClick={handleTap}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
-          className="relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-full px-6 text-[calc(0.95*var(--card-rem,1rem))] font-semibold transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
+          /*
+            Drawn like the countdown's tiles above it — a thin accent border,
+            the same soft corners, the surface leaned toward the accent — so the
+            two read as one set rather than a button dropped under a clock.
+          */
+          className="relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border px-6 text-[calc(0.95*var(--card-rem,1rem))] font-semibold tracking-[0.02em] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
           style={{
-            backgroundColor: theme.accent,
-            color: onAccent,
+            borderColor: `${theme.accent}8c`,
+            backgroundColor: mixHex(theme.surface, theme.accent, 0.05),
+            color: theme.accent,
             outlineColor: theme.accent,
-            boxShadow: `0 6px 18px -8px ${theme.accent}`,
           }}
         >
           {isAdded ? <CheckIcon /> : <CalendarIcon />}

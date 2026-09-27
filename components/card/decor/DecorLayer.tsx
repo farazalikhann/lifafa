@@ -257,6 +257,16 @@ function roamDuration(tableDuration: number): number {
  * The motif array is cycled across the fixed position table, so a scatter mixes
  * several different shapes rather than repeating one.
  */
+/**
+ * What keeps the scatter out of the writing: a mask that lets it through only
+ * in a strip down each side of the card, fading out before the text column
+ * starts, on every screen. The shapes still drift across the whole band, but
+ * only the stretch of their path inside a margin is ever seen. A static mask,
+ * so it costs a paint once and nothing per frame.
+ */
+const MARGIN_MASK =
+  "linear-gradient(to right, #000 0, #000 calc(22 * var(--card-px, 1px)), transparent calc(34 * var(--card-px, 1px)), transparent calc(100% - 34 * var(--card-px, 1px)), #000 calc(100% - 22 * var(--card-px, 1px)), #000 100%)";
+
 export default function DecorLayer({
   accent,
   motion,
@@ -328,7 +338,11 @@ export default function DecorLayer({
         takes the sides. The whole card everywhere else.
       */
       className="lifafa-card-column pointer-events-none absolute inset-0 overflow-clip transition-opacity duration-500 ease-out motion-reduce:hidden"
-      style={{ opacity: hidden ? 0 : 1 }}
+      style={{
+        opacity: hidden ? 0 : 1,
+        WebkitMaskImage: MARGIN_MASK,
+        maskImage: MARGIN_MASK,
+      }}
     >
       {/*
         Pinned flush to the top of the scrollport and exactly as tall as it, so

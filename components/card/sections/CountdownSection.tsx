@@ -7,7 +7,7 @@ import {
   type ReactElement,
 } from "react";
 import Confetti from "@/components/card/Confetti";
-import FlipClock, { type FlipUnit } from "@/components/card/FlipClock";
+import CountdownTiles, { type TileUnit } from "@/components/card/CountdownTiles";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useInView } from "@/hooks/useInView";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -42,9 +42,10 @@ function confettiKey(sessionKey: string): string {
 /**
  * What the section has to say, once it knows what time it is.
  *
- * A discriminated union rather than a number of milliseconds, because "today"
- * and "has taken place" are not distances — they are answers to a calendar
- * question — and a caller handed a bare number would have to re-derive them.
+ * A discriminated union rather than a number of milliseconds, because "has
+ * begun" and "has taken place" are not distances — the second is an answer to
+ * a calendar question — and a caller handed a bare number would have to
+ * re-derive them.
  */
 type Countdown =
   | {
@@ -54,7 +55,7 @@ type Countdown =
       readonly minutes: number;
       readonly seconds: number;
     }
-  | { readonly kind: "today" }
+  | { readonly kind: "begun" }
   | { readonly kind: "passed" };
 
 /**
@@ -65,20 +66,18 @@ type Countdown =
  * having gone and found a clock first, and the only thing that does is the
  * effect below.
  *
- * The day itself comes first, and is decided by the Indian calendar day: from
- * the morning of the celebration to midnight the card says "Today is the day"
- * rather than counting the last hours, and a reception that began an hour ago
- * is still today. After that day, it says thank you.
+ * It counts right up to the moment the celebration starts, the last hours of
+ * the day included. From then to the end of that Indian calendar day the card
+ * says "The celebration has begun" — a reception that began an hour ago is
+ * still going — and from the next day it says thank you.
  */
 function measure(target: Date, now: Date): Countdown {
-  if (istDayKey(now) === istDayKey(target)) {
-    return { kind: "today" };
-  }
-
   const remaining = target.getTime() - now.getTime();
 
   if (remaining <= 0) {
-    return { kind: "passed" };
+    return istDayKey(now) === istDayKey(target)
+      ? { kind: "begun" }
+      : { kind: "passed" };
   }
 
   return {
@@ -91,15 +90,15 @@ function measure(target: Date, now: Date): Countdown {
 }
 
 /**
- * The four units as the flip clock draws them. Days are at least two cards and
- * grow to three past 99, which every celebration anyone sends a card for fits.
- * Before the first tick every card shows a dash, so the server and the first
+ * The four units as the tiles draw them. Days are at least two digits and grow
+ * to three past 99, which every celebration anyone sends a card for fits.
+ * Before the first tick every tile shows dashes, so the server and the first
  * paint agree and nothing claims a number it has not measured.
  */
 function unitsOf(
   countdown: Countdown | null,
   copy: CardCopy["countdown"],
-): readonly FlipUnit[] {
+): readonly TileUnit[] {
   const pad = (value: number): string => String(value).padStart(2, "0");
   const counting = countdown !== null && countdown.kind === "counting" ? countdown : null;
 
@@ -111,8 +110,8 @@ function unitsOf(
   ];
 }
 
-/** What a screen reader is told in place of the drawn cards. */
-function spokenCountdown(units: readonly FlipUnit[]): string {
+/** What a screen reader is told in place of the drawn tiles. */
+function spokenCountdown(units: readonly TileUnit[]): string {
   return units
     .filter((unit) => !unit.digits.includes("–"))
     .map((unit) => `${Number(unit.digits)} ${unit.label}`)
@@ -120,12 +119,13 @@ function spokenCountdown(units: readonly FlipUnit[]): string {
 }
 
 /**
- * A live count down to the celebration, as a split-flap clock.
+ * A live count down to the celebration, as four tiles.
  *
  * Renders nothing at all when the host has not set a date — CardCanvas filters
  * the section out of the running order in that case, so its divider goes with
- * it. On the day it says "Today is the day", with a short burst of confetti
- * once a visit, and from the next day "Thank you for celebrating with us".
+ * it. From the moment it starts it says "The celebration has begun", with a
+ * short burst of confetti once a visit, and from the next day "Thank you for
+ * celebrating with us".
  *
  * THE CLOCK IS NEVER READ DURING RENDER. The server has no idea what time it
  * is where the guest is, and a browser that disagreed with it by a single
@@ -250,14 +250,14 @@ export default function CountdownSection({
   }, [targetTime, isCovered]);
 
   /*
-    Confetti, once a visit, the first time "Today is the day" is actually on
-    screen and legible: in view, not behind a panel, and not for a guest who
-    has asked for less motion.
+    Confetti, once a visit, the first time "The celebration has begun" is
+    actually on screen and legible: in view, not behind a panel, and not for a
+    guest who has asked for less motion.
   */
-  const isToday = countdown !== null && countdown.kind === "today";
+  const hasBegun = countdown !== null && countdown.kind === "begun";
 
   useEffect(() => {
-    if (!isToday || !isInView || isCovered || reducedMotion) {
+    if (!hasBegun || !isInView || isCovered || reducedMotion) {
       return;
     }
 
@@ -276,7 +276,7 @@ export default function CountdownSection({
     }
 
     setConfetti(true);
-  }, [isToday, isInView, isCovered, reducedMotion, sessionKey]);
+  }, [hasBegun, isInView, isCovered, reducedMotion, sessionKey]);
 
   if (!hasCountdown(draft)) {
     return null;
@@ -287,8 +287,8 @@ export default function CountdownSection({
   const closing =
     countdown === null || countdown.kind === "counting"
       ? null
-      : countdown.kind === "today"
-        ? copy.countdown.today
+      : countdown.kind === "begun"
+        ? copy.countdown.begun
         : copy.countdown.passed;
 
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
@@ -301,7 +301,7 @@ export default function CountdownSection({
             copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
           }`}
           style={{
-            color: isToday ? theme.accent : theme.textPrimary,
+            color: hasBegun ? theme.accent : theme.textPrimary,
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}
@@ -331,7 +331,12 @@ export default function CountdownSection({
         role="timer"
         aria-live="off"
       >
-        <FlipClock units={units} theme={theme} label={spokenCountdown(units)} />
+        <CountdownTiles
+          units={units}
+          theme={theme}
+          label={spokenCountdown(units)}
+          hindi={language === "hi"}
+        />
       </div>
     );
 
