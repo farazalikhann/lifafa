@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type ReactElement,
   type ReactNode,
@@ -14,6 +15,7 @@ import { CoverOpenContext } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
+import { whenCardReady, whenVisible } from "@/lib/cardReady";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
@@ -60,6 +62,22 @@ const WORDS_FADE_MS = 360;
 const SOUND_PRELOAD_DELAY_MS = 300;
 
 /**
+ * The longest the cover waits for the card's fonts and pictures before it
+ * appears anyway. See lib/cardReady.ts: the loader is a courtesy, never a
+ * place a guest can be left.
+ */
+const READY_TIMEOUT_MS = 8000;
+
+/** How long the loader takes to give way to the cover, once the card is ready. */
+const LOADER_FADE_MS = 420;
+
+/**
+ * The card fading in, for a guest who asked for less motion, in place of the
+ * cover's animation.
+ */
+const REDUCED_FADE_MS = 600;
+
+/**
  * Where the cover is in its one journey.
  *
  * "closed" is what a guest lands on, "opening" is the animation playing, and
@@ -103,6 +121,85 @@ export interface CoverVisualState {
    * couple on the letter — writes them in the same hand.
    */
   namesFont: CSSProperties;
+}
+
+/** For useSyncExternalStore, where the only question is server or browser. */
+function subscribeToNothing(): () => void {
+  return () => {};
+}
+
+/**
+ * What a guest sees while the card is still arriving: a small envelope in the
+ * card's accent, breathing, over the words "Preparing your invitation", on the
+ * card's own ground — never black. It is in the server's HTML, so it is the
+ * first thing painted, and it covers the cover until the card is ready, so a
+ * tap made before the page can answer it lands on nothing that looks tappable.
+ *
+ * Painted at once when it arrives with the server's HTML, because that is a
+ * guest waiting on a page. Mounted later in the browser — a Replay — its mark
+ * and words come in a quarter of a second late instead, so a card that is
+ * ready at once hands straight over to its cover with nothing flashing up in
+ * between. Not delayed in the first case, because a delayed CSS animation
+ * cannot start while the page's scripts hold the main thread, and on a slow
+ * phone that left the loader blank for seconds.
+ */
+function PreparingLoader({
+  ready,
+  text,
+  ground,
+  accent,
+  muted,
+}: {
+  ready: boolean;
+  text: string;
+  ground: string;
+  accent: string;
+  muted: string;
+}): ReactElement {
+  /* False for the server's render and the hydration that matches it; true for a later mount. */
+  const mountedLater = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+
+  return (
+    <div
+      data-cover-loading=""
+      role="status"
+      aria-hidden={ready}
+      className="absolute inset-0 z-30 flex items-center justify-center"
+      style={{
+        backgroundColor: ground,
+        opacity: ready ? 0 : 1,
+        transition: `opacity ${LOADER_FADE_MS}ms ease-out`,
+        pointerEvents: ready ? "none" : "auto",
+      }}
+    >
+      <div
+        className={`flex flex-col items-center gap-4 ${
+          mountedLater
+            ? "animate-[lifafa-cover-loader-in_400ms_ease-out_250ms_both] motion-reduce:animate-none"
+            : ""
+        }`}
+      >
+        <svg
+          viewBox="0 0 48 36"
+          aria-hidden="true"
+          focusable="false"
+          className="h-9 w-12 animate-[lifafa-cover-loader-pulse_1.8s_ease-in-out_infinite] motion-reduce:animate-none"
+          style={{ color: accent }}
+        >
+          <rect x="2" y="2" width="44" height="32" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M3 4 L24 21 L45 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          <circle cx="24" cy="21" r="4" fill="currentColor" />
+        </svg>
+        <p className="text-[0.8125rem] tracking-[0.12em]" style={{ color: muted }}>
+          {text}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -194,22 +291,26 @@ export default function CoverShell({
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
 
   /*
-    Reduced motion means no cover at all, not a still one.
-
-    A guest who has asked their device for less movement has asked to be taken
-    to the content. An envelope that no longer animates but still has to be
-    tapped through is not a gentler flourish, it is a stile: the motion is gone
-    and only the obstacle is left. So the whole layer is skipped and the card is
-    what they land on.
-
-    Declared here, above the effects, because the scroll lock is keyed to it.
-
-    A consequence worth knowing: `reducedMotion` is therefore always false by
-    the time a visual is rendered, and the reduced-motion branches inside the
-    four cover visuals are unreachable while this holds. They are left in place
-    because they are what those files would need the day this policy is revisited.
+    Whether the card underneath is ready to be seen: its fonts in, and every
+    picture it uses loaded and decoded — or eight seconds gone. Until then the
+    loader covers the cover. Waited for on every mount, from nothing stored:
+    each fresh open of the link, and each Replay, plays in full.
   */
-  const covered = phase !== "open" && !reducedMotion;
+  const [ready, setReady] = useState<boolean>(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  /*
+    Up until the cover is gone, whatever the guest's motion setting.
+
+    It used to come down at once for a guest who had asked their device for
+    less movement, and since the server cannot know that setting, the envelope
+    was painted first and then vanished as the page woke, which is exactly an
+    opening that was skipped. Android turns the setting on with "Remove
+    animations" and, on some phones, with battery saver. Such a guest now gets
+    the loader like everyone else and then the card fading in, with no
+    envelope to tap through: the stile is still gone, and so is the jump cut.
+  */
+  const covered = phase !== "open";
 
   /** The pending hand-off from "opening" to "open", so a skip can cancel it. */
   const timerRef = useRef<number | null>(null);
@@ -368,6 +469,52 @@ export default function CoverShell({
   useEffect(() => clearTimer, [clearTimer]);
 
   /*
+    The wait. Started after hydration, when the card is on the page to be read,
+    and finished only while the page is on screen: a link opened in a
+    background tab keeps its loader until the guest switches to it, and the
+    envelope arrives in front of them rather than for nobody.
+  */
+  useEffect(() => {
+    if (!hasCover) {
+      return;
+    }
+
+    let live = true;
+
+    void whenCardReady(cardRef.current, READY_TIMEOUT_MS)
+      .then(whenVisible)
+      .then(() => {
+        if (live) {
+          setReady(true);
+        }
+      });
+
+    return () => {
+      live = false;
+    };
+  }, [hasCover]);
+
+  /*
+    Less motion: once the card is ready, the cover simply fades away and the
+    card fades in under it, with nothing to tap. No cleanup of its own: the
+    phase it sets re-runs this, and clearing the timer then would strand the
+    cover; clearTimer takes it on unmount.
+  */
+  useEffect(() => {
+    if (!ready || !reducedMotion || phase !== "closed") {
+      return;
+    }
+
+    clearTimer();
+    setCardLetGo(true);
+    setPhase("opening");
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      setPhase("open");
+    }, REDUCED_FADE_MS + UNMOUNT_GRACE_MS);
+  }, [ready, reducedMotion, phase, clearTimer]);
+
+  /*
     A recorded sound is fetched while the cover is closed, so it is already in
     memory when the guest taps; fetched on the tap, it would land after the
     curtains had parted. Asked for on the same terms handleOpen plays it, so a
@@ -411,15 +558,19 @@ export default function CoverShell({
     fontWeight: namesFace.weight,
     letterSpacing: namesFace.tracking,
   };
-  const visual = renderVisual?.({
-    phase,
-    option,
-    reducedMotion,
-    colors,
-    title,
-    namesFont,
-  });
+  /* No drawing under reduced motion: the layer fades as a plain panel. */
+  const visual = reducedMotion
+    ? null
+    : renderVisual?.({
+        phase,
+        option,
+        reducedMotion,
+        colors,
+        title,
+        namesFont,
+      });
   const hasVisual = visual !== null && visual !== undefined;
+  const fadeMs = reducedMotion ? REDUCED_FADE_MS : option.durationMs;
 
   return (
     <>
@@ -446,7 +597,7 @@ export default function CoverShell({
       <RevealGateContext value={!covered || cardLetGo}>
         {/* Later than the gate: only once the cover has unmounted. */}
         <CoverOpenContext value={!covered}>
-          <div className="contents" inert={covered}>
+          <div ref={cardRef} className="contents" inert={covered}>
             {children}
           </div>
         </CoverOpenContext>
@@ -491,7 +642,7 @@ export default function CoverShell({
               opacity: phase === "opening" && !hasVisual ? 0 : 1,
               transition:
                 phase === "opening" && !hasVisual
-                  ? `opacity ${option.durationMs}ms ease-in`
+                  ? `opacity ${fadeMs}ms ease-in`
                   : undefined,
               /*
                 Published as variables as well as painted, so the controls below
@@ -514,6 +665,7 @@ export default function CoverShell({
         >
           {visual}
 
+          {reducedMotion ? null : (
           <button
             type="button"
             onClick={handleOpen}
@@ -594,6 +746,7 @@ export default function CoverShell({
               </span>
             </span>
           </button>
+          )}
 
           {/*
             Present from the first frame, not revealed once the animation
@@ -606,7 +759,7 @@ export default function CoverShell({
             flourish turns into a toll. Offering it only mid-animation helps
             nobody: by then they have already paid.
           */}
-          {covered ? (
+          {covered && !reducedMotion ? (
             <button
               type="button"
               onClick={handleSkip}
@@ -615,6 +768,14 @@ export default function CoverShell({
               {copy.coverSkip}
             </button>
           ) : null}
+
+          <PreparingLoader
+            ready={ready}
+            text={copy.coverPreparing}
+            ground={colors.ground}
+            accent={colors.accent}
+            muted={colors.textMuted}
+          />
         </div>
       ) : null}
     </>

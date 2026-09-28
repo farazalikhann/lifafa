@@ -12,6 +12,7 @@ import {
 } from "@/lib/cardTranslation";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
 import { hasEnded } from "@/lib/eventLock";
+import { getPalette } from "@/lib/palettes";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
@@ -259,8 +260,22 @@ export default async function InvitePage({
     ? await getEventWeather(event.coordinates, event.draft.eventDate)
     : null;
 
+  /*
+    THE PAGE IS THE CARD'S COLOUR FROM ITS FIRST BYTE.
+
+    The root layout paints every page the product's near-black ink, and the
+    cover and the card paint over it — so anything that briefly leaves the
+    screen uncovered showed black: the moment the tap asks for fullscreen and
+    the phone resizes the page, an overscroll, a frame before a layer lands.
+    Set here, in the server's HTML, so it holds before any script has run. An
+    unlayered rule, so it wins over the body's utility class. The colour is
+    from the fixed palette table, never text a host typed.
+  */
+  const ground = getPalette(event.config.style.paletteId).background;
+
   return (
     <>
+      <style>{`html,body{background-color:${ground}}`}</style>
       {guest.kind === "preview" ? (
         <HostPreviewBanner eventId={event.id} />
       ) : null}

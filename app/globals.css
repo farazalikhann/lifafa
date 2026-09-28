@@ -763,6 +763,30 @@
   }
 }
 
+/* The loader before the cover: its mark and words arriving, then breathing. */
+@keyframes lifafa-cover-loader-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lifafa-cover-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* The prompt on a closed cover, breathing so it reads as the way in. */
 @keyframes lifafa-cover-breathe {
   0%,

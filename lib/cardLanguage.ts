@@ -209,6 +209,8 @@ export interface CardCopy {
   };
   watermark: string;
   coverSkip: string;
+  /** Under the loader while the card arrives, before the cover appears. */
+  coverPreparing: string;
   /**
    * The cue pinned to the foot of the guest's first screen, telling them this
    * is an invitation and that it goes on below. See InvitedCue.
@@ -447,6 +449,7 @@ const ENGLISH: CardCopy = {
   },
   watermark: "Preview. Pay to remove this watermark.",
   coverSkip: "Skip",
+  coverPreparing: "Preparing your invitation",
   scrollCue: {
     heading: "You are invited",
     prompt: "Scroll to view the invitation",
@@ -661,6 +664,7 @@ const HINDI: CardCopy = {
   },
   watermark: "पूर्वावलोकन। वॉटरमार्क हटाने के लिए भुगतान करें।",
   coverSkip: "छोड़ें",
+  coverPreparing: "आपका निमंत्रण तैयार हो रहा है",
   scrollCue: {
     heading: "आप सादर आमंत्रित हैं",
     prompt: "निमंत्रण देखने के लिए नीचे स्क्रॉल करें",
