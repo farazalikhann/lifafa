@@ -16,7 +16,9 @@ export type PaletteId =
   | "forest"
   | "blush"
   | "midnight"
-  | "sand";
+  | "sand"
+  | "maroon"
+  | "peacock";
 
 export type CardDensity = "compact" | "comfortable" | "airy";
 

@@ -220,15 +220,12 @@ export const PRESETS: readonly Preset[] = [
   {
     id: "shubh-vivah-classic",
     name: "Shubh Vivah Classic",
-    description: "Dark and gold, a marigold garland, Om, diya and kalash.",
+    description: "Maroon and gold, a marigold garland, Om, diya and kalash.",
     tradition: "hindu",
     settings: {
-      /*
-        No palette is maroon. Ink is the darkest and warmest ground there is,
-        and Midnight's gold on it clears 9:1.
-      */
-      paletteId: "ink",
-      accentOverride: PALETTE_GOLD,
+      /* Maroon's own accent is the gold this look wants. */
+      paletteId: "maroon",
+      accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
       borderStyle: "none",
@@ -270,15 +267,10 @@ export const PRESETS: readonly Preset[] = [
   {
     id: "shri-ganesh",
     name: "Shri Ganesh",
-    description: "Deep red on ivory, Ganesh, a marigold garland and diyas.",
+    description: "Maroon and gold, Ganesh, a marigold garland and diyas.",
     tradition: "hindu",
     settings: {
-      /*
-        No palette has a red ground that text can sit on. Cream's own accent is
-        the deepest red the palettes have, so the red is the lettering, the
-        names and the calligraphy, with the gold of the garland and the diyas.
-      */
-      paletteId: "cream",
+      paletteId: "maroon",
       accentOverride: null,
       fontPairId: "regal",
       density: "comfortable",
@@ -288,7 +280,8 @@ export const PRESETS: readonly Preset[] = [
       butterflies: "none",
       leaves: false,
       petals: "open",
-      petalFlower: "rose",
+      /* Marigold, not rose: red petals all but vanish on the maroon ground. */
+      petalFlower: "marigold",
       coverAnimation: "envelope-seal",
       ornaments: ["marigold", "ganesh", "diya"],
       calligraphy: "shriGaneshaya",
@@ -324,14 +317,11 @@ export const PRESETS: readonly Preset[] = [
   {
     id: "radhe-krishna",
     name: "Radhe Krishna",
-    description: "Night blue and gold, diyas, falling mogra and butterflies.",
+    description: "Peacock teal and gold, diyas, falling mogra and butterflies.",
     tradition: "hindu",
     settings: {
-      /*
-        No palette is peacock blue or teal. Midnight is the nearest blue, and
-        its own accent is already gold.
-      */
-      paletteId: "midnight",
+      /* Peacock's own accent is already gold. */
+      paletteId: "peacock",
       accentOverride: null,
       fontPairId: "romantic",
       density: "comfortable",

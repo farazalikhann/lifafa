@@ -83,6 +83,37 @@ export const PALETTES: readonly Palette[] = [
     textPrimary: "#2E2418",
     textMuted: "#655644",
   },
+  /*
+    A wedding maroon: red leaning to crimson (hue 347), dark enough to read as
+    maroon rather than red, with no brown and no purple in it. Gold accent and
+    soft cream text. Text 13.0:1 on the ground and 11.6:1 on the surface; the
+    gold 8.3:1 and 7.4:1; the muted text 8.2:1 and 7.3:1, and still 6.1:1
+    under a 15% wash of the gold, where motifs cross it.
+  */
+  {
+    id: "maroon",
+    label: "Maroon",
+    background: "#4A0F1C",
+    surface: "#571626",
+    accent: "#E2B968",
+    textPrimary: "#F7EBDD",
+    textMuted: "#D9B7AA",
+  },
+  /*
+    Peacock teal (hue 187): the blue-green of the feather's eye, deep enough
+    that cream and gold sit on it the way they sit on Midnight. Text 10.5:1 on
+    the ground and 8.6:1 on the surface; the gold 6.7:1 and 5.5:1; the muted
+    text 7.1:1 and 5.8:1, and still 5.4:1 under a 15% wash of the gold.
+  */
+  {
+    id: "peacock",
+    label: "Peacock",
+    background: "#0A3A40",
+    surface: "#0F4850",
+    accent: "#E2B968",
+    textPrimary: "#F2EBDD",
+    textMuted: "#A8CBC6",
+  },
 ];
 
 export const DEFAULT_PALETTE_ID: PaletteId = "ink";
