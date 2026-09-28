@@ -1290,6 +1290,10 @@ export default function CardEditor({
                 <PresetPicker
                   design={design}
                   occasionId={occasionId}
+                  /* The couple as the card names them, set in each look's own face. */
+                  hostNames={coverNameLine(
+                    resolveCoverNames(preview.draft, occasionId, previewLanguage),
+                  )}
                   onApply={handleApplyPreset}
                   onChooseTradition={handleChooseTradition}
                   accordion={accordionFor("design")}

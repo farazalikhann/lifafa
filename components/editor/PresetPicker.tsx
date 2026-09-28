@@ -8,7 +8,8 @@ import CollapsibleSection, {
 } from "@/components/editor/CollapsibleSection";
 import { BUTTERFLY_ASPECT, butterflySources } from "@/lib/butterflies";
 import { flowerChipScale, isPhotoBorder } from "@/lib/flowerFrame";
-import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
+import { calligraphyGround } from "@/lib/calligraphy";
+import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
 import { defaultDesign, type DesignState } from "@/lib/designDefaults";
 import { getPalette } from "@/lib/palettes";
 import { FLOWER_CHIPS } from "@/lib/petals";
@@ -19,11 +20,11 @@ import {
   sameDesign,
   type Preset,
 } from "@/lib/presets";
+import { resolveSlots } from "@/lib/ornaments/slots";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import type { OccasionId } from "@/types/occasion";
-import type { AnyOrnamentId } from "@/types/ornament";
 
-/** How many of a preset's shapes its miniature has room to show. */
+/** How many of a pack's hanging shapes the miniature strings along its top. */
 const HINT_LIMIT = 3;
 
 /**
@@ -36,69 +37,69 @@ const HINT_LIMIT = 3;
 const FRAME_ZOOM = 1.5;
 
 /**
- * A preset's card in miniature: its palette, its border, its type and a few of
- * its ornaments.
+ * A preset's card in miniature, laid out the way the card itself is: its
+ * frame, the border hanging across the top, the calligraphy it opens with, the
+ * ornament over the names, the names in the pair's own face, the pieces in the
+ * two bottom corners, and a butterfly and a few petals where the card has them.
  *
- * Built from what the preset would actually do to the card — `applyPreset`
- * over the current design — rather than from the preset's settings read
- * directly, so the miniature and the card can never tell two stories. The
- * border is the border grid's own chip drawing, and the ornaments are the
- * pack's own components, drawn in the card's accent the way the card draws
- * them. Nothing here is a new picture.
+ * One small card, not a row of separate stickers: a host deciding between four
+ * looks should see four invitations. Built from what the preset would actually
+ * do to the card — `applyPreset` over the current design — rather than from
+ * the preset's settings read directly, so the miniature and the card can never
+ * tell two stories. Every picture is one the card already uses.
  */
 function PresetMiniature({
   design,
   presetId,
+  hostNames,
 }: {
   design: DesignState;
-  /** Keeps the drawings' own svg ids apart across the four cards. */
+  /** Keeps the drawings' own svg ids apart across the cards. */
   presetId: string;
+  /** The names the card will carry, so the miniature is the host's own card. */
+  hostNames: string;
 }): ReactElement {
   const palette = getPalette(design.style.paletteId);
   const accent = design.style.accentOverride ?? palette.accent;
-  const face = getFontPair(design.style.fontPairId);
+  const names = namesFaceOf(getFontPair(design.style.fontPairId));
   const pack = getTraditionPack(design.traditionId);
+  const enabled = design.ornamentConfig.enabledOrnaments;
+
+  /* A pack with places: what is in each. */
+  const slots = resolveSlots(pack, enabled);
+
+  /* The one calligraphy the card opens with, if any. */
+  const calligraphyId =
+    pack === null ? undefined : pack.calligraphyIds.find((id) => enabled.includes(id));
+  const calligraphy =
+    pack === null || calligraphyId === undefined ? null : pack.findOrnament(calligraphyId);
 
   /*
-    The shapes that are not the divider, which gets a line of its own below.
-    On a pack with places, in the order the card reads them — the top border,
-    then above the names, then the corners — so the three that fit are the
-    look's most telling, and a garland is never the one left off.
+    A pack without places — the lanterns, moons and stars of a Nikah — has its
+    hanging shapes strung along the top instead, as the card hangs them.
   */
-  const placeOrder =
-    pack?.slots === null || pack === null
+  const hanging =
+    pack === null || pack.slots !== null
       ? []
-      : [...pack.slots.top, ...pack.slots.aboveNames, ...pack.slots.corners];
-  const rank = (id: AnyOrnamentId): number => {
-    const index = placeOrder.indexOf(id);
-    return index === -1 ? placeOrder.length : index;
-  };
-  const hints =
-    pack === null
-      ? []
-      : [...design.ornamentConfig.enabledOrnaments]
-          .filter(
-            (id) => id !== pack.dividerId && !pack.calligraphyIds.includes(id),
-          )
-          .sort((a, b) => rank(a) - rank(b))
+      : enabled
+          .filter((id) => id !== pack.dividerId && !pack.calligraphyIds.includes(id))
           .map((id) => pack.findOrnament(id))
           .filter((entry) => entry !== null)
           .slice(0, HINT_LIMIT);
 
-  /* The preset's own flower, so a marigold look does not show a rose. */
-  const petal = FLOWER_CHIPS[design.petalFlower][0];
-
   const divider =
-    pack !== null &&
-    pack.dividerId !== null &&
-    design.ornamentConfig.enabledOrnaments.includes(pack.dividerId)
+    pack !== null && pack.dividerId !== null && enabled.includes(pack.dividerId)
       ? pack.findOrnament(pack.dividerId)
       : null;
+
+  /* The preset's own flower, so a marigold look does not show a rose. */
+  const petals = FLOWER_CHIPS[design.petalFlower];
+  const id = (part: string): string => `preset-${presetId}-${part}`;
 
   return (
     <span
       aria-hidden="true"
-      className="relative block aspect-[16/11] w-full overflow-hidden rounded-lg border border-[var(--lifafa-hairline)]"
+      className="relative block aspect-[4/5] w-full overflow-hidden rounded-lg border border-[var(--lifafa-hairline)]"
       style={{ backgroundColor: palette.background, color: accent }}
     >
       {/*
@@ -107,9 +108,7 @@ function PresetMiniature({
         screen pixel rather than scaled up into a slab.
       */}
       <span className="absolute inset-0 [&_*]:[vector-effect:non-scaling-stroke]">
-        {design.borderStyle === "none" ? null : isPhotoBorder(
-            design.borderStyle,
-          ) ? (
+        {design.borderStyle === "none" ? null : isPhotoBorder(design.borderStyle) ? (
           <FlowerPreview
             style={design.borderStyle}
             className="block h-full w-full"
@@ -120,61 +119,100 @@ function PresetMiniature({
         )}
       </span>
 
-      {/* What hangs or sits on the card, strung along the top edge. */}
-      {hints.length > 0 ? (
-        <span className="absolute inset-x-0 top-[17%] flex items-start justify-center gap-2.5">
-          {hints.map(({ id, Component, chipSize }) => (
-            <Component
-              key={id}
-              size={Math.round(chipSize * 0.5)}
-              instanceId={`preset-${presetId}-${id}`}
+      {/* Across the top: the garland or toran, edge to edge as on the card. */}
+      {slots.top !== null ? (
+        <span className="absolute inset-x-[8%] top-[2%]">
+          <slots.top.Component instanceId={id("top")} className="block h-auto w-full" />
+        </span>
+      ) : null}
+      {hanging.length > 0 ? (
+        <span className="absolute inset-x-0 top-[6%] flex items-start justify-center gap-2">
+          {hanging.map((entry) => (
+            <entry.Component
+              key={entry.id}
+              size={Math.round(entry.chipSize * 0.42)}
+              instanceId={id(entry.id)}
             />
           ))}
         </span>
       ) : null}
 
-      <span className="absolute inset-x-0 top-[52%] flex flex-col items-center gap-1">
+      {/* The opening: the calligraphy, the ornament over the names, the names. */}
+      <span className="absolute inset-x-0 top-[21%] flex flex-col items-center gap-[0.35rem] px-[16%]">
+        {calligraphy !== null ? (
+          <span className="block w-full">
+            <calligraphy.Component
+              instanceId={id("calligraphy")}
+              className="block h-auto w-full"
+              ground={calligraphyGround(palette.background)}
+            />
+          </span>
+        ) : null}
+
+        {slots.aboveNames !== null ? (
+          <slots.aboveNames.Component instanceId={id("above")} size={15} />
+        ) : null}
+
         <span
-          className="text-[1.125rem] leading-none"
+          className="block max-w-full overflow-hidden pb-[0.15em] text-center leading-[1.15] text-ellipsis whitespace-nowrap"
           style={{
             color: palette.textPrimary,
-            fontFamily: fontFamilyOf(face.headingVar, face.headingFallback),
-            fontWeight: face.headingWeight,
+            fontFamily: fontFamilyOf(names.variable, names.fallback),
+            fontWeight: names.weight,
+            fontSize: `${Math.round(13 * names.scale)}px`,
           }}
         >
-          Aa
+          {hostNames}
         </span>
 
         {divider !== null ? (
-          <divider.Component
-            size={36}
-            instanceId={`preset-${presetId}-divider`}
-          />
+          <divider.Component size={34} instanceId={id("divider")} />
         ) : (
-          <span
-            className="h-px w-6"
-            style={{ backgroundColor: accent }}
-          />
+          <span className="h-px w-6" style={{ backgroundColor: accent }} />
         )}
       </span>
 
-      {/* The floating elements, one of each in the lower corners. */}
+      {/* The two bottom corners; one piece alone stands in both, mirrored. */}
+      {slots.corners !== null ? (
+        <>
+          <span className="absolute bottom-[5%] left-[9%]">
+            <slots.corners.left.Component instanceId={id("corner-left")} size={17} />
+          </span>
+          <span
+            className="absolute right-[9%] bottom-[5%]"
+            style={slots.corners.mirrorRight ? { transform: "scaleX(-1)" } : undefined}
+          >
+            <slots.corners.right.Component instanceId={id("corner-right")} size={17} />
+          </span>
+        </>
+      ) : null}
+
+      {/* The floating elements: a few petals in the margins, one butterfly. */}
       {design.petals !== "none" ? (
-        <img
-          src={petal.src}
-          alt=""
-          width={11}
-          height={Math.round(11 / petal.aspect)}
-          className="absolute bottom-[12%] left-[12%] block max-w-none"
-        />
+        <>
+          <img
+            src={petals[0].src}
+            alt=""
+            width={8}
+            height={Math.round(8 / petals[0].aspect)}
+            className="absolute top-[48%] left-[7%] block max-w-none rotate-[-24deg]"
+          />
+          <img
+            src={petals[petals.length - 1].src}
+            alt=""
+            width={7}
+            height={Math.round(7 / petals[petals.length - 1].aspect)}
+            className="absolute top-[70%] right-[8%] block max-w-none rotate-[32deg]"
+          />
+        </>
       ) : null}
       {design.butterflies !== "none" ? (
         <img
           src={butterflySources(design.butterflies)[0]}
           alt=""
-          width={16}
-          height={Math.round(16 / BUTTERFLY_ASPECT)}
-          className="absolute right-[10%] bottom-[12%] block max-w-none"
+          width={14}
+          height={Math.round(14 / BUTTERFLY_ASPECT)}
+          className="absolute top-[15%] right-[12%] block max-w-none rotate-[12deg]"
         />
       ) : null}
     </span>
@@ -209,6 +247,7 @@ function PresetMiniature({
 export default function PresetPicker({
   design,
   occasionId,
+  hostNames,
   onApply,
   onChooseTradition,
   accordion,
@@ -217,6 +256,8 @@ export default function PresetPicker({
   design: DesignState;
   /** Decides what the untouched design is; see defaultDesign. */
   occasionId: OccasionId;
+  /** The names line the card's cover prints, for the miniatures. */
+  hostNames: string;
   onApply: (preset: Preset) => void;
   /** Takes the host to the Religion / tradition question in Details. */
   onChooseTradition: () => void;
@@ -328,6 +369,7 @@ export default function PresetPicker({
                   <PresetMiniature
                     design={applyPreset(design, preset)}
                     presetId={preset.id}
+                    hostNames={hostNames}
                   />
 
                   <span className="flex min-w-0 flex-col gap-0.5 px-0.5 pb-0.5">
