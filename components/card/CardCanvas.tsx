@@ -6,6 +6,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import dynamic from "next/dynamic";
 import { preload } from "react-dom";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import {
@@ -27,8 +28,7 @@ import {
 import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
-import ButterflyLayer from "@/components/card/decor/ButterflyLayer";
-import PetalLayer from "@/components/card/decor/PetalLayer";
+
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import ScrollFade, {
   scrollFadeDepth,
@@ -49,16 +49,7 @@ import {
   cornerClearance,
 } from "@/components/card/decor/SlotOrnaments";
 import { resolveSlots, slottedIds } from "@/lib/ornaments/slots";
-import DetailsSection from "@/components/card/sections/DetailsSection";
-import CountdownSection from "@/components/card/sections/CountdownSection";
-import VenueSection from "@/components/card/sections/VenueSection";
-import TimelineSection from "@/components/card/sections/TimelineSection";
-import FamilySection from "@/components/card/sections/FamilySection";
-import MessageSection from "@/components/card/sections/MessageSection";
-import CustomSection from "@/components/card/sections/CustomSection";
-import SaveTheDate from "@/components/card/SaveTheDate";
-import WeatherPanel from "@/components/card/WeatherPanel";
-import MusicToggle from "@/components/card/MusicToggle";
+
 import {
   FIRST_SCREEN_ATTRIBUTE,
   INVITED_CUE_HEIGHT,
@@ -103,6 +94,76 @@ import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
 import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
 import type { AnyOrnamentId } from "@/types/ornament";
+
+/*
+  Everything past the first screen, and the decor that only moves once the
+  card is open, each in a chunk of its own rather than in the one the cover
+  waits on.
+
+  STILL RENDERED ON THE SERVER, SO THE HTML IS EXACTLY WHAT IT WAS. What changes
+  is when each becomes live in the browser. Each sits in a Suspense boundary of
+  its own (that is what `loading` asks next/dynamic for, written out at
+  each call because Next reads the options at build time), so the page wakes —
+  the cover's button, the first screen — without waiting for their code, and
+  each of them wakes as its own chunk arrives, long before a guest has opened
+  the envelope and scrolled to it. Without the boundary the whole page would
+  wait on the slowest of them, which measured slower than one big chunk.
+
+  And a card only downloads the pieces it has: one without butterflies,
+  weather, a timeline or music no longer carries the code for them.
+
+  The fallback is nothing, and on the guest page it is never seen: the server's
+  HTML stands in until the code arrives. In the editor, which draws the card
+  in the browser, a section can take a moment to appear the first time.
+*/
+const ButterflyLayer = dynamic(
+  () => import("@/components/card/decor/ButterflyLayer"),
+  { loading: () => null },
+);
+const PetalLayer = dynamic(
+  () => import("@/components/card/decor/PetalLayer"),
+  { loading: () => null },
+);
+const DetailsSection = dynamic(
+  () => import("@/components/card/sections/DetailsSection"),
+  { loading: () => null },
+);
+const CountdownSection = dynamic(
+  () => import("@/components/card/sections/CountdownSection"),
+  { loading: () => null },
+);
+const VenueSection = dynamic(
+  () => import("@/components/card/sections/VenueSection"),
+  { loading: () => null },
+);
+const TimelineSection = dynamic(
+  () => import("@/components/card/sections/TimelineSection"),
+  { loading: () => null },
+);
+const FamilySection = dynamic(
+  () => import("@/components/card/sections/FamilySection"),
+  { loading: () => null },
+);
+const MessageSection = dynamic(
+  () => import("@/components/card/sections/MessageSection"),
+  { loading: () => null },
+);
+const CustomSection = dynamic(
+  () => import("@/components/card/sections/CustomSection"),
+  { loading: () => null },
+);
+const SaveTheDate = dynamic(
+  () => import("@/components/card/SaveTheDate"),
+  { loading: () => null },
+);
+const WeatherPanel = dynamic(
+  () => import("@/components/card/WeatherPanel"),
+  { loading: () => null },
+);
+const MusicToggle = dynamic(
+  () => import("@/components/card/MusicToggle"),
+  { loading: () => null },
+);
 
 /**
  * The most opaque any decor shape is ever authored to be, and so the highest

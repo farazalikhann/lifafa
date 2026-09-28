@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   useCallback,
   useLayoutEffect,
@@ -14,13 +15,11 @@ import Watermark, {
 } from "@/components/card/Watermark";
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
-import GuestPass from "@/components/invite/GuestPass";
 import InvitedCue from "@/components/invite/InvitedCue";
 import LanguageSwitch, {
   LANGUAGE_SWITCH_CLEARANCE,
 } from "@/components/invite/LanguageSwitch";
-import RsvpPanel from "@/components/invite/RsvpPanel";
-import RsvpConfirmed from "@/components/invite/RsvpConfirmed";
+
 import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { CARD_LANGUAGES, cardCopy, cardLanguage } from "@/lib/cardLanguage";
@@ -38,6 +37,25 @@ import type { CardLanguage } from "@/types/card";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
 import type { EventWeather } from "@/types/weather";
+
+/*
+  What sits below the card, each in a chunk of its own rather than in the one
+  the envelope waits on. The reply form is still rendered on the server, so it
+  is in the HTML as before, and wakes in a Suspense boundary of its own when
+  its code arrives (see the same note in CardCanvas). The confirmation and the
+  pass appear only after a reply, so their code — the pass brings a whole QR
+  encoder — is fetched then, and a guest who only reads the card never
+  downloads it.
+*/
+const RsvpPanel = dynamic(() => import("@/components/invite/RsvpPanel"), {
+  loading: () => null,
+});
+const RsvpConfirmed = dynamic(
+  () => import("@/components/invite/RsvpConfirmed"),
+);
+const GuestPass = dynamic(() => import("@/components/invite/GuestPass"), {
+  ssr: false,
+});
 
 type InviteStage = "form" | "confirmed";
 
