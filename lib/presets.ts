@@ -23,9 +23,10 @@ import type { CardDensity, FontPairId, PaletteId } from "@/types/style";
  * names, the date, the venue, the note, the sections or the replies. The
  * greeting and the dua are never touched either — those are words a family
  * chose to put on their card, and a palette click must not choose them again.
- * Calligraphy has one exception, and only one: a card with none gets the
- * preset's opening panel, Bismillah for a Nikah. A card that already has any
- * keeps exactly what it has. See `calligraphyIfNone`.
+ * Calligraphy is set one of two ways, per preset. A Nikah look only fills an
+ * empty card with Bismillah and keeps any panel the host chose — see
+ * `calligraphyIfNone`. A Vivah look is built around its word-mark, so it sets
+ * the one it names, or none, whatever the card had — see `calligraphy`.
  * The card is saved exactly as it always was; a preset is only a quicker way
  * of setting values a host could have set by hand.
  *
@@ -68,6 +69,14 @@ export interface PresetSettings {
    * picked any panel of their own keeps their choice, untouched and unjoined.
    */
   calligraphyIfNone: readonly AnyOrnamentId[];
+  /**
+   * The calligraphy the card heads with, set outright: this one panel, or none
+   * for null, replacing whatever the card had. For a look whose whole design
+   * is its word-mark — the Vivah presets — where keeping the host's old panel
+   * would leave a different card behind the preset's name. Wins over
+   * `calligraphyIfNone` when both are given.
+   */
+  calligraphy: AnyOrnamentId | null;
 }
 
 export interface Preset {
@@ -91,10 +100,34 @@ export interface Preset {
 const PALETTE_GOLD = "#D8B26A";
 
 /**
+ * Blush's burnt-sienna accent, lent to Cream for a saffron look. Saffron itself
+ * cannot be the accent on a light card — the palettes hold every accent to
+ * 4.5:1 for the text set in it, and saffron manages about 2:1 on cream — so
+ * this, the warmest accent any palette has, clears 5.6:1 on Cream instead, and
+ * the saffron comes from the toran, the marigold and the butterflies.
+ */
+const PALETTE_SIENNA = "#974B2E";
+
+/**
+ * Sand's bronze accent, lent to Cream as the nearest legible thing to a soft
+ * gold on a light card: 7:1 on Cream, where Midnight's gold is under 2:1.
+ */
+const PALETTE_BRONZE = "#6B4A2F";
+
+/**
  * The presets, in the order the picker lays them out.
  *
  * Four Nikah looks, each pulling a different way — soft, regal, night-time,
- * plain — so that no two read as the same card in a different colour.
+ * plain — so that no two read as the same card in a different colour. Then
+ * six Vivah looks, each built on one of the five word-marks.
+ *
+ * EVERY VIVAH PRESET SETS EVERYTHING IT IS ABOUT: the palette and accent, the
+ * type, the length, the border, the motifs' motion and amount, the
+ * butterflies, the leaves, the petals and their flower, the cover, the one
+ * calligraphy and the whole of the top border, the place above the names and
+ * the corners. So moving from one to the next leaves nothing of the first
+ * behind; a slot a look leaves empty is emptied. Ganesh is only ever above the
+ * names, and never on a card whose word-mark already draws him (Shubh Vivah).
  */
 export const PRESETS: readonly Preset[] = [
   {
@@ -184,6 +217,159 @@ export const PRESETS: readonly Preset[] = [
       calligraphyIfNone: ["bismillah"],
     },
   },
+  {
+    id: "shubh-vivah-classic",
+    name: "Shubh Vivah Classic",
+    description: "Dark and gold, a marigold garland, Om, diya and kalash.",
+    tradition: "hindu",
+    settings: {
+      /*
+        No palette is maroon. Ink is the darkest and warmest ground there is,
+        and Midnight's gold on it clears 9:1.
+      */
+      paletteId: "ink",
+      accentOverride: PALETTE_GOLD,
+      fontPairId: "royal",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "both",
+      petalFlower: "marigold",
+      coverAnimation: "envelope-seal",
+      /* Om rather than Ganesh above the names: Shubh Vivah already draws Ganesh. */
+      ornaments: ["marigold", "om", "diya", "kalash"],
+      calligraphy: "shubhVivah",
+    },
+  },
+  {
+    id: "genda-utsav",
+    name: "Genda Utsav",
+    description: "Warm cream and saffron, a toran, swastik and falling marigold.",
+    tradition: "hindu",
+    settings: {
+      paletteId: "cream",
+      accentOverride: PALETTE_SIENNA,
+      fontPairId: "warm",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "yellow",
+      leaves: false,
+      petals: "fall",
+      petalFlower: "marigold",
+      coverAnimation: "petal-dust",
+      /* Kalash alone in the corners stands in both, the right one mirrored. */
+      ornaments: ["toran", "swastik", "kalash"],
+      calligraphy: "vivahotsav",
+    },
+  },
+  {
+    id: "shri-ganesh",
+    name: "Shri Ganesh",
+    description: "Deep red on ivory, Ganesh, a marigold garland and diyas.",
+    tradition: "hindu",
+    settings: {
+      /*
+        No palette has a red ground that text can sit on. Cream's own accent is
+        the deepest red the palettes have, so the red is the lettering, the
+        names and the calligraphy, with the gold of the garland and the diyas.
+      */
+      paletteId: "cream",
+      accentOverride: null,
+      fontPairId: "regal",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "drift",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "open",
+      petalFlower: "rose",
+      coverAnimation: "envelope-seal",
+      ornaments: ["marigold", "ganesh", "diya"],
+      calligraphy: "shriGaneshaya",
+    },
+  },
+  {
+    id: "kamal-pooja",
+    name: "Kamal Pooja",
+    description: "Soft blush, lotus petals, a toran and drifting leaves.",
+    tradition: "hindu",
+    settings: {
+      /*
+        Blush's own warm accent: a gold accent on a blush ground falls far
+        short of the contrast the palettes hold every accent to. The gold is
+        the toran's and the kalash's.
+      */
+      paletteId: "blush",
+      accentOverride: null,
+      fontPairId: "elegant",
+      density: "airy",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: true,
+      petals: "both",
+      petalFlower: "lotus",
+      coverAnimation: "fold-unfold",
+      ornaments: ["toran", "om", "kalash"],
+      calligraphy: "sadarNimantran",
+    },
+  },
+  {
+    id: "radhe-krishna",
+    name: "Radhe Krishna",
+    description: "Night blue and gold, diyas, falling mogra and butterflies.",
+    tradition: "hindu",
+    settings: {
+      /*
+        No palette is peacock blue or teal. Midnight is the nearest blue, and
+        its own accent is already gold.
+      */
+      paletteId: "midnight",
+      accentOverride: null,
+      fontPairId: "romantic",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "mixed",
+      leaves: false,
+      petals: "fall",
+      petalFlower: "mogra",
+      coverAnimation: "curtain-reveal",
+      /* Nothing across the top or above the names: only the diyas below. */
+      ornaments: ["diya"],
+      calligraphy: "radheKrishna",
+    },
+  },
+  {
+    id: "sadar-minimal",
+    name: "Sadar Minimal",
+    description: "Clean cream, one line of calligraphy and a shower of petals.",
+    tradition: "hindu",
+    settings: {
+      paletteId: "cream",
+      accentOverride: PALETTE_BRONZE,
+      fontPairId: "clean",
+      density: "airy",
+      borderStyle: "none",
+      decorMotion: "none",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "open",
+      petalFlower: "rose",
+      coverAnimation: "fold-unfold",
+      ornaments: [],
+      calligraphy: "sadarNimantran",
+    },
+  },
 ];
 
 /**
@@ -194,6 +380,7 @@ export const PRESETS: readonly Preset[] = [
  */
 const GROUP_LABELS: Partial<Record<TraditionId, string>> = {
   muslim: "Nikah",
+  hindu: "Vivah",
 };
 
 export interface PresetGroup {
@@ -232,9 +419,10 @@ export const PRESET_GROUPS: readonly PresetGroup[] = PRESETS.reduce<
  * cross into the new one. Staying within the tradition keeps the greeting, the
  * dua and any calligraphy the host picked, and swaps only the shapes.
  *
- * Calligraphy is then left alone if there is any, and given the preset's
- * `calligraphyIfNone` if there is none. The greeting and the dua are never
- * added, changed or removed.
+ * Calligraphy is then set outright if the preset names one (`calligraphy`),
+ * and otherwise left alone if there is any and given the preset's
+ * `calligraphyIfNone` if there is none. Never more than one piece either way.
+ * The greeting and the dua are never added, changed or removed.
  *
  * Everything comes out in the pack's own order, and only what the pack offers
  * in that role: an id it does not know, a calligraphy panel listed as a shape,
@@ -253,12 +441,19 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
   if (pack !== null) {
     const isCalligraphy = (id: AnyOrnamentId): boolean =>
       pack.calligraphyIds.includes(id);
-    /* One piece at most: the card's latest, or else the preset's first. */
+    /*
+      One piece at most: the preset's own if it sets one, else the card's
+      latest, else the preset's first.
+    */
     const keptCalligraphy = kept.enabledOrnaments.filter(isCalligraphy);
     const calligraphy =
-      keptCalligraphy.length > 0
-        ? keptCalligraphy.slice(-1)
-        : (settings.calligraphyIfNone ?? []).slice(0, 1);
+      settings.calligraphy !== undefined
+        ? settings.calligraphy === null
+          ? []
+          : [settings.calligraphy]
+        : keptCalligraphy.length > 0
+          ? keptCalligraphy.slice(-1)
+          : (settings.calligraphyIfNone ?? []).slice(0, 1);
     const shapes =
       settings.ornaments ??
       kept.enabledOrnaments.filter((id) => !isCalligraphy(id));

@@ -11,7 +11,7 @@ import { flowerChipScale, isPhotoBorder } from "@/lib/flowerFrame";
 import { fontFamilyOf, getFontPair } from "@/lib/fontPairs";
 import { defaultDesign, type DesignState } from "@/lib/designDefaults";
 import { getPalette } from "@/lib/palettes";
-import { PETALS } from "@/lib/petals";
+import { FLOWER_CHIPS } from "@/lib/petals";
 import {
   PRESET_GROUPS,
   applyPreset,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/presets";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import type { OccasionId } from "@/types/occasion";
+import type { AnyOrnamentId } from "@/types/ornament";
 
 /** How many of a preset's shapes its miniature has room to show. */
 const HINT_LIMIT = 3;
@@ -58,17 +59,34 @@ function PresetMiniature({
   const face = getFontPair(design.style.fontPairId);
   const pack = getTraditionPack(design.traditionId);
 
-  /* The shapes that are not the divider, which gets a line of its own below. */
+  /*
+    The shapes that are not the divider, which gets a line of its own below.
+    On a pack with places, in the order the card reads them — the top border,
+    then above the names, then the corners — so the three that fit are the
+    look's most telling, and a garland is never the one left off.
+  */
+  const placeOrder =
+    pack?.slots === null || pack === null
+      ? []
+      : [...pack.slots.top, ...pack.slots.aboveNames, ...pack.slots.corners];
+  const rank = (id: AnyOrnamentId): number => {
+    const index = placeOrder.indexOf(id);
+    return index === -1 ? placeOrder.length : index;
+  };
   const hints =
     pack === null
       ? []
-      : design.ornamentConfig.enabledOrnaments
+      : [...design.ornamentConfig.enabledOrnaments]
           .filter(
             (id) => id !== pack.dividerId && !pack.calligraphyIds.includes(id),
           )
+          .sort((a, b) => rank(a) - rank(b))
           .map((id) => pack.findOrnament(id))
           .filter((entry) => entry !== null)
           .slice(0, HINT_LIMIT);
+
+  /* The preset's own flower, so a marigold look does not show a rose. */
+  const petal = FLOWER_CHIPS[design.petalFlower][0];
 
   const divider =
     pack !== null &&
@@ -143,10 +161,10 @@ function PresetMiniature({
       {/* The floating elements, one of each in the lower corners. */}
       {design.petals !== "none" ? (
         <img
-          src={PETALS[0].src}
+          src={petal.src}
           alt=""
           width={11}
-          height={Math.round(11 / PETALS[0].aspect)}
+          height={Math.round(11 / petal.aspect)}
           className="absolute bottom-[12%] left-[12%] block max-w-none"
         />
       ) : null}
