@@ -16,6 +16,8 @@ import {
   type CalligraphyId,
 } from "@/lib/calligraphy";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
+import { FIRST_SCREEN_IMAGES, FIRST_SCREEN_MASKS } from "@/lib/cardReady";
+import { flowerFrameSrc, isPhotoBorder } from "@/lib/flowerFrame";
 import {
   petalFlowerType,
   petalStyle,
@@ -926,12 +928,28 @@ export default function CardCanvas({
     is fetched in CORS mode, so the hint says so too — a hint in the default
     mode would be a second, unused download of the same file.
   */
-  for (const panel of calligraphy) {
-    const mask = calligraphyMask(panel.id as CalligraphyId);
-    if (mask !== null) {
-      preload(mask, { as: "image", crossOrigin: "anonymous" });
-    }
+  const calligraphyMasks = calligraphy
+    .map((panel) => calligraphyMask(panel.id as CalligraphyId))
+    .filter((mask) => mask !== null);
+
+  for (const mask of calligraphyMasks) {
+    preload(mask, { as: "image", crossOrigin: "anonymous" });
   }
+
+  /*
+    The first screen's pictures that are drawn as CSS rather than as <img>, for
+    the cover to wait on before it appears — see lib/cardReady.ts. Its <img>
+    elements it finds for itself, under the first screen's own marker. The top
+    border and a flower frame are on every screen, the first included; the
+    calligraphy mask only on a card that opens with it.
+  */
+  const firstScreenImages = [
+    slots.top?.src,
+    isPhotoBorder(config.borderStyle)
+      ? flowerFrameSrc(config.borderStyle)
+      : undefined,
+  ].filter((src) => src !== undefined);
+  const firstScreenMasks = cardHasHead ? calligraphyMasks : [];
 
   /*
     Where the arch has to sit so it does not cross the border.
@@ -1184,6 +1202,10 @@ export default function CardCanvas({
           globals.css all read the nearest `lang` up the tree.
         */
         lang={copy.lang}
+        {...{
+          [FIRST_SCREEN_IMAGES]: firstScreenImages.join(" ") || undefined,
+          [FIRST_SCREEN_MASKS]: firstScreenMasks.join(" ") || undefined,
+        }}
         /*
           `lifafa-card-fluid` is what lets the guest's card fill a tablet or
           laptop screen from 768px up, with its text in a scaled column down the

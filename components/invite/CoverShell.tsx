@@ -62,20 +62,20 @@ const WORDS_FADE_MS = 360;
 const SOUND_PRELOAD_DELAY_MS = 300;
 
 /**
- * The longest the cover waits for the card's fonts and pictures before it
- * appears anyway. See lib/cardReady.ts: the loader is a courtesy, never a
+ * The longest the cover waits for the first screen's fonts and pictures before
+ * it appears anyway. See lib/cardReady.ts: the loader is a courtesy, never a
  * place a guest can be left.
  */
-const READY_TIMEOUT_MS = 8000;
+const READY_TIMEOUT_MS = 5000;
 
 /** How long the loader takes to give way to the cover, once the card is ready. */
 const LOADER_FADE_MS = 420;
 
 /**
- * The card fading in, for a guest who asked for less motion, in place of the
- * cover's animation.
+ * The opening for a guest who asked for less motion: the closed envelope
+ * crossfading to the card, in place of the cover's animation.
  */
-const REDUCED_FADE_MS = 600;
+const REDUCED_FADE_MS = 300;
 
 /**
  * Where the cover is in its one journey.
@@ -291,10 +291,11 @@ export default function CoverShell({
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
 
   /*
-    Whether the card underneath is ready to be seen: its fonts in, and every
-    picture it uses loaded and decoded — or eight seconds gone. Until then the
-    loader covers the cover. Waited for on every mount, from nothing stored:
-    each fresh open of the link, and each Replay, plays in full.
+    Whether the card's first screen is ready to be seen: its fonts in, and the
+    pictures on that screen loaded and decoded — or five seconds gone. The rest
+    of the card goes on loading behind the envelope. Until then the loader
+    covers the cover. Waited for on every mount, from nothing stored: each
+    fresh open of the link, and each Replay, plays in full.
   */
   const [ready, setReady] = useState<boolean>(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -306,9 +307,9 @@ export default function CoverShell({
     less movement, and since the server cannot know that setting, the envelope
     was painted first and then vanished as the page woke, which is exactly an
     opening that was skipped. Android turns the setting on with "Remove
-    animations" and, on some phones, with battery saver. Such a guest now gets
-    the loader like everyone else and then the card fading in, with no
-    envelope to tap through: the stile is still gone, and so is the jump cut.
+    animations" and, on some phones, with battery saver — which is a great
+    many guests. So they get the envelope too, still and waiting for a tap,
+    and the tap crossfades it to the card: no movement, no petal burst.
   */
   const covered = phase !== "open";
 
@@ -410,9 +411,9 @@ export default function CoverShell({
     /*
       The sound goes with the tap, not with the phase change.
 
-      Skipped entirely under reduced motion and for a cover with no time to run,
-      both of which open instantly — a noise with no animation under it is a
-      jump scare, not a flourish. playCoverSound swallows everything else: a
+      Skipped under reduced motion, which opens with a short fade, and for a
+      cover with no time to run — a noise with no animation under it is a jump
+      scare, not a flourish. playCoverSound swallows everything else: a
       browser with no Web Audio, or one that will not start a context, opens the
       card in silence and says nothing about it.
     */
@@ -431,14 +432,21 @@ export default function CoverShell({
         return current;
       }
 
-      if (reducedMotion || option.durationMs <= 0) {
+      if (!reducedMotion && option.durationMs <= 0) {
         return "open";
       }
+
+      /*
+        Less motion: the whole layer fades in REDUCED_FADE_MS with the card let
+        go at once under it, so the card is what the envelope fades into.
+      */
+      const runMs = reducedMotion ? REDUCED_FADE_MS : option.durationMs;
+      const letGoMs = reducedMotion ? 0 : option.durationMs * option.revealAt;
 
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
         setPhase("open");
-      }, option.durationMs + UNMOUNT_GRACE_MS);
+      }, runMs + UNMOUNT_GRACE_MS);
 
       /*
         Cleared before it is set: React may call this updater twice in
@@ -452,7 +460,7 @@ export default function CoverShell({
       letGoTimerRef.current = window.setTimeout(() => {
         letGoTimerRef.current = null;
         setCardLetGo(true);
-      }, option.durationMs * option.revealAt);
+      }, letGoMs);
 
       return "opening";
     });
@@ -493,26 +501,6 @@ export default function CoverShell({
       live = false;
     };
   }, [hasCover]);
-
-  /*
-    Less motion: once the card is ready, the cover simply fades away and the
-    card fades in under it, with nothing to tap. No cleanup of its own: the
-    phase it sets re-runs this, and clearing the timer then would strand the
-    cover; clearTimer takes it on unmount.
-  */
-  useEffect(() => {
-    if (!ready || !reducedMotion || phase !== "closed") {
-      return;
-    }
-
-    clearTimer();
-    setCardLetGo(true);
-    setPhase("opening");
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null;
-      setPhase("open");
-    }, REDUCED_FADE_MS + UNMOUNT_GRACE_MS);
-  }, [ready, reducedMotion, phase, clearTimer]);
 
   /*
     A recorded sound is fetched while the cover is closed, so it is already in
@@ -558,18 +546,22 @@ export default function CoverShell({
     fontWeight: namesFace.weight,
     letterSpacing: namesFace.tracking,
   };
-  /* No drawing under reduced motion: the layer fades as a plain panel. */
-  const visual = reducedMotion
-    ? null
-    : renderVisual?.({
-        phase,
-        option,
-        reducedMotion,
-        colors,
-        title,
-        namesFont,
-      });
+  /*
+    Under reduced motion the drawing is kept closed through the opening — its
+    own opened state would be reached without transitions, in one jump — and
+    the layer fades as a whole instead, the still envelope crossfading to the
+    card.
+  */
+  const visual = renderVisual?.({
+    phase: reducedMotion && phase === "opening" ? "closed" : phase,
+    option,
+    reducedMotion,
+    colors,
+    title,
+    namesFont,
+  });
   const hasVisual = visual !== null && visual !== undefined;
+  const fadesWhole = !hasVisual || reducedMotion;
   const fadeMs = reducedMotion ? REDUCED_FADE_MS : option.durationMs;
 
   return (
@@ -638,11 +630,11 @@ export default function CoverShell({
                 so the plain panel fades itself over the same timer instead.
               */
               backgroundColor:
-                phase === "closed" || !hasVisual ? colors.ground : "transparent",
-              opacity: phase === "opening" && !hasVisual ? 0 : 1,
+                phase === "closed" || fadesWhole ? colors.ground : "transparent",
+              opacity: phase === "opening" && fadesWhole ? 0 : 1,
               transition:
-                phase === "opening" && !hasVisual
-                  ? `opacity ${fadeMs}ms ease-in`
+                phase === "opening" && fadesWhole
+                  ? `opacity ${fadeMs}ms ease-in-out`
                   : undefined,
               /*
                 Published as variables as well as painted, so the controls below
@@ -665,7 +657,6 @@ export default function CoverShell({
         >
           {visual}
 
-          {reducedMotion ? null : (
           <button
             type="button"
             onClick={handleOpen}
@@ -746,7 +737,6 @@ export default function CoverShell({
               </span>
             </span>
           </button>
-          )}
 
           {/*
             Present from the first frame, not revealed once the animation
@@ -759,7 +749,7 @@ export default function CoverShell({
             flourish turns into a toll. Offering it only mid-animation helps
             nobody: by then they have already paid.
           */}
-          {covered && !reducedMotion ? (
+          {covered ? (
             <button
               type="button"
               onClick={handleSkip}

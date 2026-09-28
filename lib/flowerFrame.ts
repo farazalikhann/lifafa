@@ -298,6 +298,11 @@ function percent(slice: number, extent: number): string {
   return `${Math.round((slice / extent) * 1e6) / 1e4}%`;
 }
 
+/** The frame's one picture, for whoever needs to wait for it to arrive. */
+export function flowerFrameSrc(style: PhotoBorderStyle): string {
+  return FRAMES[style].src;
+}
+
 /**
  * The frame, as the style of one element.
  *
