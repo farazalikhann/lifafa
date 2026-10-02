@@ -35,15 +35,15 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       2.4s: the seal peeled away (0.3s), the flap turned over (0.7s), the
       letter drawn out (0.8s) and the envelope let go as the letter comes
       forward (0.6s), each given the time real paper takes. The shares are in
-      the visual; the sound's own timings in lib/coverSound.ts shadow them.
+      the visual, and are set to the recording's own timings.
     */
     durationMs: 2400,
     /*
       As the letter starts up out of the pocket: RISE_START in the visual.
       That is also when a card's petal burst is thrown.
     */
-    revealAt: 0.36,
-    sound: "seal",
+    revealAt: 0.415,
+    sound: "envelope",
     haptic: 10,
     supportsReducedMotion: true,
     art: envelopeArt,
@@ -81,14 +81,15 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       hi: "खोलने के लिए टैप करें",
     },
     /*
-      1.8s: the ribbon slipped off (0.4s), then the two doors, each 0.9s and
-      the second 0.2s behind the first. The shares are in the visual.
+      1.8s: the ribbon slipped off (0.4s), then the two doors, each 0.8s and
+      the second 0.2s behind the first. The shares are in the visual, and are
+      set to the recording's own timings.
     */
     durationMs: 1800,
     /* As the left door starts to move: LEFT_START in the visual. */
-    revealAt: 0.17,
+    revealAt: 0.222,
     /* The card's petals are thrown as the second door opens: RIGHT_START. */
-    burstAt: 0.28,
+    burstAt: 0.333,
     sound: "fold",
     haptic: 10,
     supportsReducedMotion: true,
@@ -110,7 +111,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     revealAt: 0.1,
     /* The card's own petals follow the gust rather than being lost in it. */
     burstAt: 0.86,
-    sound: "chime",
+    sound: "petal-dust",
     haptic: 10,
     supportsReducedMotion: true,
     /* The picture has an oval left empty for them, and the visual letters them into it. */

@@ -12,22 +12,25 @@ import { envelopeArt } from "@/lib/envelopeArt";
  * How the open splits across the shell's timer, as fractions of --cover-ms,
  * which is 2400ms.
  *
- * Four movements, each handing to the next with a little overlap, because
- * paper does not stop between one movement and the next: the seal is peeled
- * away (300ms), the flap turns over while the seal is still leaving (700ms),
- * the letter is drawn out as the flap lands (800ms), and the envelope sinks
- * away as the letter comes forward to become the card (600ms). The last stage
- * ends on exactly 1, so nothing is moving when the shell unmounts. The seal's
- * sound in lib/coverSound.ts keeps the same times.
+ * Four movements: the seal is peeled away (300ms), the flap turns over
+ * (700ms), the letter is drawn out (800ms), and the envelope sinks away as
+ * the letter comes forward to become the card (600ms). The last stage ends on
+ * exactly 1, so nothing is moving when the shell unmounts.
+ *
+ * SET TO THE RECORDING, public/sounds/envelope-open.mp3, which is made of the
+ * same four: the wax from 0 to 0.3s, the flap's swish from 0.3 to 1.0s, the
+ * letter's slide from 1.0 to 1.8s, and then a chime. So each movement starts
+ * where its sound does — the flap at 0.3s, the letter at 1.0s — and the
+ * chime rings as the letter comes forward. Retime one and the other is wrong.
  */
 const PEEL_START = 0;
 const PEEL_SHARE = 0.125;
-const FLAP_START = 0.09;
+const FLAP_START = 0.125;
 const FLAP_SHARE = 0.29;
-const RISE_START = 0.36;
-const RISE_SHARE = 0.33;
-const DROP_START = 0.72;
-const DROP_SHARE = 0.28;
+const RISE_START = 0.415;
+const RISE_SHARE = 0.335;
+const DROP_START = 0.75;
+const DROP_SHARE = 0.25;
 /* The pocket is gone before the letter grows past it, since it sits in front. */
 const DROP_FADE_SHARE = 0.17;
 const ZOOM_START = 0.75;
@@ -36,8 +39,8 @@ const ZOOM_SHARE = 0.25;
   The card's ground clears as the letter comes out, so the card and its petal
   burst arrive behind the envelope rather than after it.
 */
-const BACKDROP_START = 0.58;
-const BACKDROP_SHARE = 0.38;
+const BACKDROP_START = 0.62;
+const BACKDROP_SHARE = 0.36;
 
 /** Wax coming off paper: it holds, then gives. */
 const PEEL_EASE = "cubic-bezier(0.4,0,0.7,0.6)";

@@ -17,15 +17,19 @@ import {
  * How the open splits across the shell's timer, as fractions of --cover-ms,
  * which is 1800ms.
  *
- * The ribbon is slipped off (400ms). The left door is already starting as the
- * last of it goes, and takes 900ms to swing; the right one follows 200ms
- * behind it and has landed at 0.78. The two then fade together over what is
- * left, folded back at the sides, as the card settles in between them.
+ * The ribbon is slipped off (400ms). The left door then swings, and the right
+ * one 200ms behind it, each for 800ms. The two then fade together over what
+ * is left, folded back at the sides, as the card settles in between them.
+ *
+ * SET TO THE RECORDING, public/sounds/fold-open.mp3: the ribbon's swish from
+ * 0 to 0.4s, the left door at 0.4s, the right at 0.6s, and a chime at about
+ * 1.35s, which is the moment the second door lands. Retime one and the other
+ * is wrong.
  */
 const RIBBON_SHARE = 0.22;
-const LEFT_START = 0.17;
-const RIGHT_START = 0.28;
-const SWING_SHARE = 0.5;
+const LEFT_START = 0.222;
+const RIGHT_START = 0.333;
+const SWING_SHARE = 0.445;
 const DOORS_FADE_START = 0.8;
 const DOORS_FADE_SHARE = 0.2;
 

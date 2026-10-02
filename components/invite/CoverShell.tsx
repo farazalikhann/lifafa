@@ -22,7 +22,7 @@ import { getCoverAnimation } from "@/lib/coverAnimations";
 import { fontFamilyOf, getFontPair, namesFaceOf, pairRoleVar } from "@/lib/fontPairs";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
-import { playCoverSound, preloadCoverSound } from "@/lib/coverSound";
+import { playCoverSound, preloadCoverSound, stopCoverSound } from "@/lib/coverSound";
 import { enterFullscreen } from "@/lib/fullscreen";
 import type { CardLanguage } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
@@ -591,11 +591,21 @@ export default function CoverShell({
     /* Also a tap, so also a gesture the browser will honour. */
     enterFullscreen();
     clearTimer();
+    /* Skipping part way through an open: the sound of it goes with it. */
+    stopCoverSound();
     setPhase("open");
   }, [clearTimer]);
 
   /** A timer outliving the component would call setState on a dead tree. */
   useEffect(() => clearTimer, [clearTimer]);
+
+  /*
+    The opening sound runs on for a second or so after its cover has gone, as
+    the card settles in, so it is not stopped when the cover leaves — only
+    when this shell does: a host pressing Replay, which mounts a new one that
+    plays it again from the start, or a page being left.
+  */
+  useEffect(() => stopCoverSound, []);
 
   /*
     The wait. Started after hydration, when the card is on the page to be read,
@@ -627,11 +637,12 @@ export default function CoverShell({
   }, [hasCover, artImages]);
 
   /*
-    A recorded sound is fetched while the cover is closed, so it is already in
-    memory when the guest taps; fetched on the tap, it would land after the
-    curtains had parted. Asked for on the same terms handleOpen plays it, so a
-    cover that will open in silence downloads nothing. For a synthesised sound
-    this does nothing at all.
+    The cover's sound is fetched and decoded while the cover is closed, so it
+    can start on the frame the guest taps; fetched on the tap, it would land
+    after the curtains had parted. Only this cover's own, and on the same terms
+    handleOpen plays it, so a cover that will open in silence downloads
+    nothing. Nothing waits for it: if it is not ready at the tap, the cover
+    opens without it.
   */
   useEffect(() => {
     if (phase !== "closed" || reducedMotion || option.durationMs <= 0) {
