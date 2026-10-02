@@ -4,7 +4,8 @@
  * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/,
  * the envelope cover's paper, liner and seal to public/decor/envelope/, the
  * petal dust cover's pictures to public/decor/petal-cover/, the fold cover's
- * arch and ribbon to public/decor/gatefold/.
+ * arch and ribbon to public/decor/gatefold/, the scratch panel's frames and
+ * foil to public/decor/scratch/, the floral dividers to public/decor/dividers/.
  *
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
@@ -15,6 +16,8 @@
  *   node scripts/cut-flowers.mjs envelope     just the envelope cover's paper and seal
  *   node scripts/cut-flowers.mjs petal-cover  just the petal dust cover's two pictures
  *   node scripts/cut-flowers.mjs gatefold     just the fold cover's arch and ribbon
+ *   node scripts/cut-flowers.mjs scratch      just the scratch panel's frames and foil
+ *   node scripts/cut-flowers.mjs dividers     just the floral dividers
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -219,7 +222,7 @@ const CURTAIN = [
     file: "ChatGPT Image Oct 2, 2026, 09_26_42 AM.png",
     fit: { width: 1200 },
     seeds: ["bottom"],
-    quality: 78,
+    quality: 66,
   },
   {
     name: "curtain-left-cream",
@@ -236,7 +239,7 @@ const CURTAIN = [
     file: "ChatGPT Image Oct 2, 2026, 09_29_40 AM.png",
     fit: { width: 1200 },
     seeds: ["bottom"],
-    quality: 78,
+    quality: 66,
   },
 ].map((entry) => ({
   ...entry,
@@ -317,7 +320,7 @@ const ENVELOPE = [
     floodBelow: LOW,
     softRim: true,
     fit: { width: 400 },
-    quality: 80,
+    quality: 66,
   },
 ].map((entry) => ({
   ...entry,
@@ -403,6 +406,76 @@ const GATEFOLD = [
   softRim: true,
   source: ENVELOPE_SOURCE,
   out: join("public", "decor", "gatefold"),
+}));
+
+/**
+ * The scratch panel's two frames of roses and the foil a guest scratches off,
+ * and the three garlands drawn between the card's sections. See
+ * components/card/FramedScratch.tsx and components/card/FloralDivider.tsx.
+ * These also arrived in the envelope's folder.
+ *
+ * A FRAME'S OPENING IS BLACK THE FLOOD CANNOT REACH: it is closed in by the
+ * frame on every side. So is every gap between a scroll of gold and the rose
+ * beside it. All of it is sheet, and is taken as the toran's pockets are:
+ * enclosed true black, once it is bigger than `pocketMin`. A rose's own
+ * shadows are deep red rather than black, and the few specks of true black
+ * in them are far smaller than that, so they stay solid.
+ *
+ * The foil was supplied as a tile and, like the envelope's papers, is closed
+ * at both joins by fading its first pixels in from the ones past its far edge.
+ */
+const SCRATCH = [
+  {
+    name: "scratch-frame-oval",
+    file: "ChatGPT Image Oct 2, 2026, 11_59_52 AM.png",
+    fit: { height: 900 },
+  },
+  {
+    name: "scratch-frame-rect",
+    file: "ChatGPT Image Oct 2, 2026, 11_59_44 AM.png",
+    fit: { width: 900 },
+  },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  pocketMin: 60,
+  quality: 66,
+  alphaQuality: 72,
+  source: ENVELOPE_SOURCE,
+  out: join("public", "decor", "scratch"),
+})).concat([
+  {
+    name: "scratch-foil",
+    file: "ChatGPT Image Oct 2, 2026, 11_59_35 AM.png",
+    background: "tile",
+    period: [null, null],
+    blend: 48,
+    fit: { width: 512 },
+    quality: 58,
+    source: ENVELOPE_SOURCE,
+    out: join("public", "decor", "scratch"),
+  },
+]);
+
+const DIVIDERS = [
+  { name: "divider-rose", file: "ChatGPT Image Oct 2, 2026, 11_59_26 AM.png" },
+  { name: "divider-marigold", file: "ChatGPT Image Oct 2, 2026, 11_59_19 AM.png" },
+  { name: "divider-mogra", file: "ChatGPT Image Oct 2, 2026, 11_59_11 AM.png" },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  pocketMin: 40,
+  fit: { width: 1000 },
+  quality: 66,
+  alphaQuality: 78,
+  source: ENVELOPE_SOURCE,
+  out: join("public", "decor", "dividers"),
 }));
 
 /* --- On black ---------------------------------------------------------- */
@@ -1170,6 +1243,8 @@ const sets = [
   ...(which === "all" || which === "envelope" ? ENVELOPE : []),
   ...(which === "all" || which === "petal-cover" ? PETAL_COVER : []),
   ...(which === "all" || which === "gatefold" ? GATEFOLD : []),
+  ...(which === "all" || which === "scratch" ? SCRATCH : []),
+  ...(which === "all" || which === "dividers" ? DIVIDERS : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

@@ -8,10 +8,10 @@ import {
   type ReactNode,
 } from "react";
 import FoldedMap from "@/components/card/FoldedMap";
+import FramedScratch from "@/components/card/FramedScratch";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useScratchReveal } from "@/components/card/ScratchReveal";
 import { useInView } from "@/hooks/useInView";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   REVEAL_BASE,
   SECTION_REVEAL_OPTIONS,
@@ -31,8 +31,6 @@ import type { EventDraft } from "@/types/event";
 
 /** The section's own rhythm, shared with the group the panel covers. */
 const GAP = "calc(1 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))";
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 /** How long "Address copied" stays up. */
 const COPIED_MS = 2000;
@@ -137,7 +135,6 @@ export default function VenueSection({
   language: CardLanguage;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
-  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const shared = useScratchReveal(scratch === null ? undefined : "venue");
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef<number | null>(null);
@@ -164,14 +161,12 @@ export default function VenueSection({
   );
 
   /*
-    Covered while there is a panel a guest could still scratch. The host's
-    preview clears its panels, and reduced motion draws none, so neither holds
-    the buttons.
+    Covered while there is a panel a guest could still open. The host's
+    preview clears its panels, so it does not hold the buttons.
   */
   const locked =
     scratch !== null &&
     !scratch.preCleared &&
-    !reducedMotion &&
     shared.revealed === null;
 
   const onAccent = readableOn(theme.accent, [theme.background, theme.textPrimary]);
@@ -286,6 +281,16 @@ export default function VenueSection({
       <div className={reveal} style={lineDelay(1)}>
         {scratch === null ? (
           where
+        ) : scratch.frame !== undefined ? (
+          /* Its way round the panel is the button under the venue's own actions, below. */
+          <FramedScratch
+            {...scratch}
+            frame={scratch.frame}
+            label={copy.scratch.hint}
+            showRevealButton={false}
+          >
+            {where}
+          </FramedScratch>
         ) : (
           <ScratchPanel
             {...scratch}

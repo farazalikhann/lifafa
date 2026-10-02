@@ -8,6 +8,7 @@ import {
 } from "react";
 import Confetti from "@/components/card/Confetti";
 import CountdownTiles, { type TileUnit } from "@/components/card/CountdownTiles";
+import FramedScratch from "@/components/card/FramedScratch";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useInView } from "@/hooks/useInView";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -367,6 +368,15 @@ export default function CountdownSection({
       */}
       {panel === null ? (
         counter
+      ) : panel.frame !== undefined ? (
+        /* The countdown's own panel, in its frame. The date's patch, below, is the plain one. */
+        <FramedScratch
+          {...panel}
+          frame={panel.frame}
+          onCoveredChange={handleCoveredChange}
+        >
+          {counter}
+        </FramedScratch>
       ) : (
         <div className="w-full">
           <ScratchPanel

@@ -20,11 +20,20 @@ import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { FIRST_SCREEN_IMAGES, FIRST_SCREEN_MASKS } from "@/lib/cardReady";
 import { flowerFrameSrc, isPhotoBorder } from "@/lib/flowerFrame";
 import {
+  BURST_PIECES,
   petalFlowerType,
   petalStyle,
   petalsBurst,
   petalsFall,
 } from "@/lib/petals";
+import {
+  dividerArt,
+  dividerStyleOf,
+  scratchFrameOf,
+} from "@/lib/cardDecor";
+import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import FloralDivider from "@/components/card/FloralDivider";
+import NamesHeader from "@/components/card/NamesHeader";
 import BorderFrame, {
   borderClearance,
 } from "@/components/card/decor/BorderFrame";
@@ -78,7 +87,6 @@ import {
 import { motifsWithout, type Motif } from "@/lib/motifs";
 import type { EventWeather } from "@/types/weather";
 
-import { getPalette } from "@/lib/palettes";
 import type { Theme } from "@/lib/themes";
 import type {
   CardAudience,
@@ -764,18 +772,16 @@ export default function CardCanvas({
       ? config.scratchTarget
       : "none";
 
+  const fontPair = getFontPair(style.fontPairId);
+  const namesFace = namesFaceOf(fontPair);
+
   /*
     Colour resolution order: the host's accent override, then the selected
     palette, then the theme as the last resort. Sections read colours from the
     theme object they are handed, so composing one effective theme here is what
     makes an override reach every divider, motif, scroll cue and accent line at
     once.
-  */
-  const palette = getPalette(style.paletteId);
-  const fontPair = getFontPair(style.fontPairId);
-  const namesFace = namesFaceOf(fontPair);
 
-  /*
     Lifted into lib/cardTheme.ts, because the card is no longer the only thing
     that needs it: the guest's reply form sits directly under this and was
     reading the raw theme, which put cream labels on a cream card.
@@ -1196,7 +1202,24 @@ export default function CardCanvas({
     itself in card pixels already, and the rule would size it from an
     --art-width it was never given.
   */
-  const divider = (key: string): ReactElement => (
+  /*
+    The garland, when the card has one: the host's own choice of flower, or
+    its tradition's. It takes the place of whatever rule the card had between
+    its sections. "None" gives that back: the pack's own divider when the host
+    switched one on — the arabesque band, the olive branch — and the hairline
+    flourish otherwise.
+  */
+  const floralDivider = dividerArt(dividerStyleOf(config.divider, config.traditionId));
+
+  /*
+    `floral` is false for the one rule that is not between two sections: the
+    one under the opening on the first screen, which is fitted to the pixel
+    above the cue and stays the small flourish it was measured as.
+  */
+  const divider = (key: string, floral: boolean = true): ReactElement =>
+    floral && floralDivider !== null ? (
+      <FloralDivider key={`divider-${key}`} art={floralDivider} />
+    ) : (
     <div
       className={
         dividerOrnament !== null
@@ -1229,7 +1252,19 @@ export default function CardCanvas({
         <CardFlourish accent={effectiveTheme.accent} className="opacity-50" />
       )}
     </div>
-  );
+    );
+
+  /*
+    The running head: the couple, or whoever the card names. Nothing for a
+    card that names nobody yet, which would only pin the placeholder up there.
+  */
+  const headerNames = resolveCoverNames(draft, config.occasionId, language);
+  const headerLine =
+    headerNames.kind === "pair"
+      ? `${headerNames.first} & ${headerNames.second}`
+      : headerNames.isPlaceholder
+        ? null
+        : coverNameLine(headerNames);
 
   return (
     /*
@@ -1439,6 +1474,54 @@ export default function CardCanvas({
           bandHeight={bandHeight}
         />
 
+        {/*
+          The names, pinned once the opening screen has been scrolled past.
+          Above every layer of decor, the border and the hanging ornaments
+          included: it is a band across the top of the screen, and a garland
+          drawn over the names would be the thing it exists to prevent.
+        */}
+        {headerLine !== null ? (
+          <NamesHeader
+            names={headerLine}
+            background={effectiveTheme.background}
+            accent={effectiveTheme.accent}
+            rule={`${effectiveTheme.accent}40`}
+            clearMusic={(config.musicUrl ?? null) !== null}
+          />
+        ) : null}
+
+        {/*
+          The music button, in the top right of the reading column. A row of no
+          height that sticks to the top of the scrollport, so it pushes nothing
+          down a pixel, and nothing at all when the host pasted no link, which
+          is most cards.
+
+          Out here rather than inside the column below, and after the names
+          header, because it has to be drawn over that band: the column is a
+          layer of its own beneath the decor, and a button in it would sit
+          under the band's blur. It is still laid out as the column is — the
+          same class and the same side inset — so it is where it always was.
+
+          `?? null` because card_config is a jsonb snapshot: a card saved before
+          this field existed has no key here, and `undefined` is not a value
+          MusicToggle should have to know about.
+        */}
+        {(config.musicUrl ?? null) !== null ? (
+          <div
+            className="lifafa-card-content pointer-events-none sticky top-3 z-20 h-0"
+            style={{
+              paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
+            }}
+          >
+            <MusicToggle
+              musicUrl={config.musicUrl ?? null}
+              accent={effectiveTheme.accent}
+              surface={effectiveTheme.surface}
+              language={language}
+            />
+          </div>
+        ) : null}
+
         {/* Content rides above the decor layer. */}
         {/*
           `lifafa-card-content` is the reading column a fluid card centres at
@@ -1452,22 +1535,6 @@ export default function CardCanvas({
             paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
           }}
         >
-          {/*
-            First in the column and no height of its own, so it sticks to the top
-            of the scrollport without pushing the cover down a pixel. Renders
-            nothing at all when the host pasted no link, which is most cards.
-
-            `?? null` because card_config is a jsonb snapshot: a card saved before
-            this field existed has no key here, and `undefined` is not a value
-            MusicToggle should have to know about.
-          */}
-          <MusicToggle
-            musicUrl={config.musicUrl ?? null}
-            accent={effectiveTheme.accent}
-            surface={effectiveTheme.surface}
-            language={language}
-          />
-
           {/*
             Dividers are driven off `visible`, never off `config.blocks`: an
             index > 0 test on the filtered list is what guarantees no divider can
@@ -1505,6 +1572,9 @@ export default function CardCanvas({
                     preCleared: isHostPreview,
                     /* One secret wherever it is hidden; see ScratchReveal.tsx. */
                     target: config.scratchTarget === "none" ? undefined : config.scratchTarget,
+                    /* The section's own panel is the framed one; see FramedScratch. */
+                    frame: scratchFrameOf(config.scratchFrame),
+                    petals: BURST_PIECES[petalFlower].map((piece) => piece.src),
                   }
                 : null;
 
@@ -1679,7 +1749,7 @@ export default function CardCanvas({
                   of the next screen, showing above the cue, and the one thing
                   on the opening that says the card goes on.
                 */}
-                {headIsFirstScreen ? divider("head") : null}
+                {headIsFirstScreen ? divider("head", false) : null}
                 {section}
                 {blockKey(block) === calendarAnchor ? saveTheDate : null}
               </>

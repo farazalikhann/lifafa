@@ -732,7 +732,13 @@ export default function FullScreenPreview({
           item takes its content height, the card runs off the bottom of the
           screen and the footer goes with it.
         */}
-        <div className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {/*
+          Below lg the language switch, Replay and close float over the card's
+          top corners, so the card's names header is asked to set its names a
+          row lower, under them; see NamesHeader. At lg they are in the header
+          above and the band needs no room for them.
+        */}
+        <div className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain [--lifafa-header-lift:2.75rem] [--lifafa-header-music:0] lg:[--lifafa-header-lift:0px] lg:[--lifafa-header-music:1]">
           {/*
             No bottom clearance for the watermark pill any more, and dropping it
             is what stops the border frame breaking at the end of the scroll.

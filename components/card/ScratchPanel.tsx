@@ -14,6 +14,7 @@ import {
 } from "@/components/card/ScratchReveal";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { contrastRatio } from "@/lib/contrast";
+import type { ScratchFrame } from "@/types/card";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -129,7 +130,17 @@ export interface ScratchConfig {
     short: string;
     reveal: string;
     revealed: string;
+    /** On the patch for a guest who asked for less motion, in place of the label. */
+    tap: string;
   };
+  /**
+   * Set for the card's one main panel, which is drawn in a frame of roses by
+   * FramedScratch rather than as this component's plain patch. The small
+   * patches that repeat the same secret elsewhere on the card carry none.
+   */
+  frame?: ScratchFrame;
+  /** The card's own petals, thrown with the gold when a framed panel opens. */
+  petals?: readonly string[];
   /**
    * Render the content already uncovered.
    *
@@ -358,7 +369,12 @@ export default function ScratchPanel({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const interactive = !preCleared && !prefersReducedMotion;
+  /*
+    A guest who asked for less motion still gets the patch. It used to be left
+    off for them altogether, which told them the secret outright; now it sits
+    still and opens on a tap, with no scratching to do.
+  */
+  const interactive = !preCleared;
   const shared = useScratchReveal(target);
   const sharedReveal = shared.reveal;
 
@@ -611,9 +627,11 @@ export default function ScratchPanel({
       );
       ctx.stroke();
 
-      const text = labelFor(label, phrases.short, rect.width);
+      const text = prefersReducedMotion
+        ? labelFor(phrases.tap, "", rect.width)
+        : labelFor(label, phrases.short, rect.width);
 
-      if (text !== null) {
+      if (text !== null && text.length > 0) {
         ctx.globalAlpha = 1;
         ctx.fillStyle = labelColour(accent, surface);
         /* Resolved off the host, so the label is set in the card's own face. */
@@ -726,6 +744,13 @@ export default function ScratchPanel({
         return;
       }
 
+      /* Less motion: the patch is a button, and this is its press. */
+      if (prefersReducedMotion) {
+        finished = true;
+        handleCleared();
+        return;
+      }
+
       scratching = true;
       last = positionOf(event);
 
@@ -829,7 +854,17 @@ export default function ScratchPanel({
       mid-session — must be painted rather than left as a transparent sheet over
       the content.
     */
-  }, [accent, surface, label, phrases.short, handleCleared, showCanvas, fit]);
+  }, [
+    accent,
+    surface,
+    label,
+    phrases.short,
+    phrases.tap,
+    handleCleared,
+    showCanvas,
+    fit,
+    prefersReducedMotion,
+  ]);
 
   return (
     /*
@@ -892,6 +927,7 @@ export default function ScratchPanel({
               pointer handlers above.
             */
             touchAction: "pan-y",
+            cursor: prefersReducedMotion ? "pointer" : undefined,
             opacity: phase === "fading" ? 0 : 1,
             transition: "opacity " + FADE_MS + "ms ease-out",
           }}

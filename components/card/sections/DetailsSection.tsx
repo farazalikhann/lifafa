@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactElement, ReactNode } from "react";
+import FramedScratch from "@/components/card/FramedScratch";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useInView } from "@/hooks/useInView";
 import {
@@ -308,6 +309,10 @@ export default function DetailsSection({
     >
       {scratch === null ? (
         when
+      ) : scratch.frame !== undefined ? (
+        <FramedScratch {...scratch} frame={scratch.frame}>
+          {when}
+        </FramedScratch>
       ) : (
         <ScratchPanel {...scratch}>{when}</ScratchPanel>
       )}

@@ -160,6 +160,8 @@ export interface CardCopy {
     revealed: string;
     /** The hint on or under a patch that covers a whole block. */
     hint: string;
+    /** On a patch for a guest who asked for less motion: it opens on a tap. */
+    tap: string;
   };
   calendar: {
     /** The "Save the date" block under the countdown. */
@@ -405,6 +407,7 @@ const ENGLISH: CardCopy = {
     reveal: "Reveal without scratching",
     revealed: "Revealed.",
     hint: "Scratch to reveal",
+    tap: "Tap to reveal",
   },
   calendar: {
     heading: "Save the date",
@@ -617,6 +620,7 @@ const HINDI: CardCopy = {
     reveal: "बिना खुरचे देखें",
     revealed: "दिख गया।",
     hint: "देखने के लिए खुरचें",
+    tap: "देखने के लिए टैप करें",
   },
   calendar: {
     heading: "तारीख़ याद रखिए",

@@ -41,6 +41,8 @@ import {
 } from "@/lib/autoTranslate";
 import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalFlowerType, petalStyle } from "@/lib/petals";
+import { dividerStyleOf, hasChosenDivider, scratchFrameOf } from "@/lib/cardDecor";
+import DividerPanel from "@/components/create/DividerPanel";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { deepEqual } from "@/lib/deepEqual";
@@ -52,7 +54,6 @@ import {
   paidEditMessage,
   type ChangeAllowance,
 } from "@/lib/eventLock";
-import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardLanguage } from "@/lib/cardLanguage";
 import {
@@ -78,6 +79,8 @@ import type {
   CardLanguage,
   DecorIntensity,
   DecorMotion,
+  DividerStyle,
+  ScratchFrame,
   ScratchTarget,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -141,6 +144,9 @@ interface EditorState {
   language: CardLanguage;
   rsvpEnabled: boolean;
   scratchTarget: ScratchTarget;
+  scratchFrame: ScratchFrame;
+  /** The host's own choice of divider, or undefined while the tradition's default stands. */
+  divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
   style: CardStyle;
   ornamentConfig: OrnamentConfig;
@@ -186,6 +192,9 @@ function toState(snapshot: EditorSnapshot): EditorState {
     language: cardLanguage(config.language),
     rsvpEnabled: readRsvpEnabled(config.rsvpEnabled),
     scratchTarget: config.scratchTarget,
+    /* Both absent from a card saved before they existed; see lib/cardDecor.ts. */
+    scratchFrame: scratchFrameOf(config.scratchFrame),
+    divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
     /*
@@ -248,6 +257,9 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       language: state.language,
       rsvpEnabled: state.rsvpEnabled,
       scratchTarget: state.scratchTarget,
+      scratchFrame: state.scratchFrame,
+      /* Left off the card until the host chooses, so the tradition's default goes on applying. */
+      ...(state.divider !== undefined ? { divider: state.divider } : null),
       borderStyle: state.borderStyle,
       style: state.style,
       ornamentConfig: state.ornamentConfig,
@@ -439,6 +451,8 @@ export default function CardEditor({
   }
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
+  const [scratchFrame, setScratchFrame] = useState(initial.scratchFrame);
+  const [divider, setDivider] = useState(initial.divider);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
   const [musicUrl, setMusicUrl] = useState<string | null>(initial.musicUrl);
   /*
@@ -786,6 +800,8 @@ export default function CardEditor({
     language,
     rsvpEnabled,
     scratchTarget,
+    scratchFrame,
+    divider,
     borderStyle,
     style,
     ornamentConfig,
@@ -1401,6 +1417,13 @@ export default function CardEditor({
                 <RevealPanel
                   scratchTarget={scratchTarget}
                   onScratchTargetChange={setScratchTarget}
+                  scratchFrame={scratchFrame}
+                  onScratchFrameChange={setScratchFrame}
+                  accordion={accordionFor("extras")}
+                />
+                <DividerPanel
+                  divider={dividerStyleOf(divider, traditionId)}
+                  onDividerChange={setDivider}
                   accordion={accordionFor("extras")}
                 />
                 <MusicPanel

@@ -12,7 +12,6 @@ import CalendarSheet from "@/components/card/CalendarSheet";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useScratchReveal } from "@/components/card/ScratchReveal";
 import { useInView } from "@/hooks/useInView";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { calendarEvent, type CalendarInvite } from "@/lib/calendar";
 import {
   REVEAL_BASE,
@@ -301,11 +300,6 @@ export default function SaveTheDate({
   venueScratched: boolean;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLDivElement>(SECTION_REVEAL_OPTIONS);
-  /*
-    A panel covers nothing under reduced motion (ScratchPanel shows its content
-    outright), so nothing here waits for one either.
-  */
-  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const dateReveal = useScratchReveal(dateScratch === null ? undefined : "date");
   const venueReveal = useScratchReveal(venueScratched ? "venue" : undefined);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -345,9 +339,9 @@ export default function SaveTheDate({
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
   const dateHidden =
-    dateScratch !== null && !reducedMotion && dateReveal.revealed === null;
+    dateScratch !== null && dateReveal.revealed === null;
   const venueHidden =
-    venueScratched && !reducedMotion && venueReveal.revealed === null;
+    venueScratched && venueReveal.revealed === null;
 
   const venue = venueHidden
     ? ""

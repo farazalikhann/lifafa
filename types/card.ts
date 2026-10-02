@@ -111,6 +111,12 @@ export type PetalFlower = "rose" | "marigold" | "mogra" | "lotus" | "mixed";
  */
 export type ScratchTarget = "none" | "date" | "venue" | "countdown";
 
+/** The frame of roses a scratch panel is drawn in. See lib/cardDecor.ts. */
+export type ScratchFrame = "oval" | "rect";
+
+/** The garland drawn between two sections of the card, or none. See lib/cardDecor.ts. */
+export type DividerStyle = "rose" | "marigold" | "mogra" | "none";
+
 /**
  * The language the card writes its own words in.
  *
@@ -231,6 +237,21 @@ export interface CardConfig {
   rsvpEnabled: boolean;
   /** Which section sits behind a scratch panel, if any. */
   scratchTarget: ScratchTarget;
+  /**
+   * The shape of the frame the scratch panel is drawn in.
+   *
+   * Absent from every card saved before there was a choice. Read it through
+   * `scratchFrameOf` in lib/cardDecor.ts, which turns a missing key into the
+   * oval.
+   */
+  scratchFrame?: ScratchFrame;
+  /**
+   * The garland between two sections.
+   *
+   * Absent until a host chooses one, and absent means "this card's
+   * tradition's own": read it through `dividerStyleOf` in lib/cardDecor.ts.
+   */
+  divider?: DividerStyle;
   /**
    * The decorative frame around the card's edges.
    *

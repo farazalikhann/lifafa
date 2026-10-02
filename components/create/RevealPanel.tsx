@@ -5,7 +5,7 @@ import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
-import type { ScratchTarget } from "@/types/card";
+import type { ScratchFrame, ScratchTarget } from "@/types/card";
 
 /*
   Labelled by what the host is choosing to hide rather than by the mechanism,
@@ -17,6 +17,12 @@ const SCRATCH_TARGETS: readonly { id: ScratchTarget; label: string }[] = [
   { id: "date", label: "Hide the date" },
   { id: "venue", label: "Hide the venue" },
   { id: "countdown", label: "Hide the countdown" },
+];
+
+/* The frame of roses the panel is drawn in. */
+const SCRATCH_FRAMES: readonly { id: ScratchFrame; label: string }[] = [
+  { id: "oval", label: "Oval" },
+  { id: "rect", label: "Rectangle" },
 ];
 
 function pillClass(isSelected: boolean): string {
@@ -42,10 +48,14 @@ function pillClass(isSelected: boolean): string {
 export default function RevealPanel({
   scratchTarget,
   onScratchTargetChange,
+  scratchFrame,
+  onScratchFrameChange,
   accordion,
 }: {
   scratchTarget: ScratchTarget;
   onScratchTargetChange: (target: ScratchTarget) => void;
+  scratchFrame: ScratchFrame;
+  onScratchFrameChange: (frame: ScratchFrame) => void;
   /** The Extras tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
@@ -78,6 +88,33 @@ export default function RevealPanel({
       <p className="text-xs text-[var(--lifafa-muted)]">
         Guests scratch the panel to uncover it.
       </p>
+
+      {/* Only once there is a panel for it to be the frame of. */}
+      {scratchTarget !== "none" ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium text-[var(--lifafa-cream)]">Frame</p>
+          <div className="flex flex-wrap gap-2">
+            {SCRATCH_FRAMES.map((option) => {
+              const isSelected = option.id === scratchFrame;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onScratchFrameChange(option.id)}
+                  className={pillClass(isSelected)}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-[var(--lifafa-muted)]">
+            The rectangle has more room, and suits a long venue or the countdown.
+          </p>
+        </div>
+      ) : null}
     </CollapsibleSection>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { contrastRatio } from "@/lib/contrast";
 import type { Palette } from "@/lib/palettes";
 import type { CardLanguage } from "@/types/card";
@@ -67,6 +67,28 @@ export default function LanguageSwitch({
   accent: string;
 }): ReactElement {
   const [isTucked, setIsTucked] = useState(false);
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  /*
+    How much of the top right corner the switch is taking, for the card's
+    names header to keep its names out of (see NamesHeader): its own width
+    and the gap beside it while it is showing, nothing once it has tucked
+    itself away. Re-measured when the selection changes, since the two labels
+    are not the same width at every size.
+  */
+  useEffect(() => {
+    const root = document.documentElement;
+    const group = groupRef.current;
+
+    root.style.setProperty(
+      "--lifafa-header-clear",
+      isTucked || group === null ? "0px" : `${Math.ceil(group.offsetWidth) + 12}px`,
+    );
+
+    return () => {
+      root.style.removeProperty("--lifafa-header-clear");
+    };
+  }, [isTucked, value]);
 
   useEffect(() => {
     let last = window.scrollY;
@@ -100,6 +122,7 @@ export default function LanguageSwitch({
 
   return (
     <div
+      ref={groupRef}
       role="group"
       aria-label="Language / भाषा"
       onFocusCapture={() => setIsTucked(false)}

@@ -10,7 +10,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { ScratchTarget } from "@/types/card";
 
 /** The three things a panel can hide. "none" is never revealed, so never stored. */
@@ -177,12 +176,10 @@ export function useScratchReveal(target: RevealTarget | undefined): {
   };
 }
 
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
 /**
- * Whether `target` is still behind a panel on this card: concealed, not yet
- * revealed anywhere, and not a guest with reduced motion, for whom
- * ScratchPanel draws no panel at all.
+ * Whether `target` is still behind a panel on this card: concealed, and not
+ * yet revealed anywhere. A guest with reduced motion has the panel too, and
+ * opens it with a tap.
  *
  * For the places that repeat what a panel hides without being a panel
  * themselves — the timeline's own line for the main event — so they hold it
@@ -190,7 +187,6 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  */
 export function useStillHidden(target: RevealTarget): boolean {
   const { revealed, concealed } = useContext(ScratchRevealContext);
-  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
 
-  return concealed === target && revealed[target] === undefined && !reducedMotion;
+  return concealed === target && revealed[target] === undefined;
 }
