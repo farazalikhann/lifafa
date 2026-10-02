@@ -7,6 +7,7 @@
  */
 
 import { curtainArt } from "@/lib/curtainArt";
+import { envelopeArt } from "@/lib/envelopeArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -25,20 +26,25 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     label: "Envelope seal",
     description: "A sealed envelope breaks open and the card slides out.",
     openPromptText: {
-      en: "Tap seal to open",
+      en: "Tap the seal to open",
       hi: "खोलने के लिए मुहर पर टैप करें",
     },
     /*
-      1.8s, from 2.2. The guest has just tapped a link in a chat and is holding
-      the phone waiting; every stage keeps its share of the open, so the seal,
-      the flap and the letter all run a fifth quicker rather than any one of
-      them being cut.
+      2.4s: the seal peeled away (0.3s), the flap turned over (0.7s), the
+      letter drawn out (0.8s) and the envelope let go as the letter comes
+      forward (0.6s), each given the time real paper takes. The shares are in
+      the visual; the sound's own timings in lib/coverSound.ts shadow them.
     */
-    durationMs: 1800,
-    /* As the letter starts towards the guest: EXIT_START in the visual is 0.64. */
-    revealAt: 0.62,
+    durationMs: 2400,
+    /*
+      As the letter starts up out of the pocket: RISE_START in the visual.
+      That is also when a card's petal burst is thrown.
+    */
+    revealAt: 0.36,
     sound: "seal",
+    haptic: 10,
     supportsReducedMotion: true,
+    art: envelopeArt,
   },
   {
     id: "curtain-reveal",

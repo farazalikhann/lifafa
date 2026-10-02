@@ -25,7 +25,10 @@ export type CoverAnimationId =
  *
  * A cover made of the card's own two colours takes its inks from the card. One
  * made of photographed cloth cannot: the card's text colour was chosen against
- * the card's ground, not against velvet, so the artwork brings its own.
+ * the card's ground, not against velvet, so the artwork brings its own. Every
+ * ink is optional, because artwork that leaves the card's ground showing under
+ * the words — an envelope sitting on it — has nothing to bring: the card's own
+ * inks still read there.
  */
 export interface CoverArt {
   /**
@@ -35,12 +38,14 @@ export interface CoverArt {
    */
   images: readonly string[];
   /** Skip and the focus ring, over the artwork. */
-  ink: string;
-  inkMuted: string;
+  ink?: string;
+  inkMuted?: string;
   /** The small plaque the prompt sits on, its hairline, and the prompt itself. */
-  plaque: string;
-  plaqueEdge: string;
-  plaqueInk: string;
+  plaque?: string;
+  plaqueEdge?: string;
+  plaqueInk?: string;
+  /** The prompt under the drawing, when it is printed on the card's ground: a gold that reads there. */
+  promptInk?: string;
 }
 
 /** One opening animation, as offered in the designer and played for a guest. */
@@ -87,6 +92,12 @@ export interface CoverAnimationOption {
    * changed, retuned or dropped without a stored row meaning anything different.
    */
   sound: CoverSoundId | null;
+  /**
+   * A tick of the phone's motor as the cover is tapped open, in milliseconds:
+   * the seal giving way under a thumb. Android only — an iPhone has no
+   * `navigator.vibrate` — and never under reduced motion. Absent for none.
+   */
+  haptic?: number;
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
   /**

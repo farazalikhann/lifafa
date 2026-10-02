@@ -1,7 +1,8 @@
 /**
  * Cuts supplied artwork out of the background it arrived on and publishes it
  * as WebP: the flowers to public/decor/flowers/, the ornaments to
- * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/.
+ * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/,
+ * the envelope cover's paper, liner and seal to public/decor/envelope/.
  *
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
@@ -9,6 +10,7 @@
  *   node scripts/cut-flowers.mjs ornaments toran kalash   just those two
  *   node scripts/cut-flowers.mjs calligraphy  just the calligraphy
  *   node scripts/cut-flowers.mjs curtain      just the curtain cover's cloth
+ *   node scripts/cut-flowers.mjs envelope     just the envelope cover's paper and seal
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -48,6 +50,8 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 const SOURCE = "photo border";
+/** The envelope cover's artwork was supplied in a folder of its own. */
+const ENVELOPE_SOURCE = "envelop open animation";
 const LOW = 14;
 const HIGH = 56;
 
@@ -237,6 +241,84 @@ const CURTAIN = [
   floodBelow: LOW,
   softRim: true,
   out: join("public", "decor", "curtain"),
+}));
+
+/**
+ * The envelope cover's paper, the lining of its flap, and its wax seal. See
+ * components/invite/covers/EnvelopeSealCover.tsx, which draws the envelope's
+ * shape in code and fills it with these.
+ *
+ * THE THREE TEXTURES WERE SUPPLIED AS TILES AND NONE OF THEM TILES. Each is a
+ * 1254px square holding a printed repeat that is not 1254px long, so laid
+ * edge to edge the print jumps at every join.
+ *
+ * The liner repeats every 627px both ways, measured by autocorrelation (0.95
+ * and 0.96 at 627, under 0.8 a pixel either side). One repeat is cut out and
+ * that is the tile.
+ *
+ * The papers repeat every 731px across and not at all down: the paisleys run
+ * off the top and the bottom edge and do not meet themselves. So one repeat
+ * is cut across, and down the tile the motifs that reach the top or bottom
+ * edge are taken off the paper — each covered with bare paper lifted from
+ * beside it, feathered — leaving plain paper to join to plain paper.
+ *
+ * And every join is closed the same way, because hand-made paper's creases
+ * do not repeat even where its print does: the first `blend` pixels of the
+ * tile are faded in from the pixels that follow its far edge in the source,
+ * so the tile's first row or column is the one that really came next.
+ *
+ * `period` and `blend` are in the source's pixels; a null period is "no
+ * repeat this way: use the whole length, less the blend".
+ */
+const ENVELOPE = [
+  {
+    name: "envelope-paper-maroon",
+    file: "ChatGPT Image Oct 2, 2026, 09_42_27 AM.png",
+    background: "tile",
+    period: [731, null],
+    blend: 28,
+    clearEdgeMotifs: true,
+    fit: { width: 512 },
+    quality: 62,
+  },
+  {
+    name: "envelope-paper-cream",
+    file: "ChatGPT Image Oct 2, 2026, 09_45_27 AM.png",
+    background: "tile",
+    period: [731, null],
+    blend: 28,
+    clearEdgeMotifs: true,
+    fit: { width: 512 },
+    quality: 62,
+  },
+  {
+    name: "envelope-liner",
+    file: "ChatGPT Image Oct 2, 2026, 09_46_36 AM.png",
+    background: "tile",
+    period: [627, 627],
+    blend: 16,
+    fit: { width: 512 },
+    quality: 62,
+  },
+  /*
+    The seal's wax is a red deep enough to go black in its own shadows, and
+    stays solid the way the curtain's velvet does: flooded from the edges,
+    through true black only, with the soft rim unmixed.
+  */
+  {
+    name: "wax-seal",
+    file: "ChatGPT Image Oct 2, 2026, 09_47_42 AM.png",
+    background: "black",
+    solidInside: true,
+    floodBelow: LOW,
+    softRim: true,
+    fit: { width: 400 },
+    quality: 80,
+  },
+].map((entry) => ({
+  ...entry,
+  source: ENVELOPE_SOURCE,
+  out: join("public", "decor", "envelope"),
 }));
 
 /* --- On black ---------------------------------------------------------- */
@@ -719,10 +801,191 @@ function straightenSeam(rgba, width, height, seam) {
   return `seam at x=${cut}, edge leaned ${lean.toFixed(1)}px`;
 }
 
+/* --- A tile that tiles -------------------------------------------------- */
+
+/** How far a pixel's green must sit from the paper's to be print rather than paper. */
+const PRINT_DISTANCE = 45;
+/** How far past the print its cover of bare paper reaches, and over how much of that it fades. */
+const PATCH_REACH = 9;
+const PATCH_SOLID = 4;
+
+/**
+ * Takes the printed motifs that reach the top or the bottom `band` rows off
+ * the paper, in place: each is covered with bare paper copied from the
+ * nearest place beside it that has no print, feathered at its edge. The
+ * picture wraps left to right by now, so a motif across that edge is one
+ * motif. See the note on ENVELOPE.
+ */
+function clearEdgeMotifs(rgb, width, height, band) {
+  const count = width * height;
+  const histogram = new Uint32Array(256);
+  for (let pixel = 0; pixel < count; pixel += 1) histogram[rgb[pixel * 3 + 1]] += 1;
+  let paper = 0;
+  for (let level = 0, seen = 0; level < 256; level += 1) {
+    seen += histogram[level];
+    if (seen >= count / 2) { paper = level; break; }
+  }
+
+  const print = new Uint8Array(count);
+  for (let pixel = 0; pixel < count; pixel += 1) {
+    if (Math.abs(rgb[pixel * 3 + 1] - paper) > PRINT_DISTANCE) print[pixel] = 1;
+  }
+
+  /* Distance from the print, in pixels, out to PATCH_REACH; 255 beyond. */
+  const distance = new Uint8Array(count).fill(255);
+  let frontier = [];
+  for (let pixel = 0; pixel < count; pixel += 1) {
+    if (print[pixel]) { distance[pixel] = 0; frontier.push(pixel); }
+  }
+  for (let step = 1; step <= PATCH_REACH; step += 1) {
+    const next = [];
+    for (const pixel of frontier) {
+      const x = pixel % width;
+      const y = (pixel - x) / width;
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= height) continue;
+          const near = ny * width + ((x + dx + width) % width);
+          if (distance[near] === 255) { distance[near] = step; next.push(near); }
+        }
+      }
+    }
+    frontier = next;
+  }
+
+  /* Each motif with its surround, as one region; those reaching an edge band are the ones to go. */
+  const seen = new Uint8Array(count);
+  let cleared = 0;
+  for (let start = 0; start < count; start += 1) {
+    if (seen[start] || distance[start] === 255) continue;
+    const region = [start];
+    seen[start] = 1;
+    let top = height, bottom = -1;
+    for (let i = 0; i < region.length; i += 1) {
+      const pixel = region[i];
+      const x = pixel % width;
+      const y = (pixel - x) / width;
+      if (print[pixel]) { top = Math.min(top, y); bottom = Math.max(bottom, y); }
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= height) continue;
+          const near = ny * width + ((x + dx + width) % width);
+          if (!seen[near] && distance[near] !== 255) { seen[near] = 1; region.push(near); }
+        }
+      }
+    }
+    if (top > band + 2 && bottom < height - band - 2) continue;
+
+    /* The nearest shift that lands the whole region on bare paper. */
+    let shift = null;
+    search: for (let reach = 24; reach <= 420; reach += 6) {
+      for (const [dx, dy] of [[reach, 0], [-reach, 0], [0, reach], [0, -reach], [reach, reach], [-reach, reach], [reach, -reach], [-reach, -reach]]) {
+        let clear = true;
+        for (let i = 0; i < region.length; i += 3) {
+          const pixel = region[i];
+          const x = pixel % width;
+          const y = (pixel - x) / width + dy;
+          if (y < 0 || y >= height || distance[y * width + ((x + dx + width * 2) % width)] !== 255) { clear = false; break; }
+        }
+        if (clear) { shift = [dx, dy]; break search; }
+      }
+    }
+    if (shift === null) continue;
+
+    for (const pixel of region) {
+      const x = pixel % width;
+      const y = (pixel - x) / width;
+      const from = (y + shift[1]) * width + ((x + shift[0] + width * 2) % width);
+      const cover = Math.min(1, (PATCH_REACH - distance[pixel]) / (PATCH_REACH - PATCH_SOLID));
+      for (let channel = 0; channel < 3; channel += 1) {
+        rgb[pixel * 3 + channel] = Math.round(
+          rgb[pixel * 3 + channel] * (1 - cover) + rgb[from * 3 + channel] * cover,
+        );
+      }
+    }
+    cleared += 1;
+  }
+
+  return cleared;
+}
+
+/**
+ * One axis of a tile: `length` pixels from the start, with the first `blend`
+ * of them faded in from the pixels that follow the tile's far edge.
+ */
+function closeJoin(rgb, width, height, axis, length, blend) {
+  const outWidth = axis === "x" ? length : width;
+  const outHeight = axis === "y" ? length : height;
+  const out = Buffer.alloc(outWidth * outHeight * 3);
+  for (let y = 0; y < outHeight; y += 1) {
+    for (let x = 0; x < outWidth; x += 1) {
+      const along = axis === "x" ? x : y;
+      const here = (y * width + x) * 3;
+      const beyond = axis === "x" ? (y * width + x + length) * 3 : ((y + length) * width + x) * 3;
+      const far = along < blend ? 1 - along / blend : 0;
+      for (let channel = 0; channel < 3; channel += 1) {
+        out[(y * outWidth + x) * 3 + channel] =
+          far > 0 ? Math.round(rgb[beyond + channel] * far + rgb[here + channel] * (1 - far)) : rgb[here + channel];
+      }
+    }
+  }
+  return { rgb: out, width: outWidth, height: outHeight };
+}
+
+/** How unlike two neighbouring rows or columns are, on average, per channel. */
+function stepAcross(rgb, width, height, axis, a, b) {
+  let sum = 0;
+  const span = axis === "x" ? height : width;
+  for (let i = 0; i < span; i += 1) {
+    const p = axis === "x" ? (i * width + a) * 3 : (a * width + i) * 3;
+    const q = axis === "x" ? (i * width + b) * 3 : (b * width + i) * 3;
+    sum += Math.abs(rgb[p] - rgb[q]) + Math.abs(rgb[p + 1] - rgb[q + 1]) + Math.abs(rgb[p + 2] - rgb[q + 2]);
+  }
+  return sum / span / 3;
+}
+
+async function publishTile(entry) {
+  const { data, info } = await sharp(join(entry.source ?? SOURCE, entry.file))
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const across = entry.period[0] ?? info.width - entry.blend;
+  let tile = closeJoin(data, info.width, info.height, "x", across, entry.blend);
+  const cleared = entry.clearEdgeMotifs
+    ? clearEdgeMotifs(tile.rgb, tile.width, tile.height, entry.blend)
+    : 0;
+  const down = entry.period[1] ?? tile.height - entry.blend;
+  tile = closeJoin(tile.rgb, tile.width, tile.height, "y", down, entry.blend);
+
+  /* The check: the step over each join, beside the step between two rows or columns inside. */
+  const { rgb, width, height } = tile;
+  const report =
+    `${width}x${height} cut, ${cleared} edge motifs cleared, ` +
+    `join across ${stepAcross(rgb, width, height, "x", width - 1, 0).toFixed(1)} (inside ${stepAcross(rgb, width, height, "x", width >> 1, (width >> 1) + 1).toFixed(1)}), ` +
+    `join down ${stepAcross(rgb, width, height, "y", height - 1, 0).toFixed(1)} (inside ${stepAcross(rgb, width, height, "y", height >> 1, (height >> 1) + 1).toFixed(1)})`;
+
+  mkdirSync(entry.out, { recursive: true });
+  const target = join(entry.out, `${entry.name}.webp`);
+  const result = await sharp(rgb, { raw: { width, height, channels: 3 } })
+    .resize(entry.fit)
+    .webp({ quality: entry.quality ?? 86, effort: 6 })
+    .toFile(target);
+
+  console.log(`${target}  ${result.width}x${result.height}  ${result.size} bytes  (${report})`);
+}
+
 /* --- Crop, size, publish ------------------------------------------------ */
 
 async function publish(entry) {
-  const { data, info } = await sharp(join(SOURCE, entry.file))
+  if (entry.background === "tile") {
+    await publishTile(entry);
+    return;
+  }
+
+  const { data, info } = await sharp(join(entry.source ?? SOURCE, entry.file))
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -795,6 +1058,7 @@ const sets = [
   ...(which === "all" || which === "ornaments" ? ORNAMENTS : []),
   ...(which === "all" || which === "calligraphy" ? CALLIGRAPHY : []),
   ...(which === "all" || which === "curtain" ? CURTAIN : []),
+  ...(which === "all" || which === "envelope" ? ENVELOPE : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

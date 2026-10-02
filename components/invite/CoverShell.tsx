@@ -138,6 +138,20 @@ export interface CoverVisualState {
    * couple on the letter — writes them in the same hand.
    */
   namesFont: CSSProperties;
+  /**
+   * The pair's heading face: the card's display face, for a visual that
+   * letters something other than the names themselves — a monogram in wax.
+   * The names face may be a script, which two capitals and an ampersand are
+   * not written in.
+   */
+  headingFont: CSSProperties;
+  /**
+   * The two people, when the card names two: for a monogram of their
+   * initials. Apart from `title` because the title is one line with the
+   * host's own joining word in it, and no rule can tell every joining word
+   * from a name. Undefined when the card names one person, or nobody.
+   */
+  pair?: readonly [string, string];
 }
 
 /** For useSyncExternalStore, where the only question is server or browser. */
@@ -239,6 +253,7 @@ export default function CoverShell({
   palette,
   accent,
   title,
+  pair,
   fontPairId,
   language,
   topClearance,
@@ -267,6 +282,8 @@ export default function CoverShell({
   accent?: string | null;
   /** The couple, or whatever names the event, shown on the closed cover. */
   title?: string;
+  /** The two names apart, when there are two. See CoverVisualState. */
+  pair?: readonly [string, string];
   /**
    * The card's font pair. The names on the cover are set in its names face,
    * the same one the card's own cover uses, so the guest meets the couple in
@@ -451,6 +468,19 @@ export default function CoverShell({
     if (!soundedRef.current && !reducedMotion && option.durationMs > 0) {
       soundedRef.current = true;
       playCoverSound(option.sound);
+
+      /*
+        And a tick under the thumb, where the phone can give one. On the same
+        terms as the sound and for the same reason. Guarded twice: an iPhone
+        has no `vibrate` at all, and a browser that has one may still refuse.
+      */
+      if (option.haptic !== undefined && typeof navigator.vibrate === "function") {
+        try {
+          navigator.vibrate(option.haptic);
+        } catch {
+          /* A cover that opens without a tick has still opened. */
+        }
+      }
     }
 
     /*
@@ -495,7 +525,7 @@ export default function CoverShell({
 
       return "opening";
     });
-  }, [option.durationMs, option.revealAt, option.sound, reducedMotion]);
+  }, [option.durationMs, option.haptic, option.revealAt, option.sound, reducedMotion]);
 
   const handleSkip = useCallback((): void => {
     /* Also a tap, so also a gesture the browser will honour. */
@@ -593,6 +623,14 @@ export default function CoverShell({
     colors,
     title,
     namesFont,
+    headingFont: {
+      fontFamily: fontFamilyOf(
+        pairRoleVar(fontPair, "heading"),
+        fontPair.headingFallback,
+      ),
+      fontWeight: fontPair.headingWeight,
+    },
+    pair,
   });
   const hasVisual = visual !== null && visual !== undefined;
   const fadesWhole = !hasVisual || reducedMotion;
@@ -679,6 +717,7 @@ export default function CoverShell({
               "--cover-text": art?.ink ?? colors.text,
               "--cover-muted": art?.inkMuted ?? colors.textMuted,
               "--cover-accent": art?.plaqueEdge ?? colors.accent,
+              "--cover-prompt": art?.promptInk ?? "var(--cover-muted)",
               ...(wordsHeight !== null
                 ? { "--cover-words-h": `${wordsHeight}px` }
                 : null),
@@ -794,7 +833,7 @@ export default function CoverShell({
                   </svg>
                   <span className="h-px w-8 bg-current opacity-60" />
                 </span>
-                <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-muted)] uppercase motion-reduce:animate-none">
+                <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-prompt)] uppercase motion-reduce:animate-none">
                   {prompt}
                 </span>
               </span>
@@ -817,7 +856,7 @@ export default function CoverShell({
               type="button"
               onClick={handleSkip}
               /* Over artwork it sits on tassels, and takes the plaque's ground to be read. */
-              style={art !== null ? { backgroundColor: art.plaque } : undefined}
+              style={{ backgroundColor: art?.plaque }}
               className="absolute right-6 bottom-6 rounded-full px-3 py-1.5 text-xs text-[var(--cover-muted)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--cover-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cover-accent)]"
             >
               {copy.coverSkip}

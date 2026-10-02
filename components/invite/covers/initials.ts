@@ -57,3 +57,14 @@ export function initialsOf(title: string | undefined): string {
 
   return letters.join("");
 }
+
+/**
+ * The first letter of one name, for a monogram: "Meera" gives M and "मीरा"
+ * gives म — the letter itself, without the vowel sign written on it, which is
+ * how a Devanagari monogram is cut. Empty when the name has no letter in it.
+ */
+export function initialOf(name: string): string {
+  const first = Array.from(name.replace(/[^\p{L}\p{N}]/gu, ""))[0];
+
+  return first === undefined ? "" : first.toUpperCase();
+}

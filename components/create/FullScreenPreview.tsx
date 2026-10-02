@@ -722,6 +722,7 @@ export default function FullScreenPreview({
         palette={palette}
         accent={config.style.accentOverride}
         title={coverTitle}
+        pair={names.kind === "pair" ? [names.first, names.second] : undefined}
         fontPairId={config.style.fontPairId}
         language={config.language}
         renderVisual={(state) => <CoverVisual {...state} />}
