@@ -6,7 +6,7 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
-import { CURTAIN_VIDEO_MS, curtainVideoArt } from "@/lib/curtainVideo";
+import { CURTAIN_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
 import { envelopeArt } from "@/lib/envelopeArt";
 import { gatefoldArt } from "@/lib/gatefoldArt";
 import { petalCoverArt } from "@/lib/petalCoverArt";
@@ -56,19 +56,22 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       en: "Tap to open",
       hi: "खोलने के लिए टैप करें",
     },
-    /* The length of the film; see lib/curtainVideo.ts. */
-    durationMs: CURTAIN_VIDEO_MS,
     /*
-      As the film starts to fade and the card to show between the curtains,
-      which is also when a card's petal burst should start.
+      The painted curtains, which open when the film cannot: 1.6s to draw, and
+      the valance over them then fades in the 350ms that are left. DRAW_SHARE
+      in that visual is 1600 of these.
     */
-    revealAt: 0.3,
+    durationMs: 1950,
+    /* As soon as there is a gap between the painted panels to see the card through. */
+    revealAt: 0.12,
     sound: "curtain",
     haptic: 10,
     supportsReducedMotion: true,
     /* The cloth fills the screen, so the prompt sits on a plaque of its own. */
     wordsOn: "plaque",
-    art: curtainVideoArt,
+    /* Played from film of real curtains, dark or light; see lib/coverVideos.ts. */
+    art: filmArt(CURTAIN_FILMS),
+    film: filmTiming(CURTAIN_FILMS),
   },
   {
     id: "fold-unfold",

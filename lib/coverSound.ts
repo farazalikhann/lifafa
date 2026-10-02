@@ -169,7 +169,12 @@ export function preloadCoverSound(sound: CoverSoundId | null | undefined): void 
 }
 
 /** The sound playing now, if one is: its context, its gain, and the timer that closes it. */
-let playing: { context: AudioContext; gain: GainNode; closing: number } | null = null;
+let playing: {
+  context: AudioContext;
+  gain: GainNode;
+  source: AudioBufferSourceNode;
+  closing: number;
+} | null = null;
 
 /**
  * Stops the opening sound, if one is playing, with a short fade. Never throws.
@@ -208,6 +213,53 @@ function stopWhenHidden(): void {
   }
 }
 
+/** Closes a context once its recording has run out, and forgets it if it is still the one playing. */
+function closeAfter(context: AudioContext, ms: number): number {
+  return window.setTimeout(() => {
+    if (playing?.context === context) {
+      playing = null;
+      document.removeEventListener("visibilitychange", stopWhenHidden);
+      window.removeEventListener("pagehide", stopCoverSound);
+    }
+
+    void context.close().catch(() => undefined);
+  }, ms);
+}
+
+/**
+ * Starts the sound that is playing, or waiting to, again from its top and at
+ * once. Never throws.
+ *
+ * For a cover that was to open from its film, with the sound held back to
+ * meet it, and is opening from its drawing instead, which moves on the tap.
+ * In the context the tap built: a new one made here, outside the gesture,
+ * is one an iPhone would refuse to start.
+ */
+export function restartCoverSound(): void {
+  const current = playing;
+
+  if (current === null || current.source.buffer === null) {
+    return;
+  }
+
+  try {
+    const buffer = current.source.buffer;
+    const source = current.context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(current.gain);
+
+    current.source.stop();
+    current.source.disconnect();
+    source.start(current.context.currentTime);
+
+    window.clearTimeout(current.closing);
+    current.source = source;
+    current.closing = closeAfter(current.context, buffer.duration * 1000 + 300);
+  } catch {
+    /* Whatever was scheduled plays as it was, or not at all. */
+  }
+}
+
 /**
  * Plays one cover's sound from its start, and never throws.
  *
@@ -215,8 +267,13 @@ function stopWhenHidden(): void {
  * unheard. A fresh context per open, closed when the recording has ended.
  * Holding one for the life of the page would keep an audio device awake for a
  * sound that plays once.
+ *
+ * `delayMs` holds the start back from the tap, for a cover whose film is
+ * still for a moment first. Scheduled on the audio clock inside the tap, not
+ * on a timer after it, so it is as exact as the sound itself and needs no
+ * second gesture.
  */
-export function playCoverSound(sound: CoverSoundId | null | undefined): void {
+export function playCoverSound(sound: CoverSoundId | null | undefined, delayMs = 0): void {
   if (sound === null || sound === undefined) {
     return;
   }
@@ -252,19 +309,11 @@ export function playCoverSound(sound: CoverSoundId | null | undefined): void {
       void context.resume().catch(() => undefined);
     }
 
-    source.start(context.currentTime);
+    source.start(context.currentTime + delayMs / 1000);
 
-    const closing = window.setTimeout(() => {
-      if (playing?.context === context) {
-        playing = null;
-        document.removeEventListener("visibilitychange", stopWhenHidden);
-        window.removeEventListener("pagehide", stopCoverSound);
-      }
+    const closing = closeAfter(context, delayMs + buffer.duration * 1000 + 300);
 
-      void context.close().catch(() => undefined);
-    }, buffer.duration * 1000 + 300);
-
-    playing = { context, gain, closing };
+    playing = { context, gain, source, closing };
     document.addEventListener("visibilitychange", stopWhenHidden);
     window.addEventListener("pagehide", stopCoverSound);
   } catch {

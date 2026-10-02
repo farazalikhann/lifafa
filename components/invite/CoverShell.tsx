@@ -22,7 +22,12 @@ import { getCoverAnimation } from "@/lib/coverAnimations";
 import { fontFamilyOf, getFontPair, namesFaceOf, pairRoleVar } from "@/lib/fontPairs";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
-import { playCoverSound, preloadCoverSound, stopCoverSound } from "@/lib/coverSound";
+import {
+  playCoverSound,
+  preloadCoverSound,
+  restartCoverSound,
+  stopCoverSound,
+} from "@/lib/coverSound";
 import { enterFullscreen } from "@/lib/fullscreen";
 import type { CardLanguage } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
@@ -164,6 +169,20 @@ export interface CoverVisualState {
    * cover opened from the keyboard, which has no point: open from the middle.
    */
   origin: { x: number; y: number } | null;
+  /**
+   * For a visual that finds, at the tap, that it cannot open the way the
+   * shell was timed for — a film that has not arrived — and opens another way:
+   * the shell's timers are started again from now, to this length, with the
+   * card let go at `revealAt` of it. The sound, held back for the film, is
+   * started at once for an opening that moves on the tap ("restart"), or
+   * dropped for one with nothing to go with it ("stop"). Only while opening.
+   */
+  retime: (next: {
+    durationMs: number;
+    revealAt: number;
+    burstAt?: number;
+    sound: "restart" | "stop";
+  }) => void;
 }
 
 /** For useSyncExternalStore, where the only question is server or browser. */
@@ -330,6 +349,15 @@ export default function CoverShell({
     hints, so calling it on every render costs nothing.
   */
   const art = hasCover ? (option.art?.(colors.isLight) ?? null) : null;
+  /*
+    What the open is timed to: the film's own numbers when the cover is played
+    from one, for this card's ground, and the option's otherwise.
+  */
+  const film = option.film?.(colors.isLight);
+  const durationMs = film?.durationMs ?? option.durationMs;
+  const revealAt = film?.revealAt ?? option.revealAt;
+  const burstAt = film !== undefined ? undefined : option.burstAt;
+  const soundDelayMs = film?.soundDelayMs ?? 0;
   const artImages = art?.images ?? NO_ART;
 
   for (const src of artImages) {
@@ -414,6 +442,57 @@ export default function CoverShell({
       burstTimerRef.current = null;
     }
   }, []);
+
+  /*
+    The three timers of an open: the card let go, its petals thrown, and the
+    cover taken down. Any still pending are dropped first, so calling it again
+    — React running an updater twice in development, or a visual retiming the
+    open — never leaves one this component has lost track of, which is one a
+    skip could not cancel.
+  */
+  const schedule = useCallback(
+    (runMs: number, letGoMs: number, burstMs: number): void => {
+      clearTimer();
+
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null;
+        setPhase("open");
+      }, runMs + UNMOUNT_GRACE_MS);
+
+      letGoTimerRef.current = window.setTimeout(() => {
+        letGoTimerRef.current = null;
+        setCardLetGo(true);
+      }, letGoMs);
+
+      burstTimerRef.current = window.setTimeout(() => {
+        burstTimerRef.current = null;
+        setBurstLetGo(true);
+      }, burstMs);
+    },
+    [clearTimer],
+  );
+
+  const retime = useCallback<CoverVisualState["retime"]>(
+    (next) => {
+      /* Nothing to retime once a skip, or the timer itself, has opened the card. */
+      if (timerRef.current === null) {
+        return;
+      }
+
+      if (next.sound === "restart") {
+        restartCoverSound();
+      } else {
+        stopCoverSound();
+      }
+
+      schedule(
+        next.durationMs,
+        next.durationMs * next.revealAt,
+        next.durationMs * (next.burstAt ?? next.revealAt),
+      );
+    },
+    [schedule],
+  );
 
   /**
    * Whether this cover has already made its sound.
@@ -506,9 +585,9 @@ export default function CoverShell({
       browser with no Web Audio, or one that will not start a context, opens the
       card in silence and says nothing about it.
     */
-    if (!soundedRef.current && !reducedMotion && option.durationMs > 0) {
+    if (!soundedRef.current && !reducedMotion && durationMs > 0) {
       soundedRef.current = true;
-      playCoverSound(option.sound);
+      playCoverSound(option.sound, soundDelayMs);
 
       /*
         And a tick under the thumb, where the phone can give one. On the same
@@ -534,7 +613,7 @@ export default function CoverShell({
         return current;
       }
 
-      if (!reducedMotion && option.durationMs <= 0) {
+      if (!reducedMotion && durationMs <= 0) {
         return "open";
       }
 
@@ -542,49 +621,23 @@ export default function CoverShell({
         Less motion: the whole layer fades in REDUCED_FADE_MS with the card let
         go at once under it, so the card is what the envelope fades into.
       */
-      const runMs = reducedMotion ? REDUCED_FADE_MS : option.durationMs;
-      const letGoMs = reducedMotion ? 0 : option.durationMs * option.revealAt;
-      const burstMs = reducedMotion
-        ? 0
-        : option.durationMs * (option.burstAt ?? option.revealAt);
-
-      timerRef.current = window.setTimeout(() => {
-        timerRef.current = null;
-        setPhase("open");
-      }, runMs + UNMOUNT_GRACE_MS);
-
-      /*
-        Cleared before it is set: React may call this updater twice in
-        development, and a second timer would only set the same flag, but a
-        timer this component has lost track of is one a skip cannot cancel.
-      */
-      if (letGoTimerRef.current !== null) {
-        window.clearTimeout(letGoTimerRef.current);
-      }
-
-      letGoTimerRef.current = window.setTimeout(() => {
-        letGoTimerRef.current = null;
-        setCardLetGo(true);
-      }, letGoMs);
-
-      if (burstTimerRef.current !== null) {
-        window.clearTimeout(burstTimerRef.current);
-      }
-
-      burstTimerRef.current = window.setTimeout(() => {
-        burstTimerRef.current = null;
-        setBurstLetGo(true);
-      }, burstMs);
+      schedule(
+        reducedMotion ? REDUCED_FADE_MS : durationMs,
+        reducedMotion ? 0 : durationMs * revealAt,
+        reducedMotion ? 0 : durationMs * (burstAt ?? revealAt),
+      );
 
       return "opening";
     });
   }, [
-    option.burstAt,
-    option.durationMs,
+    burstAt,
+    durationMs,
     option.haptic,
-    option.revealAt,
     option.sound,
     reducedMotion,
+    revealAt,
+    schedule,
+    soundDelayMs,
   ]);
 
   const handleSkip = useCallback((): void => {
@@ -645,7 +698,7 @@ export default function CoverShell({
     opens without it.
   */
   useEffect(() => {
-    if (phase !== "closed" || reducedMotion || option.durationMs <= 0) {
+    if (phase !== "closed" || reducedMotion || durationMs <= 0) {
       return;
     }
 
@@ -654,7 +707,7 @@ export default function CoverShell({
     }, SOUND_PRELOAD_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [phase, reducedMotion, option.durationMs, option.sound]);
+  }, [phase, reducedMotion, durationMs, option.sound]);
 
   /*
     The cover is a full viewport layer, so the page behind it must not scroll:
@@ -704,10 +757,11 @@ export default function CoverShell({
     pair,
     prompt,
     origin,
+    retime,
   });
   const hasVisual = visual !== null && visual !== undefined;
   const fadesWhole = !hasVisual || reducedMotion;
-  const fadeMs = reducedMotion ? REDUCED_FADE_MS : option.durationMs;
+  const fadeMs = reducedMotion ? REDUCED_FADE_MS : durationMs;
 
   return (
     <>

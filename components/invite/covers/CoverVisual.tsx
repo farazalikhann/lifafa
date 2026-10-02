@@ -2,10 +2,23 @@
 
 import type { ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
-import CurtainVideoCover from "@/components/invite/covers/CurtainVideoCover";
+import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import PetalDustCover from "@/components/invite/covers/PetalDustCover";
+import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
+import { CURTAIN_FILMS, filmFor } from "@/lib/coverVideos";
+import { curtainArt } from "@/lib/curtainArt";
+
+/*
+  The covers as they are drawn in code, which is what a filmed cover falls
+  back to. Module level, so each is one object for the life of the page and a
+  film's effects do not see a new one on every render.
+*/
+const DRAWN_CURTAIN: DrawnCover = {
+  Component: CurtainRevealCover,
+  images: (isLight) => curtainArt(isLight).images,
+};
 
 /**
  * Picks the drawing for whichever animation the card was saved with.
@@ -22,7 +35,18 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
       return <EnvelopeSealCover {...state} />;
 
     case "curtain-reveal":
-      return <CurtainVideoCover {...state} />;
+      /*
+        Keyed by the film, so a host changing the palette in the editor from a
+        dark one to a light one gets the other film from a clean start.
+      */
+      return (
+        <VideoCover
+          key={filmFor(CURTAIN_FILMS, state.colors.isLight).poster}
+          {...state}
+          films={CURTAIN_FILMS}
+          drawn={DRAWN_CURTAIN}
+        />
+      );
 
     case "fold-unfold":
       return <FoldUnfoldCover {...state} />;

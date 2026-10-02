@@ -48,6 +48,23 @@ export interface CoverArt {
   promptInk?: string;
 }
 
+/**
+ * How a cover runs when it is played from a film of the real thing, in place
+ * of the option's own timings, which are those of the cover drawn in code.
+ */
+export interface CoverFilmTiming {
+  /** From the tap to the film having faded right out, in milliseconds. */
+  durationMs: number;
+  /** When the card is let go under the film, as a share of `durationMs`. */
+  revealAt: number;
+  /**
+   * How long after the tap the cover's sound starts, in milliseconds. A film
+   * holds still for a moment before anything in it moves, and the sound was
+   * made for a cover that moves on the tap.
+   */
+  soundDelayMs: number;
+}
+
 /** One opening animation, as offered in the designer and played for a guest. */
 export interface CoverAnimationOption {
   id: CoverAnimationId;
@@ -124,4 +141,11 @@ export interface CoverAnimationOption {
    * answers to the card behind it, and only the chosen set is ever fetched.
    */
   art?: (isLight: boolean) => CoverArt;
+  /**
+   * For a cover played from a film: the film's own timings, for a light card
+   * or a dark one, which the shell runs to in place of `durationMs`,
+   * `revealAt` and `burstAt` above. Those stay the drawn cover's, which is
+   * what opens when the film cannot; see `retime` on CoverVisualState.
+   */
+  film?: (isLight: boolean) => CoverFilmTiming;
 }
