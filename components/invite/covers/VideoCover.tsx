@@ -439,7 +439,7 @@ export default function VideoCover({
                 </span>
               ) : (
                 /* Nobody named: a small flower in the same ink. See GoldFlower. */
-                <GoldFlower hi={ink.hi} body={ink.body} lo={ink.lo} className="w-[46%]" />
+                <GoldFlower hi={ink.hi} body={ink.body} lo={ink.lo} className="w-[46%] max-w-16" />
               )}
             </div>
           ) : null}

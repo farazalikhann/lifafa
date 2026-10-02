@@ -6,9 +6,8 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
-import { CURTAIN_FILMS, ENVELOPE_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
+import { CURTAIN_FILMS, ENVELOPE_FILMS, PETAL_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
 import { gatefoldArt } from "@/lib/gatefoldArt";
-import { petalCoverArt } from "@/lib/petalCoverArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -121,9 +120,14 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     sound: "petal-dust",
     haptic: 10,
     supportsReducedMotion: true,
-    /* The picture has an oval left empty for them, and the visual letters them into it. */
-    wordsOn: "visual",
-    art: petalCoverArt,
+    /* The petals fill the screen and the oval holds the initials, so the prompt sits on a plaque of its own. */
+    wordsOn: "plaque",
+    /*
+      Played from film, dark or light; see lib/coverVideos.ts. The timings
+      above are the drawn cover's, which opens when the film cannot.
+    */
+    art: filmArt(PETAL_FILMS),
+    film: filmTiming(PETAL_FILMS),
   },
 ];
 

@@ -7,9 +7,10 @@ import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import PetalDustCover from "@/components/invite/covers/PetalDustCover";
 import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
-import { CURTAIN_FILMS, ENVELOPE_FILMS, filmFor } from "@/lib/coverVideos";
+import { CURTAIN_FILMS, ENVELOPE_FILMS, PETAL_FILMS, filmFor } from "@/lib/coverVideos";
 import { curtainArt } from "@/lib/curtainArt";
 import { envelopeArt } from "@/lib/envelopeArt";
+import { petalCoverArt } from "@/lib/petalCoverArt";
 
 /*
   The covers as they are drawn in code, which is what a filmed cover falls
@@ -20,9 +21,15 @@ const DRAWN_CURTAIN: DrawnCover = {
   Component: CurtainRevealCover,
   images: (isLight) => curtainArt(isLight).images,
 };
+
 const DRAWN_ENVELOPE: DrawnCover = {
   Component: EnvelopeSealCover,
   images: (isLight) => envelopeArt(isLight).images,
+};
+
+const DRAWN_PETALS: DrawnCover = {
+  Component: PetalDustCover,
+  images: (isLight) => petalCoverArt(isLight).images,
 };
 
 /**
@@ -64,7 +71,14 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
       return <FoldUnfoldCover {...state} />;
 
     case "petal-dust":
-      return <PetalDustCover {...state} />;
+      return (
+        <VideoCover
+          key={filmFor(PETAL_FILMS, state.colors.isLight).poster}
+          {...state}
+          films={PETAL_FILMS}
+          drawn={DRAWN_PETALS}
+        />
+      );
 
     /* The host asked for no animation. The shell never shows a cover at all. */
     case "none":
