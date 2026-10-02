@@ -8,6 +8,7 @@
 
 import { curtainArt } from "@/lib/curtainArt";
 import { envelopeArt } from "@/lib/envelopeArt";
+import { gatefoldArt } from "@/lib/gatefoldArt";
 import { petalCoverArt } from "@/lib/petalCoverArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -74,20 +75,26 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
   {
     id: "fold-unfold",
     label: "Fold and unfold",
-    description: "A folded card opens out flat, one panel at a time.",
+    description: "Two doors tied with a ribbon swing open to show the card.",
     openPromptText: {
-      en: "Tap to unfold",
+      en: "Tap to open",
       hi: "खोलने के लिए टैप करें",
     },
     /*
-      2s, from 1.8. The card now slips its ribbon and settles to fit the
-      screen as it opens, and at 1.8 the ribbon and the turn ran together.
+      1.8s: the ribbon slipped off (0.4s), then the two doors, each 0.9s and
+      the second 0.2s behind the first. The shares are in the visual.
     */
-    durationMs: 2000,
-    /* As the opened card starts to come forward: EXIT_START in the visual is 0.56. */
-    revealAt: 0.54,
+    durationMs: 1800,
+    /* As the left door starts to move: LEFT_START in the visual. */
+    revealAt: 0.17,
+    /* The card's petals are thrown as the second door opens: RIGHT_START. */
+    burstAt: 0.28,
     sound: "fold",
+    haptic: 10,
     supportsReducedMotion: true,
+    /* The doors fill the screen, and the visual letters the prompt under its ribbon. */
+    wordsOn: "visual",
+    art: gatefoldArt,
   },
   {
     id: "petal-dust",

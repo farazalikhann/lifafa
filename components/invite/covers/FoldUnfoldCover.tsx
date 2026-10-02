@@ -1,61 +1,81 @@
 "use client";
 
-import { useId, type CSSProperties, type ReactElement } from "react";
+import { Fragment, type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
-import { initialsOf } from "@/components/invite/covers/initials";
-import { ABOVE_WORDS } from "@/components/invite/covers/layout";
+import GoldFlower from "@/components/invite/covers/GoldFlower";
+import { initialOf, initialsOf } from "@/components/invite/covers/initials";
 import { stage } from "@/components/invite/covers/timing";
-import type { CoverPalette } from "@/lib/coverPalette";
+import {
+  GATEFOLD_ARCH_ASPECT,
+  GATEFOLD_ENGRAVED,
+  GATEFOLD_MEDALLION,
+  GATEFOLD_RIBBON_ASPECT,
+  gatefoldArt,
+} from "@/lib/gatefoldArt";
 
 /**
- * How the open splits across the shell's timer, as fractions of --cover-ms.
+ * How the open splits across the shell's timer, as fractions of --cover-ms,
+ * which is 1800ms.
  *
- * The ribbon slips off as the cover starts to turn, the spread slides to the
- * middle and settles back to fit the screen while the cover is still turning,
- * gold rises off the spine as it lands, and the opened card comes towards the
- * guest before it has quite come to rest. The last stage ends on exactly 1.
+ * The ribbon is slipped off (400ms). The left door is already starting as the
+ * last of it goes, and takes 900ms to swing; the right one follows 200ms
+ * behind it and has landed at 0.78. The two then fade together over what is
+ * left, folded back at the sides, as the card settles in between them.
  */
-const RIBBON_START = 0;
-const RIBBON_SHARE = 0.16;
-const OPEN_START = 0.06;
-const OPEN_SHARE = 0.46;
-const SPARK_START = 0.3;
-const SPARK_SHARE = 0.34;
-const EXIT_START = 0.56;
-const EXIT_SHARE = 0.44;
-const BACKDROP_START = 0.62;
-const BACKDROP_SHARE = 0.38;
+const RIBBON_SHARE = 0.22;
+const LEFT_START = 0.17;
+const RIGHT_START = 0.28;
+const SWING_SHARE = 0.5;
+const DOORS_FADE_START = 0.8;
+const DOORS_FADE_SHARE = 0.2;
 
-/** Slow off the spine, quick through the middle, and settling flat. */
-const OPEN_EASE = "cubic-bezier(0.5,0,0.2,1)";
+/** A door on a hinge: slow to start, a long glide, and a soft stop. */
+const SWING_EASE = "cubic-bezier(0.6,0,0.25,1)";
 
-/**
- * The cover's angles. At rest it stands a little open, which is what says
- * "this opens" without a word; opened, it lies flat on the left.
- */
-const COVER_RESTING = -16;
-const COVER_OPEN = -180;
+/** The ribbon slipped down off the card: it gives, then goes. */
+const RIBBON_EASE = "cubic-bezier(0.5,0,0.8,0.6)";
 
 /**
- * How far the opened spread settles back, so two panels fit a phone that one
- * panel nearly filled, and where the right-hand panel then sits: the point
- * the open card comes towards the guest about.
+ * How far a door swings: right round, until it lies folded back with its
+ * lined inside to the guest and its free edge still raised towards them.
  */
-const SPREAD_FIT = 0.74;
-const RIGHT_PANEL_CENTRE = 50 + 25 * SPREAD_FIT;
+const SWING = 150;
 
 /**
- * The spread is drawn on a 400 × 280 grid: two 5 × 7 panels side by side, the
- * spine at x = 200. The closed card is the right-hand panel.
+ * How far in from the edge of the screen a door's hinge is carried as it
+ * turns, in shares of the screen's width.
+ *
+ * THE ONE LIBERTY TAKEN WITH THE GEOMETRY. The doors are hinged at the edges
+ * of the screen, and a door folded back on such a hinge lies wholly off the
+ * screen: its lining would never be seen, and each door would simply narrow
+ * to nothing at its edge. So the hinge drifts in by this much while the door
+ * turns, which leaves a strip of the opened door standing at each side with
+ * its lining showing and the card between them. Too gradual, and too small
+ * beside the swing itself, to be seen as a slide.
  */
-function box(x: number, y: number, width: number, height: number): CSSProperties {
-  return {
-    left: `${(x / 400) * 100}%`,
-    top: `${(y / 280) * 100}%`,
-    width: `${(width / 400) * 100}%`,
-    height: `${(height / 280) * 100}%`,
-  };
-}
+const HINGE_DRIFT = 15;
+
+/**
+ * How far the eye is from the card. On the doors' parent, so both swing
+ * towards one vanishing point in the middle of the screen. Near enough that a
+ * door coming towards the guest grows as a real one would; far enough that it
+ * does not swallow the screen as it passes.
+ */
+const PERSPECTIVE = "1100px";
+
+/**
+ * The arch's width on the screen, as a CSS length. The cover's root is a size
+ * container, and the arch, the ribbon and the lettering are all laid out from
+ * this one number.
+ *
+ * The whole arch is always shown — it is a frame, and a frame cut off by the
+ * edge of the screen is not one — so it is as large as fits both ways, with a
+ * little margin. The paper runs on past it to fill the doors.
+ */
+const ARCH_WIDTH = `min(100cqw - 24px, (100cqh - 56px) * ${GATEFOLD_ARCH_ASPECT.toFixed(4)})`;
+
+/** The ribbon's picture against the arch: its medallion sits in the arch's opening with room round it. */
+const RIBBON_TO_ARCH = 1.76;
 
 /** Both spellings, because Safari before 15.4 only honours the prefixed one. */
 const HIDE_BACKFACE: CSSProperties = {
@@ -63,66 +83,39 @@ const HIDE_BACKFACE: CSSProperties = {
   WebkitBackfaceVisibility: "hidden",
 };
 
-/** Flecks of gold rising off the spine as the card lies open. */
-const SPARKS: readonly { dx: number; dy: number; size: number; delay: number }[] = [
-  { dx: -70, dy: -120, size: 9, delay: 0 },
-  { dx: -30, dy: -160, size: 12, delay: 0.03 },
-  { dx: 10, dy: -140, size: 8, delay: 0.01 },
-  { dx: 46, dy: -170, size: 11, delay: 0.04 },
-  { dx: 84, dy: -110, size: 8, delay: 0.02 },
-  { dx: -96, dy: -60, size: 7, delay: 0.05 },
-  { dx: 104, dy: -54, size: 7, delay: 0.03 },
-  { dx: -8, dy: -200, size: 9, delay: 0.06 },
-];
-
-/** A curl of filigree for one corner of a panel, drawn for the top left. */
-function Filigree({ colors, transform }: { colors: CoverPalette; transform?: string }): ReactElement {
-  return (
-    <g transform={transform} fill="none" stroke={colors.foil} strokeLinecap="round">
-      <path d="M14 44 C14 26 26 14 44 14" strokeWidth="1.3" />
-      <path d="M14 30 C18 22 22 18 30 14" strokeWidth="0.9" opacity="0.8" />
-      <path d="M22 44 C24 36 30 30 38 30 C44 30 46 36 42 40 C38 44 32 40 34 36" strokeWidth="1" />
-      <path d="M44 22 C36 24 30 30 30 38" strokeWidth="0.8" opacity="0.7" />
-      <circle cx="14" cy="14" r="2.2" fill={colors.foil} stroke="none" />
-      <circle cx="50" cy="14" r="1.3" fill={colors.foil} stroke="none" />
-      <circle cx="14" cy="50" r="1.3" fill={colors.foil} stroke="none" />
-    </g>
-  );
-}
-
-/** A panel's frame of leaf: a double rule inset from the edge, and the four corners. */
-function PanelFrame({ colors }: { colors: CoverPalette }): ReactElement {
-  return (
-    <>
-      <rect x="9" y="9" width="182" height="262" rx="2" fill="none" stroke={colors.foil} strokeWidth="1.3" />
-      <rect x="14" y="14" width="172" height="252" rx="1" fill="none" stroke={colors.foil} strokeWidth="0.6" opacity="0.7" />
-      <Filigree colors={colors} />
-      <Filigree colors={colors} transform="translate(200 0) scale(-1 1)" />
-      <Filigree colors={colors} transform="translate(0 280) scale(1 -1)" />
-      <Filigree colors={colors} transform="translate(200 280) scale(-1 -1)" />
-    </>
-  );
-}
-
 /**
- * A folded card that opens like a book, one panel at a time.
+ * A gatefold card: two doors of paper under a gold arch, tied shut with a
+ * ribbon, that open towards the guest onto the invitation.
  *
- * DRESSED, NOT BLANK. The folded card used to be a small grey rectangle with a
- * diamond on it, opening onto two more grey rectangles. It is card stock now,
- * framed in metal leaf with filigree in the corners, the couple's initials in a
- * medallion on the front and a silk ribbon tied round it; it opens onto a
- * printed lining on the left and the couple's names on the right. Every colour
- * is the card's own — see the dressed tones in lib/coverPalette.ts.
+ * REAL PAPER AND GOLD. The cover used to be a small folded card drawn in the
+ * card's own colours. It is the envelope's paper now, on doors that fill the
+ * screen, with a filigree arch across them and a ribbon carrying the couple's
+ * initials — see lib/gatefoldArt.ts for the pictures, and why this cover does
+ * not take its colours from the card.
  *
- * THE OPEN. The ribbon slips off, the cover turns over on its spine to show
- * its lining, the spread slides to the middle of the screen and settles to fit
- * it, gold rises off the spine, and the names come towards the guest and
- * dissolve into the real card underneath — the right-hand panel is cut from
- * the card's own ground, so nothing changes colour on the way.
+ * CLOSED. Each door is half the screen. The arch is one picture of its left
+ * half: the left door shows it against the seam and the right door shows it
+ * again in a mirror, so the two halves are a pair by construction and meet on
+ * the centre line at any width. The paper is one sheet across both. The
+ * ribbon runs through the middle of the screen with its medallion over the
+ * seam, and where the screen is wider than the ribbon's picture its two ends
+ * are drawn on from the picture's own.
  *
- * The cover is two faces turning together with their backs hidden, so which
- * one the guest sees is the browser's own backface culling at 90°, and nothing
- * in the stack ever changes places.
+ * THE OPEN. The ribbon slips down and off. The left door swings towards the
+ * guest on its outer edge, and the right follows it; each fades as it comes
+ * round, and the card is what stands behind them from the first moment a
+ * door moves. Transform and opacity only.
+ *
+ * EACH DOOR IS TWO ELEMENTS: its outside, and its inside laid out as it would
+ * lie once swung flat open — beyond the hinge — and turned half a revolution
+ * back. Both turn about the same hinge with their backs hidden, so which one
+ * the guest sees is the browser's own backface culling. They are direct
+ * children of the root, which holds the perspective: an element between
+ * would flatten the swing. See HINGE_DRIFT for how the inside comes to be on
+ * the screen at all.
+ *
+ * Under reduced motion the shell never hands this the "opening" phase: the
+ * closed gatefold crossfades to the card as one layer.
  */
 export default function FoldUnfoldCover({
   phase,
@@ -130,351 +123,235 @@ export default function FoldUnfoldCover({
   reducedMotion,
   colors,
   title,
-  namesFont,
+  pair,
+  headingFont,
+  prompt,
 }: CoverVisualState): ReactElement {
   const opening = phase === "opening";
-  const initials = initialsOf(title);
-  /* Gradient ids are document-wide; anything but a plain name breaks url(#…). */
-  const uid = `fold${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const art = gatefoldArt(colors.isLight);
+
+  /* The monogram: the same rules as the envelope's seal. */
+  const pairLetters = pair?.map(initialOf).filter((letter) => letter.length > 0) ?? [];
+  const lineLetters = pairLetters.length === 0 ? initialsOf(title) : "";
 
   const rootStyle = {
     "--cover-ms": `${option.durationMs}ms`,
+    "--aw": ARCH_WIDTH,
+    "--ah": `calc(var(--aw) / ${GATEFOLD_ARCH_ASPECT.toFixed(4)})`,
+    "--rw": `calc(var(--aw) * ${RIBBON_TO_ARCH})`,
+    "--rh": `calc(var(--rw) / ${GATEFOLD_RIBBON_ASPECT.toFixed(4)})`,
+    perspective: PERSPECTIVE,
   } as CSSProperties;
 
   const transition = (...entries: string[]): string | undefined =>
     reducedMotion ? undefined : entries.join(", ");
 
-  const onOpen = (name: string, share: number, start: number, easing: string): string | undefined =>
-    opening && !reducedMotion
-      ? `${name} calc(var(--cover-ms)*${share}) ${easing} calc(var(--cover-ms)*${start}) both`
-      : undefined;
+  /** A tile under a wash of shade. `from` is where the sheet starts, so one sheet can run across both doors. */
+  const sheet = (src: string, size: string, shade: string, from: string): CSSProperties => ({
+    backgroundImage: `${shade}, url(${src})`,
+    backgroundSize: `100% 100%, ${size} auto`,
+    backgroundPosition: `0 0, ${from}`,
+    backgroundRepeat: "no-repeat, repeat",
+  });
 
-  /* The card's ground, held over the card until the fold has come forward. */
-  const backdropStyle: CSSProperties = {
-    backgroundColor: colors.ground,
-    transition: transition(stage("opacity", BACKDROP_SHARE, BACKDROP_START, "ease-in-out")),
+  /** One door's swing: its outside face, and its inside. `side` is -1 for the left door. */
+  const swing = (side: -1 | 1, face: "outside" | "inside"): CSSProperties => {
+    const start = side < 0 ? LEFT_START : RIGHT_START;
+    /* Towards the guest: the left door's free edge comes forward on a negative turn, the right's on a positive. */
+    const turned = opening ? side * SWING : 0;
+
+    return {
+      ...HIDE_BACKFACE,
+      willChange: "transform, opacity",
+      transition: transition(
+        stage("transform", SWING_SHARE, start, SWING_EASE),
+        stage("opacity", DOORS_FADE_SHARE, DOORS_FADE_START, "ease-in-out"),
+      ),
+      transform: `translate3d(${opening ? -side * HINGE_DRIFT : 0}cqw, 0, 0) rotateY(${face === "outside" ? turned : turned - side * 180}deg)`,
+      opacity: opening ? 0 : 1,
+    };
+  };
+
+  /* The shade a door throws on the card behind it, deepest beside the door, and gone when the door is. */
+  const castStyle = (side: -1 | 1): CSSProperties => ({
+    backgroundImage: `linear-gradient(${side < 0 ? 90 : 270}deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.44) ${HINGE_DRIFT * 2}%, rgba(0,0,0,0.12) 62%, rgba(0,0,0,0) 100%)`,
+    transition: transition(stage("opacity", DOORS_FADE_SHARE, DOORS_FADE_START, "ease-in-out")),
     opacity: opening ? 0 : 1,
-  };
+  });
 
-  /* Paused, not removed, so the tap does not snap it back mid-breath. */
-  const floatStyle: CSSProperties = {
-    animationPlayState: opening ? "paused" : "running",
-  };
-
-  /* The open card coming towards the guest, about its right-hand panel. */
-  const exitStyle: CSSProperties = {
-    transformOrigin: `${RIGHT_PANEL_CENTRE}% 50%`,
-    willChange: "transform, opacity",
-    transition: transition(
-      stage("transform", EXIT_SHARE, EXIT_START, "cubic-bezier(0.3,0,0.15,1)"),
-      stage("opacity", EXIT_SHARE * 0.75, EXIT_START + EXIT_SHARE * 0.25, "ease-in"),
-    ),
-    transform: opening
-      ? `translate3d(${-(RIGHT_PANEL_CENTRE - 50)}%, 0, 0) scale(1.8)`
-      : "none",
-    opacity: opening ? 0 : 1,
-  };
-
-  /* Two panels fitted to the screen that one panel nearly filled. */
-  const fitStyle: CSSProperties = {
-    willChange: "transform",
-    transition: transition(stage("transform", OPEN_SHARE, OPEN_START, OPEN_EASE)),
-    transform: opening ? `scale(${SPREAD_FIT})` : "scale(1)",
-  };
-
-  /*
-    The spread, sliding from "card centred" to "spine centred". The perspective
-    is here, on the panels' parent, so both share one vanishing point.
-  */
-  const spreadStyle: CSSProperties = {
-    perspective: "1500px",
-    willChange: "transform",
-    transition: transition(stage("transform", OPEN_SHARE, OPEN_START, OPEN_EASE)),
-    transform: opening ? "translate3d(0, 0, 0)" : "translate3d(-25%, 0, 0)",
-  };
-
-  /* Hinged on its left edge, which is the spine, and turned right over. */
-  const coverStyle: CSSProperties = {
-    ...box(200, 0, 200, 280),
-    transformOrigin: "0% 50%",
-    transformStyle: "preserve-3d",
-    willChange: "transform",
-    transition: transition(stage("transform", OPEN_SHARE, OPEN_START, OPEN_EASE)),
-    transform: `rotateY(${opening ? COVER_OPEN : COVER_RESTING}deg)`,
-  };
-
-  /* Light falling off the cover as it turns away from the guest. */
-  const shadeStyle: CSSProperties = {
-    ...HIDE_BACKFACE,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    transition: transition(stage("opacity", OPEN_SHARE * 0.5, OPEN_START, "ease-in")),
-    opacity: opening ? 1 : 0,
-  };
-
-  /* The ribbon slipping down off the card as it opens. */
+  /* The ribbon, the monogram on it and the prompt under it, slipped off together. */
   const ribbonStyle: CSSProperties = {
-    ...HIDE_BACKFACE,
+    left: "calc(50% - var(--rw) / 2)",
+    top: "calc(50% - var(--rh) / 2)",
+    width: "var(--rw)",
+    height: "var(--rh)",
     willChange: "transform, opacity",
     transition: transition(
-      stage("transform", RIBBON_SHARE, RIBBON_START, "cubic-bezier(0.4,0,1,1)"),
-      stage("opacity", RIBBON_SHARE, RIBBON_START, "ease-in"),
+      stage("transform", RIBBON_SHARE, 0, RIBBON_EASE),
+      stage("opacity", RIBBON_SHARE * 0.7, RIBBON_SHARE * 0.3, "ease-in"),
     ),
-    transform: opening ? "translate3d(0, 18%, 0)" : "none",
+    transform: opening ? "translate3d(0, 85%, 0)" : "translate3d(0, 0, 0)",
     opacity: opening ? 0 : 1,
   };
 
-  /* A shadow stays a shadow on every palette. It goes when the card does. */
-  const shadowStyle: CSSProperties = {
-    ...box(190, 250, 230, 60),
-    backgroundImage:
-      "radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 68%)",
-    transition: transition(
-      stage("transform", OPEN_SHARE, OPEN_START, OPEN_EASE),
-      stage("opacity", EXIT_SHARE * 0.5, EXIT_START, "ease-out"),
-    ),
-    transform: opening ? "translate3d(-45%, 0, 0) scaleX(1.7)" : "none",
-    opacity: opening ? 0 : 1,
+  /* An end of the ribbon carried on to the edge of the screen: the picture's own end at its own size, in a mirror, so the satin runs on unbroken. */
+  const ribbonEnd = (side: -1 | 1): CSSProperties => ({
+    /* Tucked two pixels under the picture, whose own last column is soft and would show as a hairline. */
+    [side < 0 ? "right" : "left"]: "calc(100% - 2px)",
+    width: "max(0px, calc(50cqw - var(--rw) / 2 + 4px))",
+    backgroundImage: `url(${art.ribbon})`,
+    backgroundSize: "var(--rw) var(--rh)",
+    backgroundPosition: side < 0 ? "0 0" : "100% 0",
+    transform: "scaleX(-1)",
+  });
+
+  const engraved: CSSProperties = {
+    ...headingFont,
+    color: GATEFOLD_ENGRAVED.body,
+    textShadow: GATEFOLD_ENGRAVED.shadow,
   };
 
-  const stockFill = `url(#${uid}-stock)`;
+  /* The paper is one sheet: the right door's starts half a screen further along it. */
+  const paperTile = "calc(var(--aw) * 0.7)";
+  const linerTile = "calc(var(--aw) * 0.5)";
 
   return (
     <div
       aria-hidden
       style={rootStyle}
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 overflow-hidden [container-type:size]"
     >
-      <div className="absolute inset-0" style={backdropStyle} />
+      {([-1, 1] as const).map((side) => (
+        <div key={`cast${side}`} className={`absolute inset-y-0 w-1/2 ${side < 0 ? "left-0" : "right-0"}`} style={castStyle(side)} />
+      ))}
 
-      {/* The card takes the space above the names; see ABOVE_WORDS. */}
-      <div style={ABOVE_WORDS}>
+      {([-1, 1] as const).map((side) => (
+        <Fragment key={`door${side}`}>
+          {/* The inside: beyond the hinge, where the door would lie flat open, turned back to lie shut. */}
+          <div
+            className={`absolute inset-y-0 w-1/2 ${side < 0 ? "right-full origin-right" : "left-full origin-left"}`}
+            style={{
+              ...swing(side, "inside"),
+              ...sheet(
+                art.liner,
+                linerTile,
+                `linear-gradient(${side < 0 ? 270 : 90}deg, rgba(20,2,4,0.5) 0%, rgba(20,2,4,0.12) 55%, rgba(20,2,4,0.3) 100%)`,
+                "0 0",
+              ),
+            }}
+          />
 
-        {/* A soft pool of light behind the card, so it sits in the room. */}
-        <div
-          className="absolute top-1/2 left-1/2 aspect-square w-[120vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            backgroundImage: `radial-gradient(circle, ${colors.foilHi} 0%, transparent 62%)`,
-            opacity: opening ? 0 : colors.isLight ? 0.35 : 0.14,
-            transition: transition(stage("opacity", 0.3, 0.6, "ease-out")),
-          }}
+          {/* The outside: paper, and its half of the arch against the seam. */}
+          <div
+            className={`absolute inset-y-0 w-1/2 ${side < 0 ? "left-0 origin-left" : "left-1/2 origin-right"}`}
+            style={{
+              ...swing(side, "outside"),
+              ...sheet(
+                art.paper,
+                paperTile,
+                `linear-gradient(${side < 0 ? 90 : 270}deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 88%, rgba(0,0,0,0.14) 100%)`,
+                side < 0 ? "0 0" : "-50cqw 0",
+              ),
+            }}
+          >
+            {/*
+              Decoded before it is painted: the shell's loader has already
+              waited for it. The right door's is the same picture, flipped.
+            */}
+            <img
+              src={art.arch}
+              alt=""
+              decoding="sync"
+              draggable={false}
+              className={`absolute max-w-none select-none ${side < 0 ? "right-0" : "left-0 -scale-x-100"}`}
+              style={{
+                top: "calc(50% - var(--ah) / 2)",
+                width: "calc(var(--aw) / 2)",
+                height: "var(--ah)",
+              }}
+            />
+          </div>
+        </Fragment>
+      ))}
+
+      {/* Where the doors meet: a hair of shade, gone as soon as one moves. */}
+      <div
+        className="absolute inset-y-0 left-1/2 w-[10px] -translate-x-1/2"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.16) 42%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.16) 58%, rgba(0,0,0,0) 100%)",
+          transition: transition(stage("opacity", 0.06, LEFT_START, "linear")),
+          opacity: opening ? 0 : 1,
+        }}
+      />
+
+      {/* The ribbon across both doors, its medallion over the seam. */}
+      <div className="absolute" style={ribbonStyle}>
+        <div className="absolute inset-y-0 bg-no-repeat" style={ribbonEnd(-1)} />
+        <div className="absolute inset-y-0 bg-no-repeat" style={ribbonEnd(1)} />
+        <img
+          src={art.ribbon}
+          alt=""
+          decoding="sync"
+          draggable={false}
+          className="absolute inset-0 h-full w-full max-w-none select-none"
         />
 
         {/*
-          The spread's full width, two panels, of which the closed card is the
-          right half — so the stage is wider than the card, and the slide below
-          is what centres the card while it is shut.
+          The monogram, sized off the ribbon so it keeps its place on the
+          medallion on any screen. The medallion's clear face is a fifth of
+          the ribbon across; the widest pair a card can carry, "M & W", is
+          about three ems, which at this size is four fifths of that.
         */}
-        {/*
-          The closed card is half this stage wide and 0.7 of it tall, so 120cqh
-          keeps it to 84% of the height it has; see ABOVE_WORDS.
-        */}
-        <div
-          className="relative aspect-[10/7] w-[min(128vw,640px)] shrink-0"
-          style={{ width: "min(128cqw, 640px, 120cqh)" }}
-        >
-          <div className="absolute" style={shadowStyle} />
-
-          <div
-            className="absolute inset-0 animate-[lifafa-float_5.5s_ease-in-out_infinite] motion-reduce:animate-none"
-            style={floatStyle}
-          >
-            <div className="absolute inset-0" style={exitStyle}>
-              <div className="absolute inset-0" style={fitStyle}>
-                <div className="absolute inset-0" style={spreadStyle}>
-                  <svg className="absolute h-0 w-0" role="presentation" focusable="false">
-                    <defs>
-                      <linearGradient id={`${uid}-stock`} x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0" stopColor={colors.stockHi} />
-                        <stop offset="0.6" stopColor={colors.stock} />
-                        <stop offset="1" stopColor={colors.stockLo} />
-                      </linearGradient>
-                      <pattern id={`${uid}-liner`} width="24" height="24" patternUnits="userSpaceOnUse">
-                        <rect width="24" height="24" fill={colors.liner} />
-                        <path d="M12 2 C16 8 16 16 12 22 C8 16 8 8 12 2 Z" fill="none" stroke={colors.linerInk} strokeWidth="0.8" opacity="0.6" />
-                        <path d="M2 12 C8 8 16 8 22 12 C16 16 8 16 2 12 Z" fill="none" stroke={colors.linerInk} strokeWidth="0.8" opacity="0.6" />
-                        <circle cx="12" cy="12" r="1.6" fill={colors.linerInk} opacity="0.8" />
-                      </pattern>
-                      <linearGradient id={`${uid}-ribbon`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0" stopColor={colors.waxLo} />
-                        <stop offset="0.3" stopColor={colors.waxHi} />
-                        <stop offset="0.6" stopColor={colors.wax} />
-                        <stop offset="1" stopColor={colors.waxLo} />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-
-                  {/* Inside right: the invitation, waiting under the cover. */}
-                  <div
-                    className="absolute overflow-hidden rounded-r-[4px] [container-type:inline-size]"
-                    style={{
-                      ...box(200, 0, 200, 280),
-                      backgroundColor: colors.ground,
-                      boxShadow: "0 20px 40px -24px rgba(0,0,0,0.6), 0 2px 6px -2px rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                      <PanelFrame colors={colors} />
-                    </svg>
-                    {/* The crease, darkest at the spine. */}
-                    <div
-                      className="absolute inset-0"
-                      style={{ backgroundImage: "linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 16%)" }}
-                    />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[5cqw] px-[16%] text-center">
-                      <svg viewBox="0 0 80 14" className="w-[34%]" role="presentation" focusable="false">
-                        <path d="M2 7 H28 M52 7 H78" stroke={colors.foil} strokeWidth="1" />
-                        <path d="M40 1 L46 7 L40 13 L34 7 Z" fill={colors.foil} />
-                        <circle cx="30" cy="7" r="1.5" fill={colors.foil} />
-                        <circle cx="50" cy="7" r="1.5" fill={colors.foil} />
-                      </svg>
-                      {title !== undefined && title.length > 0 ? (
-                        <span
-                          className="block leading-[1.25] text-balance wrap-anywhere"
-                          style={{ ...namesFont, color: colors.text, fontSize: "clamp(14px, 12cqw, 48px)" }}
-                        >
-                          {title}
-                        </span>
-                      ) : null}
-                      <svg viewBox="0 0 120 10" className="w-[46%]" role="presentation" focusable="false">
-                        <path d="M4 5 H52 M68 5 H116" stroke={colors.foil} strokeWidth="0.9" />
-                        <path d="M60 1 L64 5 L60 9 L56 5 Z" fill={colors.foil} />
-                      </svg>
-                    </div>
-
-                  </div>
-
-                  {/*
-                    Gold rising off the spine as the card lies open. Beside the
-                    panel rather than in it, so the panel's clip does not cut the
-                    flecks off at its top edge as they rise.
-                  */}
-                  <div className="absolute" style={box(200, 0, 200, 280)}>
-                    {SPARKS.map((spark, index) => (
-                      <span
-                        key={index}
-                        className="absolute top-[62%] left-0 opacity-0"
-                        style={
-                          {
-                            width: spark.size,
-                            height: spark.size,
-                            marginLeft: -spark.size / 2,
-                            "--dx": `${spark.dx}px`,
-                            "--dy": `${spark.dy}px`,
-                            animation: onOpen(
-                              "lifafa-cover-spark",
-                              SPARK_SHARE,
-                              SPARK_START + spark.delay,
-                              "cubic-bezier(0.15,0.7,0.4,1)",
-                            ),
-                          } as CSSProperties
-                        }
-                      >
-                        <svg viewBox="0 0 10 10" className="h-full w-full" role="presentation" focusable="false">
-                          <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill={index % 2 === 0 ? colors.foilHi : colors.foil} />
-                        </svg>
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* The cover, hinged on the spine: two faces turning together. */}
-                  <div className="absolute" style={coverStyle}>
-                    {/* Outside: the front of the card. */}
-                    <div className="absolute inset-0 overflow-hidden rounded-r-[4px]" style={HIDE_BACKFACE}>
-                      <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                        <rect x="0" y="0" width="200" height="280" fill={stockFill} />
-                        <PanelFrame colors={colors} />
-                        {/* The medallion, with the couple's initials in its middle. */}
-                        <g>
-                          <circle cx="100" cy="128" r="40" fill="none" stroke={colors.foil} strokeWidth="1.4" />
-                          <circle cx="100" cy="128" r="34" fill="none" stroke={colors.foil} strokeWidth="0.6" opacity="0.8" />
-                          {Array.from({ length: 16 }, (_, index) => {
-                            const angle = (index / 16) * Math.PI * 2;
-
-                            return (
-                              <circle
-                                key={index}
-                                cx={100 + Math.cos(angle) * 37}
-                                cy={128 + Math.sin(angle) * 37}
-                                r={index % 2 === 0 ? 1.3 : 0.8}
-                                fill={colors.foil}
-                              />
-                            );
-                          })}
-                          {initials.length > 0 ? (
-                            <text
-                              x="100"
-                              y="130"
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              fontSize={initials.length > 1 ? 26 : 32}
-                              fill={colors.foil}
-                              style={namesFont}
-                            >
-                              {initials}
-                            </text>
-                          ) : (
-                            <path d="M100 112 L112 128 L100 144 L88 128 Z" fill={colors.foil} />
-                          )}
-                          <path d="M78 196 H122" stroke={colors.foil} strokeWidth="0.9" />
-                          <path d="M100 190 L105 196 L100 202 L95 196 Z" fill={colors.foil} />
-                          <path d="M86 64 Q100 54 114 64" fill="none" stroke={colors.foil} strokeWidth="1" />
-                          <circle cx="100" cy="58" r="2" fill={colors.foil} />
-                        </g>
-                      </svg>
-
-                      {/* A silk ribbon round the card, near the spine, tied in a bow. */}
-                      <div className="absolute inset-0" style={ribbonStyle}>
-                        <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                          <rect x="30" y="0" width="16" height="280" fill={`url(#${uid}-ribbon)`} />
-                          <path d="M30 0 V280 M46 0 V280" stroke={colors.waxLo} strokeWidth="0.8" opacity="0.6" />
-                          <path d="M38 118 C14 98 4 110 12 124 C18 134 30 128 38 122 Z" fill={`url(#${uid}-ribbon)`} stroke={colors.waxLo} strokeWidth="0.8" />
-                          <path d="M38 118 C62 98 72 110 64 124 C58 134 46 128 38 122 Z" fill={`url(#${uid}-ribbon)`} stroke={colors.waxLo} strokeWidth="0.8" />
-                          <path d="M36 124 L24 160 L31 156 L34 164 Z" fill={`url(#${uid}-ribbon)`} />
-                          <path d="M40 124 L52 162 L45 157 L42 165 Z" fill={`url(#${uid}-ribbon)`} />
-                          <ellipse cx="38" cy="121" rx="6" ry="7" fill={colors.wax} stroke={colors.waxLo} strokeWidth="0.8" />
-                        </svg>
-                      </div>
-
-                      {/* The sheen on the leaf, now and then. */}
-                      <div className="absolute inset-0 overflow-hidden" style={{ opacity: opening ? 0 : 1 }}>
-                        <div
-                          className="absolute inset-y-0 left-0 w-1/2 animate-[lifafa-cover-sheen_5s_ease-in-out_1s_infinite] motion-reduce:animate-none"
-                          style={{
-                            ...floatStyle,
-                            backgroundImage:
-                              "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)",
-                            mixBlendMode: "soft-light",
-                            transform: "translate3d(-130%, 0, 0)",
-                          }}
-                        />
-                      </div>
-
-                      <div className="absolute inset-0" style={shadeStyle} />
-                    </div>
-
-                    {/*
-                      Inside: the lining, drawn the right way up once the cover has
-                      turned half a revolution onto the left.
-                    */}
-                    <div
-                      className="absolute inset-0 overflow-hidden rounded-l-[4px]"
-                      style={{ ...HIDE_BACKFACE, transform: "rotateY(180deg)" }}
-                    >
-                      <svg viewBox="0 0 200 280" className="absolute inset-0 h-full w-full" role="presentation" focusable="false">
-                        <rect x="0" y="0" width="200" height="280" fill={`url(#${uid}-liner)`} />
-                        <rect x="9" y="9" width="182" height="262" rx="2" fill="none" stroke={colors.linerInk} strokeWidth="1.2" />
-                      </svg>
-                      <div
-                        className="absolute inset-0"
-                        style={{ backgroundImage: "linear-gradient(270deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 18%)" }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          {pairLetters.length === 2 ? (
+            <span
+              data-cover-monogram=""
+              className="leading-none whitespace-nowrap"
+              style={{ ...engraved, fontSize: `calc(var(--rw) * ${GATEFOLD_MEDALLION} * 0.27)` }}
+            >
+              {pairLetters[0]}
+              <span className="mx-[0.14em] text-[0.72em]" style={{ color: GATEFOLD_ENGRAVED.hi }}>
+                &amp;
+              </span>
+              {pairLetters[1]}
+            </span>
+          ) : pairLetters.length === 1 || lineLetters.length > 0 ? (
+            <span
+              data-cover-monogram=""
+              className="leading-none whitespace-nowrap"
+              style={{
+                ...engraved,
+                letterSpacing: "0.04em",
+                fontSize: `calc(var(--rw) * ${GATEFOLD_MEDALLION} * ${
+                  pairLetters.length === 1 || lineLetters.length === 1 ? 0.46 : 0.36
+                })`,
+              }}
+            >
+              {pairLetters[0] ?? lineLetters}
+            </span>
+          ) : (
+            <GoldFlower
+              hi={GATEFOLD_ENGRAVED.hi}
+              body={GATEFOLD_ENGRAVED.body}
+              lo={GATEFOLD_ENGRAVED.lo}
+              className="w-[10%] drop-shadow-[0_1px_0_rgba(255,238,178,0.8)]"
+            />
+          )}
         </div>
+
+        {/* The way in, on the paper under the medallion. */}
+        <span
+          data-cover-prompt=""
+          className="absolute top-full left-1/2 mt-[calc(var(--aw)*0.03)] -translate-x-1/2 animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] tracking-[0.18em] whitespace-nowrap uppercase motion-reduce:animate-none"
+          style={{
+            ...headingFont,
+            color: art.promptInk,
+            fontSize: "clamp(11px, calc(var(--aw) * 0.04), 20px)",
+          }}
+        >
+          {prompt}
+        </span>
       </div>
     </div>
   );

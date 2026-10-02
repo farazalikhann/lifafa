@@ -3,7 +3,8 @@
  * as WebP: the flowers to public/decor/flowers/, the ornaments to
  * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/,
  * the envelope cover's paper, liner and seal to public/decor/envelope/, the
- * petal dust cover's pictures to public/decor/petal-cover/.
+ * petal dust cover's pictures to public/decor/petal-cover/, the fold cover's
+ * arch and ribbon to public/decor/gatefold/.
  *
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
@@ -13,6 +14,7 @@
  *   node scripts/cut-flowers.mjs curtain      just the curtain cover's cloth
  *   node scripts/cut-flowers.mjs envelope     just the envelope cover's paper and seal
  *   node scripts/cut-flowers.mjs petal-cover  just the petal dust cover's two pictures
+ *   node scripts/cut-flowers.mjs gatefold     just the fold cover's arch and ribbon
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -349,6 +351,58 @@ const PETAL_COVER = [
   fit: { height: 1200 },
   source: ENVELOPE_SOURCE,
   out: join("public", "decor", "petal-cover"),
+}));
+
+/**
+ * The fold cover's gold: an arch of filigree that frames its two doors, and
+ * the ribbon tied across them. See components/invite/covers/FoldUnfoldCover.tsx.
+ * They too arrived in the envelope's folder.
+ *
+ * THE ARCH IS A FRAME, AND MOST OF ITS BLACK IS INSIDE IT. The opening it
+ * frames and every hole in its lattice are closed off from the picture's
+ * edges, so a flood from the edges takes only the thin margin outside. The
+ * rest is taken as the toran's pockets are: enclosed true black, of any size
+ * a lattice hole can be. The gold's own shading is brown, not black, and is
+ * not touched; `pocketMin` keeps the few specks of true black in it solid.
+ *
+ * ONLY ITS LEFT HALF IS PUBLISHED. The arch was drawn to be symmetrical and
+ * is not quite: mirrored about its centre line, a pixel differs from its
+ * twin by 9 levels in 255 on average. The two doors meet on that line, and
+ * two halves that are nearly a pair would not meet. So the right door shows
+ * the left half in a mirror, as the right curtain shows the left one, and
+ * the two are a pair by construction — at half the download.
+ *
+ * SIZED TO A BUDGET. Filigree and lattice are the worst case for an alpha
+ * channel: at 1200px tall with a lossless one, the half arch alone is 215 KB.
+ * The two files together are held under 150 KB, so the arch is 1100px tall
+ * and the ribbon 1000px wide, each with its alpha compressed as well — still
+ * more pixels than a phone draws either of them at.
+ */
+const GATEFOLD = [
+  {
+    name: "gatefold-arch",
+    file: "ChatGPT Image Oct 2, 2026, 10_37_53 AM.png",
+    pocketMin: 12,
+    half: "left",
+    fit: { height: 1100 },
+    quality: 44,
+    alphaQuality: 62,
+  },
+  {
+    name: "gatefold-ribbon",
+    file: "ChatGPT Image Oct 2, 2026, 10_37_19 AM.png",
+    fit: { width: 1000 },
+    quality: 58,
+    alphaQuality: 80,
+  },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  source: ENVELOPE_SOURCE,
+  out: join("public", "decor", "gatefold"),
 }));
 
 /* --- On black ---------------------------------------------------------- */
@@ -1047,6 +1101,13 @@ async function publish(entry) {
         : cutFromChecker(data, width, height);
   const report = entry.seam ? straightenSeam(rgba, width, height, entry.seam) : cutReport;
 
+  /* Only the left half kept: everything from the centre line on is cleared, and the crop ends there. */
+  if (entry.half === "left") {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = width >> 1; x < width; x += 1) rgba[(y * width + x) * 4 + 3] = 0;
+    }
+  }
+
   /* Cropped to what is left — a stray pixel below 10% coverage does not stretch the box. */
   let top = height, bottom = -1, left = width, right = -1;
   for (let pixel = 0; pixel < width * height; pixel += 1) {
@@ -1092,7 +1153,7 @@ async function publish(entry) {
   }
 
   const result = await sized
-    .webp({ quality: entry.quality ?? 86, alphaQuality: 100, effort: 6 })
+    .webp({ quality: entry.quality ?? 86, alphaQuality: entry.alphaQuality ?? 100, effort: 6 })
     .toFile(target);
 
   console.log(`${target}  ${result.width}x${result.height}  ${result.size} bytes${report ? `  (${report})` : ""}`);
@@ -1108,6 +1169,7 @@ const sets = [
   ...(which === "all" || which === "curtain" ? CURTAIN : []),
   ...(which === "all" || which === "envelope" ? ENVELOPE : []),
   ...(which === "all" || which === "petal-cover" ? PETAL_COVER : []),
+  ...(which === "all" || which === "gatefold" ? GATEFOLD : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {
