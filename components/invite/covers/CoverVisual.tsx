@@ -7,8 +7,9 @@ import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import PetalDustCover from "@/components/invite/covers/PetalDustCover";
 import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
-import { CURTAIN_FILMS, filmFor } from "@/lib/coverVideos";
+import { CURTAIN_FILMS, ENVELOPE_FILMS, filmFor } from "@/lib/coverVideos";
 import { curtainArt } from "@/lib/curtainArt";
+import { envelopeArt } from "@/lib/envelopeArt";
 
 /*
   The covers as they are drawn in code, which is what a filmed cover falls
@@ -18,6 +19,10 @@ import { curtainArt } from "@/lib/curtainArt";
 const DRAWN_CURTAIN: DrawnCover = {
   Component: CurtainRevealCover,
   images: (isLight) => curtainArt(isLight).images,
+};
+const DRAWN_ENVELOPE: DrawnCover = {
+  Component: EnvelopeSealCover,
+  images: (isLight) => envelopeArt(isLight).images,
 };
 
 /**
@@ -32,7 +37,14 @@ const DRAWN_CURTAIN: DrawnCover = {
 export default function CoverVisual(state: CoverVisualState): ReactElement | null {
   switch (state.option.id) {
     case "envelope-seal":
-      return <EnvelopeSealCover {...state} />;
+      return (
+        <VideoCover
+          key={filmFor(ENVELOPE_FILMS, state.colors.isLight).poster}
+          {...state}
+          films={ENVELOPE_FILMS}
+          drawn={DRAWN_ENVELOPE}
+        />
+      );
 
     case "curtain-reveal":
       /*

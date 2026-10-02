@@ -6,8 +6,7 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
-import { CURTAIN_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
-import { envelopeArt } from "@/lib/envelopeArt";
+import { CURTAIN_FILMS, ENVELOPE_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
 import { gatefoldArt } from "@/lib/gatefoldArt";
 import { petalCoverArt } from "@/lib/petalCoverArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
@@ -46,7 +45,14 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     sound: "envelope",
     haptic: 10,
     supportsReducedMotion: true,
-    art: envelopeArt,
+    /* The envelope fills the screen, so the prompt sits on a plaque of its own. */
+    wordsOn: "plaque",
+    /*
+      Played from film, dark or light; see lib/coverVideos.ts. The timings
+      above are the drawn cover's, which opens when the film cannot.
+    */
+    art: filmArt(ENVELOPE_FILMS),
+    film: filmTiming(ENVELOPE_FILMS),
   },
   {
     id: "curtain-reveal",

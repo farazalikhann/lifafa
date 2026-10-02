@@ -151,6 +151,45 @@ export const CURTAIN_FILMS: CoverFilmSet = {
   }),
 };
 
+/*
+  ENVELOPE. Dark: frames 17-127 (0.71s to 5.33s): the seal breaks at 0.3s, the
+  flap is open by 2.3s and the card is out by 4.55s. Light: frames 17-107
+  (0.71s to 4.50s): seal at 0.3s, flap open by 2.3s, card out by 3.55s.
+
+  The film's last frames hold a blank card standing out of the envelope. It
+  is grown about that card's middle as it fades, so the blank card swells to
+  the screen while the real one comes through it.
+
+  The sound's wax crackle is its first 0.3s, so it waits for the seal. Its
+  flap and its slide are quicker than either film's and run ahead of them
+  from there; an offset can line up one moment, and the seal is the one.
+
+  The seal's face is 125px across in the dark film and 148px in the light.
+*/
+export const ENVELOPE_FILMS: CoverFilmSet = {
+  dark: film("envelope-video", "envelope-dark", {
+    lengthMs: 4625,
+    fadeStartMs: 3500,
+    fadeMs: 1050,
+    soundDelayMs: 300,
+    surround: BLACK,
+    mark: { x: 525 / 1080, y: 1010 / 1920, width: 125 / 1080 },
+    ink: GOLD,
+    grow: { x: 0.5, y: 0.49, scale: 2.3 },
+  }),
+  light: film("envelope-video", "envelope-light", {
+    lengthMs: 3790,
+    fadeStartMs: 2800,
+    fadeMs: 950,
+    soundDelayMs: 300,
+    surround: IVORY,
+    mark: { x: 534 / 1080, y: 1086 / 1920, width: 148 / 1080 },
+    ink: GOLD,
+    grow: { x: 0.5, y: 0.47, scale: 2.3 },
+  }),
+  markExit: "fade",
+};
+
 /** The film for a card whose ground is light, or dark. */
 export function filmFor(set: CoverFilmSet, isLight: boolean): CoverFilm {
   return isLight ? set.light : set.dark;
