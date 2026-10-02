@@ -141,14 +141,11 @@ export const SIKH_ORNAMENT_ASPECT: Record<SikhOrnamentId, number> = {
   kandaFloralBorder: PICTURES.kandaFloralBorder.aspect,
   ikOnkar: IK_ONKAR_BOX.width / IK_ONKAR_BOX.height,
   /* Not viewBoxes: the published crops each calligraphy's pair of files shares. */
-  ikOnkarCalligraphy: calligraphyAspect("ikOnkarCalligraphy"),
-  satnamWaheguru: calligraphyAspect("satnamWaheguru"),
   anandKaraj: calligraphyAspect("anandKaraj"),
-  shubhVivaah: calligraphyAspect("shubhVivaah"),
-  guruKirpa: calligraphyAspect("guruKirpa"),
-  ikDoojeDeSang: calligraphyAspect("ikDoojeDeSang"),
-  doRoohanIkRaah: calligraphyAspect("doRoohanIkRaah"),
+  shubhViah: calligraphyAspect("shubhViah"),
+  satnamWaheguru: calligraphyAspect("satnamWaheguru"),
   waheguru: calligraphyAspect("waheguru"),
+  guruKirpa: calligraphyAspect("guruKirpa"),
   sarbatDaBhala: calligraphyAspect("sarbatDaBhala"),
 };
 
@@ -173,29 +170,21 @@ export interface SikhOrnamentEntry {
    --------------------------------------------------------------------------- */
 
 /**
- * The nine Gurmukhi word-marks, from the shared factory in
- * lib/ornaments/frame.tsx. lib/calligraphy.ts holds their files, what each is
- * meant to say, and how the dark version was made.
+ * The six Gurmukhi word-marks, from the shared factory in
+ * lib/ornaments/frame.tsx. lib/calligraphy.ts holds their files and what each
+ * says.
  */
-const IkOnkarCalligraphy = calligraphyOrnament("ikOnkarCalligraphy");
-const SatnamWaheguru = calligraphyOrnament("satnamWaheguru");
 const AnandKaraj = calligraphyOrnament("anandKaraj");
-const ShubhVivaah = calligraphyOrnament("shubhVivaah");
-const GuruKirpa = calligraphyOrnament("guruKirpa");
-const IkDoojeDeSang = calligraphyOrnament("ikDoojeDeSang");
-const DoRoohanIkRaah = calligraphyOrnament("doRoohanIkRaah");
+const ShubhViah = calligraphyOrnament("shubhViah");
+const SatnamWaheguru = calligraphyOrnament("satnamWaheguru");
 const Waheguru = calligraphyOrnament("waheguru");
+const GuruKirpa = calligraphyOrnament("guruKirpa");
 const SarbatDaBhala = calligraphyOrnament("sarbatDaBhala");
 
 /**
  * The pack. The first six have places on the card (see `slots` on the Sikh
- * pack) and the editor groups them by place; the rest are calligraphy.
- *
- * Two Ik Onkars, and they are different things. `ikOnkar` is the character,
- * in gold, for the place above the names. `ikOnkarCalligraphy` is one of the
- * nine word-marks that head the card: supplied artwork, published as it was
- * given, which still wants a Punjabi reader to check it against the files, as
- * every Gurmukhi piece beside it does.
+ * pack) and the editor groups them by place; the rest are calligraphy, one
+ * of which can head the card.
  */
 export const SIKH_ORNAMENTS: readonly SikhOrnamentEntry[] = [
   {
@@ -247,78 +236,23 @@ export const SIKH_ORNAMENTS: readonly SikhOrnamentEntry[] = [
     topRegionOnly: false,
     src: PICTURES.lotus.src,
   },
-  {
-    id: "ikOnkarCalligraphy",
-    label: "Ik Onkar",
-    Component: IkOnkarCalligraphy,
+  ...(
+    [
+      ["anandKaraj", "Anand Karaj", AnandKaraj],
+      ["shubhViah", "Shubh Viah", ShubhViah],
+      ["satnamWaheguru", "Satnam Waheguru", SatnamWaheguru],
+      ["waheguru", "Waheguru", Waheguru],
+      ["guruKirpa", "Guru Kirpa", GuruKirpa],
+      ["sarbatDaBhala", "Sarbat Da Bhala", SarbatDaBhala],
+    ] as const
+  ).map(([id, label, Component]) => ({
+    id,
+    label,
+    Component,
     /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
     chipSize: 84,
     topRegionOnly: false,
-  },
-  {
-    id: "satnamWaheguru",
-    label: "Satnam Waheguru",
-    Component: SatnamWaheguru,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "anandKaraj",
-    label: "Anand Karaj",
-    Component: AnandKaraj,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "shubhVivaah",
-    label: "Shubh Vivaah",
-    Component: ShubhVivaah,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "guruKirpa",
-    label: "Guru Kirpa",
-    Component: GuruKirpa,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "ikDoojeDeSang",
-    label: "Ik Dooje De Sang",
-    Component: IkDoojeDeSang,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "doRoohanIkRaah",
-    label: "Do Roohan Ik Raah",
-    Component: DoRoohanIkRaah,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "waheguru",
-    label: "Waheguru",
-    Component: Waheguru,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
-  {
-    id: "sarbatDaBhala",
-    label: "Sarbat Da Bhala",
-    Component: SarbatDaBhala,
-    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
-    chipSize: 84,
-    topRegionOnly: false,
-  },
+  })),
 ];
 
 /** Sits under the ornament grid in the editor. */

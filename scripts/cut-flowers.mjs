@@ -166,11 +166,29 @@ const CALLIGRAPHY = [
   /* The second supply, which spells गणेशाय; the first was lettered गणराय. */
   { name: "shri-ganeshaya-namah", file: "ChatGPT Image Sep 28, 2026, 02_07_37 AM.png" },
   { name: "vivahotsav", file: "ChatGPT Image Sep 28, 2026, 01_44_07 AM.png" },
+  /*
+    The Sikh calligraphy: six Gurmukhi word-marks, white on black like the
+    Hindu ones and published the same way, to a folder of their own. Each was
+    read against the text it is meant to say before it was published; see
+    lib/calligraphy.ts. Supplied in the Sikh pack's folder.
+  */
+  ...[
+    { name: "anand-karaj", file: "ChatGPT Image Oct 2, 2026, 05_07_00 PM.png" },
+    { name: "shubh-viah", file: "ChatGPT Image Oct 2, 2026, 05_11_49 PM.png" },
+    { name: "satnam-waheguru", file: "ChatGPT Image Oct 2, 2026, 05_12_01 PM.png" },
+    { name: "waheguru", file: "ChatGPT Image Oct 2, 2026, 05_12_10 PM.png" },
+    { name: "guru-kirpa", file: "ChatGPT Image Oct 2, 2026, 05_12_21 PM.png" },
+    { name: "sarbat-da-bhala", file: "ChatGPT Image Oct 2, 2026, 05_12_31 PM.png" },
+  ].map((entry) => ({
+    ...entry,
+    source: "sikh religion",
+    out: join("public", "decor", "calligraphy", "sikh"),
+  })),
 ].map((entry) => ({
-  ...entry,
   background: "mask",
   fit: { width: 900 },
   out: join("public", "decor", "calligraphy"),
+  ...entry,
 }));
 
 /**

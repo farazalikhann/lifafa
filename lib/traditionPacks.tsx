@@ -229,6 +229,8 @@ export interface PackBlessing {
   translation: string;
   /** Which occasion it suits. Empty on greetings, which are not occasion bound. */
   occasionNote: string;
+  /** Where a quoted blessing is from, set small under its meaning. */
+  source?: string;
 }
 
 /**
@@ -406,6 +408,7 @@ function fromGurmukhi(entry: SikhGreeting | SikhBlessing): PackBlessing {
     transliteration: entry.transliteration,
     translation: entry.translation,
     occasionNote: "occasionNote" in entry ? entry.occasionNote : "",
+    ...("source" in entry && entry.source !== undefined ? { source: entry.source } : null),
   };
 }
 
@@ -636,20 +639,34 @@ const SIKH_PACK: TraditionPack = {
     sides: ["nishanSahibPennant"],
   },
   frameOpening: GURUDWARA_ARCH_DOORWAY,
-  cardHead: null,
   /*
-    Ik Onkar first, because it opens everything that follows it; then the
-    ceremony's own name. The rest in the order a card would say them.
+    The Hindu block's type system, in Gurmukhi: Tiro Gurmukhi for the script
+    lines, with the card's own Gurmukhi face behind it, and Lora for the
+    English under them. The blessing is two lines of verse, each of which has
+    to stay one line on a 360px card, so it is set a step smaller than the
+    Hindu shlok.
   */
+  cardHead: {
+    scriptFace:
+      'var(--font-pa-tiro), var(--font-gurmukhi), "Noto Serif Gurmukhi", "Noto Sans Gurmukhi", serif',
+    greetingClass:
+      "text-[calc(1.375rem*var(--card-opening-text,1))] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+    blessingClass:
+      "text-[calc(1rem*var(--card-opening-text,1))] sm:text-[calc(1.125*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+    greetingLeading: "1.7",
+    blessingLeading: "1.9",
+    englishClass:
+      "text-[calc(0.875*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-[1.5]",
+    englishFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
+    alignTop: true,
+  },
+  /* The order the panel offers them: the ceremony's own name first. */
   calligraphyIds: [
-    "ikOnkarCalligraphy",
-    "satnamWaheguru",
     "anandKaraj",
-    "shubhVivaah",
-    "guruKirpa",
-    "ikDoojeDeSang",
-    "doRoohanIkRaah",
+    "shubhViah",
+    "satnamWaheguru",
     "waheguru",
+    "guruKirpa",
     "sarbatDaBhala",
   ],
 };

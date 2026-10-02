@@ -295,6 +295,10 @@ function Blessing({
           "--lifafa-devanagari": head.scriptFace,
           "--lifafa-devanagari-leading":
             kind === "greeting" ? head.greetingLeading : head.blessingLeading,
+          /* The same two for a pack whose script is Gurmukhi; each script component reads its own. */
+          "--lifafa-gurmukhi": head.scriptFace,
+          "--lifafa-gurmukhi-leading":
+            kind === "greeting" ? head.greetingLeading : head.blessingLeading,
         }),
   } as CSSProperties;
   const englishClass =
@@ -357,6 +361,17 @@ function Blessing({
           style={englishStyle}
         >
           {entry.translation}
+        </p>
+      ) : null}
+
+      {/* Where a quoted blessing is from: small, and quieter than the meaning above it. */}
+      {entry.source !== undefined && entry.source.length > 0 ? (
+        <p
+          dir="ltr"
+          className="w-full text-center text-[calc(0.75*var(--card-rem,1rem)*var(--card-opening-text,1))] tracking-[0.04em]"
+          style={{ ...englishStyle, opacity: 0.8 }}
+        >
+          {entry.source}
         </p>
       ) : null}
     </div>

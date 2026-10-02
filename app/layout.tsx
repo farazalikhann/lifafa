@@ -32,6 +32,7 @@ import {
   Rozha_One,
   Tillana,
   Tiro_Devanagari_Hindi,
+  Tiro_Gurmukhi,
 } from "next/font/google";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
@@ -365,6 +366,21 @@ const hind = Hind({
   Elegant's names and headings, and the headings of Royal, Romantic and
   Graceful. One weight.
 */
+/*
+  The Sikh card's opening block: the greeting and the blessing, in the
+  traditional serif that sits beside Tiro Devanagari Hindi. One weight. The
+  "gurmukhi" subset only, fetched by a page that sets Gurmukhi in it and by no
+  other. Noto Sans Gurmukhi above remains the face for every other Gurmukhi
+  line, and stands behind this one.
+*/
+const tiroGurmukhi = Tiro_Gurmukhi({
+  subsets: ["gurmukhi"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-pa-tiro",
+});
+
 const tiroDevanagariHindi = Tiro_Devanagari_Hindi({
   subsets: ["devanagari"],
   weight: "400",
@@ -453,6 +469,7 @@ const FONT_VARIABLES = [
   poppins.variable,
   hind.variable,
   tiroDevanagariHindi.variable,
+  tiroGurmukhi.variable,
   laila.variable,
   amita.variable,
   notoSerifDevanagari.variable,

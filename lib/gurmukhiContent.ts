@@ -1,40 +1,39 @@
 /**
  * Greetings and blessings offered on a Sikh card.
  *
- * EVERY GURMUKHI, TRANSLITERATION AND TRANSLATION STRING IN THIS FILE SHIPS
- * EMPTY. Nothing here was written, transliterated, reconstructed or recalled
- * from memory, and nothing may be. Each empty field carries a TODO naming
- * exactly what belongs in it; every value must be copied from a verified source
- * and reviewed by someone knowledgeable before release.
+ * THE GURMUKHI AND THE ENGLISH BELOW WERE SUPPLIED BY THE OWNER, and are here
+ * character for character as supplied. Nothing in this file was written,
+ * transliterated, reconstructed or recalled from memory, and nothing may be.
+ * No transliteration was supplied, so every transliteration is empty, and an
+ * empty string renders nothing at all.
  *
- * An empty string renders nothing at all, so an unfilled entry is safe — it is
- * filling one in casually that is unsafe. The editor shows "Text pending"
- * against a row whose script has not arrived; the opt-out row is exempt.
+ * Do not "tidy" a value. Gurmukhi matras and the addak, bindi and tippi are
+ * load bearing, and a normalisation pass — NFC/NFD, a collapsed space, an
+ * editor's auto-format — will change a word silently and read as a whitespace
+ * diff. A string that needs changing gets replaced wholesale from the source,
+ * never edited in place. A line break inside a value is a line break on the
+ * card.
  *
- * Once a value is supplied, do not "tidy" it. Gurmukhi matras and the addak,
- * bindi and tippi are load bearing, and a normalisation pass — NFC/NFD, a
- * collapsed space, an editor's auto-format — will change a word silently and
- * read as a whitespace diff. A string that needs changing gets replaced
- * wholesale from the source, never edited in place.
- *
- * FULL GURBANI PASSAGES ARE DELIBERATELY OUT OF SCOPE, and this is not an
- * oversight to be corrected by adding more entries. A printed or digital
- * invitation is handled casually and discarded after the event, and many
- * families consider that treatment inappropriate for Gurbani. Only the short
- * invocations listed below are offered. DO NOT ADD FURTHER ENTRIES to either
- * array — extending this file is a decision for the people whose practice it
- * is, not a gap in the data.
+ * GURBANI. This file used to rule full Gurbani passages out: an invitation is
+ * handled casually and thrown away after the event, and many families
+ * consider that treatment inappropriate for Gurbani. The owner has since
+ * supplied one, the salok on Ang 788, as the blessing for a couple, and it is
+ * here with its source. The point stands for anything further: extending
+ * this file is a decision for the people whose practice it is, not a gap in
+ * the data. DO NOT ADD ENTRIES to either array without being given them.
  *
  * RENDERING: every Gurmukhi field goes on the page inside an element carrying
  * lang="pa" and dir="ltr". Gurmukhi runs left to right — never copy the Arabic
  * pack's dir="rtl" across with the markup around it. The face and the leading
- * come from --lifafa-gurmukhi and --lifafa-gurmukhi-leading in globals.css.
+ * come from --lifafa-gurmukhi and --lifafa-gurmukhi-leading in globals.css,
+ * which the card's opening block sets to Tiro Gurmukhi (see `cardHead` on
+ * the Sikh pack in lib/traditionPacks.tsx).
  */
 
 /** The `lang` every Gurmukhi string is rendered under. */
 export const GURMUKHI_LANG = "pa";
 
-export type SikhGreetingId =
+type SikhGreetingId =
   | "ikOnkar"
   | "waheguruKhalsa"
   | "satNaam"
@@ -56,32 +55,24 @@ export const SIKH_GREETINGS: readonly SikhGreeting[] = [
   {
     id: "ikOnkar",
     label: "Ik Onkar Satgur Prasad",
-    /* TODO: the Gurmukhi for "Ik Onkar Satgur Prasad" (the Mool Mantar's opening invocation). */
-    gurmukhi: "",
-    /* TODO: the Roman transliteration of that line. */
+    gurmukhi: "ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥",
     transliteration: "",
-    /* TODO: the English rendering of that line. */
-    translation: "",
+    translation: "One Creator, realised by the Guru's grace",
   },
   {
     id: "waheguruKhalsa",
     label: "Waheguru Ji Ka Khalsa, Waheguru Ji Ki Fateh",
-    /* TODO: the Gurmukhi for the full Khalsa salutation, both halves. */
-    gurmukhi: "",
-    /* TODO: the Roman transliteration of the full salutation. */
+    /* Two lines, one to each ॥. */
+    gurmukhi: "ਵਾਹਿਗੁਰੂ ਜੀ ਕਾ ਖ਼ਾਲਸਾ ॥\nਵਾਹਿਗੁਰੂ ਜੀ ਕੀ ਫ਼ਤਹਿ ॥",
     transliteration: "",
-    /* TODO: the English rendering of the full salutation. */
-    translation: "",
+    translation: "The Khalsa belongs to Waheguru, victory belongs to Waheguru",
   },
   {
     id: "satNaam",
     label: "Satnam Waheguru",
-    /* TODO: the Gurmukhi for "Satnam Waheguru". */
-    gurmukhi: "",
-    /* TODO: the Roman transliteration of "Satnam Waheguru". */
+    gurmukhi: "ਸਤਿਨਾਮ ਵਾਹਿਗੁਰੂ",
     transliteration: "",
-    /* TODO: the English rendering of "Satnam Waheguru". */
-    translation: "",
+    translation: "True is the Name, Wondrous Lord",
   },
   {
     /*
@@ -97,7 +88,7 @@ export const SIKH_GREETINGS: readonly SikhGreeting[] = [
   },
 ];
 
-export type SikhBlessingId = "anandBlessing" | "chardiKala" | "none";
+type SikhBlessingId = "anandBlessing" | "chardiKala" | "none";
 
 export interface SikhBlessing {
   id: SikhBlessingId;
@@ -111,33 +102,29 @@ export interface SikhBlessing {
   translation: string;
   /** Which occasion the blessing suits, in the host's words. Never Gurmukhi. */
   occasionNote: string;
+  /** Where the lines are from, for a blessing that is a quotation. Set small under the meaning. */
+  source?: string;
 }
 
 export const SIKH_BLESSINGS: readonly SikhBlessing[] = [
   {
     id: "anandBlessing",
     label: "Blessing for the couple",
-    /*
-      TODO: a short Gurmukhi blessing for a couple, suitable for an Anand Karaj
-      invitation. See the file header — a short invocation, not a Gurbani
-      passage, and not a quotation from the Lavan.
-    */
-    gurmukhi: "",
-    /* TODO: the Roman transliteration of that blessing. */
+    /* Gurbani, as supplied, in its two lines. See the file header. */
+    gurmukhi: "ਧਨ ਪਿਰੁ ਏਹਿ ਨ ਆਖੀਅਨਿ ਬਹਨਿ ਇਕਠੇ ਹੋਇ ॥\nਏਕ ਜੋਤਿ ਦੁਇ ਮੂਰਤੀ ਧਨ ਪਿਰੁ ਕਹੀਐ ਸੋਇ ॥",
     transliteration: "",
-    /* TODO: the English rendering of that blessing. */
-    translation: "",
+    translation:
+      "They are not husband and wife who merely sit together. They alone are husband and wife who have one light in two bodies.",
     occasionNote: "Wedding",
+    source: "Sri Guru Granth Sahib Ji, Ang 788",
   },
   {
     id: "chardiKala",
     label: "Chardi Kala",
-    /* TODO: the Gurmukhi for "Chardi Kala". */
-    gurmukhi: "",
-    /* TODO: the Roman transliteration of "Chardi Kala". */
+    gurmukhi: "ਨਾਨਕ ਨਾਮ ਚੜ੍ਹਦੀ ਕਲਾ ॥\nਤੇਰੇ ਭਾਣੇ ਸਰਬੱਤ ਦਾ ਭਲਾ ॥",
     transliteration: "",
-    /* TODO: the English rendering of "Chardi Kala". */
-    translation: "",
+    translation:
+      "Through the Name, may our spirits always rise. By Your will, may all be blessed.",
     occasionNote: "Any occasion",
   },
   {
@@ -162,22 +149,4 @@ export const SIKH_BLESSINGS: readonly SikhBlessing[] = [
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getSikhGreeting(id: string | null): SikhGreeting | null {
-  if (id === null) {
-    return null;
-  }
-
-  return SIKH_GREETINGS.find((greeting) => greeting.id === id) ?? null;
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getSikhBlessing(id: string | null): SikhBlessing | null {
-  if (id === null) {
-    return null;
-  }
-
-  return SIKH_BLESSINGS.find((blessing) => blessing.id === id) ?? null;
 }

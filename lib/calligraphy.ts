@@ -45,14 +45,11 @@ export type CalligraphyId =
   | "radheKrishna"
   | "shriGaneshaya"
   | "vivahotsav"
-  | "ikOnkarCalligraphy"
-  | "satnamWaheguru"
-  | "shubhVivaah"
-  | "guruKirpa"
   | "anandKaraj"
-  | "ikDoojeDeSang"
-  | "doRoohanIkRaah"
+  | "shubhViah"
+  | "satnamWaheguru"
   | "waheguru"
+  | "guruKirpa"
   | "sarbatDaBhala";
 
 /** Which ground the lettering is being laid on. */
@@ -138,14 +135,9 @@ function devanagari(
  * Both files share one box, as every pair here does.
  */
 function gurmukhi(slug: string, aspect: number, alt: string): CalligraphyArt {
-  return {
-    src: {
-      light: `/decor/sikh/${slug}-light.webp`,
-      dark: `/decor/sikh/${slug}-dark.webp`,
-    },
-    aspect,
-    alt,
-  };
+  const mask = `/decor/calligraphy/sikh/${slug}.webp`;
+
+  return { src: { light: mask, dark: mask }, aspect, alt, mask };
 }
 
 const ART: Record<CalligraphyId, CalligraphyArt> = {
@@ -240,52 +232,40 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
   radheKrishna: devanagari("radhe-krishna", 900 / 706, "Radhe Krishna"),
 
   /*
-    The nine Gurmukhi pieces, in the order the sheet set them out.
+    The six Gurmukhi pieces, in the order the panel offers them. Published as
+    shapes, like the Devanagari ones, and filled with the card's accent.
 
-    The alt text says what each piece is MEANT to read. It is not a claim that
-    the lettering in the artwork is spelt that way — that is a question for a
-    Punjabi reader looking at the files, and see the note above SIKH_ORNAMENTS
-    in lib/ornaments/sikh.tsx for why it matters more here than anywhere else.
+    Each was read letter by letter against the text beside it before it was
+    published, and each agrees: the letters, the vowel signs, the tippi in
+    ਆਨੰਦ, the bindi under ਸ਼, the sihari in ਸਤਿਨਾਮ and ਵਾਹਿਗੁਰੂ, the addak in
+    ਸਰਬੱਤ. That is a reading by eye against a font, not a Punjabi reader's
+    review, and it is worth one before a card is printed from these.
+
+    They replace nine earlier pieces. The four of those with no successor are
+    in RETIRED_CALLIGRAPHY below.
   */
-  ikOnkarCalligraphy: gurmukhi(
-    "ik-onkar",
-    434 / 324,
-    "Ik Onkar: One Creator",
-  ),
-  satnamWaheguru: gurmukhi(
-    "satnam-waheguru",
-    422 / 283,
-    "Satnam Waheguru",
-  ),
-  shubhVivaah: gurmukhi(
-    "shubh-vivaah",
-    471 / 359,
-    "Shubh Vivaah: an auspicious marriage",
-  ),
-  guruKirpa: gurmukhi(
-    "guru-kirpa",
-    453 / 270,
-    "Guru Kirpa Sada Rahe: with the Guru's blessings always",
-  ),
+  /* ਆਨੰਦ ਕਾਰਜ */
   anandKaraj: gurmukhi(
     "anand-karaj",
-    491 / 295,
+    900 / 387,
     "Anand Karaj: the Sikh wedding ceremony",
   ),
-  ikDoojeDeSang: gurmukhi(
-    "ik-dooje-de-sang",
-    442 / 269,
-    "Ik Dooje De Sang: together, in faith",
+  /* ਸ਼ੁਭ ਵਿਆਹ */
+  shubhViah: gurmukhi("shubh-viah", 900 / 455, "Shubh Viah: an auspicious marriage"),
+  /* ਸਤਿਨਾਮ ਵਾਹਿਗੁਰੂ */
+  satnamWaheguru: gurmukhi("satnam-waheguru", 900 / 326, "Satnam Waheguru"),
+  /* ਵਾਹਿਗੁਰੂ */
+  waheguru: gurmukhi("waheguru", 900 / 372, "Waheguru"),
+  /* ਗੁਰੂ ਕਿਰਪਾ ਸਦਾ ਰਹੇ */
+  guruKirpa: gurmukhi(
+    "guru-kirpa",
+    900 / 185,
+    "Guru Kirpa Sada Rahe: may the Guru's grace always remain",
   ),
-  doRoohanIkRaah: gurmukhi(
-    "do-roohan-ik-raah",
-    513 / 241,
-    "Do Roohan Ik Raah: two souls, one journey",
-  ),
-  waheguru: gurmukhi("waheguru", 392 / 289, "Waheguru: always with us"),
+  /* ਸਰਬੱਤ ਦਾ ਭਲਾ */
   sarbatDaBhala: gurmukhi(
     "sarbat-da-bhala",
-    471 / 182,
+    900 / 201,
     "Sarbat Da Bhala: may all be well",
   ),
 };
@@ -344,6 +324,15 @@ const RETIRED_CALLIGRAPHY: Readonly<Record<string, CalligraphyId>> = {
   mangalParinay: "shubhVivah",
   madhurMilan: "shubhVivah",
   shubhLabh: "shubhVivah",
+  /*
+    The four Sikh pieces that went when the set was replaced. A card saved with
+    one opens with Anand Karaj, the piece that names the ceremony itself. The
+    other five kept their ids and show the new artwork.
+  */
+  ikOnkarCalligraphy: "anandKaraj",
+  shubhVivaah: "anandKaraj",
+  ikDoojeDeSang: "anandKaraj",
+  doRoohanIkRaah: "anandKaraj",
 };
 
 /**

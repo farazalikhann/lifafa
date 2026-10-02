@@ -28,14 +28,11 @@ export type SikhOrnamentId =
     sheet. Ids here because the host switches them on from the same panel;
     the pack sends them to `calligraphyIds` and the head of the card.
   */
-  | "ikOnkarCalligraphy"
-  | "satnamWaheguru"
-  | "shubhVivaah"
-  | "guruKirpa"
   | "anandKaraj"
-  | "ikDoojeDeSang"
-  | "doRoohanIkRaah"
+  | "shubhViah"
+  | "satnamWaheguru"
   | "waheguru"
+  | "guruKirpa"
   | "sarbatDaBhala";
 
 /*
