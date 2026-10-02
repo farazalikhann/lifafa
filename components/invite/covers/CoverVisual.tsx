@@ -7,9 +7,10 @@ import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import PetalDustCover from "@/components/invite/covers/PetalDustCover";
 import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
-import { CURTAIN_FILMS, ENVELOPE_FILMS, PETAL_FILMS, filmFor } from "@/lib/coverVideos";
+import { CURTAIN_FILMS, ENVELOPE_FILMS, FOLD_FILMS, PETAL_FILMS, filmFor } from "@/lib/coverVideos";
 import { curtainArt } from "@/lib/curtainArt";
 import { envelopeArt } from "@/lib/envelopeArt";
+import { gatefoldArt } from "@/lib/gatefoldArt";
 import { petalCoverArt } from "@/lib/petalCoverArt";
 
 /*
@@ -30,6 +31,11 @@ const DRAWN_ENVELOPE: DrawnCover = {
 const DRAWN_PETALS: DrawnCover = {
   Component: PetalDustCover,
   images: (isLight) => petalCoverArt(isLight).images,
+};
+
+const DRAWN_FOLD: DrawnCover = {
+  Component: FoldUnfoldCover,
+  images: (isLight) => gatefoldArt(isLight).images,
 };
 
 /**
@@ -68,7 +74,14 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
       );
 
     case "fold-unfold":
-      return <FoldUnfoldCover {...state} />;
+      return (
+        <VideoCover
+          key={filmFor(FOLD_FILMS, state.colors.isLight).poster}
+          {...state}
+          films={FOLD_FILMS}
+          drawn={DRAWN_FOLD}
+        />
+      );
 
     case "petal-dust":
       return (

@@ -6,8 +6,7 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
-import { CURTAIN_FILMS, ENVELOPE_FILMS, PETAL_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
-import { gatefoldArt } from "@/lib/gatefoldArt";
+import { CURTAIN_FILMS, ENVELOPE_FILMS, FOLD_FILMS, PETAL_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -99,9 +98,14 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     sound: "fold",
     haptic: 10,
     supportsReducedMotion: true,
-    /* The doors fill the screen, and the visual letters the prompt under its ribbon. */
-    wordsOn: "visual",
-    art: gatefoldArt,
+    /* The doors fill the screen, so the prompt sits on a plaque of its own. */
+    wordsOn: "plaque",
+    /*
+      Played from film, dark or light; see lib/coverVideos.ts. The timings
+      above are the drawn cover's, which opens when the film cannot.
+    */
+    art: filmArt(FOLD_FILMS),
+    film: filmTiming(FOLD_FILMS),
   },
   {
     id: "petal-dust",

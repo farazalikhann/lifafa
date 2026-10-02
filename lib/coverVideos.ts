@@ -221,6 +221,40 @@ export const PETAL_FILMS: CoverFilmSet = {
   markExit: "drift",
 };
 
+/*
+  FOLD. Dark: frames 13-91 (0.54s to 3.83s): the ribbon starts down at 0.3s
+  and is gone by 1.7s, and the doors swing from 1.45s to 2.95s. Light: frames
+  17-95 (0.71s to 4.00s): ribbon 0.3s to 1.55s, doors 1.3s to 3.05s. In both
+  the doors open almost together, the left a quarter of a second ahead. The
+  film fades while they swing.
+
+  The sound has its two doors at 0.4s and 0.6s and its chime at 1.35s, so it
+  is held until its doors meet the film's.
+
+  The medallion's face is 152px across in the dark film and 124px in the light.
+*/
+export const FOLD_FILMS: CoverFilmSet = {
+  dark: film("fold-video", "fold-dark", {
+    lengthMs: 3290,
+    fadeStartMs: 1900,
+    fadeMs: 1250,
+    soundDelayMs: 1050,
+    surround: BLACK,
+    mark: { x: 540 / 1080, y: 1000 / 1920, width: 150 / 1080 },
+    ink: ENGRAVED,
+  }),
+  light: film("fold-video", "fold-light", {
+    lengthMs: 3290,
+    fadeStartMs: 1800,
+    fadeMs: 1350,
+    soundDelayMs: 900,
+    surround: IVORY,
+    mark: { x: 538 / 1080, y: 1074 / 1920, width: 122 / 1080 },
+    ink: ENGRAVED,
+  }),
+  markExit: "drop",
+};
+
 /** The film for a card whose ground is light, or dark. */
 export function filmFor(set: CoverFilmSet, isLight: boolean): CoverFilm {
   return isLight ? set.light : set.dark;
