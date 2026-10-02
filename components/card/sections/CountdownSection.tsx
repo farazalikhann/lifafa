@@ -8,6 +8,7 @@ import {
 } from "react";
 import Confetti from "@/components/card/Confetti";
 import CountdownTiles, { type TileUnit } from "@/components/card/CountdownTiles";
+import FrameStage from "@/components/card/FrameStage";
 import FramedScratch from "@/components/card/FramedScratch";
 import ScratchPanel, { type ScratchConfig } from "@/components/card/ScratchPanel";
 import { useInView } from "@/hooks/useInView";
@@ -104,10 +105,10 @@ function unitsOf(
   const counting = countdown !== null && countdown.kind === "counting" ? countdown : null;
 
   return [
-    { id: "days", label: copy.days, digits: counting === null ? "––" : pad(counting.days) },
-    { id: "hours", label: copy.hours, digits: counting === null ? "––" : pad(counting.hours) },
-    { id: "minutes", label: copy.minutes, digits: counting === null ? "––" : pad(counting.minutes) },
-    { id: "seconds", label: copy.seconds, digits: counting === null ? "––" : pad(counting.seconds) },
+    { id: "days", label: copy.days, shortLabel: copy.short.days, digits: counting === null ? "––" : pad(counting.days) },
+    { id: "hours", label: copy.hours, shortLabel: copy.short.hours, digits: counting === null ? "––" : pad(counting.hours) },
+    { id: "minutes", label: copy.minutes, shortLabel: copy.short.minutes, digits: counting === null ? "––" : pad(counting.minutes) },
+    { id: "seconds", label: copy.seconds, shortLabel: copy.short.seconds, digits: counting === null ? "––" : pad(counting.seconds) },
   ];
 }
 
@@ -120,7 +121,13 @@ function spokenCountdown(units: readonly TileUnit[]): string {
 }
 
 /**
- * A live count down to the celebration, as four tiles.
+ * A live count down to the celebration, as four tiles in a frame of roses.
+ *
+ * ALWAYS THE RECTANGLE. Four tiles in a row are wide and short, which is the
+ * rectangle's shape and not the oval's: set in the oval they were squeezed
+ * until their labels ran into each other. So the clock, and the line that
+ * replaces it on the day and after, sit in the rectangle on every card,
+ * whichever frame the host chose for their scratch panel.
  *
  * Renders nothing at all when the host has not set a date — CardCanvas filters
  * the section out of the running order in that case, so its divider goes with
@@ -151,6 +158,7 @@ export default function CountdownSection({
   dateScratch,
   sessionKey,
   language,
+  isWedding,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -165,6 +173,8 @@ export default function CountdownSection({
   sessionKey: string | null;
   /** The language the heading, the units and the closing line are written in. */
   language: CardLanguage;
+  /** A wedding card's clock counts down to the vows, and says so under itself. */
+  isWedding: boolean;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -366,38 +376,49 @@ export default function CountdownSection({
         either way, which is what lets a panel cover "the countdown" without
         having to know which of the two is in there today.
       */}
-      {panel === null ? (
-        counter
-      ) : panel.frame !== undefined ? (
-        /* The countdown's own panel, in its frame. The date's patch, below, is the plain one. */
+      {panel !== null && panel.frame !== undefined ? (
+        /* The countdown's own panel: foil over the frame's opening. */
         <FramedScratch
           {...panel}
-          frame={panel.frame}
+          frame="rect"
           onCoveredChange={handleCoveredChange}
         >
           {counter}
         </FramedScratch>
       ) : (
-        <div className="w-full">
-          <ScratchPanel
-            {...panel}
-            label={panel === dateScratch ? copy.scratch.hint : panel.label}
-            fit={closing === null ? "box" : "ink"}
-            fill={closing === null}
-            onCoveredChange={handleCoveredChange}
-          >
-            {counter}
-          </ScratchPanel>
-        </div>
+        <FrameStage frame="rect">
+          {panel === null ? (
+            counter
+          ) : (
+            /* The date's patch, which the clock would otherwise give away: the plain one, inside the frame. */
+            <div className="w-full">
+              <ScratchPanel
+                {...panel}
+                label={panel === dateScratch ? copy.scratch.hint : panel.label}
+                fit={closing === null ? "box" : "ink"}
+                fill={closing === null}
+                onCoveredChange={handleCoveredChange}
+              >
+                {counter}
+              </ScratchPanel>
+            </div>
+          )}
+        </FrameStage>
       )}
 
-      <div className={reveal} style={lineDelay(2)}>
-        <span
-          aria-hidden="true"
-          className="block h-px w-12"
-          style={{ backgroundColor: theme.accent, opacity: 0.45 }}
-        />
-      </div>
+      {/* What it is counting down to. Gone on the day and after, when the frame says it instead. */}
+      {closing === null ? (
+        <div className={reveal} style={lineDelay(2)}>
+          <p
+            className={`text-[calc(1*var(--card-rem,1rem))] ${
+              copy.script === "devanagari" ? "leading-[1.5]" : "italic"
+            }`}
+            style={{ color: theme.textMuted, fontFamily: "var(--card-heading)" }}
+          >
+            {isWedding ? copy.countdown.untilVows : copy.countdown.until}
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }

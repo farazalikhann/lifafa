@@ -414,6 +414,9 @@ const GATEFOLD = [
  * components/card/FramedScratch.tsx and components/card/FloralDivider.tsx.
  * These also arrived in the envelope's folder.
  *
+ * The frames are the second pair supplied, a slim vine of roses: the first
+ * pair were garlands thick enough to leave little room for what they framed.
+ *
  * A FRAME'S OPENING IS BLACK THE FLOOD CANNOT REACH: it is closed in by the
  * frame on every side. So is every gap between a scroll of gold and the rose
  * beside it. All of it is sheet, and is taken as the toran's pockets are:
@@ -427,12 +430,12 @@ const GATEFOLD = [
 const SCRATCH = [
   {
     name: "scratch-frame-oval",
-    file: "ChatGPT Image Oct 2, 2026, 11_59_52 AM.png",
+    file: "ChatGPT Image Oct 2, 2026, 03_22_26 PM.png",
     fit: { height: 900 },
   },
   {
     name: "scratch-frame-rect",
-    file: "ChatGPT Image Oct 2, 2026, 11_59_44 AM.png",
+    file: "ChatGPT Image Oct 2, 2026, 03_23_17 PM.png",
     fit: { width: 900 },
   },
 ].map((entry) => ({

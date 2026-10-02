@@ -9,11 +9,11 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import FrameStage from "@/components/card/FrameStage";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { useScratchReveal } from "@/components/card/ScratchReveal";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { SCRATCH_FOIL, scratchFrameArt } from "@/lib/cardDecor";
-import { cardRem } from "@/lib/cardScale";
 import type { ScratchFrame } from "@/types/card";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
@@ -98,10 +98,9 @@ const GOLD = ["#F8E7B0", "#E9C46A", "#D4A636", "#FFF4CF"] as const;
  * patch over the same secret, and a reload in the same session does not ask
  * again.
  *
- * THE FRAME DECIDES THE SIZE, not the words. A frame is a picture with one
- * shape, so the panel is as large as the frame is drawn and the words are set
- * inside its opening, brought down a size if they would not fit. That also
- * means nothing moves when it opens: the frame stays, and so does its height.
+ * THE FRAME DECIDES THE SIZE, not the words: see FrameStage, which is the
+ * frame and the fitting of what is set in it. That also means nothing moves
+ * when the panel opens: the frame stays, and so does its height.
  *
  * BACK TO FRONT: the words; the foil, a canvas cut to the opening's shape,
  * which is what is scratched away; the shimmer and the hint lying on the
@@ -141,8 +140,6 @@ export default function FramedScratch({
   const stageRef = useRef<HTMLDivElement>(null);
   const foilRef = useRef<HTMLCanvasElement>(null);
   const dustRef = useRef<HTMLCanvasElement>(null);
-  const wordsRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const shared = useScratchReveal(target);
@@ -152,8 +149,6 @@ export default function FramedScratch({
   const [announcement, setAnnouncement] = useState<string>("");
   /* The shimmer and the hint lie on the foil until the first stroke. */
   const [touched, setTouched] = useState<boolean>(false);
-  /* How far the words are brought down to fit the opening. */
-  const [fit, setFit] = useState<number>(1);
 
   const showFoil = phase !== "gone";
   const isCovered = phase === "hiding";
@@ -194,63 +189,6 @@ export default function FramedScratch({
     setAnnouncement(phrases.revealed);
     sharedReveal();
   }, [phrases.revealed, sharedReveal]);
-
-  /*
-    The words, fitted to the opening. Measured, because what is under the foil
-    is whatever the section hands over — two lines of a date, a venue and its
-    address, a clock — and the opening is one size.
-  */
-  useEffect(() => {
-    const box = wordsRef.current;
-    const content = contentRef.current;
-
-    if (box === null || content === null || typeof ResizeObserver !== "function") {
-      return;
-    }
-
-    const measure = (): void => {
-      const roomW = box.clientWidth;
-      const roomH = box.clientHeight;
-
-      if (roomW < 1 || roomH < 1 || content.offsetWidth < 1 || content.offsetHeight < 1) {
-        return;
-      }
-
-      /*
-        What the content really reaches to, not the box it was given: a row
-        of day, date and time is laid out wider than its own box and runs out
-        of it on both sides. A range over the content reports everything in
-        it, text included, as it is drawn — so through the scale already on
-        it, which is divided back out. Taken as twice the further reach from
-        the middle, since what overhangs need not overhang evenly.
-      */
-      const own = content.getBoundingClientRect();
-      const scale = own.width / content.offsetWidth || 1;
-      const range = document.createRange();
-      range.selectNodeContents(content);
-      const ink = range.getBoundingClientRect();
-      const midX = own.left + own.width / 2;
-      const midY = own.top + own.height / 2;
-      const needW = Math.max(
-        content.offsetWidth,
-        (2 * Math.max(midX - ink.left, ink.right - midX)) / scale,
-      );
-      const needH = Math.max(
-        content.offsetHeight,
-        (2 * Math.max(midY - ink.top, ink.bottom - midY)) / scale,
-      );
-
-      const next = Math.min(1, roomW / needW, roomH / needH);
-      setFit((current) => (Math.abs(current - next) < 0.01 ? current : next));
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(box);
-    observer.observe(content);
-
-    return () => observer.disconnect();
-  }, []);
 
   /*
     Everything the two canvases do. One effect, because the brush, the
@@ -732,42 +670,14 @@ export default function FramedScratch({
 
   return (
     <div className="flex max-w-full flex-col items-center">
-      {/*
-        A width of its own, in the card's rem so it grows with the type it
-        frames on a tablet or a laptop, and never more than the column:
-        everything inside it is placed absolutely, so it has no content to
-        take a width from, and inside a parent that shrinks to fit it would
-        otherwise be nothing wide.
-      */}
-      <div
-        ref={stageRef}
-        className="relative max-w-full"
-        style={{ width: cardRem(art.width / 16), aspectRatio: String(art.aspect) }}
-      >
-        {/* The words, in the opening. In the document from the first paint, whatever is over them. */}
-        <div
-          ref={wordsRef}
-          className={`absolute flex items-center justify-center ${isCovered ? "select-none" : ""}`}
-          style={boxOf(art.words)}
-        >
-          <div
-            ref={contentRef}
-            className="flex w-fit min-w-full shrink-0 flex-col items-center text-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none"
-            /*
-              As wide as the opening, unless something in it will not wrap — a
-              row of day, date and time — in which case it is as wide as that
-              needs, so the measurement above sees the whole of it and brings
-              it down to fit rather than letting it run under the frame.
-            */
-            style={{
-              /* Brought down to fit, and a touch further while covered, so it comes up as the foil goes. */
-              transform: `scale(${(fit * (isCovered && !reducedMotion ? 0.92 : 1)).toFixed(3)})`,
-            }}
-          >
-            {children}
-          </div>
-        </div>
-
+      <FrameStage
+        frame={frame}
+        stageRef={stageRef}
+        /* A touch smaller while covered, so the words come up as the foil goes. */
+        settle={isCovered && !reducedMotion}
+        locked={isCovered}
+        between={
+          <>
         {showFoil ? (
           <div
             className="absolute overflow-hidden"
@@ -835,16 +745,11 @@ export default function FramedScratch({
           />
         ) : null}
 
-        {/* The frame, on top, so its roses overlap the foil's edge. */}
-        <img
-          src={art.src}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          className="pointer-events-none absolute inset-0 h-full w-full select-none"
-        />
-      </div>
+          </>
+        }
+      >
+        {children}
+      </FrameStage>
 
       {/*
         Required, not a nicety: a guest using a switch, a head pointer or a

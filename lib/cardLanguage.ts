@@ -126,6 +126,12 @@ export interface CardCopy {
     begun: string;
     /** Instead of the clock, from the day after. */
     passed: string;
+    /** The four units again, short, for a tile too narrow for the word. */
+    short: { days: string; hours: string; minutes: string; seconds: string };
+    /** Under the clock on a card for two people: what it is counting down to. */
+    untilVows: string;
+    /** The same line on any other card. */
+    until: string;
   };
   venue: {
     namePlaceholder: string;
@@ -382,6 +388,9 @@ const ENGLISH: CardCopy = {
     seconds: "Seconds",
     begun: "The celebration has begun",
     passed: "Thank you for celebrating with us",
+    short: { days: "Days", hours: "Hrs", minutes: "Min", seconds: "Sec" },
+    untilVows: "until we say I do",
+    until: "until we celebrate",
   },
   venue: {
     namePlaceholder: "Venue name",
@@ -595,6 +604,9 @@ const HINDI: CardCopy = {
     seconds: "सेकंड",
     begun: "उत्सव शुरू हो चुका है",
     passed: "हमारी ख़ुशी में शामिल होने के लिए शुक्रिया",
+    short: { days: "दिन", hours: "घंटे", minutes: "मिनट", seconds: "सेकंड" },
+    untilVows: "शुभ घड़ी तक",
+    until: "शुभ घड़ी तक",
   },
   venue: {
     namePlaceholder: "स्थान का नाम",

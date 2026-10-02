@@ -577,6 +577,8 @@ function renderBlock(
   invite: CalendarInvite,
   language: CardLanguage,
   coverDecor: CoverDecor | null,
+  /** The venue is behind a scratch panel, so the date's screen does not name it until it opens. */
+  venueScratched: boolean,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -613,6 +615,9 @@ function renderBlock(
           pad={pad}
           scratch={scratch}
           language={language}
+          invite={invite}
+          occasionId={occasionId}
+          venueScratched={venueScratched}
         />
       );
     case "countdown":
@@ -626,6 +631,7 @@ function renderBlock(
           dateScratch={dateScratch}
           sessionKey={invite.url === null ? null : invite.code}
           language={language}
+          isWedding={occasionId === "wedding"}
         />
       );
     case "venue":
@@ -798,6 +804,15 @@ export default function CardCanvas({
     no panel there, only a line that waits for the venue's own.
   */
   const calendarAnchor = saveTheDateAnchor(visible);
+  /*
+    The date's own screen carries the "Save the date" heading and the calendar
+    button now (DetailsSection), so the block below is drawn only on a card
+    whose host has switched that section off: it is how such a card still
+    offers the button.
+  */
+  const hasDateScreen = visible.some(
+    (block) => block.kind === "builtin" && block.id === "details",
+  );
   /*
     The date's panel wherever else the date would show: the calendar page
     under the countdown, and the countdown itself, whose "80 days" would give
@@ -1611,6 +1626,7 @@ export default function CardCanvas({
               invite,
               language,
               isCover ? coverDecor : null,
+              concealed === "venue",
             );
 
             const head =
@@ -1751,7 +1767,7 @@ export default function CardCanvas({
                 */}
                 {headIsFirstScreen ? divider("head", false) : null}
                 {section}
-                {blockKey(block) === calendarAnchor ? saveTheDate : null}
+                {blockKey(block) === calendarAnchor && !hasDateScreen ? saveTheDate : null}
               </>
             );
 

@@ -36,24 +36,31 @@ export interface ScratchFrameArt {
 }
 
 /*
-  Measured on the published files: the oval's opening runs from 14.8% to 85.1%
-  across and 18.7% to 75.3% down, the rectangle's from 7.7% to 92.3% and 15.5%
-  to 73.2%.
+  Measured on the published files, which are the slim vine of roses: the
+  oval's opening runs from 7.9% to 92.1% across and 13.2% to 84.4% down, the
+  rectangle's from about 4.5% to 95.5% and 7.6% to 89.3%, less at its corners,
+  where a rose sits.
+
+  The oval's box of words is 56% by 50% about the opening's middle: its
+  corners are at 93% of the way to the ellipse, so nothing set in it reaches
+  the vine. The widths are what the frames are drawn at on a phone: the oval
+  about four fifths of the screen, the rectangle as wide as the column lets
+  it be.
 */
 const FRAMES: Record<ScratchFrame, ScratchFrameArt> = {
   oval: {
     src: "/decor/scratch/scratch-frame-oval.webp",
-    aspect: 609 / 900,
-    width: 300,
-    foil: { x: 0.128, y: 0.172, width: 0.744, height: 0.596 },
-    words: { x: 0.21, y: 0.31, width: 0.58, height: 0.32 },
+    aspect: 622 / 900,
+    width: 296,
+    foil: { x: 0.067, y: 0.12, width: 0.866, height: 0.736 },
+    words: { x: 0.22, y: 0.238, width: 0.56, height: 0.5 },
   },
   rect: {
     src: "/decor/scratch/scratch-frame-rect.webp",
-    aspect: 900 / 601,
-    width: 340,
-    foil: { x: 0.062, y: 0.135, width: 0.876, height: 0.615, round: 0.07 },
-    words: { x: 0.13, y: 0.215, width: 0.74, height: 0.455 },
+    aspect: 900 / 581,
+    width: 352,
+    foil: { x: 0.04, y: 0.07, width: 0.92, height: 0.835, round: 0.08 },
+    words: { x: 0.1, y: 0.19, width: 0.8, height: 0.62 },
   },
 };
 

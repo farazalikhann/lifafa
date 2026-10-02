@@ -44,6 +44,8 @@ function TickDigit({ value }: { value: string }): ReactElement {
 export interface TileUnit {
   id: string;
   label: string;
+  /** The label again, short, for a tile too narrow for the word: "Min" for "Minutes". */
+  shortLabel?: string;
   /** The digits to show, already padded; "––" before the first tick. */
   digits: string;
 }
@@ -76,9 +78,14 @@ export default function CountdownTiles({
   };
 
   return (
-    <div className="w-full">
+    /*
+      A container, so the labels answer to the width the tiles are given and
+      not to the screen: in a frame the row is narrower than the phone, and a
+      tile too narrow for "MINUTES" ran its label into its neighbour's.
+    */
+    <div className="@container w-full">
       <p className="sr-only">{label}</p>
-      <div className="mx-auto grid w-full max-w-[21rem] grid-cols-4 gap-2 sm:gap-2.5" aria-hidden="true">
+      <div className="mx-auto grid w-full max-w-[21rem] grid-cols-4 gap-2 @[19rem]:gap-2.5" aria-hidden="true">
         {units.map((unit) => (
           <div
             key={unit.id}
@@ -113,10 +120,12 @@ export default function CountdownTiles({
               </span>
             ) : (
               <span
-                className="text-[0.625rem] tracking-[0.18em] uppercase sm:text-[0.6875rem]"
+                className="max-w-full overflow-hidden text-[0.5625rem] tracking-[0.1em] whitespace-nowrap uppercase @[19rem]:text-[0.625rem] @[19rem]:tracking-[0.16em]"
                 style={{ color: theme.textMuted }}
               >
-                {unit.label}
+                {/* The word where a tile has the room for it, and its short form where it has not. */}
+                <span className="hidden @[19rem]:inline">{unit.label}</span>
+                <span className="@[19rem]:hidden">{unit.shortLabel ?? unit.label}</span>
               </span>
             )}
           </div>
