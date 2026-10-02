@@ -30,6 +30,7 @@ import {
   dividerArt,
   dividerStyleOf,
   scratchFrameOf,
+  type FrameArt,
 } from "@/lib/cardDecor";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import FloralDivider from "@/components/card/FloralDivider";
@@ -55,6 +56,7 @@ import {
   AboveNames,
   CORNER_INSET,
   CornerPieces,
+  SideFlag,
   cornerClearance,
 } from "@/components/card/decor/SlotOrnaments";
 import { resolveSlots, slottedIds } from "@/lib/ornaments/slots";
@@ -186,6 +188,9 @@ const DECOR_CEILING = 0.22;
  * because the border frame can push it further in, and a value that is
  * sometimes a class and sometimes a style is a value with two sources of truth.
  */
+/** The widest a frame round the names is drawn, in card px: seven tenths of the card. */
+const FRAME_WIDTH = 290;
+
 const ARCH_INSET_X = 16;
 const ARCH_INSET_TOP = 20;
 
@@ -562,6 +567,10 @@ interface CoverDecor {
   aboveNames: ReactNode;
   corners: ReactNode;
   bottomClearance: number;
+  /** The frame the names are set inside, for a pack that has one. */
+  frame: FrameArt | null;
+  /** The pair that stands either side of the names, for a pack that has one. */
+  sides: { left: ReactNode; right: ReactNode } | null;
 }
 
 function renderBlock(
@@ -604,6 +613,8 @@ function renderBlock(
           aboveNames={coverDecor?.aboveNames ?? null}
           corners={coverDecor?.corners ?? null}
           bottomClearance={coverDecor?.bottomClearance ?? 0}
+          frame={coverDecor?.frame ?? null}
+          sides={coverDecor?.sides ?? null}
         />
       );
     case "details":
@@ -978,6 +989,8 @@ export default function CardCanvas({
     slots.aboveNames,
     slots.corners?.left ?? null,
     slots.corners?.right ?? null,
+    slots.frame,
+    slots.sides,
   ]) {
     if (entry?.src !== undefined) {
       preload(entry.src, { as: "image" });
@@ -1091,9 +1104,36 @@ export default function CardCanvas({
   */
   const cornerInset = Math.max(CORNER_INSET, clearance.x);
   const coverDecor: CoverDecor | null =
-    slots.aboveNames === null && slots.corners === null
+    slots.aboveNames === null &&
+    slots.corners === null &&
+    slots.frame === null &&
+    slots.sides === null
       ? null
       : {
+          /*
+            The arch the names are set inside. Its doorway is the pack's own
+            measurement of its own picture; nothing here knows it is an arch.
+          */
+          frame:
+            slots.frame?.src !== undefined && pack?.frameOpening != null
+              ? {
+                  src: slots.frame.src,
+                  aspect: slots.frame.aspect,
+                  width: FRAME_WIDTH,
+                  words: pack.frameOpening,
+                }
+              : null,
+          sides:
+            slots.sides !== null
+              ? {
+                  left: (
+                    <SideFlag entry={slots.sides} side="left" accent={effectiveTheme.accent} />
+                  ),
+                  right: (
+                    <SideFlag entry={slots.sides} side="right" accent={effectiveTheme.accent} />
+                  ),
+                }
+              : null,
           aboveNames:
             slots.aboveNames !== null ? (
               <AboveNames entry={slots.aboveNames} accent={effectiveTheme.accent} />

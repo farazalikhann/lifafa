@@ -14,12 +14,18 @@ import type { TraditionId } from "@/types/occasion";
 
 /* --- The scratch panel's frame ------------------------------------------ */
 
-export interface ScratchFrameArt {
+/** A picture with an opening, and the box inside the opening that content is set in. */
+export interface FrameArt {
   src: string;
   /** Width over height of the picture. */
   aspect: number;
   /** As wide as the frame is drawn on a phone, in card pixels. */
   width: number;
+  /** The largest upright box the opening holds with air round it, as shares of the picture. */
+  words: { x: number; y: number; width: number; height: number };
+}
+
+export interface ScratchFrameArt extends FrameArt {
   /**
    * What the foil covers, as shares of the picture: a little more than the
    * opening, so its edge is under the frame's gold rule and the roses overlap

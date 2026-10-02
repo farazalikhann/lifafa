@@ -18,6 +18,7 @@
  *   node scripts/cut-flowers.mjs gatefold     just the fold cover's arch and ribbon
  *   node scripts/cut-flowers.mjs scratch      just the scratch panel's frames and foil
  *   node scripts/cut-flowers.mjs dividers     just the floral dividers
+ *   node scripts/cut-flowers.mjs sikh         just the Sikh pack's ornaments
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -479,6 +480,38 @@ const DIVIDERS = [
   alphaQuality: 78,
   source: ENVELOPE_SOURCE,
   out: join("public", "decor", "dividers"),
+}));
+
+/**
+ * The Sikh pack's ornaments, in gold: the khanda, the Nishan Sahib, a lotus,
+ * a phulkari band and a gurudwara arch. See lib/ornaments/sikh.tsx. Supplied
+ * in a folder of their own.
+ *
+ * Each keeps its own dark shading solid and gives up the sheet it closes in:
+ * the space between the khanda's ring and its blades, the windows of the
+ * arch's chhatris. The arch's doorway runs to the foot of the picture, so the
+ * flood from the edges takes that. The phulkari is a woven band with dark
+ * ground of its own between its flowers, so nothing inside it is taken, and
+ * it runs off both sides of the picture, so it is flooded from above and
+ * below only.
+ *
+ * The supplied Ik Onkar is not published. See the note on `ikOnkar` in
+ * lib/ornaments/sikh.tsx.
+ */
+const SIKH = [
+  { name: "khanda", file: "ChatGPT Image Oct 2, 2026, 04_12_14 PM.png", fit: { height: 260 }, pocketMin: 40 },
+  { name: "lotus-sikh", file: "ChatGPT Image Oct 2, 2026, 04_17_30 PM.png", fit: { width: 260 }, pocketMin: 40 },
+  { name: "nishan-sahib", file: "ChatGPT Image Oct 2, 2026, 04_17_48 PM.png", fit: { height: 360 }, pocketMin: 40 },
+  { name: "gurudwara-arch", file: "ChatGPT Image Oct 2, 2026, 04_17_03 PM.png", fit: { height: 900 }, pocketMin: 40, quality: 76, alphaQuality: 85 },
+  { name: "phulkari-border", file: "ChatGPT Image Oct 2, 2026, 04_17_18 PM.png", fit: { width: 1200 }, quality: 62, seeds: ["top", "bottom"] },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  source: "sikh religion",
+  out: join("public", "decor", "sikh"),
 }));
 
 /* --- On black ---------------------------------------------------------- */
@@ -1248,6 +1281,7 @@ const sets = [
   ...(which === "all" || which === "gatefold" ? GATEFOLD : []),
   ...(which === "all" || which === "scratch" ? SCRATCH : []),
   ...(which === "all" || which === "dividers" ? DIVIDERS : []),
+  ...(which === "all" || which === "sikh" ? SIKH : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

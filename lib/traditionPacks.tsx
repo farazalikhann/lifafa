@@ -71,6 +71,7 @@ import {
   JAIN_ORNAMENT_ASPECT,
 } from "@/lib/ornaments/jain";
 import {
+  GURUDWARA_ARCH_DOORWAY,
   SIKH_ORNAMENTS,
   SIKH_ORNAMENTS_NOTE,
   SIKH_ORNAMENT_ASPECT,
@@ -152,16 +153,27 @@ export interface PackOrnament {
  * loads, and where one of those has two ornaments in a place that now holds
  * one, the one picked last is the one drawn (see lib/ornaments/slots.ts).
  */
-export interface OrnamentSlots {
+interface OrnamentSlots {
   /** Hangs the full width of the card, just below the controls at its top. */
   top: readonly AnyOrnamentId[];
   /** Centred above the names. The only place a figure of a deity is drawn. */
   aboveNames: readonly AnyOrnamentId[];
   /**
    * The two bottom corners of the names' screen: the first stands at the
-   * left, the second at the right, and either alone stands in both.
+   * left, the second at the right, and either alone stands in both. A pack
+   * with one corner ornament names it twice.
    */
   corners: readonly [AnyOrnamentId, AnyOrnamentId];
+  /**
+   * Frames the names: the names, the title and the rule under it are set
+   * inside its opening. Absent for a pack with no such frame.
+   */
+  frame?: readonly AnyOrnamentId[];
+  /**
+   * Stands in the side margins of the names' screen, one on each side, the
+   * far one turned to face the other way. Absent for a pack with none.
+   */
+  sides?: readonly AnyOrnamentId[];
 }
 
 /**
@@ -175,7 +187,7 @@ export interface OrnamentSlots {
  * English one (inherited, never named here), the mantra at a medium size and
  * the shlok smaller, both regular.
  */
-export interface CardHeadType {
+interface CardHeadType {
   /** The font stack for the script lines, in place of the script's text face. */
   scriptFace: string;
   /** Size classes for the greeting's and the blessing's script line. */
@@ -228,7 +240,7 @@ export interface PackBlessing {
  * text sits in a span tagged hi". That is not expressible as a pair of values,
  * and a caller reconstructing it from parts is a caller that can get it wrong.
  */
-export type ScriptRun = (props: {
+type ScriptRun = (props: {
   children: string;
   className?: string;
   style?: CSSProperties;
@@ -309,6 +321,11 @@ export interface TraditionPack {
   slots: OrnamentSlots | null;
   /** How the card sets the greeting and blessing, or null for the default. */
   cardHead: CardHeadType | null;
+  /**
+   * The box inside the pack's frame that the names are set in, as shares of
+   * the frame's picture. Only for a pack whose slots have a `frame`.
+   */
+  frameOpening?: { x: number; y: number; width: number; height: number };
 }
 
 /**
@@ -598,9 +615,27 @@ const SIKH_PACK: TraditionPack = {
   findGreeting: (id) => find(SIKH_GREETING_ROWS, id),
   findBlessing: (id) => find(SIKH_BLESSING_ROWS, id),
   findOrnament: (id) => SIKH_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
-  coverArchId: "gurudwaraArch",
-  dividerId: "kandaFloralBorder",
-  slots: null,
+  /*
+    Neither any more: both ornaments have places of their own now. The arch is
+    a picture set round the names (`frame` below), not an outline stretched
+    over the cover, and the band is the top border, not the rule between
+    sections, which the card's garland divider has taken over.
+  */
+  coverArchId: null,
+  dividerId: null,
+  /*
+    The same ids the pack has always stored, read as places. A card saved
+    before there were places keeps every ornament it had; each simply moves to
+    where it belongs.
+  */
+  slots: {
+    top: ["kandaFloralBorder"],
+    aboveNames: ["ikOnkar", "khanda"],
+    corners: ["lotus", "lotus"],
+    frame: ["gurudwaraArch"],
+    sides: ["nishanSahibPennant"],
+  },
+  frameOpening: GURUDWARA_ARCH_DOORWAY,
   cardHead: null,
   /*
     Ik Onkar first, because it opens everything that follows it; then the

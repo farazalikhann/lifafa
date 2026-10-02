@@ -18,6 +18,12 @@ export type SikhOrnamentId =
   | "nishanSahibPennant"
   | "kandaFloralBorder"
   /*
+    Ik Onkar for the place above the names: the character itself, U+0A74, set
+    in the Gurmukhi face and drawn in gold. Not artwork of it. See the note on
+    it in lib/ornaments/sikh.tsx.
+  */
+  | "ikOnkar"
+  /*
     Calligraphy rather than shapes — Gurmukhi word-marks cut from one supplied
     sheet. Ids here because the host switches them on from the same panel;
     the pack sends them to `calligraphyIds` and the head of the card.

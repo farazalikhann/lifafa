@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
+import FrameStage from "@/components/card/FrameStage";
 import { useInView } from "@/hooks/useInView";
+import type { FrameArt } from "@/lib/cardDecor";
 import { CardFlourish } from "@/components/card/decor/DecorLayer";
 import {
   REVEAL_BASE,
@@ -79,6 +81,8 @@ export default function CoverSection({
   aboveNames = null,
   corners = null,
   bottomClearance = 0,
+  frame = null,
+  sides = null,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -120,6 +124,17 @@ export default function CoverSection({
    * larger of this and `pad`, so its content always ends above them.
    */
   bottomClearance?: number;
+  /**
+   * A frame the names are set inside: the gurudwara arch. The names, the
+   * title and the rule under them go in its opening, brought down a size if
+   * they would not fit, so nothing is ever over a pillar (FrameStage).
+   */
+  frame?: FrameArt | null;
+  /**
+   * The pair that stands either side of the names, already drawn: the one for
+   * the left margin and the one for the right. See SideFlag.
+   */
+  sides?: { left: ReactNode; right: ReactNode } | null;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -142,23 +157,17 @@ export default function CoverSection({
   */
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
 
-  return (
-    <section
-      ref={ref}
-      className="relative flex flex-col items-center justify-center px-7 text-center"
-      style={{
-        minHeight,
-        paddingTop: cardPx(pad),
-        paddingBottom: cardPx(Math.max(pad, bottomClearance)),
-        /*
-          1.25rem between the names, the title and the flourish. It
-          was 1.5, which spaced four short lines as four separate statements
-          and stood the group taller than the names needed; this reads as one
-          composed block while each line still has its own breath.
-        */
-        gap: `calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))`,
-      }}
-    >
+  const gap = "calc(1.25 * var(--card-rem, 1rem) * var(--card-gap-scale, 1))";
+
+  /*
+    A card with a frame or with side flags lays its lines out as one group, so
+    the group can be set inside the frame, or between the flags. Every other
+    card keeps its lines as the section's own children, exactly as before.
+  */
+  const grouped = frame !== null || sides !== null;
+
+  const lines = (
+    <>
       {aboveNames !== null ? (
         <div className={reveal} style={lineDelay(0)}>
           {aboveNames}
@@ -236,6 +245,65 @@ export default function CoverSection({
       <div className={reveal} style={lineDelay(stepAfterNames + 1)}>
         <CardFlourish accent={theme.accent} />
       </div>
+    </>
+  );
+
+  const group = !grouped ? (
+    lines
+  ) : frame !== null ? (
+    <FrameStage
+      art={frame}
+      /* As wide as the row leaves it, up to its own width: narrower between two flags. In the card's rem, so it grows with the type it frames. */
+      width={`min(100%, calc(${frame.width / 16} * var(--card-rem, 1rem)))`}
+      eager
+    >
+      {/*
+        As wide as its longest line wants, up to a limit, rather than as wide
+        as the doorway: a name is brought down a size to fit before it is
+        broken in the middle of a word.
+      */}
+      <div className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center" style={{ gap }}>
+        {lines}
+      </div>
+    </FrameStage>
+  ) : (
+    <div className="flex w-full flex-col items-center" style={{ gap }}>
+      {lines}
+    </div>
+  );
+
+  return (
+    <section
+      ref={ref}
+      className="relative flex flex-col items-center justify-center px-7 text-center"
+      style={{
+        minHeight,
+        paddingTop: cardPx(pad),
+        paddingBottom: cardPx(Math.max(pad, bottomClearance)),
+        /*
+          1.25rem between the names, the title and the flourish. It
+          was 1.5, which spaced four short lines as four separate statements
+          and stood the group taller than the names needed; this reads as one
+          composed block while each line still has its own breath.
+        */
+        gap,
+      }}
+    >
+      {sides !== null ? (
+        /*
+          Flag, names, flag: one row, top aligned, so the flags stand in the
+          upper part of the margins and are beside the names or the arch, never
+          over them. Let out into the section's own side padding, which is the
+          margin they stand in.
+        */
+        <div className="-mx-4 flex items-start justify-center gap-1.5 self-stretch">
+          {sides.left}
+          <div className="flex min-w-0 flex-1 justify-center">{group}</div>
+          {sides.right}
+        </div>
+      ) : (
+        group
+      )}
 
       {corners}
     </section>

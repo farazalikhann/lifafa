@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { scratchFrameArt } from "@/lib/cardDecor";
+import { scratchFrameArt, type FrameArt } from "@/lib/cardDecor";
 import { cardRem } from "@/lib/cardScale";
 import type { ScratchFrame } from "@/types/card";
 
@@ -31,13 +31,23 @@ import type { ScratchFrame } from "@/types/card";
  */
 export default function FrameStage({
   frame,
+  art: ownArt,
+  width,
+  eager = false,
   stageRef,
   settle = false,
   locked = false,
   between,
   children,
 }: {
-  frame: ScratchFrame;
+  /** One of the two frames of roses. Either this or `art`. */
+  frame?: ScratchFrame;
+  /** Any other frame: its picture, its proportions, and the box its opening holds. */
+  art?: FrameArt;
+  /** How wide it is drawn, as a CSS length, in place of the frame's own width. */
+  width?: string;
+  /** Fetched with the page rather than when scrolled to: a frame on the first screen. */
+  eager?: boolean;
   /** The stage itself, for a caller that draws over it. */
   stageRef?: Ref<HTMLDivElement>;
   /** Held a touch smaller, to come up to size when this goes false: a scratch panel's words as its foil goes. */
@@ -48,7 +58,7 @@ export default function FrameStage({
   between?: ReactNode;
   children: ReactNode;
 }): ReactElement {
-  const art = scratchFrameArt(frame);
+  const art: FrameArt = ownArt ?? scratchFrameArt(frame ?? "oval");
   const wordsRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   /* How far the content is brought down to fit the opening. */
@@ -153,7 +163,7 @@ export default function FrameStage({
     <div
       ref={stageRef}
       className="relative max-w-full"
-      style={{ width: cardRem(art.width / 16), aspectRatio: String(art.aspect) }}
+      style={{ width: width ?? cardRem(art.width / 16), aspectRatio: String(art.aspect) }}
     >
       {/* The content, in the opening. In the document from the first paint, whatever is over it. */}
       <div
@@ -187,7 +197,7 @@ export default function FrameStage({
       <img
         src={art.src}
         alt=""
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
         decoding="async"
         draggable={false}
         className="pointer-events-none absolute inset-0 h-full w-full select-none"

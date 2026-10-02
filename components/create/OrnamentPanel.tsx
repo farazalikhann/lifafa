@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { tapCalligraphy } from "@/lib/calligraphy";
-import { chosenIn, tapSlotted } from "@/lib/ornaments/slots";
+import { chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
 import type {
   PackBlessing,
   PackOrnament,
@@ -245,8 +245,9 @@ export default function OrnamentPanel({
     the plain grid below them.
   */
   const slots = pack.slots;
-  const slotted: readonly AnyOrnamentId[] =
-    slots === null ? [] : [...slots.top, ...slots.aboveNames, ...slots.corners];
+  const slotted: readonly AnyOrnamentId[] = slottedIds(pack);
+  /* A pack with one corner ornament names it for both corners; it is one tile. */
+  const cornerIds = slots === null ? [] : [...new Set(slots.corners)];
   const loose = shapes.filter((entry) => !slotted.includes(entry.id));
   const slotGroups =
     slots === null
@@ -254,8 +255,10 @@ export default function OrnamentPanel({
       : [
           { title: "Top border", ids: slots.top, oneOnly: true, columns: "grid-cols-2" },
           { title: "Above names", ids: slots.aboveNames, oneOnly: true, columns: "grid-cols-3" },
-          { title: "Bottom corners", ids: slots.corners, oneOnly: false, columns: "grid-cols-2" },
-        ];
+          { title: "Frame", ids: slots.frame ?? [], oneOnly: true, columns: "grid-cols-2" },
+          { title: "Side flags", ids: slots.sides ?? [], oneOnly: true, columns: "grid-cols-2" },
+          { title: "Bottom corners", ids: cornerIds, oneOnly: false, columns: "grid-cols-2" },
+        ].filter((group) => group.ids.length > 0);
 
   /* A place that holds one shows the one the card draws, even on an older card holding two. */
   const isShown = (ids: readonly AnyOrnamentId[], oneOnly: boolean, id: AnyOrnamentId): boolean =>

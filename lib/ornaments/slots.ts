@@ -16,7 +16,13 @@ export function slottedIds(pack: TraditionPack | null): readonly AnyOrnamentId[]
     return [];
   }
 
-  return [...pack.slots.top, ...pack.slots.aboveNames, ...pack.slots.corners];
+  return [
+    ...pack.slots.top,
+    ...pack.slots.aboveNames,
+    ...pack.slots.corners,
+    ...(pack.slots.frame ?? []),
+    ...(pack.slots.sides ?? []),
+  ];
 }
 
 /**
@@ -48,9 +54,19 @@ export interface ChosenSlots {
   top: PackOrnament | null;
   aboveNames: PackOrnament | null;
   corners: CornerPair | null;
+  /** What the names are set inside, for a pack that has a frame. */
+  frame: PackOrnament | null;
+  /** What stands in the side margins of the names' screen, for a pack that has one. */
+  sides: PackOrnament | null;
 }
 
-const NOTHING: ChosenSlots = { top: null, aboveNames: null, corners: null };
+const NOTHING: ChosenSlots = {
+  top: null,
+  aboveNames: null,
+  corners: null,
+  frame: null,
+  sides: null,
+};
 
 /** What the card draws in each place. Every place empty for a pack without slots. */
 export function resolveSlots(
@@ -72,12 +88,15 @@ export function resolveSlots(
   return {
     top: find(chosenIn(pack.slots.top, enabled)),
     aboveNames: find(chosenIn(pack.slots.aboveNames, enabled)),
+    /* Two different ornaments each keep their own way round; one in both corners is turned on the right. */
     corners:
-      left !== null && right !== null
+      left !== null && right !== null && leftId !== rightId
         ? { left, right, mirrorRight: false }
         : only !== null
           ? { left: only, right: only, mirrorRight: true }
           : null,
+    frame: find(chosenIn(pack.slots.frame ?? [], enabled)),
+    sides: find(chosenIn(pack.slots.sides ?? [], enabled)),
   };
 }
 
@@ -107,7 +126,11 @@ export function tapSlotted(
         ? slots.top
         : slots.aboveNames.includes(id)
           ? slots.aboveNames
-          : null;
+          : (slots.frame ?? []).includes(id)
+            ? (slots.frame ?? [])
+            : (slots.sides ?? []).includes(id)
+              ? (slots.sides ?? [])
+              : null;
 
   const cleared =
     place === null ? enabled : enabled.filter((current) => !place.includes(current));

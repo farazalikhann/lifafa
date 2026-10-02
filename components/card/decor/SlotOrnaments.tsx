@@ -5,8 +5,10 @@ import type { CornerPair } from "@/lib/ornaments/slots";
 import type { PackOrnament } from "@/lib/traditionPacks";
 
 /**
- * The two slotted places drawn on the names' screen: the ornament above the
- * names, and the pair in its bottom corners. The top border is HangingLayer's.
+ * The slotted places drawn on the names' screen: the ornament above the
+ * names, the pair in its bottom corners, and the pair that stands either side
+ * of it. The top border is HangingLayer's, and a frame round the names is
+ * FrameStage's.
  *
  * Both are laid out by CoverSection rather than pinned over the card like the
  * scatter, and that is the whole of how they keep off the writing. The one
@@ -19,10 +21,10 @@ import type { PackOrnament } from "@/lib/traditionPacks";
  */
 
 /** Height of the ornament above the names, in card px. */
-export const ABOVE_NAMES_HEIGHT = 60;
+const ABOVE_NAMES_HEIGHT = 60;
 
 /** Height of each corner ornament, in card px — the same for both, whatever their shapes. */
-export const CORNER_HEIGHT = 64;
+const CORNER_HEIGHT = 64;
 
 /** How far in from the card's edges the corners stand, in card px, before a border asks for more. */
 export const CORNER_INSET = 14;
@@ -90,6 +92,40 @@ export function AboveNames({
         height={ABOVE_NAMES_HEIGHT}
         instanceId={`above-names-${entry.id}`}
         accent={accent}
+      />
+    </div>
+  );
+}
+
+/** Height of an ornament standing in a side margin, in card px. */
+const SIDE_HEIGHT = 112;
+
+/**
+ * One of the pair that stands either side of the names: the Nishan Sahib.
+ *
+ * Laid out by CoverSection in a row with what it flanks — flag, names, flag —
+ * so it cannot be over the names or the pillars of an arch: they are beside
+ * each other, not on top of each other. Drawn as supplied on the right, where
+ * the flag flies out to the right; turned on the left, so that one flies
+ * outward too. The staff stands nearest the names on both.
+ */
+export function SideFlag({
+  entry,
+  side,
+  accent,
+}: {
+  entry: PackOrnament;
+  side: "left" | "right";
+  accent: string;
+}): ReactElement {
+  return (
+    <div aria-hidden="true" className="pointer-events-none shrink-0">
+      <Placed
+        entry={entry}
+        height={SIDE_HEIGHT}
+        instanceId={`side-${side}-${entry.id}`}
+        accent={accent}
+        style={side === "left" ? { transform: "scaleX(-1)" } : undefined}
       />
     </div>
   );

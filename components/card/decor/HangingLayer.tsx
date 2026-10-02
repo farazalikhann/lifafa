@@ -113,13 +113,13 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   ],
 
   /*
-    The Nishan Sahib flies from a staff, so it hangs from the top edge the way a
-    banner does. Two of them, framing the head of the card rather than centred,
-    which would put a flag straight through the greeting.
+    The phulkari band, across the top as the Hindu pack's garland is. The
+    Nishan Sahib used to hang here, two of them, swinging: it is a flag on a
+    staff, which stands, and it stands beside the names now (see `sides` in
+    OrnamentSlots).
   */
   sikh: [
-    { id: "nishanSahibPennant", xPercent: 13, topPercent: 2, sizeRem: 3.6, delayMs: 0, swing: true },
-    { id: "nishanSahibPennant", xPercent: 87, topPercent: 9, sizeRem: 3.1, delayMs: 1500, swing: true },
+    { id: "kandaFloralBorder", xPercent: 50, topPercent: 0, sizeRem: 0, delayMs: 0, swing: false, fullWidth: true },
   ],
 
   /* Bells centred and swinging; the rings dangle either side of them. */

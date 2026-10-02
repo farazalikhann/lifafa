@@ -1,280 +1,145 @@
-import { Frame, calligraphyOrnament, flowerPath, leafPath, r2 } from "@/lib/ornaments/frame";
+import { calligraphyOrnament, imageOrnament } from "@/lib/ornaments/frame";
 import type { Ornament } from "@/lib/ornaments/frame";
 import { calligraphyAspect } from "@/lib/calligraphy";
 import type { SikhOrnamentId } from "@/types/sikhOrnament";
 
 /**
- * Hand drawn Sikh ornament pack.
+ * The Sikh ornament pack: five photographs of gold work, and one character.
  *
- * Same rules as every other pack: stroke based line art in `currentColor`, each
- * shape carrying a second layer of drawing — a vein, a rib, an inner tracery —
- * beyond the silhouette, because at 64px a bare outline reads as one blown-up
- * icon rather than as ornament. Nothing here is filled.
+ * The khanda, the Nishan Sahib, the lotus, the phulkari band and the
+ * gurudwara arch were line drawings in the card's accent. They are pictures
+ * now, cut out of the supplied artwork by scripts/cut-flowers.mjs and
+ * published to public/decor/sikh/, under the ids the drawings had: a card
+ * saved with any of them loads as it always did and shows the picture.
  *
- * NO FIGURE IS DRAWN. No Guru, no human, no face, not even a stylised one.
- * These are emblems, architecture and plants. That rule is not inherited from
- * the Muslim pack's reasoning — it is this tradition's own, and it is not up
- * for reopening per ornament.
+ * EACH HAS A PLACE, and is drawn there and nowhere else — see `slots` on the
+ * Sikh pack in lib/traditionPacks.tsx. The khanda, Ik Onkar and the Nishan
+ * Sahib are emblems of the faith, not decoration to be sprinkled: none of
+ * them is ever scattered behind the writing or stood at the foot of the card,
+ * and the khanda and Ik Onkar are never mirrored or turned (`uprightOnly`).
  *
- * THE IK ONKAR GLYPH IS DELIBERATELY ABSENT. It was asked for and is not here;
- * see the note above SIKH_ORNAMENTS at the bottom of this file for why, and for
- * what to do instead.
- *
- * No Gurmukhi is drawn either. Script belongs in lib/gurmukhiContent.ts, where
- * it is reviewed and can be corrected; a letterform baked into a path cannot.
+ * NO FIGURE IS DRAWN. No Guru, no human, no face. Emblems, architecture and
+ * plants.
  */
 
 /* ---------------------------------------------------------------------------
-   Khanda
+   Ik Onkar
    --------------------------------------------------------------------------- */
 
 /**
- * The emblem: the straight double-edged khanda up the middle, the chakkar ring
- * around it, and the two kirpans crossing behind.
+ * Ik Onkar, as the character it is: ੴ, U+0A74, set in Noto Sans Gurmukhi —
+ * the face app/layout.tsx already loads for every Gurmukhi line on the card —
+ * and filled with gold, over a shade of itself for depth.
  *
- * Objects and geometry only, which is what this emblem is made of.
- */
-export const Khanda: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 64 64"
-    aspect={SIKH_ORNAMENT_ASPECT.khanda}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.4}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/*
-      Chakkar — the ring, held well inside the blades. It was drawn at nearly
-      the kirpans' own radius before, and the three merged into one bracket
-      shape at chip size; pulling it in is what lets each read separately.
-    */}
-    <circle cx={32} cy={36} r={12.4} />
-    <circle cx={32} cy={36} r={9.6} />
-
-    {/*
-      Kirpans: one sweeping stroke each, curving out and back in to the tip,
-      with a cross guard and pommel at the foot. Single stroke rather than two
-      edges, so a blade stays a blade rather than closing into a lozenge.
-    */}
-    <path d="M 22 58 C 11 49 7.4 35 12 23.4 C 13.6 19.4 16.6 16.6 20 15.6" />
-    <path d="M 19 55.6 L 25.4 61" />
-    <circle cx={26.8} cy={62.4} r={1.8} />
-
-    <path d="M 42 58 C 53 49 56.6 35 52 23.4 C 50.4 19.4 47.4 16.6 44 15.6" />
-    <path d="M 45 55.6 L 38.6 61" />
-    <circle cx={37.2} cy={62.4} r={1.8} />
-
-    {/* Khanda — narrow, double edged, tapering to a point, with a central rib. */}
-    <path d="M 32 6 C 29.6 12 28.6 18 28.6 25 C 28.6 32 30 38 32 43 C 34 38 35.4 32 35.4 25 C 35.4 18 34.4 12 32 6 Z" />
-    <path d="M 32 11 V 39" />
-  </Frame>
-);
-
-/* ---------------------------------------------------------------------------
-   Gurudwara arch
-   --------------------------------------------------------------------------- */
-
-/**
- * A doorway under a fluted onion dome, open at the foot so content can sit
- * inside it. Architecture only.
- */
-export const GurudwaraArch: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 100 140"
-    aspect={SIKH_ORNAMENT_ASPECT.gurudwaraArch}
-    size={size}
-    strokeWidth={strokeWidth ?? 2}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/* Finial above the dome. */}
-    <path d="M 50 4 V 12" />
-    <circle cx={50} cy={2.6} r={1.6} />
-
-    {/* Onion dome: shoulders wider than its base, drawn as one closed sweep. */}
-    <path d="M 50 12 C 40 22 30 32 30 44 C 30 55 39 62 50 62 C 61 62 70 55 70 44 C 70 32 60 22 50 12 Z" />
-    {/* Two flutes, the dome's second layer. */}
-    <path d="M 42 18.6 C 36.6 28 34.4 36 35.4 46.6" />
-    <path d="M 58 18.6 C 63.4 28 65.6 36 64.6 46.6" />
-
-    {/* Plinth the dome stands on. */}
-    <path d="M 26 62 H 74" />
-    <path d="M 29 68 H 71" />
-
-    {/* Jambs, and the cusped arch between them. Open at the bottom. */}
-    <path d="M 24 138 V 92 C 24 78 36 68 50 68 C 64 68 76 78 76 92 V 138" />
-    <path d="M 32 138 V 94 C 32 84 40 76.6 50 76.6 C 60 76.6 68 84 68 94 V 138" />
-
-    {/* Springline imposts. */}
-    <path d="M 24 94 H 32 M 68 94 H 76" />
-  </Frame>
-);
-
-/* ---------------------------------------------------------------------------
-   Lotus
-   --------------------------------------------------------------------------- */
-
-/** Eight open petals with an inner rosette. */
-export const Lotus: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 64 64"
-    aspect={SIKH_ORNAMENT_ASPECT.lotus}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.4}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/* Outer petals, splayed from a common base at the flower's foot. */}
-    {[
-      [6.5, 34],
-      [14, 20],
-      [26, 13],
-      [38, 13],
-      [50, 20],
-      [57.5, 34],
-    ].map(([tipX, tipY]) => (
-      <path key={`${tipX}-${tipY}`} d={leafPath(32, 47, tipX, tipY, 11)} />
-    ))}
-
-    {/* Cup the petals rise out of, and its rib — the second layer. */}
-    <path d="M 15 41 C 20 51.6 44 51.6 49 41" />
-    <path d="M 21 45.6 C 25 49.6 39 49.6 43 45.6" />
-
-    {/* Heart of the flower. */}
-    <path d={flowerPath(32, 34, 7.4, 6, 0.56)} />
-    <circle cx={32} cy={34} r={2.6} />
-  </Frame>
-);
-
-/* ---------------------------------------------------------------------------
-   Nishan Sahib pennant
-   --------------------------------------------------------------------------- */
-
-/**
- * The triangular pennant on its staff.
+ * THE SUPPLIED ARTWORK IS NOT USED, AND THIS IS WHY. A gold Ik Onkar was
+ * supplied with the other five pictures. Set beside the character from the
+ * font, its arc is different: in the character the stroke that rises from the
+ * head of the letter is one open sweep over it, ending in a hook at the far
+ * right. In the artwork that stroke comes back down onto the right end of the
+ * top bar, closing the space above the bar, and a second arc rises from
+ * there. The numeral, the bar, the middle stroke and the bowl agree; the arc
+ * does not. This is the opening of the Mool Mantar, and a letterform that is
+ * nearly right is wrong. A font's glyph is the character by construction, so
+ * the font is what is drawn. If corrected artwork arrives, it goes in PICTURES
+ * below under this id and nothing else changes.
  *
- * The flag carries a small ring-and-blade mark rather than a full khanda: at
- * the size this hangs, a complete emblem inside a 30px triangle is a blot, and
- * an emblem rendered as a blot is worse than one suggested.
+ * An svg rather than a span of text, so it is sized by `size` like every
+ * other ornament. The viewBox is the glyph's own inked box at a 100 unit em,
+ * measured: 4 to 162 across, 89 above the baseline and 1 below.
  */
-export const NishanSahibPennant: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 56 88"
-    aspect={SIKH_ORNAMENT_ASPECT.nishanSahibPennant}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.6}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/* Staff, with a finial at the head and a collar below the flag. */}
-    <circle cx={12} cy={5.6} r={2.2} />
-    <path d="M 12 7.8 V 82" />
-    <path d="M 8.6 46 H 15.4" />
+const IK_ONKAR_BOX = { width: 166, height: 98 } as const;
 
-    {/* Pennant: a long triangle with a swallow tail cut into its fly. */}
-    <path d="M 12 12 L 50 24.6 L 38 30 L 50 35.4 L 12 44 Z" />
+const IkOnkar: Ornament = ({ size = 64, className, style, instanceId = "ik-onkar" }) => {
+  const gradient = `${instanceId}-gold`;
+  const glyph = {
+    x: 0,
+    y: 93,
+    fontSize: 100,
+    fontWeight: 700,
+    style: { fontFamily: "var(--font-gurmukhi), 'Noto Sans Gurmukhi', sans-serif" },
+  };
 
-    {/* Mark on the field — ring and upright blade, not a full khanda. */}
-    <circle cx={24.6} cy={27.6} r={4.4} />
-    <path d="M 24.6 21 C 23 23.6 23 31.6 24.6 34.2 C 26.2 31.6 26.2 23.6 24.6 21 Z" />
-
-    {/* Tassel at the staff's foot. */}
-    <path d="M 12 82 L 8.4 87 M 12 82 L 12 87.4 M 12 82 L 15.6 87" />
-  </Frame>
-);
+  return (
+    <svg
+      viewBox={`0 0 ${IK_ONKAR_BOX.width} ${IK_ONKAR_BOX.height}`}
+      width={className === undefined ? Math.round(size) : undefined}
+      height={
+        className === undefined
+          ? Math.round((size * IK_ONKAR_BOX.height) / IK_ONKAR_BOX.width)
+          : undefined
+      }
+      className={className ?? "block max-w-none select-none"}
+      style={style}
+      lang="pa"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#F8E3A1" />
+          <stop offset="0.45" stopColor="#E0B65A" />
+          <stop offset="1" stopColor="#A9782A" />
+        </linearGradient>
+      </defs>
+      {/* Its own shade, a hair down and to the right: the look of a thing raised off the page. */}
+      <text {...glyph} x={1.6} y={95} fill="#5E3D0C" opacity={0.55}>
+        ੴ
+      </text>
+      <text {...glyph} fill={`url(#${gradient})`}>
+        ੴ
+      </text>
+    </svg>
+  );
+};
 
 /* ---------------------------------------------------------------------------
-   Kanda floral border
+   The pictures
    --------------------------------------------------------------------------- */
 
-/** One repeat of the vine, in viewBox units. Four repeats fill the 160 box. */
-const BORDER_UNIT = 40;
-const BORDER_REPEATS = 4;
+/** The published files, and each one's width over its height. */
+const PICTURES = {
+  khanda: { src: "/decor/sikh/khanda.webp", aspect: 240 / 260 },
+  lotus: { src: "/decor/sikh/lotus-sikh.webp", aspect: 260 / 220 },
+  nishanSahibPennant: { src: "/decor/sikh/nishan-sahib.webp", aspect: 171 / 360 },
+  gurudwaraArch: { src: "/decor/sikh/gurudwara-arch.webp", aspect: 601 / 900 },
+  kandaFloralBorder: { src: "/decor/sikh/phulkari-border.webp", aspect: 1200 / 190 },
+} as const;
 
-/**
- * A running floral band: a stem swinging above and below the centre line, a
- * five petal bloom on each crest and a paired leaf in each trough.
- */
-export const KandaFloralBorder: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 160 28"
-    aspect={SIKH_ORNAMENT_ASPECT.kandaFloralBorder}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.3}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {Array.from({ length: BORDER_REPEATS }, (_unused, index) => {
-      const x = index * BORDER_UNIT;
-
-      return (
-        <g key={x}>
-          {/* Stem: one crest, one trough, so repeats join without a kink. */}
-          <path
-            d={`M ${x} 14 C ${r2(x + 6)} 5 ${r2(x + 14)} 5 ${r2(x + 20)} 14 C ${r2(x + 26)} 23 ${r2(x + 34)} 23 ${r2(x + 40)} 14`}
-          />
-          {/* Bloom on the crest. */}
-          <path d={flowerPath(x + 10, 7.4, 4.2, 5, 0.58)} />
-          <circle cx={x + 10} cy={7.4} r={1.3} />
-          {/* Paired leaves in the trough. */}
-          <path d={leafPath(x + 30, 20.6, x + 24.6, 25.4, 3.4)} />
-          <path d={leafPath(x + 30, 20.6, x + 35.4, 25.4, 3.4)} />
-        </g>
-      );
-    })}
-
-    {/* End caps, so the run reads as a finished band and not a cropped one. */}
-    <circle cx={2.2} cy={14} r={1.6} />
-    <circle cx={157.8} cy={14} r={1.6} />
-  </Frame>
+const Khanda = imageOrnament(PICTURES.khanda.src, PICTURES.khanda.aspect);
+const Lotus = imageOrnament(PICTURES.lotus.src, PICTURES.lotus.aspect);
+const NishanSahibPennant = imageOrnament(
+  PICTURES.nishanSahibPennant.src,
+  PICTURES.nishanSahibPennant.aspect,
+);
+const GurudwaraArch = imageOrnament(PICTURES.gurudwaraArch.src, PICTURES.gurudwaraArch.aspect);
+const KandaFloralBorder = imageOrnament(
+  PICTURES.kandaFloralBorder.src,
+  PICTURES.kandaFloralBorder.aspect,
 );
 
+/**
+ * Where the gurudwara arch's doorway is, as shares of its picture: the box
+ * the names are set in, clear of the pillars either side and of the cusped
+ * arch above. Measured on the published file, whose doorway runs from 15.5%
+ * to 84.5% across between the pillars, under an arch whose crown is at 25%
+ * and whose springing is at about 40%.
+ */
+export const GURUDWARA_ARCH_DOORWAY = { x: 0.215, y: 0.385, width: 0.57, height: 0.555 } as const;
+
 /* ---------------------------------------------------------------------------
+   Registry
+   --------------------------------------------------------------------------- *//* ---------------------------------------------------------------------------
    Registry
    --------------------------------------------------------------------------- */
 
 /** Each drawing's width over its height, from its own viewBox. */
 export const SIKH_ORNAMENT_ASPECT: Record<SikhOrnamentId, number> = {
-  khanda: 1,
-  gurudwaraArch: 100 / 140,
-  lotus: 1,
-  nishanSahibPennant: 56 / 88,
-  kandaFloralBorder: 160 / 28,
+  khanda: PICTURES.khanda.aspect,
+  gurudwaraArch: PICTURES.gurudwaraArch.aspect,
+  lotus: PICTURES.lotus.aspect,
+  nishanSahibPennant: PICTURES.nishanSahibPennant.aspect,
+  kandaFloralBorder: PICTURES.kandaFloralBorder.aspect,
+  ikOnkar: IK_ONKAR_BOX.width / IK_ONKAR_BOX.height,
   /* Not viewBoxes: the published crops each calligraphy's pair of files shares. */
   ikOnkarCalligraphy: calligraphyAspect("ikOnkarCalligraphy"),
   satnamWaheguru: calligraphyAspect("satnamWaheguru"),
@@ -297,6 +162,10 @@ export interface SikhOrnamentEntry {
   chipSize: number;
   /** Whether this ornament may only be placed in the card's top region. */
   topRegionOnly: boolean;
+  /** The published file, for the card to preload. Absent for Ik Onkar, which is type. */
+  src?: string;
+  /** Never mirrored and never turned: an emblem, not a pattern. */
+  uprightOnly?: boolean;
 }
 
 /* ---------------------------------------------------------------------------
@@ -308,66 +177,51 @@ export interface SikhOrnamentEntry {
  * lib/ornaments/frame.tsx. lib/calligraphy.ts holds their files, what each is
  * meant to say, and how the dark version was made.
  */
-export const IkOnkarCalligraphy = calligraphyOrnament("ikOnkarCalligraphy");
-export const SatnamWaheguru = calligraphyOrnament("satnamWaheguru");
-export const AnandKaraj = calligraphyOrnament("anandKaraj");
-export const ShubhVivaah = calligraphyOrnament("shubhVivaah");
-export const GuruKirpa = calligraphyOrnament("guruKirpa");
-export const IkDoojeDeSang = calligraphyOrnament("ikDoojeDeSang");
-export const DoRoohanIkRaah = calligraphyOrnament("doRoohanIkRaah");
-export const Waheguru = calligraphyOrnament("waheguru");
-export const SarbatDaBhala = calligraphyOrnament("sarbatDaBhala");
+const IkOnkarCalligraphy = calligraphyOrnament("ikOnkarCalligraphy");
+const SatnamWaheguru = calligraphyOrnament("satnamWaheguru");
+const AnandKaraj = calligraphyOrnament("anandKaraj");
+const ShubhVivaah = calligraphyOrnament("shubhVivaah");
+const GuruKirpa = calligraphyOrnament("guruKirpa");
+const IkDoojeDeSang = calligraphyOrnament("ikDoojeDeSang");
+const DoRoohanIkRaah = calligraphyOrnament("doRoohanIkRaah");
+const Waheguru = calligraphyOrnament("waheguru");
+const SarbatDaBhala = calligraphyOrnament("sarbatDaBhala");
 
 /**
- * The pack, in the order the editor lays out its chips.
+ * The pack. The first six have places on the card (see `slots` on the Sikh
+ * pack) and the editor groups them by place; the rest are calligraphy.
  *
- * IK ONKAR IS NOT DRAWN IN THIS FILE, AND ITS ABSENCE IS THE DECISION, not an
- * oversight. It was asked for with the option to omit it and say so, and this
- * is me saying so.
- *
- * What the list below does now carry is `ikOnkarCalligraphy` — supplied artwork
- * of the glyph, published as it was given, not a letterform reconstructed here.
- * That removes the half of the objection below that was about reconstructing
- * it from memory. It does not remove the other half. A raster cannot be
- * corrected the way a string can: if a letter in that artwork is wrong, the fix
- * is new artwork, and until then it is wrong at the head of somebody's wedding
- * invitation. Which is why it, and every Gurmukhi piece beside it, wants a
- * Punjabi reader to check the spelling in the files themselves before it ships
- * — the same standard lib/gurmukhiContent.ts holds its strings to, applied to
- * the only form of the text that exists here. The sheet these came from reads
- * as machine-made, and machine-made Gurmukhi is where letters go wrong.
- *
- * The Ik Onkar glyph is not a decorative mark; it is the opening of the Mool Mantar, and it is a
- * script character. Drawing it means reconstructing a specific letterform from
- * memory and freezing it in a path — which is the one thing the content rule
- * for this whole feature forbids, and which nobody could later correct in
- * lib/gurmukhiContent.ts the way a string can be corrected. A khanda drawn
- * slightly wrong is a slightly wrong ornament. A sacred glyph drawn slightly
- * wrong is a different character, shipped at the head of somebody's wedding
- * invitation.
- *
- * If it should appear on a card, the right route is already built: add it as
- * the `ikOnkar` GREETING in lib/gurmukhiContent.ts, where it is real text in a
- * real Gurmukhi face, correctable under review, selectable, and read out rather
- * than hidden behind aria-hidden as every ornament here is. That entry exists
- * and is waiting for its string.
+ * Two Ik Onkars, and they are different things. `ikOnkar` is the character,
+ * in gold, for the place above the names. `ikOnkarCalligraphy` is one of the
+ * nine word-marks that head the card: supplied artwork, published as it was
+ * given, which still wants a Punjabi reader to check it against the files, as
+ * every Gurmukhi piece beside it does.
  */
 export const SIKH_ORNAMENTS: readonly SikhOrnamentEntry[] = [
   {
-    id: "nishanSahibPennant",
-    label: "Nishan Sahib",
-    Component: NishanSahibPennant,
-    chipSize: 40,
-    topRegionOnly: false,
-  },
-  { id: "khanda", label: "Khanda", Component: Khanda, chipSize: 36, topRegionOnly: false },
-  { id: "lotus", label: "Lotus", Component: Lotus, chipSize: 36, topRegionOnly: false },
-  {
     id: "kandaFloralBorder",
-    label: "Floral border",
+    label: "Phulkari border",
     Component: KandaFloralBorder,
     chipSize: 84,
-    topRegionOnly: false,
+    topRegionOnly: true,
+    src: PICTURES.kandaFloralBorder.src,
+  },
+  {
+    id: "ikOnkar",
+    label: "Ik Onkar",
+    Component: IkOnkar,
+    chipSize: 62,
+    topRegionOnly: true,
+    uprightOnly: true,
+  },
+  {
+    id: "khanda",
+    label: "Khanda",
+    Component: Khanda,
+    chipSize: 40,
+    topRegionOnly: true,
+    src: PICTURES.khanda.src,
+    uprightOnly: true,
   },
   {
     id: "gurudwaraArch",
@@ -375,6 +229,23 @@ export const SIKH_ORNAMENTS: readonly SikhOrnamentEntry[] = [
     Component: GurudwaraArch,
     chipSize: 40,
     topRegionOnly: false,
+    src: PICTURES.gurudwaraArch.src,
+  },
+  {
+    id: "nishanSahibPennant",
+    label: "Nishan Sahib",
+    Component: NishanSahibPennant,
+    chipSize: 40,
+    topRegionOnly: true,
+    src: PICTURES.nishanSahibPennant.src,
+  },
+  {
+    id: "lotus",
+    label: "Lotus",
+    Component: Lotus,
+    chipSize: 44,
+    topRegionOnly: false,
+    src: PICTURES.lotus.src,
   },
   {
     id: "ikOnkarCalligraphy",
@@ -452,25 +323,4 @@ export const SIKH_ORNAMENTS: readonly SikhOrnamentEntry[] = [
 
 /** Sits under the ornament grid in the editor. */
 export const SIKH_ORNAMENTS_NOTE =
-  "The Nishan Sahib hangs from the top of your card.";
-
-const BY_ID: Record<SikhOrnamentId, Ornament> = {
-  khanda: Khanda,
-  gurudwaraArch: GurudwaraArch,
-  lotus: Lotus,
-  nishanSahibPennant: NishanSahibPennant,
-  kandaFloralBorder: KandaFloralBorder,
-  ikOnkarCalligraphy: IkOnkarCalligraphy,
-  satnamWaheguru: SatnamWaheguru,
-  anandKaraj: AnandKaraj,
-  shubhVivaah: ShubhVivaah,
-  guruKirpa: GuruKirpa,
-  ikDoojeDeSang: IkDoojeDeSang,
-  doRoohanIkRaah: DoRoohanIkRaah,
-  waheguru: Waheguru,
-  sarbatDaBhala: SarbatDaBhala,
-};
-
-export function getSikhOrnament(id: SikhOrnamentId): Ornament {
-  return BY_ID[id];
-}
+  "Each has its own place on your card. Tap one again to take it off.";
