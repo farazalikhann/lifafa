@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
-import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
+import CurtainVideoCover from "@/components/invite/covers/CurtainVideoCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import PetalDustCover from "@/components/invite/covers/PetalDustCover";
@@ -22,7 +22,7 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
       return <EnvelopeSealCover {...state} />;
 
     case "curtain-reveal":
-      return <CurtainRevealCover {...state} />;
+      return <CurtainVideoCover {...state} />;
 
     case "fold-unfold":
       return <FoldUnfoldCover {...state} />;
