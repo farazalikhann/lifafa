@@ -3,7 +3,7 @@
 import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
 import { preload } from "react-dom";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useRevealGate } from "@/hooks/useRevealGate";
+import { useBurstGate } from "@/hooks/useRevealGate";
 import { artWidth } from "@/lib/cardScale";
 import { BURST_PIECES, FALL_PIECES, type FlowerPiece } from "@/lib/petals";
 import type { DecorIntensity, PetalFlower } from "@/types/card";
@@ -374,7 +374,7 @@ export default function PetalLayer({
   bandHeight: string;
 }): ReactElement | null {
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const gateOpen = useRevealGate();
+  const gateOpen = useBurstGate();
   /* Set once the shower has run its course, and never unset — it plays once. */
   const [burstDone, setBurstDone] = useState(false);
 

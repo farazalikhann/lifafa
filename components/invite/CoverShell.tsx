@@ -8,13 +8,14 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type MouseEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
 import { preload } from "react-dom";
 import { CoverOpenContext } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { RevealGateContext } from "@/hooks/useRevealGate";
+import { BurstGateContext, RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
 import { whenCardReady, whenPicturesReady, whenVisible } from "@/lib/cardReady";
 import { getCoverAnimation } from "@/lib/coverAnimations";
@@ -152,6 +153,17 @@ export interface CoverVisualState {
    * from a name. Undefined when the card names one person, or nobody.
    */
   pair?: readonly [string, string];
+  /**
+   * The prompt, in the card's language, for a visual that letters it into
+   * its own artwork (`wordsOn: "visual"`). The shell prints it otherwise.
+   */
+  prompt: string;
+  /**
+   * Where on the cover the guest tapped, as shares of its width and height,
+   * for a visual that opens from that point. Null until the tap, and for a
+   * cover opened from the keyboard, which has no point: open from the middle.
+   */
+  origin: { x: number; y: number } | null;
 }
 
 /** For useSyncExternalStore, where the only question is server or browser. */
@@ -379,6 +391,13 @@ export default function CoverShell({
   const [cardLetGo, setCardLetGo] = useState<boolean>(false);
   const letGoTimerRef = useRef<number | null>(null);
 
+  /* The card's petal burst, let go at the option's `burstAt` when it has one. See useBurstGate. */
+  const [burstLetGo, setBurstLetGo] = useState<boolean>(false);
+  const burstTimerRef = useRef<number | null>(null);
+
+  /* Where the guest tapped, for a visual that opens from there. See CoverVisualState. */
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+
   const clearTimer = useCallback((): void => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
@@ -388,6 +407,11 @@ export default function CoverShell({
     if (letGoTimerRef.current !== null) {
       window.clearTimeout(letGoTimerRef.current);
       letGoTimerRef.current = null;
+    }
+
+    if (burstTimerRef.current !== null) {
+      window.clearTimeout(burstTimerRef.current);
+      burstTimerRef.current = null;
     }
   }, []);
 
@@ -443,7 +467,24 @@ export default function CoverShell({
     return () => observer.disconnect();
   }, [title, prompt]);
 
-  const handleOpen = useCallback((): void => {
+  const handleOpen = useCallback((event: MouseEvent<HTMLButtonElement>): void => {
+    /*
+      A click from the keyboard reports no position (its detail is 0), and
+      neither does one a screen reader makes.
+    */
+    const layer = layerRef.current;
+
+    if (layer !== null && event.detail > 0) {
+      const bounds = layer.getBoundingClientRect();
+
+      if (bounds.width > 0 && bounds.height > 0) {
+        setOrigin({
+          x: (event.clientX - bounds.left) / bounds.width,
+          y: (event.clientY - bounds.top) / bounds.height,
+        });
+      }
+    }
+
     /*
       The address bar goes with the tap too, and for the same reason the sound
       does: fullscreen is only ever granted from inside a user gesture, so this
@@ -503,6 +544,9 @@ export default function CoverShell({
       */
       const runMs = reducedMotion ? REDUCED_FADE_MS : option.durationMs;
       const letGoMs = reducedMotion ? 0 : option.durationMs * option.revealAt;
+      const burstMs = reducedMotion
+        ? 0
+        : option.durationMs * (option.burstAt ?? option.revealAt);
 
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
@@ -523,9 +567,25 @@ export default function CoverShell({
         setCardLetGo(true);
       }, letGoMs);
 
+      if (burstTimerRef.current !== null) {
+        window.clearTimeout(burstTimerRef.current);
+      }
+
+      burstTimerRef.current = window.setTimeout(() => {
+        burstTimerRef.current = null;
+        setBurstLetGo(true);
+      }, burstMs);
+
       return "opening";
     });
-  }, [option.durationMs, option.haptic, option.revealAt, option.sound, reducedMotion]);
+  }, [
+    option.burstAt,
+    option.durationMs,
+    option.haptic,
+    option.revealAt,
+    option.sound,
+    reducedMotion,
+  ]);
 
   const handleSkip = useCallback((): void => {
     /* Also a tap, so also a gesture the browser will honour. */
@@ -631,6 +691,8 @@ export default function CoverShell({
       fontWeight: fontPair.headingWeight,
     },
     pair,
+    prompt,
+    origin,
   });
   const hasVisual = visual !== null && visual !== undefined;
   const fadesWhole = !hasVisual || reducedMotion;
@@ -661,9 +723,11 @@ export default function CoverShell({
       <RevealGateContext value={!covered || cardLetGo}>
         {/* Later than the gate: only once the cover has unmounted. */}
         <CoverOpenContext value={!covered}>
-          <div ref={cardRef} className="contents" inert={covered}>
-            {children}
-          </div>
+          <BurstGateContext value={!covered || burstLetGo}>
+            <div ref={cardRef} className="contents" inert={covered}>
+              {children}
+            </div>
+          </BurstGateContext>
         </CoverOpenContext>
       </RevealGateContext>
 
@@ -767,7 +831,7 @@ export default function CoverShell({
               it over velvet and zari alike, clear above the hem's tassels.
               The whole screen is still the button.
             */}
-            {onPlaque ? (
+            {option.wordsOn === "visual" ? null : onPlaque ? (
               <span
                 ref={wordsRef}
                 className="animate-[lifafa-cover-pulse_2.8s_ease-in-out_infinite] rounded-full border px-5 py-2 text-[0.8125rem] tracking-[0.16em] uppercase shadow-[0_6px_18px_rgba(0,0,0,0.28)] motion-reduce:animate-none"

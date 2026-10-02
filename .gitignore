@@ -15,3 +15,4 @@ next-env.d.ts
 # the site never loads. What ships is the cut, compressed WebP in public/.
 /photo border/
 /envelop open animation/
+/petal dust/

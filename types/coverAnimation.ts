@@ -82,6 +82,14 @@ export interface CoverAnimationOption {
    */
   revealAt: number;
   /**
+   * When the card's own petal burst is thrown, as a share of `durationMs`,
+   * for a cover where that is not the moment the card is let go. The petal
+   * dust cover is itself a gust of petals: the card's burst thrown into the
+   * middle of it would be lost in it, so it follows as the gust ends. Absent,
+   * the burst goes with `revealAt`, as it does for every other cover.
+   */
+  burstAt?: number;
+  /**
    * The sound the cover makes when a guest taps it open — synthesised, or for
    * the curtain a short recording fetched before the tap; see
    * lib/coverSound.ts. Null for a cover that opens in silence, which is what
@@ -105,9 +113,12 @@ export interface CoverAnimationOption {
    * it says otherwise: the names, a rule and the prompt, on the card's own
    * ground under the drawing. "plaque" is for a cover whose artwork fills the
    * screen, where there is no ground to print on: the prompt alone, in the
-   * card's heading face, on a small plaque of its own near the foot.
+   * card's heading face, on a small plaque of its own near the foot. "visual"
+   * is for a cover whose artwork has a place made for the words — an empty
+   * oval — where the visual letters the prompt itself and the shell prints
+   * nothing; the button still carries the prompt as its name.
    */
-  wordsOn?: "ground" | "plaque";
+  wordsOn?: "ground" | "plaque" | "visual";
   /**
    * The artwork, for a cover drawn from pictures rather than from the card's
    * palette. Chosen by whether the card's ground is light, so the cover still

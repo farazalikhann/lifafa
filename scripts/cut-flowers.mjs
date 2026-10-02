@@ -2,7 +2,8 @@
  * Cuts supplied artwork out of the background it arrived on and publishes it
  * as WebP: the flowers to public/decor/flowers/, the ornaments to
  * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/,
- * the envelope cover's paper, liner and seal to public/decor/envelope/.
+ * the envelope cover's paper, liner and seal to public/decor/envelope/, the
+ * petal dust cover's pictures to public/decor/petal-cover/.
  *
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
@@ -11,6 +12,7 @@
  *   node scripts/cut-flowers.mjs calligraphy  just the calligraphy
  *   node scripts/cut-flowers.mjs curtain      just the curtain cover's cloth
  *   node scripts/cut-flowers.mjs envelope     just the envelope cover's paper and seal
+ *   node scripts/cut-flowers.mjs petal-cover  just the petal dust cover's two pictures
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -319,6 +321,34 @@ const ENVELOPE = [
   ...entry,
   source: ENVELOPE_SOURCE,
   out: join("public", "decor", "envelope"),
+}));
+
+/**
+ * The petal dust cover: a carpet of petals round an empty oval, for a dark
+ * card and for a light one. See components/invite/covers/PetalDustCover.tsx.
+ *
+ * Photographs that fill the screen, so there is nothing to cut out: each is
+ * only sized and compressed. They arrived in the envelope's folder, not one
+ * of their own. Each quality is the highest that keeps its file under 150 KB:
+ * the dark one is busier in its shadows and takes a lower one to get there.
+ */
+const PETAL_COVER = [
+  {
+    name: "petal-cover-dark",
+    file: "ChatGPT Image Oct 2, 2026, 10_07_01 AM.png",
+    quality: 68,
+  },
+  {
+    name: "petal-cover-light",
+    file: "ChatGPT Image Oct 2, 2026, 10_08_29 AM.png",
+    quality: 76,
+  },
+].map((entry) => ({
+  ...entry,
+  background: "photo",
+  fit: { height: 1200 },
+  source: ENVELOPE_SOURCE,
+  out: join("public", "decor", "petal-cover"),
 }));
 
 /* --- On black ---------------------------------------------------------- */
@@ -979,9 +1009,27 @@ async function publishTile(entry) {
 
 /* --- Crop, size, publish ------------------------------------------------ */
 
+/** A photograph used whole: sized and compressed, nothing removed. */
+async function publishPhoto(entry) {
+  mkdirSync(entry.out, { recursive: true });
+  const target = join(entry.out, `${entry.name}.webp`);
+  const result = await sharp(join(entry.source ?? SOURCE, entry.file))
+    .removeAlpha()
+    .resize(entry.fit)
+    .webp({ quality: entry.quality ?? 86, effort: 6 })
+    .toFile(target);
+
+  console.log(`${target}  ${result.width}x${result.height}  ${result.size} bytes`);
+}
+
 async function publish(entry) {
   if (entry.background === "tile") {
     await publishTile(entry);
+    return;
+  }
+
+  if (entry.background === "photo") {
+    await publishPhoto(entry);
     return;
   }
 
@@ -1059,6 +1107,7 @@ const sets = [
   ...(which === "all" || which === "calligraphy" ? CALLIGRAPHY : []),
   ...(which === "all" || which === "curtain" ? CURTAIN : []),
   ...(which === "all" || which === "envelope" ? ENVELOPE : []),
+  ...(which === "all" || which === "petal-cover" ? PETAL_COVER : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

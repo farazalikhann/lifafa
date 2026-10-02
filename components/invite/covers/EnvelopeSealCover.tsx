@@ -2,6 +2,7 @@
 
 import { useId, type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
+import GoldFlower from "@/components/invite/covers/GoldFlower";
 import { initialOf, initialsOf } from "@/components/invite/covers/initials";
 import { ABOVE_WORDS } from "@/components/invite/covers/layout";
 import { stage } from "@/components/invite/covers/timing";
@@ -617,30 +618,13 @@ export default function EnvelopeSealCover({
                         {pairLetters[0] ?? lineLetters}
                       </span>
                     ) : (
-                      /*
-                        Nobody named: a small flower in the same gold. A
-                        flower and nothing else — this envelope is on cards of
-                        every tradition, and a mark that belongs to one of
-                        them has no place on the others.
-                      */
-                      <svg
-                        viewBox="0 0 40 40"
+                      /* Nobody named: a small flower in the same gold. See GoldFlower. */
+                      <GoldFlower
+                        hi={GOLD_HI}
+                        body={GOLD}
+                        lo={GOLD_LO}
                         className="w-[30%] drop-shadow-[0_1px_0.5px_rgba(52,6,8,0.85)]"
-                        role="presentation"
-                        focusable="false"
-                      >
-                        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                          <path
-                            key={angle}
-                            d="M20 20 C16.4 14.5 17 8 20 3.5 C23 8 23.6 14.5 20 20 Z"
-                            fill={angle % 90 === 0 ? GOLD : GOLD_HI}
-                            opacity={angle % 90 === 0 ? 1 : 0.85}
-                            transform={`rotate(${angle} 20 20)`}
-                          />
-                        ))}
-                        <circle cx="20" cy="20" r="3.4" fill={GOLD_LO} />
-                        <circle cx="20" cy="20" r="2.2" fill={GOLD_HI} />
-                      </svg>
+                      />
                     )}
                   </div>
                 </div>

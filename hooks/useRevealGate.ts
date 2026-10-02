@@ -24,3 +24,16 @@ export const RevealGateContext = createContext<boolean>(true);
 export function useRevealGate(): boolean {
   return useContext(RevealGateContext);
 }
+
+/**
+ * Whether the card's petal burst may be thrown yet.
+ *
+ * The same moment as the gate above for every cover but one: see `burstAt` in
+ * types/coverAnimation.ts. `true` by default, for the same reason.
+ */
+export const BurstGateContext = createContext<boolean>(true);
+
+/** Reads the burst's gate. Consumed by PetalLayer. */
+export function useBurstGate(): boolean {
+  return useContext(BurstGateContext);
+}

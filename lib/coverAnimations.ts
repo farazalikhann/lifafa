@@ -8,6 +8,7 @@
 
 import { curtainArt } from "@/lib/curtainArt";
 import { envelopeArt } from "@/lib/envelopeArt";
+import { petalCoverArt } from "@/lib/petalCoverArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -93,14 +94,21 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     label: "Petal dust",
     description: "Leaves and petals blow off the cover to reveal the card.",
     openPromptText: {
-      en: "Tap to scatter the petals",
-      hi: "पंखुड़ियाँ बिखेरने के लिए टैप करें",
+      en: "Tap to open",
+      hi: "खोलने के लिए टैप करें",
     },
-    durationMs: 2000,
-    /* With the first gust: the ground starts clearing at 0.1 in the visual. */
+    /* 1.8s: the gust crosses the screen in the first half of it, and the last petals leave in the rest. */
+    durationMs: 1800,
+    /* With the first of the gust: the card is what shows where the petals have gone. */
     revealAt: 0.1,
+    /* The card's own petals follow the gust rather than being lost in it. */
+    burstAt: 0.86,
     sound: "chime",
+    haptic: 10,
     supportsReducedMotion: true,
+    /* The picture has an oval left empty for them, and the visual letters them into it. */
+    wordsOn: "visual",
+    art: petalCoverArt,
   },
 ];
 

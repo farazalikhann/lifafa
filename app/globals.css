@@ -693,19 +693,6 @@
   }
 }
 
-/* The glow behind the thing to tap, swelling slowly. */
-@keyframes lifafa-cover-halo {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.92);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.08);
-  }
-}
-
 /*
   A fleck of gold leaf thrown off as the cover breaks: out along its own line,
   set per fleck in --dx and --dy, turning as it goes and gone by the end.
@@ -806,20 +793,36 @@
 }
 
 /*
-  A leaf on the petal-dust cover, stirring in a breeze before it is blown away.
-
-  Driven inline per leaf — duration and a negative delay from the cover's own
-  table — so the field is never in step and is already mid-sway on the first
-  frame. Transform only, and on a layer of its own inside the leaf, so it
-  keeps running through the burst without fighting it.
+  A loose petal lifted off the petal dust cover by the gust: there at once,
+  at its own size, then carried along its own line (--dx, --dy), turning
+  (--turn) and gone by the end.
 */
-@keyframes lifafa-leaf-sway {
+@keyframes lifafa-cover-gust {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--turn)) scale(0.8);
+  }
+}
+
+/*
+  The petal dust cover breathing while it waits: a hair larger and back, so
+  slowly it is felt more than seen. Transform only, on the layer that holds
+  the whole picture.
+*/
+@keyframes lifafa-cover-swell {
   0%,
   100% {
-    transform: translate3d(-2px, 0, 0) rotate(-8deg);
+    transform: scale(1);
   }
   50% {
-    transform: translate3d(2px, -3px, 0) rotate(8deg);
+    transform: scale(1.02);
   }
 }
 
