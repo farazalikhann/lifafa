@@ -1,13 +1,14 @@
 /**
  * Cuts supplied artwork out of the background it arrived on and publishes it
  * as WebP: the flowers to public/decor/flowers/, the ornaments to
- * public/decor/ornaments/.
+ * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/.
  *
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
  *   node scripts/cut-flowers.mjs ornaments    just the ornaments
  *   node scripts/cut-flowers.mjs ornaments toran kalash   just those two
  *   node scripts/cut-flowers.mjs calligraphy  just the calligraphy
+ *   node scripts/cut-flowers.mjs curtain      just the curtain cover's cloth
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -160,6 +161,84 @@ const CALLIGRAPHY = [
   out: join("public", "decor", "calligraphy"),
 }));
 
+/**
+ * The curtain cover's cloth: one panel and one valance, in maroon velvet and
+ * in cream. See components/invite/covers/CurtainRevealCover.tsx, which hangs
+ * the panel on the left and mirrors the same file for the right.
+ *
+ * THE CLOTH RUNS OFF THE PICTURE, AND ITS FOLDS ARE AS BLACK AS THE SHEET. A
+ * tenth of the maroon velvet is true black, and those folds reach the top and
+ * left edges of the panel and the top and sides of the valance. A flood from
+ * every edge would start inside them and eat the cloth, so each is flooded
+ * only from the edges that are background (`seeds`), and only through true
+ * black: the sheet measures 0 to 2, so the flood stops at LOW rather than
+ * HIGH and cannot follow a shadow in through the gold. Everything it does not
+ * reach is solid. That leaves the anti-aliased edge of a tassel as a dark
+ * solid pixel, a black rim on a cream card, so within two pixels of the
+ * flood the edge is unmixed the way a flower's is (`softRim`).
+ *
+ * The panel's tassels hang skirt to skirt, and each pair closes off a pocket
+ * of the sheet under the hem that no flood can reach. Those are taken as
+ * background the way the toran's are, by size, but only where the whole
+ * pocket lies below `pocketBelow` of the picture's height: under the hem's
+ * trim, where there is no velvet for it to mistake a fold for. The dark
+ * between the beads down the leading edge is left alone: most of it is the
+ * beads' own shadow on the cloth, and clearing the few specks of it that are
+ * sheet put pinholes down the seam.
+ *
+ * THE SEAM. The panel's leading edge is a row of beads hung off the border,
+ * and it leans: seven pixels further right at the hem than at the rod. Two
+ * panels meeting on a leaning, scalloped edge either gap or overlap. So each
+ * row is slid across until the edge stands straight, and the panel is cut
+ * down the middle of the beads — `inset` in from their outer edge, in the
+ * source's pixels — so the mirrored half completes each bead, and the hem's
+ * last tassel, on the centre line. `until` is how far down the picture the
+ * edge is read: the hem and the tassels below it are not the edge.
+ */
+const CURTAIN = [
+  {
+    name: "curtain-left",
+    file: "ChatGPT Image Oct 2, 2026, 09_25_22 AM.png",
+    fit: { height: 1400 },
+    seeds: ["right", "bottom"],
+    pocketMin: 40,
+    pocketBelow: 0.92,
+    seam: { inset: 6, until: 0.88 },
+    quality: 74,
+  },
+  {
+    name: "curtain-valance",
+    file: "ChatGPT Image Oct 2, 2026, 09_26_42 AM.png",
+    fit: { width: 1200 },
+    seeds: ["bottom"],
+    quality: 78,
+  },
+  {
+    name: "curtain-left-cream",
+    file: "ChatGPT Image Oct 2, 2026, 09_27_48 AM.png",
+    fit: { height: 1400 },
+    seeds: ["right", "bottom"],
+    pocketMin: 40,
+    pocketBelow: 0.92,
+    seam: { inset: 6, until: 0.88 },
+    quality: 74,
+  },
+  {
+    name: "curtain-valance-cream",
+    file: "ChatGPT Image Oct 2, 2026, 09_29_40 AM.png",
+    fit: { width: 1200 },
+    seeds: ["bottom"],
+    quality: 78,
+  },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  out: join("public", "decor", "curtain"),
+}));
+
 /* --- On black ---------------------------------------------------------- */
 
 /**
@@ -195,8 +274,16 @@ function cutOnBlack(data, width, height, options = {}) {
         stack.push(pixel);
       }
     };
-    for (let x = 0; x < width; x += 1) { seed(x); seed((height - 1) * width + x); }
-    for (let y = 0; y < height; y += 1) { seed(y * width); seed(y * width + width - 1); }
+    /* Every edge, unless the artwork itself runs off some of them; see CURTAIN. */
+    const seeds = options.seeds ?? ["top", "bottom", "left", "right"];
+    for (let x = 0; x < width; x += 1) {
+      if (seeds.includes("top")) seed(x);
+      if (seeds.includes("bottom")) seed((height - 1) * width + x);
+    }
+    for (let y = 0; y < height; y += 1) {
+      if (seeds.includes("left")) seed(y * width);
+      if (seeds.includes("right")) seed(y * width + width - 1);
+    }
     while (stack.length > 0) {
       const pixel = stack.pop();
       const x = pixel % width;
@@ -213,11 +300,13 @@ function cutOnBlack(data, width, height, options = {}) {
       for (let start = 0; start < count; start += 1) {
         if (seen[start] || outside[start] || bright[start] >= LOW) continue;
         const region = [start];
+        let regionTop = height;
         seen[start] = 1;
         for (let i = 0; i < region.length; i += 1) {
           const pixel = region[i];
           const x = pixel % width;
           const y = (pixel - x) / width;
+          regionTop = Math.min(regionTop, y);
           for (const near of [x > 0 ? pixel - 1 : -1, x < width - 1 ? pixel + 1 : -1, y > 0 ? pixel - width : -1, y < height - 1 ? pixel + width : -1]) {
             if (near >= 0 && !seen[near] && !outside[near] && bright[near] < LOW) {
               seen[near] = 1;
@@ -225,7 +314,8 @@ function cutOnBlack(data, width, height, options = {}) {
             }
           }
         }
-        if (region.length >= options.pocketMin) {
+        /* Anywhere, unless the entry says how low a pocket must lie; see CURTAIN. */
+        if (region.length >= options.pocketMin && regionTop >= height * (options.pocketBelow ?? 0)) {
           for (const pixel of region) stack.push(pixel), (outside[pixel] = 1);
           /* And the pocket's soft rim with it, as far as the flood would go. */
           while (stack.length > 0) {
@@ -241,6 +331,19 @@ function cutOnBlack(data, width, height, options = {}) {
       }
     }
   }
+
+  /* Within SOFT_RIM pixels of the flood: the artwork's anti-aliased edge, which keeps its ramp. */
+  const SOFT_RIM = 2;
+  const onRim = (x, y) => {
+    for (let dy = -SOFT_RIM; dy <= SOFT_RIM; dy += 1) {
+      for (let dx = -SOFT_RIM; dx <= SOFT_RIM; dx += 1) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height && outside[ny * width + nx]) return true;
+      }
+    }
+    return false;
+  };
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -271,7 +374,7 @@ function cutOnBlack(data, width, height, options = {}) {
 
       }
 
-      if (outside !== null && !outside[pixel]) {
+      if (outside !== null && !outside[pixel] && !(options.softRim && onRim(x, y))) {
         coverage = 1;
       }
 
@@ -543,6 +646,79 @@ function cutMask(data, width, height) {
   return { rgba, report: "" };
 }
 
+/* --- The curtain's seam ------------------------------------------------- */
+
+/**
+ * Stands the panel's leading edge up straight and cuts it down the middle of
+ * its beads, in place. See the note on CURTAIN.
+ *
+ * The edge is read per row as the last solid pixel, taken as the furthest
+ * reach over a bead or two either side — the beads' outer line, not the dips
+ * between them — and smoothed, so a row is slid by the lean of the cloth and
+ * not by the shape of its own bead. Rows below `until` take the last row's
+ * slide. Slid in premultiplied colour, so a soft edge is not darkened.
+ */
+function straightenSeam(rgba, width, height, seam) {
+  const rows = Math.round(height * seam.until);
+  const reach = new Float64Array(rows);
+  for (let y = 0; y < rows; y += 1) {
+    let x = width - 1;
+    while (x >= 0 && rgba[(y * width + x) * 4 + 3] < 128) x -= 1;
+    reach[y] = x;
+  }
+
+  const BEADS = 24;
+  const SMOOTH = 80;
+  const outer = new Float64Array(rows);
+  for (let y = 0; y < rows; y += 1) {
+    let most = 0;
+    for (let near = Math.max(0, y - BEADS); near <= Math.min(rows - 1, y + BEADS); near += 1) {
+      most = Math.max(most, reach[near]);
+    }
+    outer[y] = most;
+  }
+  const edge = new Float64Array(height);
+  let furthest = 0;
+  for (let y = 0; y < height; y += 1) {
+    const at = Math.min(y, rows - 1);
+    let sum = 0, n = 0;
+    for (let near = Math.max(0, at - SMOOTH); near <= Math.min(rows - 1, at + SMOOTH); near += 1) {
+      sum += outer[near]; n += 1;
+    }
+    edge[y] = sum / n;
+    furthest = Math.max(furthest, edge[y]);
+  }
+
+  const cut = Math.round(furthest) - seam.inset;
+  const row = new Float64Array(width * 4);
+  let lean = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    const slide = furthest - edge[y];
+    lean = Math.max(lean, slide);
+    for (let x = 0; x < width; x += 1) {
+      const from = x - slide;
+      const x0 = Math.floor(from);
+      const part = from - x0;
+      let r = 0, g = 0, b = 0, a = 0;
+      for (const [sx, weight] of [[x0, 1 - part], [x0 + 1, part]]) {
+        if (sx >= width || weight === 0) continue;
+        /* Off the left is more of the same cloth; off the right is nothing. */
+        const at = (y * width + Math.max(0, sx)) * 4;
+        const alpha = (rgba[at + 3] / 255) * weight;
+        r += rgba[at] * alpha; g += rgba[at + 1] * alpha; b += rgba[at + 2] * alpha; a += alpha;
+      }
+      row[x * 4] = a > 0 ? r / a : 0;
+      row[x * 4 + 1] = a > 0 ? g / a : 0;
+      row[x * 4 + 2] = a > 0 ? b / a : 0;
+      row[x * 4 + 3] = x > cut ? 0 : a * 255;
+    }
+    for (let i = 0; i < width * 4; i += 1) rgba[y * width * 4 + i] = Math.round(row[i]);
+  }
+
+  return `seam at x=${cut}, edge leaned ${lean.toFixed(1)}px`;
+}
+
 /* --- Crop, size, publish ------------------------------------------------ */
 
 async function publish(entry) {
@@ -552,12 +728,13 @@ async function publish(entry) {
     .toBuffer({ resolveWithObject: true });
   const { width, height } = info;
 
-  const { rgba, report } =
+  const { rgba, report: cutReport } =
     entry.background === "black"
       ? cutOnBlack(data, width, height, entry)
       : entry.background === "mask"
         ? cutMask(data, width, height)
         : cutFromChecker(data, width, height);
+  const report = entry.seam ? straightenSeam(rgba, width, height, entry.seam) : cutReport;
 
   /* Cropped to what is left — a stray pixel below 10% coverage does not stretch the box. */
   let top = height, bottom = -1, left = width, right = -1;
@@ -604,7 +781,7 @@ async function publish(entry) {
   }
 
   const result = await sized
-    .webp({ quality: 86, alphaQuality: 100, effort: 6 })
+    .webp({ quality: entry.quality ?? 86, alphaQuality: 100, effort: 6 })
     .toFile(target);
 
   console.log(`${target}  ${result.width}x${result.height}  ${result.size} bytes${report ? `  (${report})` : ""}`);
@@ -617,6 +794,7 @@ const sets = [
   ...(which === "all" || which === "flowers" ? FLOWERS : []),
   ...(which === "all" || which === "ornaments" ? ORNAMENTS : []),
   ...(which === "all" || which === "calligraphy" ? CALLIGRAPHY : []),
+  ...(which === "all" || which === "curtain" ? CURTAIN : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

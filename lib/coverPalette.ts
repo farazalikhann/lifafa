@@ -50,7 +50,7 @@ export interface CoverPalette {
     colours, and a cover drawn in nothing else read as grey paper on a grey
     screen: every fill was the ground with a little of the ink in it. These are
     what the covers dress it with — card stock that catches the light, a lining,
-    metal leaf, wax and velvet — and every one is still worked out of the same
+    metal leaf and wax — and every one is still worked out of the same
     palette, so a Midnight card gets gold on navy and a Blush card gets copper on
     blush without a colour the host did not choose.
   */
@@ -72,13 +72,6 @@ export interface CoverPalette {
   waxHi: string;
   wax: string;
   waxLo: string;
-  /** Velvet, the accent taken deep: a fold's crest, its body, and the hollow. */
-  velvetHi: string;
-  velvet: string;
-  velvetLo: string;
-  /** Words printed over velvet, where the card's own text colour would not read. */
-  onVelvet: string;
-  onVelvetMuted: string;
 }
 
 /**
@@ -165,7 +158,6 @@ function dressedTones(
     ? mixHex(palette.surface, "#FFFFFF", 0.45)
     : mixHex(palette.surface, accent, 0.12);
   const foil = mixHex(accent, LEAF_GOLD, 0.55);
-  const velvet = mixHex(accent, "#000000", isLight ? 0.3 : 0.55);
 
   return {
     isLight,
@@ -182,10 +174,5 @@ function dressedTones(
     waxHi: mixHex(accent, "#FFFFFF", 0.32),
     wax: accent,
     waxLo: mixHex(accent, "#000000", 0.45),
-    velvetHi: mixHex(velvet, "#FFFFFF", 0.16),
-    velvet,
-    velvetLo: mixHex(velvet, "#000000", 0.55),
-    onVelvet: "#FBF4E6",
-    onVelvetMuted: "rgba(251, 244, 230, 0.78)",
   };
 }

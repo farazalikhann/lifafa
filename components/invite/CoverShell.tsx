@@ -11,13 +11,14 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { preload } from "react-dom";
 import { CoverOpenContext } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
-import { whenCardReady, whenVisible } from "@/lib/cardReady";
+import { whenCardReady, whenPicturesReady, whenVisible } from "@/lib/cardReady";
 import { getCoverAnimation } from "@/lib/coverAnimations";
-import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
+import { fontFamilyOf, getFontPair, namesFaceOf, pairRoleVar } from "@/lib/fontPairs";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
 import { playCoverSound, preloadCoverSound } from "@/lib/coverSound";
@@ -68,6 +69,22 @@ const SOUND_PRELOAD_DELAY_MS = 300;
  */
 const READY_TIMEOUT_MS = 5000;
 
+/**
+ * The longest the cover waits for its own artwork, when it is drawn from
+ * pictures: the curtain's cloth.
+ *
+ * Longer than the card's wait, on purpose. A card missing its garland at the
+ * five second mark is still a card, and opening onto it beats holding a guest
+ * on a loader. A curtain cover missing its curtains is nothing at all — a bare
+ * ground with a button on it — so it is worth a longer wait, and the pictures
+ * are two files asked for at the front of the queue. Still an end: a picture
+ * that fails is let through at once, and past this the cover appears anyway.
+ */
+const COVER_ART_TIMEOUT_MS = 15000;
+
+/** No pictures to wait for: every cover drawn from the card's own palette. */
+const NO_ART: readonly string[] = [];
+
 /** How long the loader takes to give way to the cover, once the card is ready. */
 const LOADER_FADE_MS = 420;
 
@@ -84,7 +101,7 @@ const REDUCED_FADE_MS = 300;
  * "open" is the card. It only ever runs forwards: there is no way back to a
  * sealed envelope once it has been torn.
  */
-export type CoverPhase = "closed" | "opening" | "open";
+type CoverPhase = "closed" | "opening" | "open";
 
 /** What the cover layer hands its visual, so the visual owns no state of its own. */
 export interface CoverVisualState {
@@ -272,9 +289,23 @@ export default function CoverShell({
   const colors = coverPalette(palette, accent);
   const copy = cardCopy(language);
   const prompt = option.openPromptText[language];
-  const namesFace = namesFaceOf(getFontPair(fontPairId));
-  /* Words over velvet are set in light ink, with a shadow to lift them off it. */
-  const onVelvet = option.wordsOn === "velvet";
+  const fontPair = getFontPair(fontPairId);
+  const namesFace = namesFaceOf(fontPair);
+  /* A cover whose artwork fills the screen: the prompt alone, on a plaque. */
+  const onPlaque = option.wordsOn === "plaque";
+  /*
+    The pictures the cover is drawn from, when it is: the set for this card's
+    ground, light or dark, and no other. Asked for with the server's HTML and
+    ahead of the card's own pictures, because they are the first thing a guest
+    is shown and the loader stays up until they are in. React deduplicates the
+    hints, so calling it on every render costs nothing.
+  */
+  const art = hasCover ? (option.art?.(colors.isLight) ?? null) : null;
+  const artImages = art?.images ?? NO_ART;
+
+  for (const src of artImages) {
+    preload(src, { as: "image", fetchPriority: "high" });
+  }
 
   /*
     Seeded rather than corrected in an effect. A card saved with no animation
@@ -489,7 +520,10 @@ export default function CoverShell({
 
     let live = true;
 
-    void whenCardReady(cardRef.current, READY_TIMEOUT_MS)
+    void Promise.all([
+      whenCardReady(cardRef.current, READY_TIMEOUT_MS),
+      whenPicturesReady(artImages, COVER_ART_TIMEOUT_MS),
+    ])
       .then(whenVisible)
       .then(() => {
         if (live) {
@@ -500,7 +534,7 @@ export default function CoverShell({
     return () => {
       live = false;
     };
-  }, [hasCover]);
+  }, [hasCover, artImages]);
 
   /*
     A recorded sound is fetched while the cover is closed, so it is already in
@@ -641,9 +675,10 @@ export default function CoverShell({
                 can use them in states an inline style cannot reach — a hover, a
                 focus ring — without each one being handed the palette again.
               */
-              "--cover-text": onVelvet ? colors.onVelvet : colors.text,
-              "--cover-muted": onVelvet ? colors.onVelvetMuted : colors.textMuted,
-              "--cover-accent": onVelvet ? colors.foilHi : colors.accent,
+              /* Over artwork the artwork's own inks, which were chosen against it. */
+              "--cover-text": art?.ink ?? colors.text,
+              "--cover-muted": art?.inkMuted ?? colors.textMuted,
+              "--cover-accent": art?.plaqueEdge ?? colors.accent,
               ...(wordsHeight !== null
                 ? { "--cover-words-h": `${wordsHeight}px` }
                 : null),
@@ -676,66 +711,94 @@ export default function CoverShell({
               ink outline on an ink ground is a focus ring nobody can see, and
               this is the only control a keyboard guest has.
             */
-            className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center ${
-              onVelvet ? "[text-shadow:0_1px_12px_rgba(0,0,0,0.55)]" : ""
-            } focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
+            className={`relative flex h-full w-full flex-1 cursor-pointer flex-col items-center gap-4 px-6 text-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--cover-accent)] disabled:cursor-default ${
               !hasVisual
                 ? "justify-center"
-                : "justify-end pb-[max(9vh,60px)]"
+                : onPlaque
+                  ? "justify-end pb-[max(15vh,104px)] lg:pb-[24vh]"
+                  : "justify-end pb-[max(9vh,60px)]"
             }`}
           >
             {/*
-              The names alone take the pair's names face; the prompt below
-              keeps the page's own. Sized and spaced as the card's cover does
-              it — a script is scaled up so it carries as much as a serif —
-              with leading of at least 1.3, because the names here run as one
-              line that wraps and a script's capitals and descenders need the
-              room. Devanagari takes the cover's 1.45 for its matras.
-
-              Wrapped together so the shell can measure how far up the screen
-              they reach; see `wordsRef`.
+              On a plaque: the prompt and nothing else. The whole screen is
+              cloth, with two gold borders running down the middle of it, and
+              names set over those would be gold on gold. So the couple is met
+              when the curtains part, and what is printed here is only the way
+              in: small, in the card's heading face, on a plaque that carries
+              it over velvet and zari alike, clear above the hem's tassels.
+              The whole screen is still the button.
             */}
-            <span ref={wordsRef} className="flex flex-col items-center gap-4">
-              {title ? (
-                <span
-                  className="text-[calc(1.875rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(2.375rem*var(--cover-names-scale))]"
-                  style={
-                    {
-                      "--cover-names-scale": String(namesFace.scale),
-                      fontFamily: fontFamilyOf(
-                        namesFace.variable,
-                        namesFace.fallback,
-                      ),
-                      fontWeight: namesFace.weight,
-                      letterSpacing: namesFace.tracking,
-                      wordSpacing: namesFace.wordSpacing,
-                      lineHeight:
-                        copy.script === "devanagari"
-                          ? 1.45
-                          : Math.max(namesFace.leading, 1.3),
-                    } as CSSProperties
-                  }
-                >
-                  {title}
-                </span>
-              ) : null}
-              {/*
-                A rule of the accent between the names and the way in, and the
-                prompt breathing under it, so a guest reads it as the thing to do
-                rather than as a caption. Small caps spacing, as a card's own
-                small print is set.
-              */}
-              <span aria-hidden className="flex items-center gap-2 text-[var(--cover-accent)]">
-                <span className="h-px w-8 bg-current opacity-60" />
-                <svg viewBox="0 0 10 10" className="h-2 w-2" focusable="false">
-                  <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
-                </svg>
-                <span className="h-px w-8 bg-current opacity-60" />
-              </span>
-              <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-muted)] uppercase motion-reduce:animate-none">
+            {onPlaque ? (
+              <span
+                ref={wordsRef}
+                className="animate-[lifafa-cover-pulse_2.8s_ease-in-out_infinite] rounded-full border px-5 py-2 text-[0.8125rem] tracking-[0.16em] uppercase shadow-[0_6px_18px_rgba(0,0,0,0.28)] motion-reduce:animate-none"
+                style={{
+                  backgroundColor: art?.plaque,
+                  borderColor: art?.plaqueEdge ?? "var(--cover-accent)",
+                  color: art?.plaqueInk ?? "var(--cover-text)",
+                  fontFamily: fontFamilyOf(
+                    pairRoleVar(fontPair, "heading"),
+                    fontPair.headingFallback,
+                  ),
+                  fontWeight: fontPair.headingWeight,
+                }}
+              >
                 {prompt}
               </span>
-            </span>
+            ) : (
+              <span ref={wordsRef} className="flex flex-col items-center gap-4">
+                {/*
+                  The names alone take the pair's names face; the prompt below
+                  keeps the page's own. Sized and spaced as the card's cover does
+                  it — a script is scaled up so it carries as much as a serif —
+                  with leading of at least 1.3, because the names here run as one
+                  line that wraps and a script's capitals and descenders need the
+                  room. Devanagari takes the cover's 1.45 for its matras.
+
+                  Wrapped together so the shell can measure how far up the screen
+                  they reach; see `wordsRef`.
+                */}
+                {title ? (
+                  <span
+                    className="text-[calc(1.875rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(2.375rem*var(--cover-names-scale))]"
+                    style={
+                      {
+                        "--cover-names-scale": String(namesFace.scale),
+                        fontFamily: fontFamilyOf(
+                          namesFace.variable,
+                          namesFace.fallback,
+                        ),
+                        fontWeight: namesFace.weight,
+                        letterSpacing: namesFace.tracking,
+                        wordSpacing: namesFace.wordSpacing,
+                        lineHeight:
+                          copy.script === "devanagari"
+                            ? 1.45
+                            : Math.max(namesFace.leading, 1.3),
+                      } as CSSProperties
+                    }
+                  >
+                    {title}
+                  </span>
+                ) : null}
+                {/*
+                  A rule of the accent between the names and the way in, and the
+                  prompt breathing under it, so a guest reads it as the thing to do
+                  rather than as a caption. Small caps spacing, as a card's own
+                  small print is set.
+                */}
+                <span aria-hidden className="flex items-center gap-2 text-[var(--cover-accent)]">
+                  <span className="h-px w-8 bg-current opacity-60" />
+                  <svg viewBox="0 0 10 10" className="h-2 w-2" focusable="false">
+                    <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
+                  </svg>
+                  <span className="h-px w-8 bg-current opacity-60" />
+                </span>
+                <span className="animate-[lifafa-cover-breathe_2.6s_ease-in-out_infinite] text-[0.8125rem] tracking-[0.14em] text-[var(--cover-muted)] uppercase motion-reduce:animate-none">
+                  {prompt}
+                </span>
+              </span>
+            )}
           </button>
 
           {/*
@@ -753,6 +816,8 @@ export default function CoverShell({
             <button
               type="button"
               onClick={handleSkip}
+              /* Over artwork it sits on tassels, and takes the plaque's ground to be read. */
+              style={art !== null ? { backgroundColor: art.plaque } : undefined}
               className="absolute right-6 bottom-6 rounded-full px-3 py-1.5 text-xs text-[var(--cover-muted)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--cover-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cover-accent)]"
             >
               {copy.coverSkip}

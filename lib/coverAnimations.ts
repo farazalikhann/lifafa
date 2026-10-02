@@ -6,6 +6,7 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
+import { curtainArt } from "@/lib/curtainArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -44,21 +45,24 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     label: "Curtain reveal",
     description: "Two curtains draw apart to show the card behind them.",
     openPromptText: {
-      en: "Tap to draw the curtains",
-      hi: "पर्दे हटाने के लिए टैप करें",
+      en: "Tap to open",
+      hi: "खोलने के लिए टैप करें",
     },
     /*
-      1.9s, from 1.6. The panels gather into the sides now rather than sliding
-      off flat, and a heavy curtain drawn in under a second and a half read as
-      a pair of doors snapping open.
+      The curtains take 1.6s to draw, and the valance over them then fades in
+      the 350ms that are left: DRAW_SHARE in the visual is 1600 of these.
     */
-    durationMs: 1900,
-    /* As soon as there is a gap between the panels to see the card through. */
+    durationMs: 1950,
+    /*
+      As soon as there is a gap between the panels to see the card through,
+      which is also when a card's petal burst should start.
+    */
     revealAt: 0.12,
     sound: "curtain",
     supportsReducedMotion: true,
-    /* The names are printed over the velvet until it is drawn. */
-    wordsOn: "velvet",
+    /* The cloth fills the screen, so the prompt sits on a plaque of its own. */
+    wordsOn: "plaque",
+    art: curtainArt,
   },
   {
     id: "fold-unfold",

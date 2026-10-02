@@ -163,6 +163,34 @@ export function whenCardReady(
 }
 
 /**
+ * Resolves once every picture in `sources` is loaded and decoded, or has
+ * failed, or `timeoutMs` has passed. Never rejects.
+ *
+ * For pictures that are not the card's: the cover's own artwork, which sits
+ * outside the card's subtree and so is not found by the search above. Each is
+ * asked for exactly as an `<img>` asks, so the copy and the cover's own
+ * element share one download and one decode.
+ */
+export function whenPicturesReady(
+  sources: readonly string[],
+  timeoutMs: number,
+): Promise<void> {
+  if (sources.length === 0) {
+    return Promise.resolve();
+  }
+
+  const giveUp = new Promise<void>((resolve) => {
+    window.setTimeout(resolve, timeoutMs);
+  });
+
+  const everything = Promise.all(
+    sources.map((src) => decoded(copyOf({ src }))),
+  ).then(() => undefined);
+
+  return Promise.race([everything, giveUp]);
+}
+
+/**
  * Resolves when the page is on screen: at once if it is, or at the moment the
  * guest switches to its tab. A cover that arrives in a tab nobody is looking
  * at has arrived for nobody.

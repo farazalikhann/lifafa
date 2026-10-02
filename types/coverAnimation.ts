@@ -19,6 +19,30 @@ export type CoverAnimationId =
   | "fold-unfold"
   | "petal-dust";
 
+/**
+ * The pictures a cover is drawn from, when it is drawn from pictures, and the
+ * colours that read over them.
+ *
+ * A cover made of the card's own two colours takes its inks from the card. One
+ * made of photographed cloth cannot: the card's text colour was chosen against
+ * the card's ground, not against velvet, so the artwork brings its own.
+ */
+export interface CoverArt {
+  /**
+   * Every picture the closed cover shows. They are on the first screen a guest
+   * sees, so the shell asks for them as the page loads and keeps its loader up
+   * until they are in; see CoverShell.
+   */
+  images: readonly string[];
+  /** Skip and the focus ring, over the artwork. */
+  ink: string;
+  inkMuted: string;
+  /** The small plaque the prompt sits on, its hairline, and the prompt itself. */
+  plaque: string;
+  plaqueEdge: string;
+  plaqueInk: string;
+}
+
 /** One opening animation, as offered in the designer and played for a guest. */
 export interface CoverAnimationOption {
   id: CoverAnimationId;
@@ -66,9 +90,17 @@ export interface CoverAnimationOption {
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
   /**
-   * What the names and the prompt sit on while the cover is closed: the card's
-   * own ground, which is every cover's unless it says otherwise, or velvet,
-   * where the card's text colour would not read and they are set in light ink.
+   * What the closed cover prints, and on what. "ground" is every cover's unless
+   * it says otherwise: the names, a rule and the prompt, on the card's own
+   * ground under the drawing. "plaque" is for a cover whose artwork fills the
+   * screen, where there is no ground to print on: the prompt alone, in the
+   * card's heading face, on a small plaque of its own near the foot.
    */
-  wordsOn?: "ground" | "velvet";
+  wordsOn?: "ground" | "plaque";
+  /**
+   * The artwork, for a cover drawn from pictures rather than from the card's
+   * palette. Chosen by whether the card's ground is light, so the cover still
+   * answers to the card behind it, and only the chosen set is ever fetched.
+   */
+  art?: (isLight: boolean) => CoverArt;
 }
