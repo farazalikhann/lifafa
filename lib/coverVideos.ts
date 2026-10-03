@@ -69,7 +69,7 @@ export interface CoverFilm extends CoverFilmTiming {
 }
 
 /** How the initials leave when the cover is tapped. */
-export type MarkExit = "fade" | "drift" | "drop";
+type MarkExit = "fade" | "drift" | "drop";
 
 export interface CoverFilmSet {
   dark: CoverFilm;

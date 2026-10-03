@@ -72,7 +72,7 @@ const FRAMES: Record<ScratchFrame, ScratchFrameArt> = {
 
 export const SCRATCH_FOIL = "/decor/scratch/scratch-foil.webp";
 
-export const DEFAULT_SCRATCH_FRAME: ScratchFrame = "oval";
+const DEFAULT_SCRATCH_FRAME: ScratchFrame = "oval";
 
 /** The frame a card's scratch panel is drawn in. Oval on every card saved before there was a choice. */
 export function scratchFrameOf(value: unknown): ScratchFrame {
@@ -99,7 +99,7 @@ const DIVIDERS: Record<Exclude<DividerStyle, "none">, DividerArt> = {
 };
 
 /** The garland a tradition's card gets before its host has chosen one. */
-export function defaultDivider(traditionId: TraditionId): DividerStyle {
+function defaultDivider(traditionId: TraditionId): DividerStyle {
   if (traditionId === "hindu") {
     return "marigold";
   }

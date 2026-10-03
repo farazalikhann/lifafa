@@ -66,7 +66,7 @@ const LOTUS_FLOWER: FlowerPiece = {
 };
 
 /** The rose petals, for anything that shows petals without a flower choice. */
-export const PETALS: readonly FlowerPiece[] = [ROSE_A, ROSE_B];
+const PETALS: readonly FlowerPiece[] = [ROSE_A, ROSE_B];
 
 /**
  * What falls down the margins, cycled across the fall table. Loose pieces
