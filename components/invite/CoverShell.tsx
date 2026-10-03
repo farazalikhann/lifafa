@@ -883,9 +883,10 @@ export default function CoverShell({
             at the foot, so the head is the one band left clear — below the
             language switch's own band, which --cover-top-h already publishes.
 
-            The heading is the cue's own (see InvitedCue, which says it again
-            at the foot of the first screen once the cover has gone) in the
-            card's names face, the script on a pair that has one. In the inks
+            Said here and nowhere else: the cue at the foot of the first
+            screen (InvitedCue) used to say it again once the cover had gone,
+            and now only points down the card. The heading is in the card's
+            names face, the script on a pair that has one. In the inks
             the cover's artwork was given to be read in, with a soft shadow of
             the opposite tone under it: a film's first frame is cloth, paper or
             petals, and no single ink clears all of it unaided.
@@ -931,13 +932,13 @@ export default function CoverShell({
                 } as CSSProperties
               }
             >
-              {copy.scrollCue.heading}
+              {copy.coverInvite.heading}
             </p>
             <p
               className="max-w-[19rem] text-[0.875rem] leading-[1.55] text-[var(--cover-muted)] text-balance"
               style={{ fontFamily: fontFamilyOf(pairRoleVar(fontPair, "body"), fontPair.bodyFallback) }}
             >
-              {copy.coverInvite}
+              {copy.coverInvite.line}
             </p>
           </div>
 

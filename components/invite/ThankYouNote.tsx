@@ -19,6 +19,7 @@ import type { CardBorderStyle, CardLanguage } from "@/types/card";
  */
 export default function ThankYouNote({
   eventName,
+  couple,
   theme,
   language,
   borderStyle,
@@ -29,6 +30,8 @@ export default function ThankYouNote({
    * neither, where the note says "our celebration".
    */
   eventName: string | null;
+  /** `eventName` is a wedding's two names: the note says "the wedding of" them. */
+  couple: boolean;
   /** The card's composed theme, as the reply form above is handed it. */
   theme: Theme;
   language: CardLanguage;
@@ -64,7 +67,7 @@ export default function ThankYouNote({
             fontWeight: theme.displayFontWeight,
           }}
         >
-          {copy.thankYou(eventName)}
+          {copy.thankYou(eventName, couple)}
         </p>
       </section>
     </FramedPanel>

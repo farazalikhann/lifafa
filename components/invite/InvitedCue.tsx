@@ -41,14 +41,17 @@ export const INVITED_CUE_HEIGHT = 68;
  */
 export const FIRST_SCREEN_ATTRIBUTE = "data-first-screen";
 
-/** A short rule ending in a diamond, pointing in at the heading. */
+/**
+ * A short rule ending in a diamond, pointing in at the heading. Left off a
+ * phone under 430px wide, where the heading needs the whole line to itself.
+ */
 function Ornament({ mirrored = false }: { mirrored?: boolean }): ReactElement {
   return (
     <svg
       aria-hidden="true"
       focusable="false"
       viewBox="0 0 28 8"
-      className={`h-2 w-7 shrink-0 ${mirrored ? "-scale-x-100" : ""}`}
+      className={`h-2 w-7 shrink-0 max-[429px]:hidden ${mirrored ? "-scale-x-100" : ""}`}
     >
       <path d="M0 4 H17" stroke="currentColor" strokeWidth="1" opacity="0.6" />
       <path d="M22.5 0.5 L26 4 L22.5 7.5 L19 4 Z" fill="currentColor" />
@@ -57,8 +60,10 @@ function Ornament({ mirrored = false }: { mirrored?: boolean }): ReactElement {
 }
 
 /**
- * "You are invited", and under it "Scroll to view the invitation" and a
- * chevron, pinned to the foot of the guest's screen.
+ * "Scroll down to see the details", and under it "Scroll to view the
+ * invitation" and a chevron, pinned to the foot of the guest's screen. It used
+ * to open with "You are invited"; the closed cover says that now (CoverShell),
+ * and saying it twice in a row was once too many.
  *
  * WHY IT IS NOT PART OF THE CARD. A card with a religious opening lands on a
  * Bismillah, a greeting and a dua, centred and complete, and nothing on that
@@ -242,8 +247,13 @@ export default function InvitedCue({
         <span className="flex items-center gap-2.5" style={{ color: theme.accent }}>
           <Ornament />
           <span
-            /* The trailing tracking is balanced with the same on the left, so the line sits centred. */
-            className="ps-[0.2em] text-[0.9375rem] leading-[1.6] tracking-[0.2em] uppercase"
+            /*
+              A sentence, so set as one: in its own case and barely tracked.
+              Spaced capitals suited two words and would not fit these six on
+              one line of a 360px phone, and a second line would push the cue
+              past the room the card keeps for it (INVITED_CUE_HEIGHT).
+            */
+            className="text-[0.9375rem] leading-[1.6] tracking-[0.04em] whitespace-nowrap"
             style={{
               fontFamily: theme.displayFontFamily,
               fontWeight: theme.displayFontWeight,

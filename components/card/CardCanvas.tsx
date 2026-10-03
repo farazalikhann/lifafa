@@ -216,7 +216,7 @@ const SECTION_SIDE_PAD = 28;
 /**
  * How much shorter than the screen the card's first screen is, in px.
  *
- * The guest page pins "You are invited" to the foot of the screen (see
+ * The guest page pins its scroll cue to the foot of the screen (see
  * InvitedCue), and the first screen stops short of it by the cue's height and
  * a little over, so the divider that opens the next section shows between the
  * content and the cue. A first screen that filled the phone exactly looked

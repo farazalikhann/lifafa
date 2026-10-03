@@ -243,16 +243,17 @@ export default function InviteExperience({
       : (coverTitle ?? copy.invite.headingFallback);
 
   /*
-    What the note under the reply form calls the occasion. A wedding is named
-    by its couple, as the card titles them; anything else by its title, and by
-    whoever it names where it has no title.
+    What the note under the reply form calls the occasion. A wedding with its
+    two names is "the wedding of" them, as the card titles them; anything else
+    is named by its title, and by whoever it names where it has no title.
   */
-  const thankYouEventName =
-    config.occasionId === "wedding" && coverTitle !== undefined
-      ? coverTitle
-      : draft.eventTitle.trim().length > 0
-        ? draft.eventTitle.trim()
-        : (coverTitle ?? null);
+  const thankYouCouple =
+    config.occasionId === "wedding" && names.kind === "pair";
+  const thankYouEventName = thankYouCouple
+    ? coverNameLine(names)
+    : draft.eventTitle.trim().length > 0
+      ? draft.eventTitle.trim()
+      : (coverTitle ?? null);
 
   /*
     The page's heading, from the same resolution the cover prints. hostNames is
@@ -453,7 +454,7 @@ export default function InviteExperience({
           </div>
 
           {/*
-            "You are invited", pinned to the foot of the screen until the guest
+            The scroll cue, pinned to the foot of the screen until the guest
             scrolls. Inside the cover's children so it knows when the cover has
             gone; fixed, so where it sits in the tree changes nothing on screen.
             Above the watermark pill on a card that shows one, which is only
@@ -539,6 +540,7 @@ export default function InviteExperience({
           {ended ? null : (
             <ThankYouNote
               eventName={thankYouEventName}
+              couple={thankYouCouple}
               theme={cardTheme}
               language={language}
               borderStyle={config.borderStyle}

@@ -220,8 +220,9 @@ export interface CardCopy {
   /** Under the loader while the card arrives, before the cover appears. */
   coverPreparing: string;
   /**
-   * The cue pinned to the foot of the guest's first screen, telling them this
-   * is an invitation and that it goes on below. See InvitedCue.
+   * The cue pinned to the foot of the guest's first screen, telling them the
+   * card goes on below. See InvitedCue. It used to open with "You are
+   * invited", which the cover says now (`coverInvite`).
    */
   scrollCue: {
     heading: string;
@@ -229,16 +230,19 @@ export interface CardCopy {
   };
   /**
    * What the closed cover says above its artwork, before the guest taps in:
-   * the cue's own heading (`scrollCue.heading`) in a larger hand, and this
-   * line under it. See CoverShell.
+   * the heading in a larger hand, and the line under it. See CoverShell.
    */
-  coverInvite: string;
+  coverInvite: {
+    heading: string;
+    line: string;
+  };
   /**
-   * The note under the reply form. `eventName` is the couple on a wedding
-   * card and the event's title otherwise, or null on a card that names
-   * neither. See ThankYouNote.
+   * The note under the reply form. `eventName` is what the card calls the
+   * occasion, or null on a card that names nothing. With `couple` it is the
+   * two names of a wedding, and the note says "the wedding of" them. See
+   * ThankYouNote.
    */
-  thankYou: (eventName: string | null) => string;
+  thankYou: (eventName: string | null, couple: boolean) => string;
   invite: {
     /** The page's heading when the card names neither an event nor anyone in it. */
     headingFallback: string;
@@ -475,14 +479,20 @@ const ENGLISH: CardCopy = {
   coverSkip: "Skip",
   coverPreparing: "Preparing your invitation",
   scrollCue: {
-    heading: "You are invited",
+    heading: "Scroll down to see the details",
     prompt: "Scroll to view the invitation",
   },
-  coverInvite:
-    "With joy in our hearts, we would love for you to celebrate with us",
-  thankYou: (eventName) =>
+  coverInvite: {
+    heading: "You are invited",
+    line: "With joy in our hearts, we would love for you to celebrate with us",
+  },
+  thankYou: (eventName, couple) =>
     `Thank you for being part of our special day. We would be truly honoured by your presence at ${
-      eventName ?? "our celebration"
+      eventName === null
+        ? "our celebration"
+        : couple
+          ? `the wedding of ${eventName}`
+          : eventName
     }. Please do come and bless us with your love.`,
   invite: {
     headingFallback: "Invitation",
@@ -700,16 +710,23 @@ const HINDI: CardCopy = {
   coverSkip: "छोड़ें",
   coverPreparing: "आपका निमंत्रण तैयार हो रहा है",
   scrollCue: {
-    heading: "आप सादर आमंत्रित हैं",
+    /* TODO(Faraz): verify this Hindi heading with a native reader before launch. */
+    heading: "विवरण देखने के लिए नीचे स्क्रॉल करें",
     prompt: "निमंत्रण देखने के लिए नीचे स्क्रॉल करें",
   },
-  /* TODO(Faraz): verify this Hindi line with a native reader before launch. */
-  coverInvite:
-    "हृदय की प्रसन्नता के साथ, हम चाहते हैं कि आप हमारी ख़ुशियों में शामिल हों",
-  /* TODO(Faraz): verify this Hindi note with a native reader before launch. */
-  thankYou: (eventName) =>
+  coverInvite: {
+    heading: "आप सादर आमंत्रित हैं",
+    /* TODO(Faraz): verify this Hindi line with a native reader before launch. */
+    line: "हृदय की प्रसन्नता के साथ, हम चाहते हैं कि आप हमारी ख़ुशियों में शामिल हों",
+  },
+  /* TODO(Faraz): verify this Hindi note, and "के विवाह", with a native reader before launch. */
+  thankYou: (eventName, couple) =>
     `हमारे इस ख़ास दिन का हिस्सा बनने के लिए आपका धन्यवाद। ${
-      eventName ?? "हमारे समारोह"
+      eventName === null
+        ? "हमारे समारोह"
+        : couple
+          ? `${eventName} के विवाह`
+          : eventName
     } में आपकी उपस्थिति हमारे लिए बड़े सम्मान की बात होगी। कृपया अवश्य पधारें और अपने प्रेम व आशीर्वाद से हमें अनुगृहीत करें।`,
   invite: {
     headingFallback: "निमंत्रण",
