@@ -66,6 +66,7 @@ import {
   INVITED_CUE_HEIGHT,
 } from "@/components/invite/InvitedCue";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
+import { coupleIllustrationOn } from "@/lib/coupleCard";
 import {
   dateRevealOf,
   scratchTargetUnder,
@@ -107,7 +108,7 @@ import type {
 import type { CardDensity } from "@/types/style";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
-import type { OccasionId } from "@/types/occasion";
+import type { OccasionId, TraditionId } from "@/types/occasion";
 import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
 import type { AnyOrnamentId } from "@/types/ornament";
 
@@ -483,7 +484,11 @@ function firstScreenHeight(sizing: CardSizing, minHeight: string): string {
  * depend on it: a divider belongs between two *rendered* sections, never
  * beside one that returned null.
  */
-function blockRenders(block: CardBlock, draft: EventDraft): boolean {
+function blockRenders(
+  block: CardBlock,
+  draft: EventDraft,
+  occasionId: OccasionId,
+): boolean {
   if (block.kind === "custom") {
     return hasCustomContent(block.section);
   }
@@ -506,7 +511,7 @@ function blockRenders(block: CardBlock, draft: EventDraft): boolean {
     case "timeline":
       return hasTimeline(draft);
     case "family":
-      return hasFamily(draft);
+      return hasFamily(draft, occasionId);
     default:
       return true;
   }
@@ -612,6 +617,8 @@ function renderBlock(
   venueScratched: boolean,
   /** The royal scroll the date unrolls on, for a card whose host chose it. */
   scroll: ScrollArt | null,
+  /** Whose dress the couple's figures wear, and whether they are shown at all. */
+  couple: { traditionId: TraditionId; illustration: boolean },
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -700,6 +707,10 @@ function renderBlock(
           theme={theme}
           minHeight={minHeight}
           pad={pad}
+          occasionId={occasionId}
+          traditionId={couple.traditionId}
+          language={language}
+          illustration={couple.illustration}
         />
       );
     case "message":
@@ -787,7 +798,9 @@ export default function CardCanvas({
   const { style } = config;
   const minHeight = sectionMinHeight(sizing, style.density);
   const bandHeight = scrollportHeight(sizing);
-  const visible = config.blocks.filter((block) => blockRenders(block, draft));
+  const visible = config.blocks.filter((block) =>
+    blockRenders(block, draft, config.occasionId),
+  );
 
   /*
     The one place the card's language is read. Everything it writes for itself
@@ -1706,6 +1719,10 @@ export default function CardCanvas({
               dateReveal === "scroll"
                 ? scrollArtFor(effectiveTheme.background)
                 : null,
+              {
+                traditionId: config.traditionId,
+                illustration: coupleIllustrationOn(config.coupleIllustration),
+              },
             );
 
             const head =

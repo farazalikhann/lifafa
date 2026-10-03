@@ -44,6 +44,8 @@ import { petalFlowerType, petalStyle } from "@/lib/petals";
 import { dividerStyleOf, hasChosenDivider, scratchFrameOf } from "@/lib/cardDecor";
 import DividerPanel from "@/components/create/DividerPanel";
 import DateRevealPanel from "@/components/create/DateRevealPanel";
+import CoupleIllustrationPanel from "@/components/create/CoupleIllustrationPanel";
+import { coupleIllustrationOn } from "@/lib/coupleCard";
 import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { getTraditionPack } from "@/lib/traditionPacks";
@@ -158,6 +160,8 @@ interface EditorState {
   scratchFrame: ScratchFrame;
   /** The date's reveal once the host or a preset has chosen one; undefined on a card that never has. */
   dateReveal: DateReveal | undefined;
+  /** Whether "Meet the Couple" carries its figures. On unless the host turned it off. */
+  coupleIllustration: boolean;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
   divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
@@ -209,6 +213,7 @@ function toState(snapshot: EditorSnapshot): EditorState {
     scratchFrame: scratchFrameOf(config.scratchFrame),
     /* Kept as stored, absent included, so opening an older card is not an edit to it. */
     dateReveal: config.dateReveal,
+    coupleIllustration: coupleIllustrationOn(config.coupleIllustration),
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
@@ -275,6 +280,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       scratchFrame: state.scratchFrame,
       /* Left off the card until somebody chooses, so an older card keeps what it has always shown. */
       ...(state.dateReveal !== undefined ? { dateReveal: state.dateReveal } : null),
+      /* Only ever stored as off: a card that never had the key shows its figures. */
+      ...(state.coupleIllustration ? null : { coupleIllustration: false }),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
       ...(state.divider !== undefined ? { divider: state.divider } : null),
       borderStyle: state.borderStyle,
@@ -470,6 +477,9 @@ export default function CardEditor({
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
   const [scratchFrame, setScratchFrame] = useState(initial.scratchFrame);
   const [dateReveal, setDateReveal] = useState(initial.dateReveal);
+  const [coupleIllustration, setCoupleIllustration] = useState(
+    initial.coupleIllustration,
+  );
 
   /*
     ONE REVEAL ON THE DATE, NEVER TWO. The royal scroll and the scratch panel
@@ -882,6 +892,7 @@ export default function CardEditor({
     scratchTarget,
     scratchFrame,
     dateReveal,
+    coupleIllustration,
     divider,
     borderStyle,
     style,
@@ -1447,6 +1458,12 @@ export default function CardEditor({
                   ornamentConfig={ornamentConfig}
                   onTraditionChange={handleTraditionSelect}
                   onOrnamentConfigChange={setOrnamentConfig}
+                  accordion={accordionFor("design")}
+                />
+                {/* Beside the tradition it follows: the figures are that tradition's pair. */}
+                <CoupleIllustrationPanel
+                  enabled={coupleIllustration}
+                  onEnabledChange={setCoupleIllustration}
                   accordion={accordionFor("design")}
                 />
                 {/*

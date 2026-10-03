@@ -245,6 +245,13 @@ export interface CardConfig {
   /** Which section sits behind a scratch panel, if any. */
   scratchTarget: ScratchTarget;
   /**
+   * Whether "Meet the Couple" carries the tradition's two figures. Stored only
+   * as `false`, by a host who turned them off: absent, and on every card saved
+   * before the switch, the figures are shown. Read it through
+   * `coupleIllustrationOn` in lib/coupleCard.ts.
+   */
+  coupleIllustration?: boolean;
+  /**
    * The reveal on the date's screen.
    *
    * Absent from every card saved before there was a choice. Read it through

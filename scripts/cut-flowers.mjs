@@ -20,6 +20,7 @@
  *   node scripts/cut-flowers.mjs dividers     just the floral dividers
  *   node scripts/cut-flowers.mjs sikh         just the Sikh pack's ornaments
  *   node scripts/cut-flowers.mjs scroll       just the royal scroll's rollers, paper and poster
+ *   node scripts/cut-flowers.mjs couple       just the couple's figures, their card's corner and the monogram frame
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -571,6 +572,81 @@ const SCROLL = [
   source: ENVELOPE_SOURCE,
   out: join("public", "decor", "scroll"),
 }));
+
+/**
+ * "Meet the Couple": a groom and a bride for each tradition, seen from behind,
+ * the flower corner their cards carry, and the round frame a card shows in
+ * place of a figure. See components/card/sections/FamilySection.tsx.
+ *
+ * WHICH FILE IS WHOM is written out here and nowhere else. The pictures
+ * arrived unnamed, one folder to a tradition; in each folder the man is the
+ * groom and the woman the bride, and the folder is the tradition — three of
+ * them under another spelling, and "other" standing for a card with no
+ * tradition at all.
+ *
+ * THE FIGURES STAY ON WHITE. They are laid on the card with `multiply`, which
+ * turns white into whatever is under it, so there is nothing to cut — and a
+ * cut would cost the white clothes their own edge. What is done to them:
+ *
+ *   The same rows are kept from every one. All fourteen were drawn on the same
+ *   1024 x 1536 sheet with the head near the top and the feet near the bottom,
+ *   so keeping one band of rows, and not each figure's own, is what keeps them
+ *   the same scale: a head is the same size on every card. Only the empty
+ *   columns either side are trimmed, to the figure's own width and a margin.
+ *
+ *   The background is made truly white. It arrived a point or two off in
+ *   places, and under `multiply` an off-white box is a faint grey box on the
+ *   card.
+ *
+ * The corner and the frame are on black, and are cut the way the wax seal is.
+ * The frame's empty middle is black closed in by the frame, which the flood
+ * from the edges cannot reach: it goes as a pocket (`pocketMin`). So does
+ * every smaller patch of black the gold filigree and the leaves close in,
+ * down to 160 pixels: left in, they are black flecks on an ivory card. No
+ * smaller, because the deepest shadow in a rose is true black too, and a
+ * pocket that small is a petal's own shading.
+ */
+const COUPLE_SOURCE = join("couple illustrations", "couple illustrations");
+
+const COUPLE_FIGURES = [
+  { tradition: "hindu", folder: "hindu", groom: "ChatGPT Image Oct 3, 2026, 06_08_15 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_08_23 PM.png" },
+  { tradition: "muslim", folder: "muslim", groom: "ChatGPT Image Oct 3, 2026, 06_09_51 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_12_40 PM.png" },
+  { tradition: "sikh", folder: "sikh", groom: "ChatGPT Image Oct 3, 2026, 06_13_49 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_13_58 PM.png" },
+  { tradition: "christian", folder: "cristian", groom: "ChatGPT Image Oct 3, 2026, 06_15_17 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_15_23 PM.png" },
+  { tradition: "jain", folder: "Jain", groom: "ChatGPT Image Oct 3, 2026, 06_16_34 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_16_39 PM.png" },
+  { tradition: "buddhist", folder: "budh", groom: "ChatGPT Image Oct 3, 2026, 06_17_28 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_17_35 PM.png" },
+  { tradition: "other", folder: "other", groom: "ChatGPT Image Oct 3, 2026, 06_27_26 PM.png", bride: "ChatGPT Image Oct 3, 2026, 06_25_59 PM.png" },
+].flatMap(({ tradition, folder, groom, bride }) =>
+  [
+    ["groom", groom],
+    ["bride", bride],
+  ].map(([role, file]) => ({
+    name: role,
+    /* Named for re-cutting one: `couple hindu-groom`. */
+    alias: `${tradition}-${role}`,
+    file,
+    background: "figure",
+    source: join(COUPLE_SOURCE, folder),
+    out: join("public", "decor", "couple", tradition),
+    quality: 80,
+  })),
+);
+
+const COUPLE = [
+  ...COUPLE_FIGURES,
+  ...[
+    { name: "card-corner", file: "ChatGPT Image Oct 3, 2026, 06_19_38 PM.png", fit: { width: 200 }, quality: 84, pocketMin: 160 },
+    { name: "monogram-frame", file: "ChatGPT Image Oct 3, 2026, 06_19_47 PM.png", fit: { width: 500 }, quality: 82, pocketMin: 160 },
+  ].map((entry) => ({
+    ...entry,
+    background: "black",
+    solidInside: true,
+    floodBelow: LOW,
+    softRim: true,
+    source: join(COUPLE_SOURCE, "hindu"),
+    out: join("public", "decor", "couple"),
+  })),
+];
 
 /* --- On black ---------------------------------------------------------- */
 
@@ -1243,7 +1319,66 @@ async function publishPhoto(entry) {
   console.log(`${target}  ${result.width}x${result.height}  ${result.size} bytes`);
 }
 
+/** The sheet every figure was drawn on, and the band of its rows that is kept from each. */
+const FIGURE_SHEET = { width: 1024, height: 1536 };
+const FIGURE_ROWS = { top: 6, bottom: 1530 };
+/** How tall a figure is published, and the white kept either side of it, in source pixels. */
+const FIGURE_HEIGHT = 600;
+const FIGURE_MARGIN = 18;
+/** A background pixel is at least this light in every channel; and is made white. */
+const FIGURE_WHITE = 244;
+
+/**
+ * A figure, left on its white: the same rows as every other, its own columns,
+ * and the white made white. See COUPLE.
+ */
+async function publishFigure(entry) {
+  const { data, info } = await sharp(join(entry.source, entry.file))
+    .flatten({ background: "#ffffff" })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width, height } = info;
+
+  if (width !== FIGURE_SHEET.width || height !== FIGURE_SHEET.height) {
+    throw new Error(`${entry.file}: ${width}x${height}, not the ${FIGURE_SHEET.width}x${FIGURE_SHEET.height} every figure is drawn on`);
+  }
+
+  let top = height, bottom = -1, left = width, right = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const at = (y * width + x) * 3;
+      if (Math.min(data[at], data[at + 1], data[at + 2]) >= FIGURE_WHITE) {
+        data[at] = 255;
+        data[at + 1] = 255;
+        data[at + 2] = 255;
+      } else {
+        top = Math.min(top, y); bottom = Math.max(bottom, y);
+        left = Math.min(left, x); right = Math.max(right, x);
+      }
+    }
+  }
+
+  const x0 = Math.max(0, left - FIGURE_MARGIN);
+  const x1 = Math.min(width - 1, right + FIGURE_MARGIN);
+
+  mkdirSync(entry.out, { recursive: true });
+  const target = join(entry.out, `${entry.name}.webp`);
+  const result = await sharp(data, { raw: { width, height, channels: 3 } })
+    .extract({ left: x0, top: FIGURE_ROWS.top, width: x1 - x0 + 1, height: FIGURE_ROWS.bottom - FIGURE_ROWS.top })
+    .resize({ height: FIGURE_HEIGHT })
+    .webp({ quality: entry.quality ?? 80, effort: 6 })
+    .toFile(target);
+
+  console.log(`${target}  ${result.width}x${result.height}  ${result.size} bytes  (figure rows ${top}-${bottom} of ${height}, ${(((bottom - top) / (FIGURE_ROWS.bottom - FIGURE_ROWS.top)) * 100).toFixed(1)}% of the kept band)`);
+}
+
 async function publish(entry) {
+  if (entry.background === "figure") {
+    await publishFigure(entry);
+    return;
+  }
+
   if (entry.background === "tile") {
     await publishTile(entry);
     return;
@@ -1341,7 +1476,8 @@ const sets = [
   ...(which === "all" || which === "dividers" ? DIVIDERS : []),
   ...(which === "all" || which === "sikh" ? SIKH : []),
   ...(which === "all" || which === "scroll" ? SCROLL : []),
-].filter((entry) => only.length === 0 || only.includes(entry.name));
+  ...(which === "all" || which === "couple" ? COUPLE : []),
+].filter((entry) => only.length === 0 || only.includes(entry.alias ?? entry.name));
 
 for (const entry of sets) {
   if (entry.hold === true) {

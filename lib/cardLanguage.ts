@@ -116,6 +116,12 @@ export interface CardCopy {
     dayPlaceholder: string;
     dateTimePlaceholder: string;
   };
+  /** "Meet the Couple": the section's heading, and whose child each of the two is. */
+  family: {
+    heading: string;
+    sonOf: string;
+    daughterOf: string;
+  };
   countdown: {
     heading: string;
     days: string;
@@ -396,6 +402,11 @@ const ENGLISH: CardCopy = {
     dayPlaceholder: "The day",
     dateTimePlaceholder: "Date and time",
   },
+  family: {
+    heading: "Meet the Couple",
+    sonOf: "Son of",
+    daughterOf: "Daughter of",
+  },
   countdown: {
     heading: "The countdown",
     days: "Days",
@@ -623,6 +634,12 @@ const HINDI: CardCopy = {
   details: {
     dayPlaceholder: "दिन",
     dateTimePlaceholder: "तारीख़ और समय",
+  },
+  family: {
+    heading: "वर-वधू",
+    /* TODO(Faraz): verify these two Hindi labels with a native reader before launch. */
+    sonOf: "सुपुत्र",
+    daughterOf: "सुपुत्री",
   },
   countdown: {
     heading: "उलटी गिनती",

@@ -1,3 +1,5 @@
+import { pairsNames } from "@/lib/occasions";
+import type { OccasionId } from "@/types/occasion";
 import { eventInstant, hasEventTime } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import type { CardLanguage, CardSectionId } from "@/types/card";
@@ -23,9 +25,9 @@ export const CARD_SECTIONS: Record<CardSectionId, CardSectionMeta> = {
     description: "Host names and the occasion, the first thing a guest sees.",
   },
   family: {
-    label: "Families",
+    label: "Meet the Couple",
     description:
-      "Parents and home town for each side. Hidden until you fill one in.",
+      "The two of you, each on a card with your parents and home town.",
   },
   details: {
     label: "Date and time",
@@ -238,9 +240,48 @@ export function familyBlocks(draft: EventDraft): readonly FamilyBlock[] {
   );
 }
 
-/** The family section hides itself when neither side has anything to say. */
-export function hasFamily(draft: EventDraft): boolean {
-  return familyBlocks(draft).length > 0;
+/**
+ * The two people of a card that is for two, as "Meet the Couple" sets them:
+ * the first is the groom's card and the second the bride's, in the order the
+ * form asks for them. Null for a card that is not for a couple — an occasion
+ * that names one person, or one where both names are not written yet.
+ *
+ * Not conditional on parents or a city, as the list was: the two cards are
+ * the couple met as people, and say that with a name and a figure alone.
+ */
+export function coupleOf(
+  draft: EventDraft,
+  occasionId: OccasionId,
+): readonly [FamilyBlock, FamilyBlock] | null {
+  const first = trimmedOrNull(draft.partyOneName);
+  const second = trimmedOrNull(draft.partyTwoName);
+
+  if (!pairsNames(occasionId) || first === null || second === null) {
+    return null;
+  }
+
+  return [
+    {
+      key: "one",
+      name: first,
+      parents: trimmedOrNull(draft.partyOneParents),
+      city: trimmedOrNull(draft.partyOneCity),
+    },
+    {
+      key: "two",
+      name: second,
+      parents: trimmedOrNull(draft.partyTwoParents),
+      city: trimmedOrNull(draft.partyTwoCity),
+    },
+  ];
+}
+
+/**
+ * The section is drawn for every couple, and for a card that is not for one
+ * only when a side has something to say.
+ */
+export function hasFamily(draft: EventDraft, occasionId: OccasionId): boolean {
+  return coupleOf(draft, occasionId) !== null || familyBlocks(draft).length > 0;
 }
 
 /**
