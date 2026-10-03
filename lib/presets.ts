@@ -71,6 +71,13 @@ interface PresetSettings {
    * Secondary. A preset that names none gets the pair nearest its palette.
    */
   textPairId?: TextPairId;
+  /**
+   * The royal scroll, on a look that has its date unroll. A look that names
+   * no reveal has none of its own: it takes the scroll off a card that had
+   * one from another look, and leaves a scratch panel or a plain date as the
+   * host had it.
+   */
+  dateReveal?: "scroll";
   coverAnimation: CoverAnimationId;
   /**
    * The pack's shapes to switch on: what hangs, what sits in the corners, the
@@ -242,6 +249,7 @@ const PRESETS: readonly Preset[] = [
     settings: {
       paletteId: "cream",
       textPairId: "ivoryRose",
+      dateReveal: "scroll",
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
@@ -268,6 +276,7 @@ const PRESETS: readonly Preset[] = [
     settings: {
       paletteId: "cream",
       textPairId: "haldiSaffron",
+      dateReveal: "scroll",
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
@@ -498,6 +507,13 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     coverAnimation: settings.coverAnimation ?? design.coverAnimation,
     traditionId: preset.tradition,
     ornamentConfig,
+    ...(settings.dateReveal !== undefined
+      ? { dateReveal: settings.dateReveal }
+      : design.dateReveal === "scroll"
+        ? { dateReveal: "simple" as const }
+        : design.dateReveal !== undefined
+          ? { dateReveal: design.dateReveal }
+          : null),
   };
 }
 
@@ -540,13 +556,19 @@ export function matchingPreset(design: DesignState): Preset | null {
     PRESETS.find((preset) => {
       const applied = applyPreset(design, preset);
 
+      /* And the same for the date's reveal, on a card saved before there was a choice of one. */
+      const compared = { ...applied };
+      if (design.dateReveal === undefined) {
+        delete compared.dateReveal;
+      }
+
       if (!hasInks) {
         const style = { ...applied.style };
         delete style.textColors;
-        return sameDesign({ ...applied, style }, design);
+        return sameDesign({ ...compared, style }, design);
       }
 
-      return sameDesign(applied, design);
+      return sameDesign(compared, design);
     }) ?? null
   );
 }

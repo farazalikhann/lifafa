@@ -111,6 +111,13 @@ export type PetalFlower = "rose" | "marigold" | "mogra" | "lotus" | "mixed";
  */
 export type ScratchTarget = "none" | "date" | "venue" | "countdown";
 
+/**
+ * How the date arrives on its own screen: on a royal scroll that unrolls,
+ * behind a scratch panel, or simply there. Only ever one of the three: the
+ * scroll has no scratch layer. See lib/royalScroll.ts.
+ */
+export type DateReveal = "scroll" | "scratch" | "simple";
+
 /** The frame of roses a scratch panel is drawn in. See lib/cardDecor.ts. */
 export type ScratchFrame = "oval" | "rect";
 
@@ -237,6 +244,15 @@ export interface CardConfig {
   rsvpEnabled: boolean;
   /** Which section sits behind a scratch panel, if any. */
   scratchTarget: ScratchTarget;
+  /**
+   * The reveal on the date's screen.
+   *
+   * Absent from every card saved before there was a choice. Read it through
+   * `dateRevealOf` in lib/royalScroll.ts, which gives such a card what it has
+   * always shown: the scratch panel if its date was behind one, the plain date
+   * if not.
+   */
+  dateReveal?: DateReveal;
   /**
    * The shape of the frame the scratch panel is drawn in.
    *

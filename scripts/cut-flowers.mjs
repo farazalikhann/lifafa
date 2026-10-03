@@ -19,6 +19,7 @@
  *   node scripts/cut-flowers.mjs scratch      just the scratch panel's frames and foil
  *   node scripts/cut-flowers.mjs dividers     just the floral dividers
  *   node scripts/cut-flowers.mjs sikh         just the Sikh pack's ornaments
+ *   node scripts/cut-flowers.mjs scroll       just the royal scroll's rollers, paper and poster
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -530,6 +531,45 @@ const SIKH = [
   softRim: true,
   source: "sikh religion",
   out: join("public", "decor", "sikh"),
+}));
+
+/**
+ * The royal scroll the date unrolls on: a roller, a strip of paper and the
+ * whole scroll open, in maroon velvet for a dark card and in ivory for a light
+ * one. See components/card/RoyalScroll.tsx.
+ *
+ * All six arrived on black, unnamed, in the envelope's folder. The velvet goes
+ * nearly black in its own folds and must stay solid, so each is cut the way
+ * the wax seal is: flooded from the edges through true black only, with the
+ * soft rim unmixed, which is also what keeps a dark line from being left round
+ * the gold finials.
+ *
+ * THE PAPER IS NOT TILED, though it was drawn to be. Stacked on itself the
+ * strip's last row and first row disagree — a step in the velvet's tone, about
+ * three times what two neighbouring rows differ by, and a gold vine that stops
+ * at one edge and starts somewhere else at the other. Blending the two edges
+ * can soften the tone and cannot join the vine. One strip is as tall as the
+ * date needs at the width the scroll is drawn, so the scroll is one strip, its
+ * own paisleys in its four corners as they are on the whole scroll, and its
+ * two cut ends are behind the rollers.
+ *
+ * Sizes: the roller 900 wide, the paper 700 wide, the whole scroll 1200 tall.
+ */
+const SCROLL = [
+  { name: "scroll-full-maroon", file: "ChatGPT Image Oct 3, 2026, 04_58_54 PM.png", fit: { height: 1200 }, quality: 78 },
+  { name: "scroll-roller-maroon", file: "ChatGPT Image Oct 3, 2026, 04_59_01 PM.png", fit: { width: 900 }, quality: 82 },
+  { name: "scroll-paper-maroon", file: "ChatGPT Image Oct 3, 2026, 04_59_05 PM.png", fit: { width: 700 }, quality: 76 },
+  { name: "scroll-full-ivory", file: "ChatGPT Image Oct 3, 2026, 04_59_09 PM.png", fit: { height: 1200 }, quality: 78 },
+  { name: "scroll-roller-ivory", file: "ChatGPT Image Oct 3, 2026, 04_59_14 PM.png", fit: { width: 900 }, quality: 82 },
+  { name: "scroll-paper-ivory", file: "ChatGPT Image Oct 3, 2026, 04_59_18 PM.png", fit: { width: 700 }, quality: 76 },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  source: ENVELOPE_SOURCE,
+  out: join("public", "decor", "scroll"),
 }));
 
 /* --- On black ---------------------------------------------------------- */
@@ -1300,6 +1340,7 @@ const sets = [
   ...(which === "all" || which === "scratch" ? SCRATCH : []),
   ...(which === "all" || which === "dividers" ? DIVIDERS : []),
   ...(which === "all" || which === "sikh" ? SIKH : []),
+  ...(which === "all" || which === "scroll" ? SCROLL : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.name));
 
 for (const entry of sets) {

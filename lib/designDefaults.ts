@@ -1,3 +1,4 @@
+import type { DateReveal } from "@/types/card";
 import { paletteTextColors } from "@/lib/textColors";
 import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
@@ -41,6 +42,12 @@ export interface DesignState {
   coverAnimation: CoverAnimationId;
   traditionId: TraditionId;
   ornamentConfig: OrnamentConfig;
+  /**
+   * The reveal on the date's screen, where the host or a preset has chosen
+   * one. Absent until then, and on every card saved before there was a
+   * choice; see `dateRevealOf` in lib/royalScroll.ts.
+   */
+  dateReveal?: DateReveal;
 }
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);

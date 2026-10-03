@@ -757,6 +757,16 @@
   }
 }
 
+/* The royal scroll's rollers, gathering themselves before they roll apart. */
+@keyframes lifafa-scroll-settle {
+  from {
+    transform: scale(0.98);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 /* The loader before the cover: its mark and words arriving, then breathing. */
 @keyframes lifafa-cover-loader-in {
   from {

@@ -435,7 +435,7 @@ const ENGLISH: CardCopy = {
     tap: "Tap to reveal",
   },
   calendar: {
-    heading: "Save the date",
+    heading: "Save the Date",
     subline: "Mark your calendar. We cannot wait to celebrate with you.",
     add: "Add to my calendar",
     added: "Added to calendar",

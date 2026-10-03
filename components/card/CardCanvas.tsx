@@ -66,6 +66,12 @@ import {
   INVITED_CUE_HEIGHT,
 } from "@/components/invite/InvitedCue";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
+import {
+  dateRevealOf,
+  scratchTargetUnder,
+  scrollArtFor,
+  type ScrollArt,
+} from "@/lib/royalScroll";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
@@ -604,6 +610,8 @@ function renderBlock(
   coverDecor: CoverDecor | null,
   /** The venue is behind a scratch panel, so the date's screen does not name it until it opens. */
   venueScratched: boolean,
+  /** The royal scroll the date unrolls on, for a card whose host chose it. */
+  scroll: ScrollArt | null,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -645,6 +653,7 @@ function renderBlock(
           invite={invite}
           occasionId={occasionId}
           venueScratched={venueScratched}
+          scroll={scroll}
         />
       );
     case "countdown":
@@ -788,8 +797,17 @@ export default function CardCanvas({
   const copy = cardCopy(language);
 
   const isHostPreview = audience === "host-preview";
-  const hiddenSection = scratchSection(config.scratchTarget);
-  const panelLabel = scratchLabel(config.scratchTarget, copy.scratch);
+  /*
+    The reveal on the date's screen, and the scratch target the card obeys
+    under it. ONE REVEAL, NEVER TWO: a card whose date unrolls on the royal
+    scroll has no scratch layer over that date, wherever on the card the date
+    would otherwise be hidden — the countdown and the calendar page included,
+    since they all read the one target resolved here.
+  */
+  const dateReveal = dateRevealOf(config.dateReveal, config.scratchTarget);
+  const scratchTarget = scratchTargetUnder(dateReveal, config.scratchTarget);
+  const hiddenSection = scratchSection(scratchTarget);
+  const panelLabel = scratchLabel(scratchTarget, copy.scratch);
 
   /*
     What a guest cannot see yet: the target, when its section is on the card
@@ -802,7 +820,7 @@ export default function CardCanvas({
     visible.some(
       (block) => block.kind === "builtin" && block.id === hiddenSection,
     )
-      ? config.scratchTarget
+      ? scratchTarget
       : "none";
 
   const fontPair = getFontPair(style.fontPairId);
@@ -1643,7 +1661,7 @@ export default function CardCanvas({
                     /* The host edits; the guest scratches. */
                     preCleared: isHostPreview,
                     /* One secret wherever it is hidden; see ScratchReveal.tsx. */
-                    target: config.scratchTarget === "none" ? undefined : config.scratchTarget,
+                    target: scratchTarget === "none" ? undefined : scratchTarget,
                     /* The section's own panel is the framed one; see FramedScratch. */
                     frame: scratchFrameOf(config.scratchFrame),
                     petals: BURST_PIECES[petalFlower].map((piece) => piece.src),
@@ -1684,6 +1702,10 @@ export default function CardCanvas({
               language,
               isCover ? coverDecor : null,
               concealed === "venue",
+              /* Maroon velvet on a dark card, ivory on a light one. */
+              dateReveal === "scroll"
+                ? scrollArtFor(effectiveTheme.background)
+                : null,
             );
 
             const head =

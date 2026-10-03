@@ -16,7 +16,9 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
-import { cardPx } from "@/lib/cardScale";
+import { cardPx, cardRem } from "@/lib/cardScale";
+import RoyalScroll from "@/components/card/RoyalScroll";
+import { scrollInks, type ScrollArt } from "@/lib/royalScroll";
 import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -135,6 +137,7 @@ export default function DetailsSection({
   invite,
   occasionId,
   venueScratched,
+  scroll = null,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -153,6 +156,13 @@ export default function DetailsSection({
   occasionId: OccasionId;
   /** The venue is behind a scratch panel elsewhere on the card, and is not named here until it opens. */
   venueScratched: boolean;
+  /**
+   * The royal scroll, on a card whose host chose it for the date: the date and
+   * the venue are set on it, and it unrolls as the guest reaches this screen.
+   * Null on every other card. Never with a scratch panel — the canvas hands
+   * this section no `scratch` while the scroll is the reveal.
+   */
+  scroll?: ScrollArt | null;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -276,10 +286,37 @@ export default function DetailsSection({
       </div>
     );
 
-  /* The date, in its frame: under foil when the host hid it, and simply framed when they did not. */
+  /*
+    The date, in its frame: on the scroll when the host chose that, under foil
+    when they hid it, and simply framed when they did neither.
+  */
+  const onScroll = page !== null && scroll !== null;
   const framed =
     page === null ? (
       when
+    ) : scroll !== null ? (
+      <RoyalScroll
+        /*
+          A new scroll for a new one: a host who switches palette from dark to
+          light in the editor sees the other scroll unroll, from closed, and
+          one who only changes the card colour sees it unroll again on that.
+        */
+        key={`${scroll.variant}:${theme.background}`}
+        art={scroll}
+        inks={scrollInks(scroll, theme)}
+        page={page}
+        /* Under its own scratch panel elsewhere on the card, the venue is not given away here. */
+        venueName={venueHidden || venueName.length === 0 ? null : venueName}
+        venueAddress={venueHidden || venueAddress.length === 0 ? null : venueAddress}
+        script={copy.script}
+        scriptFace={HINDI_FACE}
+        /*
+          About 82% of the card's width: of the column and the section's own
+          3.5rem of padding together. Never wider than the column, which is
+          what a flower frame narrows, and never past the card's design width.
+        */
+        width={`min(100%, calc((100% + 3.5rem) * 0.82), ${cardRem(21.5)})`}
+      />
     ) : scratch === null ? (
       <FrameStage frame="oval">{when}</FrameStage>
     ) : scratch.frame !== undefined ? (
@@ -315,7 +352,8 @@ export default function DetailsSection({
               hindi ? "leading-[1.45]" : "leading-[1.15]"
             }`}
             style={{
-              color: textRoles(theme).heading,
+              /* Over the scroll it is the accent: the scroll's own inks are the text under it. */
+              color: onScroll ? theme.accent : textRoles(theme).heading,
               fontFamily: "var(--card-names)",
               fontWeight: "var(--card-names-weight)" as unknown as number,
             }}
@@ -328,7 +366,7 @@ export default function DetailsSection({
       {framed}
 
       {/* Where, under the frame: the venue in the display face and its address under it. */}
-      {page !== null && !venueHidden && (venueName.length > 0 || venueAddress.length > 0) ? (
+      {page !== null && !onScroll && !venueHidden && (venueName.length > 0 || venueAddress.length > 0) ? (
         <div className={`flex flex-col items-center gap-1 ${REVEAL_BASE} ${revealClass(isInView)}`}>
           {venueName.length > 0 ? (
             <p

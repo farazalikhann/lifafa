@@ -43,6 +43,8 @@ import { butterflyStyle, leavesOn } from "@/lib/butterflies";
 import { petalFlowerType, petalStyle } from "@/lib/petals";
 import { dividerStyleOf, hasChosenDivider, scratchFrameOf } from "@/lib/cardDecor";
 import DividerPanel from "@/components/create/DividerPanel";
+import DateRevealPanel from "@/components/create/DateRevealPanel";
+import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { deepEqual } from "@/lib/deepEqual";
@@ -89,6 +91,7 @@ import type {
   DecorMotion,
   DividerStyle,
   ScratchFrame,
+  DateReveal,
   ScratchTarget,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -153,6 +156,8 @@ interface EditorState {
   rsvpEnabled: boolean;
   scratchTarget: ScratchTarget;
   scratchFrame: ScratchFrame;
+  /** The date's reveal once the host or a preset has chosen one; undefined on a card that never has. */
+  dateReveal: DateReveal | undefined;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
   divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
@@ -202,6 +207,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     scratchTarget: config.scratchTarget,
     /* Both absent from a card saved before they existed; see lib/cardDecor.ts. */
     scratchFrame: scratchFrameOf(config.scratchFrame),
+    /* Kept as stored, absent included, so opening an older card is not an edit to it. */
+    dateReveal: config.dateReveal,
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
@@ -266,6 +273,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       rsvpEnabled: state.rsvpEnabled,
       scratchTarget: state.scratchTarget,
       scratchFrame: state.scratchFrame,
+      /* Left off the card until somebody chooses, so an older card keeps what it has always shown. */
+      ...(state.dateReveal !== undefined ? { dateReveal: state.dateReveal } : null),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
       ...(state.divider !== undefined ? { divider: state.divider } : null),
       borderStyle: state.borderStyle,
@@ -460,6 +469,45 @@ export default function CardEditor({
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
   const [scratchFrame, setScratchFrame] = useState(initial.scratchFrame);
+  const [dateReveal, setDateReveal] = useState(initial.dateReveal);
+
+  /*
+    ONE REVEAL ON THE DATE, NEVER TWO. The royal scroll and the scratch panel
+    are both chosen here, and choosing either takes the other off the date:
+    the scroll or the plain date clears a scratch panel that was over the date
+    (one over the venue or the countdown is another section's and is left),
+    and Scratch puts the panel on the date.
+  */
+  const handleDateReveal = useCallback(
+    (next: DateReveal) => {
+      setDateReveal(next);
+
+      if (next === "scratch") {
+        setScratchTarget("date");
+      } else if (scratchTarget === "date") {
+        setScratchTarget("none");
+      }
+    },
+    [scratchTarget],
+  );
+
+  /*
+    The scratch panel's own control. Putting the panel on the date is choosing
+    Scratch for the date, scroll or no scroll; moving it off the date leaves a
+    card that was on Scratch with a plain date.
+  */
+  const handleScratchTarget = useCallback(
+    (next: ScratchTarget) => {
+      setScratchTarget(next);
+
+      if (next === "date") {
+        setDateReveal("scratch");
+      } else if (dateRevealOf(dateReveal, scratchTarget) === "scratch") {
+        setDateReveal("simple");
+      }
+    },
+    [dateReveal, scratchTarget],
+  );
   const [divider, setDivider] = useState(initial.divider);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
   const [musicUrl, setMusicUrl] = useState<string | null>(initial.musicUrl);
@@ -786,6 +834,7 @@ export default function CardEditor({
     coverAnimation,
     traditionId,
     ornamentConfig,
+    ...(dateReveal !== undefined ? { dateReveal } : null),
   };
 
   /**
@@ -809,6 +858,11 @@ export default function CardEditor({
     setCoverAnimation(next.coverAnimation);
     setTraditionId(next.traditionId);
     setOrnamentConfig(next.ornamentConfig);
+    /* A look whose date unrolls on the scroll takes any scratch panel off that date. */
+    setDateReveal(next.dateReveal);
+    if (next.dateReveal === "scroll" && scratchTarget === "date") {
+      setScratchTarget("none");
+    }
   };
 
   /* The card as it stands, and the only place this component builds one. */
@@ -827,6 +881,7 @@ export default function CardEditor({
     rsvpEnabled,
     scratchTarget,
     scratchFrame,
+    dateReveal,
     divider,
     borderStyle,
     style,
@@ -1407,9 +1462,15 @@ export default function CardEditor({
                   onDividerChange={setDivider}
                   accordion={accordionFor("design")}
                 />
+                <DateRevealPanel
+                  dateReveal={dateRevealOf(dateReveal, scratchTarget)}
+                  scrollVariant={scrollArtFor(cardPalette(style).background).variant}
+                  onDateRevealChange={handleDateReveal}
+                  accordion={accordionFor("design")}
+                />
                 <RevealPanel
                   scratchTarget={scratchTarget}
-                  onScratchTargetChange={setScratchTarget}
+                  onScratchTargetChange={handleScratchTarget}
                   scratchFrame={scratchFrame}
                   onScratchFrameChange={setScratchFrame}
                   accordion={accordionFor("design")}
