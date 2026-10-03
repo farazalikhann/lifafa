@@ -85,7 +85,7 @@ const RSVP_STYLES: Record<RsvpStatus, { pill: string; dot: string }> = {
  * green from amber, and on a printout. The dot makes a column of two hundred
  * rows scannable; the word makes any single row unambiguous.
  */
-export function RsvpBadge({ status }: { status: RsvpStatus }): ReactElement {
+function RsvpBadge({ status }: { status: RsvpStatus }): ReactElement {
   const style = RSVP_STYLES[status];
 
   return (

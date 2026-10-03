@@ -8,7 +8,7 @@ import {
   pointOnCord,
   r2,
 } from "@/lib/ornaments/frame";
-import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
+import type { Ornament } from "@/lib/ornaments/frame";
 import { calligraphyAspect } from "@/lib/calligraphy";
 import { FLAME_COLOUR, FlameGlow } from "@/lib/ornaments/muslim";
 import type { HinduOrnamentId } from "@/types/hinduOrnament";
@@ -90,7 +90,7 @@ export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
  * the lantern's flame has no outline either, and two flames drawn differently
  * on one card is the thing this is meant to prevent.
  */
-export const Diya: Ornament = ({
+const Diya: Ornament = ({
   size,
   instanceId,
   className,
@@ -188,7 +188,7 @@ const KALASH_LEAVES: readonly {
   },
 ];
 
-export const Kalash: Ornament = ({
+const Kalash: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -249,7 +249,7 @@ export const Kalash: Ornament = ({
  * The right tusk is drawn short. That is Ekadanta, the broken tusk, and not a
  * path that got clipped — do not "fix" it to match the left.
  */
-export const Ganesh: Ornament = ({
+const Ganesh: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -314,7 +314,7 @@ export const Ganesh: Ornament = ({
  * way. Everything else here can take a vein or a band because the extra line is
  * decoration on a shape; on a glyph an extra line is a different glyph.
  */
-export const Om: Ornament = ({
+const Om: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -363,7 +363,7 @@ export const Om: Ornament = ({
  * Authored as two continuous strokes rather than six segments, so the four
  * corners are real mitred joins instead of butted line ends.
  */
-export const Swastik: Ornament = ({
+const Swastik: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -408,7 +408,7 @@ const TORAN_LEAF_STOPS: readonly number[] = [
 /** Flower drops, in every other gap. Any more and the hem closes up. */
 const TORAN_BEAD_STOPS: readonly number[] = [0.1325, 0.3425, 0.5525, 0.7625];
 
-export const Toran: Ornament = ({
+const Toran: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -483,7 +483,7 @@ const GARLAND_STOPS: readonly number[] = [
   0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
 ];
 
-export const Marigold: Ornament = ({
+const Marigold: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -669,11 +669,11 @@ export const DIYA_FLAME = { x: 0.9, y: 0.28 } as const;
  * `devanagari` in lib/calligraphy.ts, which holds each one's file and what it
  * says, and `calligraphyOrnament` in lib/ornaments/frame.tsx, which draws them.
  */
-export const ShubhVivah = calligraphyOrnament("shubhVivah");
-export const SadarNimantran = calligraphyOrnament("sadarNimantran");
-export const RadheKrishna = calligraphyOrnament("radheKrishna");
-export const ShriGaneshaya = calligraphyOrnament("shriGaneshaya");
-export const Vivahotsav = calligraphyOrnament("vivahotsav");
+const ShubhVivah = calligraphyOrnament("shubhVivah");
+const SadarNimantran = calligraphyOrnament("sadarNimantran");
+const RadheKrishna = calligraphyOrnament("radheKrishna");
+const ShriGaneshaya = calligraphyOrnament("shriGaneshaya");
+const Vivahotsav = calligraphyOrnament("vivahotsav");
 
 const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
   { id: "diya", label: "Diya", Component: Diya, chipSize: 38, topRegionOnly: false },
@@ -785,25 +785,6 @@ export const HINDU_ORNAMENTS: readonly HinduOrnamentEntry[] = HINDU_ENTRIES.map(
 /** Sits under the ornament grid in the editor. */
 export const HINDU_ORNAMENTS_NOTE =
   "One for each place on your card. Tap a chosen one again to take it off.";
-
-const BY_ID: Record<HinduOrnamentId, Ornament> = {
-  diya: Diya,
-  kalash: Kalash,
-  ganesh: Ganesh,
-  om: Om,
-  swastik: Swastik,
-  toran: Toran,
-  marigold: Marigold,
-  shubhVivah: ShubhVivah,
-  sadarNimantran: SadarNimantran,
-  radheKrishna: RadheKrishna,
-  shriGaneshaya: ShriGaneshaya,
-  vivahotsav: Vivahotsav,
-};
-
-export function getHinduOrnament(id: HinduOrnamentId): Ornament {
-  return BY_ID[id];
-}
 
 /*
   There is no DEFAULT_HINDU_ORNAMENT_CONFIG either. DEFAULT_ORNAMENT_CONFIG in

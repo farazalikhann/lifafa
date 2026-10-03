@@ -68,7 +68,7 @@ function Field({
 const HOST_HINT = "Used only when the two name fields are empty.";
 
 /** One of the two allowances a paid invitation has; see lib/eventLock.ts. */
-export interface ChangeNote {
+interface ChangeNote {
   left: number;
   limit: number;
   /** Why the change on screen cannot be saved, or null when it can. */

@@ -267,7 +267,7 @@ export async function verifyAdminToken(
 /* ─────────────────────────── The cookie ─────────────────────────── */
 
 /** Scoped to /admin: see the note on ADMIN_COOKIE_OPTIONS. */
-export const ADMIN_COOKIE_PATH = "/admin";
+const ADMIN_COOKIE_PATH = "/admin";
 
 /**
  * How the cookie is written, in one place, so setting it and clearing it

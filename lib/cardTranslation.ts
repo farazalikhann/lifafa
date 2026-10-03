@@ -32,7 +32,7 @@ import type {
  */
 
 /** The draft fields that are words, in the order the editor lists them. */
-export const DRAFT_WORD_FIELDS: readonly (keyof DraftWords)[] = [
+const DRAFT_WORD_FIELDS: readonly (keyof DraftWords)[] = [
   "partyOneName",
   "partyTwoName",
   "joinerWord",
@@ -47,14 +47,14 @@ export const DRAFT_WORD_FIELDS: readonly (keyof DraftWords)[] = [
   "message",
 ];
 
-export const SUB_EVENT_WORD_FIELDS: readonly (keyof SubEventWords)[] = [
+const SUB_EVENT_WORD_FIELDS: readonly (keyof SubEventWords)[] = [
   "label",
   "venueName",
   "venueAddress",
   "note",
 ];
 
-export const SECTION_WORD_FIELDS: readonly (keyof CustomSectionWords)[] = [
+const SECTION_WORD_FIELDS: readonly (keyof CustomSectionWords)[] = [
   "heading",
   "body",
 ];

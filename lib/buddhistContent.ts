@@ -31,7 +31,7 @@
 /** The `lang` every Pali string in this file is rendered under. */
 export const PALI_LANG = "pi";
 
-export type BuddhistGreetingId = "namoBuddhaya" | "sabbeSatta" | "none";
+type BuddhistGreetingId = "namoBuddhaya" | "sabbeSatta" | "none";
 
 export interface BuddhistGreeting {
   id: BuddhistGreetingId;
@@ -88,7 +88,7 @@ export const BUDDHIST_GREETINGS: readonly BuddhistGreeting[] = [
   },
 ];
 
-export type BuddhistBlessingId = "mettaBlessing" | "unionBlessing" | "none";
+type BuddhistBlessingId = "mettaBlessing" | "unionBlessing" | "none";
 
 export interface BuddhistBlessing {
   id: BuddhistBlessingId;
@@ -149,26 +149,4 @@ export const BUDDHIST_BLESSINGS: readonly BuddhistBlessing[] = [
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getBuddhistGreeting(
-  id: string | null,
-): BuddhistGreeting | null {
-  if (id === null) {
-    return null;
-  }
-
-  return BUDDHIST_GREETINGS.find((greeting) => greeting.id === id) ?? null;
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getBuddhistBlessing(
-  id: string | null,
-): BuddhistBlessing | null {
-  if (id === null) {
-    return null;
-  }
-
-  return BUDDHIST_BLESSINGS.find((blessing) => blessing.id === id) ?? null;
 }

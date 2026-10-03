@@ -14,7 +14,7 @@ import type {
  * the background is black and so are the wing borders and the body, and any
  * threshold deep enough to find the one eats the other.
  */
-export const BUTTERFLY_SRC: Record<ButterflyColour, string> = {
+const BUTTERFLY_SRC: Record<ButterflyColour, string> = {
   red: "/decor/butterfly-red.webp",
   yellow: "/decor/butterfly-yellow.webp",
   purple: "/decor/butterfly-purple.webp",

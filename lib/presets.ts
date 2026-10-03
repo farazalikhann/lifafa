@@ -38,7 +38,7 @@ import type { CardDensity, FontPairId, PaletteId } from "@/types/style";
  */
 
 /** Everything a preset may set. Each preset sets a subset of it. */
-export interface PresetSettings {
+interface PresetSettings {
   paletteId: PaletteId;
   /** A hex accent laid over the palette's own, or null for the palette's. */
   accentOverride: string | null;
@@ -127,7 +127,7 @@ const PALETTE_GOLD = "#D8B26A";
  * The greeting and the shlok the designs open with are only ever added to a
  * card that has none — see `greetingIfNone`.
  */
-export const PRESETS: readonly Preset[] = [
+const PRESETS: readonly Preset[] = [
   {
     id: "nikah-blush",
     name: "Nikah Blush",

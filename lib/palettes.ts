@@ -116,8 +116,6 @@ export const PALETTES: readonly Palette[] = [
   },
 ];
 
-export const DEFAULT_PALETTE_ID: PaletteId = "ink";
-
 /** Always resolves — an unknown id falls back to the first palette. */
 export function getPalette(id: PaletteId): Palette {
   return PALETTES.find((palette) => palette.id === id) ?? PALETTES[0];

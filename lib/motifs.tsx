@@ -20,7 +20,7 @@ import type { OccasionId, TraditionId } from "@/types/occasion";
  * motif reads as one blown-up icon rather than as ornament.
  */
 
-export interface MotifProps {
+interface MotifProps {
   size: number;
 }
 

@@ -31,17 +31,17 @@ import type { EventDraft } from "@/types/event";
 export const DATE_CHANGE_LIMIT = 2;
 export const NAME_CHANGE_LIMIT = 3;
 /** How far past the paid-for end date a new end date may go. */
-export const DATE_WINDOW_DAYS = 180;
+const DATE_WINDOW_DAYS = 180;
 /** How long an admin unlock of an ended invitation lasts. */
 export const ADMIN_UNLOCK_HOURS = 48;
 
 export const ENDED_EDIT_MESSAGE =
   "This event has ended, so the invitation can no longer be edited. Your guest list and responses are still available.";
-export const DATE_LIMIT_MESSAGE =
+const DATE_LIMIT_MESSAGE =
   "The date can be changed twice and up to 6 months later. Contact support if your event has moved further.";
-export const NAME_LIMIT_MESSAGE =
+const NAME_LIMIT_MESSAGE =
   "Names can no longer be changed. Contact support if you need help.";
-export const DATE_REQUIRED_MESSAGE =
+const DATE_REQUIRED_MESSAGE =
   "A paid invitation needs its event date. Add the date to save your changes.";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -61,7 +61,7 @@ function isoDate(value: unknown): string | null {
 }
 
 /** Every date on the card, the main one and each function's, sorted. */
-export function eventDates(draft: EventDraft): string[] {
+function eventDates(draft: EventDraft): string[] {
   return [draft.eventDate, ...(draft.subEvents ?? []).map((entry) => entry.date)]
     .map(isoDate)
     .filter((date): date is string => date !== null)
@@ -75,7 +75,7 @@ export function eventEndDate(draft: EventDraft): string | null {
 }
 
 /** Today's date in India, YYYY-MM-DD. India keeps no daylight saving. */
-export function todayInIndia(now: Date = new Date()): string {
+function todayInIndia(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
@@ -85,7 +85,7 @@ export function todayInIndia(now: Date = new Date()): string {
 }
 
 /** `days` after an ISO date, as an ISO date. */
-export function addDays(date: string, days: number): string {
+function addDays(date: string, days: number): string {
   const next = new Date(`${date}T00:00:00Z`);
   next.setUTCDate(next.getUTCDate() + days);
   return next.toISOString().slice(0, 10);
@@ -129,7 +129,7 @@ export function isEditLocked(
  * The card's dates as one string, so any change to any of them — moved,
  * added, removed — is one change. Same as event_date_signature() in SQL.
  */
-export function dateSignature(draft: EventDraft): string {
+function dateSignature(draft: EventDraft): string {
   return eventDates(draft).join(",");
 }
 
@@ -146,7 +146,7 @@ function nameTriple(words: Named | undefined): string {
  * one string: renaming the couple in Hindi is renaming them too. Same as
  * event_name_signature() in SQL.
  */
-export function nameSignature(draft: EventDraft): string {
+function nameSignature(draft: EventDraft): string {
   const translations = draft.translations ?? {};
   const languages = Object.keys(translations).sort();
 

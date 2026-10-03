@@ -254,7 +254,7 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
  * 0.34 the editor frame rounds down to a single tile pulled 30% taller, and the
  * host is previewing a card no guest will see.
  */
-export const FLOWER_FRAME_SCALE = 0.3;
+const FLOWER_FRAME_SCALE = 0.3;
 
 /**
  * How much of a 44px chip the two horizontal bands may take between them.

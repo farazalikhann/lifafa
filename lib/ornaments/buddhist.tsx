@@ -1,7 +1,6 @@
 import {
   Frame,
   cordPath,
-  flowerPath,
   leafPath,
   pointOnCord,
   r2,
@@ -31,7 +30,7 @@ import type { BuddhistOrnamentId } from "@/types/buddhistOrnament";
    --------------------------------------------------------------------------- */
 
 /** Eight spokes, a hub, and a rim drawn as a band. */
-export const DharmaWheel: Ornament = ({
+const DharmaWheel: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -76,7 +75,7 @@ export const DharmaWheel: Ornament = ({
  * A wide open bloom, flatter and more splayed than the Sikh and Jain lotuses —
  * the eight petal form, seen from above.
  */
-export const Lotus: Ornament = ({
+const Lotus: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -115,7 +114,7 @@ export const Lotus: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** The heart-shaped leaf with its long drip tip, veined. */
-export const BodhiLeaf: Ornament = ({
+const BodhiLeaf: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -160,7 +159,7 @@ export const BodhiLeaf: Ornament = ({
  * Broken lines at the crossings are what make it read as over-and-under rather
  * than as a flat grid.
  */
-export const EndlessKnot: Ornament = ({
+const EndlessKnot: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -213,7 +212,7 @@ export const EndlessKnot: Ornament = ({
  * Dome, spire and plinth. ARCHITECTURE ONLY — no eyes, no face, no figure in
  * any niche. See the file header.
  */
-export const StupaOutline: Ornament = ({
+const StupaOutline: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -274,7 +273,7 @@ const FLAG_STOPS: readonly number[] = [
  * script is drawn on them: real prayer flags carry printed mantras, and putting
  * invented marks there would be inventing scripture in ornament form.
  */
-export const PrayerFlagString: Ornament = ({
+const PrayerFlagString: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -326,7 +325,7 @@ export const PrayerFlagString: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** The right turning conch: a spiralled crown, a ribbed body and a flared lip. */
-export const ConchShell: Ornament = ({
+const ConchShell: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -448,17 +447,3 @@ export const BUDDHIST_ORNAMENTS: readonly BuddhistOrnamentEntry[] = [
 /** Sits under the ornament grid in the editor. */
 export const BUDDHIST_ORNAMENTS_NOTE =
   "Prayer flags and lotuses hang from the top of your card.";
-
-const BY_ID: Record<BuddhistOrnamentId, Ornament> = {
-  dharmaWheel: DharmaWheel,
-  lotus: Lotus,
-  bodhiLeaf: BodhiLeaf,
-  endlessKnot: EndlessKnot,
-  stupaOutline: StupaOutline,
-  prayerFlagString: PrayerFlagString,
-  conchShell: ConchShell,
-};
-
-export function getBuddhistOrnament(id: BuddhistOrnamentId): Ornament {
-  return BY_ID[id];
-}

@@ -28,7 +28,7 @@ export interface WeatherThemeOption {
  * the same way: one says what the weather will be, the other says only what it
  * has tended to be.
  */
-export type WeatherKind = "forecast" | "seasonal";
+type WeatherKind = "forecast" | "seasonal";
 
 /**
  * The drawing a condition gets, as a small closed set.

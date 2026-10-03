@@ -28,7 +28,7 @@ export interface Theme {
 const DISPLAY_SERIF = "var(--font-display), Georgia, serif";
 const DISPLAY_SANS = "var(--font-sans), system-ui, sans-serif";
 
-export const THEMES: readonly Theme[] = [
+const THEMES: readonly Theme[] = [
   {
     id: "marigold",
     label: "Marigold",
@@ -60,8 +60,6 @@ export const THEMES: readonly Theme[] = [
     fontFamily: DISPLAY_SANS,
   },
 ] as const;
-
-export const DEFAULT_THEME_ID: ThemeId = "marigold";
 
 /** Always resolves — an unknown id falls back to the first theme. */
 export function getTheme(id: ThemeId): Theme {

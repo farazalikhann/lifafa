@@ -169,7 +169,7 @@ export type GuestRow = {
   created_at: string;
 }
 
-export type GuestInsert = {
+type GuestInsert = {
   id?: string;
   event_id: string;
   name: string;
@@ -188,7 +188,7 @@ export type GuestInsert = {
  * with different consequences, and leaving them out means a check-in cannot
  * accidentally rewrite who a guest is.
  */
-export type GuestUpdate = Partial<
+type GuestUpdate = Partial<
   Pick<GuestRow, "rsvp" | "accompanying_count" | "message" | "checked_in" | "checked_in_at">
 >;
 
@@ -223,7 +223,7 @@ export type EventByInviteCodeRow = {
  * starts another leaves two rows, at most one of which is ever 'paid'. See the
  * note at the top of 0009_payments.sql.
  */
-export type PaymentRow = {
+type PaymentRow = {
   id: string;
   event_id: string;
   /** Null on a free row (0014): no Razorpay order was made. */
@@ -270,7 +270,7 @@ export type PaymentRow = {
 export type PaymentMethod = "razorpay" | "complimentary" | "coupon";
 
 /** The three states 0009's check constraint allows. */
-export type PaymentStatus = "created" | "paid" | "failed";
+type PaymentStatus = "created" | "paid" | "failed";
 
 /**
  * What an insert may carry.
@@ -305,7 +305,7 @@ export type PaymentInsert = {
  * update at all (0009), so this shape is only ever reachable through the
  * service-role client in lib/supabase/admin.ts.
  */
-export type PaymentUpdate = Partial<
+type PaymentUpdate = Partial<
   Pick<PaymentRow, "razorpay_payment_id" | "status" | "paid_at">
 >;
 
@@ -346,7 +346,7 @@ export type CouponRow = {
 export type CouponType = "discount" | "affiliate";
 
 /** Whether discount_value is read as a percentage or as paise. */
-export type CouponDiscountType = "percent" | "flat";
+type CouponDiscountType = "percent" | "flat";
 
 /**
  * What creating a code may carry.
@@ -378,7 +378,7 @@ export type CouponInsert = {
  * readable. `used_count` is absent for the same reason it is absent above —
  * only redeem_coupon() touches it, and it does so atomically.
  */
-export type CouponUpdate = Pick<CouponRow, "is_active">;
+type CouponUpdate = Pick<CouponRow, "is_active">;
 
 /* ─────────────────────────── translation_usage ─────────────────────────── */
 
@@ -387,7 +387,7 @@ export type CouponUpdate = Pick<CouponRow, "is_active">;
  * two rules it lets the server hold, and app/api/translate/route.ts for where
  * it is read and written.
  */
-export type TranslationUsageRow = {
+type TranslationUsageRow = {
   id: string;
   user_id: string;
   /** The saved invitation, or null for a card still being made on /create. */
@@ -400,7 +400,7 @@ export type TranslationUsageRow = {
 };
 
 /** Written only by the route, through the service role; no client may insert. */
-export type TranslationUsageInsert = {
+type TranslationUsageInsert = {
   id?: string;
   user_id: string;
   event_id?: string | null;
@@ -409,7 +409,7 @@ export type TranslationUsageInsert = {
 };
 
 /** Nothing about a usage row is ever changed after it is written. */
-export type TranslationUsageUpdate = Record<string, never>;
+type TranslationUsageUpdate = Record<string, never>;
 
 /* ────────────────────── The Database generic ────────────────────── */
 

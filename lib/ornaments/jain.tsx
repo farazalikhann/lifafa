@@ -30,7 +30,7 @@ import type { JainOrnamentId } from "@/types/jainOrnament";
  * Deliberately not a hand study — no knuckles, no nails, no wrist, nothing that
  * would start it reading as part of a person.
  */
-export const AhimsaHand: Ornament = ({
+const AhimsaHand: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -110,7 +110,7 @@ export const AhimsaHand: Ornament = ({
  * Authored as two continuous strokes rather than six segments, so the four
  * corners are real mitred joins instead of butted line ends.
  */
-export const Swastika: Ornament = ({
+const Swastika: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -144,7 +144,7 @@ export const Swastika: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** A tighter, more upright bloom than the Sikh pack's, on a stem. */
-export const Lotus: Ornament = ({
+const Lotus: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -184,7 +184,7 @@ export const Lotus: Ornament = ({
  * The stepped emblem at the head of the Jain symbol: an upturned crescent under
  * a dot, standing on a stepped base, with three dots above the crescent.
  */
-export const SiddhaShila: Ornament = ({
+const SiddhaShila: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -233,7 +233,7 @@ export const SiddhaShila: Ornament = ({
  * for the same reason it is flat there — steeper leaves close over the coconut
  * and the whole ornament turns into a lotus in a pot.
  */
-export const Kalash: Ornament = ({
+const Kalash: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -291,7 +291,7 @@ const TORAN_LEAF_STOPS: readonly number[] = [
  * A doorway garland: two posts, a swagged cord between them and a hem of
  * alternating leaves.
  */
-export const TornGate: Ornament = ({
+const TornGate: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -415,16 +415,3 @@ export const JAIN_ORNAMENTS: readonly JainOrnamentEntry[] = [
 /** Sits under the ornament grid in the editor. */
 export const JAIN_ORNAMENTS_NOTE =
   "The toran and the kalash frame the top of your card.";
-
-const BY_ID: Record<JainOrnamentId, Ornament> = {
-  ahimsaHand: AhimsaHand,
-  swastika: Swastika,
-  lotus: Lotus,
-  siddhaShila: SiddhaShila,
-  kalash: Kalash,
-  tornGate: TornGate,
-};
-
-export function getJainOrnament(id: JainOrnamentId): Ornament {
-  return BY_ID[id];
-}

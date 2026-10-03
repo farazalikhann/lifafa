@@ -9,13 +9,13 @@ import { DEVANAGARI_LANG } from "@/lib/devanagariContent";
  * it. The exact arrangement the Arabic uses — see ARABIC_FONT_STACK in
  * components/card/CardCanvas.tsx and components/create/OrnamentPanel.tsx.
  */
-export const DEVANAGARI_FONT_STACK = "var(--lifafa-devanagari)";
+const DEVANAGARI_FONT_STACK = "var(--lifafa-devanagari)";
 
 /**
  * The leading Devanagari is set at, measured rather than chosen. The reasoning
  * and the numbers behind it are on the token in globals.css.
  */
-export const DEVANAGARI_LINE_HEIGHT = "var(--lifafa-devanagari-leading)";
+const DEVANAGARI_LINE_HEIGHT = "var(--lifafa-devanagari-leading)";
 
 /**
  * One run of Devanagari, in the right face, at the right leading, tagged as

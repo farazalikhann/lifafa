@@ -24,14 +24,14 @@ import {
  */
 
 /** Rendered size of an ornament's larger dimension when the caller says nothing. */
-export const DEFAULT_SIZE = 64;
+const DEFAULT_SIZE = 64;
 
 /** Two places is finer than a subpixel at these sizes, and keeps the markup short. */
 export function r2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-export interface OrnamentProps {
+interface OrnamentProps {
   /**
    * Rendered size in px of the ornament's *larger* dimension.
    *

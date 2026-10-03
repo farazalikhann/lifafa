@@ -76,7 +76,7 @@ export async function listCoupons(): Promise<DbResult<AdminCoupon[]>> {
 }
 
 /** One code by its code, or null. */
-export async function getCoupon(
+async function getCoupon(
   rawCode: string,
 ): Promise<DbResult<AdminCoupon | null>> {
   const code = normaliseCouponCode(rawCode);

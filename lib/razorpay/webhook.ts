@@ -122,7 +122,7 @@ interface WebhookEnvelope {
 }
 
 /** The one event that means money actually moved. */
-export const PAYMENT_CAPTURED = "payment.captured";
+const PAYMENT_CAPTURED = "payment.captured";
 
 /** What the webhook route needs out of a captured payment. */
 export interface CapturedPayment {

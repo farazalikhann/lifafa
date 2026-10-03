@@ -43,7 +43,7 @@
  */
 export const JAIN_LANG = "sa";
 
-export type JainGreetingId = "jaiJinendra" | "navkarOpening" | "none";
+type JainGreetingId = "jaiJinendra" | "navkarOpening" | "none";
 
 export interface JainGreeting {
   id: JainGreetingId;
@@ -95,7 +95,7 @@ export const JAIN_GREETINGS: readonly JainGreeting[] = [
   },
 ];
 
-export type JainBlessingId = "michhami" | "mangalBlessing" | "none";
+type JainBlessingId = "michhami" | "mangalBlessing" | "none";
 
 export interface JainBlessing {
   id: JainBlessingId;
@@ -156,22 +156,4 @@ export const JAIN_BLESSINGS: readonly JainBlessing[] = [
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getJainGreeting(id: string | null): JainGreeting | null {
-  if (id === null) {
-    return null;
-  }
-
-  return JAIN_GREETINGS.find((greeting) => greeting.id === id) ?? null;
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getJainBlessing(id: string | null): JainBlessing | null {
-  if (id === null) {
-    return null;
-  }
-
-  return JAIN_BLESSINGS.find((blessing) => blessing.id === id) ?? null;
 }

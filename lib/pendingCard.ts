@@ -38,13 +38,13 @@ import type { WeatherThemeId } from "@/types/weather";
  * middleware's gate, so a host who reaches it is already signed in and there is
  * no detour to survive.
  */
-export const PENDING_CARD_KEY = "lifafa:pending-card";
+const PENDING_CARD_KEY = "lifafa:pending-card";
 
 /** How long a stashed card is offered back, from the moment it was stashed. */
-export const PENDING_CARD_TTL_MS = 24 * 60 * 60 * 1000;
+const PENDING_CARD_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** The query parameter on /create that names the address a card was stashed on. */
-export const STASH_ORIGIN_PARAM = "stashOrigin";
+const STASH_ORIGIN_PARAM = "stashOrigin";
 
 export interface PendingCard {
   draft: EventDraft;

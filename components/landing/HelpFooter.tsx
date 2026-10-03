@@ -8,7 +8,7 @@ import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
  * not a page. It stays hello@getlifafa.co.in when the site is opened on a
  * preview host or a dev server, because that is where the mail actually goes.
  */
-export const SUPPORT_EMAIL = `hello@${LIFAFA_DOMAIN}`;
+const SUPPORT_EMAIL = `hello@${LIFAFA_DOMAIN}`;
 
 /**
  * Pinned to India rather than read off the runtime's clock. `getFullYear()`

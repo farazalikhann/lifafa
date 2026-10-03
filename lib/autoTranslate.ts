@@ -238,7 +238,7 @@ function keepsCeremonyWords(address: WordAddress): boolean {
 }
 
 /** Where a word lives, so a result can be written back to the right field. */
-export type WordAddress =
+type WordAddress =
   | { kind: "draft"; field: keyof DraftWords }
   | { kind: "subEvent"; id: string; field: keyof SubEventWords }
   | { kind: "section"; id: string; field: keyof CustomSectionWords };
@@ -398,7 +398,7 @@ export function cacheKey(
  * not carry a second copy of every word. A collision would only mean one field
  * is skipped that should have been sent, and the host can still type it.
  */
-export function fingerprint(key: string): string {
+function fingerprint(key: string): string {
   let hash = 0x811c9dc5;
 
   for (let index = 0; index < key.length; index += 1) {

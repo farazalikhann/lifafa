@@ -34,8 +34,8 @@ export const OVERVIEW_EVENT_LIMIT = 8;
 /** The longest search anybody types into a title box. */
 const MAX_SEARCH_LENGTH = 64;
 
-export type EventSort = "newest" | "oldest";
-export type PaidFilter = "all" | "paid" | "unpaid";
+type EventSort = "newest" | "oldest";
+type PaidFilter = "all" | "paid" | "unpaid";
 
 /** Everything the list route accepts, already narrowed. */
 export interface EventsQuery {

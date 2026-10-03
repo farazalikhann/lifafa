@@ -82,7 +82,7 @@ export const PREVIEW_INVITE: CalendarInvite = { code: "preview", url: null };
  * timed entry is a pair of absolute instants, an all-day one is a calendar
  * date that means the same day wherever the guest's phone thinks it is.
  */
-export type CalendarTiming =
+type CalendarTiming =
   | { readonly kind: "timed"; readonly start: Date; readonly end: Date }
   /** "YYYY-MM-DD", the day in India the host picked. */
   | { readonly kind: "allDay"; readonly date: string };

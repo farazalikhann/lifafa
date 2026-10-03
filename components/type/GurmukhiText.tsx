@@ -8,13 +8,13 @@ import { GURMUKHI_LANG } from "@/lib/gurmukhiContent";
  * through one variable declared in globals.css, with the system faces behind
  * it. The same arrangement the Arabic and Devanagari stacks use.
  */
-export const GURMUKHI_FONT_STACK = "var(--lifafa-gurmukhi)";
+const GURMUKHI_FONT_STACK = "var(--lifafa-gurmukhi)";
 
 /**
  * The leading Gurmukhi is set at, measured rather than chosen. The reasoning
  * and the numbers are on the token in globals.css.
  */
-export const GURMUKHI_LINE_HEIGHT = "var(--lifafa-gurmukhi-leading)";
+const GURMUKHI_LINE_HEIGHT = "var(--lifafa-gurmukhi-leading)";
 
 /**
  * One run of Gurmukhi, in the right face, at the right leading, tagged as

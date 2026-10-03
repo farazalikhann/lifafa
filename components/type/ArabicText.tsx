@@ -6,7 +6,7 @@ import type { CSSProperties, ReactElement } from "react";
  * Amiri, loaded by next/font in app/layout.tsx and resolved through
  * one variable declared in globals.css, with the system faces behind it.
  */
-export const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
+const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
 
 /**
  * One run of Arabic, right to left, in the right face.

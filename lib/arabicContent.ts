@@ -22,7 +22,7 @@
  * provision for.
  */
 
-export type GreetingId = "bismillah" | "salam" | "salamFull" | "none";
+type GreetingId = "bismillah" | "salam" | "salamFull" | "none";
 
 export interface Greeting {
   id: GreetingId;
@@ -73,7 +73,7 @@ export const GREETINGS: readonly Greeting[] = [
   },
 ];
 
-export type DuaId =
+type DuaId =
   | "barakallah"
   | "jamaBaynakuma"
   | "barakahHome"
@@ -149,22 +149,4 @@ export const DUAS: readonly Dua[] = [
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getGreeting(id: string | null): Greeting | null {
-  if (id === null) {
-    return null;
-  }
-
-  return GREETINGS.find((greeting) => greeting.id === id) ?? null;
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getDua(id: string | null): Dua | null {
-  if (id === null) {
-    return null;
-  }
-
-  return DUAS.find((dua) => dua.id === id) ?? null;
 }

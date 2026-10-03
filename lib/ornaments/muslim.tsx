@@ -1,28 +1,20 @@
 import type { ReactElement } from "react";
 import {
-  DEFAULT_SIZE,
   Frame,
   calligraphyOrnament,
   polygonPath,
   r2,
 } from "@/lib/ornaments/frame";
-import type { Ornament, OrnamentProps } from "@/lib/ornaments/frame";
-import {
-  calligraphyAlt,
-  calligraphyAspect,
-  calligraphySrc,
-  type CalligraphyId,
-} from "@/lib/calligraphy";
+import type { Ornament } from "@/lib/ornaments/frame";
+import { calligraphyAspect } from "@/lib/calligraphy";
 import type { OrnamentConfig, OrnamentId } from "@/types/ornament";
 
 /*
-  The shell, the props and the shared path helpers now live in
+  The shell, the props and the shared path helpers live in
   lib/ornaments/frame.tsx. They were private here, copied once into the Hindu
   pack with a note saying that when a third pack arrived both belonged in a
-  shared module — four arrived at once. Re-exported below so existing importers
-  of this file keep working.
+  shared module — four arrived at once.
 */
-export type { Ornament, OrnamentProps };
 
 /**
  * Hand drawn Muslim ornament pack.
@@ -99,7 +91,6 @@ function starPath(
 
   return `M ${coords.join(" L ")} Z`;
 }
-
 
 /* ---------------------------------------------------------------------------
    Lantern
@@ -204,12 +195,12 @@ function photoOrnament(src: string, id: OrnamentId): Ornament {
   return Photo;
 }
 
-export const Lantern = photoOrnament("/decor/lantern.webp", "lantern");
-export const CrescentMoon = photoOrnament(
+const Lantern = photoOrnament("/decor/lantern.webp", "lantern");
+const CrescentMoon = photoOrnament(
   "/decor/crescent-moon.webp",
   "crescentMoon",
 );
-export const HangingLights = photoOrnament(
+const HangingLights = photoOrnament(
   "/decor/hanging-lights.webp",
   "hangingLights",
 );
@@ -238,7 +229,7 @@ const STAR_CLUSTER: readonly {
   { cx: 14, cy: 49, points: 8, outerR: 7.5, innerR: 3.2, rotation: 22 },
 ];
 
-export const Stars: Ornament = ({
+const Stars: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -300,7 +291,7 @@ function vineUnit(x: number): string {
   ].join(" ");
 }
 
-export const ArabesqueBorder: Ornament = ({
+const ArabesqueBorder: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -350,7 +341,7 @@ const STAR_RADIUS = 28;
  */
 const OCTAGON_RADIUS = r2(STAR_RADIUS / Math.SQRT2 / Math.cos(Math.PI / 8));
 
-export const GeometricStar: Ornament = ({
+const GeometricStar: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -378,12 +369,12 @@ export const GeometricStar: Ornament = ({
   </Frame>
 );
 
-export const Bismillah = calligraphyOrnament("bismillah");
-export const VersePairs = calligraphyOrnament("versePairs");
-export const VerseLoveMercy = calligraphyOrnament("verseLoveMercy");
-export const Barakallah = calligraphyOrnament("barakallah");
-export const BarakallahDua = calligraphyOrnament("barakallahDua");
-export const Alhamdulillah = calligraphyOrnament("alhamdulillah");
+const Bismillah = calligraphyOrnament("bismillah");
+const VersePairs = calligraphyOrnament("versePairs");
+const VerseLoveMercy = calligraphyOrnament("verseLoveMercy");
+const Barakallah = calligraphyOrnament("barakallah");
+const BarakallahDua = calligraphyOrnament("barakallahDua");
+const Alhamdulillah = calligraphyOrnament("alhamdulillah");
 
 /* ---------------------------------------------------------------------------
    Registry
@@ -488,25 +479,6 @@ export const MUSLIM_ORNAMENTS: readonly OrnamentEntry[] = [
     chipSize: 84,
   },
 ];
-
-const BY_ID: Record<OrnamentId, Ornament> = {
-  lantern: Lantern,
-  crescentMoon: CrescentMoon,
-  stars: Stars,
-  arabesqueBorder: ArabesqueBorder,
-  geometricStar: GeometricStar,
-  hangingLights: HangingLights,
-  bismillah: Bismillah,
-  versePairs: VersePairs,
-  verseLoveMercy: VerseLoveMercy,
-  barakallah: Barakallah,
-  barakallahDua: BarakallahDua,
-  alhamdulillah: Alhamdulillah,
-};
-
-export function getOrnament(id: OrnamentId): Ornament {
-  return BY_ID[id];
-}
 
 /**
  * What a card carries before the host touches anything, and what a card is

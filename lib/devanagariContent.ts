@@ -35,7 +35,7 @@
 /** The `lang` every Devanagari string is rendered under. */
 export const DEVANAGARI_LANG = "hi";
 
-export type HinduGreetingId =
+type HinduGreetingId =
   | "om"
   | "ganeshaya"
   | "namaste"
@@ -97,7 +97,7 @@ export const HINDU_GREETINGS: readonly HinduGreeting[] = [
   },
 ];
 
-export type ShlokId =
+type ShlokId =
   | "vakratunda"
   | "sanmangalani"
   | "vastoshpate"
@@ -196,22 +196,4 @@ export const SHLOK_NOTE = "The shlok appears at the top of your card.";
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getHinduGreeting(id: string | null): HinduGreeting | null {
-  if (id === null) {
-    return null;
-  }
-
-  return HINDU_GREETINGS.find((greeting) => greeting.id === id) ?? null;
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getShlok(id: string | null): Shlok | null {
-  if (id === null) {
-    return null;
-  }
-
-  return SHLOKS.find((shlok) => shlok.id === id) ?? null;
 }

@@ -19,7 +19,7 @@
  */
 
 /** What the host is shown, and what comes back when they pay. */
-export interface RazorpayCheckoutOptions {
+interface RazorpayCheckoutOptions {
   /** The publishable key id. Never the secret — see lib/razorpay/keys.ts. */
   key: string;
   /** Paise. Must match the order; the order is what actually decides. */
@@ -69,12 +69,12 @@ export interface RazorpayFailure {
 }
 
 /** The instance `new window.Razorpay(options)` returns. */
-export interface RazorpayCheckout {
+interface RazorpayCheckout {
   open: () => void;
   on: (event: "payment.failed", handler: (failure: RazorpayFailure) => void) => void;
 }
 
-export type RazorpayConstructor = new (
+type RazorpayConstructor = new (
   options: RazorpayCheckoutOptions,
 ) => RazorpayCheckout;
 

@@ -206,7 +206,7 @@ export interface EventDraft {
  * text each field was translated from, keyed by field, so a retry after a
  * partial failure sends only the fields that are still missing.
  */
-export interface AutoTranslation {
+interface AutoTranslation {
   translationUsed: boolean;
   /**
    * The editor's id for this card, minted on its first translate request. The

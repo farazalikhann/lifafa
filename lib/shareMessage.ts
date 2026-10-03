@@ -105,7 +105,7 @@ const MAX_CITY_LENGTH = 40;
  * A guess, and a careful one: anything it cannot place is left out, and the
  * venue's name still carries the line.
  */
-export function venueCity(venueAddress: string): string | null {
+function venueCity(venueAddress: string): string | null {
   const parts = readableAddress(venueAddress)
     .split(/[,\n]/)
     .map((part) =>

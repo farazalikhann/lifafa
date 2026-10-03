@@ -15,7 +15,6 @@ import {
   type DbResult,
 } from "@/lib/db/result";
 import type { PaymentMethod } from "@/types/database";
-import type { OccasionId } from "@/types/occasion";
 import type { RsvpStatus } from "@/types/guest";
 
 /**
@@ -58,9 +57,6 @@ const PAGE_SIZE = 1000;
  * cannot become an unbounded loop against Supabase.
  */
 const MAX_PAGES = 200;
-
-/** How many events the recent table shows. */
-const RECENT_LIMIT = 50;
 
 /** The moment "today" began in Indian Standard Time, as an ISO timestamp. */
 function startOfTodayIst(): string {

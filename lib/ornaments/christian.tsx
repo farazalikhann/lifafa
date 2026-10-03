@@ -1,4 +1,4 @@
-import { Frame, leafPath, r2 } from "@/lib/ornaments/frame";
+import { Frame, leafPath } from "@/lib/ornaments/frame";
 import type { Ornament } from "@/lib/ornaments/frame";
 import type { ChristianOrnamentId } from "@/types/christianOrnament";
 
@@ -24,7 +24,7 @@ import type { ChristianOrnamentId } from "@/types/christianOrnament";
    --------------------------------------------------------------------------- */
 
 /** Latin cross, empty, with a bevel line down each limb. */
-export const PlainCross: Ornament = ({
+const PlainCross: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -58,7 +58,7 @@ export const PlainCross: Ornament = ({
  * NO EYE, matching the birds in lib/motifs.tsx. The head reads from the beak
  * and the curve of the crown alone.
  */
-export const Dove: Ornament = ({
+const Dove: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -98,7 +98,7 @@ export const Dove: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** Two bells on a shared bow, the pair that hangs at the head of the card. */
-export const WeddingBells: Ornament = ({
+const WeddingBells: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -144,7 +144,7 @@ export const WeddingBells: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** A stem of paired leaves with three olives. */
-export const OliveBranch: Ornament = ({
+const OliveBranch: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -191,7 +191,7 @@ export const OliveBranch: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** Cup, knop, stem and foot, with a band round the bowl. */
-export const Chalice: Ornament = ({
+const Chalice: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -229,7 +229,7 @@ export const Chalice: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** A pointed arch with tracery, open at the foot so content sits inside it. */
-export const GothicArch: Ornament = ({
+const GothicArch: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -267,7 +267,7 @@ export const GothicArch: Ornament = ({
    --------------------------------------------------------------------------- */
 
 /** Two interlocking bands, the second thing that hangs in this pack. */
-export const RingPair: Ornament = ({
+const RingPair: Ornament = ({
   size,
   className,
   preserveAspectRatio,
@@ -380,17 +380,3 @@ export const CHRISTIAN_ORNAMENTS: readonly ChristianOrnamentEntry[] = [
 /** Sits under the ornament grid in the editor. */
 export const CHRISTIAN_ORNAMENTS_NOTE =
   "Bells and rings hang from the top of your card.";
-
-const BY_ID: Record<ChristianOrnamentId, Ornament> = {
-  plainCross: PlainCross,
-  dove: Dove,
-  weddingBells: WeddingBells,
-  oliveBranch: OliveBranch,
-  chalice: Chalice,
-  gothicArch: GothicArch,
-  ringPair: RingPair,
-};
-
-export function getChristianOrnament(id: ChristianOrnamentId): Ornament {
-  return BY_ID[id];
-}

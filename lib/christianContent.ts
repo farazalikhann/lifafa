@@ -28,7 +28,7 @@
 /** The `lang` every line in this file is rendered under. */
 export const CHRISTIAN_LANG = "en";
 
-export type ChristianGreetingId =
+type ChristianGreetingId =
   | "graceAndPeace"
   | "inChristName"
   | "none";
@@ -84,7 +84,7 @@ export const CHRISTIAN_GREETINGS: readonly ChristianGreeting[] = [
   },
 ];
 
-export type ChristianBlessingId =
+type ChristianBlessingId =
   | "loveBlessing"
   | "homeBlessing"
   | "generalGrace"
@@ -157,26 +157,4 @@ export const CHRISTIAN_BLESSINGS: readonly ChristianBlessing[] = [
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getChristianGreeting(
-  id: string | null,
-): ChristianGreeting | null {
-  if (id === null) {
-    return null;
-  }
-
-  return CHRISTIAN_GREETINGS.find((greeting) => greeting.id === id) ?? null;
-}
-
-/** Null for an unknown or unset id, so a caller renders nothing. */
-export function getChristianBlessing(
-  id: string | null,
-): ChristianBlessing | null {
-  if (id === null) {
-    return null;
-  }
-
-  return CHRISTIAN_BLESSINGS.find((blessing) => blessing.id === id) ?? null;
 }
