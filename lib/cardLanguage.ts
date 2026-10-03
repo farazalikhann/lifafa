@@ -227,6 +227,18 @@ export interface CardCopy {
     heading: string;
     prompt: string;
   };
+  /**
+   * What the closed cover says above its artwork, before the guest taps in:
+   * the cue's own heading (`scrollCue.heading`) in a larger hand, and this
+   * line under it. See CoverShell.
+   */
+  coverInvite: string;
+  /**
+   * The note under the reply form. `eventName` is the couple on a wedding
+   * card and the event's title otherwise, or null on a card that names
+   * neither. See ThankYouNote.
+   */
+  thankYou: (eventName: string | null) => string;
   invite: {
     /** The page's heading when the card names neither an event nor anyone in it. */
     headingFallback: string;
@@ -466,6 +478,12 @@ const ENGLISH: CardCopy = {
     heading: "You are invited",
     prompt: "Scroll to view the invitation",
   },
+  coverInvite:
+    "With joy in our hearts, we would love for you to celebrate with us",
+  thankYou: (eventName) =>
+    `Thank you for being part of our special day. We would be truly honoured by your presence at ${
+      eventName ?? "our celebration"
+    }. Please do come and bless us with your love.`,
   invite: {
     headingFallback: "Invitation",
     shareTitleFallback: "Invitation · Lifafa",
@@ -685,6 +703,14 @@ const HINDI: CardCopy = {
     heading: "आप सादर आमंत्रित हैं",
     prompt: "निमंत्रण देखने के लिए नीचे स्क्रॉल करें",
   },
+  /* TODO(Faraz): verify this Hindi line with a native reader before launch. */
+  coverInvite:
+    "हृदय की प्रसन्नता के साथ, हम चाहते हैं कि आप हमारी ख़ुशियों में शामिल हों",
+  /* TODO(Faraz): verify this Hindi note with a native reader before launch. */
+  thankYou: (eventName) =>
+    `हमारे इस ख़ास दिन का हिस्सा बनने के लिए आपका धन्यवाद। ${
+      eventName ?? "हमारे समारोह"
+    } में आपकी उपस्थिति हमारे लिए बड़े सम्मान की बात होगी। कृपया अवश्य पधारें और अपने प्रेम व आशीर्वाद से हमें अनुगृहीत करें।`,
   invite: {
     headingFallback: "निमंत्रण",
     shareTitleFallback: "निमंत्रण · Lifafa",

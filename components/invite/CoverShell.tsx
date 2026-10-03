@@ -57,6 +57,20 @@ const UNMOUNT_GRACE_MS = 80;
 const WORDS_FADE_MS = 360;
 
 /**
+ * "You are invited", over the closed cover: how long it takes to arrive once
+ * the loader has let the cover through, how long after that it waits to start,
+ * and how long it takes to go when the guest taps.
+ *
+ * Slower in than out. It arrives as the cover does, over a second, so it reads
+ * as part of the cover settling and not as a caption switched on; it leaves a
+ * little slower than the prompt under it, so it is still going as the seal
+ * breaks or the cloth starts to move, and has gone before the card shows.
+ */
+const INVITE_IN_MS = 1100;
+const INVITE_IN_DELAY_MS = 350;
+const INVITE_OUT_MS = 600;
+
+/**
  * How long after the cover appears its recorded sound is fetched, if it has one.
  *
  * Not at once, for two reasons. On the first pass `reducedMotion` is still the
@@ -859,6 +873,73 @@ export default function CoverShell({
           className="fixed inset-0 z-50 flex min-h-dvh w-full flex-col items-center justify-center"
         >
           {visual}
+
+          {/*
+            "You are invited", and the line under it, across the head of the
+            closed cover.
+
+            ABOVE THE ARTWORK'S OWN CENTRE, never over it. Every cover keeps its
+            seal, oval or medallion at the middle of the screen and its prompt
+            at the foot, so the head is the one band left clear — below the
+            language switch's own band, which --cover-top-h already publishes.
+
+            The heading is the cue's own (see InvitedCue, which says it again
+            at the foot of the first screen once the cover has gone) in the
+            card's names face, the script on a pair that has one. In the inks
+            the cover's artwork was given to be read in, with a soft shadow of
+            the opposite tone under it: a film's first frame is cloth, paper or
+            petals, and no single ink clears all of it unaided.
+
+            Opacity and transform only, and a real fade in both directions: in
+            once the loader has gone, out on the tap. Under reduced motion it
+            neither moves nor fades on its own — it is simply there, and leaves
+            with the cover as the whole layer crossfades to the card.
+
+            Never a tap target: the button under it is the whole screen.
+          */}
+          <div
+            data-cover-invite=""
+            className="pointer-events-none absolute inset-x-0 z-10 flex flex-col items-center gap-2 px-7 text-center motion-reduce:transition-none"
+            style={{
+              top: "calc(var(--cover-top-h, 0px) + max(5.5vh, 28px))",
+              opacity: reducedMotion || (ready && phase === "closed") ? 1 : 0,
+              transform:
+                reducedMotion || (ready && phase === "closed")
+                  ? "none"
+                  : phase === "closed"
+                    ? "translate3d(0, 8px, 0)"
+                    : "translate3d(0, -6px, 0)",
+              transition:
+                phase === "closed"
+                  ? `opacity ${INVITE_IN_MS}ms ease-out ${INVITE_IN_DELAY_MS}ms, transform ${INVITE_IN_MS}ms cubic-bezier(0.2,0.7,0.2,1) ${INVITE_IN_DELAY_MS}ms`
+                  : `opacity ${INVITE_OUT_MS}ms ease-in-out, transform ${INVITE_OUT_MS}ms ease-in`,
+              textShadow: colors.isLight
+                ? "0 1px 2px rgba(255, 251, 240, 0.9), 0 0 14px rgba(255, 251, 240, 0.85)"
+                : "0 1px 2px rgba(0, 0, 0, 0.6), 0 0 14px rgba(0, 0, 0, 0.55)",
+            }}
+          >
+            <p
+              className="text-[calc(1.75rem*var(--cover-names-scale))] text-[var(--cover-text)] text-balance sm:text-[calc(2.125rem*var(--cover-names-scale))]"
+              style={
+                {
+                  "--cover-names-scale": String(namesFace.scale),
+                  ...namesFont,
+                  lineHeight:
+                    copy.script === "devanagari"
+                      ? 1.45
+                      : Math.max(namesFace.leading, 1.25),
+                } as CSSProperties
+              }
+            >
+              {copy.scrollCue.heading}
+            </p>
+            <p
+              className="max-w-[19rem] text-[0.875rem] leading-[1.55] text-[var(--cover-muted)] text-balance"
+              style={{ fontFamily: fontFamilyOf(pairRoleVar(fontPair, "body"), fontPair.bodyFallback) }}
+            >
+              {copy.coverInvite}
+            </p>
+          </div>
 
           <button
             type="button"

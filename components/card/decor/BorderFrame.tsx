@@ -645,9 +645,11 @@ function Edge({
 function FlowerFrame({
   style,
   bandHeight,
+  fit,
 }: {
   style: PhotoBorderStyle;
   bandHeight: string;
+  fit: BorderFit;
 }): ReactElement {
   return (
     <div
@@ -655,7 +657,10 @@ function FlowerFrame({
       className="pointer-events-none absolute inset-0 z-[16] overflow-clip"
     >
       {/* The same sticky band the drawn frame uses, with no inset taken off it. */}
-      <div className="sticky top-0 overflow-clip" style={{ height: bandHeight }}>
+      <div
+        className={fit === "box" ? "absolute inset-0 overflow-clip" : "sticky top-0 overflow-clip"}
+        style={fit === "box" ? undefined : { height: bandHeight }}
+      >
         <div
           className="absolute inset-0"
           style={flowerFrameStyle(style, flowerFrameScale(style))}
@@ -665,10 +670,21 @@ function FlowerFrame({
   );
 }
 
+/**
+ * What the frame goes round.
+ *
+ * "screen" is the card: pinned to whatever is scrolling it, so it frames what
+ * the guest is looking at. "box" is a panel laid out under the card — the reply
+ * form, the note after it — which is one box of its own height, and the frame
+ * is simply drawn round that box and scrolls with it.
+ */
+export type BorderFit = "screen" | "box";
+
 export default function BorderFrame({
   borderStyle,
   accent,
   bandHeight,
+  fit = "screen",
 }: {
   borderStyle: CardBorderStyle;
   /** The card's resolved accent. Everything below draws with `currentColor`. */
@@ -681,6 +697,8 @@ export default function BorderFrame({
    * editor's fixed frame for a host.
    */
   bandHeight: string;
+  /** See BorderFit. A box ignores `bandHeight`: it is as tall as what it frames. */
+  fit?: BorderFit;
 }): ReactElement | null {
   /*
     Pattern ids have to be unique per mounted frame — the editor renders the
@@ -704,7 +722,7 @@ export default function BorderFrame({
     what lets everything below stay a table of line art.
   */
   if (isPhotoBorder(borderStyle)) {
-    return <FlowerFrame style={borderStyle} bandHeight={bandHeight} />;
+    return <FlowerFrame style={borderStyle} bandHeight={bandHeight} fit={fit} />;
   }
 
   const spec = SPECS[borderStyle];
@@ -730,13 +748,17 @@ export default function BorderFrame({
         the top rail sits down from its head.
       */}
       <div
-        className="sticky overflow-clip"
-        style={{
-          top: SCREEN_INSET,
-          height: `calc(${bandHeight} - ${SCREEN_INSET * 2}px)`,
-          marginLeft: SCREEN_INSET,
-          marginRight: SCREEN_INSET,
-        }}
+        className={fit === "box" ? "absolute overflow-clip" : "sticky overflow-clip"}
+        style={
+          fit === "box"
+            ? { inset: SCREEN_INSET }
+            : {
+                top: SCREEN_INSET,
+                height: `calc(${bandHeight} - ${SCREEN_INSET * 2}px)`,
+                marginLeft: SCREEN_INSET,
+                marginRight: SCREEN_INSET,
+              }
+        }
       >
         <div
           className="absolute inset-0"

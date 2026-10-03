@@ -39,7 +39,7 @@ export default function DividerPanel({
 }: {
   divider: DividerStyle;
   onDividerChange: (divider: DividerStyle) => void;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   return (

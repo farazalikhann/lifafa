@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import FramedPanel from "@/components/invite/FramedPanel";
 import { cardCopy } from "@/lib/cardLanguage";
 import { DISPLAY_FACE } from "@/lib/fontPairs";
 import type { Theme } from "@/lib/themes";
-import type { CardLanguage } from "@/types/card";
+import type { CardBorderStyle, CardLanguage } from "@/types/card";
 import type { GuestReply, RsvpSubmission } from "@/types/guest";
 
 /** The three answers, in the order they are offered. Labelled from the card's copy. */
@@ -65,8 +66,14 @@ export default function RsvpPanel({
   isSending = false,
   submitError = null,
   language,
+  borderStyle = "none",
 }: {
   theme: Theme;
+  /**
+   * The card's own border, drawn round the form as it is round the card. See
+   * FramedPanel, which also keeps the fields clear of it.
+   */
+  borderStyle?: CardBorderStyle;
   /** The card's language, which the whole form is written in. */
   language: CardLanguage;
   /** Previous answers, so "Change my reply" returns a filled form. */
@@ -167,6 +174,7 @@ export default function RsvpPanel({
     within about one screen at 360px.
   */
   return (
+    <FramedPanel borderStyle={borderStyle} accent={theme.accent}>
     <section className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-12 sm:px-6 sm:pt-12 sm:pb-14">
       <h2
         className="text-center text-2xl font-semibold"
@@ -424,5 +432,6 @@ export default function RsvpPanel({
         </p>
       ) : null}
     </section>
+    </FramedPanel>
   );
 }

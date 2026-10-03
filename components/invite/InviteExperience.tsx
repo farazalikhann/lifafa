@@ -16,6 +16,7 @@ import Watermark, {
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import InvitedCue from "@/components/invite/InvitedCue";
+import ThankYouNote from "@/components/invite/ThankYouNote";
 import LanguageSwitch, {
   LANGUAGE_SWITCH_CLEARANCE,
 } from "@/components/invite/LanguageSwitch";
@@ -240,6 +241,18 @@ export default function InviteExperience({
     draft.eventTitle.trim().length > 0
       ? draft.eventTitle.trim()
       : (coverTitle ?? copy.invite.headingFallback);
+
+  /*
+    What the note under the reply form calls the occasion. A wedding is named
+    by its couple, as the card titles them; anything else by its title, and by
+    whoever it names where it has no title.
+  */
+  const thankYouEventName =
+    config.occasionId === "wedding" && coverTitle !== undefined
+      ? coverTitle
+      : draft.eventTitle.trim().length > 0
+        ? draft.eventTitle.trim()
+        : (coverTitle ?? null);
 
   /*
     The page's heading, from the same resolution the cover prints. hostNames is
@@ -509,12 +522,28 @@ export default function InviteExperience({
             <RsvpPanel
               theme={cardTheme}
               language={language}
+              borderStyle={config.borderStyle}
               initial={submitted}
               onSubmit={handleSubmit}
               isSending={isSending}
               submitError={submitErrorText}
             />
           ) : null}
+
+          {/*
+            The hosts' thanks, under the reply whatever stage it is at: the
+            form, the confirmation, or nothing at all on a card that takes no
+            replies. Not once the event is over, when "do come" has no day left
+            to come to.
+          */}
+          {ended ? null : (
+            <ThankYouNote
+              eventName={thankYouEventName}
+              theme={cardTheme}
+              language={language}
+              borderStyle={config.borderStyle}
+            />
+          )}
         </main>
       </CoverShell>
 

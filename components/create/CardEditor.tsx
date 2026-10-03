@@ -1366,6 +1366,26 @@ export default function CardEditor({
                   onOrnamentConfigChange={setOrnamentConfig}
                   accordion={accordionFor("design")}
                 />
+                {/*
+                  The rule between sections and the frame round a hidden date
+                  are both drawn on the card, and both are flowers: the same
+                  errand as the ornament above them. They sat under Extras,
+                  where a host choosing how the card looks did not think to
+                  look. Only where they are offered has changed; what each one
+                  writes to the card is what it always wrote.
+                */}
+                <DividerPanel
+                  divider={dividerStyleOf(divider, traditionId)}
+                  onDividerChange={setDivider}
+                  accordion={accordionFor("design")}
+                />
+                <RevealPanel
+                  scratchTarget={scratchTarget}
+                  onScratchTargetChange={setScratchTarget}
+                  scratchFrame={scratchFrame}
+                  onScratchFrameChange={setScratchFrame}
+                  accordion={accordionFor("design")}
+                />
               </div>
             ) : null}
 
@@ -1392,7 +1412,7 @@ export default function CardEditor({
             {/*
               4 — EXTRAS. Everything that is off until the host turns it on.
 
-              These five used to be split between Decoration and Structure by an
+              These four used to be split between Decoration and Structure by an
               argument about what each one technically was: the weather was a
               treatment drawn on the card, the cover and the music were about how
               the day runs, check-in changed nothing a guest sees. Every one of
@@ -1403,27 +1423,16 @@ export default function CardEditor({
               answer in one list rather than by opening two tabs and reasoning
               about our categories.
 
-              In the order a guest meets them: the cover they tap, the panel they
-              scratch, the music behind it, the sky over the venue, and the code
-              at the door.
+              In the order a guest meets them: the cover they tap, the music
+              behind it, the sky over the venue, and the code at the door. The
+              scratch panel and the divider were here too, and are under Design
+              now, beside the ornament.
             */}
             {tab === "extras" ? (
               <div className="flex min-w-0 flex-col gap-3">
                 <CoverAnimationPicker
                   coverAnimation={coverAnimation}
                   onChange={setCoverAnimation}
-                  accordion={accordionFor("extras")}
-                />
-                <RevealPanel
-                  scratchTarget={scratchTarget}
-                  onScratchTargetChange={setScratchTarget}
-                  scratchFrame={scratchFrame}
-                  onScratchFrameChange={setScratchFrame}
-                  accordion={accordionFor("extras")}
-                />
-                <DividerPanel
-                  divider={dividerStyleOf(divider, traditionId)}
-                  onDividerChange={setDivider}
                   accordion={accordionFor("extras")}
                 />
                 <MusicPanel

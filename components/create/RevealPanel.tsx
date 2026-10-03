@@ -44,6 +44,10 @@ function pillClass(isSelected: boolean): string {
  * card, not a way the card looks. The pills and the copy are unchanged; only the
  * wrapper around them is new, and it is the same collapsible section the other
  * panels in its tab use.
+ *
+ * Offered under Design, after the section divider: it moved there from Extras
+ * because its frame of flowers is chosen with the card's other ornament. What
+ * it saves, and how the card draws it, did not move with it.
  */
 export default function RevealPanel({
   scratchTarget,
@@ -56,7 +60,7 @@ export default function RevealPanel({
   onScratchTargetChange: (target: ScratchTarget) => void;
   scratchFrame: ScratchFrame;
   onScratchFrameChange: (frame: ScratchFrame) => void;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   return (

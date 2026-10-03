@@ -24,14 +24,16 @@ import type { ButterflyStyle, DecorIntensity } from "@/types/card";
  * smudge, and at an alpha where it is a butterfly it is something the guest has
  * to read the date through.
  *
- * THEY CROSS THE TEXT, BUT NEVER STOP ON IT. They used to be held in the
- * margins on short CSS loops, which kept them off the writing but left them
- * bobbing on the spot. Now each one flies anywhere on the visible band, and
- * three things keep the names and the date readable: over the text column it
- * fades to TEXT_OPACITY, it only ever rests in a margin, and a guest who wants
- * to read what one is passing over only has to reach for it. The layer is
- * still `z-[17]`, above the border frame, because anywhere below that a
- * photographic border swallows them.
+ * ALWAYS SOLID, AND NEVER LEFT ON THE WRITING. A butterfly is drawn at full
+ * strength wherever it is — it used to fade over the text column, which made
+ * it a smudge on the names rather than a butterfly near them. What keeps the
+ * card readable now is that it does not stay: it only ever rests in a margin,
+ * it does not choose a line of text to fly to, and one that drifts onto the
+ * writing anyway flies off the card by itself a moment later, slowly, and
+ * comes back in from the edge once it has gone. A guest who taps one, or
+ * reaches for it, sends it off the same way. The layer is still `z-[17]`,
+ * above the border frame, because anywhere below that a photographic border
+ * swallows them.
  *
  * FLIGHT IS STEERED IN SCRIPT AND PLAYED BY THE COMPOSITOR. `startFlight`
  * below works out a couple of seconds of each butterfly's path at a time and
@@ -177,10 +179,11 @@ const LEAF_COUNT: Record<DecorIntensity, number> = {
 };
 
 /**
- * Held below full, so a butterfly crossing the frame or a scattered motif
- * reads as being in the same picture rather than pasted on top of it.
+ * The leaves are held below full, so one crossing the frame or a scattered
+ * motif reads as being in the same picture rather than pasted on top of it.
+ * The butterflies are not: they are fully opaque at all times.
  */
-const OPACITY = 0.9;
+const LEAF_OPACITY = 0.9;
 
 /**
  * A shadow the shape of the butterfly, and it is not decoration.
@@ -243,35 +246,54 @@ const REST_SETTLE = 40;
 const REST_INSET = 8;
 /** A rest spot not reached in this long is given up, and the rest skipped. */
 const REST_PATIENCE = 10000;
-/**
- * Its opacity over the text column, faded to from OPACITY and back as it
- * crosses the column's edge, at FADE_RATE per second — about a third of a
- * second either way.
- */
-const TEXT_OPACITY = 0.6;
-const FADE_RATE = 7;
 /** A pointer inside this distance of a butterfly's edge sends it off. */
 const SHOO_RADIUS = 70;
-/** The dash away from a finger, in px/s, and how long before it calms down. */
-const FLEE_SPEED = 330;
-const FLEE_FOR: readonly [number, number] = [1000, 2000];
 /**
- * A dash that would run into an edge turns along it once it is this close,
- * rather than hitting it and bouncing back at the finger it was fleeing.
+ * Flying away: off the card altogether, slowly, when a guest taps or reaches
+ * for it, or when it has drifted onto the writing.
+ *
+ * LEAVE_FOR is how long it takes to be out of sight. It follows one soft curve
+ * to the nearest edge on an ease-out — away at once, then slower and slower —
+ * and the curve runs on a little past the edge, so the slowest stretch of it
+ * is spent out of sight rather than half way off the card: it is out of sight
+ * at LEAVE_HIDDEN_AT of the whole flight, having covered LEAVE_HIDDEN_SHARE of
+ * the curve, which is what an ease-out quad makes of that moment.
  */
-const FLEE_ROOM = 60;
+const LEAVE_FOR: readonly [number, number] = [2500, 3500];
+const LEAVE_HIDDEN_AT = 0.8;
+const LEAVE_HIDDEN_SHARE = 1 - (1 - LEAVE_HIDDEN_AT) ** 2;
+/** How far the curve bows off the straight line, as a share of it, and its limits in px. */
+const LEAVE_BOW = 0.3;
+const LEAVE_BOW_RANGE: readonly [number, number] = [30, 120];
+/** How far up the card it climbs on its way out of a side, in px. */
+const LEAVE_RISE: readonly [number, number] = [60, 160];
+/** The wingbeat while it leaves: slow, unhurried strokes. */
+const LEAVE_FLAP = 0.6;
+/** How long it is gone before it comes back in over the same edge. */
+const AWAY_FOR: readonly [number, number] = [1500, 4000];
 /**
- * A finger that stays on a fleeing butterfly re-aims it at most this often.
- * Every re-aim is a new segment, and a pointermove arrives on every frame.
+ * How long it may be over a line of text before it leaves by itself. Long
+ * enough that clipping the corner of a word on the way past is not a reason to
+ * go; short enough that nobody has to wait to read what is under it.
  */
-const REAIM_MS = 120;
+const LINGER_MS = 600;
+/**
+ * How much of a wing may overlap a line before it counts as being on it, as a
+ * share of the butterfly's half size added round every line.
+ */
+const TEXT_REACH = 0.6;
+/**
+ * How long the page has to hold still after a scroll before the text is
+ * measured again. Never measured while it is moving: see `measureText`.
+ */
+const TEXT_SETTLE_MS = 200;
 /** How far it leans into a turn, in degrees, at full sideways travel. */
 const MAX_TILT = 32;
 /** The gentle rise and fall on top of the path, in px. */
 const BOB = 3;
-/** Wingbeat playback rate: slow while resting, up to this while fleeing. */
+/** Wingbeat playback rate: slow while resting, and never faster than this. */
 const MIN_FLAP = 0.42;
-const MAX_FLAP = 2.8;
+const MAX_FLAP = 1.6;
 
 /**
  * The flight is worked out ahead of time and played by the compositor.
@@ -292,6 +314,9 @@ const MAX_FLAP = 2.8;
  * replaced by the next, simulated onward from the exact sample it had reached
  * and started at that sample's own time, so the join has no seam; a finger
  * does the same thing early, from wherever the butterfly is at that moment.
+ *
+ * TRANSFORM ONLY. The keyframes carry nothing else, so every frame of a flight,
+ * a rest and a slow exit alike is the compositor moving a layer it already has.
  */
 const SAMPLE_MS = 1000 / 30;
 const SEGMENT_SAMPLES = 75;
@@ -328,16 +353,33 @@ interface Sim {
   /** A rest is due, and it is on its way to a spot in a margin to take it. */
   restPending: boolean;
   restPendingSince: number;
-  fleeStart: number;
-  fleeUntil: number;
-  fleeX: number;
-  fleeY: number;
+  /** Since when it has been over a line of text, or 0 while it is not. */
+  overSince: number;
   /**
-   * The outer span's opacity, under the middle span's OPACITY: 1 in a margin,
-   * TEXT_OPACITY / OPACITY over the text column, easing between the two.
+   * Flying away. `leaveUntil` is 0 on a butterfly that never has; the curve is
+   * from where it was, round `leaveVia`, to `leaveTo`, which is past the edge.
    */
-  fade: number;
+  leaveStart: number;
+  leaveUntil: number;
+  leaveFromX: number;
+  leaveFromY: number;
+  leaveViaX: number;
+  leaveViaY: number;
+  leaveToX: number;
+  leaveToY: number;
+  /** The edge it left over, and comes back in over. */
+  leaveEdge: Edge;
+  /** Off the card: leaving, or gone and waiting out `awayUntil`. */
+  gone: boolean;
+  awayUntil: number;
+  /** On its way back in, and not yet far enough in to be kept in. */
+  entering: boolean;
 }
+
+type Edge = "left" | "right" | "top";
+
+/** A line of text on the band, in band px: left, top, right, bottom. */
+type TextBox = readonly [number, number, number, number];
 
 interface Body {
   node: HTMLElement;
@@ -362,6 +404,8 @@ interface Body {
   plan: Sim[];
   motion: Animation | null;
   appliedFlap: number;
+  /** The text under it was measured again, so its segment is planned on old news. */
+  stale: boolean;
 }
 
 function between([low, high]: readonly [number, number]): number {
@@ -429,6 +473,14 @@ function startFlight(
   */
   let columnLeft = 0;
   let columnRight = 0;
+  /*
+    Where the writing is on the band right now, line by line, and whether that
+    is known: it is not while the page is scrolling, and nothing leaves on
+    account of text it cannot place.
+  */
+  let textBoxes: TextBox[] = [];
+  let textKnown = false;
+  let scrolledAt = 0;
   const content =
     band.parentElement?.parentElement?.querySelector<HTMLElement>(
       ".lifafa-card-content",
@@ -483,15 +535,24 @@ function startFlight(
         restUntil: 0,
         restPending: false,
         restPendingSince: 0,
-        fleeStart: 0,
-        fleeUntil: 0,
-        fleeX: 0,
-        fleeY: 0,
-        fade: 1,
+        overSince: 0,
+        leaveStart: 0,
+        leaveUntil: 0,
+        leaveFromX: 0,
+        leaveFromY: 0,
+        leaveViaX: 0,
+        leaveViaY: 0,
+        leaveToX: 0,
+        leaveToY: 0,
+        leaveEdge: "left",
+        gone: false,
+        awayUntil: 0,
+        entering: false,
       },
       plan: [],
       motion: null,
       appliedFlap: 1,
+      stale: false,
     };
   });
 
@@ -514,29 +575,36 @@ function startFlight(
    * A new place to fly to, anywhere on the band.
    *
    * A few draws rather than one: a target a wingspan away is a twitch, not a
-   * flight, so it takes the first that is a fair way off. Given a point to get
-   * away from — a finger — it takes the draw furthest from it instead.
+   * flight, so it takes the first that is a fair way off. And never a line of
+   * text, where it would only have to leave again: a draw that lands on one is
+   * passed over, unless every draw does.
    */
-  function pickTarget(body: Body, awayX?: number, awayY?: number): void {
+  function pickTarget(body: Body): void {
     const sim = body.sim;
     const [minX, maxX, minY, maxY] = targetBounds(body);
-    const fromX = awayX ?? sim.x;
-    const fromY = awayY ?? sim.y;
     const farEnough = Math.min(width, height) * 0.35;
     let bestDistance = -1;
+    let bestClear = false;
 
-    for (let draw = 0; draw < 4; draw += 1) {
+    for (let draw = 0; draw < 8; draw += 1) {
       const x = minX + Math.random() * (maxX - minX);
       const y = minY + Math.random() * (maxY - minY);
-      const distance = Math.hypot(x - fromX, y - fromY);
+      const distance = Math.hypot(x - sim.x, y - sim.y);
+      const clear = !onText(body, x, y);
 
-      if (distance > bestDistance) {
+      /* A clear draw beats any that is not; between two alike, the further. */
+      if (
+        bestDistance < 0 ||
+        (clear && !bestClear) ||
+        (clear === bestClear && distance > bestDistance)
+      ) {
         sim.targetX = x;
         sim.targetY = y;
         bestDistance = distance;
+        bestClear = clear;
       }
 
-      if (awayX === undefined && distance >= farEnough) {
+      if (bestClear && bestDistance >= farEnough) {
         break;
       }
     }
@@ -591,16 +659,152 @@ function startFlight(
   }
 
   /** Whether its centre is over the text column. */
-  function overText(sim: Sim): boolean {
+  function overColumn(sim: Sim): boolean {
     return sim.x > columnLeft && sim.x < columnRight;
   }
 
   /**
+   * Whether a butterfly centred on (x, y) would be on a line of text: within
+   * TEXT_REACH of its own half size of one. Arithmetic on boxes measured
+   * earlier, so it is free to ask from inside the simulation.
+   */
+  function onText(body: Body, x: number, y: number): boolean {
+    if (!textKnown) {
+      return false;
+    }
+
+    const reachX = body.halfW * TEXT_REACH;
+    const reachY = body.halfH * TEXT_REACH;
+
+    for (const [left, top, right, bottom] of textBoxes) {
+      if (
+        x > left - reachX &&
+        x < right + reachX &&
+        y > top - reachY &&
+        y < bottom + reachY
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /** How far past an edge its centre has to be for none of it to show, at any lean. */
+  function hiddenReach(body: Body): number {
+    return Math.hypot(body.halfW, body.halfH) + 4;
+  }
+
+  /**
+   * Sends it off the card: one slow curve to an edge, and out of sight.
+   *
+   * The nearest of the two sides and the top, so it is never asked to cross
+   * the whole card to go. Given a finger to get away from, the nearest that is
+   * not back past the finger. Out of a side it climbs as it goes, the way a
+   * butterfly leaves a flower; out of the top it drifts a little to one side.
+   * The curve bows off the straight line between the two, upward where it can.
+   */
+  function beginLeave(body: Body, awayX?: number, awayY?: number): void {
+    const sim = body.sim;
+    const reach = hiddenReach(body);
+    const rise = between(LEAVE_RISE);
+
+    const exits: { edge: Edge; x: number; y: number }[] = [
+      { edge: "left", x: -reach, y: sim.y - rise },
+      { edge: "right", x: width + reach, y: sim.y - rise },
+      {
+        edge: "top",
+        x: clamp(sim.x + (Math.random() - 0.5) * 160, 0, width),
+        y: -reach,
+      },
+    ];
+    exits.sort(
+      (a, b) =>
+        Math.hypot(a.x - sim.x, a.y - sim.y) -
+        Math.hypot(b.x - sim.x, b.y - sim.y),
+    );
+
+    const exit =
+      awayX === undefined || awayY === undefined
+        ? exits[0]
+        : (exits.find(
+            (option) =>
+              (option.x - sim.x) * (sim.x - awayX) +
+                (option.y - sim.y) * (sim.y - awayY) >=
+              0,
+          ) ?? exits[0]);
+
+    /* Run on past the edge, so it is out of sight before the curve's slow end. */
+    const toX = sim.x + (exit.x - sim.x) / LEAVE_HIDDEN_SHARE;
+    const toY = sim.y + (exit.y - sim.y) / LEAVE_HIDDEN_SHARE;
+    const length = Math.hypot(toX - sim.x, toY - sim.y) || 1;
+    const bow = clamp(length * LEAVE_BOW, LEAVE_BOW_RANGE[0], LEAVE_BOW_RANGE[1]);
+    /* The normal to the line, turned to point up the card; either way for a line straight up. */
+    let normalX = -(toY - sim.y) / length;
+    let normalY = (toX - sim.x) / length;
+    if (normalY > 0 || (Math.abs(normalY) < 0.05 && Math.random() < 0.5)) {
+      normalX = -normalX;
+      normalY = -normalY;
+    }
+
+    sim.leaveFromX = sim.x;
+    sim.leaveFromY = sim.y;
+    sim.leaveViaX = (sim.x + toX) / 2 + normalX * bow;
+    sim.leaveViaY = (sim.y + toY) / 2 + normalY * bow;
+    sim.leaveToX = toX;
+    sim.leaveToY = toY;
+    sim.leaveEdge = exit.edge;
+    sim.leaveStart = sim.t;
+    sim.leaveUntil = sim.t + between(LEAVE_FOR) / LEAVE_HIDDEN_AT;
+    sim.awayUntil = sim.leaveUntil + between(AWAY_FOR);
+    sim.gone = true;
+    sim.entering = false;
+    sim.overSince = 0;
+    sim.restUntil = 0;
+    sim.restPending = false;
+  }
+
+  /**
+   * Brings it back in over the edge it left by, somewhere new along it.
+   *
+   * Placed while it is still out of sight, so the move to its new place along
+   * the edge is never drawn. Over the top it comes back above a margin, not
+   * above the writing.
+   */
+  function comeBack(body: Body): void {
+    const sim = body.sim;
+    const reach = hiddenReach(body);
+    const [minX, maxX, minY, maxY] = targetBounds(body);
+
+    if (sim.leaveEdge === "top") {
+      sim.x =
+        Math.random() < 0.5
+          ? clamp(columnLeft - body.halfW, minX, maxX)
+          : clamp(columnRight + body.halfW, minX, maxX);
+      sim.y = -reach;
+      sim.heading = Math.PI / 2;
+    } else {
+      sim.x = sim.leaveEdge === "left" ? -reach : width + reach;
+      sim.y = minY + Math.random() * (maxY - minY);
+      sim.heading = sim.leaveEdge === "left" ? 0 : Math.PI;
+    }
+
+    sim.speed = body.cruise;
+    sim.gone = false;
+    sim.entering = true;
+    sim.overSince = 0;
+    sim.nextRest = sim.t + between(REST_EVERY);
+    pickTarget(body);
+  }
+
+  /**
    * Keeps the butterfly on the band, turning it back off whichever edge it
-   * met. Rare — targets are well inside — but a dash from a finger can reach
-   * one. At most a quarter of it may cross the side edges, which is what lets
-   * a phone's narrow margins hold a resting butterfly at all; top and bottom
-   * keep all of it.
+   * met. Rare — targets are well inside. At most a quarter of it may cross the
+   * side edges, which is what lets a phone's narrow margins hold a resting
+   * butterfly at all; top and bottom keep all of it.
+   *
+   * Not one that has left the card, which is past the edge on purpose, and not
+   * one on its way back until it is far enough in to be kept in.
    */
   function contain(body: Body): void {
     const sim = body.sim;
@@ -609,13 +813,24 @@ function startFlight(
     const minY = Math.min(body.halfH, height / 2);
     const maxY = Math.max(height - body.halfH, height / 2);
 
+    if (sim.gone) {
+      return;
+    }
+
+    if (sim.entering) {
+      if (sim.x < minX || sim.x > maxX || sim.y < minY) {
+        return;
+      }
+
+      sim.entering = false;
+    }
+
     if (sim.x < minX || sim.x > maxX) {
       const inward = sim.x < minX ? 1 : -1;
       sim.x = clamp(sim.x, minX, maxX);
       if (Math.cos(sim.heading) * inward < 0) {
         sim.heading = wrapAngle(Math.PI - sim.heading);
       }
-      sim.fleeX = Math.abs(sim.fleeX) * inward;
     }
 
     if (sim.y < minY || sim.y > maxY) {
@@ -624,41 +839,51 @@ function startFlight(
       if (Math.sin(sim.heading) * inward < 0) {
         sim.heading = -sim.heading;
       }
-      sim.fleeY = Math.abs(sim.fleeY) * inward;
     }
   }
 
   /**
-   * Turns a dash off whichever edge it is heading into, by `share` (1 at once,
-   * less for a gradual turn): the push into the edge fades, and if nothing is
-   * left to carry it, it heads for the roomier side of the other axis.
+   * One step of a flight off the card: its place on the curve at this moment,
+   * on an ease-out, and its heading and speed read back off the move it made.
+   * Once the curve is done it waits where it ended, out of sight.
    */
-  function deflect(body: Body, share: number): void {
+  function stepAway(body: Body, dt: number): void {
     const sim = body.sim;
 
-    if (
-      (sim.fleeX < 0 && sim.x - body.halfW < FLEE_ROOM) ||
-      (sim.fleeX > 0 && sim.x + body.halfW > width - FLEE_ROOM)
-    ) {
-      sim.fleeX *= 1 - share;
-      if (Math.abs(sim.fleeY) < 0.5) {
-        sim.fleeY += (sim.y < height / 2 ? 1 : -1) * share;
-      }
+    if (sim.t >= sim.leaveUntil) {
+      sim.speed = 0;
+      return;
     }
 
-    if (
-      (sim.fleeY < 0 && sim.y - body.halfH < FLEE_ROOM) ||
-      (sim.fleeY > 0 && sim.y + body.halfH > height - FLEE_ROOM)
-    ) {
-      sim.fleeY *= 1 - share;
-      if (Math.abs(sim.fleeX) < 0.5) {
-        sim.fleeX += (sim.x < width / 2 ? 1 : -1) * share;
-      }
+    const share = clamp(
+      (sim.t - sim.leaveStart) / (sim.leaveUntil - sim.leaveStart),
+      0,
+      1,
+    );
+    const along = 1 - (1 - share) * (1 - share);
+    const rest = 1 - along;
+    const x =
+      rest * rest * sim.leaveFromX +
+      2 * rest * along * sim.leaveViaX +
+      along * along * sim.leaveToX;
+    const y =
+      rest * rest * sim.leaveFromY +
+      2 * rest * along * sim.leaveViaY +
+      along * along * sim.leaveToY;
+    const moved = Math.hypot(x - sim.x, y - sim.y);
+
+    if (moved > 0.01) {
+      /* Banked round to the curve rather than snapped onto it. */
+      sim.heading = wrapAngle(
+        sim.heading +
+          wrapAngle(Math.atan2(y - sim.y, x - sim.x) - sim.heading) *
+            ease(6, dt),
+      );
     }
 
-    const length = Math.hypot(sim.fleeX, sim.fleeY) || 1;
-    sim.fleeX /= length;
-    sim.fleeY /= length;
+    sim.speed = moved / dt;
+    sim.x = x;
+    sim.y = y;
   }
 
   /** One step of the steering, `dt` seconds long, on the body's own sim. */
@@ -666,65 +891,81 @@ function startFlight(
     const sim = body.sim;
     sim.t += dt * 1000;
 
-    let heading = sim.heading;
-    let speed = body.cruise;
-    let turn = TURN;
-    let maxTurn = MAX_TURN;
-    let pace = 1.6;
-    const fleeing = sim.t < sim.fleeUntil;
-
-    if (fleeing) {
-      /* Holds most of the dash, then eases back to a cruise. */
-      const progress = (sim.t - sim.fleeStart) / (sim.fleeUntil - sim.fleeStart);
-      deflect(body, ease(10, dt));
-      heading = Math.atan2(sim.fleeY, sim.fleeX);
-      speed = FLEE_SPEED + (body.cruise - FLEE_SPEED) * progress * progress;
-      turn = 8;
-      maxTurn = 10;
-      pace = 5;
-    } else if (sim.t < sim.restUntil) {
-      speed = 0;
-      pace = 2.8;
-    } else {
-      if (!sim.restPending && sim.t >= sim.nextRest && !pickRestSpot(body)) {
-        sim.nextRest = sim.t + between(REST_EVERY);
-      }
-
-      const distance = Math.hypot(sim.targetX - sim.x, sim.targetY - sim.y);
-
-      if (sim.restPending) {
-        /* Only once its centre is clear of the text, however close it is. */
-        if (distance < REST_ARRIVE && !overText(sim)) {
-          sim.restPending = false;
-          sim.restUntil = sim.t + between(REST_FOR);
-          sim.nextRest = sim.restUntil + between(REST_EVERY);
-          /* Set now, so it leaves the margin for somewhere new afterwards. */
-          pickTarget(body);
-        } else if (sim.t - sim.restPendingSince > REST_PATIENCE) {
-          sim.restPending = false;
-          sim.nextRest = sim.t + between(REST_EVERY);
-          pickTarget(body);
-        } else {
-          speed = body.cruise * clamp(distance / REST_SETTLE, 0.3, 1);
-        }
-      } else if (
-        distance < ARRIVE ||
-        sim.t - sim.targetSince > TARGET_PATIENCE
-      ) {
-        pickTarget(body);
-      }
-
-      heading = Math.atan2(sim.targetY - sim.y, sim.targetX - sim.x);
+    if (sim.gone && sim.t >= sim.awayUntil) {
+      comeBack(body);
     }
 
-    const steer = wrapAngle(heading - sim.heading) * ease(turn, dt);
-    sim.heading = wrapAngle(
-      sim.heading + clamp(steer, -maxTurn * dt, maxTurn * dt),
-    );
-    sim.speed += (speed - sim.speed) * ease(pace, dt);
-    sim.x += Math.cos(sim.heading) * sim.speed * dt;
-    sim.y += Math.sin(sim.heading) * sim.speed * dt;
-    contain(body);
+    if (sim.gone) {
+      stepAway(body, dt);
+    } else {
+      let heading = sim.heading;
+      let speed = body.cruise;
+      let pace = 1.6;
+
+      if (sim.t < sim.restUntil) {
+        speed = 0;
+        pace = 2.8;
+      } else {
+        if (
+          !sim.restPending &&
+          !sim.entering &&
+          sim.t >= sim.nextRest &&
+          !pickRestSpot(body)
+        ) {
+          sim.nextRest = sim.t + between(REST_EVERY);
+        }
+
+        const distance = Math.hypot(sim.targetX - sim.x, sim.targetY - sim.y);
+
+        if (sim.restPending) {
+          /* Only once its centre is clear of the text, however close it is. */
+          if (distance < REST_ARRIVE && !overColumn(sim)) {
+            sim.restPending = false;
+            sim.restUntil = sim.t + between(REST_FOR);
+            sim.nextRest = sim.restUntil + between(REST_EVERY);
+            /* Set now, so it leaves the margin for somewhere new afterwards. */
+            pickTarget(body);
+          } else if (sim.t - sim.restPendingSince > REST_PATIENCE) {
+            sim.restPending = false;
+            sim.nextRest = sim.t + between(REST_EVERY);
+            pickTarget(body);
+          } else {
+            speed = body.cruise * clamp(distance / REST_SETTLE, 0.3, 1);
+          }
+        } else if (
+          distance < ARRIVE ||
+          sim.t - sim.targetSince > TARGET_PATIENCE
+        ) {
+          pickTarget(body);
+        }
+
+        heading = Math.atan2(sim.targetY - sim.y, sim.targetX - sim.x);
+      }
+
+      const steer = wrapAngle(heading - sim.heading) * ease(TURN, dt);
+      sim.heading = wrapAngle(
+        sim.heading + clamp(steer, -MAX_TURN * dt, MAX_TURN * dt),
+      );
+      sim.speed += (speed - sim.speed) * ease(pace, dt);
+      sim.x += Math.cos(sim.heading) * sim.speed * dt;
+      sim.y += Math.sin(sim.heading) * sim.speed * dt;
+      contain(body);
+
+      /*
+        On the writing, flying or hanging in the air: given LINGER_MS to be on
+        its way past, and then it goes. Not while it is still coming in over
+        the edge, which is a margin.
+      */
+      if (!sim.entering && onText(body, sim.x, sim.y)) {
+        if (sim.overSince === 0) {
+          sim.overSince = sim.t;
+        } else if (sim.t - sim.overSince >= LINGER_MS) {
+          beginLeave(body);
+        }
+      } else {
+        sim.overSince = 0;
+      }
+    }
 
     /*
       Leans into the direction of travel rather than pointing along it: the
@@ -734,18 +975,14 @@ function startFlight(
     */
     const pace01 = Math.min(1, sim.speed / body.cruise);
     const lean = Math.cos(sim.heading) * MAX_TILT * Math.max(0.35, pace01);
-    sim.tilt += (lean - sim.tilt) * ease(fleeing ? 8 : 3.5, dt);
+    sim.tilt += (lean - sim.tilt) * ease(3.5, dt);
     sim.drawnScale += (body.scale - sim.drawnScale) * ease(1.5, dt);
 
-    const flap = clamp(
-      MIN_FLAP + 0.6 * (sim.speed / body.cruise),
-      MIN_FLAP,
-      MAX_FLAP,
-    );
+    /* Slow, even strokes on the way off the card, however fast it is going. */
+    const flap = sim.gone
+      ? LEAVE_FLAP
+      : clamp(MIN_FLAP + 0.6 * (sim.speed / body.cruise), MIN_FLAP, MAX_FLAP);
     sim.flap += (flap - sim.flap) * ease(4, dt);
-
-    const fade = overText(sim) ? TEXT_OPACITY / OPACITY : 1;
-    sim.fade += (fade - sim.fade) * ease(FADE_RATE, dt);
   }
 
   /** The transform for the body's sim as it stands. */
@@ -787,9 +1024,7 @@ function startFlight(
     body.sim = { ...from, t: late ? flightNow() : from.t };
 
     const samples: Sim[] = [{ ...body.sim }];
-    const keyframes: Keyframe[] = [
-      { transform: pose(body), opacity: body.sim.fade },
-    ];
+    const keyframes: Keyframe[] = [{ transform: pose(body) }];
 
     for (let index = 1; index <= SEGMENT_SAMPLES; index += 1) {
       step(body, SAMPLE_MS / 1000);
@@ -806,7 +1041,7 @@ function startFlight(
       }
 
       samples.push({ ...body.sim });
-      keyframes.push({ transform: pose(body), opacity: body.sim.fade });
+      keyframes.push({ transform: pose(body) });
     }
 
     const motion = body.node.animate(keyframes, {
@@ -819,8 +1054,8 @@ function startFlight(
     body.motion?.cancel();
     body.motion = motion;
     body.plan = samples;
+    body.stale = false;
     body.node.style.transform = "";
-    body.node.style.opacity = "";
   }
 
   function updateFlap(body: Body, sim: Sim): void {
@@ -831,13 +1066,29 @@ function startFlight(
   }
 
   function check(): void {
+    /*
+      The page has held still since the last scroll, so the writing is where it
+      is going to be read: measured once, here, and every flight planned before
+      it is planned again, a couple at a time like any other.
+    */
+    if (!textKnown && performance.now() - scrolledAt >= TEXT_SETTLE_MS) {
+      measureText();
+      for (const body of bodies) {
+        body.stale = true;
+      }
+    }
+
     const now = flightNow();
     const due = bodies
       .filter(
         (body) =>
-          body.plan.length > 0 && now - body.plan[0].t >= REPLAN_AFTER_MS,
+          body.plan.length > 0 &&
+          (body.stale || now - body.plan[0].t >= REPLAN_AFTER_MS),
       )
-      .sort((a, b) => a.plan[0].t - b.plan[0].t)
+      .sort(
+        (a, b) =>
+          Number(b.stale) - Number(a.stale) || a.plan[0].t - b.plan[0].t,
+      )
       .slice(0, REPLANS_PER_CHECK);
 
     for (const body of due) {
@@ -878,12 +1129,74 @@ function startFlight(
       (box.right - parseFloat(style.paddingRight) - bandBox.left) / scale;
   }
 
+  /**
+   * Where each line of text sits on the band, as it is drawn.
+   *
+   * A range over each run of text, which reports the ink and not the box it
+   * was set in: a short name centred in a full-width line is as wide as the
+   * name. Only the sections that are on screen are walked. The band is pinned
+   * and the card scrolls under it, so this is true until the next scroll and
+   * no longer — it is taken again once the page has held still (see `check`),
+   * and when something resizes, and never from inside a flight.
+   */
+  function measureText(): void {
+    textBoxes = [];
+    textKnown = true;
+
+    if (content === null || width === 0 || height === 0) {
+      return;
+    }
+
+    const bandBox = band.getBoundingClientRect();
+    const scale = bandBox.width / width || 1;
+    const range = document.createRange();
+
+    for (const section of Array.from(content.children)) {
+      const box = section.getBoundingClientRect();
+      if (box.bottom < bandBox.top || box.top > bandBox.bottom) {
+        continue;
+      }
+
+      const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
+
+      for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+        /* A line kept for screen readers alone is not drawn. */
+        if (
+          (node.textContent ?? "").trim().length === 0 ||
+          node.parentElement?.closest(".sr-only") != null
+        ) {
+          continue;
+        }
+
+        range.selectNodeContents(node);
+        const ink = range.getBoundingClientRect();
+
+        if (
+          ink.width < 1 ||
+          ink.height < 1 ||
+          ink.bottom < bandBox.top ||
+          ink.top > bandBox.bottom
+        ) {
+          continue;
+        }
+
+        textBoxes.push([
+          (ink.left - bandBox.left) / scale,
+          (ink.top - bandBox.top) / scale,
+          (ink.right - bandBox.left) / scale,
+          (ink.bottom - bandBox.top) / scale,
+        ]);
+      }
+    }
+  }
+
   /** Sizes, read when something resizes — never while flying. */
   function measure(): void {
     width = band.clientWidth;
     height = band.clientHeight;
     rect = null;
     measureColumn();
+    measureText();
 
     /* Not laid out yet — a preview that has not been opened. Placed once it is. */
     if (width === 0 || height === 0) {
@@ -961,7 +1274,6 @@ function startFlight(
 
       body.sim = { ...sampleAt(body, now) };
       body.node.style.transform = pose(body);
-      body.node.style.opacity = String(body.sim.fade);
       body.motion?.cancel();
       body.motion = null;
     }
@@ -979,7 +1291,8 @@ function startFlight(
 
   /**
    * A finger or a cursor at (clientX, clientY). Anything within SHOO_RADIUS of
-   * it dashes the other way.
+   * it flies off the card, slowly, the way one that has drifted onto the
+   * writing does — see `beginLeave`. One already on its way is left to go.
    *
    * The one place the band's position is read, and only when a scroll or a
    * resize has made the last reading stale. Scaled against the laid-out width
@@ -1005,16 +1318,11 @@ function startFlight(
       }
 
       const sample = sampleAt(body, now);
-      if (
-        now < sample.fleeUntil &&
-        now - sample.fleeStart < REAIM_MS
-      ) {
+      if (sample.gone) {
         continue;
       }
 
-      const dx = sample.x - pointerX;
-      const dy = sample.y - pointerY;
-      const distance = Math.hypot(dx, dy);
+      const distance = Math.hypot(sample.x - pointerX, sample.y - pointerY);
       const reach = SHOO_RADIUS + Math.max(body.halfW, body.halfH);
 
       if (distance > reach) {
@@ -1022,33 +1330,9 @@ function startFlight(
       }
 
       body.sim = { ...sample };
-      const sim = body.sim;
-      /* Straight away from the finger, unless that is straight into an edge. */
-      sim.fleeX = distance > 0 ? dx / distance : Math.cos(sim.heading);
-      sim.fleeY = distance > 0 ? dy / distance : Math.sin(sim.heading);
-      deflect(body, 1);
-      sim.fleeStart = sim.t;
-      sim.restUntil = 0;
-      if (sim.restPending) {
-        sim.restPending = false;
-        sim.nextRest = sim.t + between(REST_EVERY);
-      }
-
-      if (sim.t >= sim.fleeUntil) {
-        sim.fleeUntil = sim.t + between(FLEE_FOR);
-        /* Startled: it darts, it does not bank round. */
-        sim.heading = Math.atan2(sim.fleeY, sim.fleeX);
-        sim.speed = Math.max(sim.speed, FLEE_SPEED * 0.6);
-        sim.flap = MAX_FLAP;
-      } else {
-        /* Still being chased: keep going, and keep going for longer. */
-        sim.fleeUntil = Math.max(sim.fleeUntil, sim.t + FLEE_FOR[0]);
-      }
-
-      /* Where it goes once it calms down: well away from the finger. */
-      pickTarget(body, pointerX, pointerY);
-      plan(body, sim);
-      updateFlap(body, sim);
+      beginLeave(body, pointerX, pointerY);
+      plan(body, body.sim);
+      updateFlap(body, body.sim);
     }
   }
 
@@ -1069,7 +1353,14 @@ function startFlight(
     }
   }
 
+  /* A scroll moves the band on the page and the writing under the band. */
   function staleRect(): void {
+    rect = null;
+    textKnown = false;
+    scrolledAt = performance.now();
+  }
+
+  function staleBand(): void {
     rect = null;
   }
 
@@ -1111,7 +1402,7 @@ function startFlight(
   window.addEventListener("touchmove", onTouch, passive);
   /* Capture, so a scroll inside the editor's preview frame reaches it too. */
   window.addEventListener("scroll", staleRect, passiveCapture);
-  window.addEventListener("resize", staleRect, passive);
+  window.addEventListener("resize", staleBand, passive);
   document.addEventListener("visibilitychange", sync);
 
   sync();
@@ -1127,13 +1418,12 @@ function startFlight(
     window.removeEventListener("touchstart", onTouch, passive);
     window.removeEventListener("touchmove", onTouch, passive);
     window.removeEventListener("scroll", staleRect, passiveCapture);
-    window.removeEventListener("resize", staleRect, passive);
+    window.removeEventListener("resize", staleBand, passive);
     document.removeEventListener("visibilitychange", sync);
 
     for (const body of bodies) {
       body.motion?.cancel();
       body.node.style.transform = "";
-      body.node.style.opacity = "";
       setFlap(body.wing, 1);
     }
   };
@@ -1143,7 +1433,7 @@ function startFlight(
  * Three spans per butterfly, and each one owns exactly one thing.
  *
  * The outermost is moved by the flight loop, the middle one holds the starting
- * heading and the alpha, the innermost beats its wings. The wingbeat's keyframe
+ * heading, the innermost beats its wings. The wingbeat's keyframe
  * transform would replace any transform written on the same element, so the
  * two cannot share one. The middle heading is what the server draws and what a
  * guest who asked for less movement keeps; the flight leans away from it.
@@ -1165,7 +1455,7 @@ function Butterfly({
   const travel: CSSProperties = {
     left: `${flyer.left}%`,
     top: `${flyer.top}%`,
-    willChange: still ? undefined : "transform, opacity",
+    willChange: still ? undefined : "transform",
   };
 
   const wing: CSSProperties = {
@@ -1186,9 +1476,10 @@ function Butterfly({
 
   return (
     <span ref={nodeRef} className="absolute block" style={travel}>
+      {/* No opacity anywhere on a butterfly: it is fully opaque wherever it is. */}
       <span
         className="block"
-        style={{ opacity: OPACITY, transform: `rotate(${flyer.rotate}deg)` }}
+        style={{ transform: `rotate(${flyer.rotate}deg)` }}
       >
         <span
           data-wing=""
@@ -1245,7 +1536,7 @@ function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
     <span className="absolute block motion-reduce:hidden" style={travel}>
       <span
         className="block"
-        style={{ opacity: OPACITY, transform: `rotate(${drifter.rotate}deg)` }}
+        style={{ opacity: LEAF_OPACITY, transform: `rotate(${drifter.rotate}deg)` }}
       >
         <span className="block" style={turn}>
           <img
