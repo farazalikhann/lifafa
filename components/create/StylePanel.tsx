@@ -18,6 +18,16 @@ import {
   isPhotoBorder,
 } from "@/lib/flowerFrame";
 import { PALETTES, getPalette } from "@/lib/palettes";
+import {
+  CUSTOM_PRIMARIES,
+  CUSTOM_SECONDARIES,
+  TEXT_PAIRS,
+  cardPalette,
+  inkAllowed,
+  inkRefusal,
+  matchingTextPair,
+  type TextPairId,
+} from "@/lib/textColors";
 import type {
   CardBorderStyle,
   CardLanguage,
@@ -297,6 +307,8 @@ export default function StylePanel({
   borderStyle,
   onFontPairChange,
   onPaletteChange,
+  onTextPairChange,
+  onCustomInkChange,
   onDensityChange,
   onAccentChange,
   onBorderStyleChange,
@@ -323,6 +335,10 @@ export default function StylePanel({
   borderStyle: CardBorderStyle;
   onFontPairChange: (id: FontPairId) => void;
   onPaletteChange: (id: PaletteId) => void;
+  /** One of the six text pairs: sets both inks, the card colour and the accent. */
+  onTextPairChange: (id: TextPairId) => void;
+  /** One ink from the curated set, under "Custom". */
+  onCustomInkChange: (role: "primary" | "secondary", ink: string) => void;
   onDensityChange: (density: CardDensity) => void;
   onAccentChange: (accent: string | null) => void;
   onBorderStyleChange: (border: CardBorderStyle) => void;
@@ -344,6 +360,14 @@ export default function StylePanel({
       ? written
       : "Your names";
   const currentAccent = style.accentOverride ?? paletteAccent;
+  /*
+    The card colour and the two inks as the card is painted in them now, and
+    which of the six that is, if it is one. A card colour that came with a
+    pair is not any palette's, so no palette tile is marked while it holds.
+  */
+  const painted = cardPalette(style);
+  const currentPair = matchingTextPair(style);
+  const pairOwnsCard = (style.textColors?.cardColor ?? null) !== null;
 
   return (
     <>
@@ -445,7 +469,9 @@ export default function StylePanel({
               style={{ backgroundColor: currentAccent }}
             />
             <span className="truncate">
-              {getPalette(style.paletteId).label}
+              {pairOwnsCard && currentPair !== null
+                ? currentPair.label
+                : getPalette(style.paletteId).label}
             </span>
           </>
         }
@@ -453,7 +479,7 @@ export default function StylePanel({
       >
         <div className="grid grid-cols-3 gap-2">
           {PALETTES.map((palette) => {
-            const isSelected = palette.id === style.paletteId;
+            const isSelected = palette.id === style.paletteId && !pairOwnsCard;
 
             return (
               <button
@@ -494,6 +520,167 @@ export default function StylePanel({
               </button>
             );
           })}
+        </div>
+
+        {/*
+          TEXT COLOURS. Every card is set in two: a Primary for the names, the
+          title, the headings and the numerals, and a Secondary for everything
+          said about them. They are chosen as a pair, with the card colour the
+          pair was made for, so each tile is that card in small: its colour,
+          a couple in the Primary and a parent's line in the Secondary. There
+          is no single-colour option, because there is no such card.
+        */}
+        <div className="mt-2 flex flex-col gap-2">
+          <p className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
+            Text colours
+          </p>
+          <p className="text-xs text-[var(--lifafa-muted)]">
+            Two colours, chosen together with the card colour they suit.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            {TEXT_PAIRS.map((pair) => {
+              const isSelected = currentPair?.id === pair.id;
+
+              return (
+                <button
+                  key={pair.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  aria-label={`${pair.label} text colours`}
+                  onClick={() => onTextPairChange(pair.id)}
+                  className="flex min-w-0 flex-col items-stretch gap-1.5 rounded-xl p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+                >
+                  <span
+                    className={[
+                      "flex min-h-[4.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-2 text-center transition-shadow duration-150",
+                      isSelected
+                        ? "border-transparent ring-2 ring-[var(--lifafa-marigold)] ring-offset-2 ring-offset-[var(--lifafa-ink)]"
+                        : "border-[var(--lifafa-hairline)]",
+                    ].join(" ")}
+                    style={{ backgroundColor: pair.card }}
+                  >
+                    <span
+                      className="max-w-full truncate text-[0.9375rem] leading-tight"
+                      style={{
+                        color: pair.primary,
+                        fontFamily: "var(--font-display), Georgia, serif",
+                      }}
+                    >
+                      Aarav &amp; Ananya
+                    </span>
+                    <span
+                      className="max-w-full truncate text-[0.625rem] leading-tight"
+                      style={{ color: pair.secondary }}
+                    >
+                      Son of Mr Rajesh Sharma
+                    </span>
+                  </span>
+                  <span
+                    className={`text-center text-[0.6875rem] ${
+                      isSelected
+                        ? "text-[var(--lifafa-cream)]"
+                        : "text-[var(--lifafa-muted)]"
+                    }`}
+                  >
+                    {pair.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/*
+            CUSTOM: one ink at a time, from a short list of colours that are
+            known to be readable on some card. Which of them this card may
+            take is measured against its own colour, 7:1 for the Primary and
+            4.5:1 for the Secondary; the rest are shown, struck through and
+            switched off, so a host can see they exist and why they are not
+            on offer.
+          */}
+          <details className="group mt-1">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded text-[0.8125rem] font-medium text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]">
+              <span
+                aria-hidden="true"
+                className="inline-block text-[var(--lifafa-muted)] transition-transform duration-150 group-open:rotate-90"
+              >
+                ›
+              </span>
+              Custom
+              {style.textColors !== undefined && currentPair === null ? (
+                <span className="text-xs font-normal text-[var(--lifafa-muted)]">
+                  (in use)
+                </span>
+              ) : null}
+            </summary>
+
+            <div className="flex flex-col gap-3 pt-1">
+              {(
+                [
+                  ["primary", "Primary", CUSTOM_PRIMARIES, painted.textPrimary],
+                  ["secondary", "Secondary", CUSTOM_SECONDARIES, painted.textMuted],
+                ] as const
+              ).map(([role, label, inks, current]) => {
+                const refused = inks.some(
+                  (ink) => !inkAllowed(ink.hex, painted.background, role),
+                );
+
+                return (
+                  <div key={role} className="flex flex-col gap-1.5">
+                    <p className="text-xs text-[var(--lifafa-muted)]">
+                      {label}
+                      {role === "primary"
+                        ? ": names, title, headings, numerals"
+                        : ": parents, places, labels, captions"}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {inks.map((ink) => {
+                        const allowed = inkAllowed(ink.hex, painted.background, role);
+                        const isCurrent =
+                          style.textColors !== undefined &&
+                          ink.hex.toUpperCase() === current.toUpperCase();
+
+                        return (
+                          <button
+                            key={ink.hex}
+                            type="button"
+                            disabled={!allowed}
+                            aria-pressed={isCurrent}
+                            aria-label={`${label} text: ${ink.label}${
+                              allowed ? "" : `. ${inkRefusal(painted.background)}`
+                            }`}
+                            title={allowed ? ink.label : inkRefusal(painted.background)}
+                            onClick={() => onCustomInkChange(role, ink.hex)}
+                            className={[
+                              "relative flex size-11 items-center justify-center rounded-lg border text-[0.8125rem] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:cursor-not-allowed disabled:opacity-35",
+                              isCurrent
+                                ? "border-transparent ring-2 ring-[var(--lifafa-marigold)] ring-offset-2 ring-offset-[var(--lifafa-ink)]"
+                                : "border-[var(--lifafa-hairline)]",
+                            ].join(" ")}
+                            /* The ink on the card's own colour, which is the only place it is ever read. */
+                            style={{ backgroundColor: painted.background, color: ink.hex }}
+                          >
+                            Aa
+                            {allowed ? null : (
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-x-1.5 top-1/2 h-px rotate-[-28deg] bg-[var(--lifafa-muted)]"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {refused ? (
+                      <p className="text-[0.6875rem] text-[var(--lifafa-muted)]">
+                        Struck through: {inkRefusal(painted.background).toLowerCase()}.
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </details>
         </div>
 
         <div className="mt-1 flex flex-col gap-2">

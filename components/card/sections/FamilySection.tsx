@@ -10,7 +10,7 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardPx } from "@/lib/cardScale";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -97,7 +97,7 @@ export default function FamilySection({
           {block.parents !== null ? (
             <p
               className="max-w-[30ch] text-[calc(0.9375*var(--card-rem,1rem))] leading-relaxed break-words text-pretty"
-              style={{ color: theme.textPrimary }}
+              style={{ color: textRoles(theme).detail }}
             >
               {block.parents}
             </p>

@@ -32,7 +32,7 @@ import {
 } from "@/lib/cardTranslation";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
-import { getPalette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 import { getTheme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { StoredEvent } from "@/types/database";
@@ -220,7 +220,7 @@ export default function InviteExperience({
     drift apart again.
   */
   const cardTheme = effectiveTheme(theme, config.style);
-  const palette = getPalette(config.style.paletteId);
+  const palette = cardPalette(config.style);
   const motifs = getMotifs(config.occasionId, config.traditionId);
 
   /*

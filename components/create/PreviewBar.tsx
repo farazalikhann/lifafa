@@ -4,7 +4,8 @@ import { useCallback, useRef, useState, type ReactElement } from "react";
 import FullScreenPreview from "@/components/create/FullScreenPreview";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { Motif } from "@/lib/motifs";
-import { getPalette, type Palette } from "@/lib/palettes";
+import type { Palette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 import { getTheme } from "@/lib/themes";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -133,7 +134,7 @@ export default function PreviewBar({
   }, []);
 
   const theme = getTheme(draft.themeId);
-  const palette = getPalette(config.style.paletteId);
+  const palette = cardPalette(config.style);
   const accent = config.style.accentOverride ?? palette.accent;
 
   /*

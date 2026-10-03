@@ -7,7 +7,7 @@ import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { PREVIEW_INVITE } from "@/lib/calendar";
 import type { Motif } from "@/lib/motifs";
-import { getPalette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 import { getTheme } from "@/lib/themes";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -85,7 +85,7 @@ export default function CardPreview({
     fallback; every colour on it is overridden by the palette.
   */
   const theme = getTheme(draft.themeId);
-  const palette = getPalette(config.style.paletteId);
+  const palette = cardPalette(config.style);
   const isFramed = useMediaQuery(FRAME_QUERY);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);

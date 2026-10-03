@@ -23,6 +23,49 @@ export interface Theme {
   displayFontFamily?: string;
   /** The pair's heading weight, to go with displayFontFamily. */
   displayFontWeight?: number;
+  /**
+   * Which ink each kind of line is set in. Set only by effectiveTheme, and
+   * read only through `textRoles`.
+   */
+  roles?: TextRoles;
+}
+
+/**
+ * The inks of the lines that are not simply `textPrimary` or `textMuted`.
+ *
+ * A card has a Primary and a Secondary text colour, and which a line takes is
+ * a matter of what the line is. Most were already in the right one: the names
+ * in `textPrimary`, a caption in `textMuted`. These five are the kinds of line
+ * that were not, and on a card saved before the two inks existed each keeps
+ * the colour it always had — named beside it — so such a card does not change.
+ */
+export interface TextRoles {
+  /** Section headings, the date's numeral, countdown digits, a mantra's script line. Was the accent. Primary. */
+  heading: string;
+  /** The event's title under the names. Was the muted colour. Primary. */
+  title: string;
+  /** Parents, a venue's name, a weekday, a year and a time. Was the primary colour. Secondary. */
+  detail: string;
+  /** Small text that was set in the accent: the joining word, a ceremony's time. Secondary. */
+  mark: string;
+  /** Long passages: a message, a host's own paragraph. Was the muted colour. Secondary, a little quieter where it can be. */
+  body: string;
+}
+
+/**
+ * The roles of a theme: its own, when effectiveTheme composed it, and the
+ * colours each kind of line has always had when it did not.
+ */
+export function textRoles(theme: Theme): TextRoles {
+  return (
+    theme.roles ?? {
+      heading: theme.accent,
+      title: theme.textMuted,
+      detail: theme.textPrimary,
+      mark: theme.accent,
+      body: theme.textMuted,
+    }
+  );
 }
 
 const DISPLAY_SERIF = "var(--font-display), Georgia, serif";

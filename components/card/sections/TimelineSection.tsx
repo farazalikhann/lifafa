@@ -33,7 +33,7 @@ import {
 } from "@/lib/cardSections";
 import { ceremonyKind } from "@/lib/ceremonies";
 import { mixHex, readableOn } from "@/lib/contrast";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
@@ -221,7 +221,7 @@ function TimelineRow({
         {when.length > 0 ? (
           <p
             className={`mt-0.5 text-[calc(0.8125*var(--card-rem,1rem))] leading-relaxed${arrives}`}
-            style={{ color: theme.accent }}
+            style={{ color: textRoles(theme).mark }}
           >
             {when.join(" · ")}
           </p>

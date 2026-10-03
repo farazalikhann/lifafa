@@ -10,7 +10,7 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardPx } from "@/lib/cardScale";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { CustomSection as CustomSectionData } from "@/types/customSection";
 
 /**
@@ -60,7 +60,7 @@ export default function CustomSection({
           <p
             className="tracking-[0.28em] break-words text-[calc(0.84*var(--card-rem,1rem))] uppercase text-balance"
             style={{
-              color: theme.accent,
+              color: textRoles(theme).heading,
               fontFamily: "var(--card-heading)",
               fontWeight: "var(--card-heading-weight)" as unknown as number,
             }}
@@ -74,7 +74,7 @@ export default function CustomSection({
         <div className={reveal} style={lineDelay(1)}>
           <p
             className="max-w-[32ch] text-[calc(1.0625*var(--card-rem,1rem))] leading-relaxed break-words whitespace-pre-line text-pretty"
-            style={{ color: theme.textMuted }}
+            style={{ color: textRoles(theme).body }}
           >
             {body}
           </p>

@@ -22,10 +22,41 @@ export type PaletteId =
 
 export type CardDensity = "compact" | "comfortable" | "airy";
 
+/**
+ * The card's two text colours, and what came with them. See lib/textColors.ts.
+ *
+ * Stored as the colours themselves rather than as the name of a pair, so a
+ * saved card keeps exactly the inks it was saved with whatever happens to the
+ * table of pairs afterwards.
+ */
+export interface CardTextColors {
+  /** Names, titles, headings, the date's numeral, the countdown. Hex. */
+  textPrimary: string;
+  /** Parents, places, labels, small dates and times, captions. Hex. */
+  textSecondary: string;
+  /**
+   * The card colour that came with a pair the host picked, laid over the
+   * palette's. Null when the card colour is the palette's own.
+   */
+  cardColor: string | null;
+  /** The accent that came with that pair. Null for the palette's own. */
+  accent: string | null;
+  /**
+   * The host picked these, as a pair or one ink at a time. False when they
+   * simply followed a palette, in which case the next palette brings its own.
+   */
+  chosen: boolean;
+}
+
 export interface CardStyle {
   fontPairId: FontPairId;
   paletteId: PaletteId;
   density: CardDensity;
   /** Hex string when the host has overridden the palette accent, else null. */
   accentOverride: string | null;
+  /**
+   * The two text colours. Absent on a card saved before there were any: such
+   * a card keeps the colours its palette always gave it, element for element.
+   */
+  textColors?: CardTextColors;
 }

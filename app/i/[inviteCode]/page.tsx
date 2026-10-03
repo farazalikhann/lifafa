@@ -12,7 +12,7 @@ import {
 } from "@/lib/cardTranslation";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
 import { hasEnded } from "@/lib/eventLock";
-import { getPalette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
@@ -271,7 +271,7 @@ export default async function InvitePage({
     unlayered rule, so it wins over the body's utility class. The colour is
     from the fixed palette table, never text a host typed.
   */
-  const ground = getPalette(event.config.style.paletteId).background;
+  const ground = cardPalette(event.config.style).background;
 
   return (
     <>

@@ -66,7 +66,15 @@ import {
 import { rsvpEnabled as readRsvpEnabled } from "@/lib/cardSections";
 import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
-import { getPalette } from "@/lib/palettes";
+import {
+  cardPalette,
+  getTextPair,
+  paletteTextColors,
+  withCustomInk,
+  withPalette,
+  withTextPair,
+  type TextPairId,
+} from "@/lib/textColors";
 import { getOccasion } from "@/lib/occasions";
 import type { DesignState } from "@/lib/designDefaults";
 import { applyPreset, type Preset } from "@/lib/presets";
@@ -578,11 +586,12 @@ export default function CardEditor({
     setOccasionId(id);
     setDecorMotion(occasion.defaultMotion);
     setDraft((previous) => ({ ...previous, themeId: occasion.defaultThemeId }));
-    /* Palette follows the occasion; a custom accent is cleared with it. */
+    /* Palette follows the occasion; a custom accent and the text pair go with it. */
     setStyle((previous) => ({
       ...previous,
       paletteId: occasion.defaultPaletteId,
       accentOverride: null,
+      textColors: paletteTextColors(occasion.defaultPaletteId),
     }));
   }, []);
 
@@ -731,9 +740,26 @@ export default function CardEditor({
     setStyle((previous) => ({ ...previous, fontPairId }));
   }, []);
 
+  /*
+    A palette brings the nearest text pair with it, unless the host chose
+    their own inks and they still read on the new card colour. See withPalette.
+  */
   const setPalette = useCallback((paletteId: PaletteId) => {
-    setStyle((previous) => ({ ...previous, paletteId }));
+    setStyle((previous) => withPalette(previous, paletteId));
   }, []);
+
+  /* One of the six pairs: its two inks, its card colour and its accent together. */
+  const setTextPair = useCallback((pairId: TextPairId) => {
+    setStyle((previous) => withTextPair(previous, getTextPair(pairId)));
+  }, []);
+
+  /* One ink, picked by hand from the curated set. */
+  const setCustomInk = useCallback(
+    (role: "primary" | "secondary", ink: string) => {
+      setStyle((previous) => withCustomInk(previous, role, ink));
+    },
+    [],
+  );
 
   const setDensity = useCallback((density: CardDensity) => {
     setStyle((previous) => ({ ...previous, density }));
@@ -1325,10 +1351,12 @@ export default function CardEditor({
                     resolveCoverNames(preview.draft, occasionId, previewLanguage),
                   )}
                   language={previewLanguage}
-                  paletteAccent={getPalette(style.paletteId).accent}
+                  paletteAccent={cardPalette(style).accent}
                   borderStyle={borderStyle}
                   onFontPairChange={setFontPair}
                   onPaletteChange={setPalette}
+                  onTextPairChange={setTextPair}
+                  onCustomInkChange={setCustomInk}
                   onDensityChange={setDensity}
                   onAccentChange={setAccent}
                   onBorderStyleChange={setBorderStyle}

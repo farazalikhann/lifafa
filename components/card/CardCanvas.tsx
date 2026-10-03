@@ -89,7 +89,7 @@ import {
 import { motifsWithout, type Motif } from "@/lib/motifs";
 import type { EventWeather } from "@/types/weather";
 
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type {
   CardAudience,
   CardConfig,
@@ -287,7 +287,8 @@ function Blessing({
         ? head.greetingClass
         : head.blessingClass;
   const scriptStyle = {
-    color: theme.accent,
+    /* The mantra or shlok's own line: the accent on an older card, the Primary on one with a text pair. */
+    color: textRoles(theme).heading,
     ...(head === null
       ? null
       : {
@@ -1554,7 +1555,8 @@ export default function CardCanvas({
           <NamesHeader
             names={headerLine}
             background={effectiveTheme.background}
-            accent={effectiveTheme.accent}
+            /* The names: the Primary on a card with a text pair, the accent as before on one without. */
+            accent={textRoles(effectiveTheme).heading}
             rule={`${effectiveTheme.accent}40`}
             clearMusic={(config.musicUrl ?? null) !== null}
           />

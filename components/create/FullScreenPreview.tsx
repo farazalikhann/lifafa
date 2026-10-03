@@ -22,7 +22,7 @@ import { cardChrome } from "@/lib/cardChrome";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import type { Motif } from "@/lib/motifs";
-import { getPalette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 import type { Theme } from "@/lib/themes";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
@@ -286,7 +286,7 @@ export default function FullScreenPreview({
   const titleId = useId();
 
   const device = DEVICES.find((entry) => entry.id === deviceId) ?? DEVICES[0];
-  const palette = getPalette(config.style.paletteId);
+  const palette = cardPalette(config.style);
 
   /*
     The controls floated over the card wear the card's colours, set here once as

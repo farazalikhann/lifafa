@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties, type ReactElement } from "react";
 import { mixHex } from "@/lib/contrast";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 
 /**
  * One digit in its fixed slot.
@@ -95,7 +95,7 @@ export default function CountdownTiles({
             <span
               className="flex text-[1.75rem] sm:text-[calc(1.9*var(--card-rem,1rem))]"
               style={{
-                color: theme.accent,
+                color: textRoles(theme).heading,
                 fontFamily: "var(--card-heading)",
                 fontWeight: "var(--card-heading-weight)" as unknown as number,
                 fontVariantNumeric: "lining-nums tabular-nums",

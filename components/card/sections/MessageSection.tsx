@@ -10,7 +10,7 @@ import {
   revealClass,
 } from "@/lib/cardFormat";
 import { cardPx } from "@/lib/cardScale";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { EventDraft } from "@/types/event";
 
 /**
@@ -65,7 +65,7 @@ export default function MessageSection({
       <div className={reveal} style={lineDelay(1)}>
         <p
           className="max-w-[32ch] text-[calc(1.0625*var(--card-rem,1rem))] leading-relaxed break-words text-pretty italic"
-          style={{ color: theme.textMuted }}
+          style={{ color: textRoles(theme).body }}
         >
           {message}
         </p>

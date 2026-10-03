@@ -1,6 +1,15 @@
 import { deepEqual } from "@/lib/deepEqual";
 import type { DesignState } from "@/lib/designDefaults";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
+import { fitContrast } from "@/lib/contrast";
+import { getPalette } from "@/lib/palettes";
+import {
+  PRIMARY_MIN_RATIO,
+  SECONDARY_MIN_RATIO,
+  getTextPair,
+  paletteTextColors,
+  type TextPairId,
+} from "@/lib/textColors";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import type {
   ButterflyStyle,
@@ -56,6 +65,12 @@ interface PresetSettings {
    * they turn petals back on themselves.
    */
   petalFlower?: PetalFlower;
+  /**
+   * The text pair whose two inks the look is set in, on the look's own
+   * palette: the pair's card colour is not taken, only its Primary and
+   * Secondary. A preset that names none gets the pair nearest its palette.
+   */
+  textPairId?: TextPairId;
   coverAnimation: CoverAnimationId;
   /**
    * The pack's shapes to switch on: what hangs, what sits in the corners, the
@@ -135,6 +150,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "muslim",
     settings: {
       paletteId: "blush",
+      textPairId: "ivoryRose",
       accentOverride: null,
       fontPairId: "elegant",
       density: "comfortable",
@@ -158,6 +174,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "muslim",
     settings: {
       paletteId: "forest",
+      textPairId: "midnightGold",
       accentOverride: PALETTE_GOLD,
       fontPairId: "classic",
       density: "airy",
@@ -179,6 +196,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "muslim",
     settings: {
       paletteId: "midnight",
+      textPairId: "midnightGold",
       /* Midnight's own accent is already the gold this look is named for. */
       accentOverride: null,
       fontPairId: "warm",
@@ -201,6 +219,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "muslim",
     settings: {
       paletteId: "cream",
+      textPairId: "champagneClassic",
       accentOverride: null,
       fontPairId: "elegant",
       density: "airy",
@@ -222,6 +241,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "hindu",
     settings: {
       paletteId: "cream",
+      textPairId: "ivoryRose",
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
@@ -247,6 +267,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "hindu",
     settings: {
       paletteId: "cream",
+      textPairId: "haldiSaffron",
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
@@ -272,6 +293,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "hindu",
     settings: {
       paletteId: "blush",
+      textPairId: "ivoryRose",
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
@@ -296,6 +318,7 @@ const PRESETS: readonly Preset[] = [
     tradition: "hindu",
     settings: {
       paletteId: "maroon",
+      textPairId: "royalMaroon",
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
@@ -428,15 +451,42 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     };
   }
 
+  /*
+    The look's two inks, on the palette it ends up with. A preset's inks are
+    the look's, not a choice the host made, so a palette picked afterwards
+    brings its own.
+  */
+  const paletteId = settings.paletteId ?? design.style.paletteId;
+  const card = getPalette(paletteId).background;
+  const textColors =
+    settings.textPairId === undefined
+      ? paletteTextColors(paletteId)
+      : {
+          textPrimary: fitContrast(
+            getTextPair(settings.textPairId).primary,
+            card,
+            PRIMARY_MIN_RATIO,
+          ),
+          textSecondary: fitContrast(
+            getTextPair(settings.textPairId).secondary,
+            card,
+            SECONDARY_MIN_RATIO,
+          ),
+          cardColor: null,
+          accent: null,
+          chosen: false,
+        };
+
   return {
     style: {
       fontPairId: settings.fontPairId ?? design.style.fontPairId,
-      paletteId: settings.paletteId ?? design.style.paletteId,
+      paletteId,
       density: settings.density ?? design.style.density,
       accentOverride:
         settings.accentOverride !== undefined
           ? settings.accentOverride
           : design.style.accentOverride,
+      textColors,
     },
     borderStyle: settings.borderStyle ?? design.borderStyle,
     decorMotion: settings.decorMotion ?? design.decorMotion,
@@ -480,8 +530,23 @@ export function sameDesign(a: DesignState, b: DesignState): boolean {
  * to null the moment the host changes anything the preset set.
  */
 export function matchingPreset(design: DesignState): Preset | null {
+  /*
+    A card saved before there were text pairs has none, and is still wearing
+    the preset it was saved in: the inks are left out of the comparison for it.
+  */
+  const hasInks = design.style.textColors !== undefined;
+
   return (
-    PRESETS.find((preset) => sameDesign(applyPreset(design, preset), design)) ??
-    null
+    PRESETS.find((preset) => {
+      const applied = applyPreset(design, preset);
+
+      if (!hasInks) {
+        const style = { ...applied.style };
+        delete style.textColors;
+        return sameDesign({ ...applied, style }, design);
+      }
+
+      return sameDesign(applied, design);
+    }) ?? null
   );
 }

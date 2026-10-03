@@ -1,3 +1,4 @@
+import { paletteTextColors } from "@/lib/textColors";
 import { DEFAULT_COVER_ANIMATION } from "@/lib/coverAnimations";
 import { DEFAULT_FONT_PAIR_ID } from "@/lib/fontPairs";
 import {
@@ -58,6 +59,8 @@ export const DEFAULT_DESIGN: DesignState = {
     paletteId: DEFAULT_OCCASION.defaultPaletteId,
     density: "comfortable",
     accentOverride: null,
+    /* Two inks from the start: the pair nearest the palette. See lib/textColors.ts. */
+    textColors: paletteTextColors(DEFAULT_OCCASION.defaultPaletteId),
   },
   /* Off by default: a border is an addition to the card, not a part of it. */
   borderStyle: "none",
@@ -85,7 +88,11 @@ export function defaultDesign(occasionId: OccasionId): DesignState {
 
   return {
     ...DEFAULT_DESIGN,
-    style: { ...DEFAULT_DESIGN.style, paletteId: occasion.defaultPaletteId },
+    style: {
+      ...DEFAULT_DESIGN.style,
+      paletteId: occasion.defaultPaletteId,
+      textColors: paletteTextColors(occasion.defaultPaletteId),
+    },
     decorMotion: occasion.defaultMotion,
   };
 }

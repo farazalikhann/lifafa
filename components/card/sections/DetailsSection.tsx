@@ -17,7 +17,7 @@ import {
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import { cardPx } from "@/lib/cardScale";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
@@ -161,7 +161,8 @@ export default function DetailsSection({
   const hindi = language === "hi";
 
   const small: CSSProperties = { color: theme.textMuted };
-  const strong: CSSProperties = { color: theme.textPrimary };
+  /* The weekday, the year and time, and the venue's name: said about the day, not the day itself. */
+  const strong: CSSProperties = { color: textRoles(theme).detail };
 
   const venueReveal = useScratchReveal(venueScratched ? "venue" : undefined);
   const venueHidden = venueScratched && venueReveal.revealed === null;
@@ -225,7 +226,7 @@ export default function DetailsSection({
             aria-hidden="true"
             className="text-[calc(6*var(--card-rem,1rem))] leading-none"
             style={{
-              color: theme.accent,
+              color: textRoles(theme).heading,
               fontFamily: "var(--card-heading)",
               fontWeight: 700,
               /* Lining figures: an old-style 3 or 9 hangs below the line, into the weekday under it. */
@@ -314,7 +315,7 @@ export default function DetailsSection({
               hindi ? "leading-[1.45]" : "leading-[1.15]"
             }`}
             style={{
-              color: theme.accent,
+              color: textRoles(theme).heading,
               fontFamily: "var(--card-names)",
               fontWeight: "var(--card-names-weight)" as unknown as number,
             }}

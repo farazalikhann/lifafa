@@ -25,7 +25,7 @@ import {
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { cardPx } from "@/lib/cardScale";
 import { mixHex } from "@/lib/contrast";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
@@ -312,7 +312,7 @@ export default function CountdownSection({
             copy.script === "devanagari" ? "leading-[1.5]" : "leading-[1.2]"
           }`}
           style={{
-            color: hasBegun ? theme.accent : theme.textPrimary,
+            color: hasBegun ? textRoles(theme).heading : theme.textPrimary,
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}

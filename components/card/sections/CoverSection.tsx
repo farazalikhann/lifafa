@@ -16,7 +16,7 @@ import {
 } from "@/lib/cardFormat";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { cardPx } from "@/lib/cardScale";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
@@ -206,7 +206,7 @@ export default function CoverSection({
               className={`text-[1.1rem] tracking-[0.22em] break-words lowercase sm:text-[calc(1.2*var(--card-rem,1rem))] ${
                 copy.script === "devanagari" ? "leading-normal" : "leading-none"
               }`}
-              style={{ color: theme.accent }}
+              style={{ color: textRoles(theme).mark }}
             >
               {names.joiner}
             </p>
@@ -234,7 +234,7 @@ export default function CoverSection({
         <p
           className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.28em] break-words uppercase text-balance"
           style={{
-            color: theme.textMuted,
+            color: textRoles(theme).title,
             opacity: placeholderOpacity(title.isPlaceholder, "muted"),
           }}
         >

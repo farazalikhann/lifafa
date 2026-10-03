@@ -11,7 +11,7 @@ import { flowerChipScale, isPhotoBorder } from "@/lib/flowerFrame";
 import { calligraphyGround } from "@/lib/calligraphy";
 import { fontFamilyOf, getFontPair, namesFaceOf } from "@/lib/fontPairs";
 import { defaultDesign, type DesignState } from "@/lib/designDefaults";
-import { getPalette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 import { FLOWER_CHIPS } from "@/lib/petals";
 import {
   PRESET_GROUPS,
@@ -59,7 +59,7 @@ function PresetMiniature({
   /** The names the card will carry, so the miniature is the host's own card. */
   hostNames: string;
 }): ReactElement {
-  const palette = getPalette(design.style.paletteId);
+  const palette = cardPalette(design.style);
   const accent = design.style.accentOverride ?? palette.accent;
   const names = namesFaceOf(getFontPair(design.style.fontPairId));
   const pack = getTraditionPack(design.traditionId);

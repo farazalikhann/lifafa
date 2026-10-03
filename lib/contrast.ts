@@ -78,6 +78,46 @@ function composite(overlay: string, background: string, alpha: number): string {
   return mixHex(background, overlay, alpha);
 }
 
+/** Steps from a colour to black or white when it is being brought up to a ratio: 1% each. */
+const FIT_STEPS = 100;
+
+/**
+ * `color`, moved just far enough away from `background` to read on it at
+ * `minRatio`, and not a step further. A colour that already does is handed
+ * back as it is.
+ *
+ * Darker than the ground, it is darkened; lighter, lightened — a step at a
+ * time towards black or white, stopping at the first that passes, so what
+ * comes back is the nearest colour to the one asked for that can be read. On
+ * a mid grey, where neither end gets there, the better of the two ends.
+ */
+export function fitContrast(
+  color: string,
+  background: string,
+  minRatio: number,
+): string {
+  if (contrastRatio(color, background) >= minRatio) {
+    return color.toUpperCase();
+  }
+
+  const end =
+    relativeLuminance(color) <= relativeLuminance(background)
+      ? "#000000"
+      : "#FFFFFF";
+
+  for (let step = 1; step <= FIT_STEPS; step += 1) {
+    const moved = mixHex(color, end, step / FIT_STEPS);
+
+    if (contrastRatio(moved, background) >= minRatio) {
+      return moved;
+    }
+  }
+
+  return contrastRatio("#000000", background) >= contrastRatio("#FFFFFF", background)
+    ? "#000000"
+    : "#FFFFFF";
+}
+
 /** WCAG's threshold for text below 18.66px, which is all of the card's body copy. */
 const SMALL_TEXT_RATIO = 4.5;
 

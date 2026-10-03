@@ -4,7 +4,7 @@ import type { CSSProperties, ReactElement } from "react";
 import { formatWhen, resolveCoverNames } from "@/lib/cardFormat";
 import { cardInLanguage, requestedLanguage } from "@/lib/cardTranslation";
 import { readEventByInviteCode } from "@/lib/db/inviteEvent";
-import { getPalette } from "@/lib/palettes";
+import { cardPalette } from "@/lib/textColors";
 
 /**
  * The share preview.
@@ -125,7 +125,7 @@ export async function GET(
     result.data.config,
     language,
   );
-  const palette = getPalette(config.style.paletteId);
+  const palette = cardPalette(config.style);
   const accent = config.style.accentOverride ?? palette.accent;
 
   const { eventTitle, eventDate, eventTime } = draft;

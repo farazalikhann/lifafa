@@ -17,7 +17,7 @@ import {
 import { cardCopy } from "@/lib/cardLanguage";
 import { cardRem } from "@/lib/cardScale";
 import { mixHex, readableOn } from "@/lib/contrast";
-import type { Theme } from "@/lib/themes";
+import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId } from "@/types/occasion";
@@ -261,7 +261,7 @@ export default function SaveTheDate({
             language === "hi" ? "leading-[1.45]" : "leading-[1.15]"
           }`}
           style={{
-            color: theme.accent,
+            color: textRoles(theme).heading,
             fontFamily: "var(--card-heading)",
             fontWeight: "var(--card-heading-weight)" as unknown as number,
           }}
@@ -308,7 +308,7 @@ export default function SaveTheDate({
         <div className={reveal} style={lineDelay(1)}>
           <p
             className="max-w-[30ch] text-[calc(0.95*var(--card-rem,1rem))] leading-snug text-balance"
-            style={{ color: theme.textPrimary }}
+            style={{ color: textRoles(theme).detail }}
           >
             {whenWhere.map((part, index) => (
               /* A part that arrives with a reveal fades in rather than appears. */

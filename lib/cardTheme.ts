@@ -4,7 +4,7 @@ import {
   getFontPair,
   pairRoleVar,
 } from "@/lib/fontPairs";
-import { getPalette } from "@/lib/palettes";
+import { bodyInk, cardPalette } from "@/lib/textColors";
 import type { Theme } from "@/lib/themes";
 import type { CardStyle } from "@/types/style";
 
@@ -25,12 +25,21 @@ import type { CardStyle } from "@/types/style";
  * beside it was drawn from the palette.
  *
  * Resolution order, narrowest first: the host's own accent, then the palette
- * they picked, then the theme underneath. Composing it in one place is what
- * keeps the card and everything laid out beside it from drifting apart again.
+ * they picked with their text pair laid over it (cardPalette), then the theme
+ * underneath. Composing it in one place is what keeps the card and everything
+ * laid out beside it from drifting apart again.
+ *
+ * THE TWO INKS ARRIVE HERE. On a card with a text pair, `textPrimary` is the
+ * Primary and `textMuted` is the Secondary, so every line that was already in
+ * the right one of the two needs nothing; the kinds of line that were not are
+ * given their ink in `roles`. A card saved before there were text pairs gets
+ * no `roles`, and `textRoles` hands each of those lines the colour it has
+ * always had.
  */
 export function effectiveTheme(theme: Theme, style: CardStyle): Theme {
-  const palette = getPalette(style.paletteId);
+  const palette = cardPalette(style);
   const fontPair = getFontPair(style.fontPairId);
+  const text = style.textColors;
 
   return {
     ...theme,
@@ -39,6 +48,16 @@ export function effectiveTheme(theme: Theme, style: CardStyle): Theme {
     accent: style.accentOverride ?? palette.accent ?? theme.accent,
     textPrimary: palette.textPrimary ?? theme.textPrimary,
     textMuted: palette.textMuted ?? theme.textMuted,
+    roles:
+      text === undefined
+        ? undefined
+        : {
+            heading: text.textPrimary,
+            title: text.textPrimary,
+            detail: text.textSecondary,
+            mark: text.textSecondary,
+            body: bodyInk(text.textSecondary, palette.background),
+          },
     /* The pair's body stack: its Latin text face, then its Devanagari one. */
     fontFamily: fontFamilyOf(
       pairRoleVar(fontPair, "body"),
