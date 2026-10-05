@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useRevealGate } from "@/hooks/useRevealGate";
 import { FIRST_SCREEN_ATTRIBUTE } from "@/components/invite/InvitedCue";
 import RoyalTextureFill from "@/components/card/decor/RoyalTextureFill";
+import type { RoyalTextureLayer } from "@/lib/royalTexture";
 
 /**
  * How much of the top of the screen the band takes, in CSS pixels, safe area
@@ -58,8 +59,8 @@ export default function NamesHeader({
   names: string;
   /** The card's ground, which the band is a translucent strip of. */
   background: string;
-  /** The royal texture's opacity on a card that has it, or null; the band is then a strip of the textured ground. */
-  texture: number | null;
+  /** The royal texture's layer on a card that has it, or null; the band is then a strip of the textured ground. */
+  texture: RoyalTextureLayer | null;
   accent: string;
   /** The hairline under the band: the accent, faint. */
   rule: string;
@@ -129,7 +130,7 @@ export default function NamesHeader({
         {texture !== null ? (
           <div className="absolute inset-0 -z-10" style={{ opacity: 0.9 }}>
             <div className="absolute inset-0" style={{ backgroundColor: background }} />
-            <RoyalTextureFill opacity={texture} anchorRef={rowRef} />
+            <RoyalTextureFill texture={texture} anchorRef={rowRef} />
           </div>
         ) : null}
         <p

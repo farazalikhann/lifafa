@@ -3,8 +3,8 @@
 import { useEffect, useRef, type ReactElement, type RefObject } from "react";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
-  ROYAL_TEXTURE_SRC,
   ROYAL_TEXTURE_TILE,
+  type RoyalTextureLayer,
 } from "@/lib/royalTexture";
 
 /**
@@ -13,7 +13,7 @@ import {
  *
  * Those bands are painted in the card's colour over the card, and on a card
  * with the texture a flat strip of that colour is a strip with no damask in
- * it. This is the damask for the strip: the same tile, the same soft-light
+ * it. This is the damask for the strip: the same tile, the same blend
  * and the same opacity as the card's own, to be laid over the band's colour
  * inside an isolated group so it blends with that colour and nothing else.
  *
@@ -30,11 +30,11 @@ import {
  * One passive listener, one write per frame, and no layout is changed by it.
  */
 export default function RoyalTextureFill({
-  opacity,
+  texture,
   anchorRef,
 }: {
-  /** The overlay's opacity on this card; see royalTextureOpacity. */
-  opacity: number;
+  /** The card's own layer: its tile, blend and opacity; see royalTextureLayer. */
+  texture: RoyalTextureLayer;
   /**
    * Where this fill is on the screen when its band is in place, for a band
    * that slides in under a transform and so cannot be measured itself.
@@ -103,11 +103,11 @@ export default function RoyalTextureFill({
       aria-hidden="true"
       className="pointer-events-none absolute inset-0"
       style={{
-        backgroundImage: `url(${ROYAL_TEXTURE_SRC})`,
+        backgroundImage: `url(${texture.src})`,
         backgroundSize: `${ROYAL_TEXTURE_TILE}px ${ROYAL_TEXTURE_TILE}px`,
         backgroundRepeat: "repeat",
-        mixBlendMode: "soft-light",
-        opacity,
+        mixBlendMode: texture.blend,
+        opacity: texture.opacity,
       }}
     />
   );

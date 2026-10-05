@@ -82,10 +82,9 @@ import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
-  ROYAL_TEXTURE_SRC,
   ROYAL_TEXTURE_TILE,
+  royalTextureLayer,
   royalTextureOn,
-  royalTextureOpacity,
 } from "@/lib/royalTexture";
 import {
   hasCountdown,
@@ -866,9 +865,9 @@ export default function CardCanvas({
     reading the raw theme, which put cream labels on a cream card.
   */
   const effectiveTheme: Theme = composeCardTheme(theme, style);
-  /* The royal texture's opacity on this card's colour, or null on a card without it. */
-  const textureOpacity = royalTextureOn(config.royalTexture)
-    ? royalTextureOpacity(effectiveTheme.background)
+  /* The royal texture as this card's colour takes it, or null on a card without it. */
+  const texture = royalTextureOn(config.royalTexture)
+    ? royalTextureLayer(effectiveTheme.background)
     : null;
 
   /*
@@ -1445,26 +1444,27 @@ export default function CardCanvas({
         }}
       >
         {/*
-          The royal texture: a grey damask tile soft-lit onto the card's colour.
+          The royal texture: a damask tile blended onto the card's colour,
+          soft-lit on a dark card and multiplied on a light one.
 
           First in the card and with no z-index, so every other layer — the
           decor, the content column at `z-10`, the border, the butterflies and
           the petals — is a positioned element that comes after it and paints
           over it. Absolute over the whole card rather than fixed or sticky, so
-          it scrolls with the paper it is woven into. Its opacity is worked out
-          from the card's colour; see royalTextureOpacity.
+          it scrolls with the paper it is woven into. Its tile, blend and
+          opacity are worked out from the card's colour; see royalTextureLayer.
         */}
-        {textureOpacity !== null ? (
+        {texture !== null ? (
           <div
             aria-hidden="true"
             {...{ [ROYAL_TEXTURE_ATTRIBUTE]: "" }}
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: `url(${ROYAL_TEXTURE_SRC})`,
+              backgroundImage: `url(${texture.src})`,
               backgroundSize: `${ROYAL_TEXTURE_TILE}px ${ROYAL_TEXTURE_TILE}px`,
               backgroundRepeat: "repeat",
-              mixBlendMode: "soft-light",
-              opacity: textureOpacity,
+              mixBlendMode: texture.blend,
+              opacity: texture.opacity,
             }}
           />
         ) : null}
@@ -1616,7 +1616,7 @@ export default function CardCanvas({
         */}
         <ScrollFade
           background={effectiveTheme.background}
-          texture={textureOpacity}
+          texture={texture}
           hangingBand={hangingBand}
           bandHeight={bandHeight}
         />
@@ -1631,7 +1631,7 @@ export default function CardCanvas({
           <NamesHeader
             names={headerLine}
             background={effectiveTheme.background}
-            texture={textureOpacity}
+            texture={texture}
             /* The names: the Primary on a card with a text pair, the accent as before on one without. */
             accent={textRoles(effectiveTheme).heading}
             rule={`${effectiveTheme.accent}40`}

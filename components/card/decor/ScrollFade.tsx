@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import RoyalTextureFill from "@/components/card/decor/RoyalTextureFill";
 import { cardPx } from "@/lib/cardScale";
+import type { RoyalTextureLayer } from "@/lib/royalTexture";
 
 /**
  * The dissolve at the top and bottom edges of the screen.
@@ -114,11 +115,11 @@ export default function ScrollFade({
   /** The card's resolved background. The dissolve is into this exact colour. */
   background: string;
   /**
-   * The royal texture's opacity on a card that has it, or null. With it, the
+   * The royal texture's layer on a card that has it, or null. With it, the
    * dissolve is into the card's colour with the damask in it, so the pattern
    * runs on under the fade instead of stopping at a flat strip.
    */
-  texture: number | null;
+  texture: RoyalTextureLayer | null;
   /**
    * How far the hanging ornaments reach down the screen, in px, from
    * `hangingDepth`. Zero when nothing hangs.
@@ -201,7 +202,7 @@ export default function ScrollFade({
               }}
             >
               <div className="absolute inset-0" style={{ backgroundColor: background }} />
-              <RoyalTextureFill opacity={texture} />
+              <RoyalTextureFill texture={texture} />
             </div>
           ) : null}
         </div>
@@ -225,7 +226,7 @@ export default function ScrollFade({
           {texture !== null ? (
             <>
               <div className="absolute inset-0" style={{ backgroundColor: background }} />
-              <RoyalTextureFill opacity={texture} />
+              <RoyalTextureFill texture={texture} />
             </>
           ) : null}
         </div>
