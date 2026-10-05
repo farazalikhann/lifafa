@@ -131,6 +131,17 @@ export interface Preset {
 const PALETTE_GOLD = "#D8B26A";
 
 /**
+ * The Blush palette's terracotta, which is also the Haldi Saffron pair's own
+ * accent: the nearest thing the card has to kesri, lent to Sand. From
+ * lib/palettes.ts and lib/textColors.ts rather than invented, and 5.1:1 on
+ * Sand's background.
+ */
+const PALETTE_KESRI = "#974B2E";
+
+/** The Champagne Classic pair's own gold, the one gold the card has that reads on a pale ground. */
+const PALETTE_CHAMPAGNE = "#86672E";
+
+/**
  * The presets, in the order the picker lays them out.
  *
  * Four Nikah looks, each pulling a different way — soft, regal, night-time,
@@ -148,6 +159,14 @@ const PALETTE_GOLD = "#D8B26A";
  * names, and never on a card whose word-mark already draws him (Shubh Vivah).
  * The greeting and the shlok the designs open with are only ever added to a
  * card that has none — see `greetingIfNone`.
+ *
+ * THEN FOUR ANAND KARAJ LOOKS, built the way the Vivah ones are: each sets
+ * everything it is about, its one word-mark included. Each is led by a
+ * different piece of the Sikh pack — the khanda, the phulkari band, the
+ * gurdwara arch, the Nishan Sahib — on a different ground, so the four are
+ * four cards. Only the pack's own emblems, architecture and plants: no figure,
+ * and nothing from another tradition. The words they open with are the pack's
+ * own rows in lib/gurmukhiContent.ts, added only to a card that has none.
  */
 const PRESETS: readonly Preset[] = [
   {
@@ -347,6 +366,111 @@ const PRESETS: readonly Preset[] = [
       blessingIfNone: "vakratunda",
     },
   },
+  {
+    id: "kesri-anand-karaj",
+    name: "Kesri Anand Karaj",
+    description: "Warm sand and saffron, the Khanda, lotuses and rose petals.",
+    tradition: "sikh",
+    settings: {
+      paletteId: "sand",
+      textPairId: "haldiSaffron",
+      /* Sand's own accent is brown; the word-mark and the rules want kesri. */
+      accentOverride: PALETTE_KESRI,
+      fontPairId: "royal",
+      density: "comfortable",
+      borderStyle: "flowerGold",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "red",
+      leaves: false,
+      petals: "open",
+      petalFlower: "rose",
+      coverAnimation: "envelope-seal",
+      ornaments: ["khanda", "lotus"],
+      calligraphy: "anandKaraj",
+      greetingIfNone: "ikOnkar",
+      blessingIfNone: "anandBlessing",
+    },
+  },
+  {
+    id: "phulkari-blush",
+    name: "Phulkari Blush",
+    description: "Festive blush with the phulkari border, lotuses and butterflies.",
+    tradition: "sikh",
+    settings: {
+      paletteId: "blush",
+      textPairId: "ivoryRose",
+      accentOverride: null,
+      fontPairId: "romantic",
+      density: "comfortable",
+      /* No frame: the phulkari band is the border, and a second one would crowd it. */
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "normal",
+      butterflies: "yellow",
+      leaves: false,
+      petals: "both",
+      petalFlower: "lotus",
+      coverAnimation: "petal-dust",
+      ornaments: ["kandaFloralBorder", "lotus"],
+      calligraphy: "shubhViah",
+      greetingIfNone: "ikOnkar",
+      blessingIfNone: "anandBlessing",
+    },
+  },
+  {
+    id: "gurdwara-ivory",
+    name: "Gurdwara Ivory",
+    description: "Calm ivory and gold, the names under a gurdwara arch.",
+    tradition: "sikh",
+    settings: {
+      paletteId: "cream",
+      textPairId: "champagneClassic",
+      /* Cream's own accent is rose; this look is ivory and gold. */
+      accentOverride: PALETTE_CHAMPAGNE,
+      fontPairId: "elegant",
+      density: "airy",
+      borderStyle: "none",
+      decorMotion: "drift",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      /* A few white petals as the card opens, and then nothing moving over the arch. */
+      petals: "open",
+      petalFlower: "mogra",
+      coverAnimation: "fold-unfold",
+      ornaments: ["gurudwaraArch"],
+      calligraphy: "satnamWaheguru",
+      greetingIfNone: "ikOnkar",
+      blessingIfNone: "anandBlessing",
+    },
+  },
+  {
+    id: "royal-midnight",
+    name: "Royal Midnight",
+    description: "Night blue and gold, the Nishan Sahib and the Khanda.",
+    tradition: "sikh",
+    settings: {
+      paletteId: "midnight",
+      textPairId: "midnightGold",
+      dateReveal: "scroll",
+      /* Midnight's own accent is already gold. */
+      accentOverride: null,
+      fontPairId: "regal",
+      density: "comfortable",
+      borderStyle: "flowerNoir",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "none",
+      coverAnimation: "curtain-reveal",
+      ornaments: ["khanda", "nishanSahibPennant"],
+      calligraphy: "waheguru",
+      greetingIfNone: "ikOnkar",
+      blessingIfNone: "anandBlessing",
+    },
+  },
 ];
 
 /**
@@ -358,6 +482,7 @@ const PRESETS: readonly Preset[] = [
 const GROUP_LABELS: Partial<Record<TraditionId, string>> = {
   muslim: "Nikah",
   hindu: "Vivah",
+  sikh: "Anand Karaj",
 };
 
 export interface PresetGroup {
