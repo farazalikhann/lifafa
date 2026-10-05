@@ -118,6 +118,9 @@ export type ScratchTarget = "none" | "date" | "venue" | "countdown";
  */
 export type DateReveal = "scroll" | "scratch" | "simple";
 
+/** The painting of the place above the venue's name, or none. See lib/venueIllustration.ts. */
+export type VenueIllustration = "none" | "garden" | "banquet" | "palace" | "poolside";
+
 /** The frame of roses a scratch panel is drawn in. See lib/cardDecor.ts. */
 export type ScratchFrame = "oval" | "rect";
 
@@ -251,6 +254,12 @@ export interface CardConfig {
    * `coupleIllustrationOn` in lib/coupleCard.ts.
    */
   coupleIllustration?: boolean;
+  /**
+   * The painting above the venue's name. Stored only once a host picks one:
+   * absent, and on every card saved before there was a choice, there is none.
+   * Read it through `venueIllustrationOf` in lib/venueIllustration.ts.
+   */
+  venueIllustration?: VenueIllustration;
   /**
    * The reveal on the date's screen.
    *

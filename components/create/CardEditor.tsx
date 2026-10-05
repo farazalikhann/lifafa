@@ -46,6 +46,8 @@ import DividerPanel from "@/components/create/DividerPanel";
 import DateRevealPanel from "@/components/create/DateRevealPanel";
 import CoupleIllustrationPanel from "@/components/create/CoupleIllustrationPanel";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
+import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
+import { venueIllustrationOf } from "@/lib/venueIllustration";
 import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { getTraditionPack } from "@/lib/traditionPacks";
@@ -85,6 +87,7 @@ import { applyPreset, type Preset } from "@/lib/presets";
 import type {
   ButterflyStyle,
   PetalFlower,
+  VenueIllustration,
   PetalStyle,
   CardBorderStyle,
   CardConfig,
@@ -162,6 +165,8 @@ interface EditorState {
   dateReveal: DateReveal | undefined;
   /** Whether "Meet the Couple" carries its figures. On unless the host turned it off. */
   coupleIllustration: boolean;
+  /** The painting above the venue's name. None unless the host picked one. */
+  venueIllustration: VenueIllustration;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
   divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
@@ -214,6 +219,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     /* Kept as stored, absent included, so opening an older card is not an edit to it. */
     dateReveal: config.dateReveal,
     coupleIllustration: coupleIllustrationOn(config.coupleIllustration),
+    /* Missing on every card saved before the choice; those have none. */
+    venueIllustration: venueIllustrationOf(config.venueIllustration),
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
@@ -282,6 +289,10 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       ...(state.dateReveal !== undefined ? { dateReveal: state.dateReveal } : null),
       /* Only ever stored as off: a card that never had the key shows its figures. */
       ...(state.coupleIllustration ? null : { coupleIllustration: false }),
+      /* Left off the card while there is none, so an older card is stored as it was. */
+      ...(state.venueIllustration !== "none"
+        ? { venueIllustration: state.venueIllustration }
+        : null),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
       ...(state.divider !== undefined ? { divider: state.divider } : null),
       borderStyle: state.borderStyle,
@@ -479,6 +490,9 @@ export default function CardEditor({
   const [dateReveal, setDateReveal] = useState(initial.dateReveal);
   const [coupleIllustration, setCoupleIllustration] = useState(
     initial.coupleIllustration,
+  );
+  const [venueIllustration, setVenueIllustration] = useState(
+    initial.venueIllustration,
   );
 
   /*
@@ -893,6 +907,7 @@ export default function CardEditor({
     scratchFrame,
     dateReveal,
     coupleIllustration,
+    venueIllustration,
     divider,
     borderStyle,
     style,
@@ -1464,6 +1479,11 @@ export default function CardEditor({
                 <CoupleIllustrationPanel
                   enabled={coupleIllustration}
                   onEnabledChange={setCoupleIllustration}
+                  accordion={accordionFor("design")}
+                />
+                <VenueIllustrationPanel
+                  venueIllustration={venueIllustration}
+                  onVenueIllustrationChange={setVenueIllustration}
                   accordion={accordionFor("design")}
                 />
                 {/*

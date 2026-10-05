@@ -26,6 +26,7 @@ import { cardCopy } from "@/lib/cardLanguage";
 import { cardPx, cardRem } from "@/lib/cardScale";
 import { readableOn } from "@/lib/contrast";
 import type { Theme } from "@/lib/themes";
+import type { VenueArt } from "@/lib/venueIllustration";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
@@ -123,6 +124,7 @@ export default function VenueSection({
   pad,
   scratch,
   language,
+  illustration,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -133,6 +135,8 @@ export default function VenueSection({
   scratch: ScratchConfig | null;
   /** The language the placeholders and the buttons are written in. */
   language: CardLanguage;
+  /** The painting of the place the host chose, or null for none. */
+  illustration: VenueArt | null;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
   const shared = useScratchReveal(scratch === null ? undefined : "venue");
@@ -274,6 +278,25 @@ export default function VenueSection({
         gap: GAP,
       }}
     >
+      {/*
+        The painting of the place, in the flow above everything else so it can
+        overlap nothing. Decoration, so it is outside the scratch panel like
+        the map, and it has no alt text. Its width and height hold its place
+        while it loads; with none chosen there is no element and no gap.
+      */}
+      {illustration !== null ? (
+        <img
+          src={illustration.src}
+          alt=""
+          width={illustration.width}
+          height={illustration.height}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          className={`h-auto w-full select-none ${reveal}`}
+        />
+      ) : null}
+
       <div className="w-full" style={{ maxWidth: cardRem(18.5) }}>
         {mapBlock}
       </div>

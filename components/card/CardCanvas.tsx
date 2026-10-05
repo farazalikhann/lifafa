@@ -68,6 +68,11 @@ import {
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import {
+  venueArt,
+  venueIllustrationOf,
+  type VenueArt,
+} from "@/lib/venueIllustration";
+import {
   dateRevealOf,
   scratchTargetUnder,
   scrollArtFor,
@@ -619,6 +624,8 @@ function renderBlock(
   scroll: ScrollArt | null,
   /** Whose dress the couple's figures wear, and whether they are shown at all. */
   couple: { traditionId: TraditionId; illustration: boolean },
+  /** The painting above the venue's name, for a card whose host chose one. */
+  venueIllustration: VenueArt | null,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -686,6 +693,7 @@ function renderBlock(
           pad={pad}
           scratch={scratch}
           language={language}
+          illustration={venueIllustration}
         />
       );
     case "timeline":
@@ -1723,6 +1731,7 @@ export default function CardCanvas({
                 traditionId: config.traditionId,
                 illustration: coupleIllustrationOn(config.coupleIllustration),
               },
+              venueArt(venueIllustrationOf(config.venueIllustration)),
             );
 
             const head =
