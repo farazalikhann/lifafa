@@ -81,6 +81,7 @@ import {
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
+  ROYAL_TEXTURE_ATTRIBUTE,
   ROYAL_TEXTURE_SRC,
   ROYAL_TEXTURE_TILE,
   royalTextureOn,
@@ -865,6 +866,10 @@ export default function CardCanvas({
     reading the raw theme, which put cream labels on a cream card.
   */
   const effectiveTheme: Theme = composeCardTheme(theme, style);
+  /* The royal texture's opacity on this card's colour, or null on a card without it. */
+  const textureOpacity = royalTextureOn(config.royalTexture)
+    ? royalTextureOpacity(effectiveTheme.background)
+    : null;
 
   /*
     Whenever the event has a date, whether or not the countdown is on. It
@@ -1449,16 +1454,17 @@ export default function CardCanvas({
           it scrolls with the paper it is woven into. Its opacity is worked out
           from the card's colour; see royalTextureOpacity.
         */}
-        {royalTextureOn(config.royalTexture) ? (
+        {textureOpacity !== null ? (
           <div
             aria-hidden="true"
+            {...{ [ROYAL_TEXTURE_ATTRIBUTE]: "" }}
             className="pointer-events-none absolute inset-0"
             style={{
               backgroundImage: `url(${ROYAL_TEXTURE_SRC})`,
               backgroundSize: `${ROYAL_TEXTURE_TILE}px ${ROYAL_TEXTURE_TILE}px`,
               backgroundRepeat: "repeat",
               mixBlendMode: "soft-light",
-              opacity: royalTextureOpacity(effectiveTheme.background),
+              opacity: textureOpacity,
             }}
           />
         ) : null}
@@ -1610,6 +1616,7 @@ export default function CardCanvas({
         */}
         <ScrollFade
           background={effectiveTheme.background}
+          texture={textureOpacity}
           hangingBand={hangingBand}
           bandHeight={bandHeight}
         />
@@ -1624,6 +1631,7 @@ export default function CardCanvas({
           <NamesHeader
             names={headerLine}
             background={effectiveTheme.background}
+            texture={textureOpacity}
             /* The names: the Primary on a card with a text pair, the accent as before on one without. */
             accent={textRoles(effectiveTheme).heading}
             rule={`${effectiveTheme.accent}40`}

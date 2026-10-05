@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import RoyalTextureFill from "@/components/card/decor/RoyalTextureFill";
 import { cardPx } from "@/lib/cardScale";
 
 /**
@@ -106,11 +107,18 @@ export function scrollFadeDepth(hangingBand: number): {
 
 export default function ScrollFade({
   background,
+  texture,
   hangingBand,
   bandHeight,
 }: {
   /** The card's resolved background. The dissolve is into this exact colour. */
   background: string;
+  /**
+   * The royal texture's opacity on a card that has it, or null. With it, the
+   * dissolve is into the card's colour with the damask in it, so the pattern
+   * runs on under the fade instead of stopping at a flat strip.
+   */
+  texture: number | null;
   /**
    * How far the hanging ornaments reach down the screen, in px, from
    * `hangingDepth`. Zero when nothing hangs.
@@ -160,7 +168,9 @@ export default function ScrollFade({
           className="absolute inset-x-0 top-0"
           style={{
             height: fade,
-            background: `linear-gradient(to bottom, ${topStops})`,
+            ...(texture === null
+              ? { background: `linear-gradient(to bottom, ${topStops})` }
+              : null),
             /*
               Masked rather than left to cover the whole band: an unmasked
               backdrop-filter would blur the full height of the fade element at
@@ -173,15 +183,52 @@ export default function ScrollFade({
             maskImage: `linear-gradient(to bottom, ${topMask})`,
             WebkitMaskImage: `linear-gradient(to bottom, ${topMask})`,
           }}
-        />
+        >
+          {/*
+            The same gradient, as the alpha of a group rather than as a paint:
+            the card's colour with the damask soft-lit onto it and onto nothing
+            else, then faded on the curve the flat colour was. Where the fade
+            is solid this is the card's own ground exactly, and through the
+            ramp it is that ground coming in over itself.
+          */}
+          {texture !== null ? (
+            <div
+              className="absolute inset-0"
+              style={{
+                isolation: "isolate",
+                maskImage: `linear-gradient(to bottom, ${topMask})`,
+                WebkitMaskImage: `linear-gradient(to bottom, ${topMask})`,
+              }}
+            >
+              <div className="absolute inset-0" style={{ backgroundColor: background }} />
+              <RoyalTextureFill opacity={texture} />
+            </div>
+          ) : null}
+        </div>
 
         <div
           className="absolute inset-x-0 bottom-0"
-          style={{
-            height: bottom,
-            background: `linear-gradient(to top, ${background} 0px, transparent ${bottom})`,
-          }}
-        />
+          style={
+            texture === null
+              ? {
+                  height: bottom,
+                  background: `linear-gradient(to top, ${background} 0px, transparent ${bottom})`,
+                }
+              : {
+                  height: bottom,
+                  isolation: "isolate",
+                  maskImage: `linear-gradient(to top, #000 0px, transparent ${bottom})`,
+                  WebkitMaskImage: `linear-gradient(to top, #000 0px, transparent ${bottom})`,
+                }
+          }
+        >
+          {texture !== null ? (
+            <>
+              <div className="absolute inset-0" style={{ backgroundColor: background }} />
+              <RoyalTextureFill opacity={texture} />
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,12 @@
 
 export const ROYAL_TEXTURE_SRC = "/decor/texture/royal-damask.webp";
 
+/**
+ * Marks the card's own texture layer, so a pinned band can find it and draw
+ * its tile in register with it; see components/card/decor/RoyalTextureFill.tsx.
+ */
+export const ROYAL_TEXTURE_ATTRIBUTE = "data-royal-texture";
+
 /** The tile's drawn size, in CSS px. The file is 600px, so it is sharp at 1.5x. */
 export const ROYAL_TEXTURE_TILE = 400;
 

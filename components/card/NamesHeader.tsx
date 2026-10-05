@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useRevealGate } from "@/hooks/useRevealGate";
 import { FIRST_SCREEN_ATTRIBUTE } from "@/components/invite/InvitedCue";
+import RoyalTextureFill from "@/components/card/decor/RoyalTextureFill";
 
 /**
  * How much of the top of the screen the band takes, in CSS pixels, safe area
@@ -48,6 +49,7 @@ const BAND_HEIGHT = 46;
 export default function NamesHeader({
   names,
   background,
+  texture,
   accent,
   rule,
   clearMusic,
@@ -56,6 +58,8 @@ export default function NamesHeader({
   names: string;
   /** The card's ground, which the band is a translucent strip of. */
   background: string;
+  /** The royal texture's opacity on a card that has it, or null; the band is then a strip of the textured ground. */
+  texture: number | null;
   accent: string;
   /** The hairline under the band: the accent, faint. */
   rule: string;
@@ -108,12 +112,26 @@ export default function NamesHeader({
           /* The music button is beside the names unless they have been set a row lower, which says so with --lifafa-header-music: 0. */
           paddingRight: `calc(16px + max(var(--lifafa-header-clear, 0px), ${clearMusic ? 52 : 0}px * var(--lifafa-header-music, 1)))`,
           /* The card's ground at nine tenths: #rrggbb with an alpha appended. */
-          backgroundColor: /^#[0-9a-f]{6}$/i.test(background) ? `${background}E6` : background,
+          ...(texture === null
+            ? { backgroundColor: /^#[0-9a-f]{6}$/i.test(background) ? `${background}E6` : background }
+            : null),
           borderColor: rule,
           transform: shown ? "translate3d(0, 0, 0)" : "translate3d(0, -100%, 0)",
           opacity: shown ? 1 : 0,
         }}
       >
+        {/*
+          The same nine tenths, of the ground with its damask: the colour and
+          the tile soft-lit onto it as one group, behind the names. Measured
+          from the row rather than from itself, because the band slides in
+          under a transform and the row is where it comes to rest.
+        */}
+        {texture !== null ? (
+          <div className="absolute inset-0 -z-10" style={{ opacity: 0.9 }}>
+            <div className="absolute inset-0" style={{ backgroundColor: background }} />
+            <RoyalTextureFill opacity={texture} anchorRef={rowRef} />
+          </div>
+        ) : null}
         <p
           className="max-w-full truncate text-center text-[calc(1.0625*var(--card-rem,1rem))] leading-tight"
           style={{
