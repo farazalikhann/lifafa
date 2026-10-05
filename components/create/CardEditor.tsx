@@ -48,6 +48,7 @@ import CoupleIllustrationPanel from "@/components/create/CoupleIllustrationPanel
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
+import { royalTextureOn } from "@/lib/royalTexture";
 import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { getTraditionPack } from "@/lib/traditionPacks";
@@ -167,6 +168,8 @@ interface EditorState {
   coupleIllustration: boolean;
   /** The painting above the venue's name. None unless the host picked one. */
   venueIllustration: VenueIllustration;
+  /** Whether the damask is woven into the card's ground. */
+  royalTexture: boolean;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
   divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
@@ -221,6 +224,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     coupleIllustration: coupleIllustrationOn(config.coupleIllustration),
     /* Missing on every card saved before the choice; those have none. */
     venueIllustration: venueIllustrationOf(config.venueIllustration),
+    /* Missing on every card saved before the texture; those have none. */
+    royalTexture: royalTextureOn(config.royalTexture),
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
@@ -293,6 +298,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       ...(state.venueIllustration !== "none"
         ? { venueIllustration: state.venueIllustration }
         : null),
+      /* Only ever stored as on: a card that never had the key has no texture. */
+      ...(state.royalTexture ? { royalTexture: true } : null),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
       ...(state.divider !== undefined ? { divider: state.divider } : null),
       borderStyle: state.borderStyle,
@@ -494,6 +501,7 @@ export default function CardEditor({
   const [venueIllustration, setVenueIllustration] = useState(
     initial.venueIllustration,
   );
+  const [royalTexture, setRoyalTexture] = useState(initial.royalTexture);
 
   /*
     ONE REVEAL ON THE DATE, NEVER TWO. The royal scroll and the scratch panel
@@ -908,6 +916,7 @@ export default function CardEditor({
     dateReveal,
     coupleIllustration,
     venueIllustration,
+    royalTexture,
     divider,
     borderStyle,
     style,
@@ -1434,6 +1443,8 @@ export default function CardEditor({
                   language={previewLanguage}
                   paletteAccent={cardPalette(style).accent}
                   borderStyle={borderStyle}
+                  royalTexture={royalTexture}
+                  onRoyalTextureChange={setRoyalTexture}
                   onFontPairChange={setFontPair}
                   onPaletteChange={setPalette}
                   onTextPairChange={setTextPair}

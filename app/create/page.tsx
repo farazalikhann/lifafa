@@ -102,6 +102,8 @@ const EMPTY_CONFIG: CardConfig = {
   /* Off by default: a card that hides its own date has to be asked for. */
   scratchTarget: "none",
   borderStyle: DEFAULT_DESIGN.borderStyle,
+  /* On for a new card. A saved card without the key has none; see lib/royalTexture.ts. */
+  royalTexture: true,
   style: DEFAULT_DESIGN.style,
   ornamentConfig: DEFAULT_DESIGN.ornamentConfig,
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */

@@ -261,6 +261,12 @@ export interface CardConfig {
    */
   venueIllustration?: VenueIllustration;
   /**
+   * Whether the damask is woven into the card's ground. Stored only as `true`:
+   * absent, and on every card saved before the texture existed, there is none.
+   * Read it through `royalTextureOn` in lib/royalTexture.ts.
+   */
+  royalTexture?: boolean;
+  /**
    * The reveal on the date's screen.
    *
    * Absent from every card saved before there was a choice. Read it through

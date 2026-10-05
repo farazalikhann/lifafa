@@ -297,9 +297,12 @@ export default function VenueSection({
         />
       ) : null}
 
-      <div className="w-full" style={{ maxWidth: cardRem(18.5) }}>
-        {mapBlock}
-      </div>
+      {/* The painting takes the map's place: one picture of the venue, not two. */}
+      {illustration === null ? (
+        <div className="w-full" style={{ maxWidth: cardRem(18.5) }}>
+          {mapBlock}
+        </div>
+      ) : null}
 
       <div className={reveal} style={lineDelay(1)}>
         {scratch === null ? (

@@ -81,6 +81,12 @@ import {
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import {
+  ROYAL_TEXTURE_SRC,
+  ROYAL_TEXTURE_TILE,
+  royalTextureOn,
+  royalTextureOpacity,
+} from "@/lib/royalTexture";
+import {
   hasCountdown,
   hasCustomContent,
   hasFamily,
@@ -1433,6 +1439,30 @@ export default function CardCanvas({
           fontFamily: effectiveTheme.fontFamily,
         }}
       >
+        {/*
+          The royal texture: a grey damask tile soft-lit onto the card's colour.
+
+          First in the card and with no z-index, so every other layer — the
+          decor, the content column at `z-10`, the border, the butterflies and
+          the petals — is a positioned element that comes after it and paints
+          over it. Absolute over the whole card rather than fixed or sticky, so
+          it scrolls with the paper it is woven into. Its opacity is worked out
+          from the card's colour; see royalTextureOpacity.
+        */}
+        {royalTextureOn(config.royalTexture) ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: `url(${ROYAL_TEXTURE_SRC})`,
+              backgroundSize: `${ROYAL_TEXTURE_TILE}px ${ROYAL_TEXTURE_TILE}px`,
+              backgroundRepeat: "repeat",
+              mixBlendMode: "soft-light",
+              opacity: royalTextureOpacity(effectiveTheme.background),
+            }}
+          />
+        ) : null}
+
         {/*
           The sides of a card that fills a laptop screen, first so everything
           else paints over them. Mounts only on the guest's card, and draws

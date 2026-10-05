@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 import CollapsibleSection, {
   sectionState,
   type Accordion,
@@ -305,6 +305,8 @@ export default function StylePanel({
   language,
   paletteAccent,
   borderStyle,
+  royalTexture,
+  onRoyalTextureChange,
   onFontPairChange,
   onPaletteChange,
   onTextPairChange,
@@ -333,6 +335,9 @@ export default function StylePanel({
     every style is offered on every card.
   */
   borderStyle: CardBorderStyle;
+  /** Whether the damask is woven into the card's ground; see lib/royalTexture.ts. */
+  royalTexture: boolean;
+  onRoyalTextureChange: (enabled: boolean) => void;
   onFontPairChange: (id: FontPairId) => void;
   onPaletteChange: (id: PaletteId) => void;
   /** One of the six text pairs: sets both inks, the card colour and the accent. */
@@ -346,6 +351,7 @@ export default function StylePanel({
   accordion: Accordion;
 }): ReactElement {
   const isHindi = language === "hi";
+  const royalTextureHintId = useId();
   const written = hostNames.trim();
   /*
     In Hindi, a names line with no Devanagari in it (English names with no
@@ -520,6 +526,52 @@ export default function StylePanel({
               </button>
             );
           })}
+        </div>
+
+        {/*
+          ROYAL TEXTURE. Under the card colours because it is the same ground:
+          a damask woven into whichever colour is chosen, never a colour of its
+          own.
+        */}
+        <div className="mt-1 flex items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
+              Royal texture
+            </p>
+            <p id={royalTextureHintId} className="text-xs text-[var(--lifafa-muted)]">
+              A soft damask pattern woven into the card colour.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={royalTexture}
+            aria-label="Royal texture"
+            aria-describedby={royalTextureHintId}
+            onClick={() => onRoyalTextureChange(!royalTexture)}
+            className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            {/* The state in words as well, hidden because aria-checked already says it. */}
+            <span
+              aria-hidden="true"
+              className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]"
+            >
+              {royalTexture ? "On" : "Off"}
+            </span>
+            <span
+              aria-hidden="true"
+              className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors duration-150 ${
+                royalTexture ? "bg-[var(--lifafa-marigold)]" : "bg-[var(--lifafa-hairline)]"
+              }`}
+            >
+              <span
+                className={`h-5 w-5 rounded-full bg-[var(--lifafa-ink)] transition-transform duration-150 ${
+                  royalTexture ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </span>
+          </button>
         </div>
 
         {/*
