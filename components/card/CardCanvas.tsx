@@ -759,6 +759,7 @@ export default function CardCanvas({
   weatherTheme = null,
   fluid = false,
   fillsPhone = false,
+  frame = true,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -786,6 +787,13 @@ export default function CardCanvas({
    * all — see lib/cardScale.ts.
    */
   fillsPhone?: boolean;
+  /**
+   * Whether the card draws its own border. Off on the guest's page, where one
+   * border is drawn for the whole page, the reply form and the note under it
+   * included, so it does not stop where the card stops. The card still stands
+   * clear of the border either way. See InviteExperience.
+   */
+  frame?: boolean;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -1554,11 +1562,13 @@ export default function CardCanvas({
           Outermost of the decor until the butterflies, which are the one thing
           that had to come out in front of it — the note under them says why.
         */}
-        <BorderFrame
-          borderStyle={config.borderStyle}
-          accent={effectiveTheme.accent}
-          bandHeight={bandHeight}
-        />
+        {frame ? (
+          <BorderFrame
+            borderStyle={config.borderStyle}
+            accent={effectiveTheme.accent}
+            bandHeight={bandHeight}
+          />
+        ) : null}
 
         {/*
           The butterflies, if the host asked for any.

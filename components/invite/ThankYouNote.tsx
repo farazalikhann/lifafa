@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import FramedPanel from "@/components/invite/FramedPanel";
+import BorderInset from "@/components/invite/BorderInset";
 import { cardCopy } from "@/lib/cardLanguage";
 import { DISPLAY_FACE } from "@/lib/fontPairs";
 import type { Theme } from "@/lib/themes";
@@ -9,8 +9,8 @@ import type { CardBorderStyle, CardLanguage } from "@/types/card";
  * The hosts' thanks, under the reply form: the last thing on the page.
  *
  * Shown to every guest, whether or not they have replied yet, in the card's
- * own display face and colours and inside the card's own border (see
- * FramedPanel), so the page ends on the card's stationery rather than on a
+ * own display face and colours and beside the card's own border (see
+ * BorderInset), so the page ends on the card's stationery rather than on a
  * form's submit button.
  *
  * The words are the card's fixed copy, not the host's: there is nothing to
@@ -40,7 +40,7 @@ export default function ThankYouNote({
   const copy = cardCopy(language);
 
   return (
-    <FramedPanel borderStyle={borderStyle} accent={theme.accent}>
+    <BorderInset borderStyle={borderStyle} last>
       <section className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 px-5 pt-10 pb-12 text-center sm:px-6">
         {/* The same rule and diamond the cover sets between the names and the way in. */}
         <span
@@ -70,6 +70,6 @@ export default function ThankYouNote({
           {copy.thankYou(eventName, couple)}
         </p>
       </section>
-    </FramedPanel>
+    </BorderInset>
   );
 }

@@ -17,6 +17,8 @@ import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import InvitedCue from "@/components/invite/InvitedCue";
 import ThankYouNote from "@/components/invite/ThankYouNote";
+import BorderInset from "@/components/invite/BorderInset";
+import BorderFrame from "@/components/card/decor/BorderFrame";
 import LanguageSwitch, {
   LANGUAGE_SWITCH_CLEARANCE,
 } from "@/components/invite/LanguageSwitch";
@@ -407,6 +409,11 @@ export default function InviteExperience({
             {pageHeading.length > 0 ? pageHeading : copy.invite.headingFallback}
           </h1>
 
+          {/*
+            The card and everything under it, in one box, so one border can
+            run the whole length of it. See the frame at the foot of this box.
+          */}
+          <div className="relative">
           <div
             className="relative"
             /*
@@ -426,6 +433,8 @@ export default function InviteExperience({
               motifs={motifs}
               sizing="viewport"
               audience="guest"
+              /* The page draws the border, for the card and what is under it together. */
+              frame={false}
               invite={invite}
               /*
                 Grows with a tablet or laptop screen from 768px up, and fills the
@@ -477,6 +486,7 @@ export default function InviteExperience({
             guest meets the refusal in addOrUpdateReply instead.
           */}
           {stage === "confirmed" && submitted !== null ? (
+            <BorderInset borderStyle={config.borderStyle}>
             <RsvpConfirmed
               status={submitted.status}
               partySize={submitted.partySize}
@@ -503,6 +513,7 @@ export default function InviteExperience({
                 ) : null
               }
             />
+            </BorderInset>
           ) : ended && config.rsvpEnabled ? (
             /*
               Where the reply form was, once the event is over: the card is a
@@ -546,6 +557,40 @@ export default function InviteExperience({
               borderStyle={config.borderStyle}
             />
           )}
+
+          {/*
+            THE ONE BORDER, for the whole page.
+
+            The card used to draw its own, and that frame is pinned to the
+            screen only for as long as the card is: it stopped where the card
+            stopped, its foot scrolled up the screen, and the reply form and
+            the note each drew another round themselves. Three frames, with
+            corners and a line across wherever one met the next.
+
+            Drawn here, in the box that holds all three, it is pinned for the
+            length of the page: its sides run unbroken from the first screen to
+            the last, and its foot is seen once, at the end.
+
+            It stands where the card's own stood: in a box with the card's
+            width and the card's own classes, so on a phone wider than the
+            card and on a laptop it is at the same edges, and the garland is
+            sized as it was. Not positioned with a z-index of its own, so it
+            takes its place among the card's layers exactly as before: over
+            the text, under the butterflies and the names' header.
+          */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+          >
+            <div className="lifafa-card-phone lifafa-card-fluid lifafa-card-viewport relative mx-auto h-full w-full max-w-[420px]">
+              <BorderFrame
+                borderStyle={config.borderStyle}
+                accent={cardTheme.accent}
+                bandHeight="100dvh"
+              />
+            </div>
+          </div>
+          </div>
         </main>
       </CoverShell>
 
