@@ -2,15 +2,14 @@
 
 import type { ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
+import BreezeCover from "@/components/invite/covers/BreezeCover";
 import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
-import PetalDustCover from "@/components/invite/covers/PetalDustCover";
 import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
-import { ENVELOPE_FILMS, FOLD_FILMS, PETAL_FILMS, filmFor } from "@/lib/coverVideos";
+import { ENVELOPE_FILMS, FOLD_FILMS, filmFor } from "@/lib/coverVideos";
 import { envelopeArt } from "@/lib/envelopeArt";
 import { gatefoldArt } from "@/lib/gatefoldArt";
-import { petalCoverArt } from "@/lib/petalCoverArt";
 
 /*
   The covers as they are drawn in code, which is what a filmed cover falls
@@ -20,11 +19,6 @@ import { petalCoverArt } from "@/lib/petalCoverArt";
 const DRAWN_ENVELOPE: DrawnCover = {
   Component: EnvelopeSealCover,
   images: (isLight) => envelopeArt(isLight).images,
-};
-
-const DRAWN_PETALS: DrawnCover = {
-  Component: PetalDustCover,
-  images: (isLight) => petalCoverArt(isLight).images,
 };
 
 const DRAWN_FOLD: DrawnCover = {
@@ -70,15 +64,13 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
         />
       );
 
+    /*
+      The breeze, under the petal dust cover's id. Drawn over the card like
+      the curtain. Keyed by the card's ground, so a host changing the palette
+      in the editor gets the veil in the new colour from a clean start.
+    */
     case "petal-dust":
-      return (
-        <VideoCover
-          key={filmFor(PETAL_FILMS, state.colors.isLight).poster}
-          {...state}
-          films={PETAL_FILMS}
-          drawn={DRAWN_PETALS}
-        />
-      );
+      return <BreezeCover key={state.colors.ground} {...state} />;
 
     /* The host asked for no animation. The shell never shows a cover at all. */
     case "none":

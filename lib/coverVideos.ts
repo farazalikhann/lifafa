@@ -173,35 +173,9 @@ export const ENVELOPE_FILMS: CoverFilmSet = {
 };
 
 /*
-  PETAL DUST. Dark: frames 23-119 (0.96s to 5.00s): the gust starts at 0.3s
-  and the frame is empty at 4.0s. Light: frames 17-119 (0.71s to 5.00s): the
-  petals stir from 0.3s, the gust proper is at 1.8s and the frame is all but
-  empty at 4.3s. Each fades over the second half of its gust. The sound's
-  rush peaks half a second in, and is set to peak with the gust.
-
-  The ovals are 554x423 (dark) and 609x437 (light), both centred.
+  No petal dust here either: that cover is the breeze now, drawn over the
+  card. See lib/breezeArt.ts.
 */
-export const PETAL_FILMS: CoverFilmSet = {
-  dark: film("petal-video", "petal-dark", {
-    lengthMs: 4040,
-    fadeStartMs: 2100,
-    fadeMs: 1700,
-    soundDelayMs: 300,
-    surround: BLACK,
-    mark: { x: 539 / 1080, y: 961 / 1920, width: 470 / 1080 },
-    ink: GOLD,
-  }),
-  light: film("petal-video", "petal-light", {
-    lengthMs: 4290,
-    fadeStartMs: 2900,
-    fadeMs: 1300,
-    soundDelayMs: 1300,
-    surround: IVORY,
-    mark: { x: 540 / 1080, y: 966 / 1920, width: 500 / 1080 },
-    ink: DEEP_GOLD,
-  }),
-  markExit: "drift",
-};
 
 /*
   FOLD. Dark: frames 13-91 (0.54s to 3.83s): the ribbon starts down at 0.3s

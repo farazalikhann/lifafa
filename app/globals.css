@@ -867,36 +867,45 @@
 }
 
 /*
-  A loose petal lifted off the petal dust cover by the gust: there at once,
-  at its own size, then carried along its own line (--dx, --dy), turning
-  (--turn) and gone by the end.
+  The breeze cover. A piece rocking while the cover waits: still for most of
+  its beat, then a small tilt and back, as if the air had stirred. And a
+  piece fluttering as it is carried off: a small rise and dip with a tilt,
+  run back and forth. Transform only. Neither runs for a guest who asked for
+  less motion.
 */
-@keyframes lifafa-cover-gust {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-  }
-  12% {
-    opacity: 1;
-  }
+@keyframes lifafa-breeze-rock {
+  0%,
+  70%,
   100% {
-    opacity: 0;
-    transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--turn)) scale(0.8);
+    transform: rotate(0deg) translate3d(0, 0, 0);
+  }
+  78% {
+    transform: rotate(4deg) translate3d(2%, -2%, 0);
+  }
+  86% {
+    transform: rotate(-3deg) translate3d(-1%, 1%, 0);
+  }
+  93% {
+    transform: rotate(1.5deg) translate3d(0, 0, 0);
   }
 }
 
-/*
-  The petal dust cover breathing while it waits: a hair larger and back, so
-  slowly it is felt more than seen. Transform only, on the layer that holds
-  the whole picture.
-*/
-@keyframes lifafa-cover-swell {
-  0%,
-  100% {
-    transform: scale(1);
+@keyframes lifafa-breeze-flutter {
+  from {
+    transform: translate3d(0, 9%, 0) rotate(-9deg);
   }
-  50% {
-    transform: scale(1.02);
+  to {
+    transform: translate3d(0, -9%, 0) rotate(9deg);
+  }
+}
+
+.lifafa-breeze-rock {
+  animation: lifafa-breeze-rock 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-breeze-rock {
+    animation: none;
   }
 }
 

@@ -6,7 +6,8 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
-import { ENVELOPE_FILMS, FOLD_FILMS, PETAL_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
+import { breezeArt } from "@/lib/breezeArt";
+import { ENVELOPE_FILMS, FOLD_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
 import { curtainArt } from "@/lib/curtainArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -112,30 +113,34 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     film: filmTiming(FOLD_FILMS),
   },
   {
+    /*
+      The id is the petal dust cover's, and stays: it is written into every
+      card saved with that cover, and those cards get the breeze.
+    */
     id: "petal-dust",
-    label: "Petal dust",
-    description: "Leaves and petals blow off the cover to reveal the card.",
+    label: "Breeze",
+    description: "A soft breeze blows leaves and petals off the card.",
     openPromptText: {
       en: "Tap to open",
       hi: "खोलने के लिए टैप करें",
     },
-    /* 1.8s: the gust crosses the screen in the first half of it, and the last petals leave in the rest. */
-    durationMs: 1800,
-    /* With the first of the gust: the card is what shows where the petals have gone. */
+    /*
+      2.9s: the words go (0.25s), the breeze crosses from the left with the
+      veil clearing behind it, and the last leaf is off the right edge at the
+      end. The shares are in the visual.
+    */
+    durationMs: 2900,
+    /* With the first of the breeze: the card is what shows where the veil has cleared. */
     revealAt: 0.1,
-    /* The card's own petals follow the gust rather than being lost in it. */
-    burstAt: 0.86,
+    /* The card's own petals follow the breeze rather than being lost in it. */
+    burstAt: 0.88,
     sound: "petal-dust",
     haptic: 10,
     supportsReducedMotion: true,
-    /* The petals fill the screen and the oval holds the initials, so the prompt sits on a plaque of its own. */
+    /* Leaves and petals lie all over the screen, so the prompt sits on a plaque of its own. */
     wordsOn: "plaque",
-    /*
-      Played from film, dark or light; see lib/coverVideos.ts. The timings
-      above are the drawn cover's, which opens when the film cannot.
-    */
-    art: filmArt(PETAL_FILMS),
-    film: filmTiming(PETAL_FILMS),
+    /* Drawn over the card, not filmed, so the card shows where the breeze has been. See lib/breezeArt.ts. */
+    art: breezeArt,
   },
 ];
 

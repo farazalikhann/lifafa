@@ -2,8 +2,7 @@
  * Cuts supplied artwork out of the background it arrived on and publishes it
  * as WebP: the flowers to public/decor/flowers/, the ornaments to
  * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/,
- * the envelope cover's paper, liner and seal to public/decor/envelope/, the
- * petal dust cover's pictures to public/decor/petal-cover/, the fold cover's
+ * the envelope cover's paper, liner and seal to public/decor/envelope/, the fold cover's
  * arch and ribbon to public/decor/gatefold/, the scratch panel's frames and
  * foil to public/decor/scratch/, the floral dividers to public/decor/dividers/.
  *
@@ -14,7 +13,6 @@
  *   node scripts/cut-flowers.mjs calligraphy  just the calligraphy
  *   node scripts/cut-flowers.mjs curtain      just the curtain cover's cloth
  *   node scripts/cut-flowers.mjs envelope     just the envelope cover's paper and seal
- *   node scripts/cut-flowers.mjs petal-cover  just the petal dust cover's two pictures
  *   node scripts/cut-flowers.mjs gatefold     just the fold cover's arch and ribbon
  *   node scripts/cut-flowers.mjs scratch      just the scratch panel's frames and foil
  *   node scripts/cut-flowers.mjs dividers     just the floral dividers
@@ -321,33 +319,12 @@ const ENVELOPE = [
   out: join("public", "decor", "envelope"),
 }));
 
-/**
- * The petal dust cover: a carpet of petals round an empty oval, for a dark
- * card and for a light one. See components/invite/covers/PetalDustCover.tsx.
- *
- * Photographs that fill the screen, so there is nothing to cut out: each is
- * only sized and compressed. They arrived in the envelope's folder, not one
- * of their own. Each quality is the highest that keeps its file under 150 KB:
- * the dark one is busier in its shadows and takes a lower one to get there.
- */
-const PETAL_COVER = [
-  {
-    name: "petal-cover-dark",
-    file: "ChatGPT Image Oct 2, 2026, 10_07_01 AM.png",
-    quality: 68,
-  },
-  {
-    name: "petal-cover-light",
-    file: "ChatGPT Image Oct 2, 2026, 10_08_29 AM.png",
-    quality: 76,
-  },
-].map((entry) => ({
-  ...entry,
-  background: "photo",
-  fit: { height: 1200 },
-  source: ENVELOPE_SOURCE,
-  out: join("public", "decor", "petal-cover"),
-}));
+/*
+  The petal dust cover's two photographs were sized here. That cover is the
+  breeze now (components/invite/covers/BreezeCover.tsx), which has no
+  photograph, so there is nothing of it to cut.
+*/
+const PETAL_COVER = [];
 
 /**
  * The fold cover's gold: an arch of filigree that frames its two doors, and
