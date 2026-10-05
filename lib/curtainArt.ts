@@ -1,7 +1,15 @@
 /**
- * The cloth the curtain cover is hung with: a panel and a valance, cut out of
- * the supplied artwork by scripts/cut-flowers.mjs, in maroon velvet and in
- * cream.
+ * The cloth the curtain cover is hung with: its panels and a valance, in
+ * maroon velvet and in cream.
+ *
+ * THE VELVET IS CUT FROM FILM. The cover used to play a film of velvet
+ * curtains parting, and a film is opaque: the card could only be faded in
+ * over its last frames, never seen between the curtains. So the film's first
+ * frame, the curtains hanging closed, was cut into a left panel and a right
+ * one down the seam between them, and the valance was cut from a later frame,
+ * where the curtains are open and it hangs against black. The panels' tops,
+ * which the valance hides in the film, are the cloth below turned over. The
+ * cream set is the artwork cut by scripts/cut-flowers.mjs, as it was.
  *
  * NOT TAKEN FROM THE CARD'S PALETTE, unlike every other cover. A photograph
  * of velvet cannot be mixed out of two hex colours, and a tint laid over one
@@ -10,8 +18,10 @@
  * behind cream cloth and a dark one from behind maroon, so the screen does not
  * flash from one end of the scale to the other as the curtains part.
  *
- * One panel per set. The right curtain is the left one mirrored, in the
- * visual, so a guest downloads two pictures and not three.
+ * The cream set has one panel: its right curtain is the left one mirrored, in
+ * the visual. The velvet has two, because the film's two curtains are not
+ * each other's mirror, and its right one is published already turned, so the
+ * visual's one mirrored markup draws it the right way round.
  */
 
 import type { CoverArt } from "@/types/coverAnimation";
@@ -19,21 +29,29 @@ import type { CoverArt } from "@/types/coverAnimation";
 export interface CurtainArt extends CoverArt {
   /** The left curtain, its gold border on its right edge. */
   panel: string;
+  /**
+   * The right curtain, for a set whose two are different cloth: published
+   * turned, border on its right edge like the left one's. Absent where the
+   * right is simply the left in a mirror.
+   */
+  panelRight?: string;
   /** The swagged valance across the top. */
   valance: string;
   /** The shade where the two panels meet, and that each casts on the card as it leaves. */
   shadow: string;
 }
 
-const MAROON_PANEL = "/decor/curtain/curtain-left.webp";
-const MAROON_VALANCE = "/decor/curtain/curtain-valance.webp";
+const VELVET_LEFT = "/decor/curtain/velvet/curtain-left.webp";
+const VELVET_RIGHT = "/decor/curtain/velvet/curtain-right.webp";
+const VELVET_VALANCE = "/decor/curtain/velvet/valance.webp";
 const CREAM_PANEL = "/decor/curtain/curtain-left-cream.webp";
 const CREAM_VALANCE = "/decor/curtain/curtain-valance-cream.webp";
 
-const MAROON: CurtainArt = {
-  panel: MAROON_PANEL,
-  valance: MAROON_VALANCE,
-  images: [MAROON_PANEL, MAROON_VALANCE],
+const VELVET: CurtainArt = {
+  panel: VELVET_LEFT,
+  panelRight: VELVET_RIGHT,
+  valance: VELVET_VALANCE,
+  images: [VELVET_LEFT, VELVET_RIGHT, VELVET_VALANCE],
   shadow: "rgba(0, 0, 0, 0.42)",
   ink: "#FBF4E6",
   inkMuted: "rgba(251, 244, 230, 0.86)",
@@ -60,5 +78,5 @@ const CREAM: CurtainArt = {
 
 /** The cloth for a card whose ground is light, or dark. */
 export function curtainArt(isLight: boolean): CurtainArt {
-  return isLight ? CREAM : MAROON;
+  return isLight ? CREAM : VELVET;
 }

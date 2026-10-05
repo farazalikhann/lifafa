@@ -6,7 +6,8 @@
  * types/coverAnimation.ts on why an id here is permanent.
  */
 
-import { CURTAIN_FILMS, ENVELOPE_FILMS, FOLD_FILMS, PETAL_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
+import { ENVELOPE_FILMS, FOLD_FILMS, PETAL_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
+import { curtainArt } from "@/lib/curtainArt";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -61,21 +62,25 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       hi: "खोलने के लिए टैप करें",
     },
     /*
-      The painted curtains, which open when the film cannot: 1.6s to draw, and
-      the valance over them then fades in the 350ms that are left. DRAW_SHARE
-      in that visual is 1600 of these.
+      3.2s: the words go (0.25s), the two curtains draw apart over the card
+      (2.6s), and the valance lifts away in what is left. The shares are in
+      the visual.
     */
-    durationMs: 1950,
-    /* As soon as there is a gap between the painted panels to see the card through. */
-    revealAt: 0.12,
+    durationMs: 3200,
+    /* As soon as there is a gap between the panels to see the card through. */
+    revealAt: 0.16,
     sound: "curtain",
     haptic: 10,
     supportsReducedMotion: true,
     /* The cloth fills the screen, so the prompt sits on a plaque of its own. */
     wordsOn: "plaque",
-    /* Played from film of real curtains, dark or light; see lib/coverVideos.ts. */
-    art: filmArt(CURTAIN_FILMS),
-    film: filmTiming(CURTAIN_FILMS),
+    /*
+      Two panels of cloth and a valance over the card, not a film: a film is
+      opaque, and this is the one cover whose whole point is the card seen
+      between the curtains as they part. See lib/curtainArt.ts. The films are
+      still in public/decor/curtain-video/ and in lib/coverVideos.ts, unused.
+    */
+    art: curtainArt,
   },
   {
     id: "fold-unfold",

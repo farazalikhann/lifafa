@@ -6,16 +6,19 @@ import { stage } from "@/components/invite/covers/timing";
 import { curtainArt } from "@/lib/curtainArt";
 
 /**
- * How the open splits across the shell's timer, as fractions of --cover-ms.
+ * How the open splits across the shell's timer, as fractions of --cover-ms,
+ * which is 3.2 seconds.
  *
- * The curtains take the first 1.6 seconds of it. The valance hangs where it
- * is while they draw and fades in what is left, so it is the last of the
- * cover to go and never sits over the card's own top border once the card is
- * the thing on screen.
+ * The words on the cloth go first, in the shell's own quarter of a second,
+ * and the curtains wait for them. Then the curtains draw, for 2.6 seconds.
+ * The valance hangs where it is while they do and lifts away in what is left,
+ * so it is the last of the cover to go and never sits over the card's own top
+ * border once the card is the thing on screen.
  */
-const DRAW_SHARE = 0.82;
-const FADE_START = 0.82;
-const FADE_SHARE = 0.18;
+const DRAW_START = 0.08;
+const DRAW_SHARE = 0.81;
+const FADE_START = 0.84;
+const FADE_SHARE = 0.16;
 
 /**
  * How quickly the ground behind the panels clears.
@@ -24,7 +27,7 @@ const FADE_SHARE = 0.18;
  * so by the time a gap has opened it is the card in the gap, not a blank ground
  * that pops into a card when the layer unmounts.
  */
-const BACKDROP_SHARE = 0.08;
+const BACKDROP_SHARE = 0.07;
 
 /** The shade at the seam going, and each panel's own shade on the card arriving. */
 const SHADE_SHARE = 0.14;
@@ -34,10 +37,22 @@ const SHADE_SHARE = 0.14;
  * hangs at: heavy cloth bunches as it is pulled, and a panel that keeps its
  * full width all the way out is a door.
  */
-const GATHER = 0.85;
+const GATHER = 0.7;
 
-/** Slow to start, a long glide, and a soft stop: the cloth has weight to get moving. */
-const DRAW_EASE = "cubic-bezier(0.62,0.02,0.2,1)";
+/**
+ * How far a panel travels, as a share of its own width: its gathered width
+ * and a little over, so its leading edge and the shade it casts leave the
+ * screen as the draw ends and not half way through it. A panel sent its full
+ * width was gone at the middle of its time, and the rest of the draw was
+ * cloth moving where nobody could see it.
+ */
+const TRAVEL = `${-(GATHER + 0.06) * 100}%`;
+
+/** Eased in and out, the stop a little softer than the start: the cloth has weight to get moving, and settles. */
+const DRAW_EASE = "cubic-bezier(0.42,0,0.5,1)";
+
+/** How far the valance lifts as it goes, as a share of its own height. */
+const VALANCE_LIFT = "-45%";
 
 /**
  * Stops short of the hem's tassels, which hang in the bottom tenth with the
@@ -65,10 +80,12 @@ const ABOVE_TASSELS = "linear-gradient(180deg, #000 0%, #000 82%, transparent 90
  * the beads on its leading edge (scripts/cut-flowers.mjs), so the two halves
  * meet as one row of beads, with nothing between them and nothing shared.
  *
- * THE DRAW. Each panel slides off its own side and gathers a little towards
- * it as it goes, and its hem trails the rod and swings through once. The card
- * is let go as the gap opens and is what the gap shows. Transform and opacity
- * only: nothing here repaints while it moves.
+ * THE DRAW. Each panel slides off its own side and gathers towards it as it
+ * goes, to seven tenths of its width, and its hem trails the rod, swings
+ * through and settles. The card is under the cloth the whole time: it is let
+ * go as the gap opens and is what the gap shows, more of it as the gap
+ * widens, and it is never faded in. The valance lifts and fades last.
+ * Transform and opacity only: nothing here repaints while it moves.
  *
  * Under reduced motion the shell never hands this the "opening" phase: the
  * closed curtains crossfade to the card as one layer. See CoverShell.
@@ -92,7 +109,7 @@ export default function CurtainRevealCover({
   /* The card's ground, cleared behind the panels as they start to move. */
   const backdropStyle: CSSProperties = {
     backgroundColor: colors.ground,
-    transition: transition(stage("opacity", BACKDROP_SHARE, 0, "linear")),
+    transition: transition(stage("opacity", BACKDROP_SHARE, 0.02, "linear")),
     opacity: opening ? 0 : 1,
   };
 
@@ -103,9 +120,9 @@ export default function CurtainRevealCover({
   */
   const drawStyle: CSSProperties = {
     transformOrigin: "0% 50%",
-    transition: transition(stage("transform", DRAW_SHARE, 0, DRAW_EASE)),
+    transition: transition(stage("transform", DRAW_SHARE, DRAW_START, DRAW_EASE)),
     transform: opening
-      ? `translate3d(-101%, 0, 0) scaleX(${GATHER})`
+      ? `translate3d(${TRAVEL}, 0, 0) scaleX(${GATHER})`
       : "translate3d(0, 0, 0) scaleX(1)",
     willChange: "transform",
   };
@@ -115,7 +132,7 @@ export default function CurtainRevealCover({
     transformOrigin: "50% 0%",
     animation:
       opening && !reducedMotion
-        ? `lifafa-cover-curtain-sway calc(var(--cover-ms)*${DRAW_SHARE}) ease-in-out both`
+        ? `lifafa-cover-curtain-sway calc(var(--cover-ms)*${DRAW_SHARE}) ease-in-out calc(var(--cover-ms)*${DRAW_START}) both`
         : undefined,
     willChange: "transform",
   };
@@ -125,7 +142,7 @@ export default function CurtainRevealCover({
     backgroundImage: `linear-gradient(90deg, ${art.shadow}, transparent)`,
     maskImage: ABOVE_TASSELS,
     WebkitMaskImage: ABOVE_TASSELS,
-    transition: transition(stage("opacity", SHADE_SHARE, 0.06, "ease-out")),
+    transition: transition(stage("opacity", SHADE_SHARE, DRAW_START + 0.06, "ease-out")),
     opacity: opening ? 1 : 0,
   };
 
@@ -134,16 +151,20 @@ export default function CurtainRevealCover({
     backgroundImage: `linear-gradient(90deg, transparent, ${art.shadow} 50%, transparent)`,
     maskImage: ABOVE_TASSELS,
     WebkitMaskImage: ABOVE_TASSELS,
-    transition: transition(stage("opacity", SHADE_SHARE, 0, "ease-out")),
+    transition: transition(stage("opacity", SHADE_SHARE, DRAW_START, "ease-out")),
     opacity: opening ? 0 : 1,
   };
 
-  /* The valance, last to go: still while the panels draw, then faded with the cover. */
+  /* The valance, last to go: still while the panels draw, then lifted off and faded. */
   const valanceStyle: CSSProperties = {
     top: "var(--lifafa-preview-h, 0px)",
     filter: `drop-shadow(0 3px 5px ${art.shadow})`,
-    transition: transition(stage("opacity", FADE_SHARE, FADE_START, "ease-in-out")),
+    transition: transition(
+      stage("opacity", FADE_SHARE, FADE_START, "ease-in"),
+      stage("transform", FADE_SHARE, FADE_START, "ease-in"),
+    ),
     opacity: opening ? 0 : 1,
+    transform: opening ? `translate3d(0, ${VALANCE_LIFT}, 0)` : "translate3d(0, 0, 0)",
   };
 
   return (
@@ -173,7 +194,8 @@ export default function CurtainRevealCover({
               curtain arriving a frame after the cover.
             */}
             <img
-              src={art.panel}
+              /* A set with a right curtain of its own has it published turned, for this mirrored half. */
+              src={side > 0 ? (art.panelRight ?? art.panel) : art.panel}
               alt=""
               decoding="sync"
               draggable={false}
