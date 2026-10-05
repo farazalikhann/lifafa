@@ -126,8 +126,13 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   christian: [
     /* A picture now, with a bow and ribbons round the bells: a little larger so the bells themselves are not smaller than they were. */
     { id: "weddingBells", xPercent: 50, topPercent: 1, sizeRem: 4.6, delayMs: 0, swing: true },
-    { id: "ringPair", xPercent: 17, topPercent: 14, sizeRem: 3.1, delayMs: 1100, swing: true },
-    { id: "ringPair", xPercent: 83, topPercent: 19, sizeRem: 2.6, delayMs: 2200, swing: true },
+    /*
+      Pictures too, and larger for it: at the drawing's size a painted pair of
+      rings was a gold dot. A little lower than the drawings hung, so they are
+      under the controls in the card's top corners and not behind them.
+    */
+    { id: "ringPair", xPercent: 17, topPercent: 17, sizeRem: 4.3, delayMs: 1100, swing: true },
+    { id: "ringPair", xPercent: 83, topPercent: 20, sizeRem: 3.8, delayMs: 2200, swing: true },
   ],
 
   /*

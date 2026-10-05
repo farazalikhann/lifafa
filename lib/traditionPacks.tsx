@@ -143,6 +143,8 @@ export interface PackOrnament {
   aboveNamesHeight?: number;
   /** And how tall in a bottom corner, for one that is a spray rather than an object. */
   cornerHeight?: number;
+  /** And how tall beside the names, for one far wider than the flag that place was made for. */
+  sideHeight?: number;
 }
 
 /**
@@ -181,6 +183,8 @@ interface OrnamentSlots {
    * far one turned to face the other way. Absent for a pack with none.
    */
   sides?: readonly AnyOrnamentId[];
+  /** What the panel calls that place, where "Side flags" is not what stands in it. */
+  sidesLabel?: string;
 }
 
 /**
@@ -714,12 +718,16 @@ const CHRISTIAN_PACK: TraditionPack = {
   /*
     The same ids the pack has always stored, read as places. The bells and the
     rings are not here: they hang, as they always have, from HangingLayer's own
-    table, and the dove and the chalice are still scattered.
+    table, and the olive branch is the divider. Nothing in this pack is
+    scattered any more: the dove and the chalice were, behind the writing and
+    at the foot of the screen, which is no place for a painting of either.
   */
   slots: {
     top: [],
-    aboveNames: ["plainCross", "gothicArch", "bibleRings"],
+    aboveNames: ["plainCross", "gothicArch", "bibleRings", "chalice"],
     corners: ["lilyCorner", "lilyCorner"],
+    sides: ["dove"],
+    sidesLabel: "Beside the names",
   },
   cardHead: null,
   /* The order the panel offers them. */

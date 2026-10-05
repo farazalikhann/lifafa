@@ -264,7 +264,7 @@ export default function OrnamentPanel({
           { title: "Top border", ids: slots.top, oneOnly: true, columns: "grid-cols-2" },
           { title: "Above names", ids: slots.aboveNames, oneOnly: true, columns: "grid-cols-3" },
           { title: "Frame", ids: slots.frame ?? [], oneOnly: true, columns: "grid-cols-2" },
-          { title: "Side flags", ids: slots.sides ?? [], oneOnly: true, columns: "grid-cols-2" },
+          { title: slots.sidesLabel ?? "Side flags", ids: slots.sides ?? [], oneOnly: true, columns: "grid-cols-2" },
           { title: "Bottom corners", ids: cornerIds, oneOnly: false, columns: "grid-cols-2" },
         ].filter((group) => group.ids.length > 0);
 

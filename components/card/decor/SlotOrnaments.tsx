@@ -129,7 +129,7 @@ export function SideFlag({
     <div aria-hidden="true" className="pointer-events-none shrink-0">
       <Placed
         entry={entry}
-        height={SIDE_HEIGHT}
+        height={entry.sideHeight ?? SIDE_HEIGHT}
         instanceId={`side-${side}-${entry.id}`}
         accent={accent}
         style={side === "left" ? { transform: "scaleX(-1)" } : undefined}

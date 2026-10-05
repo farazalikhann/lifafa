@@ -1367,7 +1367,11 @@ export default function CardCanvas({
         <dividerOrnament.Component
           instanceId={`divider-${key}`}
           size={DIVIDER_SIZE}
-          style={{ color: effectiveTheme.accent, opacity: 0.55 }}
+          /* A drawing is held back to a rule's weight; a picture is shown as it was painted. */
+          style={{
+            color: effectiveTheme.accent,
+            opacity: dividerOrnament.src !== undefined ? 1 : 0.55,
+          }}
         />
       ) : (
         <CardFlourish accent={effectiveTheme.accent} className="opacity-50" />
