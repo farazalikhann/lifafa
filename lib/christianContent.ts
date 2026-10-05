@@ -1,24 +1,26 @@
 /**
  * Greetings and blessings offered on a Christian card.
  *
- * EVERY TEXT AND TRANSLATION STRING IN THIS FILE SHIPS EMPTY. Nothing here was
- * written, paraphrased, reconstructed or recalled from memory, and nothing may
- * be. Each empty field carries a TODO naming exactly what belongs in it; every
- * value must be copied from a verified source and reviewed by someone
- * knowledgeable before release.
+ * THE TEXT IS FILLED, FROM THE KING JAMES VERSION, which is in the public
+ * domain. Every line and its reference were supplied by Faraz and are here
+ * exactly as supplied, character for character: nothing was written,
+ * paraphrased, modernised, reconstructed or recalled from memory, and nothing
+ * may be. A blessing is not a turn of phrase to be improvised, and wordings
+ * differ between traditions and translations; a line that needs changing is
+ * changed by being supplied again.
  *
- * That applies with full force even though the text is English and would be the
- * easiest in the app to write from memory. A blessing is not a turn of phrase
- * to be improvised, wordings differ between traditions and translations, and a
- * scriptural line carries requirements around attribution and version that this
- * structure makes no provision for. An empty string renders nothing at all, so
- * an unfilled entry is safe; filling one in casually is not.
+ * TODO(Faraz): have every line and reference below checked by a Christian
+ * reader before launch.
  *
- * THE SCRIPT FIELD AND THE TRANSLATION FIELD WILL HOLD THE SAME TEXT once
- * filled, because the language is already English. Both are kept anyway: the
- * shape is shared across every tradition's content file, and the card and the
- * panel read the same two fields whatever the tradition. `transliteration` has
- * nothing to carry here and stays empty permanently.
+ * THE SCRIPT FIELD AND THE TRANSLATION FIELD HOLD THE SAME TEXT, because the
+ * language is already English. Both are kept anyway: the shape is shared
+ * across every tradition's content file, and the card and the panel read the
+ * same two fields whatever the tradition. They show the line once, not twice,
+ * where the two are the same. `transliteration` has nothing to carry here and
+ * stays empty permanently.
+ *
+ * `reference` is where the line is from, chapter and verse. The card sets it
+ * on its own line under the text, small and muted.
  *
  * RENDERING: the English line goes on the page with lang="en" and dir="ltr", in
  * the card's own body face. No webfont is loaded for this pack and none should
@@ -45,30 +47,30 @@ export interface ChristianGreeting {
   /** Unused in this pack: the text is already English. Stays empty. */
   transliteration: string;
   /**
-   * English rendering, exactly as supplied. The same text as `english` once
-   * filled — see the file header.
+   * English rendering, exactly as supplied. The same text as `english` — see
+   * the file header.
    */
   translation: string;
+  /** Chapter and verse, exactly as supplied. Absent on the opt-out. */
+  reference?: string;
 }
 
 export const CHRISTIAN_GREETINGS: readonly ChristianGreeting[] = [
   {
     id: "graceAndPeace",
     label: "Grace and peace to you",
-    /* TODO: the exact wording of the "Grace and peace to you" greeting, from a verified source. */
-    english: "",
+    english: "Grace be unto you, and peace, from God our Father, and from the Lord Jesus Christ.",
     transliteration: "",
-    /* TODO: the same wording again — see the file header on why both fields exist. */
-    translation: "",
+    translation: "Grace be unto you, and peace, from God our Father, and from the Lord Jesus Christ.",
+    reference: "1 Corinthians 1:3",
   },
   {
     id: "inChristName",
     label: "In the name of the Father, Son and Holy Spirit",
-    /* TODO: the exact wording of the trinitarian invocation, from a verified source. */
-    english: "",
+    english: "In the name of the Father, and of the Son, and of the Holy Spirit.",
     transliteration: "",
-    /* TODO: the same wording again. */
-    translation: "",
+    translation: "In the name of the Father, and of the Son, and of the Holy Spirit.",
+    reference: "Matthew 28:19",
   },
   {
     /*
@@ -102,38 +104,37 @@ export interface ChristianBlessing {
   translation: string;
   /** Which occasion the blessing suits, in the host's words. */
   occasionNote: string;
+  /** Chapter and verse, exactly as supplied. Absent on the opt-out. */
+  reference?: string;
 }
 
 export const CHRISTIAN_BLESSINGS: readonly ChristianBlessing[] = [
   {
     id: "loveBlessing",
     label: "Blessing on love",
-    /* TODO: the exact wording of a blessing on love, suitable for a wedding invitation. */
-    english: "",
+    english: "What therefore God hath joined together, let not man put asunder.",
     transliteration: "",
-    /* TODO: the same wording again. */
-    translation: "",
+    translation: "What therefore God hath joined together, let not man put asunder.",
     occasionNote: "Wedding",
+    reference: "Mark 10:9",
   },
   {
     id: "homeBlessing",
     label: "Blessing on a home",
-    /* TODO: the exact wording of a blessing on a home, suitable for a housewarming. */
-    english: "",
+    english: "As for me and my house, we will serve the Lord.",
     transliteration: "",
-    /* TODO: the same wording again. */
-    translation: "",
+    translation: "As for me and my house, we will serve the Lord.",
     occasionNote: "Housewarming",
+    reference: "Joshua 24:15",
   },
   {
     id: "generalGrace",
     label: "A general blessing",
-    /* TODO: the exact wording of a general blessing, suitable for any occasion. */
-    english: "",
+    english: "The Lord bless thee, and keep thee: the Lord make his face shine upon thee, and be gracious unto thee.",
     transliteration: "",
-    /* TODO: the same wording again. */
-    translation: "",
+    translation: "The Lord bless thee, and keep thee: the Lord make his face shine upon thee, and be gracious unto thee.",
     occasionNote: "Any occasion",
+    reference: "Numbers 6:24-25",
   },
   {
     /* The opt-out — see the matching note on the "none" greeting. */
@@ -152,8 +153,8 @@ export const CHRISTIAN_BLESSINGS: readonly ChristianBlessing[] = [
  *
  * The two states are indistinguishable from the outside, both being empty
  * strings, and only one of them is waiting on anything — this is what stops a
- * "text pending" note being printed under "No greeting". Every entry in this
- * file is empty today, so this is doing real work right now.
+ * "text pending" note being printed under "No greeting". Every other entry in
+ * this file is filled now, so the opt-outs are the only empty ones.
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";

@@ -380,14 +380,22 @@ const GurmukhiRun: ScriptRun = ({ children, className, style }) => {
  * whose Pali is Roman by deliberate choice. No family is set — see
  * components/type/LatinScriptText.tsx.
  */
-function latinRun(lang: string): ScriptRun {
+function latinRun(lang: string, leading?: number): ScriptRun {
   const Run: ScriptRun = ({ children, className, style }) => {
     if (children.length === 0) {
       return null;
     }
 
     return (
-      <p className={className} style={style}>
+      <p
+        className={className}
+        /*
+          The card sets its script lines at a leading made for Arabic and
+          Devanagari, double the size. A pack whose lines are sentences of
+          English says its own, or a four line verse fills the screen.
+        */
+        style={leading === undefined ? style : { lineHeight: leading, ...style }}
+      >
         <LatinScriptText lang={lang}>{children}</LatinScriptText>
       </p>
     );
@@ -429,6 +437,8 @@ function fromEnglish(
     transliteration: entry.transliteration,
     translation: entry.translation,
     occasionNote: "occasionNote" in entry ? entry.occasionNote : "",
+    /* Chapter and verse, set where every pack's source is: small, under the line. */
+    ...(entry.reference !== undefined ? { source: entry.reference } : null),
   };
 }
 
@@ -686,8 +696,8 @@ const CHRISTIAN_PACK: TraditionPack = {
   blessings: CHRISTIAN_BLESSING_ROWS,
   blessingLabel: "Blessing",
   blessingNote: "The blessing appears at the top of your card.",
-  ScriptRun: latinRun(CHRISTIAN_LANG),
-  /* Latin in the body face, so the card's own leading is already right. */
+  ScriptRun: latinRun(CHRISTIAN_LANG, 1.5),
+  /* Latin in the body face; the run above carries its own leading. */
   panelScriptClass: "text-[1.0625rem] leading-[1.6]",
   pendingLabel: "Text pending",
   isOptOut: isEnglishOptOut,

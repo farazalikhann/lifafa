@@ -373,7 +373,8 @@ function Blessing({
         </p>
       ) : null}
 
-      {entry.translation.length > 0 ? (
+      {/* Not where it is the script line over again: an English pack's meaning is its own text. */}
+      {entry.translation.length > 0 && entry.translation !== entry.script ? (
         <p
           dir="ltr"
           className={`w-full text-center wrap-anywhere ${englishClass}`}

@@ -193,9 +193,17 @@ function BlessingList({
               </span>
             ) : null}
 
-            {row.translation.length > 0 ? (
+            {/* Not where it is the script line over again, as an English pack's is. */}
+            {row.translation.length > 0 && row.translation !== row.script ? (
               <span className="text-xs text-[var(--lifafa-muted)]">
                 {row.translation}
+              </span>
+            ) : null}
+
+            {/* Where a quoted line is from: chapter and verse, or the Ang. */}
+            {row.source !== undefined && row.source.length > 0 ? (
+              <span className="text-[0.6875rem] tracking-[0.04em] text-[var(--lifafa-muted)]">
+                {row.source}
               </span>
             ) : null}
           </>
