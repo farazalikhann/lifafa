@@ -37,6 +37,14 @@ export interface CoverArt {
    * until they are in; see CoverShell.
    */
   images: readonly string[];
+  /**
+   * Whether the artwork is dark or light, for artwork that is the same on
+   * every card. The words over a cover are seated on a shadow of the opposite
+   * tone; without this the shell takes the card's own tone, which is right
+   * for artwork chosen to match the card and wrong for dark velvet over a
+   * cream one.
+   */
+  tone?: "dark" | "light";
   /** Skip and the focus ring, over the artwork. */
   ink?: string;
   inkMuted?: string;

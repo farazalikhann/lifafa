@@ -56,11 +56,9 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
     case "curtain-reveal":
       /*
         Drawn, not filmed: the card has to show between the curtains, and
-        nothing shows through a film. Keyed by the cloth, so a host changing
-        the palette in the editor from a dark one to a light one gets the
-        other curtains hanging closed.
+        nothing shows through a film. One cloth for every card.
       */
-      return <CurtainRevealCover key={state.colors.isLight ? "cream" : "velvet"} {...state} />;
+      return <CurtainRevealCover {...state} />;
 
     case "fold-unfold":
       return (

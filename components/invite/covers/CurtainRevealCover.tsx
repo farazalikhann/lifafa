@@ -54,11 +54,8 @@ const DRAW_EASE = "cubic-bezier(0.42,0,0.5,1)";
 /** How far the valance lifts as it goes, as a share of its own height. */
 const VALANCE_LIFT = "-45%";
 
-/**
- * Stops short of the hem's tassels, which hang in the bottom tenth with the
- * card showing between them: a shade drawn there would be a grey box.
- */
-const ABOVE_TASSELS = "linear-gradient(180deg, #000 0%, #000 82%, transparent 90%)";
+/** The shades run the whole height: this cloth reaches the floor, with no hem to stop short of. */
+const FULL_HEIGHT = "linear-gradient(180deg, #000, #000)";
 
 /**
  * Two curtains of velvet and zari drawn back off the invitation, under a
@@ -97,7 +94,7 @@ export default function CurtainRevealCover({
   colors,
 }: CoverVisualState): ReactElement {
   const opening = phase === "opening";
-  const art = curtainArt(colors.isLight);
+  const art = curtainArt();
 
   const rootStyle = {
     "--cover-ms": `${option.durationMs}ms`,
@@ -140,8 +137,8 @@ export default function CurtainRevealCover({
   /* The shade a panel's leading edge casts on the card behind it, once it has left the other. */
   const castStyle: CSSProperties = {
     backgroundImage: `linear-gradient(90deg, ${art.shadow}, transparent)`,
-    maskImage: ABOVE_TASSELS,
-    WebkitMaskImage: ABOVE_TASSELS,
+    maskImage: FULL_HEIGHT,
+    WebkitMaskImage: FULL_HEIGHT,
     transition: transition(stage("opacity", SHADE_SHARE, DRAW_START + 0.06, "ease-out")),
     opacity: opening ? 1 : 0,
   };
@@ -149,22 +146,31 @@ export default function CurtainRevealCover({
   /* The shade down the middle while they hang closed: one panel lying against the other. */
   const seamStyle: CSSProperties = {
     backgroundImage: `linear-gradient(90deg, transparent, ${art.shadow} 50%, transparent)`,
-    maskImage: ABOVE_TASSELS,
-    WebkitMaskImage: ABOVE_TASSELS,
+    maskImage: FULL_HEIGHT,
+    WebkitMaskImage: FULL_HEIGHT,
     transition: transition(stage("opacity", SHADE_SHARE, DRAW_START, "ease-out")),
     opacity: opening ? 0 : 1,
   };
 
-  /* The valance, last to go: still while the panels draw, then lifted off and faded. */
+  /*
+    The valance, last to go: still while the panels draw, then lifted off and
+    faded. As tall as the film hung it against panels scaled to the screen's
+    height, and never narrower than the screen: on a phone it runs off both
+    sides exactly as the panels do, and on a wide screen it spans it. Centred
+    by its own transform, which is why the lift below carries the -50%.
+  */
   const valanceStyle: CSSProperties = {
     top: "var(--lifafa-preview-h, 0px)",
+    left: "50%",
+    height: `max(${(art.valanceHeight * 100).toFixed(3)}%, ${(100 / art.valanceAspect).toFixed(3)}vw)`,
+    aspectRatio: String(art.valanceAspect),
     filter: `drop-shadow(0 3px 5px ${art.shadow})`,
     transition: transition(
       stage("opacity", FADE_SHARE, FADE_START, "ease-in"),
       stage("transform", FADE_SHARE, FADE_START, "ease-in"),
     ),
     opacity: opening ? 0 : 1,
-    transform: opening ? `translate3d(0, ${VALANCE_LIFT}, 0)` : "translate3d(0, 0, 0)",
+    transform: opening ? `translate3d(-50%, ${VALANCE_LIFT}, 0)` : "translate3d(-50%, 0, 0)",
   };
 
   return (
@@ -194,8 +200,8 @@ export default function CurtainRevealCover({
               curtain arriving a frame after the cover.
             */}
             <img
-              /* A set with a right curtain of its own has it published turned, for this mirrored half. */
-              src={side > 0 ? (art.panelRight ?? art.panel) : art.panel}
+              /* The right curtain is published turned, for this mirrored half. */
+              src={side > 0 ? art.panelRight : art.panel}
               alt=""
               decoding="sync"
               draggable={false}
@@ -212,13 +218,13 @@ export default function CurtainRevealCover({
         style={seamStyle}
       />
 
-      {/* Full width, and as tall as that makes it: the swags keep their shape on any screen. */}
+      {/* Sized by its height, in step with the panels; see valanceStyle. */}
       <img
         src={art.valance}
         alt=""
         decoding="sync"
         draggable={false}
-        className="absolute inset-x-0 block h-auto w-full max-w-none select-none"
+        className="absolute block w-auto max-w-none select-none"
         style={valanceStyle}
       />
     </div>

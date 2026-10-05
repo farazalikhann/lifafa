@@ -79,7 +79,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
       opaque, and this is the one cover whose whole point is the card seen
       between the curtains as they part. See lib/curtainArt.ts.
     */
-    art: curtainArt,
+    art: () => curtainArt(),
   },
   {
     id: "fold-unfold",

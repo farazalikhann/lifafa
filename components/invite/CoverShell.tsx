@@ -914,7 +914,8 @@ export default function CoverShell({
                 phase === "closed"
                   ? `opacity ${INVITE_IN_MS}ms ease-out ${INVITE_IN_DELAY_MS}ms, transform ${INVITE_IN_MS}ms cubic-bezier(0.2,0.7,0.2,1) ${INVITE_IN_DELAY_MS}ms`
                   : `opacity ${INVITE_OUT_MS}ms ease-in-out, transform ${INVITE_OUT_MS}ms ease-in`,
-              textShadow: colors.isLight
+              /* The artwork's own tone where it has one; the card's otherwise. */
+              textShadow: (art?.tone !== undefined ? art.tone === "light" : colors.isLight)
                 ? "0 1px 2px rgba(255, 251, 240, 0.9), 0 0 14px rgba(255, 251, 240, 0.85)"
                 : "0 1px 2px rgba(0, 0, 0, 0.6), 0 0 14px rgba(0, 0, 0, 0.55)",
             }}
