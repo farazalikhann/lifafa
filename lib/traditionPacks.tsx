@@ -136,6 +136,13 @@ export interface PackOrnament {
    * before the envelope opens rather than arriving after it.
    */
   src?: string;
+  /**
+   * How tall the ornament stands above the names, in card px, for a picture
+   * too detailed for the usual height. See components/card/decor/SlotOrnaments.tsx.
+   */
+  aboveNamesHeight?: number;
+  /** And how tall in a bottom corner, for one that is a spray rather than an object. */
+  cornerHeight?: number;
 }
 
 /**
@@ -687,11 +694,33 @@ const CHRISTIAN_PACK: TraditionPack = {
   findGreeting: (id) => find(CHRISTIAN_GREETING_ROWS, id),
   findBlessing: (id) => find(CHRISTIAN_BLESSING_ROWS, id),
   findOrnament: (id) => CHRISTIAN_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
-  coverArchId: "gothicArch",
+  /*
+    No cover arch any more. The gothic arch was an outline the cover's content
+    sat inside; its picture is a church window, full of glass, and nothing can
+    be set inside it. It stands above the names instead, as the cross does.
+  */
+  coverArchId: null,
   dividerId: "oliveBranch",
-  slots: null,
+  /*
+    The same ids the pack has always stored, read as places. The bells and the
+    rings are not here: they hang, as they always have, from HangingLayer's own
+    table, and the dove and the chalice are still scattered.
+  */
+  slots: {
+    top: [],
+    aboveNames: ["plainCross", "gothicArch", "bibleRings"],
+    corners: ["lilyCorner", "lilyCorner"],
+  },
   cardHead: null,
-  calligraphyIds: [],
+  /* The order the panel offers them. */
+  calligraphyIds: [
+    "godIsLove",
+    "loveNeverFails",
+    "twoBecomeOne",
+    "godHasJoined",
+    "holyMatrimony",
+    "loveIsPatient",
+  ],
 };
 
 const JAIN_PACK: TraditionPack = {

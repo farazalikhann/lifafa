@@ -1212,7 +1212,7 @@ export default function CardCanvas({
               />
             ) : null,
           bottomClearance:
-            slots.corners !== null ? cornerClearance(cornerInset) : 0,
+            slots.corners !== null ? cornerClearance(cornerInset, slots.corners) : 0,
         };
 
   /* Normalised once here, so the gate below and the layer read the same thing. */

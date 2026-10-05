@@ -50,7 +50,13 @@ export type CalligraphyId =
   | "satnamWaheguru"
   | "waheguru"
   | "guruKirpa"
-  | "sarbatDaBhala";
+  | "sarbatDaBhala"
+  | "godIsLove"
+  | "loveNeverFails"
+  | "twoBecomeOne"
+  | "godHasJoined"
+  | "holyMatrimony"
+  | "loveIsPatient";
 
 /** Which ground the lettering is being laid on. */
 export type CalligraphyGround = "light" | "dark";
@@ -136,6 +142,21 @@ function devanagari(
  */
 function gurmukhi(slug: string, aspect: number, alt: string): CalligraphyArt {
   const mask = `/decor/calligraphy/sikh/${slug}.webp`;
+
+  return { src: { light: mask, dark: mask }, aspect, alt, mask };
+}
+
+/**
+ * The English pieces for a Christian card: six lines in a copperplate hand,
+ * each supplied as black lettering on a transparent ground.
+ *
+ * Published as shapes, like the Devanagari and Gurmukhi ones: one file whose
+ * alpha is the lettering, filled with the card's accent through a CSS mask,
+ * so the line is the card's own colour on every palette and no second ink is
+ * needed.
+ */
+function english(slug: string, aspect: number, alt: string): CalligraphyArt {
+  const mask = `/decor/calligraphy/christian/${slug}.webp`;
 
   return { src: { light: mask, dark: mask }, aspect, alt, mask };
 }
@@ -268,6 +289,18 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
     900 / 201,
     "Sarbat Da Bhala: may all be well",
   ),
+
+  /*
+    The six English pieces, in the order the panel offers them. Each was read
+    letter by letter before it was published and each is spelt as its alt
+    says. The alt is the line itself: it is English, and needs no gloss.
+  */
+  godIsLove: english("god-is-love", 900 / 288, "God is Love"),
+  loveNeverFails: english("love-never-fails", 900 / 193, "Love Never Fails"),
+  twoBecomeOne: english("two-become-one", 900 / 163, "Two Shall Become One"),
+  godHasJoined: english("god-has-joined", 900 / 421, "What God Has Joined Together"),
+  holyMatrimony: english("holy-matrimony", 900 / 191, "Holy Matrimony"),
+  loveIsPatient: english("love-is-patient", 900 / 409, "Love is Patient, Love is Kind"),
 };
 
 /**

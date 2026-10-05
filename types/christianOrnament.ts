@@ -18,7 +18,21 @@ export type ChristianOrnamentId =
   | "oliveBranch"
   | "chalice"
   | "gothicArch"
-  | "ringPair";
+  | "ringPair"
+  /* Two more pictures: an open Bible with the rings on it, and a spray of lilies for the corners. */
+  | "bibleRings"
+  | "lilyCorner"
+  /*
+    Calligraphy rather than shapes: six English lines in a copperplate hand.
+    Ids here because the host switches them on from the same panel; the pack
+    sends them to `calligraphyIds` and the head of the card.
+  */
+  | "godIsLove"
+  | "loveNeverFails"
+  | "twoBecomeOne"
+  | "godHasJoined"
+  | "holyMatrimony"
+  | "loveIsPatient";
 
 /*
   "plainCross" is a plain cross and not a crucifix. A crucifix carries a figure

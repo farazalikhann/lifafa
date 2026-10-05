@@ -1,52 +1,57 @@
-import { Frame, leafPath } from "@/lib/ornaments/frame";
+import { calligraphyAspect } from "@/lib/calligraphy";
+import { Frame, calligraphyOrnament, imageOrnament, leafPath } from "@/lib/ornaments/frame";
 import type { Ornament } from "@/lib/ornaments/frame";
 import type { ChristianOrnamentId } from "@/types/christianOrnament";
 
 /**
- * Hand drawn Christian ornament pack.
+ * The Christian ornament pack: five pictures, four drawings and six lines of
+ * calligraphy.
  *
- * Same rules as every other pack: stroke based line art in `currentColor`, each
- * shape carrying a second layer of drawing beyond the silhouette, because at
- * 64px a bare outline reads as one blown-up icon rather than as ornament.
- * Nothing here is filled.
+ * The cross, the church arch and the wedding bells were line drawings in the
+ * card's accent. They are pictures now, published to public/decor/christian/
+ * under the ids the drawings had: a card saved with any of them loads as it
+ * always did and shows the picture. The open Bible with the rings and the
+ * spray of lilies are new, and pictures from the start.
  *
- * NO FIGURE IS DRAWN — no Christ, no saint, no human, no face. The cross is
- * plain and empty: a crucifix carries a figure by definition, so it is not
- * offered, and this is a deliberate choice rather than a gap. Objects,
- * architecture, plants and birds only.
+ * EACH PICTURE HAS A PLACE, and is drawn there and nowhere else: see `slots`
+ * on the Christian pack in lib/traditionPacks.tsx. The cross, the arch and the
+ * Bible stand above the names, one at a time; the lilies stand in the two
+ * bottom corners; the bells hang from the top. None of them is ever scattered
+ * behind the writing, and the cross is never turned or mirrored.
+ *
+ * The ring pair, the dove, the olive branch and the chalice are still the
+ * drawings they were: stroke based line art in `currentColor`, each carrying a
+ * second layer of drawing beyond the silhouette.
+ *
+ * NO FIGURE IS DRAWN. No Christ, no saint, no human, no face. The cross is
+ * empty: a crucifix carries a figure by definition, so it is not offered, and
+ * this is a deliberate choice rather than a gap. The arch's glass is flowers
+ * and tracery, and the Bible's pages are ruled, with no words on them.
+ * Objects, architecture, plants and birds only.
  *
  * The dove follows the treatment already used for birds in lib/motifs.tsx: an
  * outline with no eye. An eye is the first mark that turns a bird into a face.
  */
 
 /* ---------------------------------------------------------------------------
-   Plain cross
+   The pictures
    --------------------------------------------------------------------------- */
 
-/** Latin cross, empty, with a bevel line down each limb. */
-const PlainCross: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 48 64"
-    aspect={CHRISTIAN_ORNAMENT_ASPECT.plainCross}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.5}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/* One continuous outline, so all twelve corners are real mitred joins. */}
-    <path d="M 19 4 H 29 V 20 H 44 V 30 H 29 V 60 H 19 V 30 H 4 V 20 H 19 Z" />
+/** The published files, and each one's width over its height. */
+const PICTURES = {
+  plainCross: { src: "/decor/christian/cross.webp", aspect: 468 / 640 },
+  gothicArch: { src: "/decor/christian/church-arch.webp", aspect: 497 / 760 },
+  weddingBells: { src: "/decor/christian/bells.webp", aspect: 611 / 640 },
+  bibleRings: { src: "/decor/christian/bible-rings.webp", aspect: 720 / 435 },
+  /* Turned over from the artwork, which was drawn for a top corner: this one grows up out of a bottom corner. */
+  lilyCorner: { src: "/decor/christian/lily-corner.webp", aspect: 636 / 640 },
+} as const;
 
-    {/* Inner bevel, held clear of the outline all the way round. */}
-    <path d="M 22 8 H 26 V 23 H 41 V 27 H 26 V 56 H 22 V 27 H 7 V 23 H 22 Z" />
-  </Frame>
-);
+const PlainCross = imageOrnament(PICTURES.plainCross.src, PICTURES.plainCross.aspect);
+const GothicArch = imageOrnament(PICTURES.gothicArch.src, PICTURES.gothicArch.aspect);
+const WeddingBells = imageOrnament(PICTURES.weddingBells.src, PICTURES.weddingBells.aspect);
+const BibleRings = imageOrnament(PICTURES.bibleRings.src, PICTURES.bibleRings.aspect);
+const LilyCorner = imageOrnament(PICTURES.lilyCorner.src, PICTURES.lilyCorner.aspect);
 
 /* ---------------------------------------------------------------------------
    Dove
@@ -90,52 +95,6 @@ const Dove: Ornament = ({
     {/* Lower wing, folded across the body. */}
     <path d="M 30 27 C 25 31 22 36 21.4 41.6" />
     <path d="M 36 28.6 C 31.6 32.6 28.6 37 27.4 42" />
-  </Frame>
-);
-
-/* ---------------------------------------------------------------------------
-   Wedding bells
-   --------------------------------------------------------------------------- */
-
-/** Two bells on a shared bow, the pair that hangs at the head of the card. */
-const WeddingBells: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 72 80"
-    aspect={CHRISTIAN_ORNAMENT_ASPECT.weddingBells}
-    size={size}
-    strokeWidth={strokeWidth ?? 1.5}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/* Bow the pair hangs from. */}
-    <path d="M 36 6 C 30 1.6 23.6 3.6 24.6 8.6 C 25.4 12.4 32 13.4 36 10" />
-    <path d="M 36 6 C 42 1.6 48.4 3.6 47.4 8.6 C 46.6 12.4 40 13.4 36 10" />
-    <circle cx={36} cy={9.6} r={2} />
-
-    {/* Left bell: crown, flared body, lip and clapper. */}
-    <path d="M 36 12 L 23 20" />
-    <circle cx={22.6} cy={22.6} r={2.4} />
-    <path d="M 22.6 25 C 14 29.6 9.6 40 9 52" />
-    <path d="M 22.6 25 C 31.2 29.6 35.6 40 36.2 52" />
-    <path d="M 7 52 C 15.4 57.4 29.8 57.4 38.2 52" />
-    <path d="M 22.6 57.6 V 62" />
-    <circle cx={22.6} cy={64.4} r={2.4} />
-
-    {/* Right bell, hung shorter so the pair does not read as one shape. */}
-    <path d="M 36 12 L 49 22" />
-    <circle cx={49.4} cy={24.4} r={2.2} />
-    <path d="M 49.4 26.6 C 42.6 30.4 39.2 38.6 38.8 48" />
-    <path d="M 49.4 26.6 C 56.2 30.4 59.6 38.6 60 48" />
-    <path d="M 37.2 48 C 43.8 52.2 55 52.2 61.6 48" />
-    <path d="M 49.4 52.8 V 56.4" />
-    <circle cx={49.4} cy={58.4} r={2.2} />
   </Frame>
 );
 
@@ -225,44 +184,6 @@ const Chalice: Ornament = ({
 );
 
 /* ---------------------------------------------------------------------------
-   Gothic arch
-   --------------------------------------------------------------------------- */
-
-/** A pointed arch with tracery, open at the foot so content sits inside it. */
-const GothicArch: Ornament = ({
-  size,
-  className,
-  preserveAspectRatio,
-  style,
-  strokeWidth,
-}) => (
-  <Frame
-    viewBox="0 0 100 140"
-    aspect={CHRISTIAN_ORNAMENT_ASPECT.gothicArch}
-    size={size}
-    strokeWidth={strokeWidth ?? 2}
-    className={className}
-    preserveAspectRatio={preserveAspectRatio}
-    style={style}
-  >
-    {/* Outer order: two struck curves meeting in a point. */}
-    <path d="M 8 138 V 62 C 8 34 28 12 50 6 C 72 12 92 34 92 62 V 138" />
-
-    {/* Inner order, held parallel. */}
-    <path d="M 18 138 V 66 C 18 44 33 26 50 20 C 67 26 82 44 82 66 V 138" />
-
-    {/* Tracery: two lancets under a quatrefoil-ish rosette. */}
-    <path d="M 44 138 V 84 C 44 74 39.4 66 32.6 62" />
-    <path d="M 56 138 V 84 C 56 74 60.6 66 67.4 62" />
-    <circle cx={50} cy={62} r={9} />
-    <circle cx={50} cy={62} r={4.4} />
-
-    {/* Springline imposts. */}
-    <path d="M 8 66 H 18 M 82 66 H 92" />
-  </Frame>
-);
-
-/* ---------------------------------------------------------------------------
    Ring pair
    --------------------------------------------------------------------------- */
 
@@ -298,18 +219,42 @@ const RingPair: Ornament = ({
 );
 
 /* ---------------------------------------------------------------------------
+   Calligraphy
+   --------------------------------------------------------------------------- */
+
+/**
+ * The six English lines, from the shared factory in lib/ornaments/frame.tsx.
+ * lib/calligraphy.ts holds their files and what each says.
+ */
+const GodIsLove = calligraphyOrnament("godIsLove");
+const LoveNeverFails = calligraphyOrnament("loveNeverFails");
+const TwoBecomeOne = calligraphyOrnament("twoBecomeOne");
+const GodHasJoined = calligraphyOrnament("godHasJoined");
+const HolyMatrimony = calligraphyOrnament("holyMatrimony");
+const LoveIsPatient = calligraphyOrnament("loveIsPatient");
+
+/* ---------------------------------------------------------------------------
    Registry
    --------------------------------------------------------------------------- */
 
-/** Each drawing's width over its height, from its own viewBox. */
+/** Each ornament's width over its height: a picture's file, a drawing's viewBox. */
 export const CHRISTIAN_ORNAMENT_ASPECT: Record<ChristianOrnamentId, number> = {
-  plainCross: 48 / 64,
+  plainCross: PICTURES.plainCross.aspect,
   dove: 72 / 56,
-  weddingBells: 72 / 80,
+  weddingBells: PICTURES.weddingBells.aspect,
   oliveBranch: 120 / 44,
   chalice: 64 / 80,
-  gothicArch: 100 / 140,
+  gothicArch: PICTURES.gothicArch.aspect,
   ringPair: 84 / 56,
+  bibleRings: PICTURES.bibleRings.aspect,
+  lilyCorner: PICTURES.lilyCorner.aspect,
+  /* Not viewBoxes: the published crop of each line's file. */
+  godIsLove: calligraphyAspect("godIsLove"),
+  loveNeverFails: calligraphyAspect("loveNeverFails"),
+  twoBecomeOne: calligraphyAspect("twoBecomeOne"),
+  godHasJoined: calligraphyAspect("godHasJoined"),
+  holyMatrimony: calligraphyAspect("holyMatrimony"),
+  loveIsPatient: calligraphyAspect("loveIsPatient"),
 };
 
 /** One ornament offered in the editor. The same shape as HinduOrnamentEntry. */
@@ -322,6 +267,14 @@ export interface ChristianOrnamentEntry {
   chipSize: number;
   /** Whether this ornament may only be placed in the card's top region. */
   topRegionOnly: boolean;
+  /** The published file, for the card to preload. Absent for a drawing. */
+  src?: string;
+  /** Never mirrored and never turned: an emblem, not a pattern. */
+  uprightOnly?: boolean;
+  /** How tall it stands above the names, in card px, where the usual 60 is too small to read. */
+  aboveNamesHeight?: number;
+  /** How tall it stands in a bottom corner, in card px, in place of the usual 64. */
+  cornerHeight?: number;
 }
 
 /**
@@ -329,15 +282,18 @@ export interface ChristianOrnamentEntry {
  *
  * The two that hang lead the list, as the Muslim pack's do, because the muted
  * line under the grid tells the host that bells and rings hang from the top of
- * the card and that is easier to believe when they are read first.
+ * the card and that is easier to believe when they are read first. The
+ * pictures with places are grouped by place in the panel, whatever their
+ * order here; the calligraphy comes last and has a group of its own.
  */
 export const CHRISTIAN_ORNAMENTS: readonly ChristianOrnamentEntry[] = [
   {
     id: "weddingBells",
     label: "Wedding bells",
     Component: WeddingBells,
-    chipSize: 40,
+    chipSize: 44,
     topRegionOnly: false,
+    src: PICTURES.weddingBells.src,
   },
   {
     id: "ringPair",
@@ -350,8 +306,41 @@ export const CHRISTIAN_ORNAMENTS: readonly ChristianOrnamentEntry[] = [
     id: "plainCross",
     label: "Cross",
     Component: PlainCross,
-    chipSize: 38,
+    chipSize: 44,
+    topRegionOnly: true,
+    src: PICTURES.plainCross.src,
+    uprightOnly: true,
+    aboveNamesHeight: 92,
+  },
+  {
+    id: "gothicArch",
+    label: "Church arch",
+    Component: GothicArch,
+    chipSize: 46,
+    topRegionOnly: true,
+    src: PICTURES.gothicArch.src,
+    uprightOnly: true,
+    /* A window full of tracery: at 60px it is a smudge. */
+    aboveNamesHeight: 136,
+  },
+  {
+    id: "bibleRings",
+    label: "Bible and rings",
+    Component: BibleRings,
+    chipSize: 60,
+    topRegionOnly: true,
+    src: PICTURES.bibleRings.src,
+    uprightOnly: true,
+    aboveNamesHeight: 84,
+  },
+  {
+    id: "lilyCorner",
+    label: "Lily corner",
+    Component: LilyCorner,
+    chipSize: 44,
     topRegionOnly: false,
+    src: PICTURES.lilyCorner.src,
+    cornerHeight: 112,
   },
   { id: "dove", label: "Dove", Component: Dove, chipSize: 52, topRegionOnly: false },
   {
@@ -368,12 +357,41 @@ export const CHRISTIAN_ORNAMENTS: readonly ChristianOrnamentEntry[] = [
     chipSize: 40,
     topRegionOnly: false,
   },
+  { id: "godIsLove", label: "God is Love", Component: GodIsLove, chipSize: 120, topRegionOnly: true },
   {
-    id: "gothicArch",
-    label: "Gothic arch",
-    Component: GothicArch,
-    chipSize: 40,
-    topRegionOnly: false,
+    id: "loveNeverFails",
+    label: "Love Never Fails",
+    Component: LoveNeverFails,
+    chipSize: 120,
+    topRegionOnly: true,
+  },
+  {
+    id: "twoBecomeOne",
+    label: "Two Shall Become One",
+    Component: TwoBecomeOne,
+    chipSize: 120,
+    topRegionOnly: true,
+  },
+  {
+    id: "godHasJoined",
+    label: "What God Has Joined Together",
+    Component: GodHasJoined,
+    chipSize: 120,
+    topRegionOnly: true,
+  },
+  {
+    id: "holyMatrimony",
+    label: "Holy Matrimony",
+    Component: HolyMatrimony,
+    chipSize: 120,
+    topRegionOnly: true,
+  },
+  {
+    id: "loveIsPatient",
+    label: "Love is Patient, Love is Kind",
+    Component: LoveIsPatient,
+    chipSize: 120,
+    topRegionOnly: true,
   },
 ];
 

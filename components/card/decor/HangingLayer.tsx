@@ -124,7 +124,8 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
 
   /* Bells centred and swinging; the rings dangle either side of them. */
   christian: [
-    { id: "weddingBells", xPercent: 50, topPercent: 1, sizeRem: 3.6, delayMs: 0, swing: true },
+    /* A picture now, with a bow and ribbons round the bells: a little larger so the bells themselves are not smaller than they were. */
+    { id: "weddingBells", xPercent: 50, topPercent: 1, sizeRem: 4.6, delayMs: 0, swing: true },
     { id: "ringPair", xPercent: 17, topPercent: 14, sizeRem: 3.1, delayMs: 1100, swing: true },
     { id: "ringPair", xPercent: 83, topPercent: 19, sizeRem: 2.6, delayMs: 2200, swing: true },
   ],

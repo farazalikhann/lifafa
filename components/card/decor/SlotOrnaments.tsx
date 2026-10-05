@@ -32,9 +32,16 @@ export const CORNER_INSET = 14;
 /** Room between a corner ornament and the content above it, in card px. */
 const CORNER_GAP = 16;
 
+/** How tall a corner ornament stands: its own height if it names one, the usual otherwise. */
+function cornerHeight(entry: PackOrnament): number {
+  return entry.cornerHeight ?? CORNER_HEIGHT;
+}
+
 /** The bottom padding a names' screen needs so its corners sit clear of its content. */
-export function cornerClearance(inset: number): number {
-  return CORNER_HEIGHT + inset + CORNER_GAP;
+export function cornerClearance(inset: number, corners: CornerPair): number {
+  return (
+    Math.max(cornerHeight(corners.left), cornerHeight(corners.right)) + inset + CORNER_GAP
+  );
 }
 
 /** The larger side a shape has to be drawn at to come out `height` tall. */
@@ -89,7 +96,7 @@ export function AboveNames({
     <div aria-hidden="true" className="pointer-events-none flex justify-center pb-1">
       <Placed
         entry={entry}
-        height={ABOVE_NAMES_HEIGHT}
+        height={entry.aboveNamesHeight ?? ABOVE_NAMES_HEIGHT}
         instanceId={`above-names-${entry.id}`}
         accent={accent}
       />
@@ -184,7 +191,7 @@ export function CornerPieces({
     >
       <Placed
         entry={corners.left}
-        height={CORNER_HEIGHT}
+        height={cornerHeight(corners.left)}
         instanceId={`corner-left-${corners.left.id}`}
         accent={accent}
       >
@@ -192,7 +199,7 @@ export function CornerPieces({
       </Placed>
       <Placed
         entry={corners.right}
-        height={CORNER_HEIGHT}
+        height={cornerHeight(corners.right)}
         instanceId={`corner-right-${corners.right.id}`}
         accent={accent}
         style={corners.mirrorRight ? { transform: "scaleX(-1)" } : undefined}
