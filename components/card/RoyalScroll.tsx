@@ -5,11 +5,11 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useRevealGate } from "@/hooks/useRevealGate";
 import type { CalendarPageText } from "@/lib/cardFormat";
 import {
   SCROLL_H,
@@ -23,7 +23,7 @@ import {
 } from "@/lib/royalScroll";
 
 /**
- * The date, on a royal scroll that unrolls as the guest reaches it.
+ * The date, on a royal scroll that unrolls when the guest taps it.
  *
  * TWO ROLLERS AND ONE STRIP OF PAPER. Closed, the rollers lie together in the
  * middle of the space the open scroll will take, and no paper shows. Open, the
@@ -50,15 +50,24 @@ import {
  * centre outward, 80ms apart, as the paper reaches them. Once, for the life of
  * the page: scrolling away and back finds it open.
  *
- * WHEN IT PLAYS. When two fifths of the date's screen is in view, and the
- * cover is off the card. Its pictures are sent for when the screen is still
- * 600px away, so they are in hand by then; if they are not, it waits for
- * them, a second and a half at most, and it never unrolls a scroll it has not
- * got the pictures for — past that it simply stands open, and the pictures
- * come up under the words when they arrive.
+ * WHEN IT PLAYS: WHEN IT IS TAPPED, AND NOT BEFORE. It used to unroll by
+ * itself as the guest reached it. Now it waits rolled up, with "Tap to open" under
+ * it and a small shake of the rollers every few seconds, and the whole of the
+ * space the open scroll will take is the button: a tap, a click, Enter or
+ * Space. The host's preview is the same, so the host sees what a guest does.
  *
- * LESS MOTION: no rollers travelling and no lines rising. The scroll is open
- * from the start and the words fade in over 300ms.
+ * Its pictures are sent for when the screen is still 600px away, so they are
+ * in hand by the tap; if they are not, it waits for them, a second and a half
+ * at most, and it never unrolls a scroll it has not got the pictures for —
+ * past that it simply stands open, and the pictures come up under the words
+ * when they arrive.
+ *
+ * READ OUT WHETHER OR NOT IT IS OPEN. The scroll is a group named with the
+ * whole date, time and venue, and the button lies over it rather than being
+ * it, so a screen reader has the date before the tap as well as after.
+ *
+ * LESS MOTION: it still waits for the tap, and then there are no rollers
+ * travelling and no lines rising. The open scroll fades in over 300ms.
  *
  * THE WORDS NEVER LEAVE THE PAPER, AND NEVER GO BELOW 12PX. They are set
  * inside the strip's gold borders and sized off the scroll's own width, each
@@ -145,6 +154,8 @@ export default function RoyalScroll({
   venueAddress,
   script,
   scriptFace,
+  hint,
+  openLabel,
   width,
 }: {
   art: ScrollArt;
@@ -157,11 +168,14 @@ export default function RoyalScroll({
   script: "latin" | "devanagari";
   /** The face a Devanagari weekday, month and time are set in. */
   scriptFace: string;
+  /** "Tap to open", under the closed scroll, in the card's language. */
+  hint: string;
+  /** What the closed scroll is called as a button. */
+  openLabel: string;
   /** How wide the scroll is drawn, as a CSS length. */
   width: string;
 }): ReactElement {
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const gateOpen = useRevealGate();
   const stageRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -170,8 +184,8 @@ export default function RoyalScroll({
   /* The pictures have been sent for, and have arrived and been decoded. */
   const [wanted, setWanted] = useState(false);
   const [ready, setReady] = useState(false);
-  /* The date's screen is two fifths in view. */
-  const [reached, setReached] = useState(false);
+  /* The guest has asked for it to open. Never unset: an opened scroll stays open. */
+  const [tapped, setTapped] = useState(false);
   /* How far the words are brought down to fit the paper: the last resort. */
   const [fit, setFit] = useState(1);
   /* How far the gaps between the lines are closed up, before that. */
@@ -242,47 +256,9 @@ export default function RoyalScroll({
     };
   }, [wanted, art.roller, art.paper]);
 
-  /* Two fifths of the date's screen in view, or most of the scroll itself on a screen taller than the phone. */
+  /* The one decision: unroll, or stand open. Made once, on the tap. */
   useEffect(() => {
-    const stage = stageRef.current;
-
-    if (stage === null) {
-      return;
-    }
-
-    if (typeof IntersectionObserver !== "function") {
-      setReached(true);
-      return;
-    }
-
-    const section = stage.closest("section");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const seen = entries.some(
-          (entry) =>
-            entry.isIntersecting &&
-            entry.intersectionRatio >= (entry.target === stage ? 0.6 : 0.4),
-        );
-
-        if (seen) {
-          setReached(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: [0.4, 0.6] },
-    );
-
-    observer.observe(stage);
-    if (section !== null) {
-      observer.observe(section);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  /* The one decision: unroll, or stand open. Made once. */
-  useEffect(() => {
-    if (phase !== "closed" || !reached || !gateOpen) {
+    if (phase !== "closed" || !tapped) {
       return;
     }
 
@@ -304,7 +280,20 @@ export default function RoyalScroll({
     /* Not in hand yet: wait, and if they do not come, open without the unroll. */
     const timer = window.setTimeout(() => setPhase("still"), ART_WAIT_MS);
     return () => window.clearTimeout(timer);
-  }, [phase, reached, gateOpen, ready, reducedMotion]);
+  }, [phase, tapped, ready, reducedMotion]);
+
+  const open = (): void => {
+    setTapped(true);
+    /* The button goes with the tap; the date it opened is what is in focus after it. */
+    stageRef.current?.focus({ preventScroll: true });
+  };
+
+  const handleKey = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      open();
+    }
+  };
 
   /* The layers are let go once everything has landed. */
   useEffect(() => {
@@ -420,6 +409,13 @@ export default function RoyalScroll({
 
   const closed = phase === "closed";
   const moving = phase === "opening";
+  /* Rolled up and not yet asked to open: the button, its hint and the shake. */
+  const inviting = closed && !tapped;
+  /* Open without the unroll: every part of it fades in together. */
+  const fadeIn: CSSProperties =
+    phase === "still"
+      ? { animation: `lifafa-scroll-fade ${STILL_FADE_MS}ms ease-out both` }
+      : {};
   const travel = `transform ${UNROLL_MS}ms ${UNROLL_EASE} ${SETTLE_MS}ms`;
   /* Only while it is playing: a layer held for a scroll that has finished is memory for nothing. */
   const promoted: CSSProperties = moving ? { willChange: "transform" } : {};
@@ -653,6 +649,7 @@ export default function RoyalScroll({
           at === "top" ? SCROLL_TRAVEL : -SCROLL_TRAVEL,
           at === "top" ? ROLLER_LEAN : -ROLLER_LEAN,
         ),
+        ...fadeIn,
       }}
     >
       {wanted ? (
@@ -662,7 +659,11 @@ export default function RoyalScroll({
           decoding="async"
           draggable={false}
           className={`block h-full w-full select-none ${
-            moving ? "animate-[lifafa-scroll-settle_150ms_ease-out_both]" : ""
+            moving
+              ? "animate-[lifafa-scroll-settle_150ms_ease-out_both]"
+              : inviting
+                ? "lifafa-scroll-invite"
+                : ""
           }`}
           style={{
             opacity: ready ? 1 : 0,
@@ -685,13 +686,15 @@ export default function RoyalScroll({
         .filter((part) => part !== null && part !== "")
         .join(", ")}
       data-fit={fit < 1 ? fit.toFixed(2) : undefined}
+      /* Focusable only by script: where focus goes when the button over it is gone. */
+      tabIndex={-1}
       /*
         Grown, it is wider than the column it is centred in and runs out
         evenly either side, into a flower frame's margin; the frame is the
         card's top layer, so where the two meet its flowers lie over the tips
         of the rollers.
       */
-      className={grown === null ? "relative max-w-full" : "relative shrink-0"}
+      className={`outline-none ${grown === null ? "relative max-w-full" : "relative shrink-0"}`}
       style={{
         width: grown === null ? width : `${grown}px`,
         aspectRatio: String(1 / SCROLL_H),
@@ -703,7 +706,12 @@ export default function RoyalScroll({
       {/* The window over the top half, and the sheet standing still behind it. */}
       <div
         className="absolute inset-x-0 overflow-hidden"
-        style={{ top: u(SCROLL_ROLLER_H / 2), height: u(windowHeight), ...moved(SCROLL_TRAVEL) }}
+        style={{
+          top: u(SCROLL_ROLLER_H / 2),
+          height: u(windowHeight),
+          ...moved(SCROLL_TRAVEL),
+          ...fadeIn,
+        }}
       >
         <div className="absolute inset-0 overflow-hidden" style={moved(-SCROLL_TRAVEL)}>
           {sheet("top")}
@@ -713,7 +721,12 @@ export default function RoyalScroll({
       {/* And the one over the bottom half. */}
       <div
         className="absolute inset-x-0 overflow-hidden"
-        style={{ top: u(SCROLL_H / 2), height: u(windowHeight), ...moved(-SCROLL_TRAVEL) }}
+        style={{
+          top: u(SCROLL_H / 2),
+          height: u(windowHeight),
+          ...moved(-SCROLL_TRAVEL),
+          ...fadeIn,
+        }}
       >
         <div className="absolute inset-0 overflow-hidden" style={moved(SCROLL_TRAVEL)}>
           {sheet("bottom")}
@@ -722,6 +735,43 @@ export default function RoyalScroll({
 
       {roller("top")}
       {roller("bottom")}
+
+      {/*
+        The hint, under the rollers where they lie together. In the card's own
+        text colour, because there is no paper under it yet. It stays in the
+        tree to fade out as the scroll opens, and the button's name is what a
+        screen reader is given instead of it.
+      */}
+      <p
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 text-center text-[max(12px,3.6cqw)] tracking-[0.08em]"
+        style={{
+          top: u(SCROLL_H / 2 + SCROLL_ROLLER_H + 0.03),
+          opacity: inviting ? 1 : 0,
+          transition: `opacity ${STILL_FADE_MS}ms ease-out`,
+        }}
+      >
+        <span className={inviting ? "lifafa-scroll-hint inline-block" : "inline-block"}>
+          {hint}
+        </span>
+      </p>
+
+      {/*
+        The button: the whole of the space the open scroll will take, so it is
+        far more than 44px either way and a thumb cannot miss it. Over the
+        scroll rather than the scroll itself, so the group under it keeps its
+        name, which is the date. Gone the moment it is used.
+      */}
+      {inviting ? (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={openLabel}
+          onClick={open}
+          onKeyDown={handleKey}
+          className="absolute inset-0 z-10 cursor-pointer rounded-xl [-webkit-tap-highlight-color:transparent] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
+        />
+      ) : null}
     </div>
   );
 }

@@ -310,6 +310,8 @@ export default function DetailsSection({
         venueAddress={venueHidden || venueAddress.length === 0 ? null : venueAddress}
         script={copy.script}
         scriptFace={HINDI_FACE}
+        hint={copy.scroll.hint}
+        openLabel={copy.scroll.open}
         /*
           About 82% of the card's width: of the column and the section's own
           3.5rem of padding together. Never wider than the column, which is

@@ -175,6 +175,13 @@ export interface CardCopy {
     /** On a patch for a guest who asked for less motion: it opens on a tap. */
     tap: string;
   };
+  /** The royal scroll, rolled up and waiting for a tap. See components/card/RoyalScroll.tsx. */
+  scroll: {
+    /** The words under the closed scroll. */
+    hint: string;
+    /** What the closed scroll is called as a button, for a screen reader. */
+    open: string;
+  };
   calendar: {
     /** The "Save the date" block under the countdown. */
     heading: string;
@@ -445,6 +452,10 @@ const ENGLISH: CardCopy = {
     hint: "Scratch to reveal",
     tap: "Tap to reveal",
   },
+  scroll: {
+    hint: "Tap to open",
+    open: "Open to see the date",
+  },
   calendar: {
     heading: "Save the Date",
     subline: "Mark your calendar. We cannot wait to celebrate with you.",
@@ -678,6 +689,11 @@ const HINDI: CardCopy = {
     revealed: "दिख गया।",
     hint: "देखने के लिए खुरचें",
     tap: "देखने के लिए टैप करें",
+  },
+  /* TODO(Faraz): verify both Hindi lines. */
+  scroll: {
+    hint: "खोलने के लिए टैप करें",
+    open: "तारीख़ देखने के लिए खोलें",
   },
   calendar: {
     heading: "तारीख़ याद रखिए",

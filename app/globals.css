@@ -767,6 +767,67 @@
   }
 }
 
+/*
+  The closed scroll asking to be tapped: still for most of five seconds, then
+  one small shake of the rollers, and its hint breathing under it. Transform
+  and opacity only. A guest who asked for less motion gets the hint and no
+  shake.
+*/
+@keyframes lifafa-scroll-invite {
+  0%,
+  78%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  82% {
+    transform: rotate(-1.4deg) scale(1.025);
+  }
+  87% {
+    transform: rotate(1.2deg) scale(1.025);
+  }
+  92% {
+    transform: rotate(-0.7deg) scale(1.01);
+  }
+  96% {
+    transform: rotate(0.3deg) scale(1);
+  }
+}
+
+@keyframes lifafa-scroll-hint {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The scroll opening for a guest who asked for less motion: it is simply there, a moment later. */
+@keyframes lifafa-scroll-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lifafa-scroll-invite {
+  animation: lifafa-scroll-invite 5s ease-in-out 1.2s infinite;
+}
+
+.lifafa-scroll-hint {
+  animation: lifafa-scroll-hint 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-scroll-invite,
+  .lifafa-scroll-hint {
+    animation: none;
+  }
+}
+
 /* The loader before the cover: its mark and words arriving, then breathing. */
 @keyframes lifafa-cover-loader-in {
   from {
