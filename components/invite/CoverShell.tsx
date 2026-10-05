@@ -934,6 +934,39 @@ export default function CoverShell({
             >
               {copy.coverInvite.heading}
             </p>
+            {/*
+              Who from: the couple, or whatever names the event, between the
+              heading and its line. Only on a cover whose prompt is on a
+              plaque, which is every cover that is cloth, paper or petals from
+              edge to edge. Those print the prompt alone at the foot, because
+              names set down there lie over the artwork's own gold, and so
+              printed the names nowhere: a guest was invited, and not told by
+              whom, until the cover had gone. Up here they are in the one band
+              the artwork leaves clear. A plain cover prints them with its
+              prompt, below, and is left to.
+
+              In the names face, like the heading, a size down from it, and in
+              the same ink over the same soft shadow. It leaves with the rest
+              of this block on the tap.
+            */}
+            {title && hasVisual && onPlaque ? (
+              <p
+                data-cover-names=""
+                className="max-w-full text-[calc(1.5rem*var(--cover-names-scale))] text-[var(--cover-text)] wrap-anywhere text-balance sm:text-[calc(1.75rem*var(--cover-names-scale))]"
+                style={
+                  {
+                    "--cover-names-scale": String(namesFace.scale),
+                    ...namesFont,
+                    lineHeight:
+                      copy.script === "devanagari"
+                        ? 1.45
+                        : Math.max(namesFace.leading, 1.3),
+                  } as CSSProperties
+                }
+              >
+                {title}
+              </p>
+            ) : null}
             <p
               className="max-w-[19rem] text-[0.875rem] leading-[1.55] text-[var(--cover-muted)] text-balance"
               style={{ fontFamily: fontFamilyOf(pairRoleVar(fontPair, "body"), fontPair.bodyFallback) }}

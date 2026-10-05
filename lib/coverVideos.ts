@@ -128,28 +128,10 @@ const BLACK = "#000000";
 const IVORY = "#EFE0C8";
 
 /*
-  CURTAIN. Dark: frames 13-107 (0.54s to 4.50s). Light: frames 17-109 (0.71s
-  to 4.58s). Both start to part 0.3s in and take about 3.6s over it. The film
-  fades from the moment there is a gap worth seeing through to the moment the
-  cloth is gathered at the sides. The sound was made for curtains that part
-  on the tap, so it waits the 0.3s with them.
+  No curtain here. The curtain cover was a film too, and is not any more: it
+  is two panels of cloth drawn over the card, so the card shows between them
+  as they part. See lib/curtainArt.ts.
 */
-export const CURTAIN_FILMS: CoverFilmSet = {
-  dark: film("curtain-video", "curtain-dark", {
-    lengthMs: 3960,
-    fadeStartMs: 900,
-    fadeMs: 1900,
-    soundDelayMs: 300,
-    surround: BLACK,
-  }),
-  light: film("curtain-video", "curtain-light", {
-    lengthMs: 3875,
-    fadeStartMs: 900,
-    fadeMs: 1900,
-    soundDelayMs: 300,
-    surround: IVORY,
-  }),
-};
 
 /*
   ENVELOPE. Dark: frames 17-127 (0.71s to 5.33s): the seal breaks at 0.3s, the

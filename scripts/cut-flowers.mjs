@@ -227,24 +227,13 @@ const CALLIGRAPHY = [
  * last tassel, on the centre line. `until` is how far down the picture the
  * edge is read: the hem and the tassels below it are not the edge.
  */
+/*
+  Only the cream set is cut here now. The maroon panel and valance this also
+  cut are gone: a dark card's curtains are the velvet in
+  public/decor/curtain/velvet/, cut from film, not from this artwork. See
+  lib/curtainArt.ts.
+*/
 const CURTAIN = [
-  {
-    name: "curtain-left",
-    file: "ChatGPT Image Oct 2, 2026, 09_25_22 AM.png",
-    fit: { height: 1400 },
-    seeds: ["right", "bottom"],
-    pocketMin: 40,
-    pocketBelow: 0.92,
-    seam: { inset: 6, until: 0.88 },
-    quality: 74,
-  },
-  {
-    name: "curtain-valance",
-    file: "ChatGPT Image Oct 2, 2026, 09_26_42 AM.png",
-    fit: { width: 1200 },
-    seeds: ["bottom"],
-    quality: 66,
-  },
   {
     name: "curtain-left-cream",
     file: "ChatGPT Image Oct 2, 2026, 09_27_48 AM.png",

@@ -77,8 +77,7 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     /*
       Two panels of cloth and a valance over the card, not a film: a film is
       opaque, and this is the one cover whose whole point is the card seen
-      between the curtains as they part. See lib/curtainArt.ts. The films are
-      still in public/decor/curtain-video/ and in lib/coverVideos.ts, unused.
+      between the curtains as they part. See lib/curtainArt.ts.
     */
     art: curtainArt,
   },
