@@ -589,6 +589,13 @@ const MOTIF_FOR_ORNAMENT: Readonly<Record<string, Motif>> = {
   om: Om,
   swastik: Swastika,
   toran: MangoToran,
+  /*
+    The Jain pack's three emblems. Each stands above the names as a picture,
+    and its faint drawing must not also drift to the foot of the card.
+  */
+  swastika: Swastika,
+  ahimsaHand: AhimsaHand,
+  siddhaShila: StepEmblem,
 };
 
 /** The scatter without the motifs of ornaments already on the card. */

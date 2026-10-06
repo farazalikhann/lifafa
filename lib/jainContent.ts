@@ -1,17 +1,19 @@
 /**
  * Greetings and blessings offered on a Jain card.
  *
- * EVERY DEVANAGARI, TRANSLITERATION AND TRANSLATION STRING IN THIS FILE SHIPS
- * EMPTY. Nothing here was written, transliterated, reconstructed or recalled
- * from memory, and nothing may be. Each empty field carries a TODO naming
- * exactly what belongs in it; every value must be copied from a verified source
- * and reviewed by someone knowledgeable before release.
+ * TODO(Faraz): have every Devanagari line, transliteration and meaning in this
+ * file checked by a Jain reader before launch.
  *
- * An empty string renders nothing at all, so an unfilled entry is safe — it is
- * filling one in casually that is unsafe. The editor shows "Text pending"
- * against a row whose script has not arrived; the opt-out row is exempt.
+ * THE TEXT WAS SUPPLIED, AND IS SET CHARACTER FOR CHARACTER AS IT CAME. Nothing
+ * here was written, reconstructed or recalled from memory, and nothing may be:
+ * a change to any of it comes from a verified source, reviewed by someone
+ * knowledgeable.
  *
- * Once a value is supplied, do not "tidy" it. Devanagari matras and conjuncts
+ * An empty string renders nothing at all. Only the two opt-out rows are empty,
+ * and they stay empty; the editor shows "Devanagari text pending" against any
+ * other row whose script is missing.
+ *
+ * Do not "tidy" a value. Devanagari matras and conjuncts
  * are load bearing: a dropped anusvara or virama changes the word, and a
  * normalisation pass — NFC/NFD, a collapsed space, a ZWJ stripped out of a
  * conjunct, an editor's auto-format — will do it silently and read as a
@@ -23,9 +25,14 @@
  * add further verses to either array — what belongs on an invitation is a
  * decision for the people whose practice it is.
  *
+ * MICHHAMI DUKKADAM ASKS FORGIVENESS. It is said at Kshamavani, at the close
+ * of Paryushan, and its occasion note says so: it does not suit a wedding.
+ *
  * THE FONT IS THE ONE THE HINDU PACK ALREADY LOADS. Devanagari is Devanagari;
  * app/layout.tsx loads Noto Sans Devanagari once and both packs resolve it
- * through --lifafa-devanagari. Do not add a second face for this pack.
+ * through --lifafa-devanagari, and on the card both are set in the same Tiro
+ * Devanagari (DEVANAGARI_CARD_HEAD in lib/traditionPacks.tsx). Do not add a
+ * second face for this pack.
  *
  * RENDERING: every Devanagari field goes on the page inside an element carrying
  * a lang attribute and dir="ltr". Devanagari runs left to right — never copy
@@ -61,25 +68,17 @@ export const JAIN_GREETINGS: readonly JainGreeting[] = [
   {
     id: "jaiJinendra",
     label: "Jai Jinendra",
-    /* TODO: the Devanagari for "Jai Jinendra". */
-    devanagari: "",
-    /* TODO: the Roman transliteration of "Jai Jinendra". */
-    transliteration: "",
-    /* TODO: the English rendering of "Jai Jinendra". */
-    translation: "",
+    devanagari: "जय जिनेन्द्र",
+    transliteration: "Jai Jinendra",
+    translation: "Victory to the Jinas",
   },
   {
     id: "navkarOpening",
     label: "Navkar Mantra opening line",
-    /*
-      TODO: the Devanagari for the OPENING LINE of the Navkar Mantra only — the
-      first salutation, not the full mantra. See the file header.
-    */
-    devanagari: "",
-    /* TODO: the Roman transliteration of that opening line. */
-    transliteration: "",
-    /* TODO: the English rendering of that opening line. */
-    translation: "",
+    /* The OPENING LINE only: the first salutation, not the full mantra. See the file header. */
+    devanagari: "णमो अरिहंताणं",
+    transliteration: "Namo Arihantanam",
+    translation: "I bow to the Arihants",
   },
   {
     /*
@@ -115,23 +114,21 @@ export const JAIN_BLESSINGS: readonly JainBlessing[] = [
   {
     id: "michhami",
     label: "Michhami Dukkadam",
-    /* TODO: the Devanagari for "Michhami Dukkadam". */
-    devanagari: "",
-    /* TODO: the Roman transliteration of "Michhami Dukkadam". */
-    transliteration: "",
-    /* TODO: the English rendering of "Michhami Dukkadam". */
-    translation: "",
-    occasionNote: "Any occasion",
+    devanagari: "मिच्छामि दुक्कडम्",
+    transliteration: "Michhami Dukkadam",
+    translation: "May all my wrongdoings be forgiven",
+    /* Not "Any occasion": it asks forgiveness. See the file header. */
+    occasionNote: "Kshamavani / Paryushan",
   },
   {
     id: "mangalBlessing",
     label: "A blessing",
-    /* TODO: a short Devanagari blessing suitable for a Jain wedding invitation. */
-    devanagari: "",
-    /* TODO: the Roman transliteration of that blessing. */
-    transliteration: "",
-    /* TODO: the English rendering of that blessing. */
-    translation: "",
+    devanagari:
+      "मंगलं भगवान वीरो, मंगलं गौतमः प्रभु। मंगलं स्थूलभद्राद्या, जैन धर्मोऽस्तु मंगलम्॥",
+    transliteration:
+      "Mangalam Bhagavan Viro, Mangalam Gautamah Prabhu, Mangalam Sthulabhadradya, Jain Dharmostu Mangalam",
+    translation:
+      "Auspicious is Lord Mahavira, auspicious is Gautam Swami, auspicious are Sthulabhadra and the acharyas, may the Jain dharma be auspicious",
     occasionNote: "Wedding",
   },
   {
@@ -151,8 +148,7 @@ export const JAIN_BLESSINGS: readonly JainBlessing[] = [
  *
  * The two states are indistinguishable from the outside, both being empty
  * strings, and only one of them is waiting on anything — this is what stops a
- * "text pending" note being printed under "No greeting". Every entry in this
- * file is empty today, so this is doing real work right now.
+ * "text pending" note being printed under "No greeting".
  */
 export function isOptOut(id: string | null): boolean {
   return id === "none";

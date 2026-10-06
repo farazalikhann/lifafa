@@ -136,14 +136,13 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   ],
 
   /*
-    The toran spans the card like the Muslim lights do — it is a gateway
-    garland, tied off at both ends, so it does not swing. The kalash hangs
-    beneath its two ends.
+    The toran, across the top as the Hindu pack's is: a gateway garland on a
+    rod, so it does not swing. The kalash used to hang beneath its two ends;
+    a pot stands, and it stands in a bottom corner now (see `corners` in
+    OrnamentSlots).
   */
   jain: [
-    { id: "tornGate", xPercent: 50, topPercent: 0, sizeRem: 21, delayMs: 0, swing: false },
-    { id: "kalash", xPercent: 15, topPercent: 22, sizeRem: 2.9, delayMs: 800, swing: false },
-    { id: "kalash", xPercent: 85, topPercent: 27, sizeRem: 2.4, delayMs: 1900, swing: false },
+    { id: "tornGate", xPercent: 50, topPercent: 0, sizeRem: 0, delayMs: 0, swing: false, fullWidth: true },
   ],
 
   /*

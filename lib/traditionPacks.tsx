@@ -556,6 +556,31 @@ const MUSLIM_PACK: TraditionPack = {
   ],
 };
 
+/*
+  Tiro Devanagari Hindi, the traditional serif the app already loads for
+  Hindi names and headings (--font-hi-tiro, app/layout.tsx), so nothing new is
+  fetched. It has conjuncts for क्र, र्य, र्व, ग्न and र्ये drawn as ligatures,
+  and one weight, so "regular" is what it has.
+
+  Shared by the Jain pack, whose lines are Devanagari too: one face for the
+  script on both.
+*/
+const DEVANAGARI_CARD_HEAD: CardHeadType = {
+  scriptFace:
+    'var(--font-hi-tiro), var(--font-devanagari), "Noto Serif Devanagari", serif',
+  greetingClass:
+    "text-[calc(1.375rem*var(--card-opening-text,1))] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+  blessingClass:
+    "text-[calc(1.0625rem*var(--card-opening-text,1))] sm:text-[calc(1.1875*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+  greetingLeading: "1.6",
+  blessingLeading: "1.9",
+  englishClass:
+    "text-[calc(0.875*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-[1.5]",
+  /* Lora, already loaded by app/layout.tsx for the card's pairs. */
+  englishFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
+  alignTop: true,
+};
+
 const HINDU_PACK: TraditionPack = {
   traditionId: "hindu",
   ornaments: HINDU_PACK_ORNAMENTS,
@@ -584,27 +609,7 @@ const HINDU_PACK: TraditionPack = {
     aboveNames: ["ganesh", "om", "swastik"],
     corners: ["diya", "kalash"],
   },
-  /*
-    Tiro Devanagari Hindi, the traditional serif the app already loads for
-    Hindi names and headings (--font-hi-tiro, app/layout.tsx), so nothing new is
-    fetched. It has conjuncts for क्र, र्य, र्व, ग्न and र्ये drawn as ligatures,
-    and one weight, so "regular" is what it has.
-  */
-  cardHead: {
-    scriptFace:
-      'var(--font-hi-tiro), var(--font-devanagari), "Noto Serif Devanagari", serif',
-    greetingClass:
-      "text-[calc(1.375rem*var(--card-opening-text,1))] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]",
-    blessingClass:
-      "text-[calc(1.0625rem*var(--card-opening-text,1))] sm:text-[calc(1.1875*var(--card-rem,1rem)*var(--card-opening-text,1))]",
-    greetingLeading: "1.6",
-    blessingLeading: "1.9",
-    englishClass:
-      "text-[calc(0.875*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-[1.5]",
-    /* Lora, already loaded by app/layout.tsx for the card's pairs. */
-    englishFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
-    alignTop: true,
-  },
+  cardHead: DEVANAGARI_CARD_HEAD,
   calligraphyIds: [
     "shubhVivah",
     "sadarNimantran",
@@ -759,8 +764,21 @@ const JAIN_PACK: TraditionPack = {
   findOrnament: (id) => JAIN_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: null,
-  slots: null,
-  cardHead: null,
+  /*
+    The same ids the pack has always stored, read as places. The toran hangs
+    across the top. The swastika, the ahimsa hand and the Siddhashila are
+    emblems of the faith: they stand above the names, one at a time, and are
+    never scattered behind the writing or stood at the foot of the card, which
+    is where the scatter used to put them. The kalash and the lotus stand in
+    the bottom corners, as the Hindu pack's diya and kalash do.
+  */
+  slots: {
+    top: ["tornGate"],
+    aboveNames: ["swastika", "ahimsaHand", "siddhaShila"],
+    corners: ["kalash", "lotus"],
+  },
+  /* The Hindu block's type, so the Devanagari is the same face on both. */
+  cardHead: DEVANAGARI_CARD_HEAD,
   calligraphyIds: [],
 };
 
