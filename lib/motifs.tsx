@@ -243,7 +243,7 @@ const Leaf: Motif = ({ size }) => (
 );
 
 /* ---------------------------------------------------------------------------
-   Hindu — objects, ornament and script glyphs only
+   Hindu — objects and ornament only
    --------------------------------------------------------------------------- */
 
 /** Oil lamp. */
@@ -267,42 +267,6 @@ const Kalash: Motif = ({ size }) => (
     <path d="M6.9 18.2 Q12 19.6 17.1 18.2" />
     <path d="M8 13 Q6.8 10.6 8.8 9.6" />
     <path d="M16 13 Q17.2 10.6 15.2 9.6" />
-  </Svg>
-);
-
-/** Stylised om glyph. */
-const Om: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M4.5 11 Q7.5 7 10.5 10.5 Q12 12.5 9.5 13.5 Q6.5 15 7.5 17 Q9 19.5 12.5 18.5 Q16 17.5 16.5 13.5" />
-    <path d="M13.5 6.5 Q15.5 4.5 17.5 6.5" />
-    <circle cx={19.5} cy={4} r={1.1} />
-    <path d="M6.4 10.8 Q8.4 8.6 10 11" />
-    <circle cx={19.5} cy={4} r={2.6} />
-  </Svg>
-);
-
-/**
- * Swastika in its traditional Indian form: axis aligned, arms turning
- * clockwise, with a dot in each quadrant. This is the auspicious symbol used in
- * Hindu and Jain practice, deliberately drawn upright rather than rotated.
- */
-const Swastika: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M12 3 V21 M3 12 H21" />
-    <path d="M12 3 H18 M21 12 V18 M12 21 H6 M3 12 V6" />
-    <circle cx={7} cy={7} r={0.9} fill="currentColor" stroke="none" />
-    <circle cx={17} cy={7} r={0.9} fill="currentColor" stroke="none" />
-    <circle cx={7} cy={17} r={0.9} fill="currentColor" stroke="none" />
-    <circle cx={17} cy={17} r={0.9} fill="currentColor" stroke="none" />
-    {/*
-      Rings around the quadrant dots, not an outer frame: a frame lands on the
-      arm tips and the whole thing reads as a window instead of the symbol.
-      Each ring clears the arms by more than two units.
-    */}
-    <circle cx={7} cy={7} r={2.4} />
-    <circle cx={17} cy={7} r={2.4} />
-    <circle cx={7} cy={17} r={2.4} />
-    <circle cx={17} cy={17} r={2.4} />
   </Svg>
 );
 
@@ -361,14 +325,6 @@ const Arabesque: Motif = ({ size }) => (
   </Svg>
 );
 
-const Crescent: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M16 3.5 A9 9 0 1 0 16 20.5 A7 7 0 1 1 16 3.5 Z" />
-    <path d="M12.6 6.6 Q9.8 12 12.6 17.4" />
-    <path d="M16 3.5 L17.6 2.2 M16 20.5 L17.6 21.8" />
-  </Svg>
-);
-
 const Lantern: Motif = ({ size }) => (
   <Svg size={size}>
     <path d="M8 7.5 H16 L17 16 Q12 19 7 16 Z" />
@@ -389,31 +345,8 @@ const PointedArch: Motif = ({ size }) => (
 );
 
 /* ---------------------------------------------------------------------------
-   Sikh — emblem, script glyph and architecture only
+   Sikh — architecture only
    --------------------------------------------------------------------------- */
-
-const Khanda: Motif = ({ size }) => (
-  <Svg size={size}>
-    <circle cx={12} cy={12} r={6} />
-    <circle cx={12} cy={12} r={4.4} />
-    <path d="M12 3 Q13.2 5 12 7 Q10.8 5 12 3 Z" />
-    <path d="M12 7 V21" />
-    <path d="M6.5 6 Q3 12 6.5 18" />
-    <path d="M17.5 6 Q21 12 17.5 18" />
-    <path d="M10.2 9.4 H13.8" />
-  </Svg>
-);
-
-/** Stylised ik onkar glyph. */
-const IkOnkar: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M7 5 Q9.5 3.5 9.5 7 V16" />
-    <path d="M9.5 16 Q12.5 18.5 15 15.5 Q17.5 12 14 11" />
-    <path d="M9.5 8 Q13.5 5.5 17 8" />
-    <path d="M11.4 14.6 Q13.4 16 14.8 14.2" />
-    <path d="M7 5 Q5.8 6.4 6.4 8" />
-  </Svg>
-);
 
 const GurudwaraArch: Motif = ({ size }) => (
   <Svg size={size}>
@@ -426,16 +359,8 @@ const GurudwaraArch: Motif = ({ size }) => (
 );
 
 /* ---------------------------------------------------------------------------
-   Christian — symbol, ornament and one animal outline, no figures
+   Christian — ornament and one animal outline, no figures
    --------------------------------------------------------------------------- */
-
-const Cross: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M12 3 V21 M6 9 H18" />
-    <path d="M12 7.2 L13.8 9 L12 10.8 L10.2 9 Z" />
-    <path d="M10.6 3 H13.4 M10.6 21 H13.4 M6 7.6 V10.4 M18 7.6 V10.4" />
-  </Svg>
-);
 
 /** Bird outline, drawn without an eye so it carries no face. */
 const Dove: Motif = ({ size }) => (
@@ -472,52 +397,12 @@ const OliveBranch: Motif = ({ size }) => (
 );
 
 /* ---------------------------------------------------------------------------
-   Jain — emblem and ornament only
+   Jain — nothing of its own: the lotus above is its one shape
    --------------------------------------------------------------------------- */
-
-/**
- * The ahimsa emblem: the conventional stylised open palm bearing a wheel. It is
- * a symbol, not a depiction of a person — no figure and no face.
- */
-const AhimsaHand: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M8 21 V11 Q8 9 10 9 H14 Q16 9 16 11 V21 Z" />
-    <path d="M9.7 9 V5 M12 9 V3.6 M14.3 9 V5" />
-    <path d="M8 13 Q6 12 5.7 14.5" />
-    <circle cx={12} cy={16} r={2.6} />
-    <path d="M12 13.4 V18.6 M9.4 16 H14.6" />
-    <path d="M8.6 19.6 H15.4" />
-  </Svg>
-);
-
-/** Stepped emblem with the crescent and dot above it. */
-const StepEmblem: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M3 21 H21" />
-    <path d="M5.5 21 V17.5 H18.5 V21" />
-    <path d="M8 17.5 V14 H16 V17.5" />
-    <path d="M10 14 V11 H14 V14" />
-    <path d="M9 9 Q12 6 15 9" />
-    <circle cx={12} cy={5} r={1.1} fill="currentColor" stroke="none" />
-    <path d="M4.2 19.4 H19.8" />
-    <path d="M10 10.4 Q12 8.6 14 10.4" />
-  </Svg>
-);
 
 /* ---------------------------------------------------------------------------
-   Buddhist — symbol and ornament only
+   Buddhist — ornament only
    --------------------------------------------------------------------------- */
-
-const DharmaWheel: Motif = ({ size }) => (
-  <Svg size={size}>
-    <circle cx={12} cy={12} r={8} />
-    <circle cx={12} cy={12} r={2.2} />
-    <path d="M12 4 V9.8 M12 14.2 V20 M4 12 H9.8 M14.2 12 H20" />
-    <path d="M6.3 6.3 L10.4 10.4 M13.6 13.6 L17.7 17.7 M17.7 6.3 L13.6 10.4 M10.4 13.6 L6.3 17.7" />
-    <circle cx={12} cy={12} r={9.6} />
-    <circle cx={12} cy={12} r={3.8} />
-  </Svg>
-);
 
 const BodhiLeaf: Motif = ({ size }) => (
   <Svg size={size}>
@@ -565,14 +450,24 @@ const OCCASION_MOTIFS: Record<OccasionId, readonly Motif[]> = {
   other: [Petal, Star, Dot],
 };
 
+/**
+ * NO EMBLEM OF A FAITH IS IN THE SCATTER. The scatter drifts: behind the
+ * writing, down the card and off its foot. That is no place for the Om, the
+ * swastika, the crescent, the khanda, Ik Onkar, the cross, the ahimsa hand,
+ * the Siddhashila or the dharma wheel, each of which was here once as a faint
+ * drawing. A host who wants one puts it on the card as an ornament, where it
+ * has a fixed place at the head (see `slots` in lib/traditionPacks.tsx).
+ * What a tradition gives the scatter is flowers, leaves, lamps, vessels,
+ * architecture and pattern. Do not add an emblem back to these lists.
+ */
 const TRADITION_MOTIFS: Record<TraditionId, readonly Motif[]> = {
   none: [],
-  hindu: [Diya, Kalash, Om, Swastika, Mandala, Lotus, MangoToran],
-  muslim: [EightPointStar, Arabesque, Crescent, Lantern, PointedArch],
-  sikh: [Khanda, IkOnkar, GurudwaraArch, Lotus],
-  christian: [Cross, Dove, Bell, OliveBranch],
-  jain: [AhimsaHand, Swastika, Lotus, StepEmblem],
-  buddhist: [DharmaWheel, Lotus, BodhiLeaf, EndlessKnot],
+  hindu: [Diya, Kalash, Mandala, Lotus, MangoToran],
+  muslim: [EightPointStar, Arabesque, Lantern, PointedArch],
+  sikh: [GurudwaraArch, Lotus],
+  christian: [Dove, Bell, OliveBranch],
+  jain: [Lotus],
+  buddhist: [Lotus, BodhiLeaf, EndlessKnot],
 };
 
 /**
@@ -586,16 +481,7 @@ const TRADITION_MOTIFS: Record<TraditionId, readonly Motif[]> = {
 const MOTIF_FOR_ORNAMENT: Readonly<Record<string, Motif>> = {
   diya: Diya,
   kalash: Kalash,
-  om: Om,
-  swastik: Swastika,
   toran: MangoToran,
-  /*
-    The Jain pack's three emblems. Each stands above the names as a picture,
-    and its faint drawing must not also drift to the foot of the card.
-  */
-  swastika: Swastika,
-  ahimsaHand: AhimsaHand,
-  siddhaShila: StepEmblem,
 };
 
 /** The scatter without the motifs of ornaments already on the card. */
