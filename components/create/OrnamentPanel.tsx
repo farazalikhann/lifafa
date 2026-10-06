@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { greetingSaidByCalligraphy, tapCalligraphy } from "@/lib/calligraphy";
-import { chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
+import { chosenCorners, chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
 import type {
   PackBlessing,
   PackOrnament,
@@ -265,14 +265,20 @@ export default function OrnamentPanel({
           { title: "Above names", ids: slots.aboveNames, oneOnly: true, columns: "grid-cols-3" },
           { title: "Frame", ids: slots.frame ?? [], oneOnly: true, columns: "grid-cols-2" },
           { title: slots.sidesLabel ?? "Side flags", ids: slots.sides ?? [], oneOnly: true, columns: "grid-cols-2" },
-          { title: "Bottom corners", ids: cornerIds, oneOnly: false, columns: "grid-cols-2" },
+          {
+            title: "Bottom corners",
+            ids: cornerIds,
+            oneOnly: false,
+            columns: cornerIds.length > 2 ? "grid-cols-3" : "grid-cols-2",
+          },
         ].filter((group) => group.ids.length > 0);
 
-  /* A place that holds one shows the one the card draws, even on an older card holding two. */
+  /* A place shows what the card draws in it, even on an older card holding more than it has room for. */
+  const shownCorners = chosenCorners(pack, config.enabledOrnaments);
   const isShown = (ids: readonly AnyOrnamentId[], oneOnly: boolean, id: AnyOrnamentId): boolean =>
     oneOnly
       ? chosenIn(ids, config.enabledOrnaments) === id
-      : config.enabledOrnaments.includes(id);
+      : shownCorners.includes(id);
 
   const tapInSlot = (id: AnyOrnamentId): void => {
     onChange({

@@ -867,6 +867,7 @@ export default function CardEditor({
     traditionId,
     ornamentConfig,
     ...(dateReveal !== undefined ? { dateReveal } : null),
+    ...(royalTexture ? { royalTexture: true as const } : null),
   };
 
   /**
@@ -894,6 +895,10 @@ export default function CardEditor({
     setDateReveal(next.dateReveal);
     if (next.dateReveal === "scroll" && scratchTarget === "date") {
       setScratchTarget("none");
+    }
+    /* Only ever turned on by a look: one that does not name it leaves it as it was. */
+    if (next.royalTexture === true) {
+      setRoyalTexture(true);
     }
   };
 

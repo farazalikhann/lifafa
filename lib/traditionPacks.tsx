@@ -168,12 +168,14 @@ interface OrnamentSlots {
   /** Centred above the names. The only place a figure of a deity is drawn. */
   aboveNames: readonly AnyOrnamentId[];
   /**
-   * The two bottom corners of the names' screen: the first stands at the
-   * left, the second at the right, and either alone stands in both. A pack
-   * with one corner ornament names it twice. Absent for a pack with nothing
-   * that stands in a corner.
+   * The two bottom corners of the names' screen, and what may stand in them.
+   * Of two on the card, the one earlier in this list stands at the left and
+   * the other at the right; one alone stands in both. A pack with one corner
+   * ornament names it twice. A pack may offer more than two, and the card
+   * still holds two: see lib/ornaments/slots.ts. Absent for a pack with
+   * nothing that stands in a corner.
    */
-  corners?: readonly [AnyOrnamentId, AnyOrnamentId];
+  corners?: readonly AnyOrnamentId[];
   /**
    * Frames the names: the names, the title and the rule under it are set
    * inside its opening. Absent for a pack with no such frame.
@@ -345,9 +347,10 @@ export interface TraditionPack {
 /**
  * Devanagari sits in a tagged span; this is the block that centres it.
  *
- * Built per language rather than once, because two packs set Devanagari and
+ * Built per language rather than once, because three packs set Devanagari and
  * they are not the same language — Hindi for the Hindu pack, Sanskrit and
- * Prakrit for the Jain one. The face and the leading are identical either way.
+ * Prakrit for the Jain one, Pali for the Buddhist one. The face and the
+ * leading are identical either way.
  */
 function devanagariRun(lang: string): ScriptRun {
   const Run: ScriptRun = ({ children, className, style }) => {
@@ -381,8 +384,7 @@ const GurmukhiRun: ScriptRun = ({ children, className, style }) => {
 /**
  * A run of Latin-alphabet text in the card's own body face.
  *
- * Serves the Christian pack, whose lines are English, and the Buddhist one,
- * whose Pali is Roman by deliberate choice. No family is set — see
+ * Serves the Christian pack, whose lines are English. No family is set — see
  * components/type/LatinScriptText.tsx.
  */
 function latinRun(lang: string, leading?: number): ScriptRun {
@@ -563,8 +565,8 @@ const MUSLIM_PACK: TraditionPack = {
   fetched. It has conjuncts for क्र, र्य, र्व, ग्न and र्ये drawn as ligatures,
   and one weight, so "regular" is what it has.
 
-  Shared by the Jain pack, whose lines are Devanagari too: one face for the
-  script on both.
+  Shared by the Jain and Buddhist packs, whose lines are Devanagari too: one
+  face for the script on all three.
 */
 const DEVANAGARI_CARD_HEAD: CardHeadType = {
   scriptFace:
@@ -798,10 +800,10 @@ const BUDDHIST_PACK: TraditionPack = {
   blessings: BUDDHIST_BLESSING_ROWS,
   blessingLabel: "Blessing",
   blessingNote: "The blessing appears at the top of your card.",
-  /* Roman Pali in the body face — see the header of lib/buddhistContent.ts. */
-  ScriptRun: latinRun(PALI_LANG),
-  panelScriptClass: "text-[1.0625rem] leading-[1.6]",
-  pendingLabel: "Pali text pending",
+  /* The Hindu pack's face, declared as Pali — see the header of lib/buddhistContent.ts. */
+  ScriptRun: devanagariRun(PALI_LANG),
+  panelScriptClass: "text-[1.0625rem]",
+  pendingLabel: "Devanagari text pending",
   isOptOut: isPaliOptOut,
   findGreeting: (id) => find(BUDDHIST_GREETING_ROWS, id),
   findBlessing: (id) => find(BUDDHIST_BLESSING_ROWS, id),
@@ -809,22 +811,27 @@ const BUDDHIST_PACK: TraditionPack = {
   coverArchId: null,
   dividerId: null,
   /*
-    ONE PLACE, FOR ONE ORNAMENT. The dharma wheel is the emblem of the faith,
-    and the scatter used to stand it wherever its turn in the list fell, the
-    foot of the card included. It stands above the names now, as the Jain
-    emblems do, and nowhere else. Everything else in the pack is where it
-    was: the flags and the lotus hang, and the rest is scattered.
-
-    TODO(Faraz): the Buddhist pack still needs proper fixed places for all of
-    its ornaments, as the Jain pack has (the stupa, the endless knot, the
-    conch and the bodhi leaf are still scattered).
+    The same ids the pack has always stored, read as places. The prayer flags
+    hang across the top, as the Jain toran does. The dharma wheel, the endless
+    knot and the stupa are emblems of the faith: they stand above the names,
+    one at a time, and are never scattered behind the writing or stood at the
+    foot of the card, which is where the scatter used to put them. The lotus,
+    the Bodhi leaf and the conch stand in the bottom corners, two of the three
+    at a time. Nothing in this pack is scattered any more.
   */
   slots: {
-    top: [],
-    aboveNames: ["dharmaWheel"],
+    top: ["prayerFlagString"],
+    aboveNames: ["dharmaWheel", "endlessKnot", "stupaOutline"],
+    corners: ["lotus", "bodhiLeaf", "conchShell"],
   },
-  cardHead: null,
-  calligraphyIds: [],
+  /* The Hindu block's type, so the Devanagari is the same face on all three. */
+  cardHead: DEVANAGARI_CARD_HEAD,
+  /* The order the panel offers them: the pack's own line first. */
+  calligraphyIds: [
+    "buddhistBuddhamSaranam",
+    "buddhistMangalParinay",
+    "buddhistShubhVivah",
+  ],
 };
 
 const PACKS: Partial<Record<TraditionId, TraditionPack>> = {

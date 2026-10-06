@@ -80,7 +80,7 @@ const MUSLIM_CORNERS: Readonly<Record<string, readonly CornerPlacement[]>> = {
  *
  * ONE SLOT EACH, NOT TWO, AND THAT IS WHAT KEEPS THEM APART. The Muslim pack
  * has two scatterable ornaments and can afford a pair of placements each; the
- * Christian pack has four and the Buddhist five, and two placements apiece
+ * Christian pack had four and the Buddhist five, and two placements apiece
  * would put ten drawings on one card. Handing each ornament a single slot from
  * a list longer than any pack's scatter set means no two can ever land on the
  * same spot, whatever combination the host switches on — collision-free by

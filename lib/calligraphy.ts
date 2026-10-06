@@ -61,7 +61,10 @@ export type CalligraphyId =
   | "jainShubhVivah"
   | "jainMangalParinay"
   | "jainNamoArihantanam"
-  | "jainShriMahaviraya";
+  | "jainShriMahaviraya"
+  | "buddhistBuddhamSaranam"
+  | "buddhistMangalParinay"
+  | "buddhistShubhVivah";
 
 /** Which ground the lettering is being laid on. */
 export type CalligraphyGround = "light" | "dark";
@@ -179,6 +182,18 @@ function english(slug: string, aspect: number, alt: string): CalligraphyArt {
  */
 function jain(slug: string, aspect: number, alt: string): CalligraphyArt {
   const mask = `/decor/calligraphy/jain/${slug}.webp`;
+
+  return { src: { light: mask, dark: mask }, aspect, alt, mask };
+}
+
+/**
+ * The Devanagari piece that is the Buddhist pack's own: one line in the same
+ * brush hand as the Jain ones, supplied as black lettering on a transparent
+ * ground and published as a shape the same way. The pack's other two pieces
+ * are the Jain pack's files, used from where they are; see ART below.
+ */
+function buddhist(slug: string, aspect: number, alt: string): CalligraphyArt {
+  const mask = `/decor/calligraphy/buddhist/${slug}.webp`;
 
   return { src: { light: mask, dark: mask }, aspect, alt, mask };
 }
@@ -350,6 +365,30 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
     900 / 185,
     "Shri Mahaviraya Namah: salutations to Lord Mahavira",
   ),
+
+  /*
+    The three Buddhist pieces, in the order the panel offers them. The first
+    is the pack's own, and was read letter by letter against the text beside
+    it before it was published: the उ under ब and the द्ध conjunct in बुद्धं, the
+    anusvara closing बुद्धं and सरणं, the च्छ conjunct and the short i before म in
+    गच्छामि. That is a reading by eye, not a Buddhist reader's review; see the
+    TODO at the head of lib/buddhistContent.ts. Two more lines were supplied
+    with it and are not here: both were misspelt.
+
+    The other two say nothing that belongs to one faith, an auspicious
+    marriage and an auspicious wedding, and are the Jain pack's artwork: the
+    same two files, not copies, under ids of this pack's own.
+  */
+  /* बुद्धं सरणं गच्छामि */
+  buddhistBuddhamSaranam: buddhist(
+    "buddham-saranam-gacchami",
+    900 / 172,
+    "Buddham Saranam Gacchami: I go to the Buddha for refuge",
+  ),
+  /* मंगल परिणय */
+  buddhistMangalParinay: jain("mangal-parinay", 900 / 225, "Mangal Parinay: an auspicious wedding"),
+  /* शुभ विवाह */
+  buddhistShubhVivah: jain("shubh-vivah", 900 / 311, "Shubh Vivah: an auspicious marriage"),
 };
 
 /**
@@ -402,7 +441,9 @@ export function calligraphyMask(id: CalligraphyId): string | null {
  *
  * ONLY A PAIR THAT IS THE SAME PHRASE. The Basmala is not here: the artwork is
  * the whole of it and the "bismillah" greeting is its short form. Waheguru is
- * not here either: no greeting is that one word.
+ * not here either: no greeting is that one word. Nor is Buddham Saranam
+ * Gacchami: neither Buddhist greeting is the refuge. The rule is the same for
+ * every pack, so a Buddhist piece that does say a greeting is a row here.
  */
 const GREETING_SAID_BY: Partial<Record<CalligraphyId, string>> = {
   /* जय जिनेन्द्र */

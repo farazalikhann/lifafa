@@ -423,18 +423,6 @@ const BodhiLeaf: Motif = ({ size }) => (
   </Svg>
 );
 
-const EndlessKnot: Motif = ({ size }) => (
-  <Svg size={size}>
-    <path d="M9 5 Q5 5 5 9" />
-    <path d="M15 5 Q19 5 19 9" />
-    <path d="M9 19 Q5 19 5 15" />
-    <path d="M15 19 Q19 19 19 15" />
-    <path d="M9 5 V19 M15 5 V19 M5 9 H19 M5 15 H19" />
-    <path d="M8 2.4 Q2.4 2.4 2.4 8 V16 Q2.4 21.6 8 21.6 H16 Q21.6 21.6 21.6 16 V8 Q21.6 2.4 16 2.4 Z" />
-    <path d="M12 10.4 L13.6 12 L12 13.6 L10.4 12 Z" />
-  </Svg>
-);
-
 /* ---------------------------------------------------------------------------
    Registries
    --------------------------------------------------------------------------- */
@@ -454,8 +442,8 @@ const OCCASION_MOTIFS: Record<OccasionId, readonly Motif[]> = {
  * NO EMBLEM OF A FAITH IS IN THE SCATTER. The scatter drifts: behind the
  * writing, down the card and off its foot. That is no place for the Om, the
  * swastika, the crescent, the khanda, Ik Onkar, the cross, the ahimsa hand,
- * the Siddhashila or the dharma wheel, each of which was here once as a faint
- * drawing. A host who wants one puts it on the card as an ornament, where it
+ * the Siddhashila, the dharma wheel or the endless knot, each of which was
+ * here once as a faint drawing. A host who wants one puts it on the card as an ornament, where it
  * has a fixed place at the head (see `slots` in lib/traditionPacks.tsx).
  * What a tradition gives the scatter is flowers, leaves, lamps, vessels,
  * architecture and pattern. Do not add an emblem back to these lists.
@@ -467,7 +455,7 @@ const TRADITION_MOTIFS: Record<TraditionId, readonly Motif[]> = {
   sikh: [GurudwaraArch, Lotus],
   christian: [Dove, Bell, OliveBranch],
   jain: [Lotus],
-  buddhist: [Lotus, BodhiLeaf, EndlessKnot],
+  buddhist: [Lotus, BodhiLeaf],
 };
 
 /**

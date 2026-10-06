@@ -18,7 +18,17 @@ export type BuddhistOrnamentId =
   | "endlessKnot"
   | "stupaOutline"
   | "prayerFlagString"
-  | "conchShell";
+  | "conchShell"
+  /*
+    Calligraphy rather than shapes: Devanagari word-marks, supplied as artwork.
+    Ids here because the host switches them on from the same panel; the pack
+    sends them to `calligraphyIds` and the head of the card. Prefixed, as the
+    Jain pack's are: two of them are the Jain pack's own artwork, offered here
+    under ids of this pack's. See lib/calligraphy.ts.
+  */
+  | "buddhistBuddhamSaranam"
+  | "buddhistMangalParinay"
+  | "buddhistShubhVivah";
 
 /*
   There is no id here for a figure of the Buddha, and there must never be one.

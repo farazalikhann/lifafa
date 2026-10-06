@@ -4,9 +4,8 @@ import type { CSSProperties, ReactElement } from "react";
  * One run of a language that is already written in the Latin alphabet, tagged
  * with its own `lang` and explicitly left to right.
  *
- * Used by the Christian pack, whose lines are English, and by the Buddhist
- * pack, whose Pali is stored in Roman script by deliberate choice — see the
- * header of lib/buddhistContent.ts.
+ * Used by the Christian pack, whose lines are English. The Buddhist pack's
+ * Pali was Roman once and set here too; it is Devanagari now.
  *
  * NO FONT IS SET HERE, and that is the point of the component. Both packs use
  * the card's own body face, because the Latin alphabet is already covered by

@@ -299,8 +299,8 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
   Gurmukhi elements alone through --lifafa-gurmukhi, so no Latin text can
   inherit it.
 
-  The Jain pack needs NO face of its own — it sets Devanagari, which is already
-  loaded above. Christian and Buddhist need none either: both are Latin. Six
+  The Jain and Buddhist packs need NO face of their own — they set Devanagari,
+  which is already loaded above. Christian needs none either: it is Latin. Six
   packs, three script faces.
 */
 const notoSansGurmukhi = Noto_Sans_Gurmukhi({

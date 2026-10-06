@@ -48,6 +48,11 @@ export interface DesignState {
    * choice; see `dateRevealOf` in lib/royalScroll.ts.
    */
   dateReveal?: DateReveal;
+  /**
+   * The royal texture, where the card has it on. Absent where it is off: a
+   * preset can turn it on and none turns it off; see lib/royalTexture.ts.
+   */
+  royalTexture?: true;
 }
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);

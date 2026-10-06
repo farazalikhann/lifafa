@@ -78,6 +78,11 @@ interface PresetSettings {
    * host had it.
    */
   dateReveal?: "scroll";
+  /**
+   * The royal texture, on a look that is woven with it. Only ever turned on:
+   * a look that does not name it leaves the card's ground as the host had it.
+   */
+  royalTexture?: true;
   coverAnimation: CoverAnimationId;
   /**
    * The pack's shapes to switch on: what hangs, what sits in the corners, the
@@ -178,6 +183,14 @@ const PALETTE_CHAMPAGNE = "#86672E";
  * Jinendra, the greeting it adds is the Navkar's opening line instead: the
  * card does not draw a greeting its calligraphy already says (see
  * greetingSaidByCalligraphy in lib/calligraphy.ts).
+ *
+ * THEN THREE BUDDHIST VIVAH LOOKS, built the same way: ivory, saffron and
+ * midnight, each headed by a different word-mark and hung with the prayer
+ * flags. The dharma wheel, the endless knot and the stupa are emblems of the
+ * faith and are only ever above the names, one to a look. The lotus, the
+ * Bodhi leaf and the conch are the corners. No figure and no face: the Buddha
+ * is never drawn. The words are the pack's own rows in lib/buddhistContent.ts,
+ * added only to a card that has none.
  */
 const PRESETS: readonly Preset[] = [
   {
@@ -588,6 +601,89 @@ const PRESETS: readonly Preset[] = [
       blessingIfNone: "mangalBlessing",
     },
   },
+  {
+    id: "bodhi-ivory",
+    name: "Bodhi Ivory",
+    description: "Ivory, maroon and gold, prayer flags, the dharma wheel and a Bodhi leaf.",
+    tradition: "buddhist",
+    settings: {
+      paletteId: "cream",
+      /* Maroon for the second ink, and gold for the word-mark and the rules. */
+      textPairId: "ivoryRose",
+      accentOverride: PALETTE_CHAMPAGNE,
+      fontPairId: "royal",
+      density: "comfortable",
+      /* No frame: the flags are the border, and a second one would crowd them. */
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "none",
+      coverAnimation: "fold-unfold",
+      /* The lotus at the left and the Bodhi leaf at the right: the pack's own order. */
+      ornaments: ["prayerFlagString", "dharmaWheel", "lotus", "bodhiLeaf"],
+      calligraphy: "buddhistBuddhamSaranam",
+      greetingIfNone: "namoBuddhaya",
+      /* The Mangala Sutta's verse on the home: the pack's wedding blessing. */
+      blessingIfNone: "unionBlessing",
+    },
+  },
+  {
+    id: "lotus-saffron",
+    name: "Lotus Saffron",
+    description: "Warm sand and saffron, prayer flags, the endless knot and lotuses.",
+    tradition: "buddhist",
+    settings: {
+      paletteId: "sand",
+      textPairId: "haldiSaffron",
+      /* Sand's own accent is brown; the word-mark and the rules want saffron. */
+      accentOverride: PALETTE_KESRI,
+      fontPairId: "royal",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      /* A few lotus petals as the card opens, and then none. */
+      petals: "open",
+      petalFlower: "lotus",
+      coverAnimation: "petal-dust",
+      /* The lotus alone in the corners stands in both, the right one mirrored. */
+      ornaments: ["prayerFlagString", "endlessKnot", "lotus"],
+      calligraphy: "buddhistMangalParinay",
+      greetingIfNone: "namoBuddhaya",
+      blessingIfNone: "unionBlessing",
+    },
+  },
+  {
+    id: "royal-midnight-bodhi",
+    name: "Royal Midnight Bodhi",
+    description: "Night blue and gold on the royal texture, prayer flags, a stupa and the conch.",
+    tradition: "buddhist",
+    settings: {
+      paletteId: "midnight",
+      textPairId: "midnightGold",
+      /* Midnight's own accent is already gold. */
+      accentOverride: null,
+      fontPairId: "regal",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "none",
+      royalTexture: true,
+      coverAnimation: "curtain-reveal",
+      /* The conch alone in the corners stands in both, the same way round: it is never mirrored. */
+      ornaments: ["prayerFlagString", "stupaOutline", "conchShell"],
+      calligraphy: "buddhistShubhVivah",
+      greetingIfNone: "namoBuddhaya",
+      blessingIfNone: "unionBlessing",
+    },
+  },
 ];
 
 /**
@@ -601,6 +697,7 @@ const GROUP_LABELS: Partial<Record<TraditionId, string>> = {
   hindu: "Vivah",
   sikh: "Anand Karaj",
   jain: "Jain Vivah",
+  buddhist: "Buddhist Vivah",
 };
 
 export interface PresetGroup {
@@ -750,6 +847,9 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     coverAnimation: settings.coverAnimation ?? design.coverAnimation,
     traditionId: preset.tradition,
     ornamentConfig,
+    ...(settings.royalTexture === true || design.royalTexture === true
+      ? { royalTexture: true as const }
+      : null),
     ...(settings.dateReveal !== undefined
       ? { dateReveal: settings.dateReveal }
       : design.dateReveal === "scroll"

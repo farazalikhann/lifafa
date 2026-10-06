@@ -96,6 +96,15 @@ function PresetMiniature({
   const petals = FLOWER_CHIPS[design.petalFlower];
   const id = (part: string): string => `preset-${presetId}-${part}`;
 
+  /*
+    Where the opening starts, as a share of the miniature's height: under the
+    top border, however deep that hangs. The border is 84% of the width, the
+    miniature is 4 wide by 5 tall, and a border too shallow to reach the
+    opening leaves it where it always was.
+  */
+  const openingTop =
+    slots.top === null ? 21 : Math.max(21, Math.round(2 + (84 / slots.top.aspect) * 0.8 + 1));
+
   return (
     <span
       aria-hidden="true"
@@ -138,7 +147,10 @@ function PresetMiniature({
       ) : null}
 
       {/* The opening: the calligraphy, the ornament over the names, the names. */}
-      <span className="absolute inset-x-0 top-[21%] flex flex-col items-center gap-[0.35rem] px-[16%]">
+      <span
+        className="absolute inset-x-0 flex flex-col items-center gap-[0.35rem] px-[16%]"
+        style={{ top: `${openingTop}%` }}
+      >
         {calligraphy !== null ? (
           <span className="block w-full">
             <calligraphy.Component
@@ -276,6 +288,8 @@ export default function PresetPicker({
   const isUntouched = sameDesign(design, {
     ...defaultDesign(occasionId),
     traditionId: design.traditionId,
+    /* On for a new card and not a design choice until a look asks for it. */
+    ...(design.royalTexture !== undefined ? { royalTexture: design.royalTexture } : null),
   });
   const hasOwnDesign = !isUntouched && active === null;
   const noTradition = design.traditionId === "none";

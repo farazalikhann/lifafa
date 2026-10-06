@@ -146,13 +146,13 @@ const HANGING_BY_TRADITION: Partial<Record<TraditionId, readonly HangingOrnament
   ],
 
   /*
-    Prayer flags span the card on their line. The lotuses float rather than
-    swing — nothing is holding them either.
+    The prayer flags, across the top as the Jain toran is: a line tied off at
+    both ends, so it does not swing. The lotuses used to float beneath its
+    ends; a lotus stands in a bottom corner now (see `corners` in
+    OrnamentSlots).
   */
   buddhist: [
-    { id: "prayerFlagString", xPercent: 50, topPercent: 0, sizeRem: 21, delayMs: 0, swing: false },
-    { id: "lotus", xPercent: 16, topPercent: 24, sizeRem: 3, delayMs: 700, swing: false },
-    { id: "lotus", xPercent: 84, topPercent: 29, sizeRem: 2.5, delayMs: 1800, swing: false },
+    { id: "prayerFlagString", xPercent: 50, topPercent: 0, sizeRem: 0, delayMs: 0, swing: false, fullWidth: true },
   ],
 };
 
