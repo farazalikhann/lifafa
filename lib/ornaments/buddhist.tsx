@@ -412,7 +412,8 @@ export const BUDDHIST_ORNAMENTS: readonly BuddhistOrnamentEntry[] = [
     label: "Dharma wheel",
     Component: DharmaWheel,
     chipSize: 36,
-    topRegionOnly: false,
+    /* Above the names and nowhere else: see `slots` on the Buddhist pack. */
+    topRegionOnly: true,
   },
   {
     id: "bodhiLeaf",

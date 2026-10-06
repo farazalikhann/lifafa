@@ -255,7 +255,7 @@ export default function OrnamentPanel({
   const slots = pack.slots;
   const slotted: readonly AnyOrnamentId[] = slottedIds(pack);
   /* A pack with one corner ornament names it for both corners; it is one tile. */
-  const cornerIds = slots === null ? [] : [...new Set(slots.corners)];
+  const cornerIds = slots === null ? [] : [...new Set(slots.corners ?? [])];
   const loose = shapes.filter((entry) => !slotted.includes(entry.id));
   const slotGroups =
     slots === null

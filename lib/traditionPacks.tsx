@@ -170,9 +170,10 @@ interface OrnamentSlots {
   /**
    * The two bottom corners of the names' screen: the first stands at the
    * left, the second at the right, and either alone stands in both. A pack
-   * with one corner ornament names it twice.
+   * with one corner ornament names it twice. Absent for a pack with nothing
+   * that stands in a corner.
    */
-  corners: readonly [AnyOrnamentId, AnyOrnamentId];
+  corners?: readonly [AnyOrnamentId, AnyOrnamentId];
   /**
    * Frames the names: the names, the title and the rule under it are set
    * inside its opening. Absent for a pack with no such frame.
@@ -800,7 +801,21 @@ const BUDDHIST_PACK: TraditionPack = {
   findOrnament: (id) => BUDDHIST_PACK_ORNAMENTS.find((o) => o.id === id) ?? null,
   coverArchId: null,
   dividerId: null,
-  slots: null,
+  /*
+    ONE PLACE, FOR ONE ORNAMENT. The dharma wheel is the emblem of the faith,
+    and the scatter used to stand it wherever its turn in the list fell, the
+    foot of the card included. It stands above the names now, as the Jain
+    emblems do, and nowhere else. Everything else in the pack is where it
+    was: the flags and the lotus hang, and the rest is scattered.
+
+    TODO(Faraz): the Buddhist pack still needs proper fixed places for all of
+    its ornaments, as the Jain pack has (the stupa, the endless knot, the
+    conch and the bodhi leaf are still scattered).
+  */
+  slots: {
+    top: [],
+    aboveNames: ["dharmaWheel"],
+  },
   cardHead: null,
   calligraphyIds: [],
 };

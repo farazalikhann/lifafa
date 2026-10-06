@@ -19,7 +19,7 @@ export function slottedIds(pack: TraditionPack | null): readonly AnyOrnamentId[]
   return [
     ...pack.slots.top,
     ...pack.slots.aboveNames,
-    ...pack.slots.corners,
+    ...(pack.slots.corners ?? []),
     ...(pack.slots.frame ?? []),
     ...(pack.slots.sides ?? []),
   ];
@@ -80,9 +80,9 @@ export function resolveSlots(
   const find = (id: AnyOrnamentId | null): PackOrnament | null =>
     id === null ? null : pack.findOrnament(id);
 
-  const [leftId, rightId] = pack.slots.corners;
-  const left = enabled.includes(leftId) ? pack.findOrnament(leftId) : null;
-  const right = enabled.includes(rightId) ? pack.findOrnament(rightId) : null;
+  const [leftId, rightId] = pack.slots.corners ?? [null, null];
+  const left = leftId !== null && enabled.includes(leftId) ? pack.findOrnament(leftId) : null;
+  const right = rightId !== null && enabled.includes(rightId) ? pack.findOrnament(rightId) : null;
   const only = left ?? right;
 
   return {
