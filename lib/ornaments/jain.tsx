@@ -1,9 +1,10 @@
-import { imageOrnament } from "@/lib/ornaments/frame";
+import { calligraphyAspect } from "@/lib/calligraphy";
+import { calligraphyOrnament, imageOrnament } from "@/lib/ornaments/frame";
 import type { Ornament } from "@/lib/ornaments/frame";
 import type { JainOrnamentId } from "@/types/jainOrnament";
 
 /**
- * The Jain ornament pack: six pictures.
+ * The Jain ornament pack: six pictures and five lines of calligraphy.
  *
  * All six were line drawings in the card's accent: the toran, the kalash, the
  * ahimsa hand, the swastika, the Siddhashila and the lotus. They are pictures
@@ -27,8 +28,10 @@ import type { JainOrnamentId } from "@/types/jainOrnament";
  * the conventional open palm bearing a wheel, which is an emblem rather than
  * a person: there is no arm, no wrist, no body and no face.
  *
- * No Devanagari is drawn. Script belongs in lib/jainContent.ts, where it is
- * reviewed and can be corrected; a letterform baked into a picture cannot.
+ * No Devanagari is drawn by hand here. The greetings and blessings are text,
+ * in lib/jainContent.ts, where they are reviewed and can be corrected. The
+ * calligraphy is supplied artwork, read against its text before it was
+ * published; see lib/calligraphy.ts.
  */
 
 /* ---------------------------------------------------------------------------
@@ -53,6 +56,20 @@ const SiddhaShila = imageOrnament(PICTURES.siddhaShila.src, PICTURES.siddhaShila
 const Lotus = imageOrnament(PICTURES.lotus.src, PICTURES.lotus.aspect);
 
 /* ---------------------------------------------------------------------------
+   Calligraphy
+   --------------------------------------------------------------------------- */
+
+/**
+ * The five Devanagari lines, from the shared factory in lib/ornaments/frame.tsx.
+ * lib/calligraphy.ts holds their files and what each says.
+ */
+const JaiJinendra = calligraphyOrnament("jainJaiJinendra");
+const ShubhVivah = calligraphyOrnament("jainShubhVivah");
+const MangalParinay = calligraphyOrnament("jainMangalParinay");
+const NamoArihantanam = calligraphyOrnament("jainNamoArihantanam");
+const ShriMahaviraya = calligraphyOrnament("jainShriMahaviraya");
+
+/* ---------------------------------------------------------------------------
    Registry
    --------------------------------------------------------------------------- */
 
@@ -64,6 +81,12 @@ export const JAIN_ORNAMENT_ASPECT: Record<JainOrnamentId, number> = {
   siddhaShila: PICTURES.siddhaShila.aspect,
   kalash: PICTURES.kalash.aspect,
   tornGate: PICTURES.tornGate.aspect,
+  /* Not viewBoxes: the published crop of each line's file. */
+  jainJaiJinendra: calligraphyAspect("jainJaiJinendra"),
+  jainShubhVivah: calligraphyAspect("jainShubhVivah"),
+  jainMangalParinay: calligraphyAspect("jainMangalParinay"),
+  jainNamoArihantanam: calligraphyAspect("jainNamoArihantanam"),
+  jainShriMahaviraya: calligraphyAspect("jainShriMahaviraya"),
 };
 
 /** One ornament offered in the editor. The same shape as HinduOrnamentEntry. */
@@ -76,7 +99,7 @@ export interface JainOrnamentEntry {
   chipSize: number;
   /** Whether this ornament may only be placed in the card's top region. */
   topRegionOnly: boolean;
-  /** The published file, for the card to preload. */
+  /** The published file, for the card to preload. Absent for the calligraphy, which is a mask. */
   src?: string;
   /** Never mirrored and never turned: an emblem, not a pattern. */
   uprightOnly?: boolean;
@@ -87,9 +110,10 @@ export interface JainOrnamentEntry {
 }
 
 /**
- * The pack, in the order the editor lays out its chips. Every one has a place
- * on the card (see `slots` on the Jain pack) and the editor groups them by
- * place, whatever their order here.
+ * The pack, in the order the editor lays out its chips. Every picture has a
+ * place on the card (see `slots` on the Jain pack) and the editor groups them
+ * by place, whatever their order here; the calligraphy comes last and has a
+ * group of its own.
  */
 export const JAIN_ORNAMENTS: readonly JainOrnamentEntry[] = [
   {
@@ -151,6 +175,22 @@ export const JAIN_ORNAMENTS: readonly JainOrnamentEntry[] = [
     topRegionOnly: false,
     src: PICTURES.lotus.src,
   },
+  ...(
+    [
+      ["jainJaiJinendra", "Jai Jinendra", JaiJinendra],
+      ["jainShubhVivah", "Shubh Vivah", ShubhVivah],
+      ["jainMangalParinay", "Mangal Parinay", MangalParinay],
+      ["jainNamoArihantanam", "Namo Arihantanam", NamoArihantanam],
+      ["jainShriMahaviraya", "Shri Mahaviraya Namah", ShriMahaviraya],
+    ] as const
+  ).map(([id, label, Component]) => ({
+    id,
+    label,
+    Component,
+    /* Unused: the panel gives calligraphy its own grid and sizes it with CSS. */
+    chipSize: 120,
+    topRegionOnly: true,
+  })),
 ];
 
 /** Sits under the ornament grid in the editor. */

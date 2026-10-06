@@ -780,7 +780,14 @@ const JAIN_PACK: TraditionPack = {
   },
   /* The Hindu block's type, so the Devanagari is the same face on both. */
   cardHead: DEVANAGARI_CARD_HEAD,
-  calligraphyIds: [],
+  /* The order the panel offers them: the greeting first. */
+  calligraphyIds: [
+    "jainJaiJinendra",
+    "jainShubhVivah",
+    "jainMangalParinay",
+    "jainNamoArihantanam",
+    "jainShriMahaviraya",
+  ],
 };
 
 const BUDDHIST_PACK: TraditionPack = {

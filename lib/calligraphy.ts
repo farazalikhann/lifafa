@@ -56,7 +56,12 @@ export type CalligraphyId =
   | "twoBecomeOne"
   | "godHasJoined"
   | "holyMatrimony"
-  | "loveIsPatient";
+  | "loveIsPatient"
+  | "jainJaiJinendra"
+  | "jainShubhVivah"
+  | "jainMangalParinay"
+  | "jainNamoArihantanam"
+  | "jainShriMahaviraya";
 
 /** Which ground the lettering is being laid on. */
 export type CalligraphyGround = "light" | "dark";
@@ -157,6 +162,23 @@ function gurmukhi(slug: string, aspect: number, alt: string): CalligraphyArt {
  */
 function english(slug: string, aspect: number, alt: string): CalligraphyArt {
   const mask = `/decor/calligraphy/christian/${slug}.webp`;
+
+  return { src: { light: mask, dark: mask }, aspect, alt, mask };
+}
+
+/**
+ * The Devanagari pieces for a Jain card: five lines in a brush hand, each
+ * supplied as black lettering on a transparent ground.
+ *
+ * Published as shapes, like every piece since the Arabic ones: one file whose
+ * alpha is the lettering, filled with the card's accent through a CSS mask.
+ * In a folder and under ids of their own, though two of them say what a Hindu
+ * piece says: "shubhVivah" is the Hindu pack's artwork, and "mangalParinay"
+ * is a retired Hindu id that RETIRED_CALLIGRAPHY below reads as Shubh Vivah.
+ * Each pack owns its own artwork, so every id here is prefixed.
+ */
+function jain(slug: string, aspect: number, alt: string): CalligraphyArt {
+  const mask = `/decor/calligraphy/jain/${slug}.webp`;
 
   return { src: { light: mask, dark: mask }, aspect, alt, mask };
 }
@@ -301,6 +323,33 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
   godHasJoined: english("god-has-joined", 900 / 421, "What God Has Joined Together"),
   holyMatrimony: english("holy-matrimony", 900 / 191, "Holy Matrimony"),
   loveIsPatient: english("love-is-patient", 900 / 409, "Love is Patient, Love is Kind"),
+
+  /*
+    The five Jain pieces, in the order the panel offers them. Each was read
+    letter by letter against the text beside it before it was published, and
+    each agrees: the anusvara in मंगल, हं and णं, the short i before र in परिणय
+    and अरिहंताणं, the long i in श्री and वी, the visarga closing नमः, and the
+    न्द्र conjunct in जिनेन्द्र. That is a reading by eye, not a Jain reader's
+    review; see the TODO at the head of lib/jainContent.ts.
+  */
+  /* जय जिनेन्द्र */
+  jainJaiJinendra: jain("jai-jinendra", 900 / 300, "Jai Jinendra: victory to the Jinas"),
+  /* शुभ विवाह */
+  jainShubhVivah: jain("shubh-vivah", 900 / 311, "Shubh Vivah: an auspicious marriage"),
+  /* मंगल परिणय */
+  jainMangalParinay: jain("mangal-parinay", 900 / 225, "Mangal Parinay: an auspicious wedding"),
+  /* णमो अरिहंताणं */
+  jainNamoArihantanam: jain(
+    "namo-arihantanam",
+    900 / 220,
+    "Namo Arihantanam: I bow to the Arihants",
+  ),
+  /* श्री महावीराय नमः */
+  jainShriMahaviraya: jain(
+    "shri-mahaviraya-namah",
+    900 / 185,
+    "Shri Mahaviraya Namah: salutations to Lord Mahavira",
+  ),
 };
 
 /**

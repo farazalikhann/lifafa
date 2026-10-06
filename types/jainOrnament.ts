@@ -17,7 +17,19 @@ export type JainOrnamentId =
   | "lotus"
   | "siddhaShila"
   | "kalash"
-  | "tornGate";
+  | "tornGate"
+  /*
+    Calligraphy rather than shapes: Devanagari word-marks, supplied as artwork.
+    Ids here because the host switches them on from the same panel; the pack
+    sends them to `calligraphyIds` and the head of the card. Prefixed, because
+    the Hindu pack has a "shubhVivah" of its own and once had a
+    "mangalParinay"; see lib/calligraphy.ts.
+  */
+  | "jainJaiJinendra"
+  | "jainShubhVivah"
+  | "jainMangalParinay"
+  | "jainNamoArihantanam"
+  | "jainShriMahaviraya";
 
 /*
   "swastika" here and "swastik" in the Hindu pack are separate ids drawing
