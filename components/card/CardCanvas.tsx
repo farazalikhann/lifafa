@@ -12,6 +12,7 @@ import { useOnScreen } from "@/hooks/useOnScreen";
 import {
   calligraphyGround,
   calligraphyMask,
+  greetingSaidByCalligraphy,
   withOneCalligraphy,
   withoutRetiredCalligraphy,
   type CalligraphyId,
@@ -970,7 +971,13 @@ export default function CardCanvas({
         )
       : [];
 
-  const greeting = pack?.findGreeting(config.ornamentConfig.greetingId) ?? null;
+  /*
+    Not drawn while the calligraphy above it says the same phrase: the card
+    would read it twice. The choice itself is untouched.
+  */
+  const greeting = greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
+    ? null
+    : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
   const blessing = pack?.findBlessing(config.ornamentConfig.blessingId) ?? null;
 
   /*

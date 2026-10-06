@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { tapCalligraphy } from "@/lib/calligraphy";
+import { greetingSaidByCalligraphy, tapCalligraphy } from "@/lib/calligraphy";
 import { chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
 import type {
   PackBlessing,
@@ -426,6 +426,13 @@ export default function OrnamentPanel({
           pack={pack}
           onSelect={(row) => onChange({ ...config, greetingId: row.id })}
         />
+
+        {greetingSaidByCalligraphy(config.greetingId, config.enabledOrnaments) ? (
+          <MutedNote>
+            Your calligraphy already says this, so your card shows it once.
+            Your greeting is kept, and comes back if you change the calligraphy.
+          </MutedNote>
+        ) : null}
       </div>
 
       {/* 4 — Dua, or shlok, or whatever this tradition calls the slot */}

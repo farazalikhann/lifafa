@@ -392,6 +392,49 @@ export function calligraphyMask(id: CalligraphyId): string | null {
 }
 
 /**
+ * The calligraphy that says, word for word, what one of its pack's greetings
+ * says: the piece's id, and that greeting's row id in the pack's content file.
+ *
+ * A card heads with its calligraphy and sets its greeting directly under it,
+ * so a card with both of a pair here said the same phrase twice, once as
+ * lettering and once as type. The card shows the lettering and skips the
+ * greeting while the two are together; see greetingSaidByCalligraphy.
+ *
+ * ONLY A PAIR THAT IS THE SAME PHRASE. The Basmala is not here: the artwork is
+ * the whole of it and the "bismillah" greeting is its short form. Waheguru is
+ * not here either: no greeting is that one word.
+ */
+const GREETING_SAID_BY: Partial<Record<CalligraphyId, string>> = {
+  /* जय जिनेन्द्र */
+  jainJaiJinendra: "jaiJinendra",
+  /* णमो अरिहंताणं */
+  jainNamoArihantanam: "navkarOpening",
+  /* श्री गणेशाय नमः */
+  shriGaneshaya: "ganeshaya",
+  /* ਸਤਿਨਾਮ ਵਾਹਿਗੁਰੂ */
+  satnamWaheguru: "satNaam",
+};
+
+/**
+ * Whether the calligraphy on the card already says its greeting.
+ *
+ * Read when the card is drawn and never written back: the host's greeting
+ * stays chosen and stays saved, and is on the card again the moment they pick
+ * another piece of calligraphy or take this one off. `ornamentIds` is the
+ * card's list after withOneCalligraphy, so the one piece in it is the one
+ * that heads the card.
+ */
+export function greetingSaidByCalligraphy(
+  greetingId: string | null,
+  ornamentIds: readonly string[],
+): boolean {
+  return (
+    greetingId !== null &&
+    ornamentIds.some((id) => GREETING_SAID_BY[id as CalligraphyId] === greetingId)
+  );
+}
+
+/**
  * Hindu calligraphy that has been taken out of the pack, and what a card that
  * chose one gets instead.
  *

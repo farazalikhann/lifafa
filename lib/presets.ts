@@ -167,6 +167,17 @@ const PALETTE_CHAMPAGNE = "#86672E";
  * four cards. Only the pack's own emblems, architecture and plants: no figure,
  * and nothing from another tradition. The words they open with are the pack's
  * own rows in lib/gurmukhiContent.ts, added only to a card that has none.
+ *
+ * THEN FOUR JAIN VIVAH LOOKS, built the same way, each on a different ground
+ * and headed by a different word-mark. The swastika, the ahimsa hand and the
+ * Siddhashila are emblems of the faith and are only ever above the names, one
+ * to a look, which is the only place the pack draws them. The toran, the
+ * kalash and the lotus are the rest: no figure, no face, and nothing from
+ * another tradition. The words are the pack's own rows in lib/jainContent.ts,
+ * added only to a card that has none. Where a look's word-mark is Jai
+ * Jinendra, the greeting it adds is the Navkar's opening line instead: the
+ * card does not draw a greeting its calligraphy already says (see
+ * greetingSaidByCalligraphy in lib/calligraphy.ts).
  */
 const PRESETS: readonly Preset[] = [
   {
@@ -471,6 +482,112 @@ const PRESETS: readonly Preset[] = [
       blessingIfNone: "anandBlessing",
     },
   },
+  {
+    id: "jinendra-ivory",
+    name: "Jinendra Ivory",
+    description: "Ivory, maroon and gold, a toran, the swastika and lotus petals.",
+    tradition: "jain",
+    settings: {
+      paletteId: "cream",
+      /* Maroon for the second ink, and gold for the word-mark and the rules. */
+      textPairId: "ivoryRose",
+      accentOverride: PALETTE_CHAMPAGNE,
+      fontPairId: "royal",
+      density: "comfortable",
+      /* No frame: the toran is the border, and a second one would crowd it. */
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "open",
+      petalFlower: "lotus",
+      coverAnimation: "fold-unfold",
+      ornaments: ["tornGate", "swastika"],
+      calligraphy: "jainJaiJinendra",
+      /* Not Jai Jinendra: the word-mark already says it. */
+      greetingIfNone: "navkarOpening",
+      blessingIfNone: "mangalBlessing",
+    },
+  },
+  {
+    id: "mahavir-saffron",
+    name: "Mahavir Saffron",
+    description: "Warm sand and saffron, a toran, the Siddhashila and kalash.",
+    tradition: "jain",
+    settings: {
+      paletteId: "sand",
+      textPairId: "haldiSaffron",
+      /* Sand's own accent is brown; the word-mark and the rules want saffron. */
+      accentOverride: PALETTE_KESRI,
+      fontPairId: "royal",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "open",
+      petalFlower: "marigold",
+      coverAnimation: "envelope-seal",
+      /* Kalash alone in the corners stands in both, the right one mirrored. */
+      ornaments: ["tornGate", "siddhaShila", "kalash"],
+      calligraphy: "jainShriMahaviraya",
+      greetingIfNone: "jaiJinendra",
+      blessingIfNone: "mangalBlessing",
+    },
+  },
+  {
+    id: "lotus-blush",
+    name: "Lotus Blush",
+    description: "Soft blush, lotuses, the ahimsa hand, petals and butterflies.",
+    tradition: "jain",
+    settings: {
+      paletteId: "blush",
+      textPairId: "ivoryRose",
+      accentOverride: null,
+      fontPairId: "romantic",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "yellow",
+      leaves: false,
+      petals: "both",
+      petalFlower: "lotus",
+      coverAnimation: "petal-dust",
+      /* No toran: the top of this one is left to the hand and the word-mark. */
+      ornaments: ["ahimsaHand", "lotus"],
+      calligraphy: "jainShubhVivah",
+      greetingIfNone: "jaiJinendra",
+      blessingIfNone: "mangalBlessing",
+    },
+  },
+  {
+    id: "royal-midnight-jain",
+    name: "Royal Midnight Jain",
+    description: "Night blue and gold, a toran, the swastika and kalash.",
+    tradition: "jain",
+    settings: {
+      paletteId: "midnight",
+      textPairId: "midnightGold",
+      /* Midnight's own accent is already gold. */
+      accentOverride: null,
+      fontPairId: "regal",
+      density: "comfortable",
+      borderStyle: "none",
+      decorMotion: "float",
+      decorIntensity: "subtle",
+      butterflies: "none",
+      leaves: false,
+      petals: "none",
+      coverAnimation: "curtain-reveal",
+      ornaments: ["tornGate", "swastika", "kalash"],
+      calligraphy: "jainMangalParinay",
+      greetingIfNone: "jaiJinendra",
+      blessingIfNone: "mangalBlessing",
+    },
+  },
 ];
 
 /**
@@ -483,6 +600,7 @@ const GROUP_LABELS: Partial<Record<TraditionId, string>> = {
   muslim: "Nikah",
   hindu: "Vivah",
   sikh: "Anand Karaj",
+  jain: "Jain Vivah",
 };
 
 export interface PresetGroup {
