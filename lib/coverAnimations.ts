@@ -7,9 +7,9 @@
  */
 
 import { breezeArt } from "@/lib/breezeArt";
-import { FOLD_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
 import { envelopeLightArt, envelopeLightTiming } from "@/lib/envelopeLightFilm";
 import { curtainLightArt, curtainLightTiming } from "@/lib/curtainLightFilm";
+import { foldLightArt, foldLightTiming } from "@/lib/foldLightFilm";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -92,12 +92,13 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
   {
     id: "fold-unfold",
     label: "Fold and unfold",
-    description: "Two doors tied with a ribbon swing open to show the card.",
+    description: "A royal gatefold card opens its panels, and the card appears out of the light.",
     openPromptText: {
       en: "Tap to open",
       hi: "खोलने के लिए टैप करें",
     },
     /*
+      The drawn doors' timings, which open when the film cannot.
       1.8s: the ribbon slipped off (0.4s), then the two doors, each 0.8s and
       the second 0.2s behind the first. The shares are in the visual, and are
       set to the recording's own timings.
@@ -113,11 +114,13 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     /* The doors fill the screen, so the prompt sits on a plaque of its own. */
     wordsOn: "plaque",
     /*
-      Played from film, dark or light; see lib/coverVideos.ts. The timings
-      above are the drawn cover's, which opens when the film cannot.
+      Played from film: the ribbon slips off, the two panels swing out on a
+      light that fills the screen, and the card comes out of the light. One
+      film for every card, and the visual follows the film's own clock, so
+      the timing here is only the shell's net. See lib/foldLightFilm.ts.
     */
-    art: filmArt(FOLD_FILMS),
-    film: filmTiming(FOLD_FILMS),
+    art: foldLightArt,
+    film: foldLightTiming,
   },
   {
     /*

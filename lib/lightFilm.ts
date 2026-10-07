@@ -36,9 +36,10 @@ export interface LightFilm {
   /** How long the film holds still before anything in it moves; its sound waits as long. */
   soundDelayMs: number;
   /**
-   * The blank place the couple's initials are lettered on, a wax seal: its
-   * centre and the width of its clear face, in shares of the frame's width
-   * (and its height, for the centre's y). Absent for a film with none.
+   * The blank place the couple's initials are lettered on, a wax seal or a
+   * medallion: its centre and the width of its clear face, in shares of the
+   * frame's width (and its height, for the centre's y). Absent for a film
+   * with none.
    */
   mark?: { x: number; y: number; width: number };
   /** The initials' ink: lit edge, body, shade, and the shadow that cuts them in. */

@@ -182,7 +182,11 @@ export const ENVELOPE_FILMS: CoverFilmSet = {
 */
 
 /*
-  FOLD. Dark: frames 13-91 (0.54s to 3.83s): the ribbon starts down at 0.3s
+  FOLD. NOT PLAYED ANY MORE, like the envelope's above: the gatefold cover is
+  now one film for every card that ends in plain light, lib/foldLightFilm.ts.
+  Nothing in this file is played now; it and VideoCover are kept as they were.
+
+  Dark: frames 13-91 (0.54s to 3.83s): the ribbon starts down at 0.3s
   and is gone by 1.7s, and the doors swing from 1.45s to 2.95s. Light: frames
   17-95 (0.71s to 4.00s): ribbon 0.3s to 1.55s, doors 1.3s to 3.05s. In both
   the doors open almost together, the left a quarter of a second ahead. The
