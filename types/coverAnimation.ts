@@ -17,7 +17,8 @@ export type CoverAnimationId =
   | "envelope-seal"
   | "curtain-reveal"
   | "fold-unfold"
-  | "petal-dust";
+  | "petal-dust"
+  | "rose-bloom";
 
 /**
  * The pictures a cover is drawn from, when it is drawn from pictures, and the
@@ -45,6 +46,15 @@ export interface CoverArt {
    * cream one.
    */
   tone?: "dark" | "light";
+  /**
+   * Where "You are invited", the names and the prompt are set. At the head,
+   * with the prompt near the foot, on every cover unless it says otherwise:
+   * each keeps its seal or medallion at the middle and the head clear. "foot"
+   * is for artwork whose subject is the middle and the head both, a rose,
+   * where the lower third is the clear ground: the words are set there, with
+   * the prompt under them.
+   */
+  wordsAt?: "head" | "foot";
   /** Skip and the focus ring, over the artwork. */
   ink?: string;
   inkMuted?: string;
@@ -80,6 +90,12 @@ export interface CoverAnimationOption {
   label: string;
   /** One short line explaining what the effect does. */
   description: string;
+  /**
+   * A small square picture of the cover, shown beside its name in the
+   * designer's picker, for a cover whose name alone does not say what a
+   * guest will see.
+   */
+  thumbnail?: string;
   /**
    * The invitation printed on the closed cover, for example "Tap seal to open",
    * in each language a card can be written in.

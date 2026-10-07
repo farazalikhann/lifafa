@@ -10,6 +10,12 @@ import { breezeArt } from "@/lib/breezeArt";
 import { envelopeLightArt, envelopeLightTiming } from "@/lib/envelopeLightFilm";
 import { curtainLightArt, curtainLightTiming } from "@/lib/curtainLightFilm";
 import { foldLightArt, foldLightTiming } from "@/lib/foldLightFilm";
+import {
+  ROSE_BLOOM_PLAIN_FADE_MS,
+  ROSE_BLOOM_THUMB,
+  roseBloomArt,
+  roseBloomTiming,
+} from "@/lib/roseBloomFilm";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -151,6 +157,40 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     wordsOn: "plaque",
     /* Drawn over the card, not filmed, so the card shows where the breeze has been. See lib/breezeArt.ts. */
     art: breezeArt,
+  },
+  {
+    /*
+      A new id, and so a new value for the check on events.cover_animation:
+      see supabase/migrations/0015_rose_bloom_cover.sql.
+    */
+    id: "rose-bloom",
+    label: "Rose Bloom",
+    description: "A red rose blooms open, and the card appears out of its light.",
+    thumbnail: ROSE_BLOOM_THUMB,
+    openPromptText: {
+      en: "Tap to open",
+      hi: "खोलने के लिए टैप करें",
+    },
+    /*
+      What happens when the film cannot play: there is no rose drawn in code,
+      so the still fades to the card, and the card is let go as it starts to.
+    */
+    durationMs: ROSE_BLOOM_PLAIN_FADE_MS,
+    revealAt: 0,
+    /* Petals: the breeze cover's own recording. */
+    sound: "petal-dust",
+    haptic: 10,
+    supportsReducedMotion: true,
+    /* Leaves and petals fill the screen, so the prompt sits on a plaque of its own. */
+    wordsOn: "plaque",
+    /*
+      Played from film: the rose opens on a light that fills the screen, and
+      the card comes out of the light. One film for every card, and the
+      visual follows the film's own clock, so the timing here is only the
+      shell's net. See lib/roseBloomFilm.ts.
+    */
+    art: roseBloomArt,
+    film: roseBloomTiming,
   },
 ];
 

@@ -20,6 +20,9 @@ import type { CoverAnimationId } from "@/types/coverAnimation";
  * "No animation" is in the list as an equal option and not behind a switch.
  * Plenty of hosts want the card and nothing in front of it, and making that
  * choice the awkward one is how a product ends up nagging people.
+ *
+ * A cover with a picture of itself shows it beside its name; see `thumbnail`
+ * on CoverAnimationOption.
  */
 export default function CoverAnimationPicker({
   coverAnimation,
@@ -54,24 +57,37 @@ export default function CoverAnimationPicker({
               aria-pressed={isSelected}
               onClick={() => onChange(option.id)}
               className={[
-                "flex min-h-11 flex-col items-start gap-0.5 rounded-xl border px-3.5 py-3 text-left transition-colors duration-150",
+                "flex min-h-11 items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors duration-150",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
                 isSelected
                   ? "border-transparent bg-[var(--lifafa-ink-raised)] ring-2 ring-[var(--lifafa-marigold)]"
                   : "border-[var(--lifafa-hairline)] hover:border-[var(--lifafa-muted)]",
               ].join(" ")}
             >
-              <span
-                className={`text-[0.8125rem] font-medium ${
-                  isSelected
-                    ? "text-[var(--lifafa-cream)]"
-                    : "text-[var(--lifafa-muted)]"
-                }`}
-              >
-                {option.label}
-              </span>
-              <span className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-                {option.description}
+              {option.thumbnail !== undefined ? (
+                <img
+                  src={option.thumbnail}
+                  alt=""
+                  width={48}
+                  height={48}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                />
+              ) : null}
+              <span className="flex min-w-0 flex-col items-start gap-0.5">
+                <span
+                  className={`text-[0.8125rem] font-medium ${
+                    isSelected
+                      ? "text-[var(--lifafa-cream)]"
+                      : "text-[var(--lifafa-muted)]"
+                  }`}
+                >
+                  {option.label}
+                </span>
+                <span className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+                  {option.description}
+                </span>
               </span>
             </button>
           );

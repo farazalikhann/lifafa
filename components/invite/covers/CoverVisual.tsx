@@ -14,6 +14,7 @@ import { ENVELOPE_LIGHT_FILM } from "@/lib/envelopeLightFilm";
 import { FOLD_LIGHT_FILM } from "@/lib/foldLightFilm";
 import { envelopeArt } from "@/lib/envelopeArt";
 import { gatefoldArt } from "@/lib/gatefoldArt";
+import { ROSE_BLOOM_FILM } from "@/lib/roseBloomFilm";
 
 /*
   The covers as they are drawn in code, which is what a filmed cover falls
@@ -91,6 +92,14 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
     */
     case "petal-dust":
       return <BreezeCover key={state.colors.ground} {...state} />;
+
+    /*
+      A film that ends in plain light, like the curtain's. Nothing is drawn
+      in code behind this one: when the film cannot play, its still fades to
+      the card.
+    */
+    case "rose-bloom":
+      return <LightFilmCover {...state} film={ROSE_BLOOM_FILM} />;
 
     /* The host asked for no animation. The shell never shows a cover at all. */
     case "none":

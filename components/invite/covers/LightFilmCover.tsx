@@ -44,6 +44,9 @@ const LATE_START_MS = 400;
 /** How quickly the initials leave their seal on the tap: gone before it has cracked. */
 const MARK_EXIT_MS = 180;
 
+/** How quickly the band under a film's words goes on the tap: with the words. */
+const BAND_EXIT_MS = 360;
+
 /**
  * Where the open is. "film" is the film playing; "light" is the flat light
  * giving way to the card; "drawn" is the cover drawn in code opening in the
@@ -102,7 +105,8 @@ const useIsomorphicLayoutEffect =
  * half after the tap, if the browser will not start it, or on a connection it
  * was never sent over. It is mounted out of sight as soon as the film looks
  * late, so it has a closed state to open from. With neither in hand the
- * still fades to the card.
+ * still fades to the card, and for a film that never had a drawn cover that
+ * soft fade is the whole of its fallback.
  *
  * Under reduced motion the shell never hands this the "opening" phase: the
  * still crossfades to the card as one layer, and no film is requested.
@@ -111,11 +115,12 @@ export default function LightFilmCover({
   film: FILM,
   drawn,
   ...state
-}: CoverVisualState & { film: LightFilm; drawn: DrawnCover }): ReactElement {
+}: CoverVisualState & { film: LightFilm; drawn?: DrawnCover }): ReactElement {
   const { phase, option, reducedMotion, colors, ready, retime, dismissSkip } = state;
   const { title, pair, headingFont } = state;
   const opening = phase === "opening";
   const fadeMs = colors.isLight ? FILM.fadeMs : FILM.fadeToDarkMs;
+  const plainMs = FILM.plainFadeMs ?? PLAIN_FADE_MS;
 
   const videoRef = useRef<HTMLVideoElement>(null);
   /* The film has failed, or was never asked for: there is nothing to wait for. */
@@ -132,7 +137,7 @@ export default function LightFilmCover({
   const [stalled, setStalled] = useState(false);
 
   const sendForDrawn = useCallback((): void => {
-    if (drawnSent.current) {
+    if (drawnSent.current || drawn === undefined) {
       return;
     }
 
@@ -243,8 +248,17 @@ export default function LightFilmCover({
           sound: "restart",
         });
       } else {
+        /*
+          A film with nothing drawn behind it keeps its sound over the fade,
+          which is its opening; one that has lost its drawing as well has
+          nothing left for a sound to go with.
+        */
         setStage("plain");
-        retime({ durationMs: PLAIN_FADE_MS, revealAt: 0, sound: "stop" });
+        retime({
+          durationMs: plainMs,
+          revealAt: 0,
+          sound: drawn === undefined ? "keep" : "stop",
+        });
       }
     };
 
@@ -380,7 +394,7 @@ export default function LightFilmCover({
   const blockStyle: CSSProperties = {
     transition:
       stage === "plain"
-        ? `opacity ${PLAIN_FADE_MS}ms ease-in-out`
+        ? `opacity ${plainMs}ms ease-in-out`
         : stage === "drawn"
           ? `opacity ${DRAWN_SWAP_MS}ms ease-out`
           : undefined,
@@ -422,6 +436,7 @@ export default function LightFilmCover({
   const lineLetters = pairLetters.length === 0 ? initialsOf(title) : "";
   const mark = FILM.mark;
   const ink = FILM.ink;
+  const Drawn = drawn?.Component;
 
   return (
     <div
@@ -439,12 +454,12 @@ export default function LightFilmCover({
           was. The prompt is the shell's, on its plaque; the drawing is not
           asked to letter it again.
         */}
-        {standIn && (stage === "closed" || stage === "drawn") ? (
+        {Drawn !== undefined && standIn && (stage === "closed" || stage === "drawn") ? (
           <div
             className="absolute inset-0"
             style={{ visibility: stage === "drawn" ? "visible" : "hidden" }}
           >
-            <drawn.Component
+            <Drawn
               {...state}
               phase={stage === "drawn" ? "opening" : "closed"}
               prompt=""
@@ -550,6 +565,22 @@ export default function LightFilmCover({
               </div>
             ) : null}
           </div>
+
+          {/*
+            The ground the shell's words are read on, for a film that has
+            them at its foot: its own shade, solid at the foot and thinning
+            upwards, as the breeze cover lays one down from the head.
+          */}
+          {FILM.band !== undefined ? (
+            <div
+              className="absolute inset-x-0 bottom-0 h-[44%]"
+              style={{
+                backgroundImage: `linear-gradient(0deg, ${FILM.band}E6 0%, ${FILM.band}B8 46%, ${FILM.band}00 100%)`,
+                transition: opening ? `opacity ${BAND_EXIT_MS}ms ease-out` : undefined,
+                opacity: opening && !reducedMotion ? 0 : 1,
+              }}
+            />
+          ) : null}
         </div>
       </div>
     </div>

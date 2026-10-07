@@ -393,6 +393,8 @@ export default function CoverShell({
   const burstAt = film !== undefined ? undefined : option.burstAt;
   const soundDelayMs = film?.soundDelayMs ?? 0;
   const artImages = art?.images ?? NO_ART;
+  /* Artwork whose middle and head are its subject: the words go to its foot. See CoverArt. */
+  const wordsAtFoot = art?.wordsAt === "foot";
 
   for (const src of artImages) {
     preload(src, { as: "image", fetchPriority: "high" });
@@ -928,7 +930,10 @@ export default function CoverShell({
             data-cover-invite=""
             className="pointer-events-none absolute inset-x-0 z-10 flex flex-col items-center gap-2 px-7 text-center motion-reduce:transition-none"
             style={{
-              top: "calc(var(--cover-top-h, 0px) + max(5.5vh, 28px))",
+              /* At the foot, it stands on the prompt's plaque, which is moved down to make room. */
+              ...(wordsAtFoot
+                ? { bottom: "calc(max(3.5vh, 28px) + 3.5rem)" }
+                : { top: "calc(var(--cover-top-h, 0px) + max(5.5vh, 28px))" }),
               opacity: reducedMotion || (ready && phase === "closed") ? 1 : 0,
               transform:
                 reducedMotion || (ready && phase === "closed")
@@ -1025,7 +1030,9 @@ export default function CoverShell({
               !hasVisual
                 ? "justify-center"
                 : onPlaque
-                  ? "justify-end pb-[max(15vh,104px)] lg:pb-[24vh]"
+                  ? wordsAtFoot
+                    ? "justify-end pb-[max(3.5vh,28px)]"
+                    : "justify-end pb-[max(15vh,104px)] lg:pb-[24vh]"
                   : "justify-end pb-[max(9vh,60px)]"
             }`}
           >

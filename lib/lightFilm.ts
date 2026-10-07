@@ -44,6 +44,17 @@ export interface LightFilm {
   mark?: { x: number; y: number; width: number };
   /** The initials' ink: lit edge, body, shade, and the shadow that cuts them in. */
   ink?: { hi: string; body: string; lo: string; shadow: string };
+  /**
+   * For a film with no cover drawn in code to fall back to: how long its
+   * still takes to give way to the card when the film cannot play.
+   */
+  plainFadeMs?: number;
+  /**
+   * For a film whose words are set at its foot: the colour of the band laid
+   * under them, six hex digits, solid at the foot and thinning upwards. It
+   * goes with the words on the tap.
+   */
+  band?: string;
 }
 
 /** How long a film is waited for after the tap, before the cover drawn in code opens instead. */
