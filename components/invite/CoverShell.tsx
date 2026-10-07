@@ -56,6 +56,9 @@ const UNMOUNT_GRACE_MS = 80;
  */
 const WORDS_FADE_MS = 360;
 
+/** How quickly Skip goes when a visual sends it away. See `dismissSkip` on CoverVisualState. */
+const SKIP_FADE_MS = 400;
+
 /**
  * "You are invited", over the closed cover: how long it takes to arrive once
  * the loader has let the cover through, how long after that it waits to start,
@@ -206,6 +209,14 @@ export interface CoverVisualState {
     burstAt?: number;
     sound: "restart" | "stop" | "keep";
   }) => void;
+  /**
+   * For a visual whose open passes through a frame the shell's Skip does not
+   * belong on, a screen of plain light: Skip is faded out from now and can no
+   * longer be reached. It is not put back; the cover is on its way out. A
+   * visual that never calls this leaves Skip as it is on every other cover,
+   * there until the cover has gone.
+   */
+  dismissSkip: () => void;
 }
 
 /** For useSyncExternalStore, where the only question is server or browser. */
@@ -445,6 +456,10 @@ export default function CoverShell({
   /* The card's petal burst, let go at the option's `burstAt` when it has one. See useBurstGate. */
   const [burstLetGo, setBurstLetGo] = useState<boolean>(false);
   const burstTimerRef = useRef<number | null>(null);
+
+  /* Skip, sent away early by a visual that asked for it. See `dismissSkip` on CoverVisualState. */
+  const [skipDismissed, setSkipDismissed] = useState<boolean>(false);
+  const dismissSkip = useCallback((): void => setSkipDismissed(true), []);
 
   /* Where the guest tapped, for a visual that opens from there. See CoverVisualState. */
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
@@ -782,6 +797,7 @@ export default function CoverShell({
     prompt,
     origin,
     retime,
+    dismissSkip,
   });
   const hasVisual = visual !== null && visual !== undefined;
   const fadesWhole = !hasVisual || reducedMotion;
@@ -1110,8 +1126,20 @@ export default function CoverShell({
             <button
               type="button"
               onClick={handleSkip}
+              /* Faded, it is out of reach as well as out of sight. */
+              tabIndex={skipDismissed ? -1 : undefined}
+              aria-hidden={skipDismissed ? true : undefined}
               /* Over artwork it sits on tassels, and takes the plaque's ground to be read. */
-              style={{ backgroundColor: art?.plaque }}
+              style={{
+                backgroundColor: art?.plaque,
+                ...(skipDismissed
+                  ? {
+                      opacity: 0,
+                      pointerEvents: "none",
+                      transition: `opacity ${SKIP_FADE_MS}ms ease-out`,
+                    }
+                  : null),
+              }}
               className="absolute right-6 bottom-6 rounded-full px-3 py-1.5 text-xs text-[var(--cover-muted)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--cover-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cover-accent)]"
             >
               {copy.coverSkip}

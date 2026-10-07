@@ -86,7 +86,8 @@ const useIsomorphicLayoutEffect =
  * layer of exactly the film's last colour under it, and the card under that.
  * The film is taken off the light, which nobody can see, and the light is
  * faded off the card: 0.8 seconds onto a light card, 1.1 onto a dark one,
- * where the change is the bigger. Opacity only.
+ * where the change is the bigger. Opacity only. The shell's Skip is sent
+ * away as the film's light starts to flood, so it never stands on the light.
  *
  * WHEN THE FILM CANNOT PLAY, the curtains drawn in code open instead
  * (CurtainRevealCover, untouched): if the film has failed, if it has not
@@ -99,7 +100,7 @@ const useIsomorphicLayoutEffect =
  * still crossfades to the card as one layer, and no film is requested.
  */
 export default function CurtainLightCover(state: CoverVisualState): ReactElement {
-  const { phase, option, reducedMotion, colors, ready, retime } = state;
+  const { phase, option, reducedMotion, colors, ready, retime, dismissSkip } = state;
   const opening = phase === "opening";
   const fadeMs = colors.isLight ? FILM.fadeMs : FILM.fadeToDarkMs;
 
@@ -202,6 +203,8 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
     let asked = false;
     let playing = false;
     let settled = false;
+    /* The film's light has started to flood the frame. */
+    let glowing = false;
     let wait = 0;
     let watchdog = 0;
     let stall = 0;
@@ -241,6 +244,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
       settled = true;
       window.clearTimeout(stall);
       window.cancelAnimationFrame(frame);
+      dismissSkip();
       setStalled(short);
       setStage("light");
       retime({ durationMs: fadeMs, revealAt: 0, sound: "keep" });
@@ -255,6 +259,16 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
       if (video.ended || video.currentTime * 1000 >= FILM.lightAtMs) {
         toLight(false);
         return;
+      }
+
+      /*
+        Skip goes as the light starts to flood, so it is not left standing on
+        a screen of plain light. Only on this path: the drawn curtains never
+        show that screen and keep Skip to the end.
+      */
+      if (!glowing && video.currentTime * 1000 >= FILM.glowAtMs) {
+        glowing = true;
+        dismissSkip();
       }
 
       frame = window.requestAnimationFrame(follow);
