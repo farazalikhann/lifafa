@@ -441,12 +441,16 @@ const DENSITY_GAP_SCALE: Record<CardDensity, number> = {
   airy: 1.4,
 };
 
-function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
+function sectionMinHeight(
+  sizing: CardSizing,
+  density: CardDensity,
+  frameHeight: number,
+): string {
   const scale = DENSITY_HEIGHT_SCALE[density];
 
   return sizing === "viewport"
     ? `${Math.round(scale * 100)}svh`
-    : `${Math.round(PREVIEW_FRAME_HEIGHT * scale)}px`;
+    : `${Math.round(frameHeight * scale)}px`;
 }
 
 /**
@@ -470,8 +474,8 @@ function sectionMinHeight(sizing: CardSizing, density: CardDensity): string {
  * guest's thumb; a decor band that resizes is drawing a rectangle nobody is
  * reading.
  */
-function scrollportHeight(sizing: CardSizing): string {
-  return sizing === "viewport" ? "100dvh" : `${PREVIEW_FRAME_HEIGHT}px`;
+function scrollportHeight(sizing: CardSizing, frameHeight: number): string {
+  return sizing === "viewport" ? "100dvh" : `${frameHeight}px`;
 }
 
 /**
@@ -484,10 +488,14 @@ function scrollportHeight(sizing: CardSizing): string {
  * height is read from --lifafa-cue-h, which is shorter on a short screen,
  * where the cue drops its second line (see globals.css).
  */
-function firstScreenHeight(sizing: CardSizing, minHeight: string): string {
+function firstScreenHeight(
+  sizing: CardSizing,
+  minHeight: string,
+  frameHeight: number,
+): string {
   return sizing === "viewport"
     ? `min(${minHeight}, calc(100svh - var(--lifafa-cue-h, ${INVITED_CUE_HEIGHT}px) - ${FIRST_SCREEN_PEEK - INVITED_CUE_HEIGHT}px - env(safe-area-inset-bottom, 0px)))`
-    : `min(${minHeight}, ${PREVIEW_FRAME_HEIGHT - FIRST_SCREEN_PEEK}px)`;
+    : `min(${minHeight}, ${frameHeight - FIRST_SCREEN_PEEK}px)`;
 }
 
 /**
@@ -761,6 +769,7 @@ export default function CardCanvas({
   fluid = false,
   fillsPhone = false,
   frame = true,
+  frameHeight = PREVIEW_FRAME_HEIGHT,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -795,6 +804,13 @@ export default function CardCanvas({
    * clear of the border either way. See InviteExperience.
    */
   frame?: boolean;
+  /**
+   * In "frame" sizing, how tall the frame is, in px: what a section is sized
+   * against and how tall the pinned decor is. The editor's 620px box unless
+   * said otherwise; the home page's phone frames are taller for their width.
+   * Does nothing in "viewport" sizing.
+   */
+  frameHeight?: number;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -820,8 +836,8 @@ export default function CardCanvas({
   weatherTheme?: string | null;
 }): ReactElement {
   const { style } = config;
-  const minHeight = sectionMinHeight(sizing, style.density);
-  const bandHeight = scrollportHeight(sizing);
+  const minHeight = sectionMinHeight(sizing, style.density, frameHeight);
+  const bandHeight = scrollportHeight(sizing, frameHeight);
   const visible = config.blocks.filter((block) =>
     blockRenders(block, draft, config.occasionId),
   );
@@ -1271,7 +1287,7 @@ export default function CardCanvas({
   const firstScreenPad = Math.max(sectionPad, clearance.y);
 
   /* See FIRST_SCREEN_PEEK. */
-  const firstScreenBox = firstScreenHeight(sizing, minHeight);
+  const firstScreenBox = firstScreenHeight(sizing, minHeight, frameHeight);
 
   /*
     What the head screen insets by, which is not what a section insets by.

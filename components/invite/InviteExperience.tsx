@@ -62,6 +62,9 @@ const GuestPass = dynamic(() => import("@/components/invite/GuestPass"), {
 
 type InviteStage = "form" | "confirmed";
 
+/** How long the sample's reply form says it is sending, before it answers. */
+const SAMPLE_REPLY_MS = 500;
+
 /**
  * Why a reply did not go through, kept as a reason rather than a sentence, so
  * a guest who switches language after a failure reads it in the new one.
@@ -115,6 +118,7 @@ export default function InviteExperience({
   ended,
   weather,
   inviteUrl,
+  sample,
 }: {
   /**
    * The event as stored: the card in its own language, with its words in the
@@ -138,6 +142,14 @@ export default function InviteExperience({
   weather: EventWeather | null;
   /** This card's own link, without a language; see inviteLinkIn below. */
   inviteUrl: string;
+  /**
+   * Set for the sample invitation (app/demo/nikah), which has no row for a
+   * reply to be written to. A reply to it is answered exactly as a real one
+   * is and sent nowhere: nothing is written, and a yes is handed this token
+   * for its pass in place of one the database would have issued. Absent on
+   * every real invitation.
+   */
+  sample?: { checkinToken: string };
 }): ReactElement {
   const [stage, setStage] = useState<InviteStage>("form");
   /** Kept whole, so "Change my reply" returns a filled form. */
@@ -284,6 +296,22 @@ export default function InviteExperience({
   const handleSubmit = (submission: RsvpSubmission): void => {
     setIsSending(true);
     setSubmitError(null);
+
+    /*
+      The sample: the form's own moment of sending, then the confirmation, and
+      no request at all. The reply lives in this tab until it is closed.
+    */
+    if (sample !== undefined) {
+      window.setTimeout(() => {
+        setIsSending(false);
+        setSubmitted(submission);
+        setCheckinToken(
+          submission.status === "accepted" ? sample.checkinToken : null,
+        );
+        setStage("confirmed");
+      }, SAMPLE_REPLY_MS);
+      return;
+    }
 
     void addOrUpdateReply(event.inviteCode, {
       name: submission.name,

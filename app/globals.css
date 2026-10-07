@@ -153,6 +153,19 @@
   and keyboard all still work. Used by the phone frame on /create, where a
   native scrollbar down the right edge breaks the illusion of a screen.
 */
+/*
+  A card shown as a picture of itself, in a frame on the home page (see
+  components/landing/Showcase.tsx). Whatever on it runs in a loop, a lantern
+  on its string or a light that glows, runs once and comes to rest: eight
+  cards side by side must not be eight cards animating. One-shot arrivals,
+  which is how a section's words come in, are untouched.
+*/
+.lifafa-demo-still *,
+.lifafa-demo-still *::before,
+.lifafa-demo-still *::after {
+  animation-iteration-count: 1 !important;
+}
+
 .lifafa-no-scrollbar {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* legacy Edge and IE */

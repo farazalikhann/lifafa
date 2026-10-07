@@ -9,6 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { useCardStill } from "@/hooks/useCardStill";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { CalendarPageText } from "@/lib/cardFormat";
 import {
@@ -176,11 +177,13 @@ export default function RoyalScroll({
   width: string;
 }): ReactElement {
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  /* A card shown as a picture of itself has nobody to tap the scroll: it stands open. */
+  const still = useCardStill();
   const stageRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const [phase, setPhase] = useState<Phase>("closed");
+  const [phase, setPhase] = useState<Phase>(still ? "still" : "closed");
   /* The pictures have been sent for, and have arrived and been decoded. */
   const [wanted, setWanted] = useState(false);
   const [ready, setReady] = useState(false);

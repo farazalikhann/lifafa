@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
+import { DEMO_NIKAH_PATH } from "@/lib/demoSlides";
 
 /**
  * sitemap.xml: the short list of pages Lifafa actually wants found.
@@ -48,6 +49,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${origin}/create`,
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    /* The sample invitation: the product shown working, and meant to be found. */
+    {
+      url: `${origin}${DEMO_NIKAH_PATH}`,
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
   ];
 }

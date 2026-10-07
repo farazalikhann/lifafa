@@ -11,8 +11,10 @@ import {
   requestedLanguage,
 } from "@/lib/cardTranslation";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
+import { DEMO_NIKAH, DEMO_NIKAH_CODE, DEMO_NIKAH_PATH } from "@/lib/demoCards";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
+import type { StoredEvent } from "@/types/database";
 
 /**
  * The invitation as an .ics file, for Apple Calendar and everything else.
@@ -57,18 +59,31 @@ export async function GET(
   { params }: { params: Promise<{ inviteCode: string }> },
 ): Promise<Response> {
   const { inviteCode } = await params;
-  const guest = await getGuestEvent(inviteCode);
+  /*
+    The sample invitation is not in the database, and its calendar buttons
+    point here like any card's: its entries are written from the card in
+    lib/demoCards.ts, and link back to its own page.
+  */
+  const isSample = inviteCode === DEMO_NIKAH_CODE;
+  let event: StoredEvent;
 
-  if (guest.kind === "failed") {
-    return notAvailable(503);
+  if (isSample) {
+    event = DEMO_NIKAH;
+  } else {
+    const guest = await getGuestEvent(inviteCode);
+
+    if (guest.kind === "failed") {
+      return notAvailable(503);
+    }
+
+    /* An unpaid card reads as not found, exactly as a code that does not exist. */
+    if (guest.kind !== "active" && guest.kind !== "preview") {
+      return notAvailable(404);
+    }
+
+    event = guest.event;
   }
 
-  /* An unpaid card reads as not found, exactly as a code that does not exist. */
-  if (guest.kind !== "active" && guest.kind !== "preview") {
-    return notAvailable(404);
-  }
-
-  const { event } = guest;
   const { searchParams } = request.nextUrl;
   const language = requestedLanguage(
     searchParams.get("lang"),
@@ -79,7 +94,9 @@ export async function GET(
   const invite = {
     code: event.inviteCode,
     url: inviteLinkIn(
-      inviteUrl(event.inviteCode, await serverSiteOrigin()),
+      isSample
+        ? `${await serverSiteOrigin()}${DEMO_NIKAH_PATH}`
+        : inviteUrl(event.inviteCode, await serverSiteOrigin()),
       language,
     ),
   };

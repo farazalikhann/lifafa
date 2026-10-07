@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Hero from "@/components/landing/Hero";
 import LandingHeader from "@/components/landing/LandingHeader";
+import DemoCoverSlide from "@/components/landing/DemoCoverSlide";
 import Showcase from "@/components/landing/Showcase";
 import ScrollStory from "@/components/landing/ScrollStory";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -8,6 +9,7 @@ import Pricing from "@/components/landing/Pricing";
 import Faq from "@/components/landing/Faq";
 import CallToAction from "@/components/landing/CallToAction";
 import HelpFooter from "@/components/landing/HelpFooter";
+import { DEMO_NIKAH_GROUND } from "@/lib/demoCards";
 
 /*
   The one address this page should be indexed under.
@@ -42,9 +44,13 @@ export default function Page() {
         <Hero />
         {/*
           Straight after the hero: a visitor who has just read "beautiful
-          invitations" is shown some before being told how the product works.
+          invitations" is shown one before being told how the product works.
+
+          The sample card's closed cover and its ground colour are worked out
+          here, on the server, and handed in: the carousel's own script then
+          carries none of the card. See Showcase.
         */}
-        <Showcase />
+        <Showcase cover={<DemoCoverSlide />} ground={DEMO_NIKAH_GROUND} />
         <ScrollStory />
         <HowItWorks />
         <Pricing />
