@@ -3,11 +3,15 @@
 import type { ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import BreezeCover from "@/components/invite/covers/BreezeCover";
-import CurtainLightCover from "@/components/invite/covers/CurtainLightCover";
+import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
+import LightFilmCover from "@/components/invite/covers/LightFilmCover";
 import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
-import { ENVELOPE_FILMS, FOLD_FILMS, filmFor } from "@/lib/coverVideos";
+import { FOLD_FILMS, filmFor } from "@/lib/coverVideos";
+import { curtainArt } from "@/lib/curtainArt";
+import { CURTAIN_LIGHT_FILM } from "@/lib/curtainLightFilm";
+import { ENVELOPE_LIGHT_FILM } from "@/lib/envelopeLightFilm";
 import { envelopeArt } from "@/lib/envelopeArt";
 import { gatefoldArt } from "@/lib/gatefoldArt";
 
@@ -19,6 +23,11 @@ import { gatefoldArt } from "@/lib/gatefoldArt";
 const DRAWN_ENVELOPE: DrawnCover = {
   Component: EnvelopeSealCover,
   images: (isLight) => envelopeArt(isLight).images,
+};
+
+const DRAWN_CURTAIN: DrawnCover = {
+  Component: CurtainRevealCover,
+  images: () => curtainArt().images,
 };
 
 const DRAWN_FOLD: DrawnCover = {
@@ -38,11 +47,17 @@ const DRAWN_FOLD: DrawnCover = {
 export default function CoverVisual(state: CoverVisualState): ReactElement | null {
   switch (state.option.id) {
     case "envelope-seal":
+      /*
+        A film that ends in plain light, which the card comes out of. One
+        film for every card; the envelope drawn in code is what it falls back
+        to, in the card's own paper. Keyed by the card's ground, so a host
+        changing the palette in the editor gets that paper from a clean start.
+      */
       return (
-        <VideoCover
-          key={filmFor(ENVELOPE_FILMS, state.colors.isLight).poster}
+        <LightFilmCover
+          key={String(state.colors.isLight)}
           {...state}
-          films={ENVELOPE_FILMS}
+          film={ENVELOPE_LIGHT_FILM}
           drawn={DRAWN_ENVELOPE}
         />
       );
@@ -51,9 +66,9 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
       /*
         A film that ends in plain light, which the card comes out of. One
         film for every card. The curtains drawn in code are what it falls
-        back to; see CurtainLightCover.
+        back to; see LightFilmCover.
       */
-      return <CurtainLightCover {...state} />;
+      return <LightFilmCover {...state} film={CURTAIN_LIGHT_FILM} drawn={DRAWN_CURTAIN} />;
 
     case "fold-unfold":
       return (

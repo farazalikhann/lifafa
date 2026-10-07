@@ -7,7 +7,8 @@
  */
 
 import { breezeArt } from "@/lib/breezeArt";
-import { ENVELOPE_FILMS, FOLD_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
+import { FOLD_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
+import { envelopeLightArt, envelopeLightTiming } from "@/lib/envelopeLightFilm";
 import { curtainLightArt, curtainLightTiming } from "@/lib/curtainLightFilm";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -25,12 +26,13 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
   {
     id: "envelope-seal",
     label: "Envelope seal",
-    description: "A sealed envelope breaks open and the card slides out.",
+    description: "A royal envelope breaks its seal, and the card appears out of the light.",
     openPromptText: {
       en: "Tap the seal to open",
       hi: "खोलने के लिए मुहर पर टैप करें",
     },
     /*
+      The drawn envelope's timings, which opens when the film cannot.
       2.4s: the seal peeled away (0.3s), the flap turned over (0.7s), the
       letter drawn out (0.8s) and the envelope let go as the letter comes
       forward (0.6s), each given the time real paper takes. The shares are in
@@ -48,11 +50,13 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     /* The envelope fills the screen, so the prompt sits on a plaque of its own. */
     wordsOn: "plaque",
     /*
-      Played from film, dark or light; see lib/coverVideos.ts. The timings
-      above are the drawn cover's, which opens when the film cannot.
+      Played from film: the seal breaks, the flap lifts on a light that fills
+      the screen, and the card comes out of the light. One film for every
+      card, and the visual follows the film's own clock, so the timing here
+      is only the shell's net. See lib/envelopeLightFilm.ts.
     */
-    art: filmArt(ENVELOPE_FILMS),
-    film: filmTiming(ENVELOPE_FILMS),
+    art: envelopeLightArt,
+    film: envelopeLightTiming,
   },
   {
     id: "curtain-reveal",

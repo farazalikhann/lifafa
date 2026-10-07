@@ -10,13 +10,10 @@ import {
   type ReactElement,
 } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
-import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
-import { curtainArt } from "@/lib/curtainArt";
-import {
-  CURTAIN_LIGHT_FILM as FILM,
-  CURTAIN_LIGHT_STALL_MS,
-  CURTAIN_LIGHT_WAIT_MS,
-} from "@/lib/curtainLightFilm";
+import GoldFlower from "@/components/invite/covers/GoldFlower";
+import { initialOf, initialsOf } from "@/components/invite/covers/initials";
+import type { DrawnCover } from "@/components/invite/covers/VideoCover";
+import { LIGHT_FILM_STALL_MS, LIGHT_FILM_WAIT_MS, type LightFilm } from "@/lib/lightFilm";
 
 /** How long the still takes to give way to the card when there is nothing to play. */
 const PLAIN_FADE_MS = 300;
@@ -26,7 +23,7 @@ const START_WATCHDOG_MS = 450;
 
 /**
  * How long after the cover is on screen the film is given before the drawn
- * curtains' pictures are sent for as well. On a good connection it is in well
+ * cover's pictures are sent for as well. On a good connection it is in well
  * inside this, and the guest downloads one still and one film.
  */
 const STAND_IN_AFTER_MS = 1200;
@@ -38,16 +35,19 @@ const STAND_IN_AFTER_MS = 1200;
  */
 const SWAP_MS = 160;
 
-/** How long the still takes to clear the drawn curtains when they open in its place. */
+/** How long the still takes to clear the drawn cover when it opens in its place. */
 const DRAWN_SWAP_MS = 250;
 
 /** A film that starts this long after the tap has left its sound behind. */
 const LATE_START_MS = 400;
 
+/** How quickly the initials leave their seal on the tap: gone before it has cracked. */
+const MARK_EXIT_MS = 180;
+
 /**
  * Where the open is. "film" is the film playing; "light" is the flat light
- * giving way to the card; "drawn" is the curtains drawn in code opening in
- * the film's place; "plain" is the still fading, with neither in hand.
+ * giving way to the card; "drawn" is the cover drawn in code opening in the
+ * film's place; "plain" is the still fading, with neither in hand.
  */
 type Stage = "closed" | "film" | "light" | "drawn" | "plain";
 
@@ -70,47 +70,60 @@ const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
- * The curtain cover as a film: velvet curtains opening on a golden light that
- * grows to fill the screen, and the card coming out of the light.
+ * A cover as a film that ends in light: velvet curtains parting, or an
+ * envelope breaking its seal, on a golden light that grows to fill the
+ * screen, and the card coming out of the light.
+ *
+ * ONE COMPONENT FOR EVERY SUCH FILM. They differ in their footage, in what
+ * was measured on it and in what is drawn when it cannot play, which is data
+ * (lib/lightFilm.ts and each film's own file), and in nothing this file does.
  *
  * CLOSED, it is the film's first frame as a still, so the closed cover and
  * the film's first frame are one picture and nothing jumps when it starts.
  * The still is in the shell's loading gate; the film is not. It is asked for
  * only once the cover is on screen, which is after the card's own first
- * screen has loaded, so it never holds the card up.
+ * screen has loaded, so it never holds the card up. A film with a seal has
+ * the couple's initials lettered on it, placed by the film's own measurements
+ * through the same arithmetic the film is placed by, so they sit on the seal
+ * at any screen size, and they are gone before the seal has cracked.
  *
  * THE FILM IS FOLLOWED, NOT TIMED. The hand-over starts when the film itself
  * says it has reached its flat last frames, not so many milliseconds after
  * the tap, so a phone that plays it slowly still crosses from light to card
- * and never from half-open curtains. Three layers do it: the film on top, a
+ * and never from a cover half open. Three layers do it: the film on top, a
  * layer of exactly the film's last colour under it, and the card under that.
  * The film is taken off the light, which nobody can see, and the light is
  * faded off the card: 0.8 seconds onto a light card, 1.1 onto a dark one,
  * where the change is the bigger. Opacity only. The shell's Skip is sent
  * away as the film's light starts to flood, so it never stands on the light.
  *
- * WHEN THE FILM CANNOT PLAY, the curtains drawn in code open instead
- * (CurtainRevealCover, untouched): if the film has failed, if it has not
- * arrived a second and a half after the tap, if the browser will not start
- * it, or on a connection it was never sent over. They are mounted out of
- * sight as soon as the film looks late, so they have a closed state to open
- * from. With neither in hand the still fades to the card.
+ * WHEN THE FILM CANNOT PLAY, the cover drawn in code opens instead, as it
+ * always did: if the film has failed, if it has not arrived a second and a
+ * half after the tap, if the browser will not start it, or on a connection it
+ * was never sent over. It is mounted out of sight as soon as the film looks
+ * late, so it has a closed state to open from. With neither in hand the
+ * still fades to the card.
  *
  * Under reduced motion the shell never hands this the "opening" phase: the
  * still crossfades to the card as one layer, and no film is requested.
  */
-export default function CurtainLightCover(state: CoverVisualState): ReactElement {
+export default function LightFilmCover({
+  film: FILM,
+  drawn,
+  ...state
+}: CoverVisualState & { film: LightFilm; drawn: DrawnCover }): ReactElement {
   const { phase, option, reducedMotion, colors, ready, retime, dismissSkip } = state;
+  const { title, pair, headingFont } = state;
   const opening = phase === "opening";
   const fadeMs = colors.isLight ? FILM.fadeMs : FILM.fadeToDarkMs;
 
   const videoRef = useRef<HTMLVideoElement>(null);
   /* The film has failed, or was never asked for: there is nothing to wait for. */
   const filmOut = useRef(false);
-  /* Whether the drawn curtains' pictures are decoded, for the tap to ask. */
+  /* Whether the drawn cover's pictures are decoded, for the tap to ask. */
   const drawnReady = useRef(false);
   const drawnSent = useRef(false);
-  /* The drawn curtains are in the tree, under the still. */
+  /* The drawn cover is in the tree, under the still. */
   const [standIn, setStandIn] = useState(false);
   const [stage, setStage] = useState<Stage>("closed");
   /* The film has drawn a frame: the still over it can go. */
@@ -127,7 +140,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
     setStandIn(true);
 
     void Promise.all(
-      curtainArt().images.map((src) => {
+      drawn.images(colors.isLight).map((src) => {
         const image = new Image();
         image.src = src;
         return typeof image.decode === "function"
@@ -143,7 +156,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
       },
       () => undefined,
     );
-  }, []);
+  }, [drawn, colors.isLight]);
 
   /*
     The film, asked for once the closed cover is on screen. `ready` comes
@@ -186,7 +199,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
       window.clearTimeout(late);
       video.removeEventListener("error", failed);
     };
-  }, [ready, reducedMotion, sendForDrawn]);
+  }, [ready, reducedMotion, sendForDrawn, FILM]);
 
   /*
     The tap. Before paint, so the frame that follows it is already the chosen
@@ -210,7 +223,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
     let stall = 0;
     let frame = 0;
 
-    /* The drawn curtains, or failing those the still fading. */
+    /* The drawn cover, or failing that the still fading. */
     const standDown = (): void => {
       if (settled || playing) {
         return;
@@ -263,8 +276,8 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
 
       /*
         Skip goes as the light starts to flood, so it is not left standing on
-        a screen of plain light. Only on this path: the drawn curtains never
-        show that screen and keep Skip to the end.
+        a screen of plain light. Only on this path: the drawn cover never
+        shows that screen and keeps Skip to the end.
       */
       if (!glowing && video.currentTime * 1000 >= FILM.glowAtMs) {
         glowing = true;
@@ -286,13 +299,13 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
 
       /* A film that was waited for starts its sound again, to go with it. */
       if (performance.now() - tappedAt > LATE_START_MS) {
-        const netMs = FILM.lengthMs + CURTAIN_LIGHT_STALL_MS + fadeMs;
+        const netMs = FILM.lengthMs + LIGHT_FILM_STALL_MS + fadeMs;
         retime({ durationMs: netMs, revealAt: 1 - fadeMs / netMs, sound: "restart" });
       }
 
       frame = window.requestAnimationFrame(follow);
       /* A film that stops part way, or a tab put away: the card is not kept behind it. */
-      stall = window.setTimeout(() => toLight(true), FILM.lengthMs + CURTAIN_LIGHT_STALL_MS);
+      stall = window.setTimeout(() => toLight(true), FILM.lengthMs + LIGHT_FILM_STALL_MS);
     };
 
     const failed = (): void => {
@@ -329,7 +342,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
     } else {
       sendForDrawn();
       video.addEventListener("canplay", begin, { once: true });
-      wait = window.setTimeout(standDown, CURTAIN_LIGHT_WAIT_MS);
+      wait = window.setTimeout(standDown, LIGHT_FILM_WAIT_MS);
     }
 
     return () => {
@@ -382,7 +395,7 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
     willChange: "opacity",
   };
 
-  /* Velvet beside the film on a wide screen, cleared as the film's own light floods. */
+  /* The film's own edge colour beside it on a wide screen, cleared as its light floods. */
   const surroundStyle: CSSProperties = {
     backgroundColor: FILM.surround,
     transition:
@@ -404,6 +417,12 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
     willChange: "opacity",
   };
 
+  /* The monogram: the same rules on every cover. */
+  const pairLetters = pair?.map(initialOf).filter((letter) => letter.length > 0) ?? [];
+  const lineLetters = pairLetters.length === 0 ? initialsOf(title) : "";
+  const mark = FILM.mark;
+  const ink = FILM.ink;
+
   return (
     <div
       aria-hidden
@@ -415,21 +434,26 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
         style={rootStyle}
       >
         {/*
-          The drawn curtains, under everything and out of sight until they are
-          needed. Held closed unless they are the path, and timed as they
-          always were.
+          The drawn cover, under everything and out of sight until it is
+          needed. Held closed unless it is the path, and timed as it always
+          was. The prompt is the shell's, on its plaque; the drawing is not
+          asked to letter it again.
         */}
         {standIn && (stage === "closed" || stage === "drawn") ? (
           <div
             className="absolute inset-0"
             style={{ visibility: stage === "drawn" ? "visible" : "hidden" }}
           >
-            <CurtainRevealCover {...state} phase={stage === "drawn" ? "opening" : "closed"} />
+            <drawn.Component
+              {...state}
+              phase={stage === "drawn" ? "opening" : "closed"}
+              prompt=""
+            />
           </div>
         ) : null}
 
         <div className="absolute inset-0" style={blockStyle}>
-          {/* Not over the drawn curtains: they have the card to show between them. */}
+          {/* Not over the drawn cover: it has the card to show through it. */}
           {stage !== "drawn" ? (
             <>
               <div className="absolute inset-0" style={lightStyle} />
@@ -467,6 +491,64 @@ export default function CurtainLightCover(state: CoverVisualState): ReactElement
               className="absolute max-w-none select-none"
               style={{ ...frameBox, opacity: filmShowing ? 0 : 1 }}
             />
+
+            {mark !== undefined && ink !== undefined ? (
+              /*
+                A box the width of the seal's clear face, centred on it, laid
+                out from the film's own place on the screen. A size container,
+                so the lettering is sized off the seal itself. It goes on the
+                tap, at once and quickly: the seal under it is about to crack.
+              */
+              <div
+                data-cover-mark=""
+                className="absolute flex items-center justify-center [container-type:inline-size]"
+                style={{
+                  left: `calc(var(--fl) + var(--fw) * ${(mark.x - mark.width / 2).toFixed(4)})`,
+                  top: `calc(var(--ft) + var(--fw) * 16 / 9 * ${mark.y.toFixed(4)} - var(--fw) * ${(mark.width / 2).toFixed(4)})`,
+                  width: `calc(var(--fw) * ${mark.width.toFixed(4)})`,
+                  height: `calc(var(--fw) * ${mark.width.toFixed(4)})`,
+                  transition: opening ? `opacity ${MARK_EXIT_MS}ms ease-out` : undefined,
+                  opacity: opening && !reducedMotion ? 0 : 1,
+                }}
+              >
+                {/*
+                  The widest pair a card can carry, "M & W" in a wide capital
+                  face, is about 3.3 ems across. At 24% of the face's width
+                  that is four fifths of it, so every pair fits with air.
+                */}
+                {pairLetters.length === 2 ? (
+                  <span
+                    data-cover-monogram=""
+                    className="leading-none whitespace-nowrap"
+                    style={{ ...headingFont, fontSize: "24cqw", color: ink.body, textShadow: ink.shadow }}
+                  >
+                    {pairLetters[0]}
+                    <span className="mx-[0.14em] text-[0.72em]" style={{ color: ink.hi }}>
+                      &amp;
+                    </span>
+                    {pairLetters[1]}
+                  </span>
+                ) : pairLetters.length === 1 || lineLetters.length > 0 ? (
+                  <span
+                    data-cover-monogram=""
+                    className="leading-none whitespace-nowrap"
+                    style={{
+                      ...headingFont,
+                      letterSpacing: "0.04em",
+                      fontSize:
+                        pairLetters.length === 1 || lineLetters.length === 1 ? "42cqw" : "32cqw",
+                      color: ink.body,
+                      textShadow: ink.shadow,
+                    }}
+                  >
+                    {pairLetters[0] ?? lineLetters}
+                  </span>
+                ) : (
+                  /* Nobody named: a small flower in the same ink. See GoldFlower. */
+                  <GoldFlower hi={ink.hi} body={ink.body} lo={ink.lo} className="w-[46%] max-w-16" />
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

@@ -134,7 +134,11 @@ const IVORY = "#EFE0C8";
 */
 
 /*
-  ENVELOPE. Dark: frames 17-127 (0.71s to 5.33s): the seal breaks at 0.3s, the
+  ENVELOPE. NOT PLAYED ANY MORE: the envelope cover is now one film for every
+  card that ends in plain light, lib/envelopeLightFilm.ts. These two and
+  their numbers are kept as they were measured.
+
+  Dark: frames 17-127 (0.71s to 5.33s): the seal breaks at 0.3s, the
   flap is open by 2.3s and the card is out by 4.55s. Light: frames 17-107
   (0.71s to 4.50s): seal at 0.3s, flap open by 2.3s, card out by 3.55s.
 
