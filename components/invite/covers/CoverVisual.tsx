@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import BreezeCover from "@/components/invite/covers/BreezeCover";
-import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
+import CurtainLightCover from "@/components/invite/covers/CurtainLightCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import VideoCover, { type DrawnCover } from "@/components/invite/covers/VideoCover";
@@ -49,10 +49,11 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
 
     case "curtain-reveal":
       /*
-        Drawn, not filmed: the card has to show between the curtains, and
-        nothing shows through a film. One cloth for every card.
+        A film that ends in plain light, which the card comes out of. One
+        film for every card. The curtains drawn in code are what it falls
+        back to; see CurtainLightCover.
       */
-      return <CurtainRevealCover {...state} />;
+      return <CurtainLightCover {...state} />;
 
     case "fold-unfold":
       return (

@@ -128,9 +128,9 @@ const BLACK = "#000000";
 const IVORY = "#EFE0C8";
 
 /*
-  No curtain here. The curtain cover was a film too, and is not any more: it
-  is two panels of cloth drawn over the card, so the card shows between them
-  as they part. See lib/curtainArt.ts.
+  No curtain here. Its film is one for every card and ends in plain light
+  that the card comes out of, which is not how these are handed over. See
+  lib/curtainLightFilm.ts.
 */
 
 /*

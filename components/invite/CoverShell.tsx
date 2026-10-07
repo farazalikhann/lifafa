@@ -127,6 +127,13 @@ type CoverPhase = "closed" | "opening" | "open";
 export interface CoverVisualState {
   phase: CoverPhase;
   option: CoverAnimationOption;
+  /**
+   * True once the loader has let the cover through: the card's first screen
+   * and the cover's own pictures are in and the closed cover is what the
+   * guest is looking at. For a visual with something heavy of its own to
+   * fetch, a film, that must not be in the card's way.
+   */
+  ready: boolean;
   /** True when the guest has asked for no motion; the visual should draw a still frame. */
   reducedMotion: boolean;
   /**
@@ -188,14 +195,16 @@ export interface CoverVisualState {
    * shell was timed for — a film that has not arrived — and opens another way:
    * the shell's timers are started again from now, to this length, with the
    * card let go at `revealAt` of it. The sound, held back for the film, is
-   * started at once for an opening that moves on the tap ("restart"), or
-   * dropped for one with nothing to go with it ("stop"). Only while opening.
+   * started at once for an opening that moves on the tap ("restart"),
+   * dropped for one with nothing to go with it ("stop"), or left playing as
+   * it is for a visual that is only telling the shell how much longer its
+   * open has to run ("keep"). Only while opening.
    */
   retime: (next: {
     durationMs: number;
     revealAt: number;
     burstAt?: number;
-    sound: "restart" | "stop";
+    sound: "restart" | "stop" | "keep";
   }) => void;
 }
 
@@ -495,7 +504,7 @@ export default function CoverShell({
 
       if (next.sound === "restart") {
         restartCoverSound();
-      } else {
+      } else if (next.sound === "stop") {
         stopCoverSound();
       }
 
@@ -757,6 +766,7 @@ export default function CoverShell({
   const visual = renderVisual?.({
     phase: reducedMotion && phase === "opening" ? "closed" : phase,
     option,
+    ready,
     reducedMotion,
     colors,
     title,

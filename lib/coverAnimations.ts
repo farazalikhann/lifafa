@@ -8,7 +8,7 @@
 
 import { breezeArt } from "@/lib/breezeArt";
 import { ENVELOPE_FILMS, FOLD_FILMS, filmArt, filmTiming } from "@/lib/coverVideos";
-import { curtainArt } from "@/lib/curtainArt";
+import { curtainLightArt, curtainLightTiming } from "@/lib/curtainLightFilm";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -57,15 +57,16 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
   {
     id: "curtain-reveal",
     label: "Curtain reveal",
-    description: "Two curtains draw apart to show the card behind them.",
+    description: "Velvet curtains open on a golden light, and the card appears out of it.",
     openPromptText: {
       en: "Tap to open",
       hi: "खोलने के लिए टैप करें",
     },
     /*
-      3.2s: the words go (0.25s), the two curtains draw apart over the card
-      (2.6s), and the valance lifts away in what is left. The shares are in
-      the visual.
+      The drawn curtains' timings, which open when the film cannot. 3.2s: the
+      words go (0.25s), the two curtains draw apart over the card (2.6s), and
+      the valance lifts away in what is left. The shares are in
+      CurtainRevealCover.
     */
     durationMs: 3200,
     /* As soon as there is a gap between the panels to see the card through. */
@@ -76,11 +77,13 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     /* The cloth fills the screen, so the prompt sits on a plaque of its own. */
     wordsOn: "plaque",
     /*
-      Two panels of cloth and a valance over the card, not a film: a film is
-      opaque, and this is the one cover whose whole point is the card seen
-      between the curtains as they part. See lib/curtainArt.ts.
+      Played from film: the curtains open on a light that fills the screen,
+      and the card comes out of the light. One film for every card, and the
+      visual follows the film's own clock, so the timing here is only the
+      shell's net. See lib/curtainLightFilm.ts.
     */
-    art: () => curtainArt(),
+    art: curtainLightArt,
+    film: curtainLightTiming,
   },
   {
     id: "fold-unfold",
