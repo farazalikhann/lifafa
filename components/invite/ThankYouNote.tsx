@@ -6,7 +6,7 @@ import type { Theme } from "@/lib/themes";
 import type { CardBorderStyle, CardLanguage } from "@/types/card";
 
 /**
- * The hosts' thanks, under the reply form: the last thing on the page.
+ * The hosts' thanks, under the reply form: the last words on the page.
  *
  * Shown to every guest, whether or not they have replied yet, in the card's
  * own display face and colours and beside the card's own border (see
@@ -23,6 +23,7 @@ export default function ThankYouNote({
   theme,
   language,
   borderStyle,
+  last = true,
 }: {
   /**
    * What the note calls the occasion: the couple, as the card titles them, on
@@ -36,12 +37,22 @@ export default function ThankYouNote({
   theme: Theme;
   language: CardLanguage;
   borderStyle: CardBorderStyle;
+  /**
+   * Whether this is the last thing on the page, which has to end clear of
+   * the border's foot. It is, unless the way to keep the card follows it;
+   * see KeepsakeSection.
+   */
+  last?: boolean;
 }): ReactElement {
   const copy = cardCopy(language);
 
   return (
-    <BorderInset borderStyle={borderStyle} last>
-      <section className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 px-5 pt-10 pb-12 text-center sm:px-6">
+    <BorderInset borderStyle={borderStyle} last={last}>
+      <section
+        className={`mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 px-5 pt-10 text-center sm:px-6 ${
+          last ? "pb-12" : "pb-4"
+        }`}
+      >
         {/* The same rule and diamond the cover sets between the names and the way in. */}
         <span
           aria-hidden="true"

@@ -291,6 +291,13 @@ export interface CardConfig {
    */
   divider?: DividerStyle;
   /**
+   * Whether a guest may keep a printable copy of the card ("Save as PDF").
+   * Stored only as `false`, by a host who turned it off: absent, and on every
+   * card saved before the switch, the copy is offered. Read it through
+   * `pdfDownloadOn` in lib/pdfDownload.ts.
+   */
+  pdfDownload?: boolean;
+  /**
    * The decorative frame around the card's edges.
    *
    * Sits on the config beside the other decor decisions rather than inside

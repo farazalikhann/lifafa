@@ -34,6 +34,7 @@ import {
 } from "@/lib/cardTranslation";
 import { addOrUpdateReply } from "@/lib/db/guests";
 import { getMotifs } from "@/lib/motifs";
+import { pdfDownloadOn, pdfTitle, printPath } from "@/lib/pdfDownload";
 import { cardPalette } from "@/lib/textColors";
 import { getTheme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
@@ -59,6 +60,11 @@ const RsvpConfirmed = dynamic(
 const GuestPass = dynamic(() => import("@/components/invite/GuestPass"), {
   ssr: false,
 });
+/* The last thing on the page, and nothing on the first screen waits for it. */
+const KeepsakeSection = dynamic(
+  () => import("@/components/invite/KeepsakeSection"),
+  { loading: () => null },
+);
 
 type InviteStage = "form" | "confirmed";
 
@@ -277,6 +283,13 @@ export default function InviteExperience({
   const pageHeading = [draft.eventTitle.trim(), coverTitle]
     .filter((part): part is string => part !== undefined && part.length > 0)
     .join(": ");
+
+  /*
+    Whether the card ends with the way to keep it, which is the host's to
+    switch off (lib/pdfDownload.ts). When it does, the note above it is no
+    longer the last thing on the page.
+  */
+  const keepsake = pdfDownloadOn(config.pdfDownload);
 
   /*
     The link arrives from the server rather than being built here: this
@@ -583,8 +596,23 @@ export default function InviteExperience({
               theme={cardTheme}
               language={language}
               borderStyle={config.borderStyle}
+              last={!keepsake}
             />
           )}
+
+          {/*
+            The way to keep the card, at the very end and inside the same
+            border. After the event too: that is when a keepsake is one.
+          */}
+          {keepsake ? (
+            <KeepsakeSection
+              theme={cardTheme}
+              language={language}
+              borderStyle={config.borderStyle}
+              printHref={printPath(event.inviteCode, language)}
+              fileTitle={pdfTitle(coverTitle ?? null, copy.keepsake.fileFallback)}
+            />
+          ) : null}
 
           {/*
             THE ONE BORDER, for the whole page.

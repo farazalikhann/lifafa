@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
+import { useCardStill } from "@/hooks/useCardStill";
 import { preload } from "react-dom";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import {
@@ -850,6 +851,12 @@ export default function CardCanvas({
   const copy = cardCopy(language);
 
   const isHostPreview = audience === "host-preview";
+  /*
+    A card shown as a picture of itself, or laid out for paper, a few sections
+    at a time: the calendar strip a card without a date screen carries is a
+    button, and belongs to neither.
+  */
+  const still = useCardStill();
   /*
     The reveal on the date's screen, and the scratch target the card obeys
     under it. ONE REVEAL, NEVER TWO: a card whose date unrolls on the royal
@@ -1948,7 +1955,9 @@ export default function CardCanvas({
                 */}
                 {headIsFirstScreen ? divider("head", false) : null}
                 {section}
-                {blockKey(block) === calendarAnchor && !hasDateScreen ? saveTheDate : null}
+                {blockKey(block) === calendarAnchor && !hasDateScreen && !still
+                  ? saveTheDate
+                  : null}
               </>
             );
 

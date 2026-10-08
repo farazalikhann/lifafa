@@ -188,6 +188,8 @@ function TimelineRow({
             ) : null}
             {isNext ? (
               <span
+                /* True at the moment it is read and no later: left off the printed copy (globals.css). */
+                data-timeline-status=""
                 className="rounded-full px-2.5 py-0.5 text-[calc(0.72*var(--card-rem,1rem))] font-semibold"
                 style={{ backgroundColor: theme.accent, color: onAccent }}
               >
@@ -196,6 +198,7 @@ function TimelineRow({
             ) : null}
             {isPast ? (
               <span
+                data-timeline-status=""
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[calc(0.72*var(--card-rem,1rem))] font-medium"
                 style={{ color: theme.textMuted, border: `1px solid ${hairline}` }}
               >

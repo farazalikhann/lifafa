@@ -7,6 +7,7 @@ import {
   useState,
   type RefObject,
 } from "react";
+import { useCardStill } from "@/hooks/useCardStill";
 import { useRevealGate } from "@/hooks/useRevealGate";
 
 export interface UseInViewResult<T extends HTMLElement> {
@@ -62,6 +63,13 @@ export function useInView<T extends HTMLElement>(
   const hasRevealed = useRef<boolean>(false);
   const [isInView, setIsInView] = useState<boolean>(initialInView);
   const gateOpen = useRevealGate();
+  /*
+    A card shown as a picture of itself, or laid out for paper, is not
+    scrolled: whatever waits to be scrolled to would wait for ever, and on a
+    sheet nobody is looking at yet no observer would ever say it had arrived.
+    Everything on such a card has arrived already.
+  */
+  const still = useCardStill();
 
   const { threshold, rootMargin, root } = {
     ...DEFAULT_OPTIONS,
@@ -82,6 +90,7 @@ export function useInView<T extends HTMLElement>(
       window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
     if (
+      still ||
       prefersReducedMotion ||
       element === null ||
       typeof IntersectionObserver === "undefined"
@@ -121,7 +130,7 @@ export function useInView<T extends HTMLElement>(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, rootMargin, root, gateOpen]);
+  }, [threshold, rootMargin, root, gateOpen, still]);
 
   return { ref, isInView };
 }

@@ -185,7 +185,7 @@ export default function RoyalScroll({
 
   const [phase, setPhase] = useState<Phase>(still ? "still" : "closed");
   /* The pictures have been sent for, and have arrived and been decoded. */
-  const [wanted, setWanted] = useState(false);
+  const [wanted, setWanted] = useState(still);
   const [ready, setReady] = useState(false);
   /* The guest has asked for it to open. Never unset: an opened scroll stays open. */
   const [tapped, setTapped] = useState(false);

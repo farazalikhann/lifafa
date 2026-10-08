@@ -256,6 +256,28 @@ export interface CardCopy {
    * ThankYouNote.
    */
   thankYou: (eventName: string | null, couple: boolean) => string;
+  /**
+   * The last thing on the page, under the note: the way to keep the card as
+   * a PDF. See components/invite/KeepsakeSection.tsx and lib/pdfDownload.ts.
+   */
+  keepsake: {
+    heading: string;
+    button: string;
+    /** While the printable copy is being laid out. */
+    preparing: string;
+    /** After the first tap: what to choose in the browser's own sheet. */
+    hint: string;
+    /** The same, on an iPhone, whose sheet has no such button. */
+    hintIos: string;
+    /** Beside the QR code on the printed copy. */
+    scan: string;
+    /** The printable copy's own button, for a visitor who opened it directly. */
+    print: string;
+    /** The way back to the card from the printable copy. */
+    back: string;
+    /** The saved file's name where the card names nobody. */
+    fileFallback: string;
+  };
   invite: {
     /** The page's heading when the card names neither an event nor anyone in it. */
     headingFallback: string;
@@ -508,6 +530,17 @@ const ENGLISH: CardCopy = {
     heading: "You are invited",
     line: "With joy in our hearts, we would love for you to celebrate with us",
   },
+  keepsake: {
+    heading: "Keep this invitation",
+    button: "Save as PDF",
+    preparing: "Preparing your copy",
+    hint: "In the next screen, choose Save as PDF.",
+    hintIos: "Tap Share, then Save to Files.",
+    scan: "Scan to open the live invitation",
+    print: "Save as PDF",
+    back: "Back to the invitation",
+    fileFallback: "Invitation",
+  },
   thankYou: (eventName, couple) =>
     `Thank you for being part of our special day. We would be truly honoured by your presence at ${
       eventName === null
@@ -753,6 +786,18 @@ const HINDI: CardCopy = {
     line: "हृदय की प्रसन्नता के साथ, हम चाहते हैं कि आप हमारी ख़ुशियों में शामिल हों",
   },
   /* TODO(Faraz): verify this Hindi note, and "के विवाह", with a native reader before launch. */
+  /* TODO(Faraz): verify these Hindi lines. The button names are the browser's own, left in English. */
+  keepsake: {
+    heading: "इस निमंत्रण को संभाल कर रखें",
+    button: "PDF सेव करें",
+    preparing: "आपकी प्रति तैयार हो रही है",
+    hint: "अगली स्क्रीन में Save as PDF चुनें।",
+    hintIos: "Share दबाएँ, फिर Save to Files चुनें।",
+    scan: "लाइव निमंत्रण खोलने के लिए स्कैन करें",
+    print: "PDF सेव करें",
+    back: "निमंत्रण पर वापस जाएँ",
+    fileFallback: "Invitation",
+  },
   thankYou: (eventName, couple) =>
     `हमारे इस ख़ास दिन का हिस्सा बनने के लिए आपका धन्यवाद। ${
       eventName === null

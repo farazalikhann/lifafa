@@ -1797,3 +1797,256 @@
     transform: none;
   }
 }
+
+/* -------------------------------------------------------------------------
+   THE PRINTABLE COPY: the invitation as sheets of A5.
+
+   app/i/[inviteCode]/print draws the card once per sheet (lib/printCard.ts)
+   and the guest's browser saves the page as a PDF. Everything here is what
+   makes a card written for a phone's screen sit on a sheet of paper.
+
+   The @page rule itself is written by the route, so it is on that page and
+   no other: a rule here would make every page of the site print on A5.
+   ------------------------------------------------------------------------- */
+
+/* On the screen: a dark desk, with the sheets laid down it. */
+.lifafa-print-doc {
+  min-height: 100vh;
+  background-color: #1b1614;
+}
+
+.lifafa-print-sheets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0 32px;
+  /* Brought down to a phone's width once the sheets are fitted; see PrintDocument. */
+  zoom: var(--print-screen-zoom, 1);
+}
+
+/*
+  One sheet. A5 exactly, and never broken: what does not fit is the fit's to
+  bring down (PrintDocument), not the printer's to carry over.
+
+  The colours are forced on. A browser prints backgrounds only if asked, and a
+  card with its ground, its texture and its border left off is a page of
+  loose text.
+*/
+.lifafa-print-sheet {
+  position: relative;
+  width: 148mm;
+  height: 210mm;
+  overflow: hidden;
+  flex: none;
+  break-inside: avoid;
+  break-after: page;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.lifafa-print-sheet:last-child {
+  break-after: auto;
+}
+
+.lifafa-print-sheet * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/*
+  The card fills its sheet, with its words in a column of the width it was
+  designed at. The same two lengths a wide phone's card publishes (see
+  `.lifafa-card-phone` above), fixed at the design's own size here, so the
+  sheet is laid out the same on a screen of any width and on paper: the rule
+  above reads the viewport, and a printed page's viewport is the sheet.
+*/
+.lifafa-print-sheet .lifafa-card-phone {
+  --card-width: 26.25rem;
+  --card-decor-width: 26.25rem;
+  --card-rem: 1rem;
+  --card-px: 1px;
+  --spacing: 0.25rem;
+  --text-xs: 0.75rem;
+
+  max-width: none;
+  min-height: 100%;
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-content {
+  max-width: var(--card-width);
+  margin-inline: auto;
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-column {
+  left: calc(50% - var(--card-width) / 2);
+  right: calc(50% - var(--card-width) / 2);
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-garland {
+  width: calc(var(--card-width) - 16px);
+  margin-inline: auto;
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-art > :is(img, svg) {
+  width: calc(var(--art-width) * var(--card-px));
+  height: auto;
+}
+
+/*
+  A section is as tall as what is in it. On the card each is a screen tall,
+  so a swipe lands on one thing; a sheet carries two, and is fitted to them.
+*/
+.lifafa-print-sheet section,
+.lifafa-print-sheet [data-first-screen] {
+  min-height: 0 !important;
+}
+
+/*
+  And keeps only a little air above and below. A section's own padding is
+  what centres a few lines on a tall screen, as much as a third of a phone
+  each way; on a sheet it is that much paper left blank and that much the
+  words have to be brought down to make room for it.
+*/
+.lifafa-print-sheet .lifafa-card-content > section {
+  padding-block: 1.75rem !important;
+}
+
+/*
+  The first sheet's names keep room under them: what a pack stands in the two
+  bottom corners of the names' screen, a lotus or a kalash, stands in the
+  corners of this section, and with only a little air they stood on the names.
+*/
+.lifafa-print-sheet[data-first] .lifafa-card-content > section {
+  padding-bottom: 5.5rem !important;
+}
+
+/* "Up next" and "Celebrated" are true on the day they are read, and paper is read later. */
+.lifafa-print-sheet [data-timeline-status] {
+  display: none !important;
+}
+
+/* Nothing on paper can be pressed: no directions, no calendar, no copy. */
+.lifafa-print-sheet :is(button, a) {
+  display: none !important;
+}
+
+/*
+  Nothing arrives and nothing loops. Whatever would have come in over a
+  moment is where it ends up, at once: a duration of nothing, not no
+  animation at all, which would leave a line that fades in standing at the
+  nothing it fades in from.
+*/
+.lifafa-print-sheet *,
+.lifafa-print-sheet *::before,
+.lifafa-print-sheet *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* The strip at the foot of the last sheet: a QR code back to the live card. */
+.lifafa-print-strip {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(var(--print-strip-foot, 0px) + 10px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.lifafa-print-qr {
+  display: block;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  padding: 3px;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.lifafa-print-qr > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lifafa-print-scan {
+  max-width: 11rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+/* The bar over the sheets, for somebody looking at the copy as a page. */
+.lifafa-print-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 8px 16px 10px;
+  background-color: rgba(27, 22, 20, 0.94);
+  border-bottom: 1px solid var(--lifafa-hairline);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.lifafa-print-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lifafa-print-bar-hint {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--lifafa-muted);
+}
+
+.lifafa-print-bar-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--lifafa-cream);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.lifafa-print-bar-button {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  background-color: var(--lifafa-marigold);
+  color: var(--lifafa-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media print {
+  .lifafa-print-doc {
+    min-height: 0;
+    background: none;
+  }
+
+  .lifafa-print-bar {
+    display: none !important;
+  }
+
+  .lifafa-print-sheets {
+    display: block;
+    gap: 0;
+    padding: 0;
+    zoom: 1;
+  }
+
+  .lifafa-print-sheet {
+    box-shadow: none;
+  }
+}

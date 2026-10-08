@@ -20,6 +20,7 @@ import EventForm, { type PaidLimitNotes } from "@/components/create/EventForm";
 import LanguagePicker from "@/components/create/LanguagePicker";
 import MotionPicker from "@/components/create/MotionPicker";
 import MusicPanel from "@/components/create/MusicPanel";
+import PdfPanel from "@/components/create/PdfPanel";
 import OccasionGrid from "@/components/create/OccasionGrid";
 import PreviewBar from "@/components/create/PreviewBar";
 import ReplyFormPanel from "@/components/create/ReplyFormPanel";
@@ -48,6 +49,7 @@ import CoupleIllustrationPanel from "@/components/create/CoupleIllustrationPanel
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
+import { pdfDownloadOn } from "@/lib/pdfDownload";
 import { royalTextureOn } from "@/lib/royalTexture";
 import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
@@ -170,6 +172,8 @@ interface EditorState {
   venueIllustration: VenueIllustration;
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
+  /** Whether a guest may keep the card as a PDF. On unless the host turned it off. */
+  pdfDownload: boolean;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
   divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
@@ -226,6 +230,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     venueIllustration: venueIllustrationOf(config.venueIllustration),
     /* Missing on every card saved before the texture; those have none. */
     royalTexture: royalTextureOn(config.royalTexture),
+    /* Missing on every card saved before the switch; those offer the copy. */
+    pdfDownload: pdfDownloadOn(config.pdfDownload),
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
@@ -300,6 +306,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
         : null),
       /* Only ever stored as on: a card that never had the key has no texture. */
       ...(state.royalTexture ? { royalTexture: true } : null),
+      /* Only ever stored as off: a card that never had the key offers the copy. */
+      ...(state.pdfDownload ? null : { pdfDownload: false }),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
       ...(state.divider !== undefined ? { divider: state.divider } : null),
       borderStyle: state.borderStyle,
@@ -502,6 +510,7 @@ export default function CardEditor({
     initial.venueIllustration,
   );
   const [royalTexture, setRoyalTexture] = useState(initial.royalTexture);
+  const [pdfDownload, setPdfDownload] = useState(initial.pdfDownload);
 
   /*
     ONE REVEAL ON THE DATE, NEVER TWO. The royal scroll and the scratch panel
@@ -922,6 +931,7 @@ export default function CardEditor({
     coupleIllustration,
     venueIllustration,
     royalTexture,
+    pdfDownload,
     divider,
     borderStyle,
     style,
@@ -1593,6 +1603,11 @@ export default function CardEditor({
                   enabled={qrCheckinEnabled}
                   onEnabledChange={setQrCheckinEnabled}
                   repliesOpen={rsvpEnabled}
+                  accordion={accordionFor("extras")}
+                />
+                <PdfPanel
+                  enabled={pdfDownload}
+                  onEnabledChange={setPdfDownload}
                   accordion={accordionFor("extras")}
                 />
               </div>
