@@ -1565,33 +1565,94 @@
   line-height: 1.12em;
 }
 
+/*
+  A digit turning over, as a flip clock's does: the old one tips back and
+  away, then the new one tips down into its place. Transform and opacity
+  only, the perspective inside the transform itself, so each is one
+  compositor animation and nothing is laid out.
+*/
 .lifafa-tick-in {
-  animation: lifafa-tick-in 340ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  animation: lifafa-flip-in 460ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  backface-visibility: hidden;
 }
 
 .lifafa-tick-out {
-  animation: lifafa-tick-out 340ms cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  animation: lifafa-flip-out 460ms cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  backface-visibility: hidden;
 }
 
-@keyframes lifafa-tick-in {
-  from {
-    transform: translate3d(0, 62%, 0);
+@keyframes lifafa-flip-in {
+  0%,
+  42% {
+    transform: perspective(6em) rotateX(88deg);
     opacity: 0;
   }
-  to {
-    transform: translate3d(0, 0, 0);
+  100% {
+    transform: perspective(6em) rotateX(0deg);
     opacity: 1;
   }
 }
 
-@keyframes lifafa-tick-out {
-  from {
-    transform: translate3d(0, 0, 0);
+@keyframes lifafa-flip-out {
+  0% {
+    transform: perspective(6em) rotateX(0deg);
     opacity: 1;
   }
-  to {
-    transform: translate3d(0, -62%, 0);
+  50%,
+  100% {
+    transform: perspective(6em) rotateX(-88deg);
     opacity: 0;
+  }
+}
+
+/*
+  What a tap on the countdown's frame lets go: a few rose petals and gold
+  sparkles from under the finger, thrown a little way up and out, then
+  falling and fading. See CountdownSection.
+*/
+.lifafa-cd-piece {
+  position: absolute;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: lifafa-cd-piece 1500ms linear both;
+}
+
+@keyframes lifafa-cd-piece {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(0, 0, 0) scale(0.4) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  10% {
+    opacity: 1;
+  }
+  32% {
+    transform: translate(-50%, -50%)
+      translate3d(calc(var(--bx) * 0.7), var(--bup), 0) scale(1)
+      rotate(calc(var(--bspin) * 0.35));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(var(--bx), var(--bdown), 0)
+      scale(0.9) rotate(var(--bspin));
+  }
+}
+
+/*
+  A screen wider than a phone: the countdown is as tall as what is in it. A
+  section is otherwise floored at a screen's height, which on a laptop left
+  the clock adrift in the middle of an empty one. The inline floor is the
+  card's, for every section, hence the !important.
+*/
+@media (min-width: 48rem) {
+  .lifafa-card-fluid .lifafa-cd-section {
+    min-height: 0 !important;
   }
 }
 
@@ -1760,7 +1821,7 @@
 
 /*
   Reduced motion: the countdown's digits change in place with nothing
-  sliding; no confetti; the thread drawn; the cards simply there; the ring
+  turning; no confetti and no petals from a tap; the thread drawn; the cards simply there; the ring
   still.
 */
 @media (prefers-reduced-motion: reduce) {
@@ -1772,7 +1833,8 @@
     display: none;
   }
 
-  .lifafa-confetti {
+  .lifafa-confetti,
+  .lifafa-cd-piece {
     display: none;
   }
 

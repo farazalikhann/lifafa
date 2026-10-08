@@ -643,6 +643,14 @@ function renderBlock(
   couple: { traditionId: TraditionId; illustration: boolean },
   /** The painting above the venue's name, for a card whose host chose one. */
   venueIllustration: VenueArt | null,
+  /** Whether the countdown carries the calendar button: not when "Save the date" hangs under it with its own. */
+  calendarButton: boolean,
+  /**
+   * The countdown's inset at the top. It is a stack now, a script heading down
+   * to a button, and tall enough to climb into the dissolve as the head screen
+   * did, so it clears the whole of it above itself, as that does.
+   */
+  countdownPadTop: number,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -694,11 +702,16 @@ function renderBlock(
           theme={theme}
           minHeight={minHeight}
           pad={pad}
+          padTop={countdownPadTop}
           scratch={scratch}
           dateScratch={dateScratch}
           sessionKey={invite.url === null ? null : invite.code}
           language={language}
           isWedding={occasionId === "wedding"}
+          invite={invite}
+          occasionId={occasionId}
+          traditionId={couple.traditionId}
+          calendarButton={calendarButton}
         />
       );
     case "venue":
@@ -723,6 +736,7 @@ function renderBlock(
           language={language}
           invite={invite}
           occasionId={occasionId}
+          traditionId={couple.traditionId}
         />
       );
     case "family":
@@ -1815,6 +1829,8 @@ export default function CardCanvas({
                 illustration: coupleIllustrationOn(config.coupleIllustration),
               },
               venueArt(venueIllustrationOf(config.venueIllustration)),
+              hasDateScreen,
+              sectionIsFirstScreen ? firstScreenPad : headPadTop,
             );
 
             const head =

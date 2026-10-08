@@ -138,6 +138,10 @@ export interface CardCopy {
     untilVows: string;
     /** The same line on any other card. */
     until: string;
+    /** On a function's chip under the clock: how far off its day is. */
+    today: string;
+    tomorrow: string;
+    inDays: (days: number) => string;
   };
   venue: {
     namePlaceholder: string;
@@ -437,16 +441,19 @@ const ENGLISH: CardCopy = {
     daughterOf: "Daughter of",
   },
   countdown: {
-    heading: "The countdown",
+    heading: "Counting the Days",
     days: "Days",
     hours: "Hours",
     minutes: "Minutes",
     seconds: "Seconds",
-    begun: "The celebration has begun",
+    begun: "Today is the day",
     passed: "Thank you for celebrating with us",
     short: { days: "Days", hours: "Hrs", minutes: "Min", seconds: "Sec" },
     untilVows: "until we say I do",
     until: "until we celebrate",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    inDays: (days) => `in ${days} days`,
   },
   venue: {
     namePlaceholder: "Venue name",
@@ -686,16 +693,22 @@ const HINDI: CardCopy = {
     daughterOf: "सुपुत्री",
   },
   countdown: {
-    heading: "उलटी गिनती",
+    /* TODO(Faraz): verify this Hindi heading ("Counting the Days") with a native reader. */
+    heading: "दिन गिन रहे हैं",
     days: "दिन",
     hours: "घंटे",
     minutes: "मिनट",
     seconds: "सेकंड",
-    begun: "उत्सव शुरू हो चुका है",
+    /* TODO(Faraz): verify this Hindi line ("Today is the day") with a native reader. */
+    begun: "आज ही वह शुभ दिन है",
     passed: "हमारी ख़ुशी में शामिल होने के लिए शुक्रिया",
     short: { days: "दिन", hours: "घंटे", minutes: "मिनट", seconds: "सेकंड" },
     untilVows: "शुभ घड़ी तक",
     until: "शुभ घड़ी तक",
+    /* TODO(Faraz): verify the three chip labels below with a native reader. */
+    today: "आज",
+    tomorrow: "कल",
+    inDays: (days) => `${days} दिन बाद`,
   },
   venue: {
     namePlaceholder: "स्थान का नाम",

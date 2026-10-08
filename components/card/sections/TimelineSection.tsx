@@ -8,7 +8,7 @@ import {
   type ReactElement,
 } from "react";
 import CalendarSheet from "@/components/card/CalendarSheet";
-import CeremonyIcon from "@/components/card/CeremonyIcon";
+import FunctionIcon from "@/components/card/FunctionIcon";
 import { useStillHidden } from "@/components/card/ScratchReveal";
 import { useInView } from "@/hooks/useInView";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -31,12 +31,12 @@ import {
   type TimelineEntry,
   type TimelinePhase,
 } from "@/lib/cardSections";
-import { ceremonyKind } from "@/lib/ceremonies";
+import { functionIcon } from "@/lib/ceremonies";
 import { mixHex, readableOn } from "@/lib/contrast";
 import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
-import type { OccasionId } from "@/types/occasion";
+import type { OccasionId, TraditionId } from "@/types/occasion";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -96,6 +96,7 @@ function TimelineRow({
   entry,
   index,
   phase,
+  traditionId,
   hideWhen,
   hideWhere,
   theme,
@@ -108,6 +109,8 @@ function TimelineRow({
   index: number;
   /** Null until the section has read the clock, after mount. */
   phase: TimelinePhase | null;
+  /** Whose wedding it is, which decides what a function called only "Wedding" is drawn as. */
+  traditionId: TraditionId;
   /** The date is still behind a scratch panel: this is the main event and it is hidden. */
   hideWhen: boolean;
   /** The same for the venue. */
@@ -166,7 +169,10 @@ function TimelineRow({
         }
         aria-hidden="true"
       >
-        <CeremonyIcon kind={ceremonyKind(entry.label)} size={cardRem(1.45)} />
+        {/* The painting, fitted inside the ring and clipped to it; the ring that breathes is outside this. */}
+        <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
+          <FunctionIcon icon={functionIcon(entry.label, traditionId)} size="86%" />
+        </span>
       </span>
 
       <article
@@ -303,8 +309,8 @@ function TimelineRow({
  * timeline's position and setting a scaleY on the line. Only a transform moves,
  * so nothing is laid out again. Under reduced motion it is simply drawn.
  *
- * EACH FUNCTION gets a medallion on the thread, its drawing chosen from its
- * name (lib/ceremonies.ts), and a card: the date as a chip, the weekday and
+ * EACH FUNCTION gets a medallion on the thread, its painting chosen from its
+ * name and the card's tradition (lib/ceremonies.ts), and a card: the date as a chip, the weekday and
  * time, the venue with a pin, the note, and two actions, Get directions and
  * Add to calendar, which opens the same calendar sheet as Save the date for
  * that function's own date, time and venue. On a laptop the cards alternate
@@ -329,6 +335,7 @@ export default function TimelineSection({
   language,
   invite,
   occasionId,
+  traditionId,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -340,6 +347,8 @@ export default function TimelineSection({
   invite: CalendarInvite;
   /** For the calendar entry's title, which names the couple as the card does. */
   occasionId: OccasionId;
+  /** The card's tradition, for the painting on each medallion (lib/ceremonies.ts). */
+  traditionId: TraditionId;
 }): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -447,7 +456,7 @@ export default function TimelineSection({
       <div
         ref={trackRef}
         className="lifafa-tl relative"
-        style={{ "--tl-medal": cardRem(2.75) } as CSSProperties}
+        style={{ "--tl-medal": cardRem(3.5) } as CSSProperties}
       >
         {/* The thread's bed, faint, and the thread itself, drawn over it. */}
         <span
@@ -475,6 +484,7 @@ export default function TimelineSection({
                 entry={entry}
                 index={index}
                 phase={phases?.get(entry.id) ?? null}
+                traditionId={traditionId}
                 hideWhen={isPrimary && dateHidden}
                 hideWhere={isPrimary && venueHidden}
                 theme={theme}

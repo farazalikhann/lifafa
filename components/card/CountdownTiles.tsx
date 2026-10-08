@@ -7,9 +7,10 @@ import { textRoles, type Theme } from "@/lib/themes";
 /**
  * One digit in its fixed slot.
  *
- * On a change the old digit slides up and out as the new one slides up into
- * its place (`lifafa-tick-*` in globals.css), transform and opacity only. The
- * slot is a fixed width, so a second ticking over never moves a neighbour.
+ * On a change the digit turns over like a flip clock's: the old one tips
+ * back and away, then the new one tips down into its place (`lifafa-flip-*`
+ * in globals.css), transform and opacity only. The slot is a fixed width, so
+ * a second ticking over never moves a neighbour.
  * The two moving copies are keyed on the change, so the next one starts
  * them again; nothing here keeps a timer — the countdown's one interval is
  * the only clock. Under reduced motion the new digit simply replaces the old.
