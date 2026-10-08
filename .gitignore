@@ -32,3 +32,7 @@ next-env.d.ts
 /petal dust video light/
 /fold video/
 /fold video light/
+/general photos/
+# Playwright screenshots taken while checking a change, and set-aside files.
+/screenshots/
+/_unused_backup/
