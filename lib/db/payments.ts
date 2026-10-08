@@ -101,6 +101,14 @@ export interface CheckoutOrder {
   couponCode: string | null;
   /** Paise taken off, as computed here. Zero when no coupon applied. */
   discountAmount: number;
+  /**
+   * The signed-in host's own email and name, handed to the checkout as
+   * `prefill` so Razorpay sends the receipt to the person who is paying.
+   * Without it Razorpay falls back to whatever details it remembered on that
+   * phone or browser, which may belong to someone else entirely.
+   */
+  hostEmail: string | null;
+  hostName: string | null;
 }
 
 /** What the "Have a coupon?" field gets back. */
@@ -181,7 +189,10 @@ export async function previewCoupon(
  */
 async function requireUnpaidOwnedEvent(
   eventId: string,
-): Promise<{ ok: true; hostId: string } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; hostId: string; hostEmail: string | null; hostName: string | null }
+  | { ok: false; error: string }
+> {
   const supabase = await createClient();
 
   const {
@@ -236,7 +247,23 @@ async function requireUnpaidOwnedEvent(
     };
   }
 
-  return { ok: true, hostId: user.id };
+  /*
+    Google sign-in puts the display name in user_metadata; an email OTP sign-in
+    has none, and the checkout simply leaves the name field for the host.
+  */
+  const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const rawName = metadata.full_name ?? metadata.name;
+  const hostName =
+    typeof rawName === "string" && rawName.trim().length > 0
+      ? rawName.trim()
+      : null;
+
+  return {
+    ok: true,
+    hostId: user.id,
+    hostEmail: user.email ?? null,
+    hostName,
+  };
 }
 
 /**
@@ -487,6 +514,8 @@ export async function createPaymentOrder(
     keyId,
     couponCode,
     discountAmount,
+    hostEmail: owned.hostEmail,
+    hostName: owned.hostName,
   });
 }
 

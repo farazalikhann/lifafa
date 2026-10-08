@@ -43,6 +43,12 @@ interface RazorpayCheckoutOptions {
     email?: string;
     contact?: string;
   };
+  /** Locks prefilled fields so the host cannot (and saved details do not) change them. */
+  readonly?: {
+    email?: boolean;
+    contact?: boolean;
+    name?: boolean;
+  };
   notes?: Record<string, string>;
   theme?: {
     color?: string;

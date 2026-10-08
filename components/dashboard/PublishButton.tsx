@@ -229,6 +229,17 @@ export default function PublishButton({
       name: "Lifafa",
       description: "Publish your invitation",
       order_id: result.data.orderId,
+      /*
+        The signed-in host's own details, so the receipt goes to them. Without
+        this Razorpay fills the form from whatever it remembered on this device,
+        which can be a friend's or a family member's email. Email is locked so
+        the remembered one cannot replace it.
+      */
+      prefill: {
+        ...(result.data.hostEmail === null ? {} : { email: result.data.hostEmail }),
+        ...(result.data.hostName === null ? {} : { name: result.data.hostName }),
+      },
+      readonly: { email: result.data.hostEmail !== null },
       theme: { color: "#E8B54D" },
       handler: () => {
         /*
