@@ -856,6 +856,16 @@
   }
 }
 
+/* A film cover waited for after the tap: a glint running the length of its hairline. */
+@keyframes lifafa-cover-film-wait {
+  from {
+    transform: translate3d(-110%, 0, 0);
+  }
+  to {
+    transform: translate3d(260%, 0, 0);
+  }
+}
+
 @keyframes lifafa-cover-loader-pulse {
   0%,
   100% {

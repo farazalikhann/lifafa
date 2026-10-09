@@ -13,13 +13,39 @@ import type { CoverVisualState } from "@/components/invite/CoverShell";
 import GoldFlower from "@/components/invite/covers/GoldFlower";
 import { initialOf, initialsOf } from "@/components/invite/covers/initials";
 import type { DrawnCover } from "@/components/invite/covers/VideoCover";
-import { LIGHT_FILM_STALL_MS, LIGHT_FILM_WAIT_MS, type LightFilm } from "@/lib/lightFilm";
+import { coverDebug, watchFilmEvents } from "@/lib/coverDebug";
+import {
+  LIGHT_FILM_CUT_MS,
+  LIGHT_FILM_STALL_MS,
+  LIGHT_FILM_START_MS,
+  LIGHT_FILM_WAIT_MS,
+  type LightFilm,
+} from "@/lib/lightFilm";
 
 /** How long the still takes to give way to the card when there is nothing to play. */
 const PLAIN_FADE_MS = 300;
 
-/** How long a film that is in hand is given to start once asked. */
-const START_WATCHDOG_MS = 450;
+/**
+ * A film whose clock has not moved for this long while it plays has stopped,
+ * whatever it says of itself.
+ */
+const FROZEN_MS = 700;
+
+/**
+ * How long a film that reports it is waiting is given to carry on. A healthy
+ * one says so for a few milliseconds as it starts, with every byte in hand,
+ * and that is not a film to give up on; one still waiting after this is.
+ */
+const WAITING_GRACE_MS = 250;
+
+/**
+ * The film, in the order it is tried: H.264 in MP4 first, which every phone
+ * decodes in hardware, then VP9 in WebM for a browser without it.
+ */
+const SOURCES = [
+  { key: "mp4", mime: "video/mp4", ask: 'video/mp4; codecs="avc1.64001F"' },
+  { key: "webm", mime: "video/webm", ask: 'video/webm; codecs="vp9"' },
+] as const;
 
 /**
  * How long after the cover is on screen the film is given before the drawn
@@ -54,6 +80,12 @@ const BAND_EXIT_MS = 360;
  */
 type Stage = "closed" | "film" | "light" | "drawn" | "plain";
 
+/**
+ * Where the film itself is. "loading" is on its way; "ready" is the whole of
+ * it in hand, as a Blob the <video> plays from; "out" is not coming.
+ */
+type FilmState = "loading" | "ready" | "out";
+
 /** A connection on which a guest should not be sent a film for a flourish. */
 function onSlowNetwork(): boolean {
   const connection = (
@@ -85,7 +117,21 @@ const useIsomorphicLayoutEffect =
  * the film's first frame are one picture and nothing jumps when it starts.
  * The still is in the shell's loading gate; the film is not. It is asked for
  * only once the cover is on screen, which is after the card's own first
- * screen has loaded, so it never holds the card up. A film with a seal has
+ * screen has loaded, so it never holds the card up.
+ *
+ * THE WHOLE FILM, OR NONE OF IT. It is fetched entire into a Blob and played
+ * from that, never streamed: a film started on the part of it that had
+ * arrived ran into the part that had not, and stopped half way. A tap before
+ * it is in waits for it on the still, under a small shimmer, for two and a
+ * half seconds and no longer.
+ *
+ * THE STILL STAYS UNTIL THE FILM IS ON SCREEN. A <video> says it is playing
+ * before it has drawn anything, by a quarter of a second on a slow phone, and
+ * a still taken away on its word left that long of nothing: black, on a phone
+ * that gives video its own surface. So the still comes off only when the film
+ * reports a frame presented.
+ *
+ * A film with a seal has
  * the couple's initials lettered on it, placed by the film's own measurements
  * through the same arithmetic the film is placed by, so they sit on the seal
  * at any screen size, and they are gone before the seal has cracked.
@@ -101,9 +147,14 @@ const useIsomorphicLayoutEffect =
  * away as the film's light starts to flood, so it never stands on the light.
  *
  * WHEN THE FILM CANNOT PLAY, the cover drawn in code opens instead, as it
- * always did: if the film has failed, if it has not arrived a second and a
- * half after the tap, if the browser will not start it, or on a connection it
- * was never sent over. It is mounted out of sight as soon as the film looks
+ * always did: if the film has failed, if it has not arrived in time after the
+ * tap, if the browser will not start it, or on a connection it was never sent
+ * over. A film that stops once it is playing is not left on its stopped
+ * frame either: the frame gives way to the light and the light to the card.
+ * And whatever happens the cover comes down: at the light, at the film's
+ * end, or a second and a half past its length, whichever is first.
+ * `?coverdebug=1` on the link puts all of this on screen; see
+ * lib/coverDebug.ts. It is mounted out of sight as soon as the film looks
  * late, so it has a closed state to open from. With neither in hand the
  * still fades to the card, and for a film that never had a drawn cover that
  * soft fade is the whole of its fallback.
@@ -123,8 +174,13 @@ export default function LightFilmCover({
   const plainMs = FILM.plainFadeMs ?? PLAIN_FADE_MS;
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  /* The film has failed, or was never asked for: there is nothing to wait for. */
-  const filmOut = useRef(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  /* Where the film is, why it is out when it is, and what the tap left waiting to hear. */
+  const filmState = useRef<FilmState>("loading");
+  const filmOutWhy = useRef("");
+  const onFilmSettled = useRef<(() => void) | null>(null);
+  /* The tap has asked the film to play: what it does from here is the tap's to deal with. */
+  const filmAsked = useRef(false);
   /* Whether the drawn cover's pictures are decoded, for the tap to ask. */
   const drawnReady = useRef(false);
   const drawnSent = useRef(false);
@@ -133,8 +189,8 @@ export default function LightFilmCover({
   const [stage, setStage] = useState<Stage>("closed");
   /* The film has drawn a frame: the still over it can go. */
   const [filmShowing, setFilmShowing] = useState(false);
-  /* The film stalled short of the light, so it is faded with it, not swapped out. */
-  const [stalled, setStalled] = useState(false);
+  /* The film stopped short of the light, so it is faded to the light, not swapped out on it. */
+  const [cutShort, setCutShort] = useState(false);
 
   const sendForDrawn = useCallback((): void => {
     if (drawnSent.current || drawn === undefined) {
@@ -164,7 +220,7 @@ export default function LightFilmCover({
   }, [drawn, colors.isLight]);
 
   /*
-    The film, asked for once the closed cover is on screen. `ready` comes
+    The film, fetched whole once the closed cover is on screen. `ready` comes
     after the card's own fonts and first pictures, so the film is behind them
     in the queue, and long after hydration, so `reducedMotion` is the guest's
     real answer by now and not the server's false.
@@ -176,33 +232,126 @@ export default function LightFilmCover({
 
     const video = videoRef.current;
 
-    if (video === null || onSlowNetwork()) {
-      filmOut.current = true;
-      sendForDrawn();
+    const settle = (state: FilmState, why: string): void => {
+      filmState.current = state;
+      filmOutWhy.current = state === "out" ? why : "";
+      coverDebug(`film ${state}: ${why}`);
+
+      if (state === "out") {
+        sendForDrawn();
+      }
+
+      onFilmSettled.current?.();
+    };
+
+    if (video === null) {
+      settle("out", "no video element");
       return;
     }
 
-    const failed = (): void => {
-      filmOut.current = true;
-      sendForDrawn();
+    if (onSlowNetwork()) {
+      settle("out", "data saver or a 2g connection, film not requested");
+      return;
+    }
+
+    const abort = new AbortController();
+    let live = true;
+    let blobUrl: string | null = null;
+    /* Which of the sources is in the <video>, for an error there to move on from. */
+    let current = -1;
+
+    filmState.current = "loading";
+    const unwatch = watchFilmEvents(video);
+
+    /*
+      Said on the element as well as in the markup. React writes `muted` as a
+      property and not as an attribute, and a browser deciding whether a film
+      may start without a gesture of its own reads either.
+    */
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+
+    const sources = SOURCES.filter((source) => video.canPlayType(source.ask) !== "");
+
+    const load = async (index: number): Promise<void> => {
+      const source = sources[index];
+
+      if (source === undefined) {
+        settle("out", sources.length === 0 ? "no format this browser plays" : "no source loaded");
+        return;
+      }
+
+      try {
+        coverDebug(`fetch ${source.key}`);
+        const response = await fetch(FILM[source.key], { signal: abort.signal });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const body = await response.blob();
+
+        if (!live) {
+          return;
+        }
+
+        /* A server that mislabels it does not get to stop it playing. */
+        const blob = body.type.startsWith("video/") ? body : body.slice(0, body.size, source.mime);
+
+        if (blobUrl !== null) {
+          URL.revokeObjectURL(blobUrl);
+        }
+
+        blobUrl = URL.createObjectURL(blob);
+        current = index;
+        video.preload = "auto";
+        video.src = blobUrl;
+        video.load();
+        settle("ready", `${source.key}, ${Math.round(blob.size / 1024)} KB in hand`);
+      } catch (error) {
+        if (!live) {
+          return;
+        }
+
+        coverDebug(`${source.key} failed: ${error instanceof Error ? error.message : "unknown"}`);
+        await load(index + 1);
+      }
     };
 
-    /* WebM where the browser plays it; MP4 everywhere else, which is every iPhone. */
-    video.preload = "auto";
-    video.src =
-      video.canPlayType('video/webm; codecs="vp9"') === "probably" ? FILM.webm : FILM.mp4;
-    video.addEventListener("error", failed, { once: true });
-    video.load();
+    /* A file the browser cannot decode after all, found before the tap: the next one. */
+    const undecodable = (): void => {
+      if (!live || filmAsked.current || current < 0) {
+        return;
+      }
+
+      const next = current + 1;
+      current = -1;
+      filmState.current = "loading";
+      void load(next);
+    };
+
+    video.addEventListener("error", undecodable);
+    void load(0);
 
     const late = window.setTimeout(() => {
-      if (video.readyState < 3) {
+      if (filmState.current !== "ready") {
         sendForDrawn();
       }
     }, STAND_IN_AFTER_MS);
 
     return () => {
+      live = false;
+      abort.abort();
       window.clearTimeout(late);
-      video.removeEventListener("error", failed);
+      video.removeEventListener("error", undecodable);
+      unwatch();
+
+      if (blobUrl !== null) {
+        URL.revokeObjectURL(blobUrl);
+      }
     };
   }, [ready, reducedMotion, sendForDrawn, FILM]);
 
@@ -226,10 +375,24 @@ export default function LightFilmCover({
     let wait = 0;
     let watchdog = 0;
     let stall = 0;
+    let grace = 0;
     let frame = 0;
+    let firstFrame = 0;
+    /* The film's clock when it last moved, and when that was. */
+    let clock = 0;
+    let clockAt = 0;
+
+    /* Which way the cover opened, for the log and for a test to read. */
+    const took = (path: string): void => {
+      coverDebug(`PATH ${path}`);
+
+      if (rootRef.current !== null) {
+        rootRef.current.dataset.coverPath = path;
+      }
+    };
 
     /* The drawn cover, or failing that the still fading. */
-    const standDown = (): void => {
+    const standDown = (why: string): void => {
       if (settled || playing) {
         return;
       }
@@ -240,6 +403,7 @@ export default function LightFilmCover({
       video?.pause();
 
       if (drawnReady.current) {
+        took(`fallback (drawn cover): ${why}`);
         setStage("drawn");
         retime({
           durationMs: option.durationMs,
@@ -253,6 +417,7 @@ export default function LightFilmCover({
           which is its opening; one that has lost its drawing as well has
           nothing left for a sound to go with.
         */
+        took(`fallback (still fades): ${why}`);
         setStage("plain");
         retime({
           durationMs: plainMs,
@@ -262,19 +427,38 @@ export default function LightFilmCover({
       }
     };
 
-    /* The light giving way to the card, and the shell told how long that takes. */
-    const toLight = (short: boolean): void => {
+    /*
+      The light giving way to the card, and the shell told how long that
+      takes. `why` is given for a film cut short: its stopped frame goes to
+      the light first, and then the light to the card.
+    */
+    const toLight = (why?: string): void => {
       if (settled) {
         return;
       }
 
       settled = true;
       window.clearTimeout(stall);
+      window.clearTimeout(grace);
       window.cancelAnimationFrame(frame);
       dismissSkip();
-      setStalled(short);
+
+      if (why === undefined) {
+        took("video, played to the light");
+        setStage("light");
+        retime({ durationMs: fadeMs, revealAt: 0, sound: "keep" });
+        return;
+      }
+
+      took(`fallback (frame to light to card) at ${video?.currentTime.toFixed(2) ?? "?"}s: ${why}`);
+      video?.pause();
+      setCutShort(true);
       setStage("light");
-      retime({ durationMs: fadeMs, revealAt: 0, sound: "keep" });
+      retime({
+        durationMs: LIGHT_FILM_CUT_MS + fadeMs,
+        revealAt: LIGHT_FILM_CUT_MS / (LIGHT_FILM_CUT_MS + fadeMs),
+        sound: "keep",
+      });
     };
 
     /* One read of the film's clock a frame, while it plays: no layout, nothing written. */
@@ -284,7 +468,18 @@ export default function LightFilmCover({
       }
 
       if (video.ended || video.currentTime * 1000 >= FILM.lightAtMs) {
-        toLight(false);
+        toLight();
+        return;
+      }
+
+      /* A clock that has stood still: the film has stopped, whatever it reports. */
+      const now = performance.now();
+
+      if (video.currentTime !== clock) {
+        clock = video.currentTime;
+        clockAt = now;
+      } else if (now - clockAt >= FROZEN_MS) {
+        toLight(`clock stood still for ${FROZEN_MS} ms`);
         return;
       }
 
@@ -301,33 +496,77 @@ export default function LightFilmCover({
       frame = window.requestAnimationFrame(follow);
     };
 
+    /* The film says it is short of data. Believed only if it is still short a moment later. */
+    const starved = (event: Event): void => {
+      if (!playing || settled || video === null) {
+        return;
+      }
+
+      const said = event.type;
+      const from = video.currentTime;
+      window.clearTimeout(grace);
+      grace = window.setTimeout(() => {
+        if (video.currentTime === from && !video.ended) {
+          toLight(`"${said}" and no frame since`);
+        }
+      }, WAITING_GRACE_MS);
+    };
+
+    const ended = (): void => toLight();
+
+    /* The film has put a frame on the screen: only now does its still come off it. */
     const started = (): void => {
-      if (settled || playing) {
+      if (settled || playing || video === null) {
         return;
       }
 
       playing = true;
       window.clearTimeout(watchdog);
+      coverDebug(`first frame on screen, ${Math.round(performance.now() - tappedAt)} ms after the tap`);
       setFilmShowing(true);
       setStage("film");
 
-      /* A film that was waited for starts its sound again, to go with it. */
-      if (performance.now() - tappedAt > LATE_START_MS) {
-        const netMs = FILM.lengthMs + LIGHT_FILM_STALL_MS + fadeMs;
-        retime({ durationMs: netMs, revealAt: 1 - fadeMs / netMs, sound: "restart" });
-      }
+      /*
+        The shell's net, from now: the film, its grace and the hand-over. A
+        film that was waited for starts its sound again, to go with it.
+      */
+      const lengthMs =
+        Number.isFinite(video.duration) && video.duration > 0
+          ? video.duration * 1000
+          : FILM.lengthMs;
+      const netMs = lengthMs + LIGHT_FILM_STALL_MS + LIGHT_FILM_CUT_MS + fadeMs;
+      retime({
+        durationMs: netMs,
+        revealAt: 1 - fadeMs / netMs,
+        sound: performance.now() - tappedAt > LATE_START_MS ? "restart" : "keep",
+      });
 
+      clock = video.currentTime;
+      clockAt = performance.now();
+      video.addEventListener("waiting", starved);
+      video.addEventListener("stalled", starved);
+      video.addEventListener("ended", ended);
       frame = window.requestAnimationFrame(follow);
-      /* A film that stops part way, or a tab put away: the card is not kept behind it. */
-      stall = window.setTimeout(() => toLight(true), FILM.lengthMs + LIGHT_FILM_STALL_MS);
+      /* A film that never gets there, or a tab put away: the card is not kept behind it. */
+      stall = window.setTimeout(
+        () => toLight("past its own length and not at the light"),
+        lengthMs + LIGHT_FILM_STALL_MS,
+      );
     };
 
     const failed = (): void => {
+      const why = `video error ${video?.error?.code ?? "?"}`;
+
       if (playing) {
-        toLight(true);
+        toLight(why);
       } else {
-        standDown();
+        standDown(why);
       }
+    };
+
+    /* Without requestVideoFrameCallback: "playing", and a frame for it to be drawn in. */
+    const playingSaid = (): void => {
+      frame = window.requestAnimationFrame(started);
     };
 
     const begin = (): void => {
@@ -336,37 +575,87 @@ export default function LightFilmCover({
       }
 
       asked = true;
+      filmAsked.current = true;
       window.clearTimeout(wait);
-      video.addEventListener("playing", started, { once: true });
-      watchdog = window.setTimeout(standDown, START_WATCHDOG_MS);
-      /* A browser that refuses to play — an iPhone in Low Power Mode — rejects here. */
-      void video.play()?.then(undefined, standDown);
+      video.addEventListener("error", failed, { once: true });
+
+      if (typeof video.requestVideoFrameCallback === "function") {
+        firstFrame = video.requestVideoFrameCallback(started);
+      } else {
+        video.addEventListener("playing", playingSaid, { once: true });
+      }
+
+      watchdog = window.setTimeout(
+        () => standDown(`no frame ${LIGHT_FILM_START_MS} ms after play()`),
+        LIGHT_FILM_START_MS,
+      );
+
+      /*
+        A browser that refuses to play, an iPhone in Low Power Mode or a
+        phone saving data, rejects here, and the drawn cover opens.
+      */
+      try {
+        const answer = video.play();
+        coverDebug("play() called");
+        void answer?.then(
+          () => coverDebug("play() resolved"),
+          (error: unknown) => {
+            const name = error instanceof Error ? error.name : "unknown";
+            coverDebug(`play() rejected: ${name}`);
+            standDown(`play() rejected (${name})`);
+          },
+        );
+      } catch {
+        standDown("play() threw");
+      }
     };
 
-    if (video === null || filmOut.current || video.error !== null) {
-      standDown();
-      return;
-    }
+    /* The film's answer, now or when it comes: play it, or stand down. */
+    const decide = (): boolean => {
+      if (video === null || filmState.current === "out") {
+        standDown(filmOutWhy.current || "no film");
+        return true;
+      }
 
-    video.addEventListener("error", failed, { once: true });
+      if (filmState.current === "ready") {
+        begin();
+        return true;
+      }
 
-    /* Enough of it buffered to play on from here, or it is waited for. */
-    if (video.readyState >= 3) {
-      begin();
-    } else {
+      return false;
+    };
+
+    coverDebug(`TAP, film ${filmState.current}`);
+
+    /* Not in yet: waited for on the still, under the shimmer, and not for long. */
+    if (!decide()) {
       sendForDrawn();
-      video.addEventListener("canplay", begin, { once: true });
-      wait = window.setTimeout(standDown, LIGHT_FILM_WAIT_MS);
+      onFilmSettled.current = decide;
+      wait = window.setTimeout(
+        () => standDown(`film not in ${LIGHT_FILM_WAIT_MS} ms after the tap`),
+        LIGHT_FILM_WAIT_MS,
+      );
     }
 
     return () => {
+      onFilmSettled.current = null;
       window.clearTimeout(wait);
       window.clearTimeout(watchdog);
       window.clearTimeout(stall);
+      window.clearTimeout(grace);
       window.cancelAnimationFrame(frame);
-      video.removeEventListener("playing", started);
-      video.removeEventListener("canplay", begin);
-      video.removeEventListener("error", failed);
+
+      if (video !== null) {
+        if (firstFrame !== 0) {
+          video.cancelVideoFrameCallback(firstFrame);
+        }
+
+        video.removeEventListener("playing", playingSaid);
+        video.removeEventListener("error", failed);
+        video.removeEventListener("waiting", starved);
+        video.removeEventListener("stalled", starved);
+        video.removeEventListener("ended", ended);
+      }
     };
     /* Everything else here is read once, on the tap. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -401,10 +690,16 @@ export default function LightFilmCover({
     opacity: stage === "plain" || stage === "drawn" ? 0 : 1,
   };
 
-  /* The light: the film's last colour, between the film and the card. */
+  /*
+    The light: the film's last colour, between the film and the card. Under a
+    film cut short it holds until the stopped frame has gone to it.
+  */
   const lightStyle: CSSProperties = {
     backgroundColor: FILM.light,
-    transition: stage === "light" ? `opacity ${fadeMs}ms ease-in-out` : undefined,
+    transition:
+      stage === "light"
+        ? `opacity ${fadeMs}ms ease-in-out ${cutShort ? LIGHT_FILM_CUT_MS : 0}ms`
+        : undefined,
     opacity: stage === "light" ? 0 : 1,
     willChange: "opacity",
   };
@@ -413,8 +708,8 @@ export default function LightFilmCover({
   const surroundStyle: CSSProperties = {
     backgroundColor: FILM.surround,
     transition:
-      stage === "light" && stalled
-        ? `opacity ${fadeMs}ms ease-in-out`
+      stage === "light" && cutShort
+        ? `opacity ${LIGHT_FILM_CUT_MS}ms ease-in-out`
         : filmShowing
           ? `opacity ${FILM.glowMs}ms ease-in ${FILM.glowAtMs}ms`
           : undefined,
@@ -425,7 +720,7 @@ export default function LightFilmCover({
   const filmStyle: CSSProperties = {
     transition:
       stage === "light"
-        ? `opacity ${stalled ? fadeMs : SWAP_MS}ms ${stalled ? "ease-in-out" : "linear"}`
+        ? `opacity ${cutShort ? LIGHT_FILM_CUT_MS : SWAP_MS}ms ${cutShort ? "ease-in-out" : "linear"}`
         : undefined,
     opacity: stage === "light" ? 0 : 1,
     willChange: "opacity",
@@ -437,9 +732,12 @@ export default function LightFilmCover({
   const mark = FILM.mark;
   const ink = FILM.ink;
   const Drawn = drawn?.Component;
+  /* Tapped, and nothing moving yet: the film is on its way, or about to draw. */
+  const waiting = opening && stage === "closed";
 
   return (
     <div
+      ref={rootRef}
       aria-hidden
       className="pointer-events-none absolute inset-0 overflow-hidden [container-type:size]"
     >
@@ -480,23 +778,26 @@ export default function LightFilmCover({
             {/*
               Muted and inline, which is what lets a phone play it on the tap
               without taking over the screen. No source and nothing preloaded
-              in the markup: both are set once the cover is on screen. Never a
-              tap target and never in the accessibility tree.
+              in the markup: the film is fetched once the cover is on screen.
+              Its still is its poster too and its ground is clear, so a frame
+              it has not drawn yet is the still and never black. Never a tap
+              target and never in the accessibility tree.
             */}
             <video
               ref={videoRef}
               muted
               playsInline
               preload="none"
+              poster={FILM.poster}
               disablePictureInPicture
               tabIndex={-1}
-              className="absolute max-w-none select-none"
+              className="absolute max-w-none bg-transparent select-none"
               style={frameBox}
             />
             {/*
-              The still, over the film until the film is drawing. Decoded
-              before it is painted: the shell's loader has already waited for
-              it.
+              The still, over the film until the film has put a frame on the
+              screen. Decoded before it is painted: the shell's loader has
+              already waited for it.
             */}
             <img
               src={FILM.poster}
@@ -565,6 +866,25 @@ export default function LightFilmCover({
               </div>
             ) : null}
           </div>
+
+          {/*
+            Tapped, and the film not on screen yet: a hairline of the film's
+            own light with a glint running along it, where the prompt was.
+            Late in, so a film that starts at once never shows it.
+          */}
+          {waiting ? (
+            <div
+              data-cover-wait=""
+              className="absolute inset-x-0 bottom-[14%] flex animate-[lifafa-cover-loader-in_300ms_ease-out_220ms_both] justify-center"
+            >
+              <div className="relative h-[3px] w-16 overflow-hidden rounded-full bg-black/30">
+                <div
+                  className="absolute inset-y-0 left-0 w-2/5 animate-[lifafa-cover-film-wait_1.1s_ease-in-out_infinite] rounded-full"
+                  style={{ backgroundColor: FILM.light }}
+                />
+              </div>
+            </div>
+          ) : null}
 
           {/*
             The ground the shell's words are read on, for a film that has

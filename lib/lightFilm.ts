@@ -57,11 +57,23 @@ export interface LightFilm {
   band?: string;
 }
 
-/** How long a film is waited for after the tap, before the cover drawn in code opens instead. */
-export const LIGHT_FILM_WAIT_MS = 1500;
+/**
+ * How long a film still on its way is waited for after the tap, on its still
+ * and a small shimmer, before the cover drawn in code opens instead.
+ */
+export const LIGHT_FILM_WAIT_MS = 2500;
+
+/** How long a film that is in hand is given, once asked, to put its first frame on screen. */
+export const LIGHT_FILM_START_MS = 1000;
 
 /** How long past its own length a film that started is given to reach the light. */
 export const LIGHT_FILM_STALL_MS = 1500;
+
+/**
+ * A film that stops short of the light is not left on its stopped frame: the
+ * frame gives way to the light in this long, and the light to the card.
+ */
+export const LIGHT_FILM_CUT_MS = 350;
 
 /** The light takes this long to leave a light card, and this long a dark one. */
 export const LIGHT_FADE_MS = 800;
@@ -71,11 +83,18 @@ export const LIGHT_FADE_TO_DARK_MS = 1100;
  * The shell's timers for such a cover are a net, not the clock. The visual
  * follows the film itself and retimes the shell when the film reaches the
  * light, or when the drawn cover opens in its place; see LightFilmCover. This
- * is the longest any of that can take: the wait, the film, its grace and the
- * slower of the two fades.
+ * is the longest any of that can take: the wait, the start, the film, its
+ * grace and the slower of the two fades. Whatever else happens, the shell
+ * takes the cover down when it has run out.
  */
 export function lightFilmTiming(film: LightFilm): () => CoverFilmTiming {
-  const netMs = LIGHT_FILM_WAIT_MS + film.lengthMs + LIGHT_FILM_STALL_MS + film.fadeToDarkMs;
+  const netMs =
+    LIGHT_FILM_WAIT_MS +
+    LIGHT_FILM_START_MS +
+    film.lengthMs +
+    LIGHT_FILM_STALL_MS +
+    LIGHT_FILM_CUT_MS +
+    film.fadeToDarkMs;
   const timing: CoverFilmTiming = {
     durationMs: netMs,
     revealAt: 1 - film.fadeToDarkMs / netMs,
