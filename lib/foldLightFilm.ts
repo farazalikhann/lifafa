@@ -40,6 +40,9 @@
  *   mp4:  -c:v libx264 -profile:v high -preset slow -crf 21 -movflags +faststart
  *   webm: -c:v libvpx-vp9 -b:v 0 -crf 24 two-pass
  *   poster: the published MP4's first frame, WebP at quality 85
+ *   small:  the published MP4 itself, which has the mark already out of it,
+ *     at scale=480:854:flags=lanczos, two-pass,
+ *     -c:v libx264 -profile:v high -preset veryslow -b:v 735k
  */
 
 import {
@@ -55,6 +58,7 @@ const FOLDER = "/decor/fold-light-video";
 export const FOLD_LIGHT_FILM: LightFilm = {
   mp4: `${FOLDER}/fold-light.mp4`,
   webm: `${FOLDER}/fold-light.webm`,
+  mp4Small: `${FOLDER}/fold-light-480.mp4`,
   poster: `${FOLDER}/fold-light-poster.webp`,
   lengthMs: 4250,
   lightAtMs: 4083,

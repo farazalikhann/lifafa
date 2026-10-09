@@ -16,8 +16,10 @@ import type { DrawnCover } from "@/components/invite/covers/VideoCover";
 import { coverDebug, watchFilmEvents } from "@/lib/coverDebug";
 import {
   LIGHT_FILM_CUT_MS,
+  LIGHT_FILM_SMALL_BELOW_MBPS,
   LIGHT_FILM_STALL_MS,
   LIGHT_FILM_START_MS,
+  LIGHT_FILM_SWITCH_MS,
   LIGHT_FILM_WAIT_MS,
   type LightFilm,
 } from "@/lib/lightFilm";
@@ -39,13 +41,19 @@ const FROZEN_MS = 700;
 const WAITING_GRACE_MS = 250;
 
 /**
- * The film, in the order it is tried: H.264 in MP4 first, which every phone
- * decodes in hardware, then VP9 in WebM for a browser without it.
+ * What a browser is asked before it is sent a film: H.264 in MP4 first, which
+ * every phone decodes in hardware, then VP9 in WebM for a browser without it.
  */
-const SOURCES = [
-  { key: "mp4", mime: "video/mp4", ask: 'video/mp4; codecs="avc1.64001F"' },
-  { key: "webm", mime: "video/webm", ask: 'video/webm; codecs="vp9"' },
-] as const;
+const MP4 = { mime: "video/mp4", ask: 'video/mp4; codecs="avc1.64001F"' };
+const WEBM = { mime: "video/webm", ask: 'video/webm; codecs="vp9"' };
+
+/** One file the film can be had from. */
+interface FilmSource {
+  /** For the log. */
+  name: string;
+  url: string;
+  mime: string;
+}
 
 /**
  * How long after the cover is on screen the film is given before the drawn
@@ -101,6 +109,24 @@ function onSlowNetwork(): boolean {
   );
 }
 
+/**
+ * A connection the full film would not cross in time: 3g by the browser's own
+ * reckoning, or under a megabit and a half. It is sent the small film.
+ */
+function onModestNetwork(): boolean {
+  const connection = (
+    navigator as Navigator & {
+      connection?: { effectiveType?: string; downlink?: number };
+    }
+  ).connection;
+
+  return (
+    connection?.effectiveType === "3g" ||
+    (typeof connection?.downlink === "number" &&
+      connection.downlink < LIGHT_FILM_SMALL_BELOW_MBPS)
+  );
+}
+
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -124,6 +150,12 @@ const useIsomorphicLayoutEffect =
  * arrived ran into the part that had not, and stopped half way. A tap before
  * it is in waits for it on the still, under a small shimmer, for two and a
  * half seconds and no longer.
+ *
+ * TWO WEIGHTS OF IT. The full film is 1.2 MB, which a slow 4G line does not
+ * carry in the time a guest takes to tap. So each film has a small cut, a
+ * third of the weight, and a guest gets that one when their connection says
+ * it is slow, or when the full film has not arrived two seconds after the
+ * cover did: its download is dropped and the small one's started.
  *
  * THE STILL STAYS UNTIL THE FILM IS ON SCREEN. A <video> says it is playing
  * before it has drawn anything, by a quarter of a second on a slow phone, and
@@ -254,10 +286,12 @@ export default function LightFilmCover({
       return;
     }
 
-    const abort = new AbortController();
     let live = true;
     let blobUrl: string | null = null;
-    /* Which of the sources is in the <video>, for an error there to move on from. */
+    /* The download under way, and which turn of the queue it belongs to. */
+    let fetching: AbortController | null = null;
+    let turn = 0;
+    /* Which of the queue is in the <video>, for an error there to move on from. */
     let current = -1;
 
     filmState.current = "loading";
@@ -274,9 +308,27 @@ export default function LightFilmCover({
     video.setAttribute("muted", "");
     video.setAttribute("playsinline", "");
 
-    const sources = SOURCES.filter((source) => video.canPlayType(source.ask) !== "");
+    const playsMp4 = video.canPlayType(MP4.ask) !== "";
+    const full: FilmSource[] = [
+      ...(playsMp4 ? [{ name: "mp4", url: FILM.mp4, mime: MP4.mime }] : []),
+      ...(video.canPlayType(WEBM.ask) !== ""
+        ? [{ name: "webm", url: FILM.webm, mime: WEBM.mime }]
+        : []),
+    ];
+    const small: FilmSource | null =
+      playsMp4 && FILM.mp4Small !== undefined
+        ? { name: "mp4 480p", url: FILM.mp4Small, mime: MP4.mime }
+        : null;
+    /* The small film first on a slow connection, with the full ones behind it should it fail. */
+    const smallFirst = small !== null && onModestNetwork();
+    let sources = smallFirst ? [small, ...full] : full;
+
+    if (smallFirst) {
+      coverDebug("slow connection: the small film");
+    }
 
     const load = async (index: number): Promise<void> => {
+      const mine = turn;
       const source = sources[index];
 
       if (source === undefined) {
@@ -285,8 +337,9 @@ export default function LightFilmCover({
       }
 
       try {
-        coverDebug(`fetch ${source.key}`);
-        const response = await fetch(FILM[source.key], { signal: abort.signal });
+        coverDebug(`fetch ${source.name}`);
+        fetching = new AbortController();
+        const response = await fetch(source.url, { signal: fetching.signal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -294,7 +347,7 @@ export default function LightFilmCover({
 
         const body = await response.blob();
 
-        if (!live) {
+        if (!live || mine !== turn) {
           return;
         }
 
@@ -310,13 +363,14 @@ export default function LightFilmCover({
         video.preload = "auto";
         video.src = blobUrl;
         video.load();
-        settle("ready", `${source.key}, ${Math.round(blob.size / 1024)} KB in hand`);
+        settle("ready", `${source.name}, ${Math.round(blob.size / 1024)} KB in hand`);
       } catch (error) {
-        if (!live) {
+        /* Dropped for the small film, or the cover has gone: not a failure to move on from. */
+        if (!live || mine !== turn) {
           return;
         }
 
-        coverDebug(`${source.key} failed: ${error instanceof Error ? error.message : "unknown"}`);
+        coverDebug(`${source.name} failed: ${error instanceof Error ? error.message : "unknown"}`);
         await load(index + 1);
       }
     };
@@ -336,6 +390,22 @@ export default function LightFilmCover({
     video.addEventListener("error", undecodable);
     void load(0);
 
+    /*
+      The full film, still not in: its download is dropped and the small
+      one's started, which is a third of the wait from here.
+    */
+    const swap = window.setTimeout(() => {
+      if (small === null || smallFirst || filmState.current !== "loading") {
+        return;
+      }
+
+      coverDebug(`full film not in after ${LIGHT_FILM_SWITCH_MS} ms: the small film`);
+      turn += 1;
+      fetching?.abort();
+      sources = [small, ...full];
+      void load(0);
+    }, LIGHT_FILM_SWITCH_MS);
+
     const late = window.setTimeout(() => {
       if (filmState.current !== "ready") {
         sendForDrawn();
@@ -344,8 +414,9 @@ export default function LightFilmCover({
 
     return () => {
       live = false;
-      abort.abort();
+      fetching?.abort();
       window.clearTimeout(late);
+      window.clearTimeout(swap);
       video.removeEventListener("error", undecodable);
       unwatch();
 
@@ -780,8 +851,9 @@ export default function LightFilmCover({
               without taking over the screen. No source and nothing preloaded
               in the markup: the film is fetched once the cover is on screen.
               Its still is its poster too and its ground is clear, so a frame
-              it has not drawn yet is the still and never black. Never a tap
-              target and never in the accessibility tree.
+              it has not drawn yet is the still and never black. Filled to its
+              box: the small film is 480x854, a third of a pixel off 9:16.
+              Never a tap target and never in the accessibility tree.
             */}
             <video
               ref={videoRef}
@@ -791,7 +863,7 @@ export default function LightFilmCover({
               poster={FILM.poster}
               disablePictureInPicture
               tabIndex={-1}
-              className="absolute max-w-none bg-transparent select-none"
+              className="absolute max-w-none bg-transparent object-fill select-none"
               style={frameBox}
             />
             {/*

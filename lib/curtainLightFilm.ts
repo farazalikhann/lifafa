@@ -27,6 +27,8 @@
  *   mp4:  -c:v libx264 -profile:v high -preset slow -crf 23 -movflags +faststart
  *   webm: -c:v libvpx-vp9 -b:v 0 -crf 31 two-pass
  *   poster: the published MP4's first frame, WebP at quality 85
+ *   small:  the same cut from the same source at scale=480:854 and s=480x854,
+ *     two-pass, -c:v libx264 -profile:v high -preset veryslow -b:v 690k
  */
 
 import { curtainArt } from "@/lib/curtainArt";
@@ -43,6 +45,7 @@ const FOLDER = "/decor/curtain-light-video";
 export const CURTAIN_LIGHT_FILM: LightFilm = {
   mp4: `${FOLDER}/curtain-light.mp4`,
   webm: `${FOLDER}/curtain-light.webm`,
+  mp4Small: `${FOLDER}/curtain-light-480.mp4`,
   poster: `${FOLDER}/curtain-light-poster.webp`,
   lengthMs: 4540,
   lightAtMs: 4375,

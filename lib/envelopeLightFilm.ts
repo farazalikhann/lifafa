@@ -26,6 +26,8 @@
  *   mp4:  -c:v libx264 -profile:v high -preset slow -crf 18 -movflags +faststart
  *   webm: -c:v libvpx-vp9 -b:v 0 -crf 11 two-pass
  *   poster: the published MP4's first frame, WebP at quality 85
+ *   small:  the same cut from the same source at scale=480:854 and s=480x854,
+ *     two-pass, -c:v libx264 -profile:v high -preset veryslow -b:v 815k
  *
  * Paper compresses to very little, so the quality is set high to spend the
  * budget the other films have: the seal's cracks and the paper's grain are
@@ -45,6 +47,7 @@ const FOLDER = "/decor/envelope-light-video";
 export const ENVELOPE_LIGHT_FILM: LightFilm = {
   mp4: `${FOLDER}/envelope-light.mp4`,
   webm: `${FOLDER}/envelope-light.webm`,
+  mp4Small: `${FOLDER}/envelope-light-480.mp4`,
   poster: `${FOLDER}/envelope-light-poster.webp`,
   lengthMs: 3830,
   lightAtMs: 3667,

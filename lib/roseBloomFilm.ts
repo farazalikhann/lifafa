@@ -38,6 +38,8 @@
  *   mp4:  -c:v libx264 -profile:v high -preset slow -crf 19 -movflags +faststart
  *   webm: -c:v libvpx-vp9 -b:v 0 -crf 15 two-pass
  *   poster: the published MP4's first frame, WebP at quality 85
+ *   small:  the same cut from the same source at scale=480:854 and s=480x854,
+ *     two-pass, -c:v libx264 -profile:v high -preset veryslow -b:v 635k
  *   thumb:  the same frame's rose, 560px square from 80, 260, scaled to 144
  */
 
@@ -60,6 +62,7 @@ export const ROSE_BLOOM_PLAIN_FADE_MS = 600;
 export const ROSE_BLOOM_FILM: LightFilm = {
   mp4: `${FOLDER}/rose-bloom.mp4`,
   webm: `${FOLDER}/rose-bloom.webm`,
+  mp4Small: `${FOLDER}/rose-bloom-480.mp4`,
   poster: `${FOLDER}/rose-bloom-poster.webp`,
   lengthMs: 4915,
   lightAtMs: 4750,

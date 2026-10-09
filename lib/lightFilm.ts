@@ -17,6 +17,13 @@ import type { CoverArt, CoverFilmTiming } from "@/types/coverAnimation";
 export interface LightFilm {
   mp4: string;
   webm: string;
+  /**
+   * The same film at 480x854, a third of the weight, for a connection the
+   * full one would not cross in time. The same frames, the same length and
+   * the same flat last colour, so everything measured on the film holds for
+   * both. MP4 only: it is for phones, and every phone plays it.
+   */
+  mp4Small?: string;
   /** The first frame: the cover closed. What is shown until it is tapped. */
   poster: string;
   /** The film's own length, in milliseconds. */
@@ -74,6 +81,15 @@ export const LIGHT_FILM_STALL_MS = 1500;
  * frame gives way to the light in this long, and the light to the card.
  */
 export const LIGHT_FILM_CUT_MS = 350;
+
+/**
+ * How long the full film is given to arrive, from the cover appearing, before
+ * its download is dropped for the small one's.
+ */
+export const LIGHT_FILM_SWITCH_MS = 2000;
+
+/** A connection slower than this, in megabits a second, is sent the small film from the start. */
+export const LIGHT_FILM_SMALL_BELOW_MBPS = 1.5;
 
 /** The light takes this long to leave a light card, and this long a dark one. */
 export const LIGHT_FADE_MS = 800;
