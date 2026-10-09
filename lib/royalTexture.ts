@@ -1,5 +1,9 @@
+import type { RoyalTexturePattern } from "@/types/card";
+
 /**
- * The royal texture: a damask woven into the card's ground.
+ * The royal texture: a patterned cloth woven into the card's ground. A damask,
+ * a paisley or a jaal, the host's choice; the damask is what every card with
+ * the texture had before there was one.
  *
  * TWO TILES, BECAUSE ONE BLEND DOES NOT DO BOTH JOBS. On a dark card it is a
  * grey tile laid over the card's colour with `mix-blend-mode: soft-light`. The
@@ -16,12 +20,49 @@
  *
  * `royalTextureLayer` chooses, and components/card/CardCanvas.tsx and
  * components/card/decor/RoyalTextureFill.tsx draw what it hands them.
+ *
+ * EVERY PATTERN IS THE SAME TWO TILES IN THE SAME GREYS. The paisley and the
+ * jaal are cut by scripts/cut-textures.mjs to the damask's own figures: the
+ * dark-card tile from 70 to 208 and averaging 127.5, the light-card tile grey
+ * on white down to 129. So the arithmetic below, which was worked out for the
+ * damask, is right for all three as it stands, and none has a strength of its
+ * own.
  */
 
-/** The soft-light tile, for a dark card. */
-const DARK_SRC = "/decor/texture/royal-damask.webp";
-/** The multiply tile, for a light card. */
-const LIGHT_SRC = "/decor/texture/royal-damask-light.webp";
+/** The two tiles of each pattern: soft-light for a dark card, multiply for a light one. */
+const TILES: Record<RoyalTexturePattern, { dark: string; light: string }> = {
+  damask: {
+    dark: "/decor/texture/royal-damask.webp",
+    light: "/decor/texture/royal-damask-light.webp",
+  },
+  paisley: {
+    dark: "/decor/texture/royal-paisley.webp",
+    light: "/decor/texture/royal-paisley-light.webp",
+  },
+  jaal: {
+    dark: "/decor/texture/royal-jaal.webp",
+    light: "/decor/texture/royal-jaal-light.webp",
+  },
+};
+
+/** The patterns, in the order the panel offers them: the damask every card had first. */
+export const ROYAL_TEXTURE_PATTERNS: readonly {
+  id: RoyalTexturePattern;
+  label: string;
+}[] = [
+  { id: "damask", label: "Damask" },
+  { id: "paisley", label: "Paisley" },
+  { id: "jaal", label: "Jaal" },
+];
+
+/**
+ * The pattern, read out of a card config that may predate the choice. A card
+ * with the texture and no pattern is a damask, which is what it has always
+ * been; so is anything this build does not recognise.
+ */
+export function royalTexturePatternOf(value: unknown): RoyalTexturePattern {
+  return value === "paisley" || value === "jaal" ? value : "damask";
+}
 
 /** The texture as one layer of the card: which tile, how it is blended, and how strongly. */
 export interface RoyalTextureLayer {
@@ -123,22 +164,27 @@ function relativeLuminance(channels: readonly number[]): number {
 }
 
 /**
- * The texture for a card of this colour.
+ * The texture for a card of this colour, in this pattern: the damask where
+ * none is named.
  *
  * Light or dark is the ground's relative luminance against a half: Cream,
  * Blush and Sand are at 0.78 and above and the dark five are under 0.04, so
  * none of the eight palettes sits near the line.
  */
-export function royalTextureLayer(background: string): RoyalTextureLayer {
+export function royalTextureLayer(
+  background: string,
+  pattern: RoyalTexturePattern = "damask",
+): RoyalTextureLayer {
+  const tiles = TILES[pattern];
   const channels = [1, 3, 5].map(
     (start) => Number.parseInt(background.slice(start, start + 2), 16) / 255,
   );
 
   if (channels.some((channel) => Number.isNaN(channel))) {
-    return { src: DARK_SRC, blend: "soft-light", opacity: 0.4 };
+    return { src: tiles.dark, blend: "soft-light", opacity: 0.4 };
   }
 
   return relativeLuminance(channels) > 0.5
-    ? { src: LIGHT_SRC, blend: "multiply", opacity: multiplyOpacity(channels) }
-    : { src: DARK_SRC, blend: "soft-light", opacity: softLightOpacity(channels) };
+    ? { src: tiles.light, blend: "multiply", opacity: multiplyOpacity(channels) }
+    : { src: tiles.dark, blend: "soft-light", opacity: softLightOpacity(channels) };
 }

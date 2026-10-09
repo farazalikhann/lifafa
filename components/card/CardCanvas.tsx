@@ -93,6 +93,7 @@ import {
   ROYAL_TEXTURE_TILE,
   royalTextureLayer,
   royalTextureOn,
+  royalTexturePatternOf,
 } from "@/lib/royalTexture";
 import {
   hasCountdown,
@@ -920,8 +921,22 @@ export default function CardCanvas({
   const effectiveTheme: Theme = composeCardTheme(theme, style);
   /* The royal texture as this card's colour takes it, or null on a card without it. */
   const texture = royalTextureOn(config.royalTexture)
-    ? royalTextureLayer(effectiveTheme.background)
+    ? royalTextureLayer(
+        effectiveTheme.background,
+        /* The damask, on every card saved before there was a choice of pattern. */
+        royalTexturePatternOf(config.royalTexturePattern),
+      )
     : null;
+
+  /*
+    The one tile this card is woven from, asked for with the page: it is the
+    card's ground, on the first screen, and a background image is otherwise not
+    fetched until the stylesheet has been applied. Never the other tiles.
+    Deduplicated by React, so calling it on every render costs nothing.
+  */
+  if (texture !== null) {
+    preload(texture.src, { as: "image" });
+  }
 
   /*
     Whenever the event has a date, whether or not the countdown is on. It

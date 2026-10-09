@@ -17,6 +17,7 @@ import type {
   NatureKind,
   PetalFlower,
   PetalStyle,
+  RoyalTexturePattern,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { OccasionId, TraditionId } from "@/types/occasion";
@@ -58,6 +59,11 @@ export interface DesignState {
    * preset can turn it on and none turns it off; see lib/royalTexture.ts.
    */
   royalTexture?: true;
+  /**
+   * Which pattern the texture is, where it is not the damask. Absent for the
+   * damask, so a design from before there was a choice is the same design.
+   */
+  royalTexturePattern?: Exclude<RoyalTexturePattern, "damask">;
 }
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);

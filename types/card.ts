@@ -160,6 +160,13 @@ export type DateReveal = "scroll" | "scratch" | "simple";
 /** The painting of the place above the venue's name, or none. See lib/venueIllustration.ts. */
 export type VenueIllustration = "none" | "garden" | "banquet" | "palace" | "poolside";
 
+/**
+ * Which cloth the royal texture is woven as: the damask every card with the
+ * texture had before there was a choice, a paisley, or a jaal, the trellis of
+ * flowers. See lib/royalTexture.ts.
+ */
+export type RoyalTexturePattern = "damask" | "paisley" | "jaal";
+
 /** The frame of roses a scratch panel is drawn in. See lib/cardDecor.ts. */
 export type ScratchFrame = "oval" | "rect";
 
@@ -318,6 +325,13 @@ export interface CardConfig {
    * Read it through `royalTextureOn` in lib/royalTexture.ts.
    */
   royalTexture?: boolean;
+  /**
+   * Which pattern the texture is, while `royalTexture` says there is one.
+   * Stored only when it is not the damask: absent, and on every card saved
+   * before there was a choice, it is the damask. Read it through
+   * `royalTexturePatternOf` in lib/royalTexture.ts.
+   */
+  royalTexturePattern?: RoyalTexturePattern;
   /**
    * The reveal on the date's screen.
    *

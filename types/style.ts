@@ -37,9 +37,13 @@ export interface CardTextColors {
   /**
    * The card colour that came with a pair the host picked, laid over the
    * palette's. Null when the card colour is the palette's own.
+   *
+   * READ, AND NO LONGER WRITTEN. A pair used to bring its own card colour and
+   * accent; it sets the two inks alone now. A card saved before then still
+   * has them here and is still painted in them.
    */
   cardColor: string | null;
-  /** The accent that came with that pair. Null for the palette's own. */
+  /** The accent that came with that pair, on the same terms. Null for the palette's own. */
   accent: string | null;
   /**
    * The host picked these, as a pair or one ink at a time. False when they

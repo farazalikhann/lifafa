@@ -18,20 +18,23 @@ import {
   isPhotoBorder,
 } from "@/lib/flowerFrame";
 import { PALETTES, getPalette } from "@/lib/palettes";
+import { ROYAL_TEXTURE_PATTERNS, royalTextureLayer } from "@/lib/royalTexture";
 import {
   CUSTOM_PRIMARIES,
   CUSTOM_SECONDARIES,
-  TEXT_PAIRS,
   cardPalette,
   inkAllowed,
   inkRefusal,
   matchingTextPair,
+  pairInks,
+  suitableTextPairs,
   type TextPairId,
 } from "@/lib/textColors";
 import type {
   CardBorderStyle,
   CardLanguage,
   PhotoBorderStyle,
+  RoyalTexturePattern,
 } from "@/types/card";
 import type {
   CardDensity,
@@ -299,6 +302,10 @@ function pillClass(isSelected: boolean): string {
 /** Any Devanagari letter, to tell a Hindi names line from an English one. */
 const DEVANAGARI_LETTER = /\p{Script=Devanagari}/u;
 
+/** A texture chip's tile, in CSS px, and how much stronger than the card it is drawn. */
+const SWATCH_TILE = 132;
+const SWATCH_STRENGTH = 2.4;
+
 export default function StylePanel({
   style,
   hostNames,
@@ -307,6 +314,8 @@ export default function StylePanel({
   borderStyle,
   royalTexture,
   onRoyalTextureChange,
+  royalTexturePattern,
+  onRoyalTexturePatternChange,
   onFontPairChange,
   onPaletteChange,
   onTextPairChange,
@@ -338,9 +347,12 @@ export default function StylePanel({
   /** Whether the damask is woven into the card's ground; see lib/royalTexture.ts. */
   royalTexture: boolean;
   onRoyalTextureChange: (enabled: boolean) => void;
+  /** Which cloth it is woven as. Kept while the texture is off, for when it returns. */
+  royalTexturePattern: RoyalTexturePattern;
+  onRoyalTexturePatternChange: (pattern: RoyalTexturePattern) => void;
   onFontPairChange: (id: FontPairId) => void;
   onPaletteChange: (id: PaletteId) => void;
-  /** One of the six text pairs: sets both inks, the card colour and the accent. */
+  /** A text pair: sets the two inks and nothing else. */
   onTextPairChange: (id: TextPairId) => void;
   /** One ink from the curated set, under "Custom". */
   onCustomInkChange: (role: "primary" | "secondary", ink: string) => void;
@@ -368,8 +380,9 @@ export default function StylePanel({
   const currentAccent = style.accentOverride ?? paletteAccent;
   /*
     The card colour and the two inks as the card is painted in them now, and
-    which of the six that is, if it is one. A card colour that came with a
-    pair is not any palette's, so no palette tile is marked while it holds.
+    which pair that is, if it is one. A card colour that came with a pair, on
+    a card saved while pairs still brought one, is not any palette's, so no
+    palette tile is marked while it holds.
   */
   const painted = cardPalette(style);
   const currentPair = matchingTextPair(style);
@@ -529,70 +542,28 @@ export default function StylePanel({
         </div>
 
         {/*
-          ROYAL TEXTURE. Under the card colours because it is the same ground:
-          a damask woven into whichever colour is chosen, never a colour of its
-          own.
-        */}
-        <div className="mt-1 flex items-center justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <p className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
-              Royal texture
-            </p>
-            <p id={royalTextureHintId} className="text-xs text-[var(--lifafa-muted)]">
-              A soft damask pattern woven into the card colour.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={royalTexture}
-            aria-label="Royal texture"
-            aria-describedby={royalTextureHintId}
-            onClick={() => onRoyalTextureChange(!royalTexture)}
-            className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
-          >
-            {/* The state in words as well, hidden because aria-checked already says it. */}
-            <span
-              aria-hidden="true"
-              className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]"
-            >
-              {royalTexture ? "On" : "Off"}
-            </span>
-            <span
-              aria-hidden="true"
-              className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors duration-150 ${
-                royalTexture ? "bg-[var(--lifafa-marigold)]" : "bg-[var(--lifafa-hairline)]"
-              }`}
-            >
-              <span
-                className={`h-5 w-5 rounded-full bg-[var(--lifafa-ink)] transition-transform duration-150 ${
-                  royalTexture ? "translate-x-4" : "translate-x-0"
-                }`}
-              />
-            </span>
-          </button>
-        </div>
-
-        {/*
           TEXT COLOURS. Every card is set in two: a Primary for the names, the
           title, the headings and the numerals, and a Secondary for everything
-          said about them. They are chosen as a pair, with the card colour the
-          pair was made for, so each tile is that card in small: its colour,
-          a couple in the Primary and a parent's line in the Secondary. There
-          is no single-colour option, because there is no such card.
+          said about them. They are chosen as a pair, and a pair changes the
+          text and nothing else. So each tile is the host's own card in small:
+          the card colour on screen, a couple in the Primary and a parent's
+          line in the Secondary, each exactly as choosing it would set them.
+          Only the pairs that suit the card are offered: dark inks on a pale
+          card, pale inks on a dark one. There is no single-colour option,
+          because there is no such card.
         */}
         <div className="mt-2 flex flex-col gap-2">
           <p className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
             Text colours
           </p>
           <p className="text-xs text-[var(--lifafa-muted)]">
-            Two colours, chosen together with the card colour they suit.
+            Two colours that read well on your card colour.
           </p>
 
           <div className="grid grid-cols-2 gap-2">
-            {TEXT_PAIRS.map((pair) => {
+            {suitableTextPairs(painted.background).map((pair) => {
               const isSelected = currentPair?.id === pair.id;
+              const inks = pairInks(pair, painted.background);
 
               return (
                 <button
@@ -610,12 +581,12 @@ export default function StylePanel({
                         ? "border-transparent ring-2 ring-[var(--lifafa-marigold)] ring-offset-2 ring-offset-[var(--lifafa-ink)]"
                         : "border-[var(--lifafa-hairline)]",
                     ].join(" ")}
-                    style={{ backgroundColor: pair.card }}
+                    style={{ backgroundColor: painted.background }}
                   >
                     <span
                       className="max-w-full truncate text-[0.9375rem] leading-tight"
                       style={{
-                        color: pair.primary,
+                        color: inks.textPrimary,
                         fontFamily: "var(--font-display), Georgia, serif",
                       }}
                     >
@@ -623,7 +594,7 @@ export default function StylePanel({
                     </span>
                     <span
                       className="max-w-full truncate text-[0.625rem] leading-tight"
-                      style={{ color: pair.secondary }}
+                      style={{ color: inks.textSecondary }}
                     >
                       Son of Mr Rajesh Sharma
                     </span>
@@ -734,6 +705,118 @@ export default function StylePanel({
             </div>
           </details>
         </div>
+
+        {/*
+          ROYAL TEXTURE. A damask woven into whichever card colour is chosen,
+          never a colour of its own. After the text colours, so the two
+          questions about colour, the card's and its lettering's, are asked
+          one after the other.
+        */}
+        <div className="mt-1 flex items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]">
+              Royal texture
+            </p>
+            <p id={royalTextureHintId} className="text-xs text-[var(--lifafa-muted)]">
+              A soft pattern woven into the card colour.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={royalTexture}
+            aria-label="Royal texture"
+            aria-describedby={royalTextureHintId}
+            onClick={() => onRoyalTextureChange(!royalTexture)}
+            className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            {/* The state in words as well, hidden because aria-checked already says it. */}
+            <span
+              aria-hidden="true"
+              className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]"
+            >
+              {royalTexture ? "On" : "Off"}
+            </span>
+            <span
+              aria-hidden="true"
+              className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors duration-150 ${
+                royalTexture ? "bg-[var(--lifafa-marigold)]" : "bg-[var(--lifafa-hairline)]"
+              }`}
+            >
+              <span
+                className={`h-5 w-5 rounded-full bg-[var(--lifafa-ink)] transition-transform duration-150 ${
+                  royalTexture ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </span>
+          </button>
+        </div>
+
+        {/*
+          WHICH CLOTH. Three, shown only while the texture is on, the way a
+          floating element's kinds are. Each chip is the pattern on the card
+          colour on screen, in the tile, the blend and the tone the card
+          itself uses, so a light card shows the light tiles and a dark card
+          the dark ones. Drawn at a third of the card's scale, so a whole
+          motif fits a chip, and at a little over twice the card's strength:
+          at the card's own, which is set to be read through, a swatch this
+          small is a flat square.
+        */}
+        {royalTexture ? (
+          <div
+            role="group"
+            aria-label="Royal texture pattern"
+            className="grid grid-cols-3 gap-2"
+          >
+            {ROYAL_TEXTURE_PATTERNS.map((pattern) => {
+              const isSelected = pattern.id === royalTexturePattern;
+              const layer = royalTextureLayer(painted.background, pattern.id);
+
+              return (
+                <button
+                  key={pattern.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  aria-label={`${pattern.label} texture`}
+                  onClick={() => onRoyalTexturePatternChange(pattern.id)}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+                >
+                  <span
+                    className={[
+                      "relative isolate block h-14 w-full overflow-hidden rounded-lg border transition-shadow duration-150",
+                      isSelected
+                        ? "border-transparent ring-2 ring-[var(--lifafa-marigold)] ring-offset-2 ring-offset-[var(--lifafa-ink)]"
+                        : "border-[var(--lifafa-hairline)]",
+                    ].join(" ")}
+                    style={{ backgroundColor: painted.background }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: `url(${layer.src})`,
+                        backgroundSize: `${SWATCH_TILE}px ${SWATCH_TILE}px`,
+                        backgroundPosition: "center",
+                        mixBlendMode: layer.blend,
+                        opacity: Math.min(1, layer.opacity * SWATCH_STRENGTH),
+                      }}
+                    />
+                  </span>
+                  <span
+                    className={`text-[0.6875rem] ${
+                      isSelected
+                        ? "text-[var(--lifafa-cream)]"
+                        : "text-[var(--lifafa-muted)]"
+                    }`}
+                  >
+                    {pattern.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         <div className="mt-1 flex flex-col gap-2">
           <label

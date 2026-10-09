@@ -1,9 +1,9 @@
 import { contrastRatio, fitContrast, mixHex, relativeLuminance } from "@/lib/contrast";
-import { PALETTES, getPalette, type Palette } from "@/lib/palettes";
+import { getPalette, type Palette } from "@/lib/palettes";
 import type { CardStyle, CardTextColors, PaletteId } from "@/types/style";
 
 /**
- * The card's two text colours, and the six pairs they are offered in.
+ * The card's two text colours, and the ten pairs they are offered in.
  *
  * EVERY CARD IS SET IN TWO INKS. The Primary is what the card is about — the
  * names, the title, the headings, the date's numeral, the countdown. The
@@ -12,11 +12,19 @@ import type { CardStyle, CardTextColors, PaletteId } from "@/types/style";
  * of ornament, rules, buttons and icons. Which element takes which is decided
  * once, in `textRoles` (lib/themes.ts), and nowhere in a section.
  *
- * A PAIR IS CHOSEN WITH THE CARD COLOUR IT WAS MADE FOR. Two inks are only a
- * pair against a ground, so each of the six carries its own, and an accent to
- * go with it. Choosing a pair sets all four; choosing a palette afterwards
- * keeps the host's inks where they can still be read on it and finds the
- * nearest pair where they cannot.
+ * A PAIR IS TEXT, AND ONLY TEXT. Choosing one sets the two inks and nothing
+ * else: the card colour and the accent are the palette's, and stay as they
+ * are. It used to bring a card colour and an accent of its own, so a host who
+ * wanted different lettering had their card repainted under them. Each pair
+ * still names the card colour it was drawn against (`card`), but only to say
+ * which kind of card it is for: dark inks for a pale card, pale inks for a
+ * dark one. A host is offered the pairs that suit the card they have, and a
+ * palette picked afterwards keeps their pair where it still suits and finds
+ * the nearest that does where it does not.
+ *
+ * A CARD SAVED WHILE A PAIR STILL BROUGHT ITS CARD COLOUR HAS ONE STORED
+ * (`cardColor`, and `accent` beside it), and goes on being painted in it:
+ * `cardPalette` reads both exactly as it did. Nothing writes them any more.
  *
  * NOTHING HERE IS TRUSTED TO BE READABLE; IT IS MEASURED. Primary is held to
  * 7:1 on the card colour and Secondary to 4.5:1, with the same contrast code
@@ -34,16 +42,27 @@ export type TextPairId =
   | "champagneClassic"
   | "midnightGold"
   | "sageGarden"
-  | "haldiSaffron";
+  | "haldiSaffron"
+  | "ivoryGold"
+  | "pearlRose"
+  | "mintIvory"
+  | "silverMoon";
 
 export interface TextPair {
   id: TextPairId;
   label: string;
-  /** The card colour the pair was made for. */
+  /**
+   * The card colour the pair was drawn against. Never painted on a card: it
+   * says whether the pair is for pale cards or dark ones, and how near a
+   * palette it is. See `pairSuits` and `closestTextPair`.
+   */
   card: string;
   primary: string;
   secondary: string;
-  /** The accent that goes with it: an existing palette's, or the Secondary. */
+  /**
+   * The accent of the palette it sits nearest, or its own Secondary. Never
+   * painted on a card either: it is the other half of what "nearest" measures.
+   */
   accent: string;
 }
 
@@ -114,6 +133,69 @@ export const TEXT_PAIRS: readonly TextPair[] = [
     secondary: "#A0521A",
     accent: "#974B2E",
   },
+  /*
+    Four more for dark cards. There are five dark palettes and there were two
+    pairs to read on them, both ivory with gold. Each of these is drawn against
+    one dark palette and measured against all five; every one passes as it was
+    specified, with nothing moved. Lowest of the five in each case:
+
+      Ivory Gold    primary 11.02:1   secondary 6.63:1
+      Pearl Rose    primary 11.33:1   secondary 6.27:1
+      Mint Ivory    primary 11.25:1   secondary 6.85:1
+      Silver Moon   primary 12.41:1   secondary 7.86:1
+
+    All eight lowest figures are on Peacock, the lightest of the dark cards.
+
+    AFTER THE FIRST SIX, AND NOT AMONG THEM: `closestTextPair` gives a palette
+    its inks from the first six alone, so every card that has only ever
+    followed its palette keeps the inks it has.
+  */
+  {
+    id: "ivoryGold",
+    label: "Ivory Gold",
+    card: "#12100E",
+    primary: "#F7F1E3",
+    secondary: "#E0B865",
+    accent: "#E0B865",
+  },
+  {
+    id: "pearlRose",
+    label: "Pearl Rose",
+    card: "#4A0F1C",
+    primary: "#FBF3F0",
+    secondary: "#E9A7AE",
+    accent: "#E9A7AE",
+  },
+  {
+    id: "mintIvory",
+    label: "Mint Ivory",
+    card: "#0B0E0C",
+    primary: "#F1F5EE",
+    secondary: "#9CCBB0",
+    accent: "#9CCBB0",
+  },
+  {
+    id: "silverMoon",
+    label: "Silver Moon",
+    card: "#0E1424",
+    primary: "#FFFFFF",
+    secondary: "#C9CED8",
+    accent: "#C9CED8",
+  },
+];
+
+/**
+ * The six a palette is given its inks from when the host has chosen none:
+ * the six there were when every saved card and every preset was made. Kept
+ * to these so that adding a pair never changes what a palette looks like.
+ */
+const PALETTE_PAIRS: readonly TextPairId[] = [
+  "ivoryRose",
+  "royalMaroon",
+  "champagneClassic",
+  "midnightGold",
+  "sageGarden",
+  "haldiSaffron",
 ];
 
 export function getTextPair(id: TextPairId): TextPair {
@@ -182,6 +264,32 @@ export function inkRefusal(card: string): string {
   return isPale(card) ? "Too light for this card" : "Too dark for this card";
 }
 
+/**
+ * Whether a pair is for this kind of card: one drawn against a pale card for
+ * a pale card, one drawn against a dark card for a dark one. The card colour
+ * asked about is the one on screen, whatever set it.
+ */
+export function pairSuits(pair: TextPair, card: string): boolean {
+  return isPale(pair.card) === isPale(card);
+}
+
+/** The pairs a host is offered on this card colour, in the table's order. */
+export function suitableTextPairs(card: string): readonly TextPair[] {
+  return TEXT_PAIRS.filter((pair) => pairSuits(pair, card));
+}
+
+/**
+ * A pair's two inks as they are on this card colour: its own where they pass,
+ * and moved just far enough where they do not. What a tile in the panel shows
+ * and what choosing it stores are both this, so they cannot differ.
+ */
+export function pairInks(
+  pair: TextPair,
+  card: string,
+): Pick<CardTextColors, "textPrimary" | "textSecondary"> {
+  return fitted(pair.primary, pair.secondary, card);
+}
+
 /** Both inks, moved just far enough to pass on `card` if they do not already. */
 function fitted(
   primary: string,
@@ -211,7 +319,8 @@ const ACCENT_WEIGHT = 0.25;
 /**
  * The pair nearest a palette: a dark card gets one of the pairs made for dark
  * cards, a pale card one made for pale cards, and of those the one whose own
- * card colour is closest.
+ * card colour is closest. This is what a palette is given when the host has
+ * not chosen, and what a host's pair gives way to when it no longer suits.
  *
  * The accent has a say, a quarter of the card colour's. The pale card colours
  * are all within a few steps of each other, and on distance alone Cream came
@@ -228,9 +337,10 @@ export function closestTextPair(card: string, accent: string): TextPair {
   const far = (pair: TextPair): number =>
     distance(pair.card, card) + ACCENT_WEIGHT * distance(pair.accent, accent);
 
-  return TEXT_PAIRS.filter((pair) => isPale(pair.card) === pale).reduce(
-    (best, pair) => (far(pair) < far(best) ? pair : best),
-  );
+  /* Of the first six only: see PALETTE_PAIRS. */
+  return TEXT_PAIRS.filter(
+    (pair) => PALETTE_PAIRS.includes(pair.id) && isPale(pair.card) === pale,
+  ).reduce((best, pair) => (far(pair) < far(best) ? pair : best));
 }
 
 /**
@@ -250,68 +360,85 @@ export function paletteTextColors(paletteId: PaletteId): CardTextColors {
   };
 }
 
-/** One of the six, as the host picked it: its inks, its card colour, its accent. */
-export function pairTextColors(pair: TextPair): CardTextColors {
+/**
+ * A pair as the host picked it, on the card colour they have: its two inks,
+ * fitted to that colour, and nothing else. No card colour and no accent: those
+ * are not a pair's to set.
+ */
+export function pairTextColors(pair: TextPair, card: string): CardTextColors {
   return {
-    ...fitted(pair.primary, pair.secondary, pair.card),
-    cardColor: pair.card,
-    accent: pair.accent,
+    ...pairInks(pair, card),
+    cardColor: null,
+    accent: null,
     chosen: true,
   };
 }
 
 /**
- * The style with one of the six chosen.
+ * The style with a pair chosen: the two inks change and nothing else does.
  *
- * The palette moves to the one nearest the pair's card colour, so everything
- * a palette still decides — the colour a field or a tile is filled with before
- * the pair's own is derived, the label in the editor — is the neighbouring
- * one rather than whatever was selected before. A custom accent is cleared:
- * the pair brings its own.
+ * The palette, the accent and a custom accent are all left as they were, and
+ * the inks are fitted to the card colour on screen, so what the host picked a
+ * tile for is what they get.
+ *
+ * A card saved while a pair still brought its own card colour has that colour
+ * stored, and it is kept, with the accent stored beside it: picking new
+ * lettering must not be what repaints such a card either. It goes back to its
+ * palette's colour when the host picks a palette; see `withPalette`.
  */
 export function withTextPair(style: CardStyle, pair: TextPair): CardStyle {
-  const pale = isPale(pair.card);
-  const nearest = PALETTES.filter(
-    (palette) => isPale(palette.background) === pale,
-  ).reduce((best, palette) =>
-    distance(palette.background, pair.card) < distance(best.background, pair.card)
-      ? palette
-      : best,
-  );
+  const current = style.textColors;
 
   return {
     ...style,
-    paletteId: nearest.id,
-    accentOverride: null,
-    textColors: pairTextColors(pair),
+    textColors: {
+      ...pairTextColors(pair, cardPalette(style).background),
+      cardColor: current?.cardColor ?? null,
+      accent: current?.accent ?? null,
+    },
   };
 }
 
 /**
  * The style with a palette chosen.
  *
- * The card colour is the palette's again. The inks follow it — the nearest
- * pair's — unless the host chose theirs and they can still be read on the new
- * card colour, in which case they are kept. Inks that cannot be read on it
- * are never kept, whoever chose them: cream on cream is not a preference.
+ * The card colour is the palette's again. The inks follow it, the nearest
+ * pair's, unless the host chose theirs and they still belong on the new card:
+ *
+ *   A pair they picked, that suits the new card colour, is kept as that pair
+ *   and fitted to the new colour, so the tile they chose is still the one
+ *   marked.
+ *
+ *   Inks they picked one at a time are kept where both can still be read.
+ *
+ *   Anything else gives way to the nearest pair that suits. Inks that cannot
+ *   be read are never kept, whoever chose them: cream on cream is not a
+ *   preference.
  */
 export function withPalette(style: CardStyle, paletteId: PaletteId): CardStyle {
   const card = getPalette(paletteId).background;
   const current = style.textColors;
 
-  const keep =
-    current !== undefined &&
-    current.chosen &&
-    inkAllowed(current.textPrimary, card, "primary") &&
-    inkAllowed(current.textSecondary, card, "secondary");
+  if (current !== undefined && current.chosen) {
+    const pair = matchingTextPair(style);
 
-  return {
-    ...style,
-    paletteId,
-    textColors: keep
-      ? { ...current, cardColor: null, accent: null }
-      : paletteTextColors(paletteId),
-  };
+    if (pair !== null && pairSuits(pair, card)) {
+      return { ...style, paletteId, textColors: pairTextColors(pair, card) };
+    }
+
+    if (
+      inkAllowed(current.textPrimary, card, "primary") &&
+      inkAllowed(current.textSecondary, card, "secondary")
+    ) {
+      return {
+        ...style,
+        paletteId,
+        textColors: { ...current, cardColor: null, accent: null },
+      };
+    }
+  }
+
+  return { ...style, paletteId, textColors: paletteTextColors(paletteId) };
 }
 
 /** The style with one ink chosen by hand, the other as it stood. */
@@ -332,7 +459,15 @@ export function withCustomInk(
   };
 }
 
-/** Which of the six the card is set in, if it is one of them exactly. */
+/**
+ * Which pair the card is set in, if it is one of them exactly: the one whose
+ * two inks, on the card colour on screen, are the card's two inks. By its
+ * inks alone. Which card colour the card has is no part of it, since a pair
+ * no longer has one of its own.
+ *
+ * Looked for among the pairs that suit the card, which are the ones the panel
+ * shows: inks from any other are a host's own, and the panel says "Custom".
+ */
 export function matchingTextPair(style: CardStyle): TextPair | null {
   const current = style.textColors;
 
@@ -343,13 +478,12 @@ export function matchingTextPair(style: CardStyle): TextPair | null {
   const card = cardPalette(style).background;
 
   return (
-    TEXT_PAIRS.find((pair) => {
-      const inks = fitted(pair.primary, pair.secondary, card);
+    suitableTextPairs(card).find((pair) => {
+      const inks = pairInks(pair, card);
 
       return (
         inks.textPrimary === current.textPrimary &&
-        inks.textSecondary === current.textSecondary &&
-        (current.cardColor === null || current.cardColor === pair.card)
+        inks.textSecondary === current.textSecondary
       );
     }) ?? null
   );
@@ -357,8 +491,9 @@ export function matchingTextPair(style: CardStyle): TextPair | null {
 
 /**
  * The colour a field, a tile or a calendar page is filled with on a card
- * colour that came from a pair rather than a palette: the card colour lifted
- * a little, as every palette's own surface is.
+ * colour that came from a pair rather than a palette, which only a card saved
+ * while pairs still brought one has: the card colour lifted a little, as
+ * every palette's own surface is.
  */
 function surfaceOf(card: string): string {
   return mixHex(card, "#FFFFFF", isPale(card) ? 0.6 : 0.06);
@@ -369,9 +504,10 @@ function surfaceOf(card: string): string {
  * with the text pair laid over it.
  *
  * THE ONE PLACE A CARD'S GROUND IS RESOLVED. The cover, the page behind the
- * card, the share image and the editor's previews all asked the palette for
- * its background, which was the whole answer while a palette was the only
- * thing that set one. A pair sets one too now, so they ask here.
+ * card, the share image and the editor's previews all ask here. It is the
+ * palette's, except on a card saved while a text pair still brought a card
+ * colour and an accent with it: those are stored on the card and are read
+ * here exactly as they always were, so such a card is painted as it was.
  *
  * A CARD SAVED BEFORE THERE WERE TEXT PAIRS HAS NONE, and comes back as its
  * palette, untouched: the same ground, the same two text colours, the same

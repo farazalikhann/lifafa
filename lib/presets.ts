@@ -887,6 +887,14 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     ...(settings.royalTexture === true || design.royalTexture === true
       ? { royalTexture: true as const }
       : null),
+    /*
+      A look that asks for the texture asks for the damask, which is what it
+      was drawn with. One that does not name the texture leaves the host's
+      pattern as it was, with the texture itself.
+    */
+    ...(settings.royalTexture !== true && design.royalTexturePattern !== undefined
+      ? { royalTexturePattern: design.royalTexturePattern }
+      : null),
     ...(settings.dateReveal !== undefined
       ? { dateReveal: settings.dateReveal }
       : design.dateReveal === "scroll"

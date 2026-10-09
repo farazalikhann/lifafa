@@ -55,7 +55,7 @@ import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
 import { pdfDownloadOn } from "@/lib/pdfDownload";
-import { royalTextureOn } from "@/lib/royalTexture";
+import { royalTextureOn, royalTexturePatternOf } from "@/lib/royalTexture";
 import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
 import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
 import { getTraditionPack } from "@/lib/traditionPacks";
@@ -97,6 +97,7 @@ import type {
   FlyingKind,
   NatureKind,
   PetalFlower,
+  RoyalTexturePattern,
   VenueIllustration,
   PetalStyle,
   CardBorderStyle,
@@ -181,6 +182,7 @@ interface EditorState {
   venueIllustration: VenueIllustration;
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
+  royalTexturePattern: RoyalTexturePattern;
   /** Whether a guest may keep the card as a PDF. On unless the host turned it off. */
   pdfDownload: boolean;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
@@ -242,6 +244,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     venueIllustration: venueIllustrationOf(config.venueIllustration),
     /* Missing on every card saved before the texture; those have none. */
     royalTexture: royalTextureOn(config.royalTexture),
+    /* Missing on every card saved before there was a choice: the damask. */
+    royalTexturePattern: royalTexturePatternOf(config.royalTexturePattern),
     /* Missing on every card saved before the switch; those offer the copy. */
     pdfDownload: pdfDownloadOn(config.pdfDownload),
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
@@ -320,6 +324,10 @@ function toSnapshot(state: EditorState): EditorSnapshot {
         : null),
       /* Only ever stored as on: a card that never had the key has no texture. */
       ...(state.royalTexture ? { royalTexture: true } : null),
+      /* Only ever stored when it is not the damask, and kept while the texture is off. */
+      ...(state.royalTexturePattern !== "damask"
+        ? { royalTexturePattern: state.royalTexturePattern }
+        : null),
       /* Only ever stored as off: a card that never had the key offers the copy. */
       ...(state.pdfDownload ? null : { pdfDownload: false }),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
@@ -527,6 +535,9 @@ export default function CardEditor({
     initial.venueIllustration,
   );
   const [royalTexture, setRoyalTexture] = useState(initial.royalTexture);
+  const [royalTexturePattern, setRoyalTexturePattern] = useState(
+    initial.royalTexturePattern,
+  );
   const [pdfDownload, setPdfDownload] = useState(initial.pdfDownload);
 
   /*
@@ -854,7 +865,7 @@ export default function CardEditor({
     setStyle((previous) => withPalette(previous, paletteId));
   }, []);
 
-  /* One of the six pairs: its two inks, its card colour and its accent together. */
+  /* A text pair: its two inks, on the card colour as it is. Nothing else changes. */
   const setTextPair = useCallback((pairId: TextPairId) => {
     setStyle((previous) => withTextPair(previous, getTextPair(pairId)));
   }, []);
@@ -896,6 +907,7 @@ export default function CardEditor({
     ornamentConfig,
     ...(dateReveal !== undefined ? { dateReveal } : null),
     ...(royalTexture ? { royalTexture: true as const } : null),
+    ...(royalTexturePattern !== "damask" ? { royalTexturePattern } : null),
   };
 
   /**
@@ -930,6 +942,8 @@ export default function CardEditor({
     if (next.royalTexture === true) {
       setRoyalTexture(true);
     }
+    /* A look that asks for the texture asks for the damask; see applyPreset. */
+    setRoyalTexturePattern(next.royalTexturePattern ?? "damask");
   };
 
   /* The card as it stands, and the only place this component builds one. */
@@ -954,6 +968,7 @@ export default function CardEditor({
     coupleIllustration,
     venueIllustration,
     royalTexture,
+    royalTexturePattern,
     pdfDownload,
     divider,
     borderStyle,
@@ -1483,6 +1498,8 @@ export default function CardEditor({
                   borderStyle={borderStyle}
                   royalTexture={royalTexture}
                   onRoyalTextureChange={setRoyalTexture}
+                  royalTexturePattern={royalTexturePattern}
+                  onRoyalTexturePatternChange={setRoyalTexturePattern}
                   onFontPairChange={setFontPair}
                   onPaletteChange={setPalette}
                   onTextPairChange={setTextPair}
