@@ -1,6 +1,8 @@
 import type {
   ButterflyColour,
   ButterflyStyle,
+  FlyingKind,
+  NatureKind,
 } from "@/types/card";
 
 /**
@@ -28,15 +30,194 @@ export const BUTTERFLY_ASPECT = 180 / 110;
  *
  * One file and no pair, unlike the butterflies: a green leaf is a green leaf on
  * cream and on ink alike, so there is nothing for the host to choose between
- * and nothing the card has to decide. A switch of its own now — see `leavesOn`.
+ * and nothing the card has to decide. A switch of its own now — see `leavesOn`
+ * — and one of several kinds, of which it is the first: see `natureKind`.
  *
  * Supplied as a JPEG on black, so it is cut out on luminance rather than on an
  * alpha channel it never had. That works here where it would not have worked
  * for the Devanagari sheet: the background is 0,0,0 and the leaf is a bright
  * green, with only 4,462 of 175,000 sampled pixels between the two.
  */
-export const LEAF_SRC = "/decor/leaf.webp";
-export const LEAF_ASPECT = 240 / 138;
+const GREEN_LEAF: NaturePiece = {
+  src: "/decor/leaf.webp",
+  aspect: 240 / 138,
+  scale: 1,
+  motion: "leaf",
+};
+
+/**
+ * One thing the nature layer drifts.
+ *
+ * `scale` is how much wider or narrower than the green leaf it is drawn: the
+ * layer's table sizes a slot for that leaf, which is long and narrow, and a
+ * maple leaf as wide as it would be nearly twice the leaf.
+ */
+export interface NaturePiece {
+  src: string;
+  /** Width over height, so a width is enough to place one. */
+  aspect: number;
+  scale: number;
+  /**
+   * How it moves, which is a set of keyframes in globals.css: a leaf is
+   * carried and turns over, a seed drifts and rises with almost no spin, a
+   * feather falls on a wide, slow swing.
+   */
+  motion: "leaf" | "seed" | "feather";
+}
+
+/**
+ * The picture for each kind. The two maple leaves are the breeze cover's own
+ * (lib/breezeArt.ts), already cut out and already on the server. At three
+ * quarters of the green leaf's width they cover about what it does. The seed
+ * and the feather are cut by scripts/cut-flowers.mjs, as light: see there.
+ */
+const NATURE_PIECES: Partial<Record<NatureKind, NaturePiece>> = {
+  greenLeaves: GREEN_LEAF,
+  goldLeaves: {
+    src: "/decor/breeze/leaf-gold.webp",
+    aspect: 177 / 180,
+    scale: 0.76,
+    motion: "leaf",
+  },
+  autumnLeaves: {
+    src: "/decor/breeze/leaf-orange.webp",
+    aspect: 179 / 180,
+    scale: 0.76,
+    motion: "leaf",
+  },
+  /* Taller than wide, both: a little narrower than the leaf, and about its size. */
+  dandelion: {
+    src: "/decor/floating/dandelion.webp",
+    aspect: 210 / 240,
+    scale: 0.9,
+    motion: "seed",
+  },
+  feathers: {
+    src: "/decor/floating/feather.webp",
+    aspect: 233 / 240,
+    scale: 1,
+    motion: "feather",
+  },
+};
+
+/**
+ * One thing the flying layer flies.
+ *
+ * `scale` is how much wider or narrower than a butterfly it is drawn: the
+ * layer's table sizes a slot for a butterfly, which is wide and shallow.
+ */
+export interface FlyingPiece {
+  src: string;
+  /** Width over height. */
+  aspect: number;
+  scale: number;
+}
+
+/**
+ * The three that came after the butterflies, cut by scripts/cut-flowers.mjs.
+ * The lovebird is seen from the side and faces right; the dragonfly is seen
+ * from above, head up, as the butterflies are; the heart is a jewel, and
+ * small, because six of anything that red is a lot of red.
+ */
+const FLYING_ART: Record<Exclude<FlyingKind, "butterflies" | "fireflies">, FlyingPiece> = {
+  lovebirds: { src: "/decor/floating/lovebird.webp", aspect: 159 / 180, scale: 0.84 },
+  dragonflies: { src: "/decor/floating/dragonfly.webp", aspect: 180 / 136, scale: 1 },
+  hearts: { src: "/decor/floating/heart.webp", aspect: 180 / 158, scale: 0.56 },
+};
+
+/**
+ * What each flyer on the card is, given the kind and, for butterflies, the
+ * colour: a list the layer cycles across its flight table, as
+ * `butterflySources` is. Fireflies have no picture: see `fireflyGlow`.
+ */
+export function flyingPieces(
+  kind: FlyingKind,
+  colour: Exclude<ButterflyStyle, "none">,
+): readonly FlyingPiece[] {
+  if (kind === "lovebirds" || kind === "dragonflies" || kind === "hearts") {
+    return [FLYING_ART[kind]];
+  }
+
+  return butterflySources(colour).map((src) => ({
+    src,
+    aspect: BUTTERFLY_ASPECT,
+    scale: 1,
+  }));
+}
+
+/** What a kind drifts: its own picture, or the green leaf until it has one. */
+export function naturePiece(kind: NatureKind): NaturePiece {
+  return NATURE_PIECES[kind] ?? GREEN_LEAF;
+}
+
+/** Every flying kind, in the order the panel offers them. */
+export const FLYING_KINDS: readonly { id: FlyingKind; label: string }[] = [
+  { id: "butterflies", label: "Butterflies" },
+  { id: "lovebirds", label: "Lovebirds" },
+  { id: "dragonflies", label: "Dragonflies" },
+  { id: "hearts", label: "Hearts" },
+  { id: "fireflies", label: "Fireflies" },
+];
+
+/**
+ * THE ONE LIST that says which flying kinds a card can have: the panel shows
+ * a chip for each, and `flyingKind` reads any other as butterflies. A kind is
+ * added here when its artwork and its layer have landed, and not before.
+ */
+export const AVAILABLE_FLYING: readonly FlyingKind[] = [
+  "butterflies",
+  "lovebirds",
+  "dragonflies",
+  "hearts",
+  "fireflies",
+];
+
+/**
+ * A firefly: a point of light with a soft halo, drawn in code, as one
+ * radial-gradient background. Not a filter and not a box-shadow: a gradient
+ * is painted once into the element's own layer, and from then on the firefly
+ * is that layer being moved and faded.
+ *
+ * Warm gold on a dark card, with a halo four times the point. On a light card
+ * gold is the colour of the paper, so it is a deeper amber with a smaller,
+ * firmer halo: a light cannot glow against cream, but an ember still reads.
+ *
+ * `core` is the point's width in px; what comes back is the size of the box
+ * that holds the point and its halo, and the background that draws both.
+ */
+export function fireflyGlow(
+  core: number,
+  onLight: boolean,
+): { size: number; background: string } {
+  const spread = onLight ? 2.4 : 4;
+  /* The point's edge, as a share of the box's radius. */
+  const edge = Math.round(100 / spread);
+
+  return {
+    size: Math.round(core * spread),
+    background: onLight
+      ? `radial-gradient(circle, #C98A1E 0%, #C98A1E ${edge - 6}%, rgb(201 138 30 / 0.4) ${edge + 10}%, rgb(201 138 30 / 0) 70%)`
+      : `radial-gradient(circle, #FFF3D1 0%, #FFD98A ${edge - 8}%, rgb(255 217 138 / 0.38) ${edge + 8}%, rgb(255 217 138 / 0.1) 48%, rgb(255 217 138 / 0) 70%)`,
+  };
+}
+
+/** Every nature kind, in the order the panel offers them. */
+export const NATURE_KINDS: readonly { id: NatureKind; label: string }[] = [
+  { id: "greenLeaves", label: "Green leaves" },
+  { id: "goldLeaves", label: "Gold leaves" },
+  { id: "autumnLeaves", label: "Autumn leaves" },
+  { id: "dandelion", label: "Dandelion" },
+  { id: "feathers", label: "Feathers" },
+];
+
+/** The same list for the nature kinds. */
+export const AVAILABLE_NATURE: readonly NatureKind[] = [
+  "greenLeaves",
+  "goldLeaves",
+  "autumnLeaves",
+  "dandelion",
+  "feathers",
+];
 
 /** In the order the panel offers them, coldest first and the mixture last. */
 export const BUTTERFLY_STYLES: readonly {
@@ -118,4 +299,24 @@ export function leavesOn(
   }
 
   return butterflyStyle(storedButterflies) !== "none";
+}
+
+/**
+ * Which kind flies, read out of a card config that may predate the choice.
+ *
+ * Every card saved before there was one flew butterflies, so a missing key is
+ * butterflies, and so is a kind this build cannot draw yet. Whether anything
+ * flies at all is not asked here: that is still `butterflyStyle`.
+ */
+export function flyingKind(stored: FlyingKind | null | undefined): FlyingKind {
+  return AVAILABLE_FLYING.find((kind) => kind === stored) ?? "butterflies";
+}
+
+/**
+ * Which kind drifts, read the same way: a missing key is the green leaf every
+ * card had, and so is a kind with no picture yet. Whether anything drifts is
+ * still `leavesOn`.
+ */
+export function natureKind(stored: NatureKind | null | undefined): NatureKind {
+  return AVAILABLE_NATURE.find((kind) => kind === stored) ?? "greenLeaves";
 }

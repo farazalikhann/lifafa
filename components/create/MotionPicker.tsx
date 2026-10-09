@@ -7,13 +7,19 @@ import CollapsibleSection, {
 } from "@/components/editor/CollapsibleSection";
 import ToggleSwitch from "@/components/editor/ToggleSwitch";
 import {
+  AVAILABLE_FLYING,
+  AVAILABLE_NATURE,
   BUTTERFLY_ASPECT,
   BUTTERFLY_STYLES,
-  LEAF_ASPECT,
-  LEAF_SRC,
+  FLYING_KINDS,
+  NATURE_KINDS,
   butterflySources,
+  fireflyGlow,
+  flyingPieces,
+  naturePiece,
 } from "@/lib/butterflies";
 import {
+  AVAILABLE_FLOWERS,
   FLOWER_CHIPS,
   PETAL_FLOWERS,
   PETAL_STYLES,
@@ -25,6 +31,8 @@ import type {
   ButterflyStyle,
   DecorIntensity,
   DecorMotion,
+  FlyingKind,
+  NatureKind,
   PetalFlower,
   PetalStyle,
 } from "@/types/card";
@@ -80,19 +88,87 @@ function ButterflyChip({ style }: { style: ButterflyStyle }): ReactElement {
   );
 }
 
-/** The leaf on its chip, as the butterflies are on theirs. */
-function LeafChip(): ReactElement {
+/**
+ * A nature kind on its chip, as the butterflies are on theirs: the real leaf,
+ * at the share of the green leaf's width the card draws it at.
+ */
+function NatureChip({ kind }: { kind: NatureKind }): ReactElement {
+  const piece = naturePiece(kind);
+  const width = Math.round(20 * piece.scale);
+
   return (
     <img
-      src={LEAF_SRC}
+      src={piece.src}
       alt=""
       aria-hidden="true"
-      width={20}
-      height={Math.round(20 / LEAF_ASPECT)}
+      width={width}
+      height={Math.round(width / piece.aspect)}
       className="block max-w-none"
     />
   );
 }
+
+/**
+ * A flying kind on its chip: the butterflies in the colour the card has, and
+ * every other kind as its own picture, at the share of a butterfly's width
+ * the card draws it at.
+ */
+function FlyingChip({
+  kind,
+  colour,
+}: {
+  kind: FlyingKind;
+  colour: ButterflyStyle;
+}): ReactElement {
+  if (kind === "butterflies") {
+    return <ButterflyChip style={colour} />;
+  }
+
+  /* Three small lights, as they are on a dark card, which is what the panel is. */
+  if (kind === "fireflies") {
+    return (
+      <span aria-hidden="true" className="flex items-center gap-px">
+        {[3, 4, 3].map((core, index) => {
+          const light = fireflyGlow(core, false);
+
+          return (
+            <span
+              key={index}
+              className="block rounded-full"
+              style={{
+                width: light.size,
+                height: light.size,
+                background: light.background,
+                /* The middle one a little higher, so they are not a row of full stops. */
+                transform: index === 1 ? "translateY(-3px)" : undefined,
+              }}
+            />
+          );
+        })}
+      </span>
+    );
+  }
+
+  const piece = flyingPieces(kind, "mixed")[0];
+  /* Never smaller than a chip can show: the heart is half a butterfly on the card. */
+  const width = Math.round(20 * Math.max(piece.scale, 0.8));
+
+  return (
+    <img
+      src={piece.src}
+      alt=""
+      aria-hidden="true"
+      width={width}
+      height={Math.round(width / piece.aspect)}
+      className="block max-w-none"
+    />
+  );
+}
+
+/** The chips each row offers: the kinds on the one list for it, in the panel's order. */
+const FLYING_CHIPS = FLYING_KINDS.filter((kind) => AVAILABLE_FLYING.includes(kind.id));
+const NATURE_CHIPS = NATURE_KINDS.filter((kind) => AVAILABLE_NATURE.includes(kind.id));
+const FLOWER_OPTIONS = PETAL_FLOWERS.filter((flower) => AVAILABLE_FLOWERS.includes(flower.id));
 
 /**
  * Flower pieces, overlapping, on a chip.
@@ -112,6 +188,31 @@ function PetalChip({
   const unique = pieces.filter(
     (piece, index) => pieces.findIndex((other) => other.src === piece.src) === index,
   );
+
+  /* Confetti is drawn, as the card draws it: three small pieces, each at its own angle. */
+  if (unique.some((piece) => piece.paper !== undefined)) {
+    return (
+      <span aria-hidden="true" className="flex items-center gap-0.5">
+        {unique.map((piece, index) => {
+          const pieceWidth = piece.paper?.shape === "dot" ? 5 : 9;
+
+          return (
+            <span
+              key={`${piece.paper?.color}-${index}`}
+              className="block"
+              style={{
+                width: pieceWidth,
+                height: Math.round(pieceWidth / piece.aspect),
+                backgroundColor: piece.paper?.color,
+                borderRadius: piece.paper?.shape === "dot" ? "50%" : 1,
+                transform: `rotate(${[-28, 0, 34][index % 3]}deg)`,
+              }}
+            />
+          );
+        })}
+      </span>
+    );
+  }
 
   return (
     <span aria-hidden="true" className="flex items-center -space-x-1.5">
@@ -169,10 +270,10 @@ function Reveal({
 }
 
 /**
- * One floating element: its picture, its name and a switch on the right, and
- * whatever it offers below that while it is on. Butterflies, leaves and petals
- * all take this one shape, so a host who has worked one out has worked out
- * all three.
+ * One category of floating element: its picture, its name and a switch on the
+ * right, and its varieties below that while it is on. What flies, what drifts
+ * and what falls all take this one shape, so a host who has worked one out
+ * has worked out all three.
  */
 function ElementRow({
   icon,
@@ -214,12 +315,16 @@ export default function MotionPicker({
   intensity,
   butterflies,
   leaves,
+  flying,
+  nature,
   petals,
   petalFlower,
   onMotionChange,
   onIntensityChange,
   onButterfliesChange,
   onLeavesChange,
+  onFlyingChange,
+  onNatureChange,
   onPetalsChange,
   onPetalFlowerChange,
   lastButterflies,
@@ -232,6 +337,14 @@ export default function MotionPicker({
   onMotionChange: (motion: DecorMotion) => void;
   onIntensityChange: (intensity: DecorIntensity) => void;
   leaves: boolean;
+  /**
+   * Which kind flies and which drifts. Kept while their rows are off, for
+   * when they return: the switches are still `butterflies` and `leaves`.
+   */
+  flying: FlyingKind;
+  nature: NatureKind;
+  onFlyingChange: (flying: FlyingKind) => void;
+  onNatureChange: (nature: NatureKind) => void;
   petals: PetalStyle;
   onButterfliesChange: (butterflies: ButterflyStyle) => void;
   onLeavesChange: (leaves: boolean) => void;
@@ -261,12 +374,18 @@ export default function MotionPicker({
     motion === "none" &&
     (butterflies !== "none" || leaves || petalsFall(petals));
 
-  /* Which of the three are on, for the header. */
+  /* Which of the three are on, for the header: each by the variety it is showing. */
   const elementsOn = [
-    butterflies !== "none" ? "Butterflies" : null,
-    leaves ? "Leaves" : null,
+    butterflies !== "none"
+      ? (FLYING_KINDS.find((option) => option.id === flying)?.label ?? "Butterflies")
+      : null,
+    leaves
+      ? (NATURE_KINDS.find((option) => option.id === nature)?.label ?? "Leaves")
+      : null,
     petals !== "none"
-      ? `${PETAL_FLOWERS.find((option) => option.id === petalFlower)?.label ?? "Rose"} petals`
+      ? petalFlower === "confetti"
+        ? "Confetti"
+        : `${PETAL_FLOWERS.find((option) => option.id === petalFlower)?.label ?? "Rose"} petals`
       : null,
   ].filter((name) => name !== null);
 
@@ -276,7 +395,9 @@ export default function MotionPicker({
     petalsBurst(petals)
       ? petalFlower === "rose"
         ? "Petals shower once as the card opens, then fall away."
-        : "Flowers and petals shower once as the card opens, then fall away."
+        : petalFlower === "confetti"
+          ? "Confetti comes down once as the card opens, then falls away."
+          : "Flowers and petals shower once as the card opens, then fall away."
       : null,
     held ? "Motion style is None, so they are holding still for now." : null,
   ].filter((sentence) => sentence !== null);
@@ -374,71 +495,106 @@ export default function MotionPicker({
           className="flex flex-col divide-y divide-[var(--lifafa-hairline)]"
           aria-describedby={hint.length > 0 ? elementsHintId : undefined}
         >
+          {/*
+            The switch is still the butterflies' colour, on or "none", as it
+            was when butterflies were all that flew: see types/card.ts. The
+            kind is beside it and is kept while the row is off.
+          */}
           <ElementRow
-            icon={<ButterflyChip style={butterfliesOn ? butterflies : lastButterflies} />}
-            name="Butterflies"
+            icon={
+              <FlyingChip
+                kind={flying}
+                colour={butterfliesOn ? butterflies : lastButterflies}
+              />
+            }
+            name="Flying elements"
             on={butterfliesOn}
             onToggle={(on) => onButterfliesChange(on ? lastButterflies : "none")}
           >
             <div className="flex flex-wrap gap-2">
-              {BUTTERFLY_STYLES.filter((option) => option.id !== "none").map(
-                (option) => {
-                  const isSelected = option.id === butterflies;
+              {FLYING_CHIPS.map((option) => {
+                const isSelected = option.id === flying;
 
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => onButterfliesChange(option.id)}
-                      className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
-                    >
-                      <ButterflyChip style={option.id} />
-                      {option.label}
-                    </button>
-                  );
-                },
-              )}
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => onFlyingChange(option.id)}
+                    className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                  >
+                    <FlyingChip
+                      kind={option.id}
+                      colour={butterfliesOn ? butterflies : lastButterflies}
+                    />
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* A colour is the butterflies' own question; no other kind is asked it. */}
+            {flying === "butterflies" ? (
+              <div className="flex flex-col gap-2">
+                <SubHeading>Colour</SubHeading>
+                <div className="flex flex-wrap gap-2">
+                  {BUTTERFLY_STYLES.filter((option) => option.id !== "none").map(
+                    (option) => {
+                      const isSelected = option.id === butterflies;
+
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          aria-pressed={isSelected}
+                          onClick={() => onButterfliesChange(option.id)}
+                          className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                        >
+                          <ButterflyChip style={option.id} />
+                          {option.label}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </ElementRow>
+
+          <ElementRow
+            icon={<NatureChip kind={nature} />}
+            name="Natural elements"
+            on={leaves}
+            onToggle={onLeavesChange}
+          >
+            <div className="flex flex-wrap gap-2">
+              {NATURE_CHIPS.map((option) => {
+                const isSelected = option.id === nature;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => onNatureChange(option.id)}
+                    className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                  >
+                    <NatureChip kind={option.id} />
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </ElementRow>
 
           <ElementRow
-            icon={<LeafChip />}
-            name="Leaves"
-            on={leaves}
-            onToggle={onLeavesChange}
-          />
-
-          <ElementRow
             icon={<PetalChip pieces={FLOWER_CHIPS[petalFlower]} width={16} />}
-            name="Flower petals"
+            name="Falling elements"
             on={petalsOn}
             onToggle={(on) => onPetalsChange(on ? lastPetals : "none")}
           >
-            <div className="flex flex-col gap-2">
-              <SubHeading>Flower</SubHeading>
-              <div className="flex flex-wrap gap-2">
-                {PETAL_FLOWERS.map((option) => {
-                  const isSelected = option.id === petalFlower;
-
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => onPetalFlowerChange(option.id)}
-                      className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
-                    >
-                      <PetalChip pieces={FLOWER_CHIPS[option.id]} width={16} />
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/*
-              Words only: the flower is chosen just above, and a picture of it
+              Words only: what falls is chosen just below, and a picture of it
               on every one of these would say the same thing three more times.
             */}
             <div className="flex flex-col gap-2">
@@ -457,6 +613,28 @@ export default function MotionPicker({
                     </button>
                   ),
                 )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <SubHeading>Type</SubHeading>
+              <div className="flex flex-wrap gap-2">
+                {FLOWER_OPTIONS.map((option) => {
+                  const isSelected = option.id === petalFlower;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => onPetalFlowerChange(option.id)}
+                      className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
+                    >
+                      <PetalChip pieces={FLOWER_CHIPS[option.id]} width={16} />
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </ElementRow>

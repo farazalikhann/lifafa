@@ -12,6 +12,13 @@ export interface FlowerPiece {
   /** Width over height, so a width is enough to place one. */
   aspect: number;
   scale: number;
+  /**
+   * Set on a piece that is drawn in code and not from a picture: a piece of
+   * confetti. The layer and the panel draw it as a coloured box, and `src` is
+   * the same piece as a tiny SVG, for the two places that can only take a
+   * picture: the scratch panel's burst and a preset's thumbnail.
+   */
+  paper?: { color: string; shape: "strip" | "dot" };
 }
 
 /*
@@ -65,6 +72,65 @@ const LOTUS_FLOWER: FlowerPiece = {
   scale: 1.8,
 };
 
+const CHERRY_PETAL: FlowerPiece = {
+  src: "/decor/floating/cherry-petal.webp",
+  aspect: 152 / 160,
+  scale: 1,
+};
+const CHERRY_FLOWER: FlowerPiece = {
+  src: "/decor/floating/cherry-blossom.webp",
+  aspect: 240 / 232,
+  scale: 1.5,
+};
+/** The few whole blossoms among the petals of a falling Cherry blossom, kept small. */
+const SMALL_CHERRY: FlowerPiece = { ...CHERRY_FLOWER, scale: 0.85 };
+
+/**
+ * Confetti: cut paper, drawn in code. Thin strips and a few small rounds, in
+ * the four papers a wedding stationer keeps: gold, rose gold, ivory and blush.
+ *
+ * No artwork and nothing to download. A strip is half a petal's width and a
+ * round a third of it, because paper is the smallest thing that falls.
+ */
+function paper(color: string, shape: "strip" | "dot"): FlowerPiece {
+  const fill = encodeURIComponent(color);
+  const drawing =
+    shape === "strip"
+      ? `<rect width='10' height='4' rx='0.6' fill='${fill}'/>`
+      : `<circle cx='5' cy='5' r='5' fill='${fill}'/>`;
+  const box = shape === "strip" ? "0 0 10 4" : "0 0 10 10";
+
+  return {
+    src: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='${box}'%3E${drawing
+      .replace(/</g, "%3C")
+      .replace(/>/g, "%3E")}%3C/svg%3E`,
+    aspect: shape === "strip" ? 2.5 : 1,
+    scale: shape === "strip" ? 0.5 : 0.3,
+    paper: { color, shape },
+  };
+}
+
+const PAPER_GOLD = "#D8B26A";
+const PAPER_ROSE_GOLD = "#E8A598";
+const PAPER_IVORY = "#F7F1E3";
+const PAPER_BLUSH = "#F4C2C2";
+
+/** Strips mostly, a round every fourth piece, and the four papers turn about. */
+const CONFETTI: readonly FlowerPiece[] = [
+  paper(PAPER_GOLD, "strip"),
+  paper(PAPER_BLUSH, "strip"),
+  paper(PAPER_ROSE_GOLD, "strip"),
+  paper(PAPER_IVORY, "dot"),
+  paper(PAPER_IVORY, "strip"),
+  paper(PAPER_GOLD, "strip"),
+  paper(PAPER_BLUSH, "strip"),
+  paper(PAPER_ROSE_GOLD, "dot"),
+  paper(PAPER_ROSE_GOLD, "strip"),
+  paper(PAPER_IVORY, "strip"),
+  paper(PAPER_BLUSH, "strip"),
+  paper(PAPER_GOLD, "dot"),
+];
+
 /** The rose petals, for anything that shows petals without a flower choice. */
 const PETALS: readonly FlowerPiece[] = [ROSE_A, ROSE_B];
 
@@ -79,6 +145,9 @@ export const FALL_PIECES: Record<PetalFlower, readonly FlowerPiece[]> = {
   mogra: [MOGRA_BUD, MOGRA_BUD, SMALL_MOGRA],
   lotus: [LOTUS_PETAL],
   mixed: [MARIGOLD_PETAL, ROSE_A, MOGRA_BUD, MARIGOLD_PETAL, ROSE_B, MOGRA_BUD],
+  /* Mostly petals, as a cherry tree sheds them; one small blossom in four. */
+  cherryBlossom: [CHERRY_PETAL, CHERRY_PETAL, SMALL_CHERRY, CHERRY_PETAL],
+  confetti: CONFETTI,
 };
 
 /**
@@ -92,6 +161,8 @@ export const BURST_PIECES: Record<PetalFlower, readonly FlowerPiece[]> = {
   mogra: [MOGRA_FLOWER, MOGRA_BUD, MOGRA_BUD],
   lotus: [LOTUS_FLOWER, LOTUS_PETAL, LOTUS_PETAL],
   mixed: [MARIGOLD_FLOWER, ROSE_A, MOGRA_FLOWER, ROSE_B],
+  cherryBlossom: [CHERRY_FLOWER, CHERRY_PETAL, CHERRY_PETAL],
+  confetti: CONFETTI,
 };
 
 /** The picture on each flower's chip in the panel. */
@@ -101,6 +172,13 @@ export const FLOWER_CHIPS: Record<PetalFlower, readonly FlowerPiece[]> = {
   mogra: [MOGRA_FLOWER],
   lotus: [LOTUS_FLOWER],
   mixed: [MARIGOLD_FLOWER, MOGRA_FLOWER, ROSE_A],
+  cherryBlossom: [CHERRY_FLOWER],
+  /* Three small pieces, one of each of the brighter papers. */
+  confetti: [
+    paper(PAPER_GOLD, "strip"),
+    paper(PAPER_ROSE_GOLD, "dot"),
+    paper(PAPER_BLUSH, "strip"),
+  ],
 };
 
 /** In the order the panel offers them. */
@@ -117,7 +195,27 @@ export const PETAL_FLOWERS: readonly { id: PetalFlower; label: string }[] = [
   { id: "marigold", label: "Marigold" },
   { id: "mogra", label: "Mogra" },
   { id: "lotus", label: "Lotus" },
+  { id: "cherryBlossom", label: "Cherry blossom" },
   { id: "mixed", label: "Mixed" },
+  { id: "confetti", label: "Confetti" },
+];
+
+/**
+ * THE ONE LIST that says which of them a card can have: the panel shows a chip
+ * for each, and `petalFlowerType` reads any other as a rose.
+ *
+ * Cherry blossom is not in Mixed. Mixed is marigold, mogra and rose, the
+ * three a garland is strung from, and every card saved with it must go on
+ * looking as it did.
+ */
+export const AVAILABLE_FLOWERS: readonly PetalFlower[] = [
+  "rose",
+  "marigold",
+  "mogra",
+  "lotus",
+  "mixed",
+  "cherryBlossom",
+  "confetti",
 ];
 
 /** Whether the choice includes the shower on opening. */
@@ -150,14 +248,5 @@ export function petalStyle(stored: PetalStyle | null | undefined): PetalStyle {
 export function petalFlowerType(
   stored: PetalFlower | null | undefined,
 ): PetalFlower {
-  if (
-    stored === "marigold" ||
-    stored === "mogra" ||
-    stored === "lotus" ||
-    stored === "mixed"
-  ) {
-    return stored;
-  }
-
-  return "rose";
+  return AVAILABLE_FLOWERS.find((flower) => flower === stored) ?? "rose";
 }

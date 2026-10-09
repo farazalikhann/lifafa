@@ -13,12 +13,18 @@ import { useOnScreen } from "@/hooks/useOnScreen";
 import {
   calligraphyGround,
   calligraphyMask,
+  blessingSaidByCalligraphy,
   greetingSaidByCalligraphy,
   withOneCalligraphy,
   withoutRetiredCalligraphy,
   type CalligraphyId,
 } from "@/lib/calligraphy";
-import { butterflyStyle, leavesOn } from "@/lib/butterflies";
+import {
+  butterflyStyle,
+  flyingKind,
+  leavesOn,
+  natureKind,
+} from "@/lib/butterflies";
 import { FIRST_SCREEN_IMAGES, FIRST_SCREEN_MASKS } from "@/lib/cardReady";
 import { flowerFrameSrc, isPhotoBorder } from "@/lib/flowerFrame";
 import {
@@ -96,7 +102,7 @@ import {
   hasTimeline,
 } from "@/lib/cardSections";
 import type { CalendarInvite } from "@/lib/calendar";
-import { maxOverlayAlpha } from "@/lib/contrast";
+import { maxOverlayAlpha, relativeLuminance } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
@@ -1015,7 +1021,9 @@ export default function CardCanvas({
   const greeting = greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
     ? null
     : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
-  const blessing = pack?.findBlessing(config.ornamentConfig.blessingId) ?? null;
+  const blessing = blessingSaidByCalligraphy(config.ornamentConfig.blessingId, ornaments)
+    ? null
+    : (pack?.findBlessing(config.ornamentConfig.blessingId) ?? null);
 
   /*
     Resolves to nothing wherever a content file still ships empty strings, which
@@ -1637,7 +1645,13 @@ export default function CardCanvas({
         {(butterflies !== "none" || leaves) && config.decorMotion !== "none" ? (
           <ButterflyLayer
             style={butterflies}
+            /* Butterflies on every card saved before there was another kind. */
+            kind={flyingKind(config.flying)}
+            /* The same line the cover draws between a light card and a dark one. */
+            onLight={relativeLuminance(effectiveTheme.background) > 0.4}
             leaves={leaves}
+            /* Green on every card saved before there was a choice of leaf. */
+            nature={natureKind(config.nature)}
             intensity={config.decorIntensity}
             bandHeight={bandHeight}
           />

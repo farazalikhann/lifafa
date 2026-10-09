@@ -4,7 +4,8 @@
  * public/decor/ornaments/, the curtain cover's cloth to public/decor/curtain/,
  * the envelope cover's paper, liner and seal to public/decor/envelope/, the fold cover's
  * arch and ribbon to public/decor/gatefold/, the scratch panel's frames and
- * foil to public/decor/scratch/, the floral dividers to public/decor/dividers/.
+ * foil to public/decor/scratch/, the floral dividers to public/decor/dividers/,
+ * the floating elements to public/decor/floating/.
  *
  *   node scripts/cut-flowers.mjs              every set
  *   node scripts/cut-flowers.mjs flowers      just the flowers
@@ -19,6 +20,7 @@
  *   node scripts/cut-flowers.mjs sikh         just the Sikh pack's ornaments
  *   node scripts/cut-flowers.mjs scroll       just the royal scroll's rollers, paper and poster
  *   node scripts/cut-flowers.mjs couple       just the couple's figures, their card's corner and the monogram frame
+ *   node scripts/cut-flowers.mjs floating     just the floating elements: what flies, drifts and falls
  *
  * Run by hand when a picture is added or replaced — the output is committed,
  * so nothing here runs at build time. Uses the sharp that ships inside Next.js
@@ -597,6 +599,59 @@ const COUPLE = [
   })),
 ];
 
+/**
+ * The floating elements that came after the butterflies, the leaf and the
+ * first flowers: a lovebird, a dragonfly and a heart that fly, a dandelion
+ * seed and a feather that drift, and a cherry blossom with its petal. See
+ * lib/butterflies.ts and lib/petals.ts. Supplied in a folder of their own.
+ *
+ * Sized like what each sits beside: the three that fly 180 on their longer
+ * side, as a butterfly is 180 wide; the two that drift 240, as the leaf is;
+ * the blossom 240 and its petal 160, as every flower and petal is.
+ *
+ * TWO CUTS, BY WHAT THE PICTURE IS MADE OF.
+ *
+ * The bird, the dragonfly, the heart and the blossom are surfaces with dark
+ * in them that is their own: the bird's eye, the dragonfly's body and the
+ * dark cells of its wings, the heart's deep red, the blossom's throat. Read
+ * as brightness those would go see-through, so they are cut the way the wax
+ * seal is: only black the flood reaches from the edges is background, through
+ * true black alone, and the soft rim is unmixed so no dark line is left on
+ * cream. The sheet the bird closes in between its claws, and the dragonfly
+ * between its legs and its body, goes as a pocket; the bird's pupil is true
+ * black too and far smaller than `pocketMin`, and stays.
+ *
+ * The dandelion and the feather are hair: thousands of strands a pixel wide
+ * with the sheet showing between them, none of it enclosed and none of it
+ * dark of its own. A strand that thin is never fully bright in the picture:
+ * it is white mixed with the black beside it, and the plain ramp calls that
+ * grey a solid grey, which on a cream card was a seed head drawn in pencil.
+ * So they are cut as the diya's flame is, as light: coverage is brightness
+ * and the colour is lifted back towards full, a pale strand that thins out.
+ * Not all the way (`gamma`): lifted to pure white, an ivory feather on an
+ * ivory card is a card with nothing on it, so a strand keeps some of the
+ * shade it was drawn in, and the feather its own modelling. The
+ * whole feather is cut so; of the dandelion only its plume, down to where the
+ * stalk leaves it, because the seed under it is a brown surface and keeps the
+ * plain cut. The petal has no dark in it and takes the plain cut too.
+ */
+const FLOATING_SOLID = { solidInside: true, floodBelow: LOW, softRim: true };
+
+const FLOATING = [
+  { name: "lovebird", file: "Peach-Faced Lovebird in Flight.png", fit: { long: 180 }, ...FLOATING_SOLID, pocketMin: 900 },
+  { name: "dragonfly", file: "Gilded Iridescent Dragonfly on Black.png", fit: { long: 180 }, ...FLOATING_SOLID, pocketMin: 900 },
+  { name: "heart", file: "Glossy Rose-Gold Heart Jewel.png", fit: { long: 180 }, ...FLOATING_SOLID },
+  { name: "dandelion", file: "Dandelion Seed in the Dark.png", fit: { long: FLOWER }, light: { x0: 0, y0: 0, x1: 1254, y1: 540, feather: 90, gamma: 0.6 } },
+  { name: "feather", file: "Golden Ivory Feather on Black.png", fit: { long: FLOWER }, light: { x0: 0, y0: 0, x1: 1254, y1: 1254, feather: 1, gamma: 0.5 } },
+  { name: "cherry-blossom", file: "Pink Cherry Blossom on Black.png", fit: { long: FLOWER }, ...FLOATING_SOLID },
+  { name: "cherry-petal", file: "Delicate Sakura Petal on Black.png", fit: { long: PIECE } },
+].map((entry) => ({
+  ...entry,
+  background: "black",
+  source: "floating art",
+  out: join("public", "decor", "floating"),
+}));
+
 /* --- On black ---------------------------------------------------------- */
 
 /**
@@ -738,7 +793,8 @@ function cutOnBlack(data, width, height, options = {}) {
 
       const light = options.light;
       if (light && x >= light.x0 && x <= light.x1 && y >= light.y0 && y <= light.y1 + light.feather) {
-        const asLight = Math.max(0, (bright[pixel] - LOW) / (255 - LOW));
+        /* `gamma` under 1 keeps a dim strand more of itself: see FLOATING. */
+        const asLight = Math.max(0, (bright[pixel] - LOW) / (255 - LOW)) ** (light.gamma ?? 1);
         /* Glow the background reaches stays light all the way down; the wick and spout blend in. */
         const toBowl =
           outside !== null && outside[pixel]
@@ -1426,6 +1482,7 @@ const sets = [
   ...(which === "all" || which === "sikh" ? SIKH : []),
   ...(which === "all" || which === "scroll" ? SCROLL : []),
   ...(which === "all" || which === "couple" ? COUPLE : []),
+  ...(which === "all" || which === "floating" ? FLOATING : []),
 ].filter((entry) => only.length === 0 || only.includes(entry.alias ?? entry.name));
 
 for (const entry of sets) {

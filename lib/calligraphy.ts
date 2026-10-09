@@ -36,9 +36,7 @@ import { relativeLuminance } from "@/lib/contrast";
 export type CalligraphyId =
   | "bismillah"
   | "versePairs"
-  | "verseLoveMercy"
   | "barakallah"
-  | "barakallahDua"
   | "alhamdulillah"
   | "shubhVivah"
   | "sadarNimantran"
@@ -94,12 +92,14 @@ interface CalligraphyArt {
 }
 
 /**
- * An Arabic piece published as a black and a white ink, like the verse above.
+ * An Arabic piece, published as a black and a white ink and drawn as a shape.
  *
- * Unlike the Devanagari and Gurmukhi artwork, these are one colour, so the
- * second file really is the same lettering in the other ink rather than an
- * adjustment of it: both are one alpha mask, filled once with black and once
- * with white.
+ * Both files are one alpha mask, filled once with black and once with white,
+ * so the black file's alpha is the lettering and nothing else. The card uses
+ * it as a CSS mask filled with its own accent, the way every other pack's
+ * calligraphy is drawn: gold on Emerald and Midnight, the palette's own accent
+ * on a light card, instead of a fixed black or white. The two inks stay
+ * published as the `src` pair for anything that still wants a picture.
  */
 function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
   return {
@@ -107,6 +107,7 @@ function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
       light: `/decor/${slug}-black.webp`,
       dark: `/decor/${slug}-white.webp`,
     },
+    mask: `/decor/${slug}-black.webp`,
     aspect,
     alt,
   };
@@ -204,61 +205,39 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
     lib/arabicContent.ts — that entry is the short form, and this artwork is
     not.
   */
-  bismillah: {
-    src: {
-      light: "/decor/bismillah-black.webp",
-      dark: "/decor/bismillah-white.webp",
-    },
-    aspect: 1024 / 436,
-    alt: "Bismillah ir-Rahman ir-Rahim: In the name of Allah, the Most Gracious, the Most Merciful",
-  },
+  bismillah: arabic(
+    "bismillah",
+    1024 / 436,
+    "Bismillah ir-Rahman ir-Rahim: In the name of Allah, the Most Gracious, the Most Merciful",
+  ),
   /*
     Surah An-Naba 78:8, which is a verse about marriage and the reason it is
     offered on a card that is mostly wedding invitations. Its English line and
     its reference are set into the artwork rather than rendered beside it, so
     the alt below says both.
   */
-  versePairs: {
-    src: {
-      light: "/decor/verse-pairs-black.webp",
-      dark: "/decor/verse-pairs-white.webp",
-    },
-    aspect: 1024 / 526,
-    alt: "And We created you in pairs (Quran 78:8)",
-  },
-
-  /*
-    Four more, supplied together as black lettering on white paper with no
-    alpha. Each was cut the way the verse was: one mask taken from the sheet's
-    own darkness, cropped to the lettering and scaled to 1024 wide, then filled
-    with black for a light card and white for a dark one — so both inks are the
-    same shape to the pixel. See `arabic` below.
-
-    Like the Gurmukhi pieces, the alt says what each is MEANT to read. The two
-    that carry the letter jeem — "wa ja'ala" in the verse and "wa jama'a" in the
-    dua — were supplied with it drawn undotted, so as published they read with
-    a hah; that is for an Arabic reader to settle against the files, not for
-    the alt to paper over.
-  */
-  /*
-    Surah Ar-Rum 30:21, the verse most often read at a nikah. Its English line
-    and reference are set into the artwork, as the pairs verse's are.
-  */
-  verseLoveMercy: arabic(
-    "verse-love-mercy",
-    1024 / 399,
-    "And He placed between you love and mercy (Quran 30:21)",
+  versePairs: arabic(
+    "verse-pairs",
+    1024 / 526,
+    "And We created you in pairs (Quran 78:8)",
   ),
+
+  /*
+    Two more, supplied as black lettering on white paper with no alpha, and
+    cut the way the verse was: one mask taken from the sheet's own darkness,
+    cropped to the lettering and scaled to 1024 wide.
+
+    Two others from the same sheet are gone: the Ar-Rum 30:21 verse and the
+    full Barakallahu lakuma wa jama'a dua. Both drew the letter jeem without
+    its dot, so "wa ja'ala" and "wa jama'a" read with a hah, and a Quranic
+    verse misspelled on an invitation is not something to ship. A card saved
+    with either opens with Barakallahu lakuma instead; see RETIRED_CALLIGRAPHY.
+    They come back only as new artwork checked by an Arabic reader.
+  */
   barakallah: arabic(
     "barakallah",
     1024 / 369,
     "Barakallahu lakuma: may Allah bless you both",
-  ),
-  /* The full wedding dua, of which the piece above is the opening. */
-  barakallahDua: arabic(
-    "barakallah-dua",
-    1024 / 374,
-    "Barakallahu lakuma wa jama'a baynakuma fi khayr: may Allah bless you both and unite you in goodness",
   ),
   alhamdulillah: arabic(
     "alhamdulillah",
@@ -476,6 +455,32 @@ export function greetingSaidByCalligraphy(
 }
 
 /**
+ * The calligraphy that says, word for word, what one of its pack's blessings
+ * says: the piece's id, and that blessing's row id. The same rule as
+ * GREETING_SAID_BY, for the line under the greeting. A Nikah card with the
+ * Barakallahu lakuma lettering and the Barakallahu lakuma dua read the same
+ * three words twice, once as lettering and once as type.
+ */
+const BLESSING_SAID_BY: Partial<Record<CalligraphyId, string>> = {
+  /* بارك الله لكما */
+  barakallah: "barakallah",
+};
+
+/**
+ * Whether the calligraphy on the card already says its blessing. Read when
+ * the card is drawn, never written back, exactly as greetingSaidByCalligraphy.
+ */
+export function blessingSaidByCalligraphy(
+  blessingId: string | null,
+  ornamentIds: readonly string[],
+): boolean {
+  return (
+    blessingId !== null &&
+    ornamentIds.some((id) => BLESSING_SAID_BY[id as CalligraphyId] === blessingId)
+  );
+}
+
+/**
  * Hindu calligraphy that has been taken out of the pack, and what a card that
  * chose one gets instead.
  *
@@ -486,6 +491,13 @@ export function greetingSaidByCalligraphy(
  * when its host next saves it.
  */
 const RETIRED_CALLIGRAPHY: Readonly<Record<string, CalligraphyId>> = {
+  /*
+    The two Arabic pieces taken out for an undotted jeem. Both were wedding
+    blessings, and Barakallahu lakuma is the one that is left; the dua piece
+    opened with exactly those words.
+  */
+  verseLoveMercy: "barakallah",
+  barakallahDua: "barakallah",
   togetherForever: "shubhVivah",
   mangalParinay: "shubhVivah",
   madhurMilan: "shubhVivah",

@@ -36,3 +36,7 @@ next-env.d.ts
 # Playwright screenshots taken while checking a change, and set-aside files.
 /screenshots/
 /_unused_backup/
+# Raw source artwork and drafts; what the card uses is published to public/decor/.
+/floating art/
+/texture art/
+/marketing/

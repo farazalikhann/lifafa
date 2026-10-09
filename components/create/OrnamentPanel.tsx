@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { greetingSaidByCalligraphy, tapCalligraphy } from "@/lib/calligraphy";
+import {
+  blessingSaidByCalligraphy,
+  greetingSaidByCalligraphy,
+  tapCalligraphy,
+} from "@/lib/calligraphy";
 import { chosenCorners, chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
 import type {
   PackBlessing,
@@ -452,7 +456,14 @@ export default function OrnamentPanel({
           onSelect={(row) => onChange({ ...config, blessingId: row.id })}
         />
 
-        <MutedNote>{pack.blessingNote}</MutedNote>
+        {blessingSaidByCalligraphy(config.blessingId, config.enabledOrnaments) ? (
+          <MutedNote>
+            Your calligraphy already says this, so your card shows it once.
+            Your choice is kept, and comes back if you change the calligraphy.
+          </MutedNote>
+        ) : (
+          <MutedNote>{pack.blessingNote}</MutedNote>
+        )}
       </div>
     </section>
   );

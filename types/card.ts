@@ -88,6 +88,35 @@ export type ButterflyStyle = "none" | "red" | "yellow" | "purple" | "mixed";
 export type ButterflyColour = Exclude<ButterflyStyle, "none" | "mixed">;
 
 /**
+ * What flies in the card's margins, when anything does.
+ *
+ * The kind only. Whether the flying layer is on at all is still `butterflies`
+ * on the card, as it was before there was more than one kind, and that field
+ * is also the colour when the kind is butterflies. See `flyingKind` in
+ * lib/butterflies.ts, and AVAILABLE_FLYING there for which of these a card
+ * can have yet.
+ */
+export type FlyingKind =
+  | "butterflies"
+  | "lovebirds"
+  | "dragonflies"
+  | "hearts"
+  | "fireflies";
+
+/**
+ * What drifts in the card's margins, when anything does.
+ *
+ * The kind only, as above: whether the layer is on is still `leaves` on the
+ * card. See `natureKind` and AVAILABLE_NATURE in lib/butterflies.ts.
+ */
+export type NatureKind =
+  | "greenLeaves"
+  | "goldLeaves"
+  | "autumnLeaves"
+  | "dandelion"
+  | "feathers";
+
+/**
  * Whether, and how, rose petals come down on the card.
  *
  * "open" is a single shower at the moment the card opens — as the cover hands
@@ -100,8 +129,18 @@ export type PetalStyle = "none" | "open" | "fall" | "both";
 /**
  * Which flower the petals are: the rose they always were, one of three more,
  * or a mixture. The mode above is when they come down; this is what does.
+ *
+ * Cherry blossom and confetti are named here ahead of their artwork; see
+ * AVAILABLE_FLOWERS in lib/petals.ts for which a card can have yet.
  */
-export type PetalFlower = "rose" | "marigold" | "mogra" | "lotus" | "mixed";
+export type PetalFlower =
+  | "rose"
+  | "marigold"
+  | "mogra"
+  | "lotus"
+  | "mixed"
+  | "cherryBlossom"
+  | "confetti";
 
 /**
  * Which section, if any, a guest has to scratch open before they can read it.
@@ -209,6 +248,19 @@ export interface CardConfig {
    * lib/butterflies.ts, which gives such a card exactly what it had.
    */
   leaves: boolean;
+  /**
+   * Which kind flies, while `butterflies` says anything does. Optional, and
+   * absent from every card saved before there was a second kind: those flew
+   * butterflies, which is what `flyingKind` in lib/butterflies.ts reads a
+   * missing key as.
+   */
+  flying?: FlyingKind;
+  /**
+   * Which kind drifts, while `leaves` says anything does. Absent from every
+   * card saved before there was a second kind, all of which had the green
+   * leaf: read through `natureKind` in lib/butterflies.ts.
+   */
+  nature?: NatureKind;
   /**
    * Flower petals: a shower when the card opens, a steady fall in the margins,
    * both, or none. Absent from older cards; read through `petalStyle` in

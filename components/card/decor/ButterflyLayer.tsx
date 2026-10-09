@@ -2,15 +2,22 @@
 
 import { useEffect, useRef } from "react";
 import type { CSSProperties, ReactElement } from "react";
+import { useFloatingPause } from "@/hooks/useFloatingPause";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
-  BUTTERFLY_ASPECT,
-  LEAF_ASPECT,
-  LEAF_SRC,
-  butterflySources,
+  fireflyGlow,
+  flyingPieces,
+  naturePiece,
+  type FlyingPiece,
+  type NaturePiece,
 } from "@/lib/butterflies";
 import { artWidth } from "@/lib/cardScale";
-import type { ButterflyStyle, DecorIntensity } from "@/types/card";
+import type {
+  ButterflyStyle,
+  DecorIntensity,
+  FlyingKind,
+  NatureKind,
+} from "@/types/card";
 
 /**
  * A few butterflies, roaming the card, that get out of the way of a finger.
@@ -65,6 +72,13 @@ import type { ButterflyStyle, DecorIntensity } from "@/types/card";
  * PINNED, not scrolled — the same sticky band DecorLayer uses, so the
  * butterflies stay with what the guest is looking at rather than being left
  * behind after the cover.
+ *
+ * NOT ONLY BUTTERFLIES ANY MORE. A card flies one kind: butterflies,
+ * lovebirds, dragonflies or hearts. They are all flown by the one flight
+ * below, from the same table, in the same numbers, and all leave for a
+ * finger the same way; what differs between them is a `Manner`, a handful of
+ * numbers the steering reads, so a new kind is no new work for the main
+ * thread. See MANNERS.
  */
 
 interface Flyer {
@@ -120,6 +134,12 @@ const FLYERS: readonly Flyer[] = [
  * the server render is already the right size and nothing jumps on hydration.
  */
 const GROW = 1.4;
+
+/** The table without its headings, for a kind that is drawn level. See Manner. */
+const LEVEL_FLYERS: readonly Flyer[] = FLYERS.map((flyer) => ({
+  ...flyer,
+  rotate: 0,
+}));
 
 interface Drifter {
   /** Percentages within the band. */
@@ -202,13 +222,6 @@ const LEAF_OPACITY = 0.9;
 const SHADOW = "drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.38))";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-/**
- * How much slower the wings beat for a guest who has asked for less movement.
- * They stay where the table puts them and only open and close, about once
- * every two seconds.
- */
-const REDUCED_WING_SLOWDOWN = 3.2;
 
 /* --- The flight. Distances in the band's own px, times in ms or s as named. --- */
 
@@ -296,6 +309,146 @@ const MIN_FLAP = 0.42;
 const MAX_FLAP = 1.6;
 
 /**
+ * How a kind carries itself: the numbers the one flight reads to fly it.
+ *
+ * Everything a kind does differently is here and is arithmetic inside the
+ * same simulated step, played by the compositor as the same keyframed
+ * transform. Nothing here adds a timer, a listener or a frame loop.
+ */
+interface Manner {
+  /** Its cruising speed, as a share of a butterfly's. */
+  cruise: number;
+  /** How eagerly it turns, the most it may turn in a second, and how quickly it picks up speed. */
+  turn: number;
+  maxTurn: number;
+  pace: number;
+  /** How far it leans, in degrees, and how far it rises and falls on its way, in px. */
+  maxTilt: number;
+  bob: number;
+  /** The keyframes its wings beat to, and how long a beat is as a share of the table's. Null: no beat. */
+  wing: string | null;
+  wingBeat: number;
+  /**
+   * Seen from the side: it faces the way it is going, mirrored when that is
+   * left, and its lean is its nose rising or dipping, not a bank.
+   */
+  faces: boolean;
+  /** Drawn level, without the table's starting heading: a bird or a heart at a tilt is falling. */
+  level: boolean;
+  /** Flies in short hops of this length in px, and hangs in the air this long in ms after each. */
+  hops: readonly [number, number] | null;
+  pause: readonly [number, number] | null;
+  /** Goes to a margin every so often and rests there, as a butterfly does. */
+  rests: boolean;
+  /** Does not roam: it rises up a margin, swaying, fades out at the top and in again at the foot. */
+  rises: boolean;
+}
+
+/**
+ * BUTTERFLIES are the flight as it always was: every number here is the
+ * constant it used to be.
+ *
+ * LOVEBIRDS are seen from the side with their wings spread, so there is no
+ * beat to give them. They glide: a little slower, wider turns, a longer rise
+ * and fall, the nose up a few degrees on a climb and down on a descent, and
+ * always facing the way they are going. They do not hang in a margin; a bird
+ * with its wings out, stopped in the air, has been pinned there.
+ *
+ * DRAGONFLIES are seen from above, as the butterflies are. They dart: a short
+ * straight hop at nearly twice a butterfly's speed, a sharp turn, and then
+ * they hang where they have stopped for a moment with the wings shimmering,
+ * unless that is on a line of writing, where they do not stop.
+ *
+ * HEARTS do not fly anywhere. Each goes up its own side of the card, slowly,
+ * swaying, turning a little with the sway, and is faded out as it nears the
+ * top and in again at the foot. Up a margin, so they are never on the writing.
+ */
+const MANNERS: Record<"butterflies" | "lovebirds" | "dragonflies" | "hearts", Manner> = {
+  butterflies: {
+    cruise: 1,
+    turn: TURN,
+    maxTurn: MAX_TURN,
+    pace: 1.6,
+    maxTilt: MAX_TILT,
+    bob: BOB,
+    wing: "lifafa-butterfly-wing",
+    wingBeat: 1,
+    faces: false,
+    level: false,
+    hops: null,
+    pause: null,
+    rests: true,
+    rises: false,
+  },
+  lovebirds: {
+    cruise: 0.82,
+    turn: 1,
+    maxTurn: 1.2,
+    pace: 1.2,
+    maxTilt: 11,
+    bob: 5,
+    wing: null,
+    wingBeat: 1,
+    faces: true,
+    level: true,
+    hops: null,
+    pause: null,
+    rests: false,
+    rises: false,
+  },
+  dragonflies: {
+    cruise: 1.8,
+    turn: 5,
+    maxTurn: 5.5,
+    pace: 6,
+    maxTilt: 46,
+    bob: 1.5,
+    wing: "lifafa-dragonfly-wing",
+    wingBeat: 0.2,
+    faces: false,
+    level: false,
+    hops: [70, 170],
+    pause: [500, 1300],
+    rests: false,
+    rises: false,
+  },
+  hearts: {
+    cruise: 0.42,
+    turn: 1,
+    maxTurn: 1,
+    pace: 1,
+    maxTilt: 10,
+    bob: 0,
+    wing: null,
+    wingBeat: 1,
+    faces: false,
+    level: true,
+    hops: null,
+    pause: null,
+    rests: false,
+    rises: true,
+  },
+};
+
+/**
+ * FIREFLIES are not in this table, because they are not flown at all. See
+ * FIREFLIES below: they are points of light on short loops of their own.
+ */
+
+/** A kind this build cannot fly yet is flown as butterflies; see `flyingKind`. */
+function mannerOf(kind: FlyingKind): Manner {
+  return kind === "lovebirds" || kind === "dragonflies" || kind === "hearts"
+    ? MANNERS[kind]
+    : MANNERS.butterflies;
+}
+
+/** How far a rising heart sways either side of its line, at most, in px. */
+const RISE_SWAY = 20;
+/** The shares of the band's height it is faded in over at the foot, and out over at the top. */
+const RISE_FADE_IN = 0.14;
+const RISE_FADE_OUT = 0.2;
+
+/**
  * The flight is worked out ahead of time and played by the compositor.
  *
  * WHY NOT A FRAME LOOP. Writing a transform from requestAnimationFrame looks
@@ -374,6 +527,15 @@ interface Sim {
   awayUntil: number;
   /** On its way back in, and not yet far enough in to be kept in. */
   entering: boolean;
+  /**
+   * For a kind seen from the side: 1 facing right, -1 facing left, and on its
+   * way between the two for the quarter second a turn takes. `faceTo` is
+   * which it is turning to.
+   */
+  face: number;
+  faceTo: number;
+  /** How solid it is drawn. 1 always, but for a kind that rises and fades. */
+  alpha: number;
 }
 
 type Edge = "left" | "right" | "top";
@@ -462,6 +624,7 @@ function startFlight(
   band: HTMLElement,
   nodes: readonly HTMLElement[],
   flyers: readonly Flyer[],
+  manner: Manner,
 ): () => void {
   let width = 0;
   let height = 0;
@@ -510,7 +673,7 @@ function startFlight(
       wing,
       flyer,
       scale: 0.9 + Math.random() * 0.2,
-      cruise: CRUISE * (0.85 + Math.random() * 0.3),
+      cruise: CRUISE * manner.cruise * (0.85 + Math.random() * 0.3),
       phase: Math.random() * Math.PI * 2,
       layoutHalfW: 0,
       layoutHalfH: 0,
@@ -548,6 +711,9 @@ function startFlight(
         gone: false,
         awayUntil: 0,
         entering: false,
+        face: 1,
+        faceTo: 1,
+        alpha: 1,
       },
       plan: [],
       motion: null,
@@ -582,13 +748,24 @@ function startFlight(
   function pickTarget(body: Body): void {
     const sim = body.sim;
     const [minX, maxX, minY, maxY] = targetBounds(body);
-    const farEnough = Math.min(width, height) * 0.35;
+    const hops = manner.hops;
+    const farEnough =
+      hops === null ? Math.min(width, height) * 0.35 : hops[0] * 0.8;
     let bestDistance = -1;
     let bestClear = false;
 
     for (let draw = 0; draw < 8; draw += 1) {
-      const x = minX + Math.random() * (maxX - minX);
-      const y = minY + Math.random() * (maxY - minY);
+      let x = minX + Math.random() * (maxX - minX);
+      let y = minY + Math.random() * (maxY - minY);
+
+      /* A hop: any direction, a short way off, and still on the band. */
+      if (hops !== null) {
+        const angle = Math.random() * Math.PI * 2;
+        const reach = between(hops);
+        x = clamp(sim.x + Math.cos(angle) * reach, minX, maxX);
+        y = clamp(sim.y + Math.sin(angle) * reach, minY, maxY);
+      }
+
       const distance = Math.hypot(x - sim.x, y - sim.y);
       const clear = !onText(body, x, y);
 
@@ -776,6 +953,18 @@ function startFlight(
     const reach = hiddenReach(body);
     const [minX, maxX, minY, maxY] = targetBounds(body);
 
+    /* One that rises comes back the way it always arrives: from under the foot of its line. */
+    if (manner.rises) {
+      sim.x = riseLine(body);
+      sim.y = height + reach;
+      sim.heading = -Math.PI / 2;
+      sim.speed = body.cruise;
+      sim.gone = false;
+      sim.entering = false;
+      sim.overSince = 0;
+      return;
+    }
+
     if (sim.leaveEdge === "top") {
       sim.x =
         Math.random() < 0.5
@@ -798,6 +987,66 @@ function startFlight(
   }
 
   /**
+   * The line a rising heart goes up: the middle of the margin on its own side
+   * of the card. Where the margin is narrower than the heart and its sway, a
+   * phone's, the line is far enough in that the outward swing still leaves
+   * all but a sliver of it on the card. Arithmetic on sizes already measured.
+   */
+  function riseLine(body: Body): number {
+    const onLeft = body.flyer.left < 50;
+    const room = onLeft ? columnLeft : width - columnRight;
+    const inset = Math.max(body.halfW + riseSway(body) - 2, room / 2);
+
+    return onLeft ? inset : width - inset;
+  }
+
+  /** How far it sways either side of that line: a quarter of its margin, within reason. */
+  function riseSway(body: Body): number {
+    const room = body.flyer.left < 50 ? columnLeft : width - columnRight;
+
+    return clamp(room / 4, 4, RISE_SWAY);
+  }
+
+  /**
+   * One step of a rise: up at its own slow pace, swaying about its line, and
+   * back under the foot of the band once it is over the top. That jump is the
+   * height of the band in one sample, and is not seen: it is fully faded at
+   * both ends of it, see `fade`.
+   */
+  function stepRise(body: Body, dt: number): void {
+    const sim = body.sim;
+    const sway = riseSway(body);
+    const swing = sim.t * 0.0011 + body.phase;
+    const wantX = riseLine(body) + Math.sin(swing) * sway;
+    const reach = hiddenReach(body);
+
+    sim.x += (wantX - sim.x) * ease(1.4, dt);
+    sim.y -= body.cruise * dt;
+    sim.speed = body.cruise;
+    sim.heading = -Math.PI / 2;
+
+    if (sim.y < -reach) {
+      sim.y = height + reach;
+    }
+  }
+
+  /** How solid a rising heart is at its height: nothing at the foot and at the top, whole between. */
+  function fade(sim: Sim): number {
+    if (height === 0) {
+      return 1;
+    }
+
+    return clamp(
+      Math.min(
+        (height - sim.y) / (height * RISE_FADE_IN),
+        sim.y / (height * RISE_FADE_OUT),
+      ),
+      0,
+      1,
+    );
+  }
+
+  /**
    * Keeps the butterfly on the band, turning it back off whichever edge it
    * met. Rare — targets are well inside. At most a quarter of it may cross the
    * side edges, which is what lets a phone's narrow margins hold a resting
@@ -813,7 +1062,8 @@ function startFlight(
     const minY = Math.min(body.halfH, height / 2);
     const maxY = Math.max(height - body.halfH, height / 2);
 
-    if (sim.gone) {
+    /* Nor one that rises, which comes in under the foot and goes out over the top. */
+    if (sim.gone || manner.rises) {
       return;
     }
 
@@ -897,16 +1147,19 @@ function startFlight(
 
     if (sim.gone) {
       stepAway(body, dt);
+    } else if (manner.rises) {
+      stepRise(body, dt);
     } else {
       let heading = sim.heading;
       let speed = body.cruise;
-      let pace = 1.6;
+      let pace = manner.pace;
 
       if (sim.t < sim.restUntil) {
         speed = 0;
-        pace = 2.8;
+        pace = manner.pace * 1.75;
       } else {
         if (
+          manner.rests &&
           !sim.restPending &&
           !sim.entering &&
           sim.t >= sim.nextRest &&
@@ -936,15 +1189,19 @@ function startFlight(
           distance < ARRIVE ||
           sim.t - sim.targetSince > TARGET_PATIENCE
         ) {
+          /* The end of a hop: it hangs there a moment, unless there is on the writing. */
+          if (manner.pause !== null && !onText(body, sim.x, sim.y)) {
+            sim.restUntil = sim.t + between(manner.pause);
+          }
           pickTarget(body);
         }
 
         heading = Math.atan2(sim.targetY - sim.y, sim.targetX - sim.x);
       }
 
-      const steer = wrapAngle(heading - sim.heading) * ease(TURN, dt);
+      const steer = wrapAngle(heading - sim.heading) * ease(manner.turn, dt);
       sim.heading = wrapAngle(
-        sim.heading + clamp(steer, -MAX_TURN * dt, MAX_TURN * dt),
+        sim.heading + clamp(steer, -manner.maxTurn * dt, manner.maxTurn * dt),
       );
       sim.speed += (speed - sim.speed) * ease(pace, dt);
       sim.x += Math.cos(sim.heading) * sim.speed * dt;
@@ -974,8 +1231,28 @@ function startFlight(
       upright; sideways it leans the full MAX_TILT.
     */
     const pace01 = Math.min(1, sim.speed / body.cruise);
-    const lean = Math.cos(sim.heading) * MAX_TILT * Math.max(0.35, pace01);
+    let lean = Math.cos(sim.heading) * manner.maxTilt * Math.max(0.35, pace01);
+
+    if (manner.faces) {
+      /*
+        Turned to face the way it is going, once it is clearly going that way:
+        straight up or down it keeps the side it had, so it does not flicker.
+        Its lean is its nose, up on a climb and down on a descent, and the
+        mirror turns that with it.
+      */
+      const across = Math.cos(sim.heading);
+      if (Math.abs(across) > 0.25) {
+        sim.faceTo = across > 0 ? 1 : -1;
+      }
+      sim.face += (sim.faceTo - sim.face) * ease(7, dt);
+      lean = Math.sin(sim.heading) * manner.maxTilt * sim.faceTo * pace01;
+    } else if (manner.rises) {
+      /* A gentle turn with the sway, a quarter of a swing ahead of it. */
+      lean = Math.cos(sim.t * 0.0011 + body.phase) * manner.maxTilt;
+    }
+
     sim.tilt += (lean - sim.tilt) * ease(3.5, dt);
+    sim.alpha = manner.rises && !sim.gone ? fade(sim) : 1;
     sim.drawnScale += (body.scale - sim.drawnScale) * ease(1.5, dt);
 
     /* Slow, even strokes on the way off the card, however fast it is going. */
@@ -990,7 +1267,8 @@ function startFlight(
     const sim = body.sim;
     const pace01 = Math.min(1, sim.speed / body.cruise);
     /* A little rise and fall, softer while it hangs in the air. */
-    const bob = Math.sin(sim.t * 0.0042 + body.phase) * BOB * (0.4 + 0.6 * pace01);
+    const bob =
+      Math.sin(sim.t * 0.0042 + body.phase) * manner.bob * (0.4 + 0.6 * pace01);
     const x = sim.x - body.layoutHalfW - body.baseX;
     const y = sim.y + bob - body.layoutHalfH - body.baseY;
     /*
@@ -999,7 +1277,20 @@ function startFlight(
     */
     const turn = sim.tilt - body.flyer.rotate;
 
-    return `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${turn.toFixed(2)}deg) scale(${sim.drawnScale.toFixed(3)})`;
+    /* The mirror is innermost, so the lean above is applied to the bird as it faces. */
+    const mirror = manner.faces ? ` scaleX(${sim.face.toFixed(3)})` : "";
+
+    return `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${turn.toFixed(2)}deg) scale(${sim.drawnScale.toFixed(3)})${mirror}`;
+  }
+
+  /**
+   * One keyframe: the transform, and for a kind that fades its opacity too.
+   * Those two and nothing else, so every frame is still the compositor's.
+   */
+  function frame(body: Body): Keyframe {
+    return manner.rises
+      ? { transform: pose(body), opacity: body.sim.alpha.toFixed(3) }
+      : { transform: pose(body) };
   }
 
   /** The last sample at or before flight time `at`, from the segment playing. */
@@ -1024,7 +1315,7 @@ function startFlight(
     body.sim = { ...from, t: late ? flightNow() : from.t };
 
     const samples: Sim[] = [{ ...body.sim }];
-    const keyframes: Keyframe[] = [{ transform: pose(body) }];
+    const keyframes: Keyframe[] = [frame(body)];
 
     for (let index = 1; index <= SEGMENT_SAMPLES; index += 1) {
       step(body, SAMPLE_MS / 1000);
@@ -1041,7 +1332,7 @@ function startFlight(
       }
 
       samples.push({ ...body.sim });
-      keyframes.push({ transform: pose(body) });
+      keyframes.push(frame(body));
     }
 
     const motion = body.node.animate(keyframes, {
@@ -1056,6 +1347,7 @@ function startFlight(
     body.plan = samples;
     body.stale = false;
     body.node.style.transform = "";
+    body.node.style.opacity = "";
   }
 
   function updateFlap(body: Body, sim: Sim): void {
@@ -1274,6 +1566,9 @@ function startFlight(
 
       body.sim = { ...sampleAt(body, now) };
       body.node.style.transform = pose(body);
+      if (manner.rises) {
+        body.node.style.opacity = body.sim.alpha.toFixed(3);
+      }
       body.motion?.cancel();
       body.motion = null;
     }
@@ -1424,6 +1719,7 @@ function startFlight(
     for (const body of bodies) {
       body.motion?.cancel();
       body.node.style.transform = "";
+      body.node.style.opacity = "";
       setFlap(body.wing, 1);
     }
   };
@@ -1440,17 +1736,29 @@ function startFlight(
  */
 function Butterfly({
   flyer,
-  src,
+  piece,
+  manner,
   still,
   nodeRef,
 }: {
   flyer: Flyer;
-  src: string;
-  /** Reduced motion: no flight, and a slow wingbeat. */
+  /** What it is: a butterfly of the host's colour, or another kind's picture. */
+  piece: FlyingPiece;
+  manner: Manner;
+  /** Reduced motion: no flight and no wingbeat. It stays where the table puts it. */
   still: boolean;
   nodeRef: (node: HTMLSpanElement | null) => void;
 }): ReactElement {
-  const width = Math.round(flyer.size * GROW);
+  /* The table's width is a butterfly's; another kind is drawn to its own. */
+  const size = flyer.size * piece.scale;
+  const width = Math.round(size * GROW);
+  /*
+    No beat at all for a guest who asked for less movement: every floating
+    element is fully still for them. A butterfly's wings used to go on opening
+    and closing slowly, which was still a card with something moving on it.
+  */
+  const beat = manner.wing === null || still ? null : manner.wing;
+  const beatSeconds = flyer.wing * manner.wingBeat;
 
   const travel: CSSProperties = {
     left: `${flyer.left}%`,
@@ -1461,9 +1769,9 @@ function Butterfly({
   const wing: CSSProperties = {
     /* The span directly around the image, so a fluid card can grow it. */
     ...artWidth(width),
-    "--butterfly-width": String(flyer.size),
-    animationName: "lifafa-butterfly-wing",
-    animationDuration: `${still ? flyer.wing * REDUCED_WING_SLOWDOWN : flyer.wing}s`,
+    "--butterfly-width": String(Math.round(size * 100) / 100),
+    animationName: beat ?? "none",
+    animationDuration: `${beatSeconds.toFixed(3)}s`,
     /*
       Offset per butterfly. Two that happen to start together would otherwise
       beat together for as long as they are both on the card.
@@ -1487,12 +1795,12 @@ function Butterfly({
           style={wing}
         >
           <img
-            src={src}
+            src={piece.src}
             alt=""
             aria-hidden="true"
             decoding="async"
             width={width}
-            height={Math.round(width / BUTTERFLY_ASPECT)}
+            height={Math.round(width / piece.aspect)}
             className="block max-w-none select-none"
             style={{ filter: SHADOW }}
           />
@@ -1502,6 +1810,119 @@ function Butterfly({
   );
 }
 
+interface Glow {
+  /** Where its loop starts, as percentages within the band. */
+  left: number;
+  top: number;
+  /** The point of light itself, in px: 4 to 7. Its halo is drawn round that. */
+  core: number;
+  /** Which of the three loops in globals.css it wanders. */
+  path: "a" | "b" | "c";
+  /** Seconds for one circuit of it, and for one pulse. */
+  travel: number;
+  pulse: number;
+  delay: number;
+}
+
+/**
+ * The fireflies, hand authored like every other table here.
+ *
+ * NOT FLOWN BY THE SCRIPT, AND NOT SHOOED. A butterfly is something a guest
+ * reaches for; a firefly is a light in the air, and there is nothing to send
+ * away. So each is two CSS animations the compositor plays: a slow closed
+ * loop on the outer span, and a pulse of opacity on the inner one, each of
+ * its own length, so they twinkle out of step.
+ *
+ * Further in from the edges than the butterflies start. A butterfly leaves
+ * the writing because it would cover a word; a firefly is a few px of light,
+ * dim half the time, and a card with every one of them pinned to its margins
+ * has two columns of dots. They keep to the outer third all the same, clear
+ * of the names. The first two are a "subtle" card's, on opposite sides.
+ */
+const FIREFLIES: readonly Glow[] = [
+  { left: 9, top: 24, core: 6, path: "a", travel: 26, pulse: 3.1, delay: 0 },
+  { left: 86, top: 60, core: 5, path: "b", travel: 31, pulse: 4.3, delay: 1.3 },
+  /* Joins at "normal". */
+  { left: 82, top: 16, core: 4, path: "c", travel: 23, pulse: 2.6, delay: 0.6 },
+  { left: 12, top: 72, core: 7, path: "b", travel: 34, pulse: 3.7, delay: 2.2 },
+  /* Only at "lively". */
+  { left: 90, top: 86, core: 5, path: "a", travel: 28, pulse: 4.9, delay: 1.7 },
+  { left: 5, top: 47, core: 4, path: "c", travel: 21, pulse: 2.9, delay: 0.9 },
+];
+
+/** How solid a firefly is held for a guest who asked for less movement: lit, and still. */
+const FIREFLY_STILL_OPACITY = 0.8;
+
+/**
+ * A firefly: the outer span wanders, the inner one is the light and pulses.
+ * Two spans because an animation's opacity and another's transform could
+ * share one, but the box is centred on its place with a transform of its own.
+ */
+function Firefly({
+  glow,
+  onLight,
+  still,
+}: {
+  glow: Glow;
+  onLight: boolean;
+  /** Reduced motion: lit steadily where the table puts it. */
+  still: boolean;
+}): ReactElement {
+  const light = fireflyGlow(glow.core, onLight);
+
+  const wander: CSSProperties = {
+    left: `${glow.left}%`,
+    top: `${glow.top}%`,
+    ...(still
+      ? null
+      : {
+          animationName: `lifafa-firefly-${glow.path}`,
+          animationDuration: `${glow.travel}s`,
+          animationDelay: `${-glow.delay * 4}s`,
+          animationTimingFunction: "ease-in-out",
+          animationIterationCount: "infinite",
+        }),
+  };
+
+  const pulse: CSSProperties = {
+    width: light.size,
+    height: light.size,
+    /* Centred on its place, so a bigger halo grows round the point and not away from it. */
+    margin: -light.size / 2,
+    background: light.background,
+    borderRadius: "50%",
+    ...(still
+      ? { opacity: FIREFLY_STILL_OPACITY }
+      : {
+          animationName: "lifafa-firefly-pulse",
+          animationDuration: `${glow.pulse}s`,
+          /* Negative, so each is already somewhere in its own pulse on the first frame. */
+          animationDelay: `${-glow.delay}s`,
+          animationTimingFunction: "ease-in-out",
+          animationIterationCount: "infinite",
+        }),
+  };
+
+  return (
+    <span className="absolute block" style={wander}>
+      <span className="block" style={pulse} />
+    </span>
+  );
+}
+
+/**
+ * How each thing that drifts is timed against the table, which was written
+ * for a leaf: a seed is carried a little slower, and a feather's fall is one
+ * pass and not a circuit, so it takes about half as long. Only a leaf turns
+ * over in the air; a seed hardly spins, and a feather's lean is in its swing.
+ * The paths themselves are keyframes in globals.css, named for the motion.
+ */
+const LEAF_MOTIONS: Record<NaturePiece["motion"], { travel: number; turns: boolean }> = {
+  leaf: { travel: 1, turns: true },
+  seed: { travel: 0.9, turns: false },
+  feather: { travel: 0.56, turns: false },
+};
+
 /**
  * A leaf, built the way a butterfly is and for the same reason.
  *
@@ -1510,12 +1931,22 @@ function Butterfly({
  * three cannot share one element. Hidden outright under reduced motion — a
  * leaf is nothing but its drift.
  */
-function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
+function Leaf({
+  drifter,
+  piece,
+}: {
+  drifter: Drifter;
+  piece: NaturePiece;
+}): ReactElement {
+  /* The table's width is the green leaf's; another kind is drawn to its own. */
+  const width = Math.round(drifter.size * piece.scale);
+  const motion = LEAF_MOTIONS[piece.motion];
+
   const travel: CSSProperties = {
     left: `${drifter.left}%`,
     top: `${drifter.top}%`,
-    animationName: `lifafa-leaf-${drifter.path}`,
-    animationDuration: `${drifter.travel}s`,
+    animationName: `lifafa-${piece.motion}-${drifter.path}`,
+    animationDuration: `${(drifter.travel * motion.travel).toFixed(1)}s`,
     animationDelay: `${drifter.delay}s`,
     animationTimingFunction: "ease-in-out",
     animationIterationCount: "infinite",
@@ -1523,7 +1954,7 @@ function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
   };
 
   const turn: CSSProperties = {
-    animationName: "lifafa-leaf-turn",
+    animationName: motion.turns ? "lifafa-leaf-turn" : "none",
     animationDuration: `${drifter.turn}s`,
     /* Offset against the drift, so a leaf does not turn on the same beat it sways. */
     animationDelay: `${drifter.delay * 0.45}s`,
@@ -1540,12 +1971,12 @@ function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
       >
         <span className="block" style={turn}>
           <img
-            src={LEAF_SRC}
+            src={piece.src}
             alt=""
             aria-hidden="true"
             decoding="async"
-            width={drifter.size}
-            height={Math.round(drifter.size / LEAF_ASPECT)}
+            width={width}
+            height={Math.round(width / piece.aspect)}
             className="block max-w-none select-none"
             style={{ filter: SHADOW }}
           />
@@ -1557,7 +1988,10 @@ function Leaf({ drifter }: { drifter: Drifter }): ReactElement {
 
 export default function ButterflyLayer({
   style,
+  kind,
+  onLight,
   leaves,
+  nature,
   intensity,
   bandHeight,
 }: {
@@ -1566,8 +2000,20 @@ export default function ButterflyLayer({
    * leaves. The canvas does not mount this layer when both are off.
    */
   style: ButterflyStyle;
+  /**
+   * Which kind flies, already read through `flyingKind`. `style` is still
+   * what says whether anything does, and is the colour when it is butterflies.
+   */
+  kind: FlyingKind;
+  /**
+   * Whether the card's ground is light. Only the fireflies ask: they are
+   * drawn in code, and a gold light on cream is drawn as an amber one.
+   */
+  onLight: boolean;
   /** Whether leaves drift with them, or on their own. */
   leaves: boolean;
+  /** Which leaf: the host's kind, already read through `natureKind`. */
+  nature: NatureKind;
   /** How many fly — the host's existing "Amount", read rather than duplicated. */
   intensity: DecorIntensity;
   /**
@@ -1578,15 +2024,24 @@ export default function ButterflyLayer({
 }): ReactElement {
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const bandRef = useRef<HTMLDivElement>(null);
+  /* The wingbeat, the leaves and the fireflies are CSS loops: held while unseen. */
+  const pauseRef = useFloatingPause();
   const flyerNodes = useRef<(HTMLSpanElement | null)[]>([]);
 
-  const sources = style === "none" ? [] : butterflySources(style);
-  const flyerCount = style === "none" ? 0 : COUNT[intensity];
+  /* Lights, not flyers: none of the flight below is started for them. */
+  const fireflies = kind === "fireflies" && style !== "none";
+  const pieces = style === "none" ? [] : flyingPieces(kind, style);
+  const manner = mannerOf(kind);
+  const flyers = manner.level ? LEVEL_FLYERS : FLYERS;
+  const flyerCount = style === "none" || fireflies ? 0 : COUNT[intensity];
   const leafCount = leaves ? LEAF_COUNT[intensity] : 0;
+  /* A change of kind swaps each image and leaves every leaf where it is in its drift. */
+  const leaf = naturePiece(nature);
 
   /*
-    Keyed on the count and the motion preference only. A change of colour swaps
-    each image's src and leaves every butterfly exactly where it is in the air.
+    Keyed on the count, the kind and the motion preference only. A change of
+    colour swaps each image's src and leaves every butterfly exactly where it
+    is in the air; a change of kind is a different flight, and starts again.
   */
   useEffect(() => {
     const band = bandRef.current;
@@ -1608,11 +2063,12 @@ export default function ButterflyLayer({
       .slice(0, flyerCount)
       .filter((node): node is HTMLSpanElement => node !== null);
 
-    return startFlight(band, nodes, FLYERS);
-  }, [prefersReducedMotion, flyerCount]);
+    return startFlight(band, nodes, flyers, manner);
+  }, [prefersReducedMotion, flyerCount, flyers, manner]);
 
   return (
     <div
+      ref={pauseRef}
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-[17] overflow-clip"
     >
@@ -1621,17 +2077,19 @@ export default function ButterflyLayer({
         className="sticky top-0 w-full overflow-clip"
         style={{ height: bandHeight }}
       >
-        {FLYERS.slice(0, flyerCount).map((flyer, index) => (
+        {flyers.slice(0, flyerCount).map((flyer, index) => (
           <Butterfly
-            key={`${flyer.left}-${flyer.top}`}
+            /* A new kind is new spans: nothing of the last one's flight is left on them. */
+            key={`${kind}-${flyer.left}-${flyer.top}`}
             flyer={flyer}
+            manner={manner}
             /*
               Cycled by position rather than authored per flyer, the way
               DecorLayer cycles its motifs and its rotations — and the same
               cycle covers both cases, because a single colour arrives as a list
               of one and every place lands on it.
             */
-            src={sources[index % sources.length]}
+            piece={pieces[index % pieces.length]}
             still={prefersReducedMotion}
             nodeRef={(node) => {
               flyerNodes.current[index] = node;
@@ -1639,8 +2097,20 @@ export default function ButterflyLayer({
           />
         ))}
 
+        {/* As many as there would be butterflies, at the same Amount. */}
+        {fireflies
+          ? FIREFLIES.slice(0, COUNT[intensity]).map((glow) => (
+              <Firefly
+                key={`firefly-${glow.left}-${glow.top}`}
+                glow={glow}
+                onLight={onLight}
+                still={prefersReducedMotion}
+              />
+            ))
+          : null}
+
         {LEAVES.slice(0, leafCount).map((drifter) => (
-          <Leaf key={`leaf-${drifter.left}-${drifter.top}`} drifter={drifter} />
+          <Leaf key={`leaf-${drifter.left}-${drifter.top}`} drifter={drifter} piece={leaf} />
         ))}
       </div>
     </div>

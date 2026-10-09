@@ -968,6 +968,15 @@
   }
 }
 
+/*
+  A floating layer nobody can see: every CSS loop under it is held where it
+  is. Set by hooks/useFloatingPause.ts while the tab is hidden or the card is
+  scrolled off the screen, and taken off again when it is not.
+*/
+[data-floating-paused] * {
+  animation-play-state: paused !important;
+}
+
 /* --- Butterflies. Flown by ButterflyLayer's script; only the wingbeat is here. --- */
 
 /*
@@ -1014,6 +1023,90 @@
   }
   62% {
     transform: scaleX(0.86);
+  }
+}
+
+/*
+  The dragonfly's wings: the butterfly's beat, far smaller and far quicker. Four
+  wings held out flat do not close; they blur. So the span only narrows by a
+  tenth, evenly, a few times a second: a shimmer, not a stroke. Duration is
+  set inline, and the flight changes its rate as it does the butterfly's.
+*/
+@keyframes lifafa-dragonfly-wing {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.9);
+  }
+}
+
+/*
+  Fireflies: three slow wandering loops and one pulse.
+
+  A firefly is not flown by the script. Nothing shoos it and it has nowhere to
+  be, so its whole path is a closed loop of a few dozen px, a different one
+  for its neighbours, over the better part of half a minute. The pulse is
+  opacity on the element inside, from nearly out to full and back, and each
+  firefly is given its own length of it inline, so no two are lit together
+  for long. Transform on one element and opacity on the other, nothing else.
+*/
+@keyframes lifafa-firefly-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    transform: translate3d(20px, -16px, 0);
+  }
+  47% {
+    transform: translate3d(38px, 8px, 0);
+  }
+  74% {
+    transform: translate3d(12px, 26px, 0);
+  }
+}
+
+@keyframes lifafa-firefly-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  26% {
+    transform: translate3d(-18px, -22px, 0);
+  }
+  52% {
+    transform: translate3d(-36px, -46px, 0);
+  }
+  78% {
+    transform: translate3d(-10px, -30px, 0);
+  }
+}
+
+@keyframes lifafa-firefly-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(16px, 22px, 0);
+  }
+  45% {
+    transform: translate3d(-12px, 38px, 0);
+  }
+  70% {
+    transform: translate3d(-26px, 12px, 0);
+  }
+}
+
+@keyframes lifafa-firefly-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -1087,6 +1180,105 @@
   }
   50% {
     transform: scaleX(0.66);
+  }
+}
+
+/*
+  A dandelion seed: carried, slowly, a little upward, and hardly turning.
+
+  A LOOP THAT DOES NOT COME BACK. A leaf's path returns to where it began; a
+  seed that rose and then sank again to rise again would be on a string. So it
+  travels one way and is faded out at the end of it and in at the start,
+  which is where the loop restarts unseen. Opacity and transform, both the
+  compositor's. Held to about 10px on the horizontal, as the leaves are.
+*/
+@keyframes lifafa-seed-a {
+  0% {
+    transform: translate3d(-4px, 30px, 0) rotate(-2deg);
+    opacity: 0;
+  }
+  12%,
+  86% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(9px, -8px, 0) rotate(3deg);
+  }
+  100% {
+    transform: translate3d(3px, -50px, 0) rotate(-1deg);
+    opacity: 0;
+  }
+}
+
+@keyframes lifafa-seed-b {
+  0% {
+    transform: translate3d(5px, 26px, 0) rotate(2deg);
+    opacity: 0;
+  }
+  12%,
+  86% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate3d(-8px, 2px, 0) rotate(-3deg);
+  }
+  100% {
+    transform: translate3d(-2px, -44px, 0) rotate(1deg);
+    opacity: 0;
+  }
+}
+
+/*
+  A feather: down, slowly, on a wide swing from side to side, leaning into
+  each swing as a real one does. It falls one way and is faded at both ends,
+  like the seed. Wider on the horizontal than a leaf, because the swing is the
+  whole of what makes it a feather, and it is the palest thing on the layer.
+*/
+@keyframes lifafa-feather-a {
+  0% {
+    transform: translate3d(-6px, -24px, 0) rotate(-10deg);
+    opacity: 0;
+  }
+  10%,
+  88% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate3d(15px, 14px, 0) rotate(12deg);
+  }
+  50% {
+    transform: translate3d(-15px, 52px, 0) rotate(-12deg);
+  }
+  75% {
+    transform: translate3d(13px, 90px, 0) rotate(10deg);
+  }
+  100% {
+    transform: translate3d(-8px, 124px, 0) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
+@keyframes lifafa-feather-b {
+  0% {
+    transform: translate3d(6px, -20px, 0) rotate(9deg);
+    opacity: 0;
+  }
+  10%,
+  88% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate3d(-14px, 16px, 0) rotate(-12deg);
+  }
+  50% {
+    transform: translate3d(14px, 50px, 0) rotate(11deg);
+  }
+  75% {
+    transform: translate3d(-13px, 84px, 0) rotate(-10deg);
+  }
+  100% {
+    transform: translate3d(7px, 116px, 0) rotate(5deg);
+    opacity: 0;
   }
 }
 
@@ -1171,6 +1363,54 @@
     opacity: 0;
     transform: translate3d(calc(var(--dx) * 1cqw), calc(var(--down) * 1cqh), 0)
       scale(0.9) rotate(calc(var(--spin) * 1deg));
+  }
+}
+
+/*
+  Confetti: paper, so it tumbles end over end as well as turning flat.
+
+  `rotateX` on a flat piece is the foreshortening the leaf's turn fakes with
+  scaleX, and here it is the real thing: a strip of paper goes edge on and
+  comes round again. One and a half turns about its own face for every one
+  end over end, so it never shows the same pose twice running.
+*/
+@keyframes lifafa-confetti-tumble {
+  from {
+    transform: rotateX(0deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(360deg) rotateZ(540deg);
+  }
+}
+
+/*
+  The confetti's burst as a card opens: let go from above the top edge, across
+  the whole width, and falling. Not thrown up from the middle as petals are;
+  paper is dropped. The same custom properties as the petals' burst, read
+  differently: --dx is where across the card a piece comes down, and --down
+  how far it has fallen by the time it has faded.
+*/
+@keyframes lifafa-confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(calc(var(--dx) * 0.8cqw), -6cqh, 0)
+      rotate(0deg);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.7, 0.8);
+  }
+  8% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(
+        calc(var(--dx) * 1cqw),
+        calc(var(--down) * 0.85cqh),
+        0
+      )
+      rotate(calc(var(--spin) * 0.5deg));
   }
 }
 

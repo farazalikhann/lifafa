@@ -25,9 +25,7 @@ export type OrnamentId =
   | "hangingLights"
   | "bismillah"
   | "versePairs"
-  | "verseLoveMercy"
   | "barakallah"
-  | "barakallahDua"
   | "alhamdulillah";
 
 /**

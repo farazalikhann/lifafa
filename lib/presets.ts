@@ -16,6 +16,8 @@ import type {
   CardBorderStyle,
   DecorIntensity,
   DecorMotion,
+  FlyingKind,
+  NatureKind,
   PetalFlower,
   PetalStyle,
 } from "@/types/card";
@@ -33,10 +35,10 @@ import type { CardDensity, FontPairId, PaletteId } from "@/types/style";
  * greeting and the dua are never changed either — those are words a family
  * chose to put on their card, and a palette click must not choose them again;
  * a card with none gets the preset's, and only then.
- * Calligraphy is set one of two ways, per preset. A Nikah look only fills an
- * empty card with Bismillah and keeps any panel the host chose — see
- * `calligraphyIfNone`. A Vivah look is built around its word-mark, so it sets
- * the one it names, or none, whatever the card had — see `calligraphy`.
+ * Calligraphy is set outright by every look: each is built around its
+ * word-mark, so it sets the one it names, or none, whatever the card had (see
+ * `calligraphy`). `calligraphyIfNone` is still understood, for a look that
+ * only wants to fill an empty head.
  * The card is saved exactly as it always was; a preset is only a quicker way
  * of setting values a host could have set by hand.
  *
@@ -58,6 +60,15 @@ interface PresetSettings {
   decorIntensity: DecorIntensity;
   butterflies: ButterflyStyle;
   leaves: boolean;
+  /**
+   * The kind that flies and the kind that drifts, on a preset that wants
+   * another than the first of each. A preset that turns either on without
+   * naming one gets butterflies, or the green leaf: what every look had
+   * before there was a choice. One that leaves it off leaves the host's kind
+   * as it was, for when they turn it back on themselves.
+   */
+  flying?: FlyingKind;
+  nature?: NatureKind;
   petals: PetalStyle;
   /**
    * The flower, on a preset that turns petals on. Left out of one that does
@@ -149,8 +160,14 @@ const PALETTE_CHAMPAGNE = "#86672E";
 /**
  * The presets, in the order the picker lays them out.
  *
- * Four Nikah looks, each pulling a different way — soft, regal, night-time,
- * plain — so that no two read as the same card in a different colour. Then
+ * Four Nikah looks, each pulling a different way (soft, regal, night-time,
+ * plain) so that no two read as the same card in a different colour. They are
+ * built the way the Vivah ones are, described below: each sets everything it
+ * is about, its one word-mark, what hangs, what stands above the names and in
+ * the corners, so moving from one to the next leaves nothing of the first
+ * behind. The greeting and the dua they open with are added only to a card
+ * that has none, and a look headed by the Barakallahu lakuma word-mark never
+ * adds the dua that says the same words. Then
  * four Vivah looks, three of them taken from cards the Lifafa team designed by
  * hand in the editor — ivory with the Ivory frame, ivory with the blossom
  * frame, blush with a toran — and a fourth, the same card in Maroon and gold.
@@ -196,7 +213,7 @@ const PRESETS: readonly Preset[] = [
   {
     id: "nikah-blush",
     name: "Nikah Blush",
-    description: "Soft blush, a flower frame, lanterns and butterflies.",
+    description: "Soft blush, a blossom frame, lanterns and a crescent moon.",
     tradition: "muslim",
     settings: {
       paletteId: "blush",
@@ -213,14 +230,16 @@ const PRESETS: readonly Preset[] = [
       /* Rose, as it had before there was a choice: blush and red butterflies. */
       petalFlower: "rose",
       coverAnimation: "petal-dust",
-      ornaments: ["lantern", "arabesqueBorder"],
-      calligraphyIfNone: ["bismillah"],
+      ornaments: ["lantern", "crescentMoon"],
+      calligraphy: "bismillah",
+      greetingIfNone: "salam",
+      blessingIfNone: "jamaBaynakuma",
     },
   },
   {
     id: "emerald-royal",
     name: "Emerald Royal",
-    description: "Deep green and gold, a gold flower frame, calm and regal.",
+    description: "Deep green and gold on the royal texture, lights and a gold star.",
     tradition: "muslim",
     settings: {
       paletteId: "forest",
@@ -234,43 +253,51 @@ const PRESETS: readonly Preset[] = [
       butterflies: "none",
       leaves: false,
       petals: "none",
+      royalTexture: true,
       coverAnimation: "envelope-seal",
-      ornaments: ["hangingLights", "geometricStar", "arabesqueBorder"],
-      calligraphyIfNone: ["bismillah"],
+      ornaments: ["hangingLights", "geometricStar"],
+      calligraphy: "bismillah",
+      greetingIfNone: "salamFull",
+      blessingIfNone: "jamaBaynakuma",
     },
   },
   {
     id: "midnight-lantern",
     name: "Midnight Lantern",
-    description: "Night blue and gold, with lanterns, moons and stars.",
+    description: "Night blue and gold, lanterns, moons, stars and a royal scroll.",
     tradition: "muslim",
     settings: {
       paletteId: "midnight",
       textPairId: "midnightGold",
+      dateReveal: "scroll",
       /* Midnight's own accent is already the gold this look is named for. */
       accentOverride: null,
-      fontPairId: "warm",
+      fontPairId: "regal",
       density: "comfortable",
       borderStyle: "flowerNoir",
       decorMotion: "float",
-      decorIntensity: "normal",
+      decorIntensity: "subtle",
       butterflies: "none",
       leaves: false,
       petals: "none",
       coverAnimation: "curtain-reveal",
-      ornaments: ["lantern", "crescentMoon", "stars", "arabesqueBorder"],
-      calligraphyIfNone: ["bismillah"],
+      ornaments: ["lantern", "crescentMoon", "stars"],
+      /* The marriage verse, so this look does not open the way the other three do. */
+      calligraphy: "versePairs",
+      greetingIfNone: "salam",
+      blessingIfNone: "barakallah",
     },
   },
   {
     id: "ivory-grace",
     name: "Ivory Grace",
-    description: "Warm ivory, a slim flower frame and still, quiet detail.",
+    description: "Warm ivory and gold, a slim frame and a fine arabesque.",
     tradition: "muslim",
     settings: {
       paletteId: "cream",
       textPairId: "champagneClassic",
-      accentOverride: null,
+      /* Cream's own accent is rose; this look is ivory and gold. */
+      accentOverride: PALETTE_CHAMPAGNE,
       fontPairId: "elegant",
       density: "airy",
       borderStyle: "flowerIvory",
@@ -278,10 +305,15 @@ const PRESETS: readonly Preset[] = [
       decorIntensity: "subtle",
       butterflies: "none",
       leaves: false,
-      petals: "none",
+      /* A few white petals as the card opens, and then nothing moving. */
+      petals: "open",
+      petalFlower: "mogra",
       coverAnimation: "fold-unfold",
       ornaments: ["arabesqueBorder"],
-      calligraphyIfNone: ["bismillah"],
+      calligraphy: "barakallah",
+      greetingIfNone: "salam",
+      /* Not Barakallahu lakuma: the word-mark already says it. */
+      blessingIfNone: "jamaBaynakuma",
     },
   },
   {
@@ -842,6 +874,11 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     decorIntensity: settings.decorIntensity ?? design.decorIntensity,
     butterflies: settings.butterflies ?? design.butterflies,
     leaves: settings.leaves ?? design.leaves,
+    flying:
+      settings.butterflies !== undefined && settings.butterflies !== "none"
+        ? (settings.flying ?? "butterflies")
+        : design.flying,
+    nature: settings.leaves === true ? (settings.nature ?? "greenLeaves") : design.nature,
     petals: settings.petals ?? design.petals,
     petalFlower: settings.petalFlower ?? design.petalFlower,
     coverAnimation: settings.coverAnimation ?? design.coverAnimation,

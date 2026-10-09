@@ -552,9 +552,7 @@ const MUSLIM_PACK: TraditionPack = {
   calligraphyIds: [
     "bismillah",
     "versePairs",
-    "verseLoveMercy",
     "barakallah",
-    "barakallahDua",
     "alhamdulillah",
   ],
 };

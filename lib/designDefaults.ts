@@ -13,6 +13,8 @@ import type {
   CardBorderStyle,
   DecorIntensity,
   DecorMotion,
+  FlyingKind,
+  NatureKind,
   PetalFlower,
   PetalStyle,
 } from "@/types/card";
@@ -37,6 +39,9 @@ export interface DesignState {
   decorIntensity: DecorIntensity;
   butterflies: ButterflyStyle;
   leaves: boolean;
+  /* The kinds, kept while their switches are off. See types/card.ts. */
+  flying: FlyingKind;
+  nature: NatureKind;
   petals: PetalStyle;
   petalFlower: PetalFlower;
   coverAnimation: CoverAnimationId;
@@ -80,6 +85,9 @@ export const DEFAULT_DESIGN: DesignState = {
   decorIntensity: "normal",
   butterflies: "none",
   leaves: false,
+  /* What every card had before there was a choice. */
+  flying: "butterflies",
+  nature: "greenLeaves",
   petals: "none",
   /* What every card had before there was a choice. */
   petalFlower: "rose",

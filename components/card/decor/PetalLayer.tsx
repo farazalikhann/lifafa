@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
 import { preload } from "react-dom";
+import { useFloatingPause } from "@/hooks/useFloatingPause";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useBurstGate } from "@/hooks/useRevealGate";
 import { artWidth } from "@/lib/cardScale";
@@ -198,6 +199,26 @@ function PetalImage({
   piece: FlowerPiece;
   size: number;
 }): ReactElement {
+  /*
+    A piece of confetti is a box of its paper's colour: a strip with barely
+    rounded corners, or a round. No shadow under it, which a picture has: a
+    hairline of darker edge does the same work on a cream card, where ivory
+    paper would otherwise be nowhere, and costs nothing to move.
+  */
+  if (piece.paper !== undefined) {
+    return (
+      <span
+        className="block border-[0.5px] border-black/15"
+        style={{
+          width: size,
+          height: Math.max(2, Math.round(size / piece.aspect)),
+          backgroundColor: piece.paper.color,
+          borderRadius: piece.paper.shape === "dot" ? "50%" : 1,
+        }}
+      />
+    );
+  }
+
   return (
     <img
       src={piece.src}
@@ -242,7 +263,12 @@ function FallingPetal({
         animationTimingFunction: "ease-in-out",
         animationIterationCount: "infinite",
         animationFillMode: "both",
-        animationName: "lifafa-leaf-turn",
+        /* Paper tumbles end over end, evenly; a petal turns over and comes back. */
+        ...(piece.paper !== undefined
+          ? { animationTimingFunction: "linear" }
+          : null),
+        animationName:
+          piece.paper !== undefined ? "lifafa-confetti-tumble" : "lifafa-leaf-turn",
         animationDuration: `${faller.turn}s`,
       }}
     >
@@ -316,20 +342,24 @@ function ThrownPetal({
   sizeScale: number;
 }): ReactElement {
   const size = Math.round(thrown.size * sizeScale);
+  const isPaper = piece.paper !== undefined;
 
   return (
     <span
       className="absolute block"
       style={
         {
-          /* Thrown from just above the middle, where the names sit. */
+          /*
+            Thrown from just above the middle, where the names sit. Confetti
+            is let go from the top edge instead; see lifafa-confetti-burst.
+          */
           left: "50%",
-          top: "40%",
+          top: isPaper ? "0%" : "40%",
           "--dx": String(thrown.dx),
           "--up": String(thrown.up),
           "--down": String(thrown.down),
           "--spin": String(thrown.spin),
-          animationName: "lifafa-petal-burst",
+          animationName: isPaper ? "lifafa-confetti-burst" : "lifafa-petal-burst",
           animationDuration: `${thrown.duration}s`,
           animationDelay: `${thrown.delay}s`,
           animationFillMode: "both",
@@ -340,9 +370,9 @@ function ThrownPetal({
         className="lifafa-card-art block"
         style={{
           ...artWidth(size),
-          animationName: "lifafa-leaf-turn",
+          animationName: isPaper ? "lifafa-confetti-tumble" : "lifafa-leaf-turn",
           animationDuration: `${0.9 + (index % 5) * 0.2}s`,
-          animationTimingFunction: "ease-in-out",
+          animationTimingFunction: isPaper ? "linear" : "ease-in-out",
           animationIterationCount: "infinite",
         }}
       >
@@ -375,6 +405,8 @@ export default function PetalLayer({
 }): ReactElement | null {
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const gateOpen = useBurstGate();
+  /* Every fall here is a CSS loop: held while the tab is hidden or the card off screen. */
+  const pauseRef = useFloatingPause();
   /* Set once the shower has run its course, and never unset — it plays once. */
   const [burstDone, setBurstDone] = useState(false);
 
@@ -403,7 +435,10 @@ export default function PetalLayer({
       ...(fall ? FALL_PIECES[flower] : []),
     ];
 
-    for (const src of new Set(pieces.map((piece) => piece.src))) {
+    /* Not confetti, which is drawn here and has nothing to fetch. */
+    for (const src of new Set(
+      pieces.filter((piece) => piece.paper === undefined).map((piece) => piece.src),
+    )) {
       preload(src, { as: "image" });
     }
   }
@@ -419,6 +454,7 @@ export default function PetalLayer({
 
   return (
     <div
+      ref={pauseRef}
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-[17] overflow-clip motion-reduce:hidden"
     >

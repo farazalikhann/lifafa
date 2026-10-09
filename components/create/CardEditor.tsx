@@ -40,7 +40,12 @@ import {
   applyToDraft,
   type TranslatedWord,
 } from "@/lib/autoTranslate";
-import { butterflyStyle, leavesOn } from "@/lib/butterflies";
+import {
+  butterflyStyle,
+  flyingKind,
+  leavesOn,
+  natureKind,
+} from "@/lib/butterflies";
 import { petalFlowerType, petalStyle } from "@/lib/petals";
 import { dividerStyleOf, hasChosenDivider, scratchFrameOf } from "@/lib/cardDecor";
 import DividerPanel from "@/components/create/DividerPanel";
@@ -89,6 +94,8 @@ import type { DesignState } from "@/lib/designDefaults";
 import { applyPreset, type Preset } from "@/lib/presets";
 import type {
   ButterflyStyle,
+  FlyingKind,
+  NatureKind,
   PetalFlower,
   VenueIllustration,
   PetalStyle,
@@ -156,6 +163,8 @@ interface EditorState {
   decorIntensity: DecorIntensity;
   butterflies: ButterflyStyle;
   leaves: boolean;
+  flying: FlyingKind;
+  nature: NatureKind;
   petals: PetalStyle;
   petalFlower: PetalFlower;
   occasionId: OccasionId;
@@ -208,6 +217,9 @@ function toState(snapshot: EditorSnapshot): EditorState {
     butterflies: butterflyStyle(config.butterflies),
     /* Missing on older cards; see leavesOn and petalStyle. */
     leaves: leavesOn(config.leaves, config.butterflies),
+    /* Missing on every card saved before there were kinds: butterflies, and the green leaf. */
+    flying: flyingKind(config.flying),
+    nature: natureKind(config.nature),
     petals: petalStyle(config.petals),
     /* Missing on every card saved before the choice; those are roses. */
     petalFlower: petalFlowerType(config.petalFlower),
@@ -288,6 +300,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       decorIntensity: state.decorIntensity,
       butterflies: state.butterflies,
       leaves: state.leaves,
+      flying: state.flying,
+      nature: state.nature,
       petals: state.petals,
       petalFlower: state.petalFlower,
       occasionId: state.occasionId,
@@ -477,6 +491,9 @@ export default function CardEditor({
   );
   const [butterflies, setButterflies] = useState(initial.butterflies);
   const [leaves, setLeaves] = useState(initial.leaves);
+  /* The kinds stay in the card while their switches are off, as the flower does. */
+  const [flying, setFlying] = useState(initial.flying);
+  const [nature, setNature] = useState(initial.nature);
   const [petals, setPetals] = useState(initial.petals);
   const [petalFlower, setPetalFlower] = useState(initial.petalFlower);
   /*
@@ -870,6 +887,8 @@ export default function CardEditor({
     decorIntensity,
     butterflies,
     leaves,
+    flying,
+    nature,
     petals,
     petalFlower,
     coverAnimation,
@@ -895,6 +914,8 @@ export default function CardEditor({
     setDecorIntensity(next.decorIntensity);
     setButterflies(next.butterflies);
     setLeaves(next.leaves);
+    setFlying(next.flying);
+    setNature(next.nature);
     setPetals(next.petals);
     setPetalFlower(next.petalFlower);
     setCoverAnimation(next.coverAnimation);
@@ -919,6 +940,8 @@ export default function CardEditor({
     decorIntensity,
     butterflies,
     leaves,
+    flying,
+    nature,
     petals,
     petalFlower,
     occasionId,
@@ -1474,12 +1497,16 @@ export default function CardEditor({
                   intensity={decorIntensity}
                   butterflies={butterflies}
                   leaves={leaves}
+                  flying={flying}
+                  nature={nature}
                   petals={petals}
                   petalFlower={petalFlower}
                   onMotionChange={setDecorMotion}
                   onIntensityChange={setDecorIntensity}
                   onButterfliesChange={setButterflies}
                   onLeavesChange={setLeaves}
+                  onFlyingChange={setFlying}
+                  onNatureChange={setNature}
                   onPetalsChange={setPetals}
                   onPetalFlowerChange={setPetalFlower}
                   lastButterflies={lastButterflies}
