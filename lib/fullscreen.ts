@@ -22,6 +22,62 @@
  * else. Nothing about the card depends on it.
  */
 
+import { coverDebug, coverDebugOn } from "@/lib/coverDebug";
+
+/**
+ * The longest a tap waits to hear that the screen has changed. Chrome on
+ * Android says so in about a fifth of a second; a browser that never says so
+ * is not waited on for longer than this.
+ */
+const SETTLE_TIMEOUT_MS = 450;
+
+/**
+ * The longest the two frames after it are waited for. A frame is a sixtieth
+ * of a second; a tab whose frames have stopped is not a reason to keep a
+ * guest on a closed cover.
+ */
+const FRAMES_TIMEOUT_MS = 300;
+
+/**
+ * `?nofs=1` on the link: fullscreen is never asked for. For telling, on a real
+ * phone, a fault of the fullscreen switch from a fault of the cover.
+ */
+function fullscreenSkipped(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("nofs") === "1";
+  } catch {
+    return false;
+  }
+}
+
+/* When fullscreen was last asked for, for the log to time the answer from. */
+let askedAt = 0;
+let watching = false;
+
+/** Under `?coverdebug=1`: every change of fullscreen and of the screen's size, timed from the tap. */
+function watchScreen(): void {
+  if (watching || !coverDebugOn()) {
+    return;
+  }
+
+  watching = true;
+
+  const size = (): string => `${window.innerWidth}x${window.innerHeight}`;
+  const since = (): string => `${Math.round(performance.now() - askedAt)} ms after the tap`;
+
+  document.addEventListener("fullscreenchange", () => {
+    coverDebug(
+      `fullscreenchange (${document.fullscreenElement !== null ? "in" : "out"}) ${since()}, ${size()}`,
+    );
+  });
+  document.addEventListener("fullscreenerror", () => {
+    coverDebug(`fullscreenerror ${since()}`);
+  });
+  window.addEventListener("resize", () => {
+    coverDebug(`resize ${since()}, ${size()}`);
+  });
+}
+
 /**
  * Whether this browser will put the page into fullscreen at all.
  *
@@ -52,18 +108,129 @@ function canRequestFullscreen(): boolean {
  * page is complete with the address bar still on it.
  */
 export function enterFullscreen(): void {
-  if (!canRequestFullscreen() || document.fullscreenElement !== null) {
-    return;
+  void requestPageFullscreen();
+}
+
+/**
+ * The request itself. Null when nothing was asked for, so nothing is coming;
+ * otherwise the browser's answer, which never rejects: true for granted.
+ */
+function requestPageFullscreen(): Promise<boolean> | null {
+  watchScreen();
+  askedAt = performance.now();
+
+  if (fullscreenSkipped()) {
+    coverDebug("fullscreen not asked for: ?nofs=1");
+    return null;
   }
+
+  if (!canRequestFullscreen()) {
+    coverDebug("fullscreen not asked for: this browser has none");
+    return null;
+  }
+
+  if (document.fullscreenElement !== null) {
+    coverDebug("fullscreen not asked for: already in it");
+    return null;
+  }
+
+  coverDebug(`requestFullscreen() called, ${window.innerWidth}x${window.innerHeight}`);
 
   /*
     `navigationUI: "hide"` asks for the system navigation to go too, and is a
     hint rather than a promise — a browser that does not understand it ignores
     the option and gives plain fullscreen, which is the thing we came for.
   */
-  void document.documentElement
-    .requestFullscreen({ navigationUI: "hide" })
-    .catch(() => {
+  try {
+    return document.documentElement.requestFullscreen({ navigationUI: "hide" }).then(
+      () => true,
       /* Denied, or the gesture had already expired. The card is fine as it is. */
+      () => false,
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fullscreen asked for now, inside the tap, and `done` called once the screen
+ * has stopped changing under the page. Returns how to call it off.
+ *
+ * THE SCREEN CHANGES SIZE A MOMENT AFTER THE TAP, NOT ON IT. On an Android
+ * phone the browser takes its bars away about a fifth of a second later and
+ * the page is laid out and painted again at the new height. A cover that had
+ * started to open by then, its ground gone clear and its film just starting,
+ * was caught half way by that repaint, and the guest saw a black screen. So
+ * nothing is started until the browser has said the change is done
+ * (`fullscreenchange`), and the page has then painted twice at its new size.
+ *
+ * Never left waiting: a browser that says nothing is given 450 ms, one that
+ * refuses is taken at its word at once, and where nothing was asked for, an
+ * iPhone or a page already in fullscreen, there is nothing to wait for and
+ * only the two frames are.
+ */
+export function enterFullscreenThen(done: () => void): () => void {
+  const startedAt = performance.now();
+  let live = true;
+  let settled = false;
+  let timer = 0;
+  let frame = 0;
+  let net = 0;
+
+  const since = (): number => Math.round(performance.now() - startedAt);
+
+  const finish = (how: string): void => {
+    if (!live) {
+      return;
+    }
+
+    live = false;
+    window.cancelAnimationFrame(frame);
+    window.clearTimeout(net);
+    coverDebug(`${how} ${since()} ms after the tap: the cover starts`);
+    done();
+  };
+
+  const changed = (): void => settle("fullscreenchange");
+
+  function settle(why: string): void {
+    if (!live || settled) {
+      return;
+    }
+
+    settled = true;
+    window.clearTimeout(timer);
+    document.removeEventListener("fullscreenchange", changed);
+    coverDebug(`screen settled ${since()} ms after the tap: ${why}`);
+
+    frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => finish("two frames painted"));
     });
+    net = window.setTimeout(() => finish("no frames, not waited for"), FRAMES_TIMEOUT_MS);
+  }
+
+  const answer = requestPageFullscreen();
+
+  if (answer === null) {
+    settle("no fullscreen to wait for");
+  } else {
+    document.addEventListener("fullscreenchange", changed);
+    timer = window.setTimeout(
+      () => settle(`no fullscreenchange in ${SETTLE_TIMEOUT_MS} ms`),
+      SETTLE_TIMEOUT_MS,
+    );
+    void answer.then((granted) => {
+      if (!granted) {
+        settle("fullscreen refused");
+      }
+    });
+  }
+
+  return () => {
+    live = false;
+    window.clearTimeout(timer);
+    window.clearTimeout(net);
+    window.cancelAnimationFrame(frame);
+    document.removeEventListener("fullscreenchange", changed);
+  };
 }

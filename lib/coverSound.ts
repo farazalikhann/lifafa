@@ -183,6 +183,8 @@ let playing: {
  * left: a three-second sound outlives all three.
  */
 export function stopCoverSound(): void {
+  dropPrimed();
+
   const current = playing;
 
   if (current === null) {
@@ -204,6 +206,60 @@ export function stopCoverSound(): void {
   window.setTimeout(() => {
     void current.context.close().catch(() => undefined);
   }, STOP_FADE_S * 1000 + 40);
+}
+
+/** The context a tap built and nothing has played in yet. See primeCoverSound. */
+let primed: AudioContext | null = null;
+
+function dropPrimed(): void {
+  const context = primed;
+  primed = null;
+
+  if (context !== null) {
+    void context.close().catch(() => undefined);
+  }
+}
+
+/**
+ * Builds and starts the audio context inside the tap, in silence, for a sound
+ * that playCoverSound will start a moment later. Never throws.
+ *
+ * The cover does not make its sound on the tap any more: it waits for the
+ * screen to settle first (see enterFullscreenThen), and by then the gesture is
+ * over. A context built then is one an iPhone refuses to start. So the tap
+ * builds it, and a silent sample is played in it, which is what unlocks it;
+ * the recording is started in the same context when the cover opens.
+ */
+export function primeCoverSound(sound: CoverSoundId | null | undefined): void {
+  if (sound === null || sound === undefined || !readyRecordings.has(sound)) {
+    return;
+  }
+
+  const Constructor = audioContextConstructor();
+
+  if (Constructor === null) {
+    return;
+  }
+
+  /* One at a time, as playCoverSound has it. */
+  stopCoverSound();
+
+  try {
+    const context = new Constructor();
+
+    if (context.state === "suspended") {
+      void context.resume().catch(() => undefined);
+    }
+
+    const silence = context.createBufferSource();
+    silence.buffer = context.createBuffer(1, 1, context.sampleRate);
+    silence.connect(context.destination);
+    silence.start();
+
+    primed = context;
+  } catch {
+    /* The cover opens in silence, or in a context built late. */
+  }
 }
 
 /** A page being left, or put in the background: the sound does not follow the guest out. */
@@ -264,7 +320,8 @@ export function restartCoverSound(): void {
  * Plays one cover's sound from its start, and never throws.
  *
  * Only if its recording is ready: one still on its way is left to land
- * unheard. A fresh context per open, closed when the recording has ended.
+ * unheard. A fresh context per open, the one the tap primed when it did,
+ * closed when the recording has ended.
  * Holding one for the life of the page would keep an audio device awake for a
  * sound that plays once.
  *
@@ -285,11 +342,15 @@ export function playCoverSound(sound: CoverSoundId | null | undefined, delayMs =
     return;
   }
 
+  /* The tap's own context, taken before the stop below would close it. */
+  const fromTap = primed;
+  primed = null;
+
   /* One at a time: a replay starts again from the top rather than over the last. */
   stopCoverSound();
 
   try {
-    const context = new Constructor();
+    const context = fromTap ?? new Constructor();
 
     const gain = context.createGain();
     gain.gain.value = VOLUME;

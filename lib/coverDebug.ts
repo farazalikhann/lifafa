@@ -58,6 +58,24 @@ export function coverDebugOn(): boolean {
   return on;
 }
 
+/**
+ * In fullscreen only the fullscreen element and what is inside it are drawn.
+ * On the guest's page that is the whole document, the log included; in the
+ * editor's preview it is the preview alone, so the log is moved inside it.
+ */
+function rehome(): void {
+  if (panel === null) {
+    return;
+  }
+
+  const home = document.fullscreenElement;
+  const parent = home !== null && home !== document.documentElement ? home : document.body;
+
+  if (panel.parentNode !== parent) {
+    parent.appendChild(panel);
+  }
+}
+
 function draw(): void {
   if (panel === null) {
     panel = document.createElement("pre");
@@ -81,6 +99,9 @@ function draw(): void {
       "pointer-events:none",
     ].join(";");
     document.body.appendChild(panel);
+    /* Now, and whenever the page goes into or out of fullscreen. */
+    document.addEventListener("fullscreenchange", rehome);
+    rehome();
   }
 
   panel.textContent = lines.slice(-SHOWN).join("\n");

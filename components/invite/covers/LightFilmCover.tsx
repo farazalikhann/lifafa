@@ -191,6 +191,12 @@ const useIsomorphicLayoutEffect =
  * still fades to the card, and for a film that never had a drawn cover that
  * soft fade is the whole of its fallback.
  *
+ * NOTHING HERE STARTS ON THE TAP ITSELF. The shell holds the cover closed,
+ * the still and the words as they were, until the browser has finished going
+ * into fullscreen and has painted at the new size, and hands this "opening"
+ * only then: a film started while the screen was still changing was a black
+ * screen on an Android phone. See enterFullscreenThen in lib/fullscreen.ts.
+ *
  * Under reduced motion the shell never hands this the "opening" phase: the
  * still crossfades to the card as one layer, and no film is requested.
  */
@@ -696,7 +702,7 @@ export default function LightFilmCover({
       return false;
     };
 
-    coverDebug(`TAP, film ${filmState.current}`);
+    coverDebug(`OPENING (the screen has settled), film ${filmState.current}`);
 
     /* Not in yet: waited for on the still, under the shimmer, and not for long. */
     if (!decide()) {

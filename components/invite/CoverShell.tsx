@@ -25,10 +25,11 @@ import type { Palette } from "@/lib/palettes";
 import {
   playCoverSound,
   preloadCoverSound,
+  primeCoverSound,
   restartCoverSound,
   stopCoverSound,
 } from "@/lib/coverSound";
-import { enterFullscreen } from "@/lib/fullscreen";
+import { enterFullscreen, enterFullscreenThen } from "@/lib/fullscreen";
 import type { CardLanguage } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 import type { FontPairId } from "@/types/style";
@@ -535,15 +536,18 @@ export default function CoverShell({
   );
 
   /**
-   * Whether this cover has already made its sound.
+   * Whether this cover has been tapped, or skipped: it is opened once.
    *
-   * A ref rather than the phase, and it is not redundant with the guard below.
-   * That guard lives inside a state updater, and React calls an updater twice
-   * in development and may call it again on a replayed render; a sound
-   * scheduled in there would be scheduled twice. This is read and set once, in
-   * the handler itself, where a tap happens exactly as often as it happens.
+   * A ref rather than the phase, because the phase does not change on the tap
+   * any more. The cover stays "closed" while the screen settles, and a second
+   * tap in that wait must find something to be turned away by. It is also what
+   * keeps the sound to one: read and set in the handler itself, where a tap
+   * happens exactly as often as it happens, and not in a state updater, which
+   * React may run twice.
    */
-  const soundedRef = useRef(false);
+  const tappedRef = useRef(false);
+  /** Calls off the wait for the screen, for a skip or an unmount during it. */
+  const cancelSettleRef = useRef<(() => void) | null>(null);
 
   /*
     How much of the bottom of the screen the names and the prompt take, from
@@ -587,6 +591,13 @@ export default function CoverShell({
   }, [title, prompt]);
 
   const handleOpen = useCallback((event: MouseEvent<HTMLButtonElement>): void => {
+    /* A second tap while the screen settles, or after: the cover is already on its way. */
+    if (tappedRef.current) {
+      return;
+    }
+
+    tappedRef.current = true;
+
     /*
       A click from the keyboard reports no position (its detail is 0), and
       neither does one a screen reader makes.
@@ -605,34 +616,75 @@ export default function CoverShell({
     }
 
     /*
-      The address bar goes with the tap too, and for the same reason the sound
-      does: fullscreen is only ever granted from inside a user gesture, so this
-      is the one moment on the whole page where it can be asked for. A guest
-      who has just tapped a wax seal is the guest most willing to be handed a
-      whole screen of invitation.
+      THE TAP ASKS FOR THE SCREEN, AND NOTHING ELSE MOVES UNTIL IT HAS IT.
 
-      Does nothing on an iPhone, which has no page fullscreen to give — see
-      lib/fullscreen.ts. Nothing below depends on the answer.
+      Fullscreen is only ever granted from inside a user gesture, so this is
+      the one moment it can be asked for, and it is asked for first. But the
+      browser takes its bars away a moment later, and lays the page out and
+      paints it again at the new height when it does. A cover that had begun
+      to open by then, its ground handed to its visual and its film just
+      started, was caught by that repaint: a black screen, on a real Android
+      phone. So the cover stays exactly as it is, closed, on its own opaque
+      ground, until the screen has settled and painted twice, and only then
+      does anything start. See enterFullscreenThen.
+
+      On an iPhone, which has no page fullscreen to give, that is two frames.
     */
-    enterFullscreen();
+    const sounds = !reducedMotion && durationMs > 0;
 
-    /*
-      The sound goes with the tap, not with the phase change.
-
-      Skipped under reduced motion, which opens with a short fade, and for a
-      cover with no time to run — a noise with no animation under it is a jump
-      scare, not a flourish. playCoverSound swallows everything else: a
-      browser with no Web Audio, or one that will not start a context, opens the
-      card in silence and says nothing about it.
-    */
-    if (!soundedRef.current && !reducedMotion && durationMs > 0) {
-      soundedRef.current = true;
-      playCoverSound(option.sound, soundDelayMs);
+    cancelSettleRef.current = enterFullscreenThen(() => {
+      cancelSettleRef.current = null;
 
       /*
-        And a tick under the thumb, where the phone can give one. On the same
-        terms as the sound and for the same reason. Guarded twice: an iPhone
-        has no `vibrate` at all, and a browser that has one may still refuse.
+        The sound goes with the cover's first movement.
+
+        Skipped under reduced motion, which opens with a short fade, and for a
+        cover with no time to run — a noise with no animation under it is a
+        jump scare, not a flourish. playCoverSound swallows everything else: a
+        browser with no Web Audio, or one that will not start a context, opens
+        the card in silence and says nothing about it.
+      */
+      if (sounds) {
+        playCoverSound(option.sound, soundDelayMs);
+      }
+
+      /* Still "closed" here: a skip during the wait calls this off before it runs. */
+      setPhase((current) => {
+        if (current !== "closed") {
+          return current;
+        }
+
+        if (!reducedMotion && durationMs <= 0) {
+          return "open";
+        }
+
+        /*
+          Less motion: the whole layer fades in REDUCED_FADE_MS with the card let
+          go at once under it, so the card is what the envelope fades into.
+        */
+        schedule(
+          reducedMotion ? REDUCED_FADE_MS : durationMs,
+          reducedMotion ? 0 : durationMs * revealAt,
+          reducedMotion ? 0 : durationMs * (burstAt ?? revealAt),
+        );
+
+        return "opening";
+      });
+    });
+
+    if (sounds) {
+      /*
+        The audio context is built here, inside the gesture, in silence: the
+        sound itself starts after it, and a context built then is one an
+        iPhone will not start. See primeCoverSound.
+      */
+      primeCoverSound(option.sound);
+
+      /*
+        And a tick under the thumb, where the phone can give one: on the tap
+        itself, so the guest knows it was felt while the screen settles.
+        Guarded twice: an iPhone has no `vibrate` at all, and a browser that
+        has one may still refuse.
       */
       if (option.haptic !== undefined && typeof navigator.vibrate === "function") {
         try {
@@ -642,33 +694,6 @@ export default function CoverShell({
         }
       }
     }
-
-    /*
-      The whole double tap guard. A second tap during "opening" would queue a
-      second timeout, and an impatient guest could stack several; the phase
-      itself is the lock, so there is no separate flag to keep in step.
-    */
-    setPhase((current) => {
-      if (current !== "closed") {
-        return current;
-      }
-
-      if (!reducedMotion && durationMs <= 0) {
-        return "open";
-      }
-
-      /*
-        Less motion: the whole layer fades in REDUCED_FADE_MS with the card let
-        go at once under it, so the card is what the envelope fades into.
-      */
-      schedule(
-        reducedMotion ? REDUCED_FADE_MS : durationMs,
-        reducedMotion ? 0 : durationMs * revealAt,
-        reducedMotion ? 0 : durationMs * (burstAt ?? revealAt),
-      );
-
-      return "opening";
-    });
   }, [
     burstAt,
     durationMs,
@@ -683,6 +708,10 @@ export default function CoverShell({
   const handleSkip = useCallback((): void => {
     /* Also a tap, so also a gesture the browser will honour. */
     enterFullscreen();
+    /* Skipped while the screen settles after a tap: that open is called off. */
+    tappedRef.current = true;
+    cancelSettleRef.current?.();
+    cancelSettleRef.current = null;
     clearTimer();
     /* Skipping part way through an open: the sound of it goes with it. */
     stopCoverSound();
@@ -691,6 +720,45 @@ export default function CoverShell({
 
   /** A timer outliving the component would call setState on a dead tree. */
   useEffect(() => clearTimer, [clearTimer]);
+  useEffect(
+    () => () => {
+      cancelSettleRef.current?.();
+      cancelSettleRef.current = null;
+    },
+    [],
+  );
+
+  /*
+    The page itself is painted the cover's colour for as long as this shell is
+    up, not only the cover's layer.
+
+    The site's body is its own dark ink, which nothing shows on an invitation
+    until the screen changes size: going into fullscreen, the browser draws
+    the newly uncovered strip from the page's own background before the cover
+    has been laid out over it, and that strip was the black a guest saw. With
+    html and body in the cover's ground, any such frame is the cover's colour.
+    Kept after the cover has gone, since a Skip goes into fullscreen as the
+    cover leaves; put back as it was when the shell unmounts.
+  */
+  const ground = colors.ground;
+
+  useEffect(() => {
+    if (!hasCover) {
+      return;
+    }
+
+    const html = document.documentElement;
+    const { body } = document;
+    const previousHtml = html.style.backgroundColor;
+    const previousBody = body.style.backgroundColor;
+    html.style.backgroundColor = ground;
+    body.style.backgroundColor = ground;
+
+    return () => {
+      html.style.backgroundColor = previousHtml;
+      body.style.backgroundColor = previousBody;
+    };
+  }, [hasCover, ground]);
 
   /*
     The opening sound runs on for a second or so after its cover has gone, as
@@ -898,7 +966,8 @@ export default function CoverShell({
             } as CSSProperties
           }
           ref={layerRef}
-          className="fixed inset-0 z-50 flex min-h-dvh w-full flex-col items-center justify-center"
+          /* dvh, not vh: the height the browser is showing now, bars or none. */
+          className="fixed inset-0 z-50 flex h-dvh min-h-dvh w-full flex-col items-center justify-center"
         >
           {visual}
 
