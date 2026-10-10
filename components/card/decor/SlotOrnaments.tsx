@@ -161,6 +161,46 @@ function FlameGlow(): ReactElement {
   );
 }
 
+/** Height of one of the pair beside the title on an opening that carries the names, in card px. */
+const OPENING_CORNER_HEIGHT = 48;
+
+/**
+ * One of the bottom-corner pair on a card whose opening carries the names
+ * (NamesOpening): stood beside the event's title at the foot of that screen,
+ * in a row with it, so it is next to the title and never over it, and under
+ * the frame and the names. Smaller than in the corners of a screen of its
+ * own, which that screen grew to hold.
+ *
+ * Not drawn on a card narrower than 390px: the row is 28px taller with the
+ * pair in it, and at 360 that height is the frame's.
+ */
+export function OpeningCorner({
+  entry,
+  side,
+  mirror = false,
+  accent,
+}: {
+  entry: PackOrnament;
+  side: "left" | "right";
+  /** Turned to face back into the card: one ornament alone, standing on the right. */
+  mirror?: boolean;
+  accent: string;
+}): ReactElement {
+  return (
+    <div aria-hidden="true" className="pointer-events-none shrink-0 max-[389px]:hidden">
+      <Placed
+        entry={entry}
+        height={OPENING_CORNER_HEIGHT}
+        instanceId={`opening-corner-${side}-${entry.id}`}
+        accent={accent}
+        style={mirror ? { transform: "scaleX(-1)" } : undefined}
+      >
+        {entry.id === "diya" && entry.src !== undefined ? <FlameGlow /> : null}
+      </Placed>
+    </div>
+  );
+}
+
 /**
  * The pair in the bottom corners of the names' screen, the same height and
  * the same distance from the edges. One ornament alone stands in both, the

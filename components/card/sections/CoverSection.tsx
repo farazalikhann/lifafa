@@ -25,7 +25,7 @@ import type { OccasionId } from "@/types/occasion";
  * One name, set in the pair's names face at the cover's hero size.
  *
  * Pulled out because the pair layout draws it twice and the single-line layout
- * once, and the three have to be the same size to the pixel — a first name a
+ * once (and the opening that carries the names, NamesOpening, draws it too), and the three have to be the same size to the pixel — a first name a
  * shade larger than a second one would read as a ranking.
  *
  * `break-words` is the whole defence against a long unbroken token — the canvas
@@ -38,7 +38,7 @@ import type { OccasionId } from "@/types/occasion";
  * Devanagari name hangs its matras above the headline, and at 1.05 the second
  * line's matras land in the first line's descenders.
  */
-function HeroName({
+export function HeroName({
   text,
   isPlaceholder,
   script,

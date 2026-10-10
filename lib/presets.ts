@@ -1,5 +1,6 @@
 import { deepEqual } from "@/lib/deepEqual";
 import type { DesignState } from "@/lib/designDefaults";
+import { DEFAULT_NAMES_FRAME } from "@/lib/namesFrame";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import { fitContrast } from "@/lib/contrast";
 import { getPalette } from "@/lib/palettes";
@@ -12,6 +13,7 @@ import {
 } from "@/lib/textColors";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import type {
+  NamesFrame,
   ButterflyStyle,
   CardBorderStyle,
   DecorIntensity,
@@ -94,6 +96,13 @@ interface PresetSettings {
    * a look that does not name it leaves the card's ground as the host had it.
    */
   royalTexture?: true;
+  /**
+   * The frame the names are set in, on a look for a card whose opening
+   * carries them. A look for such a card that names none gets the lotus ring,
+   * which is what the card has before anyone chooses; a look for any other
+   * card leaves the host's frame as it was, for it is not drawn there.
+   */
+  namesFrame?: NamesFrame;
   coverAnimation: CoverAnimationId;
   /**
    * The pack's shapes to switch on: what hangs, what sits in the corners, the
@@ -338,6 +347,8 @@ const PRESETS: readonly Preset[] = [
       coverAnimation: "fold-unfold",
       /* Om rather than Ganesh above the names: Shubh Vivah already draws Ganesh. */
       ornaments: ["marigold", "om", "kalash"],
+      /* Pink lotuses on ivory and rose, and the look's petals are lotus. */
+      namesFrame: "lotus",
       calligraphy: "shubhVivah",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
@@ -365,6 +376,8 @@ const PRESETS: readonly Preset[] = [
       coverAnimation: "fold-unfold",
       /* Kalash alone in the corners stands in both, the right one mirrored. */
       ornaments: ["marigold", "om", "kalash"],
+      /* A garland of marigold and mogra, under the marigold garland and in haldi and saffron. */
+      namesFrame: "varmala",
       calligraphy: "shriGaneshaya",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
@@ -390,6 +403,8 @@ const PRESETS: readonly Preset[] = [
       petalFlower: "lotus",
       coverAnimation: "fold-unfold",
       ornaments: ["toran", "om", "diya"],
+      /* Fine gold scrollwork, light enough for blush, and wide under the toran. */
+      namesFrame: "paisley",
       calligraphy: "shriGaneshaya",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
@@ -417,6 +432,8 @@ const PRESETS: readonly Preset[] = [
       petalFlower: "marigold",
       coverAnimation: "envelope-seal",
       ornaments: ["marigold", "om", "diya", "kalash"],
+      /* A carved gold arch on maroon: the palace doorway the look is named for. */
+      namesFrame: "jharokha",
       calligraphy: "shubhVivah",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
@@ -858,6 +875,15 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
           chosen: false,
         };
 
+  /*
+    The names' frame: the look's own, or the lotus ring for a look that names
+    none on a card whose opening carries the names, or the host's where the
+    look is for a card that draws no such frame.
+  */
+  const namesFrame: NamesFrame =
+    settings.namesFrame ??
+    (pack?.namesOpening === true ? DEFAULT_NAMES_FRAME : (design.namesFrame ?? DEFAULT_NAMES_FRAME));
+
   return {
     style: {
       fontPairId: settings.fontPairId ?? design.style.fontPairId,
@@ -895,6 +921,7 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
     ...(settings.royalTexture !== true && design.royalTexturePattern !== undefined
       ? { royalTexturePattern: design.royalTexturePattern }
       : null),
+    ...(namesFrame !== "lotus" ? { namesFrame } : null),
     ...(settings.dateReveal !== undefined
       ? { dateReveal: settings.dateReveal }
       : design.dateReveal === "scroll"
@@ -948,6 +975,16 @@ export function matchingPreset(design: DesignState): Preset | null {
       const compared = { ...applied };
       if (design.dateReveal === undefined) {
         delete compared.dateReveal;
+      }
+
+      /*
+        And for the names' frame. A card saved before there was a choice of
+        one has none stored, which is the lotus ring, and is still wearing
+        the look it was saved in, whichever frame that look has since been
+        given. So a card on the lotus ring is not told apart by its frame.
+      */
+      if (design.namesFrame === undefined) {
+        delete compared.namesFrame;
       }
 
       if (!hasInks) {

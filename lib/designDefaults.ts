@@ -14,6 +14,7 @@ import type {
   DecorIntensity,
   DecorMotion,
   FlyingKind,
+  NamesFrame,
   NatureKind,
   PetalFlower,
   PetalStyle,
@@ -64,6 +65,12 @@ export interface DesignState {
    * damask, so a design from before there was a choice is the same design.
    */
   royalTexturePattern?: Exclude<RoyalTexturePattern, "damask">;
+  /**
+   * The frame the names are set in, where it is not the lotus ring. Absent
+   * for the lotus ring, so a design from before there was a choice is the
+   * same design. See lib/namesFrame.ts.
+   */
+  namesFrame?: Exclude<NamesFrame, "lotus">;
 }
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);

@@ -55,6 +55,8 @@ import InvitedHeadingPanel from "@/components/create/InvitedHeadingPanel";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
+import NamesFramePanel from "@/components/create/NamesFramePanel";
+import { namesFrameOf } from "@/lib/namesFrame";
 import { pdfDownloadOn } from "@/lib/pdfDownload";
 import { royalTextureOn, royalTexturePatternOf } from "@/lib/royalTexture";
 import { dateRevealOf, scrollArtFor } from "@/lib/royalScroll";
@@ -103,6 +105,7 @@ import type {
   PetalFlower,
   RoyalTexturePattern,
   VenueIllustration,
+  NamesFrame,
   PetalStyle,
   CardBorderStyle,
   CardConfig,
@@ -188,6 +191,8 @@ interface EditorState {
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
   royalTexturePattern: RoyalTexturePattern;
+  /** The frame the opening sets the names in. The lotus ring unless the host picked another. */
+  namesFrame: NamesFrame;
   /** Whether a guest may keep the card as a PDF. On unless the host turned it off. */
   pdfDownload: boolean;
   /** The host's own choice of divider, or undefined while the tradition's default stands. */
@@ -252,6 +257,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     royalTexture: royalTextureOn(config.royalTexture),
     /* Missing on every card saved before there was a choice: the damask. */
     royalTexturePattern: royalTexturePatternOf(config.royalTexturePattern),
+    /* Missing on every card saved before there was a choice: the lotus ring. */
+    namesFrame: namesFrameOf(config.namesFrame),
     /* Missing on every card saved before the switch; those offer the copy. */
     pdfDownload: pdfDownloadOn(config.pdfDownload),
     divider: hasChosenDivider(config.divider) ? config.divider : undefined,
@@ -336,6 +343,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       ...(state.royalTexturePattern !== "damask"
         ? { royalTexturePattern: state.royalTexturePattern }
         : null),
+      /* Only ever stored when it is not the lotus ring, so an older card is stored as it was. */
+      ...(state.namesFrame !== "lotus" ? { namesFrame: state.namesFrame } : null),
       /* Only ever stored as off: a card that never had the key offers the copy. */
       ...(state.pdfDownload ? null : { pdfDownload: false }),
       /* Left off the card until the host chooses, so the tradition's default goes on applying. */
@@ -547,6 +556,7 @@ export default function CardEditor({
   const [royalTexturePattern, setRoyalTexturePattern] = useState(
     initial.royalTexturePattern,
   );
+  const [namesFrame, setNamesFrame] = useState(initial.namesFrame);
   const [pdfDownload, setPdfDownload] = useState(initial.pdfDownload);
 
   /*
@@ -917,6 +927,7 @@ export default function CardEditor({
     ...(dateReveal !== undefined ? { dateReveal } : null),
     ...(royalTexture ? { royalTexture: true as const } : null),
     ...(royalTexturePattern !== "damask" ? { royalTexturePattern } : null),
+    ...(namesFrame !== "lotus" ? { namesFrame } : null),
   };
 
   /**
@@ -956,6 +967,8 @@ export default function CardEditor({
     }
     /* A look that asks for the texture asks for the damask; see applyPreset. */
     setRoyalTexturePattern(next.royalTexturePattern ?? "damask");
+    /* The look's frame for the names, or the lotus ring; see applyPreset. */
+    setNamesFrame(next.namesFrame ?? "lotus");
   };
 
   /* The card as it stands, and the only place this component builds one. */
@@ -982,6 +995,7 @@ export default function CardEditor({
     venueIllustration,
     royalTexture,
     royalTexturePattern,
+    namesFrame,
     pdfDownload,
     divider,
     borderStyle,
@@ -1558,6 +1572,14 @@ export default function CardEditor({
                   onOrnamentConfigChange={setOrnamentConfig}
                   accordion={accordionFor("design")}
                 />
+                {/* Only for a card whose opening carries the names, which is where the frame is drawn. */}
+                {getTraditionPack(traditionId)?.namesOpening === true ? (
+                  <NamesFramePanel
+                    namesFrame={namesFrame}
+                    onNamesFrameChange={setNamesFrame}
+                    accordion={accordionFor("design")}
+                  />
+                ) : null}
                 {/* Under the opening it sits above: the calligraphy and greeting are chosen just before it. */}
                 <InvitedHeadingPanel
                   enabled={invitedHeading}

@@ -48,6 +48,8 @@ import BorderFrame, {
 } from "@/components/card/decor/BorderFrame";
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
+import NamesOpening from "@/components/card/NamesOpening";
+import { namesFrameArt, namesFrameOf } from "@/lib/namesFrame";
 import TopCorners, {
   topCornersHole,
   topCornersStrength,
@@ -309,6 +311,7 @@ function Blessing({
   theme,
   sizeClass,
   kind,
+  scriptOnly = false,
 }: {
   entry: PackBlessing;
   pack: TraditionPack;
@@ -316,6 +319,8 @@ function Blessing({
   /** The script line's size where the pack sets no block of its own. */
   sizeClass: string;
   kind: "greeting" | "blessing";
+  /** Only the script line: neither its reading nor its meaning. For an opening that also carries the names. */
+  scriptOnly?: boolean;
 }): ReactElement | null {
   if (entry.script.length === 0) {
     return null;
@@ -370,7 +375,7 @@ function Blessing({
     */
     <div
       className={`flex w-full flex-col items-center gap-1.5 ${
-        head !== null && kind === "blessing" ? "mt-2" : ""
+        head !== null && kind === "blessing" && !scriptOnly ? "mt-2" : ""
       }`}
     >
       {/*
@@ -396,7 +401,7 @@ function Blessing({
         an unmarked Latin line there has its punctuation pushed to the wrong
         end. They inherit the card's body font from the canvas root.
       */}
-      {entry.transliteration.length > 0 ? (
+      {!scriptOnly && entry.transliteration.length > 0 ? (
         <p
           dir="ltr"
           className={`w-full text-center wrap-anywhere italic ${englishClass}`}
@@ -407,7 +412,7 @@ function Blessing({
       ) : null}
 
       {/* Not where it is the script line over again: an English pack's meaning is its own text. */}
-      {entry.translation.length > 0 && entry.translation !== entry.script ? (
+      {!scriptOnly && entry.translation.length > 0 && entry.translation !== entry.script ? (
         <p
           dir="ltr"
           className={`w-full text-center wrap-anywhere ${englishClass}`}
@@ -418,7 +423,7 @@ function Blessing({
       ) : null}
 
       {/* Where a quoted blessing is from: small, and quieter than the meaning above it. */}
-      {entry.source !== undefined && entry.source.length > 0 ? (
+      {!scriptOnly && entry.source !== undefined && entry.source.length > 0 ? (
         <p
           dir="ltr"
           className="w-full text-center text-[calc(0.75*var(--card-rem,1rem)*var(--card-opening-text,1))] tracking-[0.04em]"
@@ -1062,9 +1067,16 @@ export default function CardCanvas({
     Not drawn while the calligraphy above it says the same phrase: the card
     would read it twice. The choice itself is untouched.
   */
-  const greeting = greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
-    ? null
-    : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
+  /*
+    And no greeting at all on a card whose opening carries the names: the
+    calligraphy heads it, and the host's stored greeting is left as it is.
+  */
+  const namesOpening = pack?.namesOpening === true;
+  const greeting =
+    namesOpening ||
+    greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
+      ? null
+      : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
   const blessing = blessingSaidByCalligraphy(config.ornamentConfig.blessingId, ornaments)
     ? null
     : (pack?.findBlessing(config.ornamentConfig.blessingId) ?? null);
@@ -1183,7 +1195,7 @@ export default function CardCanvas({
     has such a screen: the cover block renders and carries a head.
   */
   const cardHasHead =
-    (hasBlessing || calligraphy.length > 0) &&
+    (namesOpening || hasBlessing || calligraphy.length > 0) &&
     visible.some((block) => block.kind === "builtin" && block.id === "cover");
   const { ref: headRef, isOnScreen: headOnScreen } = useOnScreen<HTMLDivElement>(
     0.5,
@@ -1629,14 +1641,6 @@ export default function CardCanvas({
         />
 
         {/*
-          Where "stars" and "geometricStar" are drawn, and the only place either
-          one is: they do not hang, they do not divide and they do not frame, so
-          before this layer existed a host could switch them on and nothing at all
-          appeared. Gated on the tradition exactly as HangingLayer is, and given
-          the same measured alpha ceiling as the scattered motifs, because it sits
-          behind the same text.
-        */}
-        {/*
           What turns in the two top corners of the first screen. At the top of
           the card rather than pinned to the screen, so it scrolls away with
           that screen, and under the content column, so under everything. The
@@ -1651,6 +1655,14 @@ export default function CardCanvas({
           />
         ) : null}
 
+        {/*
+          Where "stars" and "geometricStar" are drawn, and the only place either
+          one is: they do not hang, they do not divide and they do not frame, so
+          before this layer existed a host could switch them on and nothing at all
+          appeared. Gated on the tradition exactly as HangingLayer is, and given
+          the same measured alpha ceiling as the scattered motifs, because it sits
+          behind the same text.
+        */}
         {pack !== null ? (
           <CornerLayer
             pack={pack}
@@ -1899,7 +1911,10 @@ export default function CardCanvas({
               blessing is never hidden behind a panel a guest has to scratch.
             */
             const isCover = block.kind === "builtin" && block.id === "cover";
-            const hasHead = isCover && (hasBlessing || calligraphy.length > 0);
+            /* Always, where the opening carries the names: they are a head by themselves. */
+            const opensWithNames = isCover && namesOpening;
+            const hasHead =
+              isCover && (opensWithNames || hasBlessing || calligraphy.length > 0);
 
             /*
               The screen a guest lands on: the blessing, when the card opens with
@@ -1949,7 +1964,60 @@ export default function CardCanvas({
             );
 
             const head =
-              hasHead ? (
+              opensWithNames && pack !== null ? (
+                /*
+                  The opening and the names as one screen; see NamesOpening.
+                  As the first screen it stops short of the cue by the room
+                  the divider after it needs, which is the card's ordinary
+                  divider and may be a garland: the names' own screen is not
+                  under it any more to take the small rule.
+                */
+                <NamesOpening
+                  rootRef={headRef}
+                  rootProps={headIsFirstScreen ? { [FIRST_SCREEN_ATTRIBUTE]: "" } : undefined}
+                  draft={draft}
+                  theme={effectiveTheme}
+                  occasionId={config.occasionId}
+                  language={language}
+                  invited={headIsFirstScreen ? invitedHeading : null}
+                  calligraphy={calligraphy.map((panel) => ({
+                    id: panel.id,
+                    aspect: panel.aspect,
+                    Component: panel.Component,
+                  }))}
+                  calligraphyGround={calligraphyGround(effectiveTheme.background)}
+                  blessing={
+                    blessing !== null ? (
+                      <Blessing
+                        kind="blessing"
+                        entry={blessing}
+                        pack={pack}
+                        theme={effectiveTheme}
+                        scriptOnly
+                        sizeClass="text-[calc(1.375rem*var(--card-opening-text,1))] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]"
+                      />
+                    ) : null
+                  }
+                  frame={namesFrameArt(namesFrameOf(config.namesFrame))}
+                  corners={slots.corners}
+                  /* Fitted to the screen only where the card is sized to one. */
+                  fitted={headIsFirstScreen && sizing === "viewport"}
+                  style={
+                    headIsFirstScreen
+                      ? {
+                          [sizing === "viewport" ? "height" : "minHeight"]:
+                            sectionFirstScreenBox,
+                          paddingTop: `max(${cardPx(clearance.y)}, ${cardPx(headPadTop)} * var(--card-opening, 1))`,
+                          paddingBottom: cardPx(FIRST_SCREEN_FOOT),
+                        }
+                      : {
+                          minHeight,
+                          paddingTop: cardPx(headPadTop),
+                          paddingBottom: cardPx(headPadBottom),
+                        }
+                  }
+                />
+              ) : hasHead ? (
                 /*
                   A screen of its own, not a header sitting on top of the names.
 
@@ -2099,8 +2167,9 @@ export default function CardCanvas({
                   of the next screen, showing above the cue, and the one thing
                   on the opening that says the card goes on.
                 */}
-                {headIsFirstScreen ? divider("head", false) : null}
-                {section}
+                {headIsFirstScreen && !opensWithNames ? divider("head", false) : null}
+                {/* Not where the opening carries the names: they have no screen of their own. */}
+                {opensWithNames ? null : section}
                 {blockKey(block) === calendarAnchor && !hasDateScreen && !still
                   ? saveTheDate
                   : null}

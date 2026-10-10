@@ -463,6 +463,81 @@
   }
 }
 
+/*
+  The opening that carries the names (components/card/NamesOpening.tsx).
+
+  The calligraphy is a box of the piece's own shape, as wide as the opening's
+  calligraphy has always been: 16px into the screen's padding on each side,
+  and never more than 20 card rem. The frame's row is the frame's full height.
+
+  FITTED TO A SCREEN, both are let move. Each starts at its least (four fifths
+  of the calligraphy, the frame's minimum) and is grown into whatever room the
+  screen has, the frame a thousand times as readily, so the frame is at its
+  full height before the calligraphy gains a pixel. `fit-content` as the least
+  the block may be is what happens when even that does not fit: it is as tall
+  as the two at their least, and nothing is laid over anything.
+
+  Container units, because a flex item's least and most are lengths, and the
+  calligraphy's are a share of the opening's own width. A browser without
+  them draws both at full size and lets the screen be as tall as that takes.
+*/
+.lifafa-opening-calligraphy {
+  flex: none;
+  width: min(
+    calc(100% + 2rem),
+    calc(20 * var(--card-rem, 1rem) * var(--card-opening, 1))
+  );
+}
+
+.lifafa-opening-frame-row {
+  flex: none;
+  height: var(--opening-frame-height);
+}
+
+.lifafa-opening-frame-cell {
+  --opening-frame-width: min(
+    100%,
+    calc(var(--opening-frame-height) * var(--opening-frame-aspect))
+  );
+}
+
+@supports (width: 1cqw) {
+  .lifafa-names-opening {
+    container-type: inline-size;
+  }
+
+  .lifafa-opening-frame-cell {
+    container-type: size;
+    --opening-frame-width: min(
+      100cqw,
+      calc(100cqh * var(--opening-frame-aspect))
+    );
+  }
+
+  .lifafa-names-opening-fitted {
+    min-height: fit-content;
+  }
+
+  .lifafa-names-opening-fitted > .lifafa-opening-calligraphy {
+    --opening-calligraphy-height: calc(
+      min(
+          calc(100cqw + 2rem),
+          calc(20 * var(--card-rem, 1rem) * var(--card-opening, 1))
+        ) / var(--opening-calligraphy-aspect)
+    );
+    flex: 1 0 calc(var(--opening-calligraphy-height) * var(--opening-calligraphy-min));
+    /* Or its own shape is its least, and it never comes down. */
+    min-height: 0;
+    max-height: var(--opening-calligraphy-height);
+  }
+
+  .lifafa-names-opening-fitted > .lifafa-opening-frame-row {
+    flex: 1000 0 var(--opening-frame-min);
+    height: auto;
+    max-height: var(--opening-frame-height);
+  }
+}
+
 /* The scroll cue's arrow: a small, slow drop. See InvitedCue. */
 @keyframes lifafa-cue-bounce {
   0%,

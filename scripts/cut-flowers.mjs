@@ -18,6 +18,7 @@
  *   node scripts/cut-flowers.mjs scratch      just the scratch panel's frames and foil
  *   node scripts/cut-flowers.mjs dividers     just the floral dividers
  *   node scripts/cut-flowers.mjs sikh         just the Sikh pack's ornaments
+ *   node scripts/cut-flowers.mjs names-frames just the frames a Hindu card sets its names in
  *   node scripts/cut-flowers.mjs scroll       just the royal scroll's rollers, paper and poster
  *   node scripts/cut-flowers.mjs couple       just the couple's figures, their card's corner and the monogram frame
  *   node scripts/cut-flowers.mjs floating     just the floating elements: what flies, drifts and falls
@@ -520,6 +521,50 @@ const SIKH = [
   softRim: true,
   source: "sikh religion",
   out: join("public", "decor", "sikh"),
+}));
+
+/**
+ * The frames a Hindu card sets its names in: a jharokha arch, a ring of
+ * lotuses, a pair of paisleys and a varmala. See lib/namesFrame.ts.
+ *
+ * Each arrived on pure black with an empty middle, and is cut the way the
+ * gurudwara arch is: flooded from the edges through true black only, so the
+ * gold's own dark shading stays solid, with the soft rim unmixed so no dark
+ * line is left round it on a cream card. The middle of the ring and of the
+ * varmala is black the flood cannot reach, closed in by the frame itself, and
+ * goes as a pocket (`pocketMin`); so do the gaps between a garland's flowers
+ * and the scrollwork's loops. The arch's doorway and the paisleys' middle
+ * are open to the edge, and the flood takes them.
+ *
+ * Each twice: the frame as the card draws it, and a small one for the
+ * editor's chip.
+ */
+const NAMES_FRAME_ART = [
+  { name: "jharokha", file: "Golden Marigold Rajasthani Arch.png", fit: { height: 900 }, thumb: { height: 240 } },
+  { name: "lotus", file: "Elegant Golden Lotus Wreath Frame.png", fit: { width: 760 }, thumb: { width: 240 } },
+  { name: "paisley", file: "Ornate Golden Paisley Filigree Frame.png", fit: { width: 760 }, thumb: { width: 240 } },
+  { name: "varmala", file: "Ornate Indian Wedding Floral Oval Frame.png", fit: { height: 900 }, thumb: { height: 240 } },
+];
+
+const NAMES_FRAMES = NAMES_FRAME_ART.flatMap(({ name, file, fit, thumb }) => [
+  { name, file, fit, quality: 76, alphaQuality: 80, out: join("public", "decor", "names-frames") },
+  {
+    name,
+    alias: `${name}-thumb`,
+    file,
+    fit: thumb,
+    quality: 78,
+    alphaQuality: 80,
+    out: join("public", "decor", "names-frames", "thumbs"),
+  },
+]).map((entry) => ({
+  ...entry,
+  background: "black",
+  solidInside: true,
+  floodBelow: LOW,
+  softRim: true,
+  pocketMin: 40,
+  source: "general photos",
 }));
 
 /**
@@ -1541,6 +1586,7 @@ const sets = [
   ...(which === "all" || which === "scratch" ? SCRATCH : []),
   ...(which === "all" || which === "dividers" ? DIVIDERS : []),
   ...(which === "all" || which === "sikh" ? SIKH : []),
+  ...(which === "all" || which === "names-frames" ? NAMES_FRAMES : []),
   ...(which === "all" || which === "scroll" ? SCROLL : []),
   ...(which === "all" || which === "couple" ? COUPLE : []),
   ...(which === "all" || which === "floating" ? FLOATING : []),

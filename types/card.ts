@@ -170,6 +170,12 @@ export type RoyalTexturePattern = "damask" | "paisley" | "jaal";
 /** The frame of roses a scratch panel is drawn in. See lib/cardDecor.ts. */
 export type ScratchFrame = "oval" | "rect";
 
+/**
+ * The frame the names are set in on a card whose opening carries them (a
+ * Hindu card). See lib/namesFrame.ts.
+ */
+export type NamesFrame = "jharokha" | "lotus" | "paisley" | "varmala";
+
 /** The garland drawn between two sections of the card, or none. See lib/cardDecor.ts. */
 export type DividerStyle = "rose" | "marigold" | "mogra" | "none";
 
@@ -363,6 +369,13 @@ export interface CardConfig {
    * tradition's own": read it through `dividerStyleOf` in lib/cardDecor.ts.
    */
   divider?: DividerStyle;
+  /**
+   * The frame the opening sets the names in, on a card whose opening carries
+   * them. Stored only when it is not the lotus ring: absent, and on every
+   * card saved before there was a choice, it is the lotus ring. Read it
+   * through `namesFrameOf` in lib/namesFrame.ts.
+   */
+  namesFrame?: NamesFrame;
   /**
    * Whether a guest may keep a printable copy of the card ("Save as PDF").
    * Stored only as `false`, by a host who turned it off: absent, and on every

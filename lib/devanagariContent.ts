@@ -183,8 +183,12 @@ export const SHLOKS: readonly Shlok[] = [
   },
 ];
 
-/** Sits under the shlok list in the editor. */
-export const SHLOK_NOTE = "The shlok appears at the top of your card.";
+/**
+ * Sits under the shlok list in the editor. The card sets the Devanagari and
+ * neither its reading nor its meaning; the list above still shows a meaning,
+ * so a host can tell one shlok from another.
+ */
+export const SHLOK_NOTE = "Your card shows the shlok in Hindi only.";
 
 /**
  * Whether an entry is the deliberate opt-out rather than one still awaiting its

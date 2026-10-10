@@ -267,7 +267,13 @@ export default function OrnamentPanel({
       : [
           { title: "Top border", ids: slots.top, oneOnly: true, columns: "grid-cols-2" },
           { title: "Top corners", ids: slots.topCorners ?? [], oneOnly: true, columns: "grid-cols-2" },
-          { title: "Above names", ids: slots.aboveNames, oneOnly: true, columns: "grid-cols-3" },
+          /* Not offered where the opening carries the names: the calligraphy heads that card, and nothing is drawn above the names. */
+          {
+            title: "Above names",
+            ids: pack.namesOpening === true ? [] : slots.aboveNames,
+            oneOnly: true,
+            columns: "grid-cols-3",
+          },
           { title: "Frame", ids: slots.frame ?? [], oneOnly: true, columns: "grid-cols-2" },
           { title: slots.sidesLabel ?? "Side flags", ids: slots.sides ?? [], oneOnly: true, columns: "grid-cols-2" },
           {
@@ -421,13 +427,18 @@ export default function OrnamentPanel({
           </div>
 
           <MutedNote>
-            A line of calligraphy sits at the head of your card, above the
-            greeting.
+            {pack.namesOpening === true
+              ? `A line of calligraphy sits at the head of your card, above the ${pack.blessingLabel.toLowerCase()} and your names.`
+              : "A line of calligraphy sits at the head of your card, above the greeting."}
           </MutedNote>
         </div>
       ) : null}
 
-      {/* 3 — Greeting */}
+      {/*
+        3 — Greeting. Not offered where the card draws none (`namesOpening`):
+        the host's stored greeting is kept, untouched, and simply not shown.
+      */}
+      {pack.namesOpening === true ? null : (
       <div className="flex flex-col gap-2.5">
         <GroupHeading>Greeting</GroupHeading>
 
@@ -445,6 +456,7 @@ export default function OrnamentPanel({
           </MutedNote>
         ) : null}
       </div>
+      )}
 
       {/* 4 — Dua, or shlok, or whatever this tradition calls the slot */}
       <div className="flex flex-col gap-2.5">
