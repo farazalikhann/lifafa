@@ -4,7 +4,12 @@ import type { CSSProperties, ReactElement, ReactNode, Ref } from "react";
 import FrameStage from "@/components/card/FrameStage";
 import { OpeningCorner } from "@/components/card/decor/SlotOrnaments";
 import { HeroName } from "@/components/card/sections/CoverSection";
-import { placeholderOpacity, resolve, resolveCoverNames } from "@/lib/cardFormat";
+import {
+  firstNameOf,
+  placeholderOpacity,
+  resolve,
+  resolveCoverNames,
+} from "@/lib/cardFormat";
 import type { FrameArt } from "@/lib/cardDecor";
 import { cardCopy } from "@/lib/cardLanguage";
 import { cardPx } from "@/lib/cardScale";
@@ -22,18 +27,28 @@ import type { OccasionId } from "@/types/occasion";
  * the event's title under it. The names had a screen of their own after the
  * opening; here they are what the opening ends on.
  *
+ * FIRST NAMES IN THE FRAME. "Aarav", the joining word, "Ananya": the frame
+ * is where the names are largest, and a surname halves them. The names in
+ * full are on Meet the Couple, in the band pinned to the top of the screen
+ * and everywhere else the card has always set them. See firstNameOf.
+ *
  * ONE SCREEN, AND WHAT GIVES WAY TO KEEP IT ONE. As the first screen of a
  * card sized to the phone, the block is exactly as tall as the room above the
- * scroll cue, and two things in it are let move: the calligraphy, between its
- * full size and four fifths of it, and the frame, between FRAME_MIN and
- * FRAME_HEIGHT. Everything else is the size it is. Both start at their least
- * and are grown into the room there is, the frame first by a factor of a
- * thousand, so the calligraphy is only ever smaller than full while the frame
- * is already at its full height: read the other way, on a shorter screen the
- * calligraphy comes down first, by up to a fifth, and only then the frame.
- * If even the least of both does not fit, the block is as tall as they need
+ * scroll cue, and three things in it are let move: the calligraphy, between
+ * its full size and three quarters of it; the two gaps either side of the
+ * frame, between GAP and GAP_MIN; and the frame, between FRAME_MIN and
+ * FRAME_HEIGHT. Everything else is the size it is. All three start at their
+ * least and are grown into the room there is, the frame first, then the
+ * gaps, then the calligraphy, each a thousand times as readily as the next:
+ * read the other way, on a shorter screen the calligraphy comes down first,
+ * by up to a quarter, then the gaps close, and only then the frame. If even
+ * the least of all three does not fit, the block is as tall as they need
  * (`min-height: fit-content`) and the screen runs on under the cue; nothing
  * is cut off or laid over anything else.
+ *
+ * THE FRAME IS AS WIDE AS THE CARD LETS IT BE: out through the screen's own
+ * side padding to where a border's flowers begin, less a little air. A wide
+ * frame is bound by that width and a tall one by the height it is given.
  *
  * Anywhere else (the editor's frame, a printed sheet, a card whose host moved
  * the names down) nothing has to fit a screen, and both are their full size.
@@ -49,11 +64,32 @@ import type { OccasionId } from "@/types/occasion";
  */
 
 /** The frame's full height and its least, in card px. */
-const FRAME_HEIGHT = 240;
+const FRAME_HEIGHT = 300;
 const FRAME_MIN = 120;
 
 /** The least the calligraphy is drawn at, as a share of its full size. */
-const CALLIGRAPHY_MIN = 0.8;
+const CALLIGRAPHY_MIN = 0.75;
+
+/** The gap either side of the frame, and the least it closes to, in card px. */
+const GAP = 12;
+const GAP_MIN = 6;
+
+/**
+ * The joining word: this share of the names' size, and never drawn under
+ * JOINER_MIN_PX. The names are brought down a size to fit the frame
+ * (FrameStage, which says by how much in --frame-fit), so the least is
+ * divided by that to come out at 13px as drawn.
+ */
+const JOINER_SHARE = 0.45;
+const JOINER_MIN_PX = 13;
+
+/**
+ * The names' leading inside the frame. A script face is set looser than this
+ * on a screen of its own, for its swashes; here the joining word is between
+ * the two names, the swashes have that to reach into, and every pixel of
+ * height the stack gives back is the names' size.
+ */
+const NAMES_LEADING = "0.9";
 
 export interface OpeningCalligraphy {
   id: string;
@@ -114,12 +150,20 @@ export default function NamesOpening({
     <div
       ref={rootRef}
       {...rootProps}
-      className={`lifafa-names-opening relative flex flex-col items-center justify-center gap-3 px-7 text-center ${
+      className={`lifafa-names-opening relative flex flex-col items-center justify-center px-7 text-center ${
         fitted ? "lifafa-names-opening-fitted" : ""
       }`}
-      style={style}
+      style={
+        {
+          ...style,
+          "--opening-gap": cardPx(GAP),
+          "--opening-gap-min": cardPx(GAP_MIN),
+        } as CSSProperties
+      }
     >
-      {invited}
+      {invited !== null && invited !== undefined && invited !== false ? (
+        <div className="lifafa-opening-fixed-gap">{invited}</div>
+      ) : null}
 
       {calligraphy.map((panel) => (
         <div
@@ -129,7 +173,7 @@ export default function NamesOpening({
             the piece drawn as tall as the box and centred: so it comes down
             whole, not squashed. See .lifafa-opening-calligraphy.
           */
-          className="lifafa-opening-calligraphy flex justify-center"
+          className="lifafa-opening-calligraphy lifafa-opening-fixed-gap flex justify-center"
           style={
             {
               aspectRatio: String(panel.aspect),
@@ -150,8 +194,11 @@ export default function NamesOpening({
 
       {blessing}
 
+      {/* The two gaps that close before the frame gives anything up; see .lifafa-opening-gap. */}
+      <div aria-hidden="true" className="lifafa-opening-gap" />
+
       <div
-        className="lifafa-opening-frame-row -mx-4 flex justify-center self-stretch"
+        className="lifafa-opening-frame-row -mx-7 flex justify-center self-stretch"
         style={
           {
             "--opening-frame-height": cardPx(FRAME_HEIGHT),
@@ -171,21 +218,40 @@ export default function NamesOpening({
           {/* As large as fits the cell both ways; the cell says how in globals.css. */}
           <FrameStage art={frame} width="var(--opening-frame-width)" eager>
             {names.kind === "pair" ? (
-              /* Three lines, one unit, as the names' own screen set them. */
-              <div className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center gap-1">
-                <HeroName text={names.first} isPlaceholder={false} script={copy.script} />
+              /*
+                Three lines, one unit, centred in the frame's opening. The
+                group is set at the names' own size, so the joining word can
+                be a share of it.
+              */
+              <div
+                className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center gap-0.5 text-[calc(2.4375rem*var(--card-names-scale,1))] sm:text-[calc(2.75*var(--card-rem,1rem)*var(--card-names-scale,1))]"
+                style={{ "--card-names-leading": NAMES_LEADING } as CSSProperties}
+              >
+                <HeroName text={firstNameOf(names.first)} isPlaceholder={false} script={copy.script} />
+                {/*
+                  In the accent, as the theme resolves it for small text, and
+                  letter spaced. Padded on the left by its tracking, which
+                  otherwise trails the last letter and sets the word off
+                  centre.
+                */}
                 <p
-                  className={`text-[1.1rem] tracking-[0.22em] break-words lowercase sm:text-[calc(1.2*var(--card-rem,1rem))] ${
+                  className={`pl-[0.22em] tracking-[0.22em] break-words lowercase ${
                     copy.script === "devanagari" ? "leading-normal" : "leading-none"
                   }`}
-                  style={{ color: textRoles(theme).mark }}
+                  style={{
+                    color: textRoles(theme).mark,
+                    fontSize: `max(${JOINER_SHARE}em, calc(${JOINER_MIN_PX}px / var(--frame-fit, 1)))`,
+                  }}
                 >
                   {names.joiner}
                 </p>
-                <HeroName text={names.second} isPlaceholder={false} script={copy.script} />
+                <HeroName text={firstNameOf(names.second)} isPlaceholder={false} script={copy.script} />
               </div>
             ) : (
-              <div className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center">
+              <div
+                className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center"
+                style={{ "--card-names-leading": NAMES_LEADING } as CSSProperties}
+              >
                 <HeroName
                   text={names.text}
                   isPlaceholder={names.isPlaceholder}
@@ -198,7 +264,9 @@ export default function NamesOpening({
 
       </div>
 
-      {/* The title, between the pair where the card has one: let out into the screen's padding, as the frame is. */}
+      <div aria-hidden="true" className="lifafa-opening-gap" />
+
+      {/* The title, between the pair where the card has one: let out into the screen's padding. */}
       <div className="-mx-4 flex items-end justify-center gap-2 self-stretch">
         {corners !== null ? (
           <OpeningCorner entry={corners.left} side="left" accent={theme.accent} />

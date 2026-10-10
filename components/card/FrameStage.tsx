@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   useEffect,
   useRef,
   useState,
@@ -185,7 +186,13 @@ export default function FrameStage({
             letting it run under the frame.
           */
           className="flex w-fit min-w-full shrink-0 flex-col items-center text-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none"
-          style={{ transform: `scale(${(fit * (settle ? 0.92 : 1)).toFixed(3)})` }}
+          style={
+            {
+              transform: `scale(${(fit * (settle ? 0.92 : 1)).toFixed(3)})`,
+              /* For content with a line that must not be drawn under a size: it can set that size over this. */
+              "--frame-fit": fit.toFixed(3),
+            } as CSSProperties
+          }
         >
           {children}
         </div>

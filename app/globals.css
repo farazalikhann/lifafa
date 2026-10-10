@@ -470,10 +470,12 @@
   calligraphy has always been: 16px into the screen's padding on each side,
   and never more than 20 card rem. The frame's row is the frame's full height.
 
-  FITTED TO A SCREEN, both are let move. Each starts at its least (four fifths
-  of the calligraphy, the frame's minimum) and is grown into whatever room the
-  screen has, the frame a thousand times as readily, so the frame is at its
-  full height before the calligraphy gains a pixel. `fit-content` as the least
+  FITTED TO A SCREEN, three things are let move: the calligraphy, the two gaps
+  either side of the frame, and the frame. Each starts at its least and is
+  grown into whatever room the screen has, the frame first, then the gaps,
+  then the calligraphy, each a thousand times as readily as the next, so the
+  frame is at its full height before a gap opens, and the gaps are open
+  before the calligraphy gains a pixel. `fit-content` as the least
   the block may be is what happens when even that does not fit: it is as tall
   as the two at their least, and nothing is laid over anything.
 
@@ -494,9 +496,20 @@
   height: var(--opening-frame-height);
 }
 
+/* Under the heading and under the calligraphy: a gap that does not move. */
+.lifafa-opening-fixed-gap {
+  margin-bottom: var(--opening-gap);
+}
+
+/* Either side of the frame: a gap that closes before the frame gives anything up. */
+.lifafa-opening-gap {
+  flex: none;
+  height: var(--opening-gap);
+}
+
 .lifafa-opening-frame-cell {
   --opening-frame-width: min(
-    100%,
+    calc(100% - 4px),
     calc(var(--opening-frame-height) * var(--opening-frame-aspect))
   );
 }
@@ -509,7 +522,7 @@
   .lifafa-opening-frame-cell {
     container-type: size;
     --opening-frame-width: min(
-      100cqw,
+      calc(100cqw - 4px),
       calc(100cqh * var(--opening-frame-aspect))
     );
   }
@@ -531,8 +544,14 @@
     max-height: var(--opening-calligraphy-height);
   }
 
+  .lifafa-names-opening-fitted > .lifafa-opening-gap {
+    flex: 1000 0 var(--opening-gap-min);
+    height: auto;
+    max-height: var(--opening-gap);
+  }
+
   .lifafa-names-opening-fitted > .lifafa-opening-frame-row {
-    flex: 1000 0 var(--opening-frame-min);
+    flex: 1000000 0 var(--opening-frame-min);
     height: auto;
     max-height: var(--opening-frame-height);
   }

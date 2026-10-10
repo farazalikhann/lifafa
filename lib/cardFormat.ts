@@ -82,6 +82,35 @@ export function resolve(value: string, placeholder: string): FieldValue {
    thread and another after tapping through.
    --------------------------------------------------------------------------- */
 
+/**
+ * Words that come before a name and are not it: a title or a short prefix. A
+ * name that opens with one keeps the word after it too, so "Dr. Aarav Sharma"
+ * is "Dr. Aarav" and "Md Imran Khan" is "Md Imran". Compared without case
+ * and without a closing full stop; any word that ends in a full stop counts
+ * as one whether it is listed or not.
+ */
+const NAME_PREFIXES = new Set(["dr", "mr", "mrs", "ms", "smt", "shri", "sri", "md", "mohd"]);
+
+/**
+ * The first name of a name as the host typed it: its first word, or its
+ * first two where the first is a title or prefix. A name of one word is that
+ * word. For where the card has room for a first name only, the frame on an
+ * opening that carries the names; everywhere else sets the name in full.
+ */
+export function firstNameOf(name: string): string {
+  const words = name.trim().split(/\s+/).filter((word) => word.length > 0);
+
+  if (words.length <= 1) {
+    return words[0] ?? "";
+  }
+
+  const first = words[0];
+  const isPrefix =
+    first.endsWith(".") || NAME_PREFIXES.has(first.replace(/\.$/, "").toLowerCase());
+
+  return isPrefix ? `${first} ${words[1]}` : first;
+}
+
 /** Used when both names are filled in but the joining word was left blank. */
 const JOINER_FALLBACK = "&";
 

@@ -536,14 +536,18 @@ const SIKH = [
  * and the scrollwork's loops. The arch's doorway and the paisleys' middle
  * are open to the edge, and the flood takes them.
  *
+ * The arch and the varmala are the wide ones: the first of each was taller
+ * than it was wide, and a tall frame on a phone is a narrow one, with the
+ * names set small to fit between its sides.
+ *
  * Each twice: the frame as the card draws it, and a small one for the
  * editor's chip.
  */
 const NAMES_FRAME_ART = [
-  { name: "jharokha", file: "Golden Marigold Rajasthani Arch.png", fit: { height: 900 }, thumb: { height: 240 } },
+  { name: "jharokha", file: "Ornate Golden Marigold Archway.png", fit: { width: 760 }, thumb: { width: 240 } },
   { name: "lotus", file: "Elegant Golden Lotus Wreath Frame.png", fit: { width: 760 }, thumb: { width: 240 } },
   { name: "paisley", file: "Ornate Golden Paisley Filigree Frame.png", fit: { width: 760 }, thumb: { width: 240 } },
-  { name: "varmala", file: "Ornate Indian Wedding Floral Oval Frame.png", fit: { height: 900 }, thumb: { height: 240 } },
+  { name: "varmala", file: "Ornate Indian Floral Garland Frame.png", fit: { width: 760 }, thumb: { width: 240 } },
 ];
 
 const NAMES_FRAMES = NAMES_FRAME_ART.flatMap(({ name, file, fit, thumb }) => [

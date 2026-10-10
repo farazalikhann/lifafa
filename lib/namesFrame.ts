@@ -29,29 +29,33 @@ export interface NamesFrameArt extends FrameArt {
 /*
   `words` is each frame's empty opening, as shares of its picture: the box
   the names are set in, the way GURUDWARA_ARCH_DOORWAY is the Sikh arch's.
+  The names are centred in it both ways.
 
-  MEASURED ON THE PUBLISHED FILES, as the largest upright box of clear pixels
-  that holds the picture's middle, and then brought in a little on every side
-  for air, so a name that fills its box still stands off the artwork:
+  MEASURED ON THE PUBLISHED FILES, row by row, as the span of clear pixels
+  about the picture's middle, and then brought in a little on every side for
+  air, so a name that fills its box still stands off the artwork:
 
-    jharokha   clear from 18.3% to 81.6% across between the pillars, and from
-               34.1% down, under the lowest cusp of the arch and its marigold
-               swag, to the foot of the picture
-    lotus      clear from 22.5% to 77.5% across and 13.1% to 64.5% down: inside
+    jharokha   the wide arch. Clear from 10% to 90% across between the
+               pillars from 56% down to the foot of the picture, and from
+               13.5% to 86.3% at 51%; above that the cusps and the marigold
+               swags close in. The box is the open part below the crown, the
+               full width between the pillars.
+    lotus      clear from 22.7% to 79.4% across and 15.1% to 63.7% down: inside
                the ring, above the two lotuses that lean in at the bottom
-    paisley    clear from 28.3% to 71.6% across between the two paisleys and
-               27% to 71.7% down between the two rows of scrollwork
-    varmala    clear from 22.5% to 77.9% across and 21.7% to 65.8% down: inside
-               the garland, under the tassels that hang from its top
+    paisley    clear from 30.5% to 69.3% across between the two paisleys, from
+               26% to 72% down between the two rows of scrollwork
+    varmala    the wide garland. Clear from 29% down, under the tassels that
+               hang from its top, to 64%, where it is clear from 25% to 76.5%
+               across; wider above that
 
   `width` is not read for these: the opening sizes the frame to the room it
   has (NamesOpening). It is the most the frame is ever drawn at.
 */
 const ART: Record<NamesFrame, NamesFrameArt> = {
-  jharokha: art("jharokha", 659 / 900, { x: 0.2, y: 0.36, width: 0.6, height: 0.6 }),
-  lotus: art("lotus", 760 / 703, { x: 0.24, y: 0.15, width: 0.52, height: 0.48 }),
-  paisley: art("paisley", 760 / 445, { x: 0.3, y: 0.285, width: 0.4, height: 0.415 }),
-  varmala: art("varmala", 670 / 900, { x: 0.245, y: 0.235, width: 0.51, height: 0.405 }),
+  jharokha: art("jharokha", 760 / 549, { x: 0.13, y: 0.52, width: 0.74, height: 0.45 }),
+  lotus: art("lotus", 760 / 703, { x: 0.24, y: 0.16, width: 0.54, height: 0.465 }),
+  paisley: art("paisley", 760 / 445, { x: 0.31, y: 0.265, width: 0.38, height: 0.445 }),
+  varmala: art("varmala", 760 / 507, { x: 0.28, y: 0.31, width: 0.44, height: 0.33 }),
 };
 
 function art(name: string, aspect: number, words: FrameArt["words"]): NamesFrameArt {
@@ -59,7 +63,7 @@ function art(name: string, aspect: number, words: FrameArt["words"]): NamesFrame
     src: `/decor/names-frames/${name}.webp`,
     thumb: `/decor/names-frames/thumbs/${name}.webp`,
     aspect,
-    width: 300,
+    width: 340,
     words,
   };
 }
