@@ -8,10 +8,26 @@ import CollapsibleSection, {
 import { scrollArt, type ScrollVariant } from "@/lib/royalScroll";
 import type { DateReveal } from "@/types/card";
 
-const REVEALS: readonly { id: DateReveal; label: string; hint: string }[] = [
-  { id: "scroll", label: "Royal scroll", hint: "Unrolls as the guest reaches the date." },
-  { id: "scratch", label: "Scratch to reveal", hint: "The guest scratches gold foil off the date." },
-  { id: "simple", label: "Simple", hint: "The date is simply there." },
+/* `summary` is the section's collapsed line, where "Scratch to reveal" is the name of the section below. */
+const REVEALS: readonly {
+  id: DateReveal;
+  label: string;
+  summary: string;
+  hint: string;
+}[] = [
+  {
+    id: "scroll",
+    label: "Royal scroll",
+    summary: "Royal scroll",
+    hint: "Unrolls as the guest reaches the date.",
+  },
+  {
+    id: "scratch",
+    label: "Scratch to reveal",
+    summary: "Scratch",
+    hint: "The guest scratches gold foil off the date.",
+  },
+  { id: "simple", label: "Simple", summary: "Simple", hint: "The date is simply there." },
 ];
 
 /** A scroll's two rollers and what is between them, at thumbnail size: the picture of the whole scroll. */
@@ -78,9 +94,11 @@ function SimplePreview(): ReactElement {
  * calls, and the card will not draw both even if a saved one asks for it
  * (lib/royalScroll.ts).
  *
- * The scratch panel's own section, "Reveal effect", is still where a host
- * hides the venue or the countdown, and picks the panel's frame. Hiding the
- * date there and choosing Scratch here are the same act.
+ * THIS SECTION OWNS THE DATE, AND NOTHING ELSE DOES. A scratch panel over the
+ * date is chosen here and only here. The section below, "Scratch to reveal",
+ * puts the panel over the venue or the countdown and has no say over the
+ * date: it used to offer "Hide the date" as well, and choosing it there
+ * quietly took a host's royal scroll away up here.
  */
 export default function DateRevealPanel({
   dateReveal,
@@ -101,7 +119,7 @@ export default function DateRevealPanel({
   return (
     <CollapsibleSection
       title="Date reveal"
-      summary={current?.label}
+      summary={current?.summary}
       {...sectionState(accordion, "date-reveal")}
     >
       <div className="grid grid-cols-3 gap-2">

@@ -24,7 +24,7 @@ import PdfPanel from "@/components/create/PdfPanel";
 import OccasionGrid from "@/components/create/OccasionGrid";
 import PreviewBar from "@/components/create/PreviewBar";
 import ReplyFormPanel from "@/components/create/ReplyFormPanel";
-import RevealPanel from "@/components/create/RevealPanel";
+import RevealPanel, { type ScratchSection } from "@/components/create/RevealPanel";
 import SectionManager from "@/components/create/SectionManager";
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TraditionPicker from "@/components/create/TraditionPicker";
@@ -541,11 +541,12 @@ export default function CardEditor({
   const [pdfDownload, setPdfDownload] = useState(initial.pdfDownload);
 
   /*
-    ONE REVEAL ON THE DATE, NEVER TWO. The royal scroll and the scratch panel
-    are both chosen here, and choosing either takes the other off the date:
-    the scroll or the plain date clears a scratch panel that was over the date
-    (one over the venue or the countdown is another section's and is left),
-    and Scratch puts the panel on the date.
+    THE DATE'S REVEAL, AND THE ONLY PLACE IT IS SET. The royal scroll and the
+    scratch panel are both chosen here, and choosing either takes the other
+    off the date: the scroll or the plain date clears a scratch panel that
+    was over the date, and only one that was over the date; one over the venue
+    or the countdown is the section below's, and is left exactly as it is.
+    Scratch puts the card's one panel on the date.
   */
   const handleDateReveal = useCallback(
     (next: DateReveal) => {
@@ -561,22 +562,21 @@ export default function CardEditor({
   );
 
   /*
-    The scratch panel's own control. Putting the panel on the date is choosing
-    Scratch for the date, scroll or no scroll; moving it off the date leaves a
-    card that was on Scratch with a plain date.
+    "Scratch to reveal": the panel over the venue or the countdown, or off.
+    It sets that and nothing else. It cannot put the panel on the date, which
+    is not among its options, and it never touches the date's reveal: a royal
+    scroll on the date and a scratch panel on the venue are two choices in two
+    sections, and changing one leaves the other alone. While the date has the
+    panel this section is switched off, so it is never asked to take it away.
   */
-  const handleScratchTarget = useCallback(
-    (next: ScratchTarget) => {
-      setScratchTarget(next);
+  const handleScratchSection = useCallback((next: ScratchSection) => {
+    setScratchTarget(next);
+  }, []);
 
-      if (next === "date") {
-        setDateReveal("scratch");
-      } else if (dateRevealOf(dateReveal, scratchTarget) === "scratch") {
-        setDateReveal("simple");
-      }
-    },
-    [dateReveal, scratchTarget],
-  );
+  /* The way out the switched-off section offers: the date shown plainly, the panel free. */
+  const handleShowDateSimply = useCallback(() => {
+    handleDateReveal("simple");
+  }, [handleDateReveal]);
   const [divider, setDivider] = useState(initial.divider);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
   const [musicUrl, setMusicUrl] = useState<string | null>(initial.musicUrl);
@@ -933,7 +933,10 @@ export default function CardEditor({
     setCoverAnimation(next.coverAnimation);
     setTraditionId(next.traditionId);
     setOrnamentConfig(next.ornamentConfig);
-    /* A look whose date unrolls on the scroll takes any scratch panel off that date. */
+    /*
+      A look whose date unrolls on the scroll takes a scratch panel off that
+      date, and only off the date: one over the venue or the countdown stays.
+    */
     setDateReveal(next.dateReveal);
     if (next.dateReveal === "scroll" && scratchTarget === "date") {
       setScratchTarget("none");
@@ -1577,7 +1580,8 @@ export default function CardEditor({
                 />
                 <RevealPanel
                   scratchTarget={scratchTarget}
-                  onScratchTargetChange={handleScratchTarget}
+                  onScratchSectionChange={handleScratchSection}
+                  onShowDateSimply={handleShowDateSimply}
                   scratchFrame={scratchFrame}
                   onScratchFrameChange={setScratchFrame}
                   accordion={accordionFor("design")}

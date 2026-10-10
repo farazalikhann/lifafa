@@ -1,22 +1,24 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
 import type { ScratchFrame, ScratchTarget } from "@/types/card";
 
+/** What this section can put the panel over: everything but the date, which has its own. */
+export type ScratchSection = Exclude<ScratchTarget, "date">;
+
 /*
-  Labelled by what the host is choosing to hide rather than by the mechanism,
-  because that is the decision they are actually making. Only one section can be
-  hidden, so these are radio-like pills rather than a pair of toggles.
+  Named for the section the panel goes over. Only one can have it, so these
+  are radio-like pills rather than a pair of toggles. The date is not among
+  them: a scratch panel over the date is chosen under "Date reveal".
 */
-const SCRATCH_TARGETS: readonly { id: ScratchTarget; label: string }[] = [
+const SCRATCH_SECTIONS: readonly { id: ScratchSection; label: string }[] = [
   { id: "none", label: "Off" },
-  { id: "date", label: "Hide the date" },
-  { id: "venue", label: "Hide the venue" },
-  { id: "countdown", label: "Hide the countdown" },
+  { id: "venue", label: "Venue" },
+  { id: "countdown", label: "Countdown" },
 ];
 
 /* The frame of roses the panel is drawn in. */
@@ -28,6 +30,7 @@ const SCRATCH_FRAMES: readonly { id: ScratchFrame; label: string }[] = [
 function pillClass(isSelected: boolean): string {
   return [
     "min-h-11 rounded-full border px-3.5 text-[0.8125rem] font-medium transition-colors duration-150",
+    "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-[var(--lifafa-muted)]",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]",
     isSelected
       ? "border-transparent bg-[var(--lifafa-ink-raised)] text-[var(--lifafa-cream)] ring-2 ring-[var(--lifafa-marigold)]"
@@ -36,51 +39,77 @@ function pillClass(isSelected: boolean): string {
 }
 
 /**
- * The scratch panel, and which section it covers.
+ * The scratch panel over the venue or the countdown.
  *
  * Was the fourth group inside StylePanel. It is a panel of its own now because
  * the editor's tabs put it under Decoration and left the typography, the
  * palettes and the borders under Design: this is something a guest does to the
- * card, not a way the card looks. The pills and the copy are unchanged; only the
- * wrapper around them is new, and it is the same collapsible section the other
- * panels in its tab use.
+ * card, not a way the card looks.
  *
- * Offered under Design, after the section divider: it moved there from Extras
- * because its frame of flowers is chosen with the card's other ornament. What
- * it saves, and how the card draws it, did not move with it.
+ * Offered under Design, after the date's own reveal: it moved there from
+ * Extras because its frame of flowers is chosen with the card's other
+ * ornament. What it saves, and how the card draws it, did not move with it.
+ *
+ * NOT THE DATE'S. It used to be called "Reveal effect" and offer "Hide the
+ * date" beside the other two, which was a second place to choose something
+ * "Date reveal" already chose, and picking it here switched a royal scroll to
+ * a scratch panel up there without a word. The date has one owner now, and
+ * this section has the other two sections and nothing else.
+ *
+ * A CARD HAS ONE SCRATCH PANEL. That has not changed. So while the date has
+ * it, there is nothing here to choose: the options are shown, switched off,
+ * with a line saying why and a way to take the panel off the date. Shown and
+ * not hidden, so a host looking for the venue's scratch panel finds where it
+ * is and what is in its way.
  */
 export default function RevealPanel({
   scratchTarget,
-  onScratchTargetChange,
+  onScratchSectionChange,
+  onShowDateSimply,
   scratchFrame,
   onScratchFrameChange,
   accordion,
 }: {
+  /** Where the card's one panel is, the date included: that is what switches this section off. */
   scratchTarget: ScratchTarget;
-  onScratchTargetChange: (target: ScratchTarget) => void;
+  onScratchSectionChange: (section: ScratchSection) => void;
+  /** Takes the panel off the date and shows the date plainly, which frees the panel for here. */
+  onShowDateSimply: () => void;
   scratchFrame: ScratchFrame;
   onScratchFrameChange: (frame: ScratchFrame) => void;
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
+  const usedByDate = scratchTarget === "date";
+  const usedByDateId = useId();
+
   return (
     <CollapsibleSection
-      title="Reveal effect"
+      title="Scratch to reveal"
       summary={
-        SCRATCH_TARGETS.find((option) => option.id === scratchTarget)?.label
+        usedByDate
+          ? "Used by the date"
+          : SCRATCH_SECTIONS.find((option) => option.id === scratchTarget)?.label
       }
       {...sectionState(accordion, "reveal")}
     >
-      <div className="flex flex-wrap gap-2">
-        {SCRATCH_TARGETS.map((option) => {
-          const isSelected = option.id === scratchTarget;
+      <div
+        role="group"
+        aria-label="Section behind the scratch panel"
+        aria-describedby={usedByDate ? usedByDateId : undefined}
+        className="flex flex-wrap gap-2"
+      >
+        {SCRATCH_SECTIONS.map((option) => {
+          /* None of them while the date has the panel: it is not off, and it is not here. */
+          const isSelected = !usedByDate && option.id === scratchTarget;
 
           return (
             <button
               key={option.id}
               type="button"
+              disabled={usedByDate}
               aria-pressed={isSelected}
-              onClick={() => onScratchTargetChange(option.id)}
+              onClick={() => onScratchSectionChange(option.id)}
               className={pillClass(isSelected)}
             >
               {option.label}
@@ -89,12 +118,28 @@ export default function RevealPanel({
         })}
       </div>
 
-      <p className="text-xs text-[var(--lifafa-muted)]">
-        Guests scratch the panel to uncover it.
-      </p>
+      {usedByDate ? (
+        <div className="flex flex-col items-start gap-1">
+          <p id={usedByDateId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+            Your date already uses scratch to reveal. A card has one scratch
+            panel, so guests only scratch once.
+          </p>
+          <button
+            type="button"
+            onClick={onShowDateSimply}
+            className="min-h-11 rounded text-xs font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-150 hover:decoration-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            Show the date simply instead
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-[var(--lifafa-muted)]">
+          Guests scratch the panel to uncover it.
+        </p>
+      )}
 
-      {/* Only once there is a panel for it to be the frame of. */}
-      {scratchTarget !== "none" ? (
+      {/* Only once a section here has the panel for it to be the frame of. */}
+      {scratchTarget === "venue" || scratchTarget === "countdown" ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-medium text-[var(--lifafa-cream)]">Frame</p>
           <div className="flex flex-wrap gap-2">
