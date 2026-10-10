@@ -106,7 +106,12 @@ import {
 } from "@/lib/cardSections";
 import InvitedHeading from "@/components/card/InvitedHeading";
 import type { CalendarInvite } from "@/lib/calendar";
-import { maxOverlayAlpha, maxVeilAlpha, relativeLuminance } from "@/lib/contrast";
+import {
+  contrastRatio,
+  maxOverlayAlpha,
+  maxVeilAlpha,
+  relativeLuminance,
+} from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
@@ -212,11 +217,15 @@ const MusicToggle = dynamic(
 const DECOR_CEILING = 0.22;
 
 /**
- * The same ceiling for the ornament that turns in the top corners. Lower than
- * the scatter's: a motif there is 30px of line and this is a quarter of a
- * circle 70% of the card wide.
+ * The same ceiling for the ornament that turns in the top corners, which is
+ * what it is drawn at wherever the card's text can carry it. Higher on a dark
+ * card: gold line on maroon or midnight at the light card's strength was too
+ * faint to be seen under a flower frame.
  */
-const TOP_CORNERS_CEILING = 0.2;
+const TOP_CORNERS_CEILING = { light: 0.22, dark: 0.3 } as const;
+
+/** WCAG's threshold for small text, which the top corners' strength is held to. */
+const TOP_CORNERS_MIN_RATIO = 4.5;
 
 /**
  * The mosque arch's inset from the cover's edges when no border is drawn, in px.
@@ -1039,15 +1048,50 @@ export default function CardCanvas({
   );
 
   /*
-    And how strong the ornament in the top corners may be, by the same
-    measurement, taken both for a wash behind the muted text and for one across
-    it: that layer is drawn above the content column. See TopCorners.
+    And how strong the ornament in the top corners may be: its ceiling, brought
+    down only as far as the text it can lie across asks. That layer is drawn
+    above the content column (see TopCorners), so each ink is measured for a
+    wash behind a line and for one across it.
+
+    WHICH INKS. The ornament is on the first screen and scrolls away with it,
+    so it is that screen's text and no other. Where the card opens on its cover
+    block, as nearly every card does, that is the opening and the names: the
+    two inks and the four roles set in them. Long passages are in a quieter
+    ink of their own (`body`) and are never on that screen; they are measured
+    only on a card whose host moved another section to the top.
+
+    The muted ink is always measured. Any other that does not reach the ratio
+    on the bare card is left out, because no strength of ornament could bring
+    it there.
   */
-  const topCornersAlpha = maxVeilAlpha(
-    effectiveTheme.accent,
-    effectiveTheme.background,
-    effectiveTheme.textMuted,
-    TOP_CORNERS_CEILING,
+  const firstBlock = visible[0];
+  const opensOnCover =
+    firstBlock !== undefined && firstBlock.kind === "builtin" && firstBlock.id === "cover";
+  const { body: bodyInkOnCard, ...firstScreenRoles } = textRoles(effectiveTheme);
+  const topCornersInks = [
+    ...new Set([
+      effectiveTheme.textMuted,
+      effectiveTheme.textPrimary,
+      ...Object.values(firstScreenRoles),
+      ...(opensOnCover ? [] : [bodyInkOnCard]),
+    ]),
+  ].filter(
+    (ink) =>
+      ink === effectiveTheme.textMuted ||
+      contrastRatio(ink, effectiveTheme.background) >= TOP_CORNERS_MIN_RATIO,
+  );
+  const topCornersAlpha = Math.min(
+    ...topCornersInks.map((ink) =>
+      maxVeilAlpha(
+        effectiveTheme.accent,
+        effectiveTheme.background,
+        ink,
+        relativeLuminance(effectiveTheme.background) > 0.4
+          ? TOP_CORNERS_CEILING.light
+          : TOP_CORNERS_CEILING.dark,
+        TOP_CORNERS_MIN_RATIO,
+      ),
+    ),
   );
 
   /*
