@@ -595,8 +595,8 @@ export interface HinduOrnamentEntry {
   src?: string;
   /** And for one drawn as a mask filled with the accent, which is fetched as a mask is. */
   mask?: string;
-  /** The shapes the card turns, for an ornament that does; see the note on the mandala. */
-  turning?: { pair: Ornament; end: Ornament };
+  /** The shape the card turns, for an ornament that does; see the note on the mandala. */
+  turning?: Ornament;
 }
 
 /**
@@ -670,24 +670,22 @@ export const DIYA_FLAME = { x: 0.9, y: 0.28 } as const;
    --------------------------------------------------------------------------- */
 
 /**
- * The mandala that turns in the top corners of the screen and at the end of
- * the card.
+ * The mandala that turns in the two top corners of the first screen.
  *
  * Neither a drawing nor a gold picture: white line art cut to one shape whose
  * alpha is the line work, and filled with the card's accent through a CSS
  * mask, the way the calligraphy below is. Published with its centre at the
  * centre of its square, because it turns about that point.
  *
- * THREE FILES OF THE ONE ART. The plain one is the editor's tile. The other
- * two are what the card turns, each with its fade from the centre outwards
- * cut into the file, so nothing is masked a second time on top of a layer
- * that is moving; scripts/cut-flowers.mjs says what each fade is, and
- * components/card/decor/TopCorners.tsx sizes them to match.
+ * TWO FILES OF THE ONE ART. The plain one is the editor's tile. The other is
+ * what the card turns, with its fade from the centre outwards cut into the
+ * file, so nothing is masked a second time on top of a layer that is moving;
+ * scripts/cut-flowers.mjs says what the fade is, and
+ * components/card/decor/TopCorners.tsx sizes it.
  */
 const Mandala = maskOrnament("/decor/ornaments/mandala-hindu.webp", 1);
 const MANDALA_CORNER_MASK = "/decor/ornaments/mandala-hindu-corner.webp";
 const MandalaCorner = maskOrnament(MANDALA_CORNER_MASK, 1);
-const MandalaEnd = maskOrnament("/decor/ornaments/mandala-hindu-end.webp", 1);
 
 /* ---------------------------------------------------------------------------
    Calligraphy
@@ -759,7 +757,7 @@ const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
   {
     /*
       A place of its own, the pack's `topCorners`, and never the scatter: it
-      is drawn wider than the card and turning, which is not a thing to be
+      is drawn three quarters of the card wide and turning, which is not a thing to be
       set down at 84px beside the venue.
     */
     id: "mandala",
@@ -769,7 +767,7 @@ const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
     topRegionOnly: false,
     /* The one on the first screen, which the card fetches before it opens. */
     mask: MANDALA_CORNER_MASK,
-    turning: { pair: MandalaCorner, end: MandalaEnd },
+    turning: MandalaCorner,
   },
   /* In the order the panel offers them. */
   {

@@ -3,33 +3,34 @@
 import type { ReactElement } from "react";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
 import { cardPx } from "@/lib/cardScale";
-import { resolveSlots } from "@/lib/ornaments/slots";
-import { getTraditionPack, type PackOrnament } from "@/lib/traditionPacks";
-import type { TraditionId } from "@/types/occasion";
-import type { AnyOrnamentId } from "@/types/ornament";
+import type { PackOrnament } from "@/lib/traditionPacks";
 
 /**
- * The pack's `topCorners` ornament, in its two places: a pair pinned to the
- * top corners of the screen for the whole card (TopCorners), and one more,
- * larger, rising from the bottom edge where the page ends (EndMandala). One
- * round shape, filled with the card's accent, turning slowly.
+ * The pack's `topCorners` ornament: two copies of one round shape, one in
+ * each top corner of the card, so about a quarter of each shows. The left one
+ * turns clockwise and the right one the other way.
  *
- * NEVER UNDER A LINE OF TEXT THAT CAN BE READ. Each is somewhere the card
- * sets no text at full strength, and is gone where the text begins, so its
- * strength does not have to answer to the card's inks: an ink that sits at
- * 4.5:1 on the bare card has nothing to give, and an ornament measured
- * against it was switched on and drawn at nothing.
+ * PART OF THE CARD, NOT OF THE SCREEN. Every other layer of decor is pinned
+ * inside a sticky band; this one is laid at the top of the card itself, so it
+ * goes up and off with the first screen and is not there on the second. It
+ * was pinned for a while, with a third at the end of the page, and a guest
+ * had it over their shoulder for the whole card.
  *
- *  - The pair is part of the dissolve at the top of the screen (ScrollFade),
- *    which is where a line of text is taken away before it reaches whatever
- *    hangs there. ScrollFade mounts it and masks it on its own curve: whole
- *    where the text is gone, and gone where the text is whole.
+ * BEHIND EVERYTHING. Under the content column, so the card's writing is drawn
+ * over it and never the other way round, and so under the top border and the
+ * frame as well. The dissolve at the top of the screen (ScrollFade) paints
+ * the card's own colour over whatever is under the column, and would paint
+ * this out with it, so it is told where these two corners are and leaves them
+ * alone; see `spareTopCorners` there, which takes `topCornersHole` from here.
  *
- *  - The one at the end is a block of its own after everything else on the
- *    page, with nothing set in it, and fades out inside that block.
+ * ALWAYS THERE, AND GONE WHERE THE WRITING BEGINS. Its strength is fixed for
+ * the card's ground and does not answer to the card's inks. What keeps it off
+ * the writing is where it is: it fades from its centre outwards, in its file,
+ * and has nothing left at its rim, which is short of the first line of the
+ * first screen.
  *
  * The motion is `lifafa-mandala-turn` in globals.css: a rotate and nothing
- * else. Held while the tab is hidden or the layer is off the screen, and
+ * else. Held while the tab is hidden or this layer is off the screen, and
  * still under reduced motion.
  *
  * Decoration only: aria-hidden, and never a tap target.
@@ -39,9 +40,30 @@ import type { AnyOrnamentId } from "@/types/ornament";
 const DESIGN_WIDTH = 420;
 
 /**
- * How strong the ornament is where it is strongest, by the card's ground.
- * Stronger on a dark card, where a gold line at the light card's strength is
- * too faint to see under a flower frame.
+ * Each circle's diameter, as a share of the card's width, so a quarter of
+ * each shows and the middle of the top is left to the card. No wider than
+ * that share of the design width in card px, so on a card that fills a laptop
+ * screen it is still a corner ornament.
+ */
+const DIAMETER = 0.75;
+
+/**
+ * How far in and down each centre moves under a flower frame, as a share of
+ * the card's width: the frame's corner bouquets are deep, and a circle
+ * centred on the corner itself keeps its best rings behind them. The same
+ * share of the circle it was when the circle was 110% of the width.
+ */
+const INSET = (0.1 * DIAMETER) / 1.1;
+
+/** A share of the card's width as a CSS length, capped at that share of the design width. */
+function share(of: number): string {
+  return `min(${of * 100}%, ${cardPx(DESIGN_WIDTH * of)})`;
+}
+
+/**
+ * How strong the ornament is at its centre, by the card's ground. Stronger on
+ * a dark card, where a gold line at the light card's strength is too faint to
+ * see under a flower frame.
  */
 const STRENGTH = { light: 0.22, dark: 0.3 } as const;
 
@@ -53,38 +75,30 @@ export function topCornersStrength(lightGround: boolean): number {
   return Math.max(STRENGTH_FLOOR, lightGround ? STRENGTH.light : STRENGTH.dark);
 }
 
-/* ---------------------------------------------------------------------------
-   The pair pinned to the top corners
-   --------------------------------------------------------------------------- */
-
 /**
- * Each circle's diameter, as a share of the card's width: wider than the
- * card, so a generous quarter of each shows and the two meet across the top.
- * No wider than that share of the design width in card px, so on a card that
- * fills a laptop screen it is still a corner ornament.
+ * The part of each top corner the ornament is drawn in, for the dissolve to
+ * leave alone: a square on the corner, `size` across, and where in it the
+ * circle's centre is, as a share of that size from the corner. The circle
+ * reaches the square's far sides.
  */
-const PAIR_DIAMETER = 1.1;
+export interface TopCornersHole {
+  size: string;
+  centre: number;
+}
 
-/**
- * How far in and down each centre moves under a flower frame, as a share of
- * the card's width: the frame's corner bouquets are about that deep, and a
- * circle centred on the corner itself kept its best rings behind them.
- */
-const PAIR_INSET = 0.1;
+export function topCornersHole(inset: boolean): TopCornersHole {
+  const step = inset ? INSET : 0;
+  const reach = step + DIAMETER / 2;
+
+  return { size: share(reach), centre: step / reach };
+}
 
 /*
-  Its own fade, round the centre it turns about, is in its file: full for
-  most of the way out, so the rings that clear a garland's ends and a frame's
-  bouquets are at strength, and soft at the rim, where the two circles cross
-  in the middle of the screen. What keeps it off the text is not that but the
-  mask ScrollFade lays over both.
+  Its fade, round the centre it turns about, is in its file (see
+  `mandala-hindu-corner` in scripts/cut-flowers.mjs), so the fade does not
+  turn with it and nothing is masked a second time over a layer that moves.
 */
 
-/**
- * Two copies, each centred on a top corner of the box it is put in, the left
- * turning clockwise and the right the other way. Fills that box and is cut
- * by it; ScrollFade supplies one as deep as its own dissolve.
- */
 export default function TopCorners({
   entry,
   accent,
@@ -99,16 +113,22 @@ export default function TopCorners({
   inset: boolean;
 }): ReactElement {
   const pauseRef = useFloatingPause();
-  const Shape = entry.turning?.pair ?? entry.Component;
+  const Shape = entry.turning ?? entry.Component;
+  const step = inset ? INSET : 0;
   /* A share of the card's width, as a share of the circle's own, which is what a transform is measured in. */
-  const step = inset ? (PAIR_INSET / PAIR_DIAMETER) * 100 : 0;
+  const stepOfCircle = (step / DIAMETER) * 100;
 
   return (
     <div
       ref={pauseRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-clip"
-      style={{ color: accent }}
+      /*
+        As deep as the circles reach and cut there and at the card's edges.
+        The depth is padding because a percentage of padding is of the card's
+        width, which a height cannot be given in.
+      */
+      className="pointer-events-none absolute inset-x-0 top-0 z-[1] overflow-clip"
+      style={{ paddingTop: share(step + DIAMETER / 2), color: accent }}
     >
       {(["left", "right"] as const).map((side) => (
         <div
@@ -120,8 +140,8 @@ export default function TopCorners({
           className="absolute top-0"
           style={{
             left: side === "left" ? 0 : "100%",
-            width: `min(${PAIR_DIAMETER * 100}%, ${cardPx(DESIGN_WIDTH * PAIR_DIAMETER)})`,
-            transform: `translate(${side === "left" ? -50 + step : -50 - step}%, ${-50 + step}%)`,
+            width: share(DIAMETER),
+            transform: `translate(${side === "left" ? -50 + stepOfCircle : -50 - stepOfCircle}%, ${-50 + stepOfCircle}%)`,
           }}
         >
           <Shape
@@ -135,107 +155,5 @@ export default function TopCorners({
         </div>
       ))}
     </div>
-  );
-}
-
-/* ---------------------------------------------------------------------------
-   The one at the end of the page
-   --------------------------------------------------------------------------- */
-
-/** The whole circle's diameter, as a share of the card's width, capped as the pair's is. */
-const END_DIAMETER = 1.2;
-
-/**
- * How much of the art its file holds: the middle 55%, with a fade cut into
- * it that is strongest at the centre and gone at the file's own edge, all the
- * way round. The shape that turns is this share of the circle and no bigger,
- * and the block it stands in is exactly as tall as its upper half: so it is
- * strongest at the bottom edge of the page, where its centre is, and has
- * faded to nothing at the top of its block and well inside the block's sides.
- * The only straight edge it meets is the end of the page itself.
- */
-const END_ART_SHARE = 0.55;
-
-/**
- * One circle, centred across the page with its centre on the page's bottom
- * edge, so its upper half rises at the very end.
- *
- * A BLOCK OF ITS OWN, IN THE FLOW, AFTER EVERYTHING. It was laid at the foot
- * of the card, in room under the card's last section, and on a guest's page
- * the card is not the end: the reply form follows on a ground with no texture
- * in it, and the ornament stopped dead on the line between the two. As the
- * last block of the page it has nothing after it to stop on and nothing over
- * it: the reply, the note and the keepsake are all above it, and it does not
- * reach up into any of them. Whoever draws the end of the page mounts it: the
- * guest's page after its last section, and the card itself where a card is
- * all there is (the editor's full-screen preview; see `endOrnament` on
- * CardCanvas).
- *
- * `z-[13]`: above the dissolve, whose bottom fade comes to rest on the foot
- * of a card and would paint this out where it is strongest, and under the
- * frame at `z-[16]`, whose foot is drawn over it.
- */
-export function EndMandala({
-  entry,
-  accent,
-  strength,
-}: {
-  entry: PackOrnament;
-  accent: string;
-  strength: number;
-}): ReactElement {
-  const pauseRef = useFloatingPause();
-  const Shape = entry.turning?.end ?? entry.Component;
-  /* What is drawn of the circle: its diameter, less what its file leaves out. */
-  const drawn = END_DIAMETER * END_ART_SHARE;
-
-  return (
-    <div
-      ref={pauseRef}
-      aria-hidden="true"
-      /* As tall as the half that shows; padding, because a percentage of it is of the page's width. */
-      className="pointer-events-none relative z-[13] overflow-clip"
-      style={{
-        paddingTop: `min(${(drawn / 2) * 100}%, ${cardPx((DESIGN_WIDTH * drawn) / 2)})`,
-        color: accent,
-      }}
-    >
-      <div
-        className="absolute left-1/2 top-full"
-        style={{
-          width: `min(${drawn * 100}%, ${cardPx(DESIGN_WIDTH * drawn)})`,
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <Shape
-          instanceId={`end-${entry.id}`}
-          className="lifafa-mandala-turn lifafa-mandala-turn-slow block w-full"
-          style={{ opacity: strength }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/**
- * The end ornament for a card's config, or nothing for a card without one:
- * for a page that draws its own end and has the config but not the card's
- * resolved slots. Reads the same list the card does, through the same slots.
- */
-export function PageEndMandala({
-  traditionId,
-  enabledOrnaments,
-  accent,
-  lightGround,
-}: {
-  traditionId: TraditionId;
-  enabledOrnaments: readonly AnyOrnamentId[];
-  accent: string;
-  lightGround: boolean;
-}): ReactElement | null {
-  const entry = resolveSlots(getTraditionPack(traditionId), enabledOrnaments).topCorners;
-
-  return entry === null ? null : (
-    <EndMandala entry={entry} accent={accent} strength={topCornersStrength(lightGround)} />
   );
 }

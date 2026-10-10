@@ -161,37 +161,24 @@ const ORNAMENTS = [
     alphaQuality: 14,
   },
   /*
-    The same art twice more, as the card draws it: each with its fade from the
+    The same art once more, as the card draws it: with its fade from the
     centre outwards cut into the file, as the share of itself it keeps at each
-    share of its radius. The card used to lay that fade over the turning shape
-    as a second mask, and a mask over a layer that turns is composited again
-    on every frame; cut into the file it costs nothing. The plain one above is
-    what the editor's tile shows.
+    share of its radius. A fade laid over the turning shape as a second mask
+    is composited again on every frame; cut into the file it costs nothing.
+    The plain one above is what the editor's tile shows.
 
-    `corner` is the pair pinned to the top corners: whole for most of the way
-    out and soft at the rim, where the two cross in the middle of the screen.
-    `end` is the one at the foot of the card, which fades out inside the room
-    the card makes for it: only the middle 55% of the art is ever seen, so
-    only that is published, and it is drawn at 55% of the size.
-    components/card/decor/TopCorners.tsx sizes both.
+    Whole for two thirds of the way out, half by 82%, a tenth by 93% and
+    nothing at the rim, which is where the first screen's writing begins.
+    components/card/decor/TopCorners.tsx sizes it.
   */
   {
     name: "mandala-hindu-corner",
     file: "Intricate White Lotus Mandala on Black.png",
     source: "mandala art",
     background: "mask",
-    circle: { cx: 626, cy: 625.5, r: 614, fade: [[0, 1], [0.72, 1], [0.9, 0.35], [1, 0]] },
+    circle: { cx: 626, cy: 625.5, r: 614, fade: [[0, 1], [0.65, 1], [0.82, 0.5], [0.93, 0.1], [1, 0]] },
     fit: { width: 800, height: 800 },
     alphaQuality: 14,
-  },
-  {
-    name: "mandala-hindu-end",
-    file: "Intricate White Lotus Mandala on Black.png",
-    source: "mandala art",
-    background: "mask",
-    circle: { cx: 626, cy: 625.5, r: 338, fade: [[0, 1], [0.47, 1], [0.76, 0.45], [1, 0]] },
-    fit: { width: 560, height: 560 },
-    alphaQuality: 30,
   },
 ].map((entry) => ({ ...entry, out: join("public", "decor", "ornaments") }));
 

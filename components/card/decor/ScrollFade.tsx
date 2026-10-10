@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import RoyalTextureFill from "@/components/card/decor/RoyalTextureFill";
+import type { TopCornersHole } from "@/components/card/decor/TopCorners";
 import { cardPx } from "@/lib/cardScale";
 import type { RoyalTextureLayer } from "@/lib/royalTexture";
 
@@ -106,12 +107,68 @@ export function scrollFadeDepth(hangingBand: number): {
   };
 }
 
+/**
+ * A disc as a square mask tile: solid at its centre and for nine tenths of
+ * the way out, and gone at its edge, as the ornament it is cut for is. The
+ * centre is `centre` of the tile's size in from the corner of the card the
+ * tile sits on (0 for a quarter disc on the corner itself), and the disc
+ * reaches the tile's two far sides. `right` is the tile for the right corner.
+ */
+function cornerTile(centre: number, right: boolean): string {
+  const c = centre * 100;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">` +
+    `<radialGradient id="g" gradientUnits="userSpaceOnUse" cx="${right ? 100 - c : c}" cy="${c}" r="${100 - c}">` +
+    `<stop offset="0.9"/><stop offset="1" stop-opacity="0"/>` +
+    `</radialGradient><rect width="100" height="100" fill="url(#g)"/></svg>`;
+
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+/**
+ * The mask that takes two top corners of the card out of this layer.
+ *
+ * FOR THE ORNAMENT THAT TURNS THERE (TopCorners). It lies under the content
+ * column, and this layer paints the card's colour over whatever is under the
+ * column at the top of the screen: the ornament was being painted out. The
+ * two are in step only while the card is at the top, so the hole cannot be in
+ * the pinned band; it is on the layer's outer box, which is the card's own
+ * height and scrolls with it, and so stays over the ornament as both go up.
+ *
+ * Everything, less a disc at each top corner: the whole box excluded
+ * by the two tiles. Where `mask-composite` is not understood the three are
+ * added instead, the mask is solid, and the dissolve is whole as it was: the
+ * ornament is hidden under it and nothing else changes.
+ *
+ * A masked box is where a backdrop filter stops looking, so on a card with
+ * the ornament the dissolve fades a line without also softening it. The
+ * ornament is line art directly under this layer, and blurred it would be a
+ * smudge; the fade is the part that matters.
+ */
+function sparing(hole: TopCornersHole): CSSProperties {
+  const image = `${cornerTile(hole.centre, false)}, ${cornerTile(hole.centre, true)}, linear-gradient(#000, #000)`;
+  const size = `${hole.size} auto, ${hole.size} auto, 100% 100%`;
+
+  return {
+    WebkitMaskImage: image,
+    WebkitMaskSize: size,
+    WebkitMaskPosition: "left top, right top, left top",
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskComposite: "xor",
+    maskImage: image,
+    maskSize: size,
+    maskPosition: "left top, right top, left top",
+    maskRepeat: "no-repeat",
+    maskComposite: "exclude",
+  };
+}
+
 export default function ScrollFade({
   background,
   texture,
   hangingBand,
   bandHeight,
-  topCorners = null,
+  spareTopCorners = null,
 }: {
   /** The card's resolved background. The dissolve is into this exact colour. */
   background: string;
@@ -133,12 +190,10 @@ export default function ScrollFade({
   /** Height of the scrollport, exactly as the other pinned layers take it. */
   bandHeight: string;
   /**
-   * An ornament pinned to the top corners of the screen, on a card that has
-   * one: see TopCorners. Drawn here, as part of the dissolve, because this
-   * band is the one place at the top of the screen where the card's text is
-   * never whole. It fills a box as deep as the dissolve and is masked below.
+   * The part of the card's two top corners this layer is to leave alone, on
+   * a card with an ornament there; see `sparing`.
    */
-  topCorners?: ReactNode;
+  spareTopCorners?: TopCornersHole | null;
 }): ReactElement {
   /* Text is fully gone by here, which is at or above the deepest ornament. */
   const clearTo = Math.max(MIN_CLEARANCE, hangingBand);
@@ -163,19 +218,12 @@ export default function ScrollFade({
   const bottom = cardPx(BOTTOM_FADE);
   const topStops = `${background} 0px, ${background} ${clear}, transparent ${fade}`;
   const topMask = `#000 0px, #000 ${clear}, transparent ${fade}`;
-  /*
-    The ornament's own curve through the ramp. Whole where the text is gone,
-    gone where the text is whole, and between the two it holds on a little
-    longer than the wash does: three quarters of itself half way down, where
-    a line of text is half dissolved. Past the foot of the ramp, where text is
-    drawn at full strength, there is none of it at all.
-  */
-  const ornamentMask = `linear-gradient(to bottom, #000 0px, #000 ${clear}, rgb(0 0 0 / 0.75) calc((${clear} + ${fade}) / 2), transparent ${fade})`;
 
   return (
     <div
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-[12] overflow-clip"
+      style={spareTopCorners !== null ? sparing(spareTopCorners) : undefined}
     >
       <div
         className="sticky top-0 w-full overflow-clip"
@@ -222,24 +270,6 @@ export default function ScrollFade({
             </div>
           ) : null}
         </div>
-
-        {/*
-          After the wash, so over it: the wash is the card's own ground, and
-          this is drawn on that ground. Under whatever hangs and under the
-          frame, which are layers above this one.
-        */}
-        {topCorners !== null && topCorners !== undefined ? (
-          <div
-            className="absolute inset-x-0 top-0 overflow-clip"
-            style={{
-              height: fade,
-              maskImage: ornamentMask,
-              WebkitMaskImage: ornamentMask,
-            }}
-          >
-            {topCorners}
-          </div>
-        ) : null}
 
         <div
           className="absolute inset-x-0 bottom-0"

@@ -800,8 +800,6 @@ export default function FullScreenPreview({
                 invite={PREVIEW_INVITE}
                 /* "Exactly what your guests will see" has to include the doing. */
                 audience="guest"
-                /* Nothing follows the card here, so the card ends the page. */
-                endOrnament
                 weather={weather}
                 weatherTheme={weatherTheme}
               />

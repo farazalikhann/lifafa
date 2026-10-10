@@ -49,7 +49,7 @@ import BorderFrame, {
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import TopCorners, {
-  EndMandala,
+  topCornersHole,
   topCornersStrength,
 } from "@/components/card/decor/TopCorners";
 import ScrollFade, {
@@ -821,7 +821,6 @@ export default function CardCanvas({
   fillsPhone = false,
   frame = true,
   frameHeight = PREVIEW_FRAME_HEIGHT,
-  endOrnament = false,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -863,13 +862,6 @@ export default function CardCanvas({
    * Does nothing in "viewport" sizing.
    */
   frameHeight?: number;
-  /**
-   * Whether the card ends the page it is on, and so draws the ornament that
-   * ends a page itself: the editor's full-screen preview, where nothing comes
-   * after the card. Not the guest's page, which has a reply form and a note
-   * after the card and draws the ornament after those; see EndMandala.
-   */
-  endOrnament?: boolean;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -1644,6 +1636,21 @@ export default function CardCanvas({
           the same measured alpha ceiling as the scattered motifs, because it sits
           behind the same text.
         */}
+        {/*
+          What turns in the two top corners of the first screen. At the top of
+          the card rather than pinned to the screen, so it scrolls away with
+          that screen, and under the content column, so under everything. The
+          dissolve below is told to leave its two corners alone.
+        */}
+        {slots.topCorners !== null ? (
+          <TopCorners
+            entry={slots.topCorners}
+            accent={effectiveTheme.accent}
+            strength={topCornersStrength(lightGround)}
+            inset={isPhotoBorder(config.borderStyle)}
+          />
+        ) : null}
+
         {pack !== null ? (
           <CornerLayer
             pack={pack}
@@ -1768,19 +1775,10 @@ export default function CardCanvas({
           texture={texture}
           hangingBand={hangingBand}
           bandHeight={bandHeight}
-          /*
-            What turns in the two top corners of the screen, for the whole
-            card: pinned with the dissolve and drawn as part of it.
-          */
-          topCorners={
-            slots.topCorners !== null ? (
-              <TopCorners
-                entry={slots.topCorners}
-                accent={effectiveTheme.accent}
-                strength={topCornersStrength(lightGround)}
-                inset={isPhotoBorder(config.borderStyle)}
-              />
-            ) : null
+          spareTopCorners={
+            slots.topCorners !== null
+              ? topCornersHole(isPhotoBorder(config.borderStyle))
+              : null
           }
         />
 
@@ -2224,19 +2222,6 @@ export default function CardCanvas({
             />
           ) : null}
         </div>
-
-        {/*
-          The ornament that ends the page, where the card is the whole of the
-          page; see `endOrnament`. After the column, in the flow, so the frame
-          and the pinned layers run to the foot of it.
-        */}
-        {endOrnament && slots.topCorners !== null && !still ? (
-          <EndMandala
-            entry={slots.topCorners}
-            accent={effectiveTheme.accent}
-            strength={topCornersStrength(lightGround)}
-          />
-        ) : null}
       </div>
     </ScratchRevealProvider>
   );

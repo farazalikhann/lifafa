@@ -142,11 +142,10 @@ export interface PackOrnament {
    */
   mask?: string;
   /**
-   * For an ornament that turns: the shape pinned to the top corners and the
-   * one at the end of the card, each with its own fade cut into its file.
-   * See components/card/decor/TopCorners.tsx.
+   * For an ornament that turns: the shape the card turns, with its fade cut
+   * into its file. See components/card/decor/TopCorners.tsx.
    */
-  turning?: { pair: Ornament; end: Ornament };
+  turning?: Ornament;
   /**
    * How tall the ornament stands above the names, in card px, for a picture
    * too detailed for the usual height. See components/card/decor/SlotOrnaments.tsx.
@@ -200,9 +199,9 @@ interface OrnamentSlots {
   /** What the panel calls that place, where "Side flags" is not what stands in it. */
   sidesLabel?: string;
   /**
-   * Turns slowly in the two top corners of the screen, behind what hangs
-   * there, for the whole card, and once more at the card's end: one ornament.
-   * Absent for a pack with none. See components/card/decor/TopCorners.tsx.
+   * Turns slowly in the two top corners of the card's first screen, behind
+   * what hangs there: one ornament, a copy in each corner. Absent for a pack
+   * with none. See components/card/decor/TopCorners.tsx.
    */
   topCorners?: readonly AnyOrnamentId[];
 }
