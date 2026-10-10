@@ -234,6 +234,12 @@ export interface CardCopy {
   };
   watermark: string;
   coverSkip: string;
+  /**
+   * The small heading over the card's first screen, above whatever opens it.
+   * Not the closed cover's own heading (`coverInvite`), which is said before
+   * the card is open and in a larger hand. See InvitedHeading.
+   */
+  invitedHeading: string;
   /** Under the loader while the card arrives, before the cover appears. */
   coverPreparing: string;
   /**
@@ -528,6 +534,7 @@ const ENGLISH: CardCopy = {
   },
   watermark: "Preview. Pay to remove this watermark.",
   coverSkip: "Skip",
+  invitedHeading: "You are invited",
   coverPreparing: "Preparing your invitation",
   scrollCue: {
     heading: "Scroll down to see the details",
@@ -787,6 +794,7 @@ const HINDI: CardCopy = {
   },
   watermark: "पूर्वावलोकन। वॉटरमार्क हटाने के लिए भुगतान करें।",
   coverSkip: "छोड़ें",
+  invitedHeading: "आप आमंत्रित हैं",
   coverPreparing: "आपका निमंत्रण तैयार हो रहा है",
   scrollCue: {
     /* TODO(Faraz): verify this Hindi heading with a native reader before launch. */

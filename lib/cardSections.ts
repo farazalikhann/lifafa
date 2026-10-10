@@ -316,6 +316,16 @@ export function rsvpEnabled(value: unknown): boolean {
   return value !== false;
 }
 
+/**
+ * Whether the first screen opens with "You are invited".
+ *
+ * On unless a host turned it off, for the same reason as above: no card saved
+ * before the switch has the key, and every one of them is to show the heading.
+ */
+export function invitedHeadingOn(value: unknown): boolean {
+  return value !== false;
+}
+
 /* ---------------------------------------------------------------------------
    Where each function stands, for the timeline's chips.
    --------------------------------------------------------------------------- */

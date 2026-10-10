@@ -78,6 +78,7 @@ export default function CoverSection({
   pad,
   occasionId,
   language,
+  invited = null,
   aboveNames = null,
   corners = null,
   bottomClearance = 0,
@@ -112,6 +113,12 @@ export default function CoverSection({
    * never adds to `minHeight` — the section still fills its viewport exactly.
    */
   pad: number;
+  /**
+   * "You are invited", already drawn, on a card whose first screen is this
+   * one. Above everything else here, the frame and the flags included, so it
+   * is never set inside an arch that was sized for the names.
+   */
+  invited?: ReactNode;
   /**
    * The pack's ornament for the place above the names, already drawn — see
    * SlotOrnaments. In the column's flow, so the names make room for it.
@@ -289,6 +296,12 @@ export default function CoverSection({
         gap,
       }}
     >
+      {invited !== null ? (
+        <div className={reveal} style={lineDelay(0)}>
+          {invited}
+        </div>
+      ) : null}
+
       {sides !== null ? (
         /*
           Flag, names, flag: one row, top aligned, so the flags stand in the

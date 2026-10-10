@@ -101,7 +101,9 @@ import {
   hasFamily,
   hasMessage,
   hasTimeline,
+  invitedHeadingOn,
 } from "@/lib/cardSections";
+import InvitedHeading from "@/components/card/InvitedHeading";
 import type { CalendarInvite } from "@/lib/calendar";
 import { maxOverlayAlpha, relativeLuminance } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
@@ -658,6 +660,8 @@ function renderBlock(
    * did, so it clears the whole of it above itself, as that does.
    */
   countdownPadTop: number,
+  /** "You are invited", for the names' screen when it is the one the guest lands on. */
+  invited: ReactNode,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -680,6 +684,7 @@ function renderBlock(
           pad={pad}
           occasionId={occasionId}
           language={language}
+          invited={invited}
           aboveNames={coverDecor?.aboveNames ?? null}
           corners={coverDecor?.corners ?? null}
           bottomClearance={coverDecor?.bottomClearance ?? 0}
@@ -1836,6 +1841,18 @@ export default function CardCanvas({
             const sectionIsFirstScreen = index === 0 && !hasHead;
             const headIsFirstScreen = index === 0 && hasHead;
 
+            /*
+              "You are invited" opens the first screen and no other: above the
+              calligraphy or the greeting where the card has an opening, and
+              above the names where the names are what the guest lands on. A
+              card whose host moved another section to the top has neither
+              there, and goes without.
+            */
+            const invitedHeading =
+              index === 0 && isCover && invitedHeadingOn(config.invitedHeading) ? (
+                <InvitedHeading language={language} theme={effectiveTheme} />
+              ) : null;
+
             const section = renderBlock(
               block,
               draft,
@@ -1860,6 +1877,7 @@ export default function CardCanvas({
               venueArt(venueIllustrationOf(config.venueIllustration)),
               hasDateScreen,
               sectionIsFirstScreen ? firstScreenPad : headPadTop,
+              sectionIsFirstScreen ? invitedHeading : null,
             );
 
             const head =
@@ -1946,11 +1964,26 @@ export default function CardCanvas({
                     lettering to its very edges — would otherwise run nearly to
                     the edges of the card.
                   */}
+                  {headIsFirstScreen ? invitedHeading : null}
+
                   {calligraphy.map((panel) => (
                     <panel.Component
                       key={panel.id}
                       instanceId={`cover-calligraphy-${panel.id}`}
-                      className="-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem)*var(--card-opening,1))]"
+                      /*
+                        Under 390px, on a first screen that also carries "You
+                        are invited", the piece is drawn at 85% of its width.
+                        The heading is a line and a gap more on the tallest
+                        screen the card has, and on a 360px phone that was
+                        enough to put the divider under the scroll cue. 15% is
+                        the most it gives up, and only there: the lettering is
+                        still the widest thing on the screen.
+                      */
+                      className={`-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem)*var(--card-opening,1))] ${
+                        headIsFirstScreen && invitedHeading !== null
+                          ? "max-[389px]:w-[calc((100%+2rem)*0.85)]"
+                          : ""
+                      }`}
                       ground={calligraphyGround(effectiveTheme.background)}
                       /*
                         What a piece drawn as a shape is filled with: the

@@ -314,6 +314,13 @@ export interface CardConfig {
    */
   coupleIllustration?: boolean;
   /**
+   * Whether the first screen opens with the small "You are invited" heading.
+   * Stored only as `false`, by a host who turned it off: absent, and on every
+   * card saved before the switch, the heading is shown. Read it through
+   * `invitedHeadingOn` in lib/cardSections.ts.
+   */
+  invitedHeading?: boolean;
+  /**
    * The painting above the venue's name. Stored only once a host picks one:
    * absent, and on every card saved before there was a choice, there is none.
    * Read it through `venueIllustrationOf` in lib/venueIllustration.ts.

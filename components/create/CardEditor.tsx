@@ -51,6 +51,7 @@ import { dividerStyleOf, hasChosenDivider, scratchFrameOf } from "@/lib/cardDeco
 import DividerPanel from "@/components/create/DividerPanel";
 import DateRevealPanel from "@/components/create/DateRevealPanel";
 import CoupleIllustrationPanel from "@/components/create/CoupleIllustrationPanel";
+import InvitedHeadingPanel from "@/components/create/InvitedHeadingPanel";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
@@ -77,7 +78,10 @@ import {
   setSubEventWord,
   swapCardLanguage,
 } from "@/lib/cardTranslation";
-import { rsvpEnabled as readRsvpEnabled } from "@/lib/cardSections";
+import {
+  invitedHeadingOn,
+  rsvpEnabled as readRsvpEnabled,
+} from "@/lib/cardSections";
 import { getMotifs } from "@/lib/motifs";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
 import {
@@ -178,6 +182,7 @@ interface EditorState {
   dateReveal: DateReveal | undefined;
   /** Whether "Meet the Couple" carries its figures. On unless the host turned it off. */
   coupleIllustration: boolean;
+  invitedHeading: boolean;
   /** The painting above the venue's name. None unless the host picked one. */
   venueIllustration: VenueIllustration;
   /** Whether the damask is woven into the card's ground. */
@@ -240,6 +245,7 @@ function toState(snapshot: EditorSnapshot): EditorState {
     /* Kept as stored, absent included, so opening an older card is not an edit to it. */
     dateReveal: config.dateReveal,
     coupleIllustration: coupleIllustrationOn(config.coupleIllustration),
+    invitedHeading: invitedHeadingOn(config.invitedHeading),
     /* Missing on every card saved before the choice; those have none. */
     venueIllustration: venueIllustrationOf(config.venueIllustration),
     /* Missing on every card saved before the texture; those have none. */
@@ -318,6 +324,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       ...(state.dateReveal !== undefined ? { dateReveal: state.dateReveal } : null),
       /* Only ever stored as off: a card that never had the key shows its figures. */
       ...(state.coupleIllustration ? null : { coupleIllustration: false }),
+      /* The same: only a host who turned the heading off has anything stored. */
+      ...(state.invitedHeading ? null : { invitedHeading: false }),
       /* Left off the card while there is none, so an older card is stored as it was. */
       ...(state.venueIllustration !== "none"
         ? { venueIllustration: state.venueIllustration }
@@ -531,6 +539,7 @@ export default function CardEditor({
   const [coupleIllustration, setCoupleIllustration] = useState(
     initial.coupleIllustration,
   );
+  const [invitedHeading, setInvitedHeading] = useState(initial.invitedHeading);
   const [venueIllustration, setVenueIllustration] = useState(
     initial.venueIllustration,
   );
@@ -969,6 +978,7 @@ export default function CardEditor({
     scratchFrame,
     dateReveal,
     coupleIllustration,
+    invitedHeading,
     venueIllustration,
     royalTexture,
     royalTexturePattern,
@@ -1546,6 +1556,12 @@ export default function CardEditor({
                   ornamentConfig={ornamentConfig}
                   onTraditionChange={handleTraditionSelect}
                   onOrnamentConfigChange={setOrnamentConfig}
+                  accordion={accordionFor("design")}
+                />
+                {/* Under the opening it sits above: the calligraphy and greeting are chosen just before it. */}
+                <InvitedHeadingPanel
+                  enabled={invitedHeading}
+                  onEnabledChange={setInvitedHeading}
                   accordion={accordionFor("design")}
                 />
                 {/* Beside the tradition it follows: the figures are that tradition's pair. */}
