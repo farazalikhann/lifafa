@@ -1576,6 +1576,8 @@ export default function CardEditor({
                   dateReveal={dateRevealOf(dateReveal, scratchTarget)}
                   scrollVariant={scrollArtFor(cardPalette(style).background).variant}
                   onDateRevealChange={handleDateReveal}
+                  scratchFrame={scratchFrame}
+                  onScratchFrameChange={setScratchFrame}
                   accordion={accordionFor("design")}
                 />
                 <RevealPanel

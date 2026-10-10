@@ -39,6 +39,45 @@ function pillClass(isSelected: boolean): string {
 }
 
 /**
+ * The panel's frame, Oval or Rectangle. The card has one panel and so one
+ * frame, `scratchFrame`, whichever section the panel is over: this is shown
+ * here for the venue and the countdown, and under "Date reveal" for the date.
+ */
+export function ScratchFramePicker({
+  scratchFrame,
+  onScratchFrameChange,
+  hint,
+}: {
+  scratchFrame: ScratchFrame;
+  onScratchFrameChange: (frame: ScratchFrame) => void;
+  hint: string;
+}): ReactElement {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-medium text-[var(--lifafa-cream)]">Frame</p>
+      <div className="flex flex-wrap gap-2">
+        {SCRATCH_FRAMES.map((option) => {
+          const isSelected = option.id === scratchFrame;
+
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onScratchFrameChange(option.id)}
+              className={pillClass(isSelected)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-[var(--lifafa-muted)]">{hint}</p>
+    </div>
+  );
+}
+
+/**
  * The scratch panel over the venue or the countdown.
  *
  * Was the fourth group inside StylePanel. It is a panel of its own now because
@@ -140,29 +179,11 @@ export default function RevealPanel({
 
       {/* Only once a section here has the panel for it to be the frame of. */}
       {scratchTarget === "venue" || scratchTarget === "countdown" ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-[var(--lifafa-cream)]">Frame</p>
-          <div className="flex flex-wrap gap-2">
-            {SCRATCH_FRAMES.map((option) => {
-              const isSelected = option.id === scratchFrame;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => onScratchFrameChange(option.id)}
-                  className={pillClass(isSelected)}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-[var(--lifafa-muted)]">
-            The rectangle has more room, and suits a long venue or the countdown.
-          </p>
-        </div>
+        <ScratchFramePicker
+          scratchFrame={scratchFrame}
+          onScratchFrameChange={onScratchFrameChange}
+          hint="The rectangle has more room, and suits a long venue or the countdown."
+        />
       ) : null}
     </CollapsibleSection>
   );

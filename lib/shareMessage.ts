@@ -8,6 +8,7 @@ import { cardCopy, type WhatsAppGreeting } from "@/lib/cardLanguage";
 import { timelineEntries } from "@/lib/cardSections";
 import { cardInLanguage, inviteLinkIn } from "@/lib/cardTranslation";
 import { pairsNames } from "@/lib/occasions";
+import { dateRevealOf, scratchTargetUnder } from "@/lib/royalScroll";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { TraditionId } from "@/types/occasion";
@@ -208,8 +209,16 @@ export function buildShareMessage(
 
   /* When and where, with whatever the scratch panel is keeping back left back. */
   const details: string[] = [];
+  /*
+    Read as the card reads it (CardCanvas): under the royal scroll a date
+    target left on the card from before hides nothing, so nothing is held back.
+  */
+  const scratchTarget = scratchTargetUnder(
+    dateRevealOf(config.dateReveal, config.scratchTarget),
+    config.scratchTarget,
+  );
 
-  if (config.scratchTarget === "date") {
+  if (scratchTarget === "date") {
     details.push(words.dateHidden);
   } else {
     const date = formatWhen(draft.eventDate, "", language);
@@ -224,7 +233,7 @@ export function buildShareMessage(
     }
   }
 
-  if (config.scratchTarget === "venue") {
+  if (scratchTarget === "venue") {
     details.push(words.venueHidden);
   } else {
     const venue = venueLine(draft.venueName, draft.venueAddress);

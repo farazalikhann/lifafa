@@ -5,8 +5,9 @@ import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
+import { ScratchFramePicker } from "@/components/create/RevealPanel";
 import { scrollArt, type ScrollVariant } from "@/lib/royalScroll";
-import type { DateReveal } from "@/types/card";
+import type { DateReveal, ScratchFrame } from "@/types/card";
 
 /* `summary` is the section's collapsed line, where "Scratch to reveal" is the name of the section below. */
 const REVEALS: readonly {
@@ -104,6 +105,8 @@ export default function DateRevealPanel({
   dateReveal,
   scrollVariant,
   onDateRevealChange,
+  scratchFrame,
+  onScratchFrameChange,
   accordion,
 }: {
   /** What the card does now, resolved: never undefined. */
@@ -111,6 +114,9 @@ export default function DateRevealPanel({
   /** The scroll this card would get, so the thumbnail is the one the host will see. */
   scrollVariant: ScrollVariant;
   onDateRevealChange: (reveal: DateReveal) => void;
+  /** The card's one scratch frame: the same field "Scratch to reveal" writes for the venue and the countdown. */
+  scratchFrame: ScratchFrame;
+  onScratchFrameChange: (frame: ScratchFrame) => void;
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
@@ -163,6 +169,15 @@ export default function DateRevealPanel({
       </div>
 
       <p className="text-xs text-[var(--lifafa-muted)]">{current?.hint}</p>
+
+      {/* The panel is over the date, so its frame is chosen here, where the panel was. */}
+      {dateReveal === "scratch" ? (
+        <ScratchFramePicker
+          scratchFrame={scratchFrame}
+          onScratchFrameChange={onScratchFrameChange}
+          hint="The rectangle has more room, and suits a long date."
+        />
+      ) : null}
     </CollapsibleSection>
   );
 }
