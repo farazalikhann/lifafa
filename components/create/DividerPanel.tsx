@@ -5,6 +5,7 @@ import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
+import { dividerArt } from "@/lib/cardDecor";
 import type { DividerStyle } from "@/types/card";
 
 const DIVIDERS: readonly { id: DividerStyle; label: string }[] = [
@@ -22,6 +23,51 @@ function pillClass(isSelected: boolean): string {
       ? "border-transparent bg-[var(--lifafa-ink-raised)] text-[var(--lifafa-cream)] ring-2 ring-[var(--lifafa-marigold)]"
       : "border-[var(--lifafa-hairline)] text-[var(--lifafa-muted)] hover:text-[var(--lifafa-cream)]",
   ].join(" ");
+}
+
+/* The picture on a chip: the height of the garland, and how much of its width shows. */
+const CHIP_ART_HEIGHT = 22;
+const CHIP_ART_WIDTH = 48;
+
+/**
+ * What the card draws for this divider, at chip size.
+ *
+ * The garland itself, the file the card uses, scaled to the chip and cropped
+ * to its middle: the whole of it is five times as wide as it is tall, and at
+ * a chip's width would be a smear. The middle is where its flowers are. None
+ * is the plain rule the card draws in its place.
+ */
+function DividerChipArt({ style }: { style: DividerStyle }): ReactElement {
+  const art = dividerArt(style);
+
+  if (art === null) {
+    return (
+      <span
+        aria-hidden="true"
+        className="block h-px w-6 bg-[var(--lifafa-muted)]"
+      />
+    );
+  }
+
+  const width = Math.round((CHIP_ART_HEIGHT * art.width) / art.height);
+
+  return (
+    <span
+      aria-hidden="true"
+      className="flex shrink-0 items-center justify-center overflow-hidden"
+      style={{ width: CHIP_ART_WIDTH, height: CHIP_ART_HEIGHT }}
+    >
+      <img
+        src={art.src}
+        alt=""
+        width={width}
+        height={CHIP_ART_HEIGHT}
+        loading="lazy"
+        decoding="async"
+        className="block max-w-none"
+      />
+    </span>
+  );
 }
 
 /**
@@ -58,8 +104,9 @@ export default function DividerPanel({
               type="button"
               aria-pressed={isSelected}
               onClick={() => onDividerChange(option.id)}
-              className={pillClass(isSelected)}
+              className={`flex items-center gap-1.5 ${pillClass(isSelected)}`}
             >
+              <DividerChipArt style={option.id} />
               {option.label}
             </button>
           );
