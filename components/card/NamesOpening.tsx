@@ -47,8 +47,9 @@ import type { OccasionId } from "@/types/occasion";
  * is cut off or laid over anything else.
  *
  * THE FRAME IS AS WIDE AS THE CARD LETS IT BE: out through the screen's own
- * side padding to where a border's flowers begin, less a little air. A wide
- * frame is bound by that width and a tall one by the height it is given.
+ * side padding to where a border's flowers begin, less a little air, and
+ * never nearer the card's edge than 16px. A wide frame is bound by that width
+ * and a tall one by the height it is given.
  *
  * Anywhere else (the editor's frame, a printed sheet, a card whose host moved
  * the names down) nothing has to fit a screen, and both are their full size.
@@ -86,10 +87,21 @@ const JOINER_MIN_PX = 13;
 /**
  * The names' leading inside the frame. A script face is set looser than this
  * on a screen of its own, for its swashes; here the joining word is between
- * the two names, the swashes have that to reach into, and every pixel of
- * height the stack gives back is the names' size.
+ * the two names with room of its own either side (JOINER_ROOM), and every
+ * pixel of height the stack gives back is the names' size.
  */
 const NAMES_LEADING = "0.9";
+
+/**
+ * Room between the joining word and each name, as a share of the names' size.
+ * At this leading a name's capital rises to the top of its line and a
+ * script's swash above it, and a "y" or a "g" in the name overhead comes down
+ * under its own: both reach the joining word without this. Measured on every
+ * pair's names face, it keeps the word 2px or more from either name.
+ * Devanagari is set at a leading of its own for its matras, which is room
+ * enough already.
+ */
+const JOINER_ROOM = "0.14em";
 
 export interface OpeningCalligraphy {
   id: string;
@@ -224,8 +236,13 @@ export default function NamesOpening({
                 be a share of it.
               */
               <div
-                className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center gap-0.5 text-[calc(2.4375rem*var(--card-names-scale,1))] sm:text-[calc(2.75*var(--card-rem,1rem)*var(--card-names-scale,1))]"
-                style={{ "--card-names-leading": NAMES_LEADING } as CSSProperties}
+                className="flex w-max max-w-[calc(20*var(--card-rem,1rem))] flex-col items-center text-[calc(2.4375rem*var(--card-names-scale,1))] sm:text-[calc(2.75*var(--card-rem,1rem)*var(--card-names-scale,1))]"
+                style={
+                  {
+                    "--card-names-leading": NAMES_LEADING,
+                    gap: copy.script === "devanagari" ? cardPx(2) : JOINER_ROOM,
+                  } as CSSProperties
+                }
               >
                 <HeroName text={firstNameOf(names.first)} isPlaceholder={false} script={copy.script} />
                 {/*

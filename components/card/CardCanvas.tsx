@@ -1853,9 +1853,13 @@ export default function CardCanvas({
         */}
         <div
           className="lifafa-card-content relative z-10"
-          style={{
-            paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
-          }}
+          style={
+            {
+              paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
+              /* How far in from the card's edge the column is: a names frame keeps its distance from that edge by it. */
+              "--card-content-inset": `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
+            } as CSSProperties
+          }
         >
           {/*
             Dividers are driven off `visible`, never off `config.blocks`: an

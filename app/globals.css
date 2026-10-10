@@ -507,9 +507,15 @@
   height: var(--opening-gap);
 }
 
+/*
+  The frame is never nearer the card's edge than 16px, nor nearer a border's
+  flowers than 2px: the cell is the content column, which a border has already
+  brought in from the edge by --card-content-inset.
+*/
 .lifafa-opening-frame-cell {
+  --opening-frame-air: max(2px, calc(16px - var(--card-content-inset, 0px)));
   --opening-frame-width: min(
-    calc(100% - 4px),
+    calc(100% - 2 * var(--opening-frame-air)),
     calc(var(--opening-frame-height) * var(--opening-frame-aspect))
   );
 }
@@ -522,7 +528,7 @@
   .lifafa-opening-frame-cell {
     container-type: size;
     --opening-frame-width: min(
-      calc(100cqw - 4px),
+      calc(100cqw - 2 * var(--opening-frame-air)),
       calc(100cqh * var(--opening-frame-aspect))
     );
   }
