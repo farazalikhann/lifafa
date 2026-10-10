@@ -30,7 +30,7 @@ export default function InvitedHeading({
       lang={copy.lang}
       className={
         copy.script === "devanagari"
-          ? "text-[calc(0.9375*var(--card-rem,1rem))] leading-[1.7]"
+          ? "text-[calc(0.9375*var(--card-rem,1rem))] leading-[1.5]"
           : /* The left padding is the tracking after the last letter, so the line is centred on its letters. */
             "pl-[0.34em] text-[calc(0.6875*var(--card-rem,1rem))] leading-[1.6] tracking-[0.34em] uppercase"
       }

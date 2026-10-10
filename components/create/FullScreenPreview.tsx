@@ -12,13 +12,16 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import CardCanvas from "@/components/card/CardCanvas";
-import Watermark from "@/components/card/Watermark";
+import { borderFootDepth } from "@/components/card/decor/BorderFrame";
+import Watermark, { WATERMARK_PILL_SELECTOR } from "@/components/card/Watermark";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
 import CoverShell from "@/components/invite/CoverShell";
+import InvitedCue from "@/components/invite/InvitedCue";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import { useRevealGate } from "@/hooks/useRevealGate";
 import { PREVIEW_INVITE } from "@/lib/calendar";
 import { cardChrome } from "@/lib/cardChrome";
+import { effectiveTheme } from "@/lib/cardTheme";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import type { Motif } from "@/lib/motifs";
@@ -261,6 +264,8 @@ export default function FullScreenPreview({
 }): ReactElement {
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  /* The box the card scrolls in here, which the scroll cue listens to in place of the window. */
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const [deviceId, setDeviceId] = useState<DeviceId>("phone");
   /*
     Tracked rather than assumed. Nothing reads it for layout — the overlay is
@@ -738,7 +743,10 @@ export default function FullScreenPreview({
           row lower, under them; see NamesHeader. At lg they are in the header
           above and the band needs no room for them.
         */}
-        <div className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain [--lifafa-header-lift:2.75rem] [--lifafa-header-music:0] lg:[--lifafa-header-lift:0px] lg:[--lifafa-header-music:1]">
+        <div
+          ref={scrollerRef}
+          className="lifafa-no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain [--lifafa-header-lift:2.75rem] [--lifafa-header-music:0] lg:[--lifafa-header-lift:0px] lg:[--lifafa-header-music:1]"
+        >
           {/*
             No bottom clearance for the watermark pill any more, and dropping it
             is what stops the border frame breaking at the end of the scroll.
@@ -805,6 +813,22 @@ export default function FullScreenPreview({
             />
           </div>
         </div>
+
+        {/*
+          The scroll cue, as the guest's page has it and on the same clock: a
+          second after the cover has gone, away on a scroll, back after six
+          seconds at the top. It was on the guest's page only, so a host never
+          saw it and could not know their guests are told the card goes on.
+          Inside the shell so it knows when the cover has gone; it follows this
+          preview's own scroller, and stands clear of the watermark pill.
+        */}
+        <InvitedCue
+          language={config.language}
+          theme={effectiveTheme(theme, config.style)}
+          clearOf={isPaid ? undefined : WATERMARK_PILL_SELECTOR}
+          scroller={scrollerRef}
+          footDepth={borderFootDepth(config.borderStyle)}
+        />
 
         {/* Draws nothing. Reads the shell's gate and reports it out. */}
         <CoverReveal coverKey={coverKey} onRevealed={setRevealedKey} />

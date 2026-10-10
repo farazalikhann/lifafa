@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type RefObject,
+} from "react";
 import { useCoverOpen } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cardCopy } from "@/lib/cardLanguage";
@@ -24,16 +30,34 @@ const AT_TOP_PX = 12;
 /** Air between the cue and the element it stands clear of, in px. */
 const CLEAR_GAP_PX = 8;
 
+/** How far the arrow drops on its bounce, in px: lifafa-cue-bounce in globals.css. */
+const BOUNCE_PX = 4;
+
+/** How far below its place the hidden cue rests, in px: `translate-y-2` on the button. */
+const HIDDEN_DROP_PX = 8;
+
+/** The cue's own inset under its arrow, in px, above the safe area. */
+const ARROW_FOOT_PX = 18;
+
+/** Air between the arrow at the bottom of its bounce and a frame's rule under it, in px. */
+const RAIL_GAP_PX = 2;
+
 /**
- * How far up the screen the cue's words reach, in px, above the safe area:
- * its bottom inset, the chevron, the prompt and the heading. The card keeps
- * this much of its first screen, and a little over, free for the cue, so the
- * top of the next section shows above the words rather than under them.
- * Kept in step with the sizes below by hand; see FIRST_SCREEN_PEEK in
- * components/card/CardCanvas.tsx. On a screen under 700px tall the cue drops
- * its prompt and --lifafa-cue-h in globals.css says so instead.
+ * How far up the screen the cue reaches, in px, above the safe area: its
+ * bottom inset, the arrow and the word. The card keeps this much of its first
+ * screen, and a little over, free for the cue, so the divider that opens the
+ * next section shows above the word rather than under it. Kept in step with
+ * the sizes below by hand; see FIRST_SCREEN_PEEK in
+ * components/card/CardCanvas.tsx.
+ *
+ * Where the cue cannot sit at the very foot of the screen, or something else
+ * is pinned there with it, it says how much of the foot is taken through
+ * --lifafa-cue-h on the root, and the card's first screen follows that.
  */
-export const INVITED_CUE_HEIGHT = 68;
+export const INVITED_CUE_HEIGHT = 48;
+
+/** Read by the card's first screen in place of INVITED_CUE_HEIGHT; see above. */
+const CUE_HEIGHT_VARIABLE = "--lifafa-cue-h";
 
 /**
  * Set by CardCanvas on the screen the guest lands on. Tapping the cue scrolls
@@ -42,28 +66,11 @@ export const INVITED_CUE_HEIGHT = 68;
 export const FIRST_SCREEN_ATTRIBUTE = "data-first-screen";
 
 /**
- * A short rule ending in a diamond, pointing in at the heading. Left off a
- * phone under 430px wide, where the heading needs the whole line to itself.
- */
-function Ornament({ mirrored = false }: { mirrored?: boolean }): ReactElement {
-  return (
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      viewBox="0 0 28 8"
-      className={`h-2 w-7 shrink-0 max-[429px]:hidden ${mirrored ? "-scale-x-100" : ""}`}
-    >
-      <path d="M0 4 H17" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-      <path d="M22.5 0.5 L26 4 L22.5 7.5 L19 4 Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-/**
- * "Scroll down to see the details", and under it "Scroll to view the
- * invitation" and a chevron, pinned to the foot of the guest's screen. It used
- * to open with "You are invited"; the closed cover says that now (CoverShell),
- * and saying it twice in a row was once too many.
+ * "Scroll", and under it a small arrow that bounces, pinned to the foot of the
+ * screen in the card's accent. It was two lines of words and a chevron, which
+ * was more to read than the thing it asks for and stood on a ground wide
+ * enough to wash over a frame's bottom corners. One word and an arrow is read
+ * at a glance and is narrower than the gap between any two corner pieces.
  *
  * WHY IT IS NOT PART OF THE CARD. A card with a religious opening lands on a
  * Bismillah, a greeting and a dua, centred and complete, and nothing on that
@@ -75,28 +82,55 @@ function Ornament({ mirrored = false }: { mirrored?: boolean }): ReactElement {
  * holds, and it is never in the card's content, so nothing is placed above or
  * among the sacred lines.
  *
+ * WHAT IT STANDS CLEAR OF. The card's first screen stops short of the cue, so
+ * the divider under it, a garland or the arabesque band, shows whole above the
+ * word (CardCanvas, FIRST_SCREEN_PEEK), and on the rare phone where the opening
+ * outgrows that screen and the divider ends up under the cue's place anyway,
+ * the cue is not shown. It is centred and narrow, so a frame's
+ * bottom corners are either side of it, and where the frame draws a rule right
+ * across the foot of the screen it stands above the rule (`footDepth`). And on
+ * a card that shows the watermark
+ * pill it goes in the room under the pill where there is room, above the pill
+ * where there is not, and tells the card how much of the foot the two take.
+ *
  * It waits for the cover to finish opening, then fades in a second later. It
  * leaves the moment the guest scrolls, and a guest who comes back to the top
  * and stays there for six seconds gets it back. Tapping it takes them to the
  * next section. Under reduced motion it neither fades nor bounces; it still
- * comes and goes. On a screen under 700px tall it is only the heading and the
- * chevron, so it takes as little of the opening's room as it can.
+ * comes and goes.
+ *
+ * ON THE GUEST'S PAGE AND IN THE EDITOR'S FULL-SCREEN PREVIEW. The page scrolls
+ * the window; the preview scrolls a box of its own inside an overlay, which at
+ * desktop width has a bar above it and a line under it. `scroller` is that
+ * box: its scroll is the one listened to, and the cue sits at its foot.
  */
 export default function InvitedCue({
   language,
   theme,
   clearOf,
+  scroller,
+  footDepth = 0,
 }: {
   language: CardLanguage;
   /** The card's composed theme, so the cue is in the card's own colours and faces. */
   theme: Theme;
   /**
-   * A selector for something fixed at the foot of the screen the cue must sit
-   * above: the watermark pill on the host's unpaid preview. Measured rather
-   * than assumed, because the pill wraps to two lines on a narrow phone and
-   * its height changes with the language.
+   * A selector for something fixed at the foot of the screen the cue must not
+   * touch: the watermark pill on an unpaid card. Measured rather than assumed,
+   * because the pill wraps to two lines on a narrow phone and its height
+   * changes with the language.
    */
   clearOf?: string;
+  /**
+   * The box the card scrolls in, where that is not the window: the editor's
+   * full-screen preview. Absent on the guest's page.
+   */
+  scroller?: RefObject<HTMLElement | null>;
+  /**
+   * How far up from the foot of the screen the card's frame draws across it,
+   * in px: `borderFootDepth` of the card's border. The cue sits above that.
+   */
+  footDepth?: number;
 }): ReactElement {
   const copy = cardCopy(language);
   const coverOpen = useCoverOpen();
@@ -104,42 +138,118 @@ export default function InvitedCue({
   const [shown, setShown] = useState(false);
   /** How far off the bottom of the screen it sits, in px. */
   const [lift, setLift] = useState(0);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
+  /*
+    Where the cue sits, and how much of the screen's foot the card is to leave.
+    Measured on mount, on resize and when the pill changes size: never in a
+    loop, and never while anything is moving.
+  */
   useEffect(() => {
-    if (clearOf === undefined) {
+    const box = scroller?.current ?? null;
+    const target = clearOf === undefined ? null : document.querySelector(clearOf);
+
+    /* What the arrow, at the bottom of its bounce, has to rise to be over the frame's rule. */
+    const overRail = Math.max(
+      0,
+      footDepth + RAIL_GAP_PX - (ARROW_FOOT_PX - BOUNCE_PX),
+    );
+
+    /* The guest's page with nothing at its foot to stand clear of: the stylesheet's own numbers stand. */
+    if (box === null && target === null && overRail === 0) {
       setLift(0);
       return;
     }
 
-    const target = document.querySelector(clearOf);
-
-    if (target === null) {
-      return;
-    }
+    const root = document.documentElement;
 
     const measure = (): void => {
-      const top = target.getBoundingClientRect().top;
-      setLift(Math.max(0, Math.ceil(window.innerHeight - top + CLEAR_GAP_PX)));
+      const screen = window.innerHeight;
+      const boxRect = box?.getBoundingClientRect() ?? null;
+      /* The foot the cue is pinned to: the screen's, or the scrolling box's. */
+      const foot = (boxRect === null ? screen : boxRect.bottom) - overRail;
+      const own = buttonRef.current?.offsetHeight ?? INVITED_CUE_HEIGHT;
+      let cueBottom = foot;
+      /* The highest point the two reach: the card's first screen ends above it. */
+      let reach = foot - own;
+
+      if (target !== null) {
+        const pill = target.getBoundingClientRect();
+
+        if (foot - pill.bottom >= own + BOUNCE_PX) {
+          /* Room under the pill: the cue takes it, and the pill is the top of the pair. */
+          reach = pill.top - CLEAR_GAP_PX;
+        } else {
+          cueBottom = pill.top - CLEAR_GAP_PX;
+          reach = cueBottom - own;
+        }
+      }
+
+      setLift(Math.max(0, Math.ceil(screen - cueBottom)));
+      /*
+        The first screen is the screen less this, measured from the top of the
+        screen; in a box that starts lower, what is above the box counts too.
+      */
+      root.style.setProperty(
+        CUE_HEIGHT_VARIABLE,
+        `${Math.max(0, Math.ceil(screen - reach + (boxRect?.top ?? 0)))}px`,
+      );
     };
 
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(target);
+
+    if (target !== null) {
+      observer.observe(target);
+    }
+
+    if (box !== null) {
+      observer.observe(box);
+    }
+
     window.addEventListener("resize", measure);
 
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", measure);
+      root.style.removeProperty(CUE_HEIGHT_VARIABLE);
     };
-  }, [clearOf, language]);
+  }, [clearOf, scroller, language, footDepth]);
 
   useEffect(() => {
     if (!coverOpen) {
       return;
     }
 
+    const box = scroller?.current ?? null;
+    const source: HTMLElement | Window = box ?? window;
     let timer: number | null = null;
-    const atTop = (): boolean => window.scrollY <= AT_TOP_PX;
+    const atTop = (): boolean =>
+      (box === null ? window.scrollY : box.scrollTop) <= AT_TOP_PX;
+
+    /*
+      The last word on "never over the divider". The card's first screen stops
+      short of the cue, but it is a least height and not a limit: an opening
+      too tall for a short phone grows, and takes the divider down with it. So
+      before the cue shows it looks, once, at where the divider under the
+      first screen has come to rest, and where that is under the cue it stays
+      away. The guest on that phone has a line of the next section in sight
+      already. Read when the timer fires, never on a scroll or in a loop.
+    */
+    const overDivider = (): boolean => {
+      const button = buttonRef.current;
+      const divider = (box ?? document).querySelector(`[${FIRST_SCREEN_ATTRIBUTE}]`)
+        ?.nextElementSibling;
+
+      if (button === null || divider === null || divider === undefined) {
+        return false;
+      }
+
+      /* Hidden, the cue rests HIDDEN_DROP_PX lower than it is shown. */
+      const shownTop = button.getBoundingClientRect().top - HIDDEN_DROP_PX;
+
+      return divider.getBoundingClientRect().bottom > shownTop;
+    };
 
     /* One pending timer at a time; a scroll away cancels it. */
     const showAfter = (ms: number): void => {
@@ -150,7 +260,7 @@ export default function InvitedCue({
       timer = window.setTimeout(() => {
         timer = null;
 
-        if (atTop()) {
+        if (atTop() && !overDivider()) {
           setShown(true);
         }
       }, ms);
@@ -174,23 +284,41 @@ export default function InvitedCue({
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    source.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       cancel();
-      window.removeEventListener("scroll", handleScroll);
+      source.removeEventListener("scroll", handleScroll);
+      /* A cover that closes again (Replay, in the preview) takes the cue with it. */
+      setShown(false);
     };
-  }, [coverOpen]);
+  }, [coverOpen, scroller]);
 
   const handleTap = (): void => {
-    const first = document.querySelector(`[${FIRST_SCREEN_ATTRIBUTE}]`);
+    const box = scroller?.current ?? null;
+    const first = (box ?? document).querySelector(`[${FIRST_SCREEN_ATTRIBUTE}]`);
+    const behavior = reducedMotion ? "auto" : "smooth";
+
+    setShown(false);
+
+    if (box !== null) {
+      const top =
+        first !== null
+          ? first.getBoundingClientRect().bottom -
+            box.getBoundingClientRect().top +
+            box.scrollTop
+          : box.clientHeight;
+
+      box.scrollTo({ top, behavior });
+      return;
+    }
+
     const top =
       first !== null
         ? first.getBoundingClientRect().bottom + window.scrollY
         : window.innerHeight;
 
-    setShown(false);
-    window.scrollTo({ top, behavior: reducedMotion ? "auto" : "smooth" });
+    window.scrollTo({ top, behavior });
   };
 
   /* A touch translucent, so the card reads as still being there under it. */
@@ -207,82 +335,75 @@ export default function InvitedCue({
       style={{ bottom: `${lift}px` }}
     >
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleTap}
-        /* Both lines, even where a short screen shows only the first. */
-        aria-label={`${copy.scrollCue.heading}. ${copy.scrollCue.prompt}`}
+        /* The whole sentence for a screen reader; the one word is for the eye. */
+        aria-label={copy.scrollCue.label}
         /* Hidden means gone: no taps, no focus, nothing read out. */
         inert={!shown}
-        className={`relative isolate flex w-[min(22rem,calc(100vw-2rem))] flex-col items-center px-4 pt-6 text-center [@media(max-height:699px)]:pt-4 transition-[opacity,transform] duration-[600ms] ease-out motion-reduce:transition-none rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${
+        className={`relative isolate flex min-w-24 flex-col items-center rounded-2xl px-5 text-center transition-[opacity,transform] duration-[600ms] ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${
           shown
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none translate-y-2 opacity-0"
         }`}
         style={{
-          paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
-          fontFamily: theme.fontFamily,
+          paddingBottom: `calc(${ARROW_FOOT_PX}px + env(safe-area-inset-bottom, 0px))`,
+          color: theme.accent,
           outlineColor: theme.accent,
         }}
       >
         {/*
-          The ground the words stand on: the card's own colour in a soft dome
-          rising off the bottom edge, with a light blur under it, so they read
-          over a flower frame, a lantern or a line of the card alike. A dome and
-          not a bar, so a frame's bottom corners are left as they are.
+          The ground the word stands on: the card's own colour in a small soft
+          dome rising off the bottom edge, so it reads over the royal texture
+          or a petal that has landed there. No wider than the button, so a
+          frame's bottom corners are left as they are, and no blur: it is under
+          one word now, and a blurred backdrop is paint a slow phone can do
+          without.
         */}
         <span
           aria-hidden="true"
-          className="absolute -inset-x-10 -top-2 bottom-0 -z-10"
+          className="absolute inset-x-0 top-0 -z-10"
           style={{
-            background: `radial-gradient(ellipse 50% 100% at 50% 100%, ${veil} 0%, ${veil} 58%, transparent 100%)`,
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            maskImage:
-              "radial-gradient(ellipse 50% 100% at 50% 100%, #000 55%, transparent 100%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 50% 100% at 50% 100%, #000 55%, transparent 100%)",
+            /* Under the word and the arrow, and not under the inset below them, where a frame's rule may be. */
+            bottom: ARROW_FOOT_PX - BOUNCE_PX - RAIL_GAP_PX,
+            background: `radial-gradient(ellipse 50% 100% at 50% 100%, ${veil} 0%, ${veil} 45%, transparent 100%)`,
           }}
         />
 
-        <span className="flex items-center gap-2.5" style={{ color: theme.accent }}>
-          <Ornament />
-          <span
-            /*
-              A sentence, so set as one: in its own case and barely tracked.
-              Spaced capitals suited two words and would not fit these six on
-              one line of a 360px phone, and a second line would push the cue
-              past the room the card keeps for it (INVITED_CUE_HEIGHT).
-            */
-            className="text-[0.9375rem] leading-[1.6] tracking-[0.04em] whitespace-nowrap"
-            style={{
-              fontFamily: theme.displayFontFamily,
-              fontWeight: theme.displayFontWeight,
-            }}
-          >
-            {copy.scrollCue.heading}
-          </span>
-          <Ornament mirrored />
-        </span>
-
         <span
-          className="text-[0.75rem] leading-[1.6] [@media(max-height:699px)]:hidden"
-          style={{ color: theme.textMuted }}
+          lang={copy.lang}
+          className={
+            copy.script === "devanagari"
+              ? "text-[0.9375rem] leading-[1.2] whitespace-nowrap"
+              : /* The left padding is the tracking after the last letter, so the word is centred over the arrow. */
+                "pl-[0.24em] text-[0.8125rem] leading-[1.4] tracking-[0.24em] whitespace-nowrap uppercase"
+          }
+          style={{
+            fontFamily: theme.displayFontFamily ?? theme.fontFamily,
+            fontWeight: theme.displayFontWeight,
+          }}
         >
-          {copy.scrollCue.prompt}
+          {copy.scrollCue.word}
         </span>
 
+        {/*
+          The arrow: a short stem and a head, bouncing 4px. Transform only, and
+          only while the cue is on screen, so a hidden cue costs nothing.
+        */}
         <svg
           aria-hidden="true"
           focusable="false"
-          viewBox="0 0 16 10"
-          className="mt-1 h-2.5 w-4 animate-[lifafa-cue-bounce_1.8s_ease-in-out_infinite] motion-reduce:animate-none"
-          style={{ color: theme.accent }}
+          viewBox="0 0 12 14"
+          className={`h-3 w-3 motion-reduce:animate-none ${
+            shown ? "animate-[lifafa-cue-bounce_1.8s_ease-in-out_infinite]" : ""
+          }`}
         >
           <path
-            d="M1.5 1.5 L8 8 L14.5 1.5"
+            d="M6 1 V12 M1.5 7.5 L6 12 L10.5 7.5"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.6"
+            strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />

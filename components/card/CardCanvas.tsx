@@ -261,6 +261,24 @@ const SECTION_SIDE_PAD = 28;
 const FIRST_SCREEN_PEEK = INVITED_CUE_HEIGHT + 36;
 
 /**
+ * Air between the divider under the first screen and the cue, in px: what is
+ * left of the peek above once the small rule (25px at its tallest, the
+ * arabesque band) is in it.
+ */
+const FIRST_SCREEN_AIR = 11;
+
+/**
+ * The room a garland needs under the first screen, where the divider there is
+ * one: its own height and the same air. A garland is four fifths of the card
+ * wide (FloralDivider) and the card is the screen wide on a phone, so its
+ * height is a share of the screen's width; capped where the card stops
+ * growing, so a desktop window does not ask for a garland a metre tall.
+ */
+function garlandRoom(art: { width: number; height: number }): string {
+  return `calc(min(100vw, 480px) * ${((0.8 * art.height) / art.width).toFixed(4)} + ${FIRST_SCREEN_AIR}px)`;
+}
+
+/**
  * Under the opening on the first screen, the least room left before the
  * divider, in px. Small, because the peek above is what keeps it off the cue;
  * the opening's own inset at the foot was a screen's worth of symmetry that a
@@ -502,9 +520,11 @@ function firstScreenHeight(
   sizing: CardSizing,
   minHeight: string,
   frameHeight: number,
+  /** What the divider under it needs above the cue, when that is more than the small rule's share of the peek. */
+  dividerRoom: string = `${FIRST_SCREEN_PEEK - INVITED_CUE_HEIGHT}px`,
 ): string {
   return sizing === "viewport"
-    ? `min(${minHeight}, calc(100svh - var(--lifafa-cue-h, ${INVITED_CUE_HEIGHT}px) - ${FIRST_SCREEN_PEEK - INVITED_CUE_HEIGHT}px - env(safe-area-inset-bottom, 0px)))`
+    ? `min(${minHeight}, calc(100svh - var(--lifafa-cue-h, ${INVITED_CUE_HEIGHT}px) - ${dividerRoom} - env(safe-area-inset-bottom, 0px)))`
     : `min(${minHeight}, ${frameHeight - FIRST_SCREEN_PEEK}px)`;
 }
 
@@ -1413,6 +1433,18 @@ export default function CardCanvas({
   const floralDivider = dividerArt(dividerStyleOf(config.divider, config.traditionId));
 
   /*
+    A first screen that is a section, not the opening, is followed by the
+    card's ordinary divider, and that may be a garland: three to five times as
+    tall as the rule the peek was measured for. So that screen stops shorter
+    by the garland's own height, and the whole garland shows above the cue. It
+    used to stop where the opening does, and the cue was set across the roses.
+  */
+  const sectionFirstScreenBox =
+    floralDivider !== null
+      ? firstScreenHeight(sizing, minHeight, frameHeight, garlandRoom(floralDivider))
+      : firstScreenBox;
+
+  /*
     `floral` is false for the one rule that is not between two sections: the
     one under the opening on the first screen, which is fitted to the pixel
     above the cue and stays the small flourish it was measured as.
@@ -1857,7 +1889,7 @@ export default function CardCanvas({
               block,
               draft,
               effectiveTheme,
-              sectionIsFirstScreen ? firstScreenBox : minHeight,
+              sectionIsFirstScreen ? sectionFirstScreenBox : minHeight,
               sectionIsFirstScreen ? firstScreenPad : sectionPad,
               config.occasionId,
               scratch,

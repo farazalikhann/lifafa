@@ -16,6 +16,7 @@ import Watermark, {
 import CoverShell from "@/components/invite/CoverShell";
 import CoverVisual from "@/components/invite/covers/CoverVisual";
 import InvitedCue from "@/components/invite/InvitedCue";
+import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import ThankYouNote from "@/components/invite/ThankYouNote";
 import BorderInset from "@/components/invite/BorderInset";
 import BorderFrame from "@/components/card/decor/BorderFrame";
@@ -514,6 +515,7 @@ export default function InviteExperience({
             language={language}
             theme={cardTheme}
             clearOf={event.isPaid ? undefined : WATERMARK_PILL_SELECTOR}
+            footDepth={borderFootDepth(config.borderStyle)}
           />
 
           {/*

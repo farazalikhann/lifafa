@@ -243,13 +243,13 @@ export interface CardCopy {
   /** Under the loader while the card arrives, before the cover appears. */
   coverPreparing: string;
   /**
-   * The cue pinned to the foot of the guest's first screen, telling them the
-   * card goes on below. See InvitedCue. It used to open with "You are
-   * invited", which the cover says now (`coverInvite`).
+   * The cue pinned to the foot of the first screen, telling the guest the
+   * card goes on below: the one word shown over its arrow, and the sentence a
+   * screen reader is given in its place. See InvitedCue.
    */
   scrollCue: {
-    heading: string;
-    prompt: string;
+    word: string;
+    label: string;
   };
   /**
    * What the closed cover says above its artwork, before the guest taps in:
@@ -537,8 +537,8 @@ const ENGLISH: CardCopy = {
   invitedHeading: "You are invited",
   coverPreparing: "Preparing your invitation",
   scrollCue: {
-    heading: "Scroll down to see the details",
-    prompt: "Scroll to view the invitation",
+    word: "Scroll",
+    label: "Scroll down to see the details",
   },
   coverInvite: {
     heading: "You are invited",
@@ -797,9 +797,9 @@ const HINDI: CardCopy = {
   invitedHeading: "आप आमंत्रित हैं",
   coverPreparing: "आपका निमंत्रण तैयार हो रहा है",
   scrollCue: {
-    /* TODO(Faraz): verify this Hindi heading with a native reader before launch. */
-    heading: "विवरण देखने के लिए नीचे स्क्रॉल करें",
-    prompt: "निमंत्रण देखने के लिए नीचे स्क्रॉल करें",
+    word: "स्क्रॉल करें",
+    /* TODO(Faraz): verify this Hindi line with a native reader before launch. */
+    label: "विवरण देखने के लिए नीचे स्क्रॉल करें",
   },
   coverInvite: {
     heading: "आप सादर आमंत्रित हैं",

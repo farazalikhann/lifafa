@@ -272,6 +272,26 @@ export function borderClearance(style: CardBorderStyle): {
   return SPECS[style].clearance;
 }
 
+/**
+ * How far up from the foot of the screen a frame's bottom edge reaches, in px.
+ *
+ * For the scroll cue, which is pinned to the foot of the screen and must sit
+ * above a rule drawn across it (InvitedCue). Only the drawn frames that run
+ * all the way round have one worth clearing: a vine, a double rule or a row of
+ * scallops, each as deep as its band and standing SCREEN_INSET in. The corner
+ * styles and the garland draw nothing at the middle of the foot, and a
+ * photographic frame's foot there is a hairline under where the cue stands.
+ */
+export function borderFootDepth(style: CardBorderStyle): number {
+  if (style === "none" || isPhotoBorder(style)) {
+    return 0;
+  }
+
+  const spec = SPECS[style];
+
+  return spec.hasEdges ? SCREEN_INSET + spec.band : 0;
+}
+
 /* ---------------------------------------------------------------------------
    Tiles
 
