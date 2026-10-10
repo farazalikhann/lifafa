@@ -49,7 +49,8 @@ import BorderFrame, {
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import TopCorners, {
-  TOP_CORNERS_REACH,
+  END_MANDALA_ROOM,
+  EndMandala,
   topCornersStrength,
 } from "@/components/card/decor/TopCorners";
 import ScrollFade, {
@@ -1147,6 +1148,8 @@ export default function CardCanvas({
     list; the other two are the names' screen's, handed to it below.
   */
   const slots = resolveSlots(pack, ornaments);
+  /* The same line the cover draws between a light card and a dark one. */
+  const lightGround = relativeLuminance(effectiveTheme.background) > 0.4;
 
   /*
     Every chosen picture fetched as the page loads. Under a cover the card is
@@ -1635,19 +1638,16 @@ export default function CardCanvas({
           behind the same text.
         */}
         {/*
-          What turns in the two top corners of the first screen. At the top of
-          the card rather than pinned to the screen, so it scrolls away with
-          that screen, and under the content column, so under everything. The
-          dissolve below is told to leave its two corners alone.
+          The same ornament once more, rising from the bottom edge where the
+          card ends, in room the column below grows to hold it. Not on a card
+          drawn still: a printed sheet and a carousel frame are a cut of the
+          card, and its end is not theirs.
         */}
-        {slots.topCorners !== null ? (
-          <TopCorners
+        {slots.topCorners !== null && !still ? (
+          <EndMandala
             entry={slots.topCorners}
             accent={effectiveTheme.accent}
-            /* The same line the cover draws between a light card and a dark one. */
-            strength={topCornersStrength(
-              relativeLuminance(effectiveTheme.background) > 0.4,
-            )}
+            strength={topCornersStrength(lightGround)}
           />
         ) : null}
 
@@ -1775,7 +1775,20 @@ export default function CardCanvas({
           texture={texture}
           hangingBand={hangingBand}
           bandHeight={bandHeight}
-          spareTopCorners={slots.topCorners !== null ? TOP_CORNERS_REACH : null}
+          /*
+            What turns in the two top corners of the screen, for the whole
+            card: pinned with the dissolve and drawn as part of it.
+          */
+          topCorners={
+            slots.topCorners !== null ? (
+              <TopCorners
+                entry={slots.topCorners}
+                accent={effectiveTheme.accent}
+                strength={topCornersStrength(lightGround)}
+                inset={isPhotoBorder(config.borderStyle)}
+              />
+            ) : null
+          }
         />
 
         {/*
@@ -1839,6 +1852,9 @@ export default function CardCanvas({
           className="lifafa-card-content relative z-10"
           style={{
             paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
+            /* Room under the last section for the ornament at the card's end. */
+            paddingBottom:
+              slots.topCorners !== null && !still ? END_MANDALA_ROOM : undefined,
           }}
         >
           {/*

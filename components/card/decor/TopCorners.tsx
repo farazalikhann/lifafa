@@ -6,55 +6,38 @@ import { cardPx } from "@/lib/cardScale";
 import type { PackOrnament } from "@/lib/traditionPacks";
 
 /**
- * The pack's `topCorners` ornament: two copies of one round shape, each
- * centred on a top corner of the card, so about a quarter of each shows. The
- * left one turns clockwise and the right one the other way.
+ * The pack's `topCorners` ornament, in its two places: a pair pinned to the
+ * top corners of the screen for the whole card (TopCorners), and one more,
+ * larger, rising from the bottom edge where the card ends (EndMandala). One
+ * round shape, filled with the card's accent, turning slowly.
  *
- * PART OF THE CARD, NOT OF THE SCREEN. Every other layer of decor is pinned
- * inside a sticky band; this one is laid at the top of the card itself, so it
- * goes up and off with the first screen and is not there on the second.
+ * NEVER UNDER A LINE OF TEXT THAT CAN BE READ. Each is somewhere the card
+ * sets no text at full strength, and is gone where the text begins, so its
+ * strength does not have to answer to the card's inks: an ink that sits at
+ * 4.5:1 on the bare card has nothing to give, and an ornament measured
+ * against it was switched on and drawn at nothing.
  *
- * BEHIND EVERYTHING. Under the content column, so the card's writing is drawn
- * over it and never the other way round, and so under the top border and the
- * frame as well. The dissolve at the top of the screen (ScrollFade) paints the
- * card's own colour over whatever is under the column, and would paint this
- * out with it: about 100px deep under a garland, of a shape that reaches 137.
- * So the dissolve is told where these two corners are and leaves them alone;
- * see `spareTopCorners` there, which takes its reach from TOP_CORNERS_REACH.
+ *  - The pair is part of the dissolve at the top of the screen (ScrollFade),
+ *    which is where a line of text is taken away before it reaches whatever
+ *    hangs there. ScrollFade mounts it and masks it on its own curve: whole
+ *    where the text is gone, and gone where the text is whole.
  *
- * ALWAYS THERE, AND NEVER UNDER A LINE OF TEXT AT MORE THAN A TRACE. Its
- * strength used to be measured against the card's text and brought down until
- * the text passed, and an ink that sits at 4.5:1 on the bare card has nothing
- * to give: on such a card the ornament was switched on and drawn at nothing.
- * Its strength is now fixed for the ground, and what keeps it off the writing
- * is where it is rather than how faint: it fades from the corner outwards
- * (TOP_CORNERS_FADE), and is gone where the first screen's text begins.
+ *  - The one at the end stands in room the card grows to hold it
+ *    (END_MANDALA_ROOM), under its last section, and fades out inside that
+ *    room.
  *
- * The motion is `lifafa-mandala-turn` in globals.css. Held while the tab is
- * hidden or this layer is off the screen, and still under reduced motion.
+ * The motion is `lifafa-mandala-turn` in globals.css: a rotate and nothing
+ * else. Held while the tab is hidden or the layer is off the screen, and
+ * still under reduced motion.
  *
  * Decoration only: aria-hidden, and never a tap target.
  */
 
-/** Each circle's diameter, as a share of the card's width. */
-const DIAMETER_SHARE = 0.7;
+/** The 420px design width, which every cap here is a share of. */
+const DESIGN_WIDTH = 420;
 
 /**
- * And the most it may be, in card px: that share of the 420px design width.
- * A card that fills a laptop screen is as wide as the screen, and 70% of that
- * is not a corner ornament.
- */
-const MAX_DIAMETER = 420 * DIAMETER_SHARE;
-
-/**
- * How far in from a top corner the circles reach: their radius, as a CSS
- * length. A percentage of the card's width, so it is only right where a
- * percentage is of that width.
- */
-export const TOP_CORNERS_REACH = `min(${(DIAMETER_SHARE / 2) * 100}%, ${cardPx(MAX_DIAMETER / 2)})`;
-
-/**
- * How strong the ornament is at the corner itself, by the card's ground.
+ * How strong the ornament is where it is strongest, by the card's ground.
  * Stronger on a dark card, where a gold line at the light card's strength is
  * too faint to see under a flower frame.
  */
@@ -68,74 +51,75 @@ export function topCornersStrength(lightGround: boolean): number {
   return Math.max(STRENGTH_FLOOR, lightGround ? STRENGTH.light : STRENGTH.dark);
 }
 
+/* ---------------------------------------------------------------------------
+   The pair pinned to the top corners
+   --------------------------------------------------------------------------- */
+
 /**
- * The fade from the corner outwards, as the share of its strength the
- * ornament keeps at each share of its reach.
- *
- * Full for the first two thirds, much of which is under the ends of the
- * garland and the corner flowers of a frame, so that what shows beyond them
- * is still worth showing; half by 82%, a tenth by 93%, nothing at the edge. MEASURED, NOT GUESSED: across the opening and the names as a first
- * screen, with and without a top border and a flower frame, at 360x640,
- * 360x740 and 390x844, the nearest any line of first-screen text comes to a
- * top corner is 0.99 of the reach ("You are invited" on the shortest screen),
- * and the calligraphy's box 1.02. So the text begins where this ends, and a
- * layout that brought a line a tenth closer would have a fifth of the
- * ornament's strength under its nearest end. Round the centre the shape turns about, so the fade does
- * not turn with it.
+ * Each circle's diameter, as a share of the card's width: wider than the
+ * card, so a generous quarter of each shows and the two meet across the top.
+ * No wider than that share of the design width in card px, so on a card that
+ * fills a laptop screen it is still a corner ornament.
  */
-const TOP_CORNERS_FADE: readonly (readonly [reach: number, kept: number])[] = [
-  [0, 1],
-  [0.65, 1],
-  [0.82, 0.5],
-  [0.93, 0.1],
-  [1, 0],
-];
+const PAIR_DIAMETER = 1.1;
 
-const FADE_MASK = `radial-gradient(closest-side, ${TOP_CORNERS_FADE.map(
-  ([reach, kept]) => `rgb(0 0 0 / ${kept}) ${reach * 100}%`,
-).join(", ")})`;
+/**
+ * How far in and down each centre moves under a flower frame, as a share of
+ * the card's width: the frame's corner bouquets are about that deep, and a
+ * circle centred on the corner itself kept its best rings behind them.
+ */
+const PAIR_INSET = 0.1;
 
+/*
+  Its own fade, round the centre it turns about, is in its file: full for
+  most of the way out, so the rings that clear a garland's ends and a frame's
+  bouquets are at strength, and soft at the rim, where the two circles cross
+  in the middle of the screen. What keeps it off the text is not that but the
+  mask ScrollFade lays over both.
+*/
+
+/**
+ * Two copies, each centred on a top corner of the box it is put in, the left
+ * turning clockwise and the right the other way. Fills that box and is cut
+ * by it; ScrollFade supplies one as deep as its own dissolve.
+ */
 export default function TopCorners({
   entry,
   accent,
   strength,
+  inset,
 }: {
   entry: PackOrnament;
   accent: string;
   /** From `topCornersStrength`, for the card's ground. */
   strength: number;
+  /** Whether the card has a flower frame, whose bouquets the centres step clear of. */
+  inset: boolean;
 }): ReactElement {
   const pauseRef = useFloatingPause();
-  const Shape = entry.Component;
+  const Shape = entry.turning?.pair ?? entry.Component;
+  /* A share of the card's width, as a share of the circle's own, which is what a transform is measured in. */
+  const step = inset ? (PAIR_INSET / PAIR_DIAMETER) * 100 : 0;
 
   return (
     <div
       ref={pauseRef}
       aria-hidden="true"
-      /*
-        As deep as the circles reach, which is half of one, and cut there and
-        at the card's edges. The depth is padding because a percentage of
-        padding is of the card's width, which a height cannot be given in.
-      */
-      className="pointer-events-none absolute inset-x-0 top-0 z-[1] overflow-clip"
-      style={{ paddingTop: TOP_CORNERS_REACH, color: accent }}
+      className="pointer-events-none absolute inset-0 overflow-clip"
+      style={{ color: accent }}
     >
       {(["left", "right"] as const).map((side) => (
         <div
           key={side}
           /*
             Set on its corner by a transform of its own, so the turn inside is
-            a rotate and nothing else; and the fade is on this, which does not
-            turn, over the shape, which does.
+            a rotate and nothing else.
           */
           className="absolute top-0"
           style={{
             left: side === "left" ? 0 : "100%",
-            width: `min(${DIAMETER_SHARE * 100}%, ${cardPx(MAX_DIAMETER)})`,
-            transform: "translate(-50%, -50%)",
-            opacity: strength,
-            WebkitMaskImage: FADE_MASK,
-            maskImage: FADE_MASK,
+            width: `min(${PAIR_DIAMETER * 100}%, ${cardPx(DESIGN_WIDTH * PAIR_DIAMETER)})`,
+            transform: `translate(${side === "left" ? -50 + step : -50 - step}%, ${-50 + step}%)`,
           }}
         >
           <Shape
@@ -143,9 +127,89 @@ export default function TopCorners({
             className={`lifafa-mandala-turn block w-full${
               side === "right" ? " lifafa-mandala-turn-back" : ""
             }`}
+            /* On the turning shape itself, so each is one layer with nothing to blend as a group. */
+            style={{ opacity: strength }}
           />
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   The one at the end of the card
+   --------------------------------------------------------------------------- */
+
+/** The whole circle's diameter, as a share of the card's width, capped as the pair's is. */
+const END_DIAMETER = 1.2;
+
+/** The room the card adds under its last section to hold it, as a share of the card's width. */
+const END_ROOM = 0.34;
+
+/**
+ * That room, as the bottom padding of the card's content column: a percentage
+ * of padding is of the card's width. Nothing is set in it, which is the whole
+ * of how the ornament keeps off the last section's text.
+ */
+export const END_MANDALA_ROOM = `min(${END_ROOM * 100}%, ${cardPx(DESIGN_WIDTH * END_ROOM)})`;
+
+/**
+ * How much of the art its file holds: the middle 55%, with a fade cut into
+ * it that is strongest at the centre and gone at the file's own edge. So it
+ * is strongest at the card's bottom edge, where its centre is, and gone
+ * inside the room made for it, which is 0.567 of the whole circle's radius
+ * deep. The shape that turns is this share of the circle and no bigger.
+ */
+const END_ART_SHARE = 0.55;
+
+/**
+ * One circle, centred across the card with its centre on the card's bottom
+ * edge, so its upper half rises behind the end of the card. It is part of
+ * the card and scrolls with it.
+ *
+ * ABOVE THE DISSOLVE, AT `z-[13]`. The dissolve's bottom fade comes to rest
+ * on the last 60px of the card, which is exactly where this is strongest,
+ * and would paint it out. Under the frame and anything that hangs, which
+ * stand higher; and the column's text is not in the room it stands in.
+ */
+export function EndMandala({
+  entry,
+  accent,
+  strength,
+}: {
+  entry: PackOrnament;
+  accent: string;
+  strength: number;
+}): ReactElement {
+  const pauseRef = useFloatingPause();
+  const Shape = entry.turning?.end ?? entry.Component;
+  /* What is drawn of the circle: its diameter, less what its file leaves out. */
+  const drawn = END_DIAMETER * END_ART_SHARE;
+
+  return (
+    <div
+      ref={pauseRef}
+      aria-hidden="true"
+      /* As tall as the half that shows; padding, because a percentage of it is of the card's width. */
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[13] overflow-clip"
+      style={{
+        paddingTop: `min(${(drawn / 2) * 100}%, ${cardPx((DESIGN_WIDTH * drawn) / 2)})`,
+        color: accent,
+      }}
+    >
+      <div
+        className="absolute left-1/2 top-full"
+        style={{
+          width: `min(${drawn * 100}%, ${cardPx(DESIGN_WIDTH * drawn)})`,
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        <Shape
+          instanceId={`end-${entry.id}`}
+          className="lifafa-mandala-turn lifafa-mandala-turn-slow block w-full"
+          style={{ opacity: strength }}
+        />
+      </div>
     </div>
   );
 }

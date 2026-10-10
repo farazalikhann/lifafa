@@ -160,6 +160,39 @@ const ORNAMENTS = [
     fit: { width: 800, height: 800 },
     alphaQuality: 14,
   },
+  /*
+    The same art twice more, as the card draws it: each with its fade from the
+    centre outwards cut into the file, as the share of itself it keeps at each
+    share of its radius. The card used to lay that fade over the turning shape
+    as a second mask, and a mask over a layer that turns is composited again
+    on every frame; cut into the file it costs nothing. The plain one above is
+    what the editor's tile shows.
+
+    `corner` is the pair pinned to the top corners: whole for most of the way
+    out and soft at the rim, where the two cross in the middle of the screen.
+    `end` is the one at the foot of the card, which fades out inside the room
+    the card makes for it: only the middle 55% of the art is ever seen, so
+    only that is published, and it is drawn at 55% of the size.
+    components/card/decor/TopCorners.tsx sizes both.
+  */
+  {
+    name: "mandala-hindu-corner",
+    file: "Intricate White Lotus Mandala on Black.png",
+    source: "mandala art",
+    background: "mask",
+    circle: { cx: 626, cy: 625.5, r: 614, fade: [[0, 1], [0.72, 1], [0.9, 0.35], [1, 0]] },
+    fit: { width: 800, height: 800 },
+    alphaQuality: 14,
+  },
+  {
+    name: "mandala-hindu-end",
+    file: "Intricate White Lotus Mandala on Black.png",
+    source: "mandala art",
+    background: "mask",
+    circle: { cx: 626, cy: 625.5, r: 338, fade: [[0, 1], [0.47, 1], [0.76, 0.45], [1, 0]] },
+    fit: { width: 560, height: 560 },
+    alphaQuality: 30,
+  },
 ].map((entry) => ({ ...entry, out: join("public", "decor", "ornaments") }));
 
 /**
@@ -1445,11 +1478,22 @@ async function publish(entry) {
 
   /* A piece that turns: the square round its circle, and nothing outside the circle. */
   if (entry.circle) {
-    const { cx, cy, r } = entry.circle;
+    const { cx, cy, r, fade } = entry.circle;
+    /* What the piece keeps of itself at a share of its radius: a straight line between the stops given. */
+    const kept = (share) => {
+      if (!fade) return 1;
+      for (let stop = 1; stop < fade.length; stop += 1) {
+        const [from, a] = fade[stop - 1];
+        const [to, b] = fade[stop];
+        if (share <= to) return a + ((b - a) * (share - from)) / (to - from);
+      }
+      return fade[fade.length - 1][1];
+    };
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
-        const out = Math.hypot(x - cx, y - cy) - r;
-        if (out > 0) rgba[(y * width + x) * 4 + 3] *= Math.max(0, 1 - out);
+        const reach = Math.hypot(x - cx, y - cy);
+        const out = reach - r;
+        rgba[(y * width + x) * 4 + 3] *= out > 0 ? Math.max(0, 1 - out) * kept(1) : kept(reach / r);
       }
     }
     left = Math.round(cx - r); top = Math.round(cy - r);

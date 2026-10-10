@@ -969,9 +969,10 @@
   The mandala in a card's top corners: one full turn every 90 seconds, at one
   speed, by `transform: rotate` alone, so the compositor turns a picture it
   has already drawn and nothing is laid out or painted again. The left one
-  turns clockwise and the right one back the other way. Held by
-  [data-floating-paused] below while the tab is hidden or the first screen is
-  off the screen, and not turned at all under reduced motion.
+  turns clockwise and the right one back the other way; the one at the end of
+  the card turns clockwise, a turn every 120 seconds. Held by
+  [data-floating-paused] below while the tab is hidden or its layer is off
+  the screen, and not turned at all under reduced motion.
 */
 @keyframes lifafa-mandala-turn {
   to {
@@ -986,6 +987,10 @@
 
 .lifafa-mandala-turn-back {
   animation-direction: reverse;
+}
+
+.lifafa-mandala-turn-slow {
+  animation-duration: 120s;
 }
 
 @media (prefers-reduced-motion: reduce) {
