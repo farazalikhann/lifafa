@@ -16,6 +16,12 @@ import {
   roseBloomArt,
   roseBloomTiming,
 } from "@/lib/roseBloomFilm";
+import {
+  RIBBON_SEAL_PLAIN_FADE_MS,
+  RIBBON_SEAL_THUMB,
+  ribbonSealArt,
+  ribbonSealTiming,
+} from "@/lib/ribbonSealFilm";
 import type { CoverAnimationId, CoverAnimationOption } from "@/types/coverAnimation";
 
 export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
@@ -191,6 +197,41 @@ export const COVER_ANIMATIONS: readonly CoverAnimationOption[] = [
     */
     art: roseBloomArt,
     film: roseBloomTiming,
+  },
+  {
+    /*
+      A new id, and so a new value for the check on events.cover_animation:
+      see supabase/migrations/0016_ribbon_seal_cover.sql.
+    */
+    id: "ribbon-seal",
+    label: "Ribbon & Seal",
+    description: "A satin bow unties from a floral gatefold, and the card appears out of the light.",
+    thumbnail: RIBBON_SEAL_THUMB,
+    openPromptText: {
+      en: "Tap to open",
+      hi: "खोलने के लिए टैप करें",
+    },
+    /*
+      What happens when the film cannot play: this gatefold was never drawn in
+      code, so the still fades to the card, and the card is let go as it
+      starts to.
+    */
+    durationMs: RIBBON_SEAL_PLAIN_FADE_MS,
+    revealAt: 0,
+    /* Ribbon, paper panels and a chime: the gatefold's own recording. */
+    sound: "fold",
+    haptic: 10,
+    supportsReducedMotion: true,
+    /* Paper and flowers fill the screen, so the prompt sits on a plaque of its own. */
+    wordsOn: "plaque",
+    /*
+      Played from film: the bow unties, the panels open on a light that fills
+      the screen, and the card comes out of the light. One film for every
+      card, and the visual follows the film's own clock, so the timing here
+      is only the shell's net. See lib/ribbonSealFilm.ts.
+    */
+    art: ribbonSealArt,
+    film: ribbonSealTiming,
   },
 ];
 

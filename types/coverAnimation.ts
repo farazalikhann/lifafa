@@ -18,7 +18,8 @@ export type CoverAnimationId =
   | "curtain-reveal"
   | "fold-unfold"
   | "petal-dust"
-  | "rose-bloom";
+  | "rose-bloom"
+  | "ribbon-seal";
 
 /**
  * The pictures a cover is drawn from, when it is drawn from pictures, and the
@@ -55,6 +56,19 @@ export interface CoverArt {
    * the prompt under them.
    */
   wordsAt?: "head" | "foot";
+  /**
+   * The widest the words at the head may be set, as a CSS length, for artwork
+   * whose clear ground there is narrower than the screen: a strip of plain
+   * paper between two painted edges. Absent, they take the screen's width
+   * less its margins, as on every cover whose head is clear from side to side.
+   */
+  wordsWidth?: string;
+  /**
+   * False for artwork with room at its head for "You are invited" and the
+   * names and no more: the line that follows them is left off. Absent, the
+   * line is set.
+   */
+  wordsLine?: boolean;
   /** Skip and the focus ring, over the artwork. */
   ink?: string;
   inkMuted?: string;

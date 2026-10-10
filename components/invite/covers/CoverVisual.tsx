@@ -14,6 +14,7 @@ import { ENVELOPE_LIGHT_FILM } from "@/lib/envelopeLightFilm";
 import { FOLD_LIGHT_FILM } from "@/lib/foldLightFilm";
 import { envelopeArt } from "@/lib/envelopeArt";
 import { gatefoldArt } from "@/lib/gatefoldArt";
+import { RIBBON_SEAL_FILM } from "@/lib/ribbonSealFilm";
 import { ROSE_BLOOM_FILM } from "@/lib/roseBloomFilm";
 
 /*
@@ -100,6 +101,13 @@ export default function CoverVisual(state: CoverVisualState): ReactElement | nul
     */
     case "rose-bloom":
       return <LightFilmCover {...state} film={ROSE_BLOOM_FILM} />;
+
+    /*
+      The same again: a film that ends in plain light, with nothing drawn in
+      code behind it. Its still fades to the card when the film cannot play.
+    */
+    case "ribbon-seal":
+      return <LightFilmCover {...state} film={RIBBON_SEAL_FILM} />;
 
     /* The host asked for no animation. The shell never shows a cover at all. */
     case "none":

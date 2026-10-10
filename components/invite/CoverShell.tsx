@@ -997,8 +997,12 @@ export default function CoverShell({
           */}
           <div
             data-cover-invite=""
-            className="pointer-events-none absolute inset-x-0 z-10 flex flex-col items-center gap-2 px-7 text-center motion-reduce:transition-none"
+            className="pointer-events-none absolute inset-x-0 z-10 mx-auto flex flex-col items-center gap-2 px-7 text-center motion-reduce:transition-none"
             style={{
+              /* No wider than the artwork's clear ground, where it has less than the screen's. */
+              ...(art?.wordsWidth !== undefined
+                ? { maxWidth: art.wordsWidth, paddingLeft: 0, paddingRight: 0 }
+                : null),
               /* At the foot, it stands on the prompt's plaque, which is moved down to make room. */
               ...(wordsAtFoot
                 ? { bottom: "calc(max(3.5vh, 28px) + 3.5rem)" }
@@ -1068,12 +1072,15 @@ export default function CoverShell({
                 {title}
               </p>
             ) : null}
-            <p
-              className="max-w-[19rem] text-[0.875rem] leading-[1.55] text-[var(--cover-muted)] text-balance"
-              style={{ fontFamily: fontFamilyOf(pairRoleVar(fontPair, "body"), fontPair.bodyFallback) }}
-            >
-              {copy.coverInvite.line}
-            </p>
+            {/* Left off where the artwork has no room for it under the names; see `wordsLine`. */}
+            {art?.wordsLine !== false ? (
+              <p
+                className="max-w-[19rem] text-[0.875rem] leading-[1.55] text-[var(--cover-muted)] text-balance"
+                style={{ fontFamily: fontFamilyOf(pairRoleVar(fontPair, "body"), fontPair.bodyFallback) }}
+              >
+                {copy.coverInvite.line}
+              </p>
+            ) : null}
           </div>
 
           <button
