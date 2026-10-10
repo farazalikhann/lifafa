@@ -143,6 +143,23 @@ const ORNAMENTS = [
     pocketMin: 40,
   },
   { name: "marigold-garland", file: "WhatsApp Image 2026-09-27 at 2.45.32 PM.jpeg", background: "checker", fit: { width: 1200 } },
+  /*
+    The mandala that turns in the card's top corners: white line art on black,
+    published as a mask like the calligraphy and filled with the card's accent.
+    It turns about its own middle, so it is not cropped to its ink, which would
+    put the middle wherever the longest petal left it: `circle` is the
+    mandala's centre and outer radius in the source's pixels, the published
+    square is that circle's, and nothing outside the circle is kept.
+  */
+  {
+    name: "mandala-hindu",
+    file: "Intricate White Lotus Mandala on Black.png",
+    source: "mandala art",
+    background: "mask",
+    circle: { cx: 626, cy: 625.5, r: 614 },
+    fit: { width: 800, height: 800 },
+    alphaQuality: 14,
+  },
 ].map((entry) => ({ ...entry, out: join("public", "decor", "ornaments") }));
 
 /**
@@ -1424,6 +1441,19 @@ async function publish(entry) {
       top = Math.min(top, y); bottom = Math.max(bottom, y);
       left = Math.min(left, x); right = Math.max(right, x);
     }
+  }
+
+  /* A piece that turns: the square round its circle, and nothing outside the circle. */
+  if (entry.circle) {
+    const { cx, cy, r } = entry.circle;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const out = Math.hypot(x - cx, y - cy) - r;
+        if (out > 0) rgba[(y * width + x) * 4 + 3] *= Math.max(0, 1 - out);
+      }
+    }
+    left = Math.round(cx - r); top = Math.round(cy - r);
+    right = left + Math.round(r * 2) - 1; bottom = top + Math.round(r * 2) - 1;
   }
 
   const resize =

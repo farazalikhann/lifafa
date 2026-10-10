@@ -48,6 +48,7 @@ import BorderFrame, {
 } from "@/components/card/decor/BorderFrame";
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
+import TopCorners from "@/components/card/decor/TopCorners";
 import ScrollFade, {
   scrollFadeDepth,
 } from "@/components/card/decor/ScrollFade";
@@ -105,7 +106,7 @@ import {
 } from "@/lib/cardSections";
 import InvitedHeading from "@/components/card/InvitedHeading";
 import type { CalendarInvite } from "@/lib/calendar";
-import { maxOverlayAlpha, relativeLuminance } from "@/lib/contrast";
+import { maxOverlayAlpha, maxVeilAlpha, relativeLuminance } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
@@ -209,6 +210,13 @@ const MusicToggle = dynamic(
  * alpha worth testing for contrast. Mirrors OPACITY_AT_SMALLEST in DecorLayer.
  */
 const DECOR_CEILING = 0.22;
+
+/**
+ * The same ceiling for the ornament that turns in the top corners. Lower than
+ * the scatter's: a motif there is 30px of line and this is a quarter of a
+ * circle 70% of the card wide.
+ */
+const TOP_CORNERS_CEILING = 0.2;
 
 /**
  * The mosque arch's inset from the cover's edges when no border is drawn, in px.
@@ -1031,6 +1039,18 @@ export default function CardCanvas({
   );
 
   /*
+    And how strong the ornament in the top corners may be, by the same
+    measurement, taken both for a wash behind the muted text and for one across
+    it: that layer is drawn above the content column. See TopCorners.
+  */
+  const topCornersAlpha = maxVeilAlpha(
+    effectiveTheme.accent,
+    effectiveTheme.background,
+    effectiveTheme.textMuted,
+    TOP_CORNERS_CEILING,
+  );
+
+  /*
     THE SINGLE GATE ON THE WHOLE ORNAMENT FEATURE, for every tradition.
 
     One lookup, checked once. A tradition with no pack resolves to null, the
@@ -1210,7 +1230,17 @@ export default function CardCanvas({
       ? flowerFrameSrc(config.borderStyle)
       : undefined,
   ].filter((src) => src !== undefined);
-  const firstScreenMasks = cardHasHead ? calligraphyMasks : [];
+  /* The top corners' mask is on the first screen of every card that has it. */
+  const topCornersMask = slots.topCorners?.mask;
+
+  if (topCornersMask !== undefined) {
+    preload(topCornersMask, { as: "image", crossOrigin: "anonymous" });
+  }
+
+  const firstScreenMasks = [
+    ...(cardHasHead ? calligraphyMasks : []),
+    ...(topCornersMask !== undefined ? [topCornersMask] : []),
+  ];
 
   /*
     Where the arch has to sit so it does not cross the border.
@@ -1620,6 +1650,20 @@ export default function CardCanvas({
           the same measured alpha ceiling as the scattered motifs, because it sits
           behind the same text.
         */}
+        {/*
+          What turns in the two top corners of the first screen. At the top of
+          the card rather than pinned to the screen, so it scrolls away with
+          that screen; under the top border and the frame, which come after it
+          and stand higher. Its own note says why it is not lower still.
+        */}
+        {slots.topCorners !== null ? (
+          <TopCorners
+            entry={slots.topCorners}
+            accent={effectiveTheme.accent}
+            opacity={topCornersAlpha}
+          />
+        ) : null}
+
         {pack !== null ? (
           <CornerLayer
             pack={pack}

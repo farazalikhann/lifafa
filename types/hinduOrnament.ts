@@ -28,6 +28,8 @@ export type HinduOrnamentId =
   | "swastik"
   | "toran"
   | "marigold"
+  /* Line art that turns slowly in the two top corners of the first screen. */
+  | "mandala"
   /*
     The five below are calligraphy rather than shapes — Devanagari word-marks.
     They are ids in this union like any other because the host switches them on

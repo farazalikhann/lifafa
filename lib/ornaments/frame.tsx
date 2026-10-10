@@ -339,6 +339,42 @@ export function imageOrnament(src: string, aspect: number): Ornament {
   return Picture;
 }
 
+/**
+ * An ornament that is a shape rather than a picture or a drawing: one file
+ * whose alpha is the line work, published by scripts/cut-flowers.mjs, laid
+ * over a block of `currentColor` as a CSS mask. It takes its wrapper's colour
+ * as every drawing does, so it is the card's accent on the card and the
+ * editor's ink on a tile. The calligraphy below is drawn the same way.
+ *
+ * Decoration: aria-hidden and no label. `size` measures the longer side;
+ * `className` hands sizing to CSS, and the shape keeps its own proportions.
+ */
+export function maskOrnament(mask: string, aspect: number): Ornament {
+  const Shape: Ornament = ({ size = DEFAULT_SIZE, className, style }) => (
+    <span
+      aria-hidden="true"
+      className={className ?? "block"}
+      style={{
+        display: "block",
+        aspectRatio: String(aspect),
+        ...(className === undefined
+          ? { width: Math.round(aspect >= 1 ? size : size * aspect) }
+          : null),
+        backgroundColor: "currentColor",
+        WebkitMaskImage: `url(${mask})`,
+        maskImage: `url(${mask})`,
+        WebkitMaskSize: "100% 100%",
+        maskSize: "100% 100%",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        ...style,
+      }}
+    />
+  );
+
+  return Shape;
+}
+
 export function calligraphyOrnament(id: CalligraphyId): Ornament {
   const mask = calligraphyMask(id);
 

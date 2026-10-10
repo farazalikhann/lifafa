@@ -22,6 +22,7 @@ export function slottedIds(pack: TraditionPack | null): readonly AnyOrnamentId[]
     ...(pack.slots.corners ?? []),
     ...(pack.slots.frame ?? []),
     ...(pack.slots.sides ?? []),
+    ...(pack.slots.topCorners ?? []),
   ];
 }
 
@@ -78,6 +79,8 @@ export interface ChosenSlots {
   frame: PackOrnament | null;
   /** What stands in the side margins of the names' screen, for a pack that has one. */
   sides: PackOrnament | null;
+  /** What turns in the two top corners of the first screen, for a pack that has one. */
+  topCorners: PackOrnament | null;
 }
 
 const NOTHING: ChosenSlots = {
@@ -86,6 +89,7 @@ const NOTHING: ChosenSlots = {
   corners: null,
   frame: null,
   sides: null,
+  topCorners: null,
 };
 
 /** What the card draws in each place. Every place empty for a pack without slots. */
@@ -116,6 +120,7 @@ export function resolveSlots(
           : null,
     frame: find(chosenIn(pack.slots.frame ?? [], enabled)),
     sides: find(chosenIn(pack.slots.sides ?? [], enabled)),
+    topCorners: find(chosenIn(pack.slots.topCorners ?? [], enabled)),
   };
 }
 
@@ -150,7 +155,9 @@ export function tapSlotted(
             ? (slots.frame ?? [])
             : (slots.sides ?? []).includes(id)
               ? (slots.sides ?? [])
-              : null;
+              : (slots.topCorners ?? []).includes(id)
+                ? (slots.topCorners ?? [])
+                : null;
 
   if (place === null) {
     const corners = slots?.corners ?? [];

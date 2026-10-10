@@ -966,6 +966,36 @@
 }
 
 /*
+  The mandala in a card's top corners: one full turn every 90 seconds, at one
+  speed, by `transform: rotate` alone, so the compositor turns a picture it
+  has already drawn and nothing is laid out or painted again. The left one
+  turns clockwise and the right one back the other way. Held by
+  [data-floating-paused] below while the tab is hidden or the first screen is
+  off the screen, and not turned at all under reduced motion.
+*/
+@keyframes lifafa-mandala-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lifafa-mandala-turn {
+  animation: lifafa-mandala-turn 90s linear infinite;
+  will-change: transform;
+}
+
+.lifafa-mandala-turn-back {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-mandala-turn {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+/*
   A floating layer nobody can see: every CSS loop under it is held where it
   is. Set by hooks/useFloatingPause.ts while the tab is hidden or the card is
   scrolled off the screen, and taken off again when it is not.

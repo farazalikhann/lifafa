@@ -2,6 +2,7 @@ import {
   Frame,
   calligraphyOrnament,
   imageOrnament,
+  maskOrnament,
   cordPath,
   flowerPath,
   leafPath,
@@ -62,6 +63,8 @@ export const HINDU_ORNAMENT_ASPECT: Record<HinduOrnamentId, number> = {
   swastik: 257 / 260,
   toran: 1200 / 211,
   marigold: 1200 / 302,
+  /* A circle, published in the square round it. */
+  mandala: 1,
   /*
     Not viewBoxes: the published crops each calligraphy's pair of files shares.
     Asked of lib/calligraphy.ts rather than copied, so the sheet can be re-cut
@@ -590,6 +593,8 @@ export interface HinduOrnamentEntry {
   uprightOnly?: boolean;
   /** The published file, for an ornament that is a picture; the card preloads it. */
   src?: string;
+  /** And for one drawn as a mask filled with the accent, which is fetched as a mask is. */
+  mask?: string;
 }
 
 /**
@@ -659,6 +664,22 @@ const PICTURES: Partial<Record<HinduOrnamentId, { src: string; Component: Orname
 export const DIYA_FLAME = { x: 0.9, y: 0.28 } as const;
 
 /* ---------------------------------------------------------------------------
+   Mandala
+   --------------------------------------------------------------------------- */
+
+/**
+ * The mandala that turns in the two top corners of the first screen.
+ *
+ * Neither a drawing nor a gold picture: white line art cut to one shape whose
+ * alpha is the line work, and filled with the card's accent through a CSS
+ * mask, the way the calligraphy below is. Published with its centre at the
+ * centre of its square, because it turns about that point; see the note on it
+ * in scripts/cut-flowers.mjs.
+ */
+const MANDALA_MASK = "/decor/ornaments/mandala-hindu.webp";
+const Mandala = maskOrnament(MANDALA_MASK, 1);
+
+/* ---------------------------------------------------------------------------
    Calligraphy
    --------------------------------------------------------------------------- */
 
@@ -724,6 +745,19 @@ const HINDU_ENTRIES: readonly HinduOrnamentEntry[] = [
     Component: Marigold,
     chipSize: 84,
     topRegionOnly: false,
+  },
+  {
+    /*
+      A place of its own, the pack's `topCorners`, and never the scatter: it
+      is drawn 70% of the card wide and turning, which is not a thing to be
+      set down at 84px beside the venue.
+    */
+    id: "mandala",
+    label: "Mandala",
+    Component: Mandala,
+    chipSize: 40,
+    topRegionOnly: false,
+    mask: MANDALA_MASK,
   },
   /* In the order the panel offers them. */
   {

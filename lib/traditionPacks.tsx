@@ -137,6 +137,11 @@ export interface PackOrnament {
    */
   src?: string;
   /**
+   * The published file of an ornament drawn as a mask filled with the accent.
+   * Preloaded apart from `src`, because a mask is fetched in CORS mode.
+   */
+  mask?: string;
+  /**
    * How tall the ornament stands above the names, in card px, for a picture
    * too detailed for the usual height. See components/card/decor/SlotOrnaments.tsx.
    */
@@ -188,6 +193,12 @@ interface OrnamentSlots {
   sides?: readonly AnyOrnamentId[];
   /** What the panel calls that place, where "Side flags" is not what stands in it. */
   sidesLabel?: string;
+  /**
+   * Turns slowly in the two top corners of the card's first screen, behind
+   * what hangs there: one ornament, a copy centred on each corner. Absent for
+   * a pack with none. See components/card/decor/TopCorners.tsx.
+   */
+  topCorners?: readonly AnyOrnamentId[];
 }
 
 /**
@@ -609,6 +620,7 @@ const HINDU_PACK: TraditionPack = {
     top: ["toran", "marigold"],
     aboveNames: ["ganesh", "om", "swastik"],
     corners: ["diya", "kalash"],
+    topCorners: ["mandala"],
   },
   cardHead: DEVANAGARI_CARD_HEAD,
   calligraphyIds: [
