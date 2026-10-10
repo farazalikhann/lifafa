@@ -48,7 +48,10 @@ import BorderFrame, {
 } from "@/components/card/decor/BorderFrame";
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
-import TopCorners from "@/components/card/decor/TopCorners";
+import TopCorners, {
+  TOP_CORNERS_REACH,
+  topCornersStrength,
+} from "@/components/card/decor/TopCorners";
 import ScrollFade, {
   scrollFadeDepth,
 } from "@/components/card/decor/ScrollFade";
@@ -106,12 +109,7 @@ import {
 } from "@/lib/cardSections";
 import InvitedHeading from "@/components/card/InvitedHeading";
 import type { CalendarInvite } from "@/lib/calendar";
-import {
-  contrastRatio,
-  maxOverlayAlpha,
-  maxVeilAlpha,
-  relativeLuminance,
-} from "@/lib/contrast";
+import { maxOverlayAlpha, relativeLuminance } from "@/lib/contrast";
 import { cardCopy, type CardCopy } from "@/lib/cardLanguage";
 import { artWidth, cardPx } from "@/lib/cardScale";
 import { effectiveTheme as composeCardTheme } from "@/lib/cardTheme";
@@ -215,17 +213,6 @@ const MusicToggle = dynamic(
  * alpha worth testing for contrast. Mirrors OPACITY_AT_SMALLEST in DecorLayer.
  */
 const DECOR_CEILING = 0.22;
-
-/**
- * The same ceiling for the ornament that turns in the top corners, which is
- * what it is drawn at wherever the card's text can carry it. Higher on a dark
- * card: gold line on maroon or midnight at the light card's strength was too
- * faint to be seen under a flower frame.
- */
-const TOP_CORNERS_CEILING = { light: 0.22, dark: 0.3 } as const;
-
-/** WCAG's threshold for small text, which the top corners' strength is held to. */
-const TOP_CORNERS_MIN_RATIO = 4.5;
 
 /**
  * The mosque arch's inset from the cover's edges when no border is drawn, in px.
@@ -1048,53 +1035,6 @@ export default function CardCanvas({
   );
 
   /*
-    And how strong the ornament in the top corners may be: its ceiling, brought
-    down only as far as the text it can lie across asks. That layer is drawn
-    above the content column (see TopCorners), so each ink is measured for a
-    wash behind a line and for one across it.
-
-    WHICH INKS. The ornament is on the first screen and scrolls away with it,
-    so it is that screen's text and no other. Where the card opens on its cover
-    block, as nearly every card does, that is the opening and the names: the
-    two inks and the four roles set in them. Long passages are in a quieter
-    ink of their own (`body`) and are never on that screen; they are measured
-    only on a card whose host moved another section to the top.
-
-    The muted ink is always measured. Any other that does not reach the ratio
-    on the bare card is left out, because no strength of ornament could bring
-    it there.
-  */
-  const firstBlock = visible[0];
-  const opensOnCover =
-    firstBlock !== undefined && firstBlock.kind === "builtin" && firstBlock.id === "cover";
-  const { body: bodyInkOnCard, ...firstScreenRoles } = textRoles(effectiveTheme);
-  const topCornersInks = [
-    ...new Set([
-      effectiveTheme.textMuted,
-      effectiveTheme.textPrimary,
-      ...Object.values(firstScreenRoles),
-      ...(opensOnCover ? [] : [bodyInkOnCard]),
-    ]),
-  ].filter(
-    (ink) =>
-      ink === effectiveTheme.textMuted ||
-      contrastRatio(ink, effectiveTheme.background) >= TOP_CORNERS_MIN_RATIO,
-  );
-  const topCornersAlpha = Math.min(
-    ...topCornersInks.map((ink) =>
-      maxVeilAlpha(
-        effectiveTheme.accent,
-        effectiveTheme.background,
-        ink,
-        relativeLuminance(effectiveTheme.background) > 0.4
-          ? TOP_CORNERS_CEILING.light
-          : TOP_CORNERS_CEILING.dark,
-        TOP_CORNERS_MIN_RATIO,
-      ),
-    ),
-  );
-
-  /*
     THE SINGLE GATE ON THE WHOLE ORNAMENT FEATURE, for every tradition.
 
     One lookup, checked once. A tradition with no pack resolves to null, the
@@ -1697,14 +1637,17 @@ export default function CardCanvas({
         {/*
           What turns in the two top corners of the first screen. At the top of
           the card rather than pinned to the screen, so it scrolls away with
-          that screen; under the top border and the frame, which come after it
-          and stand higher. Its own note says why it is not lower still.
+          that screen, and under the content column, so under everything. The
+          dissolve below is told to leave its two corners alone.
         */}
         {slots.topCorners !== null ? (
           <TopCorners
             entry={slots.topCorners}
             accent={effectiveTheme.accent}
-            opacity={topCornersAlpha}
+            /* The same line the cover draws between a light card and a dark one. */
+            strength={topCornersStrength(
+              relativeLuminance(effectiveTheme.background) > 0.4,
+            )}
           />
         ) : null}
 
@@ -1832,6 +1775,7 @@ export default function CardCanvas({
           texture={texture}
           hangingBand={hangingBand}
           bandHeight={bandHeight}
+          spareTopCorners={slots.topCorners !== null ? TOP_CORNERS_REACH : null}
         />
 
         {/*

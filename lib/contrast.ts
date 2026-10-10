@@ -174,44 +174,6 @@ export function maxOverlayAlpha(
 }
 
 /**
- * The largest alpha at which a wash of `overlay` leaves `text` readable both
- * where it lies behind the text and where it lies across it.
- *
- * For a layer that is drawn over the content rather than under it. Behind a
- * glyph the wash is that glyph's background, which is maxOverlayAlpha's
- * question; across one it tints the glyph and its ground by the same share,
- * which is a second question with its own answer. The lower of the two, by the
- * same scan and to the same half percent.
- */
-export function maxVeilAlpha(
-  overlay: string,
-  background: string,
-  text: string,
-  ceiling: number,
-  minRatio: number = SMALL_TEXT_RATIO,
-): number {
-  let safe = 0;
-  const behind = maxOverlayAlpha(overlay, background, text, ceiling, minRatio);
-
-  for (let step = 1; step <= Math.round(behind * ALPHA_STEPS); step += 1) {
-    const alpha = step / ALPHA_STEPS;
-
-    if (
-      contrastRatio(
-        composite(overlay, text, alpha),
-        composite(overlay, background, alpha),
-      ) < minRatio
-    ) {
-      break;
-    }
-
-    safe = alpha;
-  }
-
-  return safe;
-}
-
-/**
  * Which colour to set text in on a solid `fill`.
  *
  * The card's own colours first, in the order given, taking whichever reads
