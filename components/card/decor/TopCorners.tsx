@@ -3,12 +3,15 @@
 import type { ReactElement } from "react";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
 import { cardPx } from "@/lib/cardScale";
-import type { PackOrnament } from "@/lib/traditionPacks";
+import { resolveSlots } from "@/lib/ornaments/slots";
+import { getTraditionPack, type PackOrnament } from "@/lib/traditionPacks";
+import type { TraditionId } from "@/types/occasion";
+import type { AnyOrnamentId } from "@/types/ornament";
 
 /**
  * The pack's `topCorners` ornament, in its two places: a pair pinned to the
  * top corners of the screen for the whole card (TopCorners), and one more,
- * larger, rising from the bottom edge where the card ends (EndMandala). One
+ * larger, rising from the bottom edge where the page ends (EndMandala). One
  * round shape, filled with the card's accent, turning slowly.
  *
  * NEVER UNDER A LINE OF TEXT THAT CAN BE READ. Each is somewhere the card
@@ -22,9 +25,8 @@ import type { PackOrnament } from "@/lib/traditionPacks";
  *    hangs there. ScrollFade mounts it and masks it on its own curve: whole
  *    where the text is gone, and gone where the text is whole.
  *
- *  - The one at the end stands in room the card grows to hold it
- *    (END_MANDALA_ROOM), under its last section, and fades out inside that
- *    room.
+ *  - The one at the end is a block of its own after everything else on the
+ *    page, with nothing set in it, and fades out inside that block.
  *
  * The motion is `lifafa-mandala-turn` in globals.css: a rotate and nothing
  * else. Held while the tab is hidden or the layer is off the screen, and
@@ -137,40 +139,41 @@ export default function TopCorners({
 }
 
 /* ---------------------------------------------------------------------------
-   The one at the end of the card
+   The one at the end of the page
    --------------------------------------------------------------------------- */
 
 /** The whole circle's diameter, as a share of the card's width, capped as the pair's is. */
 const END_DIAMETER = 1.2;
 
-/** The room the card adds under its last section to hold it, as a share of the card's width. */
-const END_ROOM = 0.34;
-
-/**
- * That room, as the bottom padding of the card's content column: a percentage
- * of padding is of the card's width. Nothing is set in it, which is the whole
- * of how the ornament keeps off the last section's text.
- */
-export const END_MANDALA_ROOM = `min(${END_ROOM * 100}%, ${cardPx(DESIGN_WIDTH * END_ROOM)})`;
-
 /**
  * How much of the art its file holds: the middle 55%, with a fade cut into
- * it that is strongest at the centre and gone at the file's own edge. So it
- * is strongest at the card's bottom edge, where its centre is, and gone
- * inside the room made for it, which is 0.567 of the whole circle's radius
- * deep. The shape that turns is this share of the circle and no bigger.
+ * it that is strongest at the centre and gone at the file's own edge, all the
+ * way round. The shape that turns is this share of the circle and no bigger,
+ * and the block it stands in is exactly as tall as its upper half: so it is
+ * strongest at the bottom edge of the page, where its centre is, and has
+ * faded to nothing at the top of its block and well inside the block's sides.
+ * The only straight edge it meets is the end of the page itself.
  */
 const END_ART_SHARE = 0.55;
 
 /**
- * One circle, centred across the card with its centre on the card's bottom
- * edge, so its upper half rises behind the end of the card. It is part of
- * the card and scrolls with it.
+ * One circle, centred across the page with its centre on the page's bottom
+ * edge, so its upper half rises at the very end.
  *
- * ABOVE THE DISSOLVE, AT `z-[13]`. The dissolve's bottom fade comes to rest
- * on the last 60px of the card, which is exactly where this is strongest,
- * and would paint it out. Under the frame and anything that hangs, which
- * stand higher; and the column's text is not in the room it stands in.
+ * A BLOCK OF ITS OWN, IN THE FLOW, AFTER EVERYTHING. It was laid at the foot
+ * of the card, in room under the card's last section, and on a guest's page
+ * the card is not the end: the reply form follows on a ground with no texture
+ * in it, and the ornament stopped dead on the line between the two. As the
+ * last block of the page it has nothing after it to stop on and nothing over
+ * it: the reply, the note and the keepsake are all above it, and it does not
+ * reach up into any of them. Whoever draws the end of the page mounts it: the
+ * guest's page after its last section, and the card itself where a card is
+ * all there is (the editor's full-screen preview; see `endOrnament` on
+ * CardCanvas).
+ *
+ * `z-[13]`: above the dissolve, whose bottom fade comes to rest on the foot
+ * of a card and would paint this out where it is strongest, and under the
+ * frame at `z-[16]`, whose foot is drawn over it.
  */
 export function EndMandala({
   entry,
@@ -190,8 +193,8 @@ export function EndMandala({
     <div
       ref={pauseRef}
       aria-hidden="true"
-      /* As tall as the half that shows; padding, because a percentage of it is of the card's width. */
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[13] overflow-clip"
+      /* As tall as the half that shows; padding, because a percentage of it is of the page's width. */
+      className="pointer-events-none relative z-[13] overflow-clip"
       style={{
         paddingTop: `min(${(drawn / 2) * 100}%, ${cardPx((DESIGN_WIDTH * drawn) / 2)})`,
         color: accent,
@@ -211,5 +214,28 @@ export function EndMandala({
         />
       </div>
     </div>
+  );
+}
+
+/**
+ * The end ornament for a card's config, or nothing for a card without one:
+ * for a page that draws its own end and has the config but not the card's
+ * resolved slots. Reads the same list the card does, through the same slots.
+ */
+export function PageEndMandala({
+  traditionId,
+  enabledOrnaments,
+  accent,
+  lightGround,
+}: {
+  traditionId: TraditionId;
+  enabledOrnaments: readonly AnyOrnamentId[];
+  accent: string;
+  lightGround: boolean;
+}): ReactElement | null {
+  const entry = resolveSlots(getTraditionPack(traditionId), enabledOrnaments).topCorners;
+
+  return entry === null ? null : (
+    <EndMandala entry={entry} accent={accent} strength={topCornersStrength(lightGround)} />
   );
 }

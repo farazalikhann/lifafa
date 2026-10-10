@@ -20,6 +20,7 @@ import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import ThankYouNote from "@/components/invite/ThankYouNote";
 import BorderInset from "@/components/invite/BorderInset";
 import BorderFrame from "@/components/card/decor/BorderFrame";
+import { PageEndMandala } from "@/components/card/decor/TopCorners";
 import LanguageSwitch, {
   LANGUAGE_SWITCH_CLEARANCE,
 } from "@/components/invite/LanguageSwitch";
@@ -28,6 +29,7 @@ import type { CalendarInvite } from "@/lib/calendar";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { CARD_LANGUAGES, cardCopy, cardLanguage } from "@/lib/cardLanguage";
 import { effectiveTheme } from "@/lib/cardTheme";
+import { relativeLuminance } from "@/lib/contrast";
 import {
   cardInLanguage,
   hasHeadlineIn,
@@ -615,6 +617,20 @@ export default function InviteExperience({
               fileTitle={pdfTitle(coverTitle ?? null, copy.keepsake.fileFallback)}
             />
           ) : null}
+
+          {/*
+            The ornament that ends the page, on a card that has one: the last
+            block of all, after the reply, the note and the keepsake, so it
+            stops on nothing but the end of the page. Not on the card itself,
+            which is not where a guest's page ends.
+          */}
+          <PageEndMandala
+            traditionId={config.traditionId}
+            enabledOrnaments={config.ornamentConfig.enabledOrnaments}
+            accent={cardTheme.accent}
+            /* The same line the cover draws between a light card and a dark one. */
+            lightGround={relativeLuminance(palette.background) > 0.4}
+          />
 
           {/*
             THE ONE BORDER, for the whole page.

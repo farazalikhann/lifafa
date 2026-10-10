@@ -49,7 +49,6 @@ import BorderFrame, {
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import TopCorners, {
-  END_MANDALA_ROOM,
   EndMandala,
   topCornersStrength,
 } from "@/components/card/decor/TopCorners";
@@ -822,6 +821,7 @@ export default function CardCanvas({
   fillsPhone = false,
   frame = true,
   frameHeight = PREVIEW_FRAME_HEIGHT,
+  endOrnament = false,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -863,6 +863,13 @@ export default function CardCanvas({
    * Does nothing in "viewport" sizing.
    */
   frameHeight?: number;
+  /**
+   * Whether the card ends the page it is on, and so draws the ornament that
+   * ends a page itself: the editor's full-screen preview, where nothing comes
+   * after the card. Not the guest's page, which has a reply form and a note
+   * after the card and draws the ornament after those; see EndMandala.
+   */
+  endOrnament?: boolean;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -1637,20 +1644,6 @@ export default function CardCanvas({
           the same measured alpha ceiling as the scattered motifs, because it sits
           behind the same text.
         */}
-        {/*
-          The same ornament once more, rising from the bottom edge where the
-          card ends, in room the column below grows to hold it. Not on a card
-          drawn still: a printed sheet and a carousel frame are a cut of the
-          card, and its end is not theirs.
-        */}
-        {slots.topCorners !== null && !still ? (
-          <EndMandala
-            entry={slots.topCorners}
-            accent={effectiveTheme.accent}
-            strength={topCornersStrength(lightGround)}
-          />
-        ) : null}
-
         {pack !== null ? (
           <CornerLayer
             pack={pack}
@@ -1852,9 +1845,6 @@ export default function CardCanvas({
           className="lifafa-card-content relative z-10"
           style={{
             paddingInline: `calc(${cardPx(contentSideInset)} * var(--card-side-inset, 1))`,
-            /* Room under the last section for the ornament at the card's end. */
-            paddingBottom:
-              slots.topCorners !== null && !still ? END_MANDALA_ROOM : undefined,
           }}
         >
           {/*
@@ -2234,6 +2224,19 @@ export default function CardCanvas({
             />
           ) : null}
         </div>
+
+        {/*
+          The ornament that ends the page, where the card is the whole of the
+          page; see `endOrnament`. After the column, in the flow, so the frame
+          and the pinned layers run to the foot of it.
+        */}
+        {endOrnament && slots.topCorners !== null && !still ? (
+          <EndMandala
+            entry={slots.topCorners}
+            accent={effectiveTheme.accent}
+            strength={topCornersStrength(lightGround)}
+          />
+        ) : null}
       </div>
     </ScratchRevealProvider>
   );
