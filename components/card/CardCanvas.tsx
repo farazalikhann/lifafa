@@ -95,7 +95,7 @@ import {
 } from "@/lib/royalScroll";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
-import { sceneArt, sceneOf } from "@/lib/scene";
+import { sceneArt, sceneDusk, sceneOf } from "@/lib/scene";
 import { tearInkColor, tearPaperColor, type TearConfig } from "@/lib/tearReveal";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
@@ -1610,7 +1610,13 @@ export default function CardCanvas({
     content column, so inside a flower frame; see SceneScreen.
   */
   const scenePicture = sceneArt(sceneOf(config.scene));
-  const scene = scenePicture !== null ? <SceneScreen art={scenePicture} /> : null;
+  const scene =
+    scenePicture !== null ? (
+      <SceneScreen
+        art={scenePicture}
+        dusk={sceneDusk(effectiveTheme.background, effectiveTheme.accent)}
+      />
+    ) : null;
 
   /*
     The running head: the couple, or whoever the card names. Nothing for a

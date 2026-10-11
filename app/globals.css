@@ -472,10 +472,11 @@
 
   FITTED TO ITS SCREEN where the browser has container units: the block is
   exactly a section tall, and two things in it are let move, the gaps either
-  side of the frame and the frame. The frame is as tall as its picture is at
-  the width the card allows, up to its full height; on a screen too short for
-  that the gaps close first, a thousand times as readily, and only then does
-  the frame come down. `fit-content`
+  side of the frame and the frame. Each starts at its least and is grown into
+  whatever room the screen has, the frame first and a thousand times as
+  readily, up to the height its picture has at the width the card allows, so
+  on a shorter screen the gaps close first and then the frame comes down.
+  `fit-content`
   as the least the block may be is what happens when even that does not fit:
   it is as tall as both at their least, and nothing is laid over anything.
 
@@ -508,8 +509,11 @@
   flowers than 2px: the cell is the content column, which a border has already
   brought in from the edge by --card-content-inset.
 */
-.lifafa-names-frame-cell {
+.lifafa-names-frame-row {
   --names-frame-air: max(2px, calc(16px - var(--card-content-inset, 0px)));
+}
+
+.lifafa-names-frame-cell {
   --names-frame-width: min(
     calc(100% - 2 * var(--names-frame-air)),
     calc(var(--names-frame-height) * var(--names-frame-aspect))
@@ -518,6 +522,7 @@
 
 @supports (width: 1cqw) {
   .lifafa-names-screen {
+    container-type: inline-size;
     height: var(--names-screen-height);
     min-height: fit-content;
   }
@@ -531,21 +536,26 @@
   }
 
   .lifafa-names-screen > .lifafa-names-gap {
-    flex: 0 1000 var(--names-gap);
+    flex: 1000 0 var(--names-gap-min);
     height: auto;
-    min-height: var(--names-gap-min);
+    max-height: var(--names-gap);
   }
 
   /*
-    As tall as the frame is at the row's own width, and no taller, so what is
-    above and below the frame stands next to it and not across a gap.
+    At most as tall as the frame is at the row's own width (the screen's
+    width and the side padding the row is let out through, less the air), so
+    what is above and below the frame stands next to it and not across a gap.
   */
   .lifafa-names-screen > .lifafa-names-frame-row {
-    flex: 0 1 auto;
+    flex: 1000000 0 var(--names-frame-min);
     height: auto;
-    aspect-ratio: var(--names-frame-aspect);
-    min-height: var(--names-frame-min);
-    max-height: var(--names-frame-height);
+    max-height: min(
+      var(--names-frame-height),
+      calc(
+        (100cqw + 14 * var(--spacing) - 2 * var(--names-frame-air)) /
+          var(--names-frame-aspect)
+      )
+    );
   }
 }
 
@@ -609,6 +619,36 @@
 }
 
 /*
+  On a dark card the scene's ends are laid in by SceneScreen, ground then
+  glow, and the mask is only the first and last of it: enough for the card's
+  real ground, texture and all, to come through at the very edge.
+*/
+.lifafa-scene-dusk {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.35) 3%,
+    rgb(0 0 0 / 0.8) 6%,
+    #000 9%,
+    #000 91%,
+    rgb(0 0 0 / 0.8) 94%,
+    rgb(0 0 0 / 0.35) 97%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.35) 3%,
+    rgb(0 0 0 / 0.8) 6%,
+    #000 9%,
+    #000 91%,
+    rgb(0 0 0 / 0.8) 94%,
+    rgb(0 0 0 / 0.35) 97%,
+    transparent 100%
+  );
+}
+
+/*
   The picture grows a little and drifts up as the guest scrolls through it:
   from the moment its box enters the foot of the screen to the moment it
   leaves the top. A view timeline, so the browser moves it with the scroll on
@@ -657,6 +697,15 @@
     transform: translate3d(11px, 0, 0);
     opacity: 0;
   }
+}
+
+/*
+  The strip's shadow on the card: of its own shape, so it follows the rough
+  edges. On the canvas that has the whole strip and then its lower piece; the
+  upper piece's shadow, in the gap, is drawn (TearReveal).
+*/
+.lifafa-tear-piece {
+  filter: drop-shadow(0 5px 7px rgb(0 0 0 / 0.3));
 }
 
 /* The date as the paper leaves it: up to size, and a glow behind it that comes and goes. */

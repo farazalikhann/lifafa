@@ -18,52 +18,71 @@ import { TEAR_PAPER_SRC, TEAR_PAPER_TILE, type TearConfig } from "@/lib/tearReve
 import { playTearSound } from "@/lib/tearSound";
 
 /**
- * The date under a strip of handmade paper that the guest tears off.
+ * The date under a strip of handmade paper that the guest tears in two.
  *
- * WHAT THE GUEST DOES. They drag a finger, or the mouse, across the strip,
- * and the paper rips along the path of the finger as it moves: a thin slit
- * with a white, fibrous rim, jagged a little differently every time. Once the
- * rip has crossed three fifths of the strip, or the finger lifts with two
- * fifths crossed, it runs on to both edges by itself; the piece above it
- * curls away and falls off the screen, the piece below slides down and fades,
- * and the date is there, with a soft glow. A tap that is not a drag tears it
- * along a gentle wave. A rip given up short of two fifths mends.
+ * THE STRIP. As wide as the section's column and as tall as the month, the
+ * day and the weekday, which are all it covers. It is a strip torn from a
+ * sheet: its top and bottom edges are rough from the start, a little
+ * different on every card, with the white of the paper's fibre showing along
+ * them.
+ *
+ * WHAT THE GUEST DOES. They drag a finger, or the mouse, across it, and the
+ * paper comes apart along the path of the finger: the rip opens from the edge
+ * behind the finger up to the finger itself, the two pieces drawing apart
+ * behind it until the gap is a centimetre or so and the date shows through.
+ * Both torn edges carry a thick, uneven white rim with loose fibres standing
+ * off it into the gap. The upper piece lifts as it comes away, turned a few
+ * degrees toward the guest about the point the finger is at, with a soft
+ * shadow under it on the date in the gap; the lower piece sags. Once the finger has gone three
+ * fifths of the way across, or lifts with two fifths crossed, the rip runs on
+ * to the far edge by itself: the upper piece curls up and flies off, turning,
+ * the lower drops away, and the date comes up to size over a glow. A tap that
+ * is not a drag tears it along a gentle wave. A rip given up short of two
+ * fifths mends.
  *
  * ONE SECRET, KEPT FOR THE VISIT. It reads and writes the card's reveal state
  * for the date (ScratchReveal), so a date torn open stays open on a reload in
  * the same session, and whatever else on the card waits for the date to be
  * shown stops waiting.
  *
- * THE CANVASES ARE THE STRIP'S SIZE AND NO MORE: one while the paper is
- * whole, and one for each piece once it parts. The canvas is drawn only when
- * the finger moves, never in a loop of its own, except for the third of a
- * second a tap's rip takes to cross. Once the paper has parted nothing is
- * drawn at all: the two pieces are moved by the browser, transform and
- * opacity only (the Web Animations API).
+ * TWO CANVASES, THE STRIP'S SIZE AND A MARGIN: one for each piece, with room
+ * above and below for the pieces to part into. They are drawn only when the
+ * finger moves, never in a loop of their own, except for the third of a
+ * second a tap's rip takes to cross. The lift is a transform on the upper
+ * canvas. Once the paper has parted nothing is drawn at all: the two pieces
+ * are moved by the browser, transform and opacity only (the Web Animations
+ * API).
  *
  * SCROLLING STILL WORKS. The strip takes pointer events and leaves vertical
  * panning to the browser (`touch-action: pan-y`): a swipe up or down scrolls
  * the page as it does anywhere on the card, and only a drag that is mostly
- * sideways tears. What is under the paper cannot be reached until it is
- * gone, and once it is gone the strip is not in the page at all, so nothing
- * is ever over the calendar button.
+ * sideways tears. Once the paper is gone the strip is not in the page at all.
  *
- * UNDER REDUCED MOTION a tap fades the paper away, with no rip, no sound and
- * nothing falling.
+ * UNDER REDUCED MOTION a tap or a swipe fades the paper away, with no rip,
+ * no sound and nothing flying.
  */
 
-/** A point of the rip, in CSS px from the strip's top left. */
-interface Point {
+/** A point of the rip, in CSS px from the strip's top left, with the rim it carries. */
+interface RipPoint {
   x: number;
   y: number;
+  /** How thick the white rim is here, on the upper piece and on the lower. */
+  rimUp: number;
+  rimDown: number;
+  /** Loose fibres off the upper edge (hanging down) and off the lower (standing up). */
+  fibresUp: readonly Fibre[];
+  fibresDown: readonly Fibre[];
 }
 
-/** A fibre standing off the rip: from a point of it, this far. */
-interface Fibre extends Point {
-  dx: number;
-  dy: number;
+/** A fibre: where along the rip it starts, how far it leans, how long it is. */
+interface Fibre {
+  at: number;
+  lean: number;
+  length: number;
 }
 
+/** Room above and below the strip, in px, for the two pieces to part into. */
+const MARGIN = 22;
 /** How far a finger moves before it is a drag and not a tap, in px. */
 const DRAG_START = 8;
 /** How much more sideways than up or down a drag must be to tear. */
@@ -71,11 +90,17 @@ const SIDEWAYS = 1.2;
 /** The rip finishes itself at this share of the width, or at the lesser one when the finger lifts. */
 const FINISH_AT = 0.6;
 const FINISH_ON_LIFT = 0.4;
-/** The rip is drawn in steps of about this many px, each knocked off the line by up to JAG. */
+/** The rip is laid in steps of about this many px, each knocked off the line by up to JAG. */
 const STEP = 4;
-const JAG = 3;
+const JAG = 3.2;
+/** How far behind the finger the gap takes to open fully, in px. */
+const OPENING = 68;
+/** Of the gap, how much is the upper piece lifting and how much the lower sagging. */
+const LIFT_SHARE = 0.62;
+/** How wide a column the pieces are drawn in, in CSS px. */
+const SLICE = 2;
 /** How long a tap's rip takes to cross the strip, in ms. */
-const AUTO_MS = 380;
+const AUTO_MS = 420;
 /** How long the paper takes to fade under reduced motion, in ms. */
 const FADE_MS = 300;
 
@@ -90,34 +115,32 @@ function jitter(amount: number): number {
   return (Math.random() * 2 - 1) * amount;
 }
 
-/** The rim along the rip: a soft white line, and fibres standing off it. */
-function drawRim(
-  context: CanvasRenderingContext2D,
-  points: readonly Point[],
-  fibres: readonly Fibre[],
-): void {
-  context.lineJoin = "round";
-  context.lineCap = "round";
-  context.strokeStyle = "rgb(255 255 255 / 0.94)";
-  context.lineWidth = 2.6;
-  context.beginPath();
-  points.forEach((point, index) => {
-    if (index === 0) {
-      context.moveTo(point.x, point.y);
-    } else {
-      context.lineTo(point.x, point.y);
-    }
-  });
-  context.stroke();
+function between(low: number, high: number): number {
+  return low + Math.random() * (high - low);
+}
 
-  context.strokeStyle = "rgb(255 255 255 / 0.85)";
-  context.lineWidth = 0.8;
-  context.beginPath();
-  for (const fibre of fibres) {
-    context.moveTo(fibre.x, fibre.y);
-    context.lineTo(fibre.x + fibre.dx, fibre.y + fibre.dy);
+function fibres(): Fibre[] {
+  const roll = Math.random();
+  const count = roll < 0.3 ? 0 : roll < 0.85 ? 1 : 2;
+
+  return Array.from({ length: count }, () => ({
+    at: jitter(STEP / 2),
+    lean: jitter(2.2),
+    length: between(1.5, 5),
+  }));
+}
+
+/** A rough edge across the strip: a height for every few px, wandering about a line. */
+function roughEdge(width: number): number[] {
+  const edge: number[] = [];
+  let drift = 0;
+
+  for (let x = 0; x <= width + 4; x += 4) {
+    drift = Math.max(-3.2, Math.min(3.2, drift + jitter(1.5)));
+    edge.push(drift + jitter(0.9));
   }
-  context.stroke();
+
+  return edge;
 }
 
 export default function TearReveal({
@@ -141,7 +164,6 @@ export default function TearReveal({
   const open = preCleared || still || revealed === "restored" || phase === "gone";
 
   const stripRef = useRef<HTMLDivElement>(null);
-  const liveRef = useRef<HTMLCanvasElement>(null);
   const upperRef = useRef<HTMLCanvasElement>(null);
   const lowerRef = useRef<HTMLCanvasElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
@@ -152,10 +174,19 @@ export default function TearReveal({
     width: 0,
     height: 0,
     dpr: 1,
+    /** The whole strip, rough edges and all, at the canvases' size. */
     sheet: null as HTMLCanvasElement | null,
     tile: null as HTMLImageElement | null,
-    points: [] as Point[],
-    fibres: [] as Fibre[],
+    topEdge: [] as number[],
+    bottomEdge: [] as number[],
+    /** The rip, from the edge it started at to the finger. */
+    points: [] as RipPoint[],
+    /** Which way it is going: 1 to the right, -1 to the left. */
+    direction: 1 as 1 | -1,
+    /** How wide the gap opens on this tear, in px. */
+    gap: 13,
+    /** The rip has reached the far edge: the gap is open all the way along. */
+    through: false,
     drag: null as {
       id: number;
       startX: number;
@@ -163,14 +194,13 @@ export default function TearReveal({
       left: number;
       top: number;
       tearing: boolean;
-      direction: 1 | -1;
     } | null,
     frame: 0,
     done: false,
     animations: [] as Animation[],
   });
 
-  /** The paper, whole, at the strip's size: the colour, with the tile's grain laid into it. */
+  /** The strip, whole: the colour with the tile's grain in it, cut to its rough edges, rimmed in white. */
   const makeSheet = useCallback((): void => {
     const state = work.current;
 
@@ -178,82 +208,268 @@ export default function TearReveal({
       return;
     }
 
+    const { width, height, dpr } = state;
     const sheet = document.createElement("canvas");
-    sheet.width = Math.round(state.width * state.dpr);
-    sheet.height = Math.round(state.height * state.dpr);
+    sheet.width = Math.round(width * dpr);
+    sheet.height = Math.round((height + 2 * MARGIN) * dpr);
     const context = sheet.getContext("2d");
 
     if (context === null) {
       return;
     }
 
+    const top = (index: number): number => MARGIN + 5 + state.topEdge[index];
+    const bottom = (index: number): number => MARGIN + height - 5 + state.bottomEdge[index];
+    const outline = (): void => {
+      context.beginPath();
+      state.topEdge.forEach((_, index) => context.lineTo(index * 4 - 2, top(index)));
+      for (let index = state.bottomEdge.length - 1; index >= 0; index -= 1) {
+        context.lineTo(index * 4 - 2, bottom(index));
+      }
+      context.closePath();
+    };
+
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.save();
+    outline();
+    context.clip();
+
     context.fillStyle = paper;
-    context.fillRect(0, 0, sheet.width, sheet.height);
+    context.fillRect(0, 0, width, height + 2 * MARGIN);
 
     if (state.tile !== null) {
       const pattern = context.createPattern(state.tile, "repeat");
 
       if (pattern !== null) {
-        const scale = (TEAR_PAPER_TILE * state.dpr) / state.tile.naturalWidth;
-        pattern.setTransform(new DOMMatrix().scale(scale));
+        pattern.setTransform(new DOMMatrix().scale(TEAR_PAPER_TILE / state.tile.naturalWidth));
         /* A tile that averages the middle grey leaves the colour as it is and adds its grain. */
         context.globalCompositeOperation = "overlay";
         context.fillStyle = pattern;
-        context.fillRect(0, 0, sheet.width, sheet.height);
+        context.fillRect(0, 0, width, height + 2 * MARGIN);
         /* Twice: once is a grain too faint to see on a phone. */
         context.globalAlpha = 0.6;
-        context.fillRect(0, 0, sheet.width, sheet.height);
+        context.fillRect(0, 0, width, height + 2 * MARGIN);
         context.globalAlpha = 1;
         context.globalCompositeOperation = "source-over";
       }
     }
 
     /* A paper is a shade lighter where the light falls and darker at its foot. */
-    const light = context.createLinearGradient(0, 0, 0, sheet.height);
+    const light = context.createLinearGradient(0, MARGIN, 0, MARGIN + height);
     light.addColorStop(0, "rgb(255 255 255 / 0.1)");
     light.addColorStop(0.5, "rgb(255 255 255 / 0)");
-    light.addColorStop(1, "rgb(0 0 0 / 0.12)");
+    light.addColorStop(1, "rgb(0 0 0 / 0.14)");
     context.fillStyle = light;
-    context.fillRect(0, 0, sheet.width, sheet.height);
+    context.fillRect(0, 0, width, height + 2 * MARGIN);
+
+    /* The white of the fibre along both rough edges: an uneven line, inside the paper. */
+    context.strokeStyle = "rgb(255 255 255 / 0.9)";
+    context.lineJoin = "round";
+    for (const edge of [top, bottom]) {
+      for (let index = 0; index < state.topEdge.length - 1; index += 1) {
+        context.lineWidth = between(2, 5.5);
+        context.beginPath();
+        context.moveTo(index * 4 - 2, edge(index));
+        context.lineTo(index * 4 + 2, edge(index + 1));
+        context.stroke();
+      }
+    }
+    context.restore();
+
+    /* And a few fibres standing off them. */
+    context.strokeStyle = "rgb(255 255 255 / 0.8)";
+    context.lineWidth = 0.8;
+    context.beginPath();
+    state.topEdge.forEach((_, index) => {
+      if (Math.random() < 0.5) {
+        context.moveTo(index * 4 - 2, top(index) + 1);
+        context.lineTo(index * 4 - 2 + jitter(2), top(index) - between(1.5, 4.5));
+      }
+      if (Math.random() < 0.5) {
+        context.moveTo(index * 4 - 2, bottom(index) - 1);
+        context.lineTo(index * 4 - 2 + jitter(2), bottom(index) + between(1.5, 4.5));
+      }
+    });
+    context.stroke();
 
     state.sheet = sheet;
   }, [paper]);
 
-  /** The strip as it stands: the paper, and the rip so far. */
-  const drawLive = useCallback((): void => {
+  /**
+   * Both pieces as they stand. Whole, the strip is the lower canvas's. Torn,
+   * the part the rip has not reached stays there with the lower piece under
+   * the rip, and the upper canvas has the piece above it; each is laid in
+   * narrow columns, moved up or down by the gap where that column is.
+   */
+  const drawPieces = useCallback((): void => {
     const state = work.current;
-    const canvas = liveRef.current;
-    const context = canvas?.getContext("2d") ?? null;
+    const upper = upperRef.current?.getContext("2d") ?? null;
+    const lower = lowerRef.current?.getContext("2d") ?? null;
+    const sheet = state.sheet;
 
-    if (canvas === null || context === null || state.sheet === null) {
+    if (upper === null || lower === null || sheet === null) {
       return;
     }
 
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(state.sheet, 0, 0);
+    const { width, dpr, points } = state;
+    const deviceWidth = sheet.width;
+    const deviceHeight = sheet.height;
 
-    if (state.points.length < 2) {
+    for (const context of [upper, lower]) {
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.clearRect(0, 0, deviceWidth, deviceHeight);
+    }
+
+    if (points.length < 2) {
+      lower.drawImage(sheet, 0, 0);
       return;
     }
 
-    context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-    drawRim(context, state.points, state.fibres);
+    /* Left to right, whichever way the rip is going. */
+    const across = state.direction > 0 ? points : [...points].reverse();
+    const tip = points[points.length - 1];
+    const from = Math.max(0, Math.min(width, across[0].x));
+    const to = Math.max(0, Math.min(width, across[across.length - 1].x));
 
-    /* The slit itself: the paper is gone along it, and the date shows through. */
-    context.globalCompositeOperation = "destination-out";
-    context.lineWidth = 1.5;
-    context.strokeStyle = "#000";
-    context.beginPath();
-    state.points.forEach((point, index) => {
-      if (index === 0) {
-        context.moveTo(point.x, point.y);
-      } else {
-        context.lineTo(point.x, point.y);
+    /* How far apart the pieces are at x: nothing at the finger, all of it a way behind. */
+    const gapAt = (x: number): number => {
+      if (state.through) {
+        return state.gap;
       }
-    });
-    context.stroke();
-    context.globalCompositeOperation = "source-over";
+
+      const t = Math.min(1, Math.abs(x - tip.x) / OPENING);
+
+      return state.gap * t * t * (3 - 2 * t);
+    };
+
+    /* The part not yet torn, whole. */
+    const whole = state.direction > 0 ? [to, width] : [0, from];
+    const wholeLeft = Math.round(whole[0] * dpr);
+    const wholeWidth = Math.round(whole[1] * dpr) - wholeLeft;
+
+    if (wholeWidth > 0) {
+      lower.drawImage(sheet, wholeLeft, 0, wholeWidth, deviceHeight, wholeLeft, 0, wholeWidth, deviceHeight);
+    }
+
+    /* The torn part, a column at a time. */
+    const step = Math.max(1, Math.round(SLICE * dpr));
+    let index = 0;
+
+    for (let column = Math.round(from * dpr); column < Math.round(to * dpr); column += step) {
+      const middle = (column + step / 2) / dpr;
+
+      while (index < across.length - 2 && across[index + 1].x < middle) {
+        index += 1;
+      }
+
+      const a = across[index];
+      const b = across[index + 1];
+      const t = Math.max(0, Math.min(1, (middle - a.x) / (b.x - a.x || 1)));
+      const cut = Math.round((MARGIN + a.y + (b.y - a.y) * t) * dpr);
+      const gap = gapAt(middle);
+      const up = Math.round(gap * LIFT_SHARE * dpr);
+      const down = Math.round(gap * (1 - LIFT_SHARE) * dpr);
+
+      upper.drawImage(sheet, column, 0, step, cut, column, -up, step, cut);
+      lower.drawImage(sheet, column, cut, step, deviceHeight - cut, column, cut + down, step, deviceHeight - cut);
+    }
+
+    /* The rims: a thick, uneven band of white on each torn edge, and fibres off it into the gap. */
+    const rim = (context: CanvasRenderingContext2D, side: 1 | -1): void => {
+      const edge = (point: RipPoint): number =>
+        MARGIN + point.y + side * gapAt(point.x) * (side < 0 ? LIFT_SHARE : 1 - LIFT_SHARE);
+
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      /* Under the rim, the paper a shade darker: the torn layer stands a little proud of the sheet. */
+      context.fillStyle = "rgb(0 0 0 / 0.16)";
+      context.beginPath();
+      across.forEach((point) => context.lineTo(point.x, edge(point)));
+      for (let at = across.length - 1; at >= 0; at -= 1) {
+        const point = across[at];
+        context.lineTo(point.x, edge(point) + side * ((side < 0 ? point.rimUp : point.rimDown) + 1.6));
+      }
+      context.closePath();
+      context.fill();
+
+      context.fillStyle = "rgb(255 253 248 / 0.97)";
+      context.beginPath();
+      across.forEach((point) => context.lineTo(point.x, edge(point) - side * 0.6));
+      for (let at = across.length - 1; at >= 0; at -= 1) {
+        const point = across[at];
+        context.lineTo(point.x, edge(point) + side * (side < 0 ? point.rimUp : point.rimDown));
+      }
+      context.closePath();
+      context.fill();
+
+      context.strokeStyle = "rgb(255 255 255 / 0.88)";
+      context.lineWidth = 0.9;
+      context.lineCap = "round";
+      context.beginPath();
+      for (const point of across) {
+        /* Shorter where the gap has hardly opened: a fibre does not reach across to the other piece. */
+        const room = Math.min(1, 0.15 + gapAt(point.x) / state.gap);
+
+        for (const fibre of side < 0 ? point.fibresUp : point.fibresDown) {
+          context.moveTo(point.x + fibre.at, edge(point));
+          context.lineTo(point.x + fibre.at + fibre.lean, edge(point) - side * fibre.length * room);
+        }
+      }
+      context.stroke();
+    };
+
+    /*
+      The upper piece's shadow, on the date in the gap: darkest under its
+      edge, gone by the lower piece. Drawn here, in the gap alone, so it is
+      not also laid over the part of the strip that is still whole; and not
+      once the pieces have parted, when it would leave with the lower one.
+    */
+    if (!state.through) {
+      lower.setTransform(dpr, 0, 0, dpr, 0, 0);
+      lower.save();
+      lower.beginPath();
+      across.forEach((point) =>
+        lower.lineTo(point.x, MARGIN + point.y - gapAt(point.x) * LIFT_SHARE),
+      );
+      for (let at = across.length - 1; at >= 0; at -= 1) {
+        const point = across[at];
+        lower.lineTo(point.x, MARGIN + point.y + gapAt(point.x) * (1 - LIFT_SHARE));
+      }
+      lower.closePath();
+      lower.clip();
+
+      /* The piece's own shape above its edge, filled where nothing shows, for the shadow it throws. */
+      lower.shadowColor = "rgb(0 0 0 / 0.42)";
+      lower.shadowBlur = 7 * dpr;
+      lower.shadowOffsetY = 3 * dpr;
+      lower.fillStyle = "#000";
+      lower.beginPath();
+      across.forEach((point) =>
+        lower.lineTo(point.x, MARGIN + point.y - gapAt(point.x) * LIFT_SHARE - 1),
+      );
+      lower.lineTo(across[across.length - 1].x, -40);
+      lower.lineTo(across[0].x, -40);
+      lower.closePath();
+      lower.fill();
+      lower.restore();
+    }
+
+    rim(upper, -1);
+    rim(lower, 1);
+
+    /*
+      The upper piece lifts toward the guest, turned about the point the
+      finger is at, so it has not moved there, where it is still joined.
+    */
+    const canvas = upperRef.current;
+
+    if (canvas !== null && !state.through) {
+      const torn = Math.abs(tip.x - points[0].x);
+      const turn = state.direction * Math.min(11, 2 + torn * 0.04);
+
+      canvas.style.transformOrigin = `${tip.x.toFixed(1)}px ${(MARGIN + tip.y).toFixed(1)}px`;
+      canvas.style.transform = `perspective(520px) rotateY(${turn.toFixed(2)}deg)`;
+    }
   }, []);
 
   const scheduleDraw = useCallback((): void => {
@@ -262,18 +478,26 @@ export default function TearReveal({
     if (state.frame === 0) {
       state.frame = window.requestAnimationFrame(() => {
         state.frame = 0;
-        drawLive();
+        drawPieces();
       });
     }
-  }, [drawLive]);
+  }, [drawPieces]);
 
-  /** Carries the rip on to (x, y) in jagged steps, growing a fibre here and there. */
+  /** Carries the rip on to (x, y) in jagged steps, each with its own rim and fibres. */
   const ripTo = useCallback((x: number, y: number): void => {
     const state = work.current;
+    const point = (px: number, py: number): RipPoint => ({
+      x: px,
+      y: Math.min(state.height - 16, Math.max(16, py)),
+      rimUp: between(2.6, 6),
+      rimDown: between(2.6, 6),
+      fibresUp: fibres(),
+      fibresDown: fibres(),
+    });
     const last = state.points[state.points.length - 1];
 
     if (last === undefined) {
-      state.points.push({ x, y });
+      state.points.push(point(x, y));
       return;
     }
 
@@ -281,19 +505,29 @@ export default function TearReveal({
 
     for (let step = 1; step <= steps; step += 1) {
       const t = step / steps;
-      const point = {
-        x: last.x + (x - last.x) * t,
-        y: Math.min(state.height - 6, Math.max(6, last.y + (y - last.y) * t + jitter(JAG))),
-      };
 
-      state.points.push(point);
-
-      /* A fibre or two at most points: short, and mostly up or down from the rip. */
-      for (let count = Math.random() < 0.8 ? (Math.random() < 0.4 ? 2 : 1) : 0; count > 0; count -= 1) {
-        state.fibres.push({ ...point, dx: jitter(2.4), dy: jitter(6) });
-      }
+      state.points.push(point(last.x + (x - last.x) * t, last.y + (y - last.y) * t + jitter(JAG)));
     }
   }, []);
+
+  /** The rip begins: at the edge behind the finger, and already up to the finger. */
+  const beginRip = useCallback(
+    (direction: 1 | -1, x: number, y: number): void => {
+      const state = work.current;
+
+      state.direction = direction;
+      state.gap = between(14, 17);
+      state.through = false;
+      state.points = [];
+      ripTo(direction > 0 ? -2 : state.width + 2, y + jitter(8));
+      ripTo(x, y);
+
+      if (labelRef.current !== null) {
+        labelRef.current.style.opacity = "0";
+      }
+    },
+    [ripTo],
+  );
 
   /* --- The strip's size, its paper, and the tile: none of it in a loop. --- */
   useEffect(() => {
@@ -312,22 +546,37 @@ export default function TearReveal({
         return;
       }
 
+      if (width !== state.width) {
+        state.topEdge = roughEdge(width);
+        state.bottomEdge = roughEdge(width);
+      }
+
       state.width = width;
       state.height = height;
       state.dpr = Math.min(2, window.devicePixelRatio || 1);
 
-      for (const canvas of [liveRef.current, upperRef.current, lowerRef.current]) {
+      for (const canvas of [upperRef.current, lowerRef.current]) {
         if (canvas !== null) {
           canvas.width = Math.round(width * state.dpr);
-          canvas.height = Math.round(height * state.dpr);
+          canvas.height = Math.round((height + 2 * MARGIN) * state.dpr);
         }
       }
 
       /* A rip half made on a strip that has changed size is not where the finger was. */
       state.points = [];
-      state.fibres = [];
+      state.drag = null;
+
+      if (upperRef.current !== null) {
+        upperRef.current.style.transform = "none";
+      }
+
       makeSheet();
-      drawLive();
+      drawPieces();
+
+      /* The canvas has the strip now, rough edges and all: the plain colour that stood in for it goes. */
+      if (state.sheet !== null) {
+        strip.style.backgroundColor = "transparent";
+      }
     };
 
     fit();
@@ -348,7 +597,7 @@ export default function TearReveal({
 
         if (!state.done && state.points.length === 0) {
           makeSheet();
-          drawLive();
+          drawPieces();
         }
       };
       image.src = TEAR_PAPER_SRC;
@@ -377,7 +626,7 @@ export default function TearReveal({
       resize?.disconnect();
       near?.disconnect();
     };
-  }, [open, makeSheet, drawLive]);
+  }, [open, makeSheet, drawPieces]);
 
   useEffect(() => {
     const state = work.current;
@@ -394,7 +643,7 @@ export default function TearReveal({
     reveal();
   }, [reveal]);
 
-  /** The rip runs on to both edges, and the two pieces leave. */
+  /** The rip runs on to the far edge, and the two pieces leave. */
   const part = useCallback(
     (sound: boolean): void => {
       const state = work.current;
@@ -410,49 +659,11 @@ export default function TearReveal({
       window.cancelAnimationFrame(state.frame);
       state.frame = 0;
 
-      /* Left to right, whichever way it was torn, and out to both edges. */
-      if (state.points[0].x > state.points[state.points.length - 1].x) {
-        state.points.reverse();
-      }
+      const tip = state.points[state.points.length - 1];
+      ripTo(state.direction > 0 ? state.width + 2 : -2, tip.y + jitter(8));
+      state.through = true;
+      drawPieces();
 
-      const first = state.points[0];
-      const torn = state.points;
-      state.points = [{ x: -2, y: first.y + jitter(6) }];
-      ripTo(first.x, first.y);
-      state.points.push(...torn.slice(1));
-      const end = state.points[state.points.length - 1];
-      ripTo(state.width + 2, end.y + jitter(6));
-
-      const piece = (canvas: HTMLCanvasElement, edge: number): void => {
-        const context = canvas.getContext("2d");
-
-        if (context === null || state.sheet === null) {
-          return;
-        }
-
-        context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-        context.clearRect(0, 0, state.width, state.height);
-        context.beginPath();
-        context.moveTo(-2, edge);
-        state.points.forEach((point) => context.lineTo(point.x, point.y));
-        context.lineTo(state.width + 2, edge);
-        context.closePath();
-        context.clip();
-        context.setTransform(1, 0, 0, 1, 0, 0);
-        context.drawImage(state.sheet, 0, 0);
-        context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-        drawRim(context, state.points, state.fibres);
-      };
-
-      piece(upper, -2);
-      piece(lower, state.height + 2);
-
-      if (liveRef.current !== null) {
-        liveRef.current.style.display = "none";
-      }
-      upper.style.display = "block";
-      lower.style.display = "block";
-      strip.style.boxShadow = "none";
       strip.style.pointerEvents = "none";
 
       if (sound) {
@@ -472,39 +683,47 @@ export default function TearReveal({
         return;
       }
 
-      /* How far down the foot of the screen is: read once, here, and never again. */
-      const fall = Math.max(240, window.innerHeight - strip.getBoundingClientRect().top + 80);
-      const lean = Math.random() < 0.5 ? -1 : 1;
+      /* How far the top and the foot of the screen are: read once, here, and never again. */
+      const box = strip.getBoundingClientRect();
+      const rise = box.bottom + 120;
+      const fall = Math.max(240, window.innerHeight - box.top + 120);
+      const lean = state.direction;
+      /* From where the lift left it, about the same point, so it does not jump as it goes. */
+      const lifted =
+        upper.style.transform === "" || upper.style.transform === "none"
+          ? "perspective(520px) rotateY(0deg)"
+          : upper.style.transform;
 
-      /* The upper piece lifts off its torn edge, curls back, and drops out of the screen, turning. */
+      /* The upper piece curls up off its torn edge and flies away over the top, turning. */
       const away = upper.animate(
         [
-          { transform: "perspective(700px) translate3d(0, 0, 0) rotateX(0deg) rotate(0deg)" },
+          { transform: lifted },
           {
-            offset: 0.28,
-            transform: `perspective(700px) translate3d(0, -12px, 0) rotateX(34deg) rotate(${-2 * lean}deg)`,
-            easing: "cubic-bezier(0.5, 0, 0.9, 0.6)",
+            offset: 0.3,
+            transform: `perspective(520px) translate3d(0, -22px, 0) rotateX(50deg) rotate(${-4 * lean}deg)`,
+            easing: "cubic-bezier(0.45, 0, 0.85, 0.5)",
           },
           {
-            transform: `perspective(700px) translate3d(${-26 * lean}px, ${fall}px, 0) rotateX(64deg) rotate(${-13 * lean}deg)`,
+            transform: `perspective(520px) translate3d(${70 * lean}px, ${-rise}px, 0) rotateX(76deg) rotate(${-26 * lean}deg)`,
           },
         ],
-        { duration: 980, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)", fill: "forwards" },
+        { duration: 920, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)", fill: "forwards" },
       );
 
-      /* The lower piece slides down a little and fades. */
+      /* The lower piece drops away, tipping as it goes. */
       const down = lower.animate(
         [
-          { transform: "translate3d(0, 0, 0)", opacity: 1 },
-          { transform: "translate3d(0, 44px, 0) rotate(1.5deg)", opacity: 0 },
+          { transform: "translate3d(0, 0, 0) rotate(0deg)", opacity: 1 },
+          { offset: 0.7, opacity: 1 },
+          { transform: `translate3d(${-18 * lean}px, ${fall}px, 0) rotate(${9 * lean}deg)`, opacity: 0 },
         ],
-        { duration: 560, easing: "cubic-bezier(0.3, 0, 0.6, 1)", fill: "forwards" },
+        { duration: 820, easing: "cubic-bezier(0.5, 0, 0.9, 0.55)", fill: "forwards" },
       );
 
       state.animations = [away, down];
       void Promise.all([away.finished, down.finished]).then(finish, () => undefined);
     },
-    [finish, ripTo],
+    [drawPieces, finish, ripTo],
   );
 
   /** The paper fades away: reduced motion, and a browser with no canvas. */
@@ -536,39 +755,31 @@ export default function TearReveal({
       return;
     }
 
-    const base = state.height * (0.4 + Math.random() * 0.2);
-    const swell = state.height * 0.05;
-    const phaseShift = Math.random() * Math.PI * 2;
-    const waves = 0.9 + Math.random() * 0.6;
+    const base = state.height * between(0.42, 0.58);
+    const swell = state.height * 0.07;
+    const shift = Math.random() * Math.PI * 2;
+    const waves = between(0.9, 1.5);
     const yAt = (x: number): number =>
-      base + swell * Math.sin((x / state.width) * Math.PI * 2 * waves + phaseShift);
+      base + swell * Math.sin((x / state.width) * Math.PI * 2 * waves + shift);
 
-    state.points = [];
-    state.fibres = [];
-    ripTo(-2, yAt(0));
-
-    if (stripRef.current !== null) {
-      stripRef.current.style.backgroundColor = "transparent";
-    }
-    if (labelRef.current !== null) {
-      labelRef.current.style.opacity = "0";
-    }
-
+    beginRip(1, 0, yAt(0));
     playTearSound();
 
     const started = performance.now();
 
     const step = (now: number): void => {
-      const reach = Math.min(1, (now - started) / AUTO_MS) * (state.width + 2);
+      const t = Math.min(1, (now - started) / AUTO_MS);
+      /* Eased in: a rip starts slowly and then goes. */
+      const reach = t * t * (3 - 2 * t) * state.width;
       const last = state.points[state.points.length - 1];
 
-      if (reach - last.x >= STEP || reach >= state.width + 2) {
+      if (reach - last.x >= STEP) {
         ripTo(reach, yAt(reach));
       }
 
-      drawLive();
+      drawPieces();
 
-      if (reach >= state.width + 2) {
+      if (t >= 1) {
         state.frame = 0;
         part(false);
       } else {
@@ -577,31 +788,24 @@ export default function TearReveal({
     };
 
     state.frame = window.requestAnimationFrame(step);
-  }, [drawLive, fadeAway, part, ripTo]);
+  }, [beginRip, drawPieces, fadeAway, part, ripTo]);
 
   /** A rip given up too soon: the paper is whole again. */
   const mend = useCallback((): void => {
     const state = work.current;
 
     state.points = [];
-    state.fibres = [];
-    drawLive();
+
+    if (upperRef.current !== null) {
+      upperRef.current.style.transform = "none";
+    }
+
+    drawPieces();
 
     if (labelRef.current !== null) {
       labelRef.current.style.opacity = "1";
     }
-  }, [drawLive]);
-
-  /** How far across the strip the rip has got, as a share of its width. */
-  const crossed = (): number => {
-    const state = work.current;
-    const first = state.points[0];
-    const last = state.points[state.points.length - 1];
-
-    return first === undefined || last === undefined || state.width < 1
-      ? 0
-      : Math.abs(last.x - first.x) / state.width;
-  };
+  }, [drawPieces]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const state = work.current;
@@ -620,7 +824,6 @@ export default function TearReveal({
       left: box.left,
       top: box.top,
       tearing: false,
-      direction: 1,
     };
   };
 
@@ -654,21 +857,12 @@ export default function TearReveal({
       }
 
       drag.tearing = true;
-      drag.direction = dx > 0 ? 1 : -1;
-      state.points = [];
-      state.fibres = [];
-      ripTo(drag.startX - drag.left, drag.startY - drag.top);
+      beginRip(dx > 0 ? 1 : -1, drag.startX - drag.left, drag.startY - drag.top);
 
       try {
         event.currentTarget.setPointerCapture(event.pointerId);
       } catch {
         /* Not captured: the rip follows the finger while it is over the strip. */
-      }
-
-      event.currentTarget.style.backgroundColor = "transparent";
-
-      if (labelRef.current !== null) {
-        labelRef.current.style.opacity = "0";
       }
     }
 
@@ -677,12 +871,16 @@ export default function TearReveal({
     const last = state.points[state.points.length - 1];
 
     /* Only ever onward, the way the drag set out: a rip does not go back on itself. */
-    if ((x - last.x) * drag.direction >= 3) {
+    if ((x - last.x) * state.direction >= 3) {
       ripTo(x, y);
-      scheduleDraw();
     }
 
-    if (crossed() >= FINISH_AT) {
+    scheduleDraw();
+
+    /* Far enough, or at the far edge already: it goes the rest of the way by itself. */
+    const atEdge = state.direction > 0 ? x >= state.width - 6 : x <= 6;
+
+    if (Math.abs(dx) / state.width >= FINISH_AT || atEdge) {
       state.drag = null;
       part(true);
     }
@@ -703,7 +901,7 @@ export default function TearReveal({
     }
 
     if (drag.tearing) {
-      if (crossed() >= FINISH_ON_LIFT) {
+      if (Math.abs(event.clientX - drag.startX) / state.width >= FINISH_ON_LIFT) {
         part(true);
       } else {
         mend();
@@ -728,21 +926,25 @@ export default function TearReveal({
   };
 
   const covered = !open && phase === "covered";
+  const canvasStyle: CSSProperties = {
+    top: -MARGIN,
+    height: `calc(100% + ${2 * MARGIN}px)`,
+  };
 
   return (
-    <div className="relative inline-flex max-w-full flex-col items-center px-6 py-6">
-      {/* What is under the paper. In the page from the first paint; not to be reached until the paper is off. */}
+    <div className="relative flex w-full flex-col items-center self-stretch py-5">
+      {/* What is under the paper. In the page from the first paint; not read out or reached until the paper is off. */}
       <div
         inert={covered}
         className={`relative flex flex-col items-center ${
           phase === "parting" || (phase === "gone" && revealed === "live") ? "lifafa-tear-date-in" : ""
         }`}
-        style={{ gap: "calc(1.1 * var(--card-rem, 1rem))" }}
+        style={{ gap: "calc(0.5 * var(--card-rem, 1rem))" }}
       >
         {phase === "parting" ? (
           <span
             aria-hidden="true"
-            className="lifafa-tear-glow pointer-events-none absolute -inset-8 rounded-full"
+            className="lifafa-tear-glow pointer-events-none absolute -inset-x-16 -inset-y-6 rounded-full"
             style={{
               background: `radial-gradient(closest-side, ${paper}66, ${paper}22 55%, transparent)`,
             }}
@@ -762,31 +964,33 @@ export default function TearReveal({
           onPointerUp={(event) => endDrag(event, true)}
           onPointerCancel={(event) => endDrag(event, false)}
           onKeyDown={onKeyDown}
-          className="absolute inset-0 cursor-grab rounded-[3px] select-none focus-visible:outline-2 focus-visible:outline-offset-4"
+          className="absolute inset-0 cursor-grab select-none focus-visible:outline-2 focus-visible:outline-offset-4"
           style={
             {
-              /* The paper's colour until the canvas has it, so the date is never seen first. */
+              /* The paper's colour until the canvas has drawn the strip, so the date is never seen first. */
               backgroundColor: paper,
               outlineColor: paper,
               touchAction: "pan-y",
               WebkitTapHighlightColor: "transparent",
-              boxShadow:
-                "0 14px 26px -14px rgb(0 0 0 / 0.5), 0 3px 8px -2px rgb(0 0 0 / 0.22)",
             } as CSSProperties
           }
         >
-          <canvas ref={liveRef} aria-hidden="true" className="absolute inset-0 h-full w-full rounded-[3px]" />
+          {/* The lower piece, and the whole strip until it is torn. Its shadow is the strip's on the card. */}
           <canvas
             ref={lowerRef}
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 hidden h-full w-full"
-            style={{ willChange: phase === "parting" ? "transform, opacity" : undefined }}
+            className="lifafa-tear-piece pointer-events-none absolute inset-x-0 w-full"
+            style={{
+              ...canvasStyle,
+              willChange: phase === "parting" ? "transform, opacity" : undefined,
+            }}
           />
+          {/* The upper piece, over the lower. Its shadow in the gap is drawn with the lower piece. */}
           <canvas
             ref={upperRef}
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 hidden h-full w-full origin-top"
-            style={{ willChange: phase === "parting" ? "transform" : undefined }}
+            className="pointer-events-none absolute inset-x-0 w-full"
+            style={{ ...canvasStyle, willChange: "transform" }}
           />
 
           {/* The words and the arrow, on the paper: gone the moment it starts to rip. */}

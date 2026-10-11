@@ -10,6 +10,11 @@ import type { NamesFrame } from "@/types/card";
  *
  * Each picture is cut by scripts/cut-flowers.mjs (`names-frames`) from art
  * supplied on black with an empty middle.
+ *
+ * The varmala is the tall one. While the names shared the opening's screen
+ * it was cut from a wide garland, to be as wide as the card; with a screen of
+ * its own the frame may be tall, and a tall garland has an opening the names
+ * can be their full size in, where the wide one's was a third of its height.
  */
 
 export const DEFAULT_NAMES_FRAME: NamesFrame = "lotus";
@@ -44,9 +49,10 @@ export interface NamesFrameArt extends FrameArt {
                the ring, above the two lotuses that lean in at the bottom
     paisley    clear from 30.5% to 69.3% across between the two paisleys, from
                26% to 72% down between the two rows of scrollwork
-    varmala    the wide garland. Clear from 29% down, under the tassels that
-               hang from its top, to 64%, where it is clear from 25% to 76.5%
-               across; wider above that
+    varmala    the tall garland. Clear down its middle from 20.8%, under the
+               tassels that hang from its top, to 76.1%; and from 22.5% down
+               to 65% clear across from 22.2% to 77.8% or wider (15% to 85%
+               at its waist), closing to 27.8% to 72.1% by 70%
 
   `width` is not read for these: the names' screen sizes the frame to the room it
   has (NamesFrameScreen). It is the most the frame is ever drawn at.
@@ -55,7 +61,7 @@ const ART: Record<NamesFrame, NamesFrameArt> = {
   jharokha: art("jharokha", 760 / 549, { x: 0.13, y: 0.52, width: 0.74, height: 0.45 }),
   lotus: art("lotus", 760 / 703, { x: 0.24, y: 0.16, width: 0.54, height: 0.465 }),
   paisley: art("paisley", 760 / 445, { x: 0.31, y: 0.265, width: 0.38, height: 0.445 }),
-  varmala: art("varmala", 760 / 507, { x: 0.28, y: 0.31, width: 0.44, height: 0.33 }),
+  varmala: art("varmala", 670 / 900, { x: 0.235, y: 0.245, width: 0.53, height: 0.405 }),
 };
 
 function art(name: string, aspect: number, words: FrameArt["words"]): NamesFrameArt {

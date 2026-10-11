@@ -27,6 +27,27 @@ function linearise(channel: number): number {
     : Math.pow((scaled + 0.055) / 1.055, 2.4);
 }
 
+/** A colour's hue in degrees and its HSL saturation, 0 to 1. */
+export function hueAndSaturation(hex: string): { hue: number; saturation: number } {
+  const value = parseInt(hex.slice(1), 16);
+  const r = ((value >> 16) & 255) / 255;
+  const g = ((value >> 8) & 255) / 255;
+  const b = (value & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+
+  if (delta === 0) {
+    return { hue: 0, saturation: 0 };
+  }
+
+  const lightness = (max + min) / 2;
+  const hue =
+    max === r ? ((g - b) / delta + 6) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+
+  return { hue: hue * 60, saturation: delta / (1 - Math.abs(2 * lightness - 1)) };
+}
+
 export function relativeLuminance(hex: string): number {
   const [r, g, b] = channels(hex);
   return (

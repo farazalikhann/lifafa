@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useCardStill } from "@/hooks/useCardStill";
-import { SCENE_ASPECT, type SceneArt } from "@/lib/scene";
+import { SCENE_ASPECT, type SceneArt, type SceneDusk } from "@/lib/scene";
 
 /**
  * The painted scene between a card's first screen and its second: a screen
@@ -12,7 +12,9 @@ import { SCENE_ASPECT, type SceneArt } from "@/lib/scene";
  * ITS TOP AND BOTTOM FADE INTO THE CARD, by a mask on the box and not in the
  * picture: what shows through is the card's own ground, whatever its colour
  * and with its royal texture where it has one. The mask is on the box that
- * holds still; the picture moves inside it.
+ * holds still; the picture moves inside it. On a dark card the ends pass
+ * through a glow of the card's own hue on the way, so pale paint is never
+ * simply thinned over a dark ground (sceneDusk in lib/scene.ts).
  *
  * IT MOVES WITH THE SCROLL, AND ONLY ON THE COMPOSITOR. As the guest scrolls
  * through it the picture grows from its own size to 1.08 of it and drifts up
@@ -52,7 +54,38 @@ function copyFor(art: SceneArt): string {
   return slow ? art.small : art.src;
 }
 
-export default function SceneScreen({ art }: { art: SceneArt }): ReactElement {
+/**
+ * One end of a scene on a dark card, as gradient stops from the edge inward:
+ * the card's ground, deepening into its glow by an eighth of the way down,
+ * and the glow thinning to nothing by three tenths, a little less at each
+ * step than the last.
+ */
+function duskStops(dusk: SceneDusk): string {
+  const thinning = [
+    [13, 0.86],
+    [16, 0.7],
+    [19, 0.5],
+    [22, 0.32],
+    [25, 0.17],
+    [28, 0.07],
+    [31, 0],
+  ];
+
+  return [
+    `${dusk.ground} 0%`,
+    `${dusk.ground} 4%`,
+    ...thinning.map(([at, alpha]) => `hsl(${dusk.glow} / ${alpha}) ${at}%`),
+  ].join(", ");
+}
+
+export default function SceneScreen({
+  art,
+  dusk = null,
+}: {
+  art: SceneArt;
+  /** How its ends meet a dark card; null on a light one. See sceneDusk. */
+  dusk?: SceneDusk | null;
+}): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const still = useCardStill();
   const [src, setSrc] = useState<string | null>(null);
@@ -125,7 +158,9 @@ export default function SceneScreen({ art }: { art: SceneArt }): ReactElement {
     <div
       ref={ref}
       aria-hidden="true"
-      className="lifafa-scene pointer-events-none relative w-full overflow-hidden"
+      className={`lifafa-scene pointer-events-none relative w-full overflow-hidden ${
+        dusk !== null ? "lifafa-scene-dusk" : ""
+      }`}
       style={{ aspectRatio: String(SCENE_ASPECT) }}
     >
       {src !== null ? (
@@ -140,6 +175,22 @@ export default function SceneScreen({ art }: { art: SceneArt }): ReactElement {
             still ? "" : "lifafa-scene-art"
           }`}
           style={{ opacity: shown || still ? 1 : 0 }}
+        />
+      ) : null}
+
+      {/*
+        On a dark card: a quarter of the height at each end, eased, from the
+        card's ground through its glow to nothing. Over the picture and still;
+        the box's own mask is then only the first and last tenth.
+      */}
+      {dusk !== null ? (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: ["to bottom", "to top"]
+              .map((side) => `linear-gradient(${side}, ${duskStops(dusk)})`)
+              .join(", "),
+          }}
         />
       ) : null}
     </div>

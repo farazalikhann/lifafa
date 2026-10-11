@@ -1,4 +1,4 @@
-import { mixHex, readableOn, relativeLuminance } from "@/lib/contrast";
+import { hueAndSaturation, mixHex, readableOn, relativeLuminance } from "@/lib/contrast";
 import type { Theme } from "@/lib/themes";
 
 /**
@@ -26,27 +26,6 @@ export interface TearConfig {
   openLabel: string;
   /** Already off: the host's own preview, where nothing is hidden from them. */
   preCleared: boolean;
-}
-
-/** A colour's hue in degrees and its saturation, 0 to 1. */
-function hueAndSaturation(hex: string): { hue: number; saturation: number } {
-  const value = parseInt(hex.slice(1), 16);
-  const r = ((value >> 16) & 255) / 255;
-  const g = ((value >> 8) & 255) / 255;
-  const b = (value & 255) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
-
-  if (delta === 0) {
-    return { hue: 0, saturation: 0 };
-  }
-
-  const lightness = (max + min) / 2;
-  const hue =
-    max === r ? ((g - b) / delta + 6) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
-
-  return { hue: hue * 60, saturation: delta / (1 - Math.abs(2 * lightness - 1)) };
 }
 
 /** The red a maroon card's paper is: deeper than a signal red, and lighter than the card. */

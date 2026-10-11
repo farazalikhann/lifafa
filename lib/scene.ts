@@ -1,3 +1,4 @@
+import { hueAndSaturation, relativeLuminance } from "@/lib/contrast";
 import type { Scene } from "@/types/card";
 
 /**
@@ -53,6 +54,37 @@ function art(name: string): SceneArt {
  */
 export function sceneOf(value: unknown): Scene {
   return SCENES.find((option) => option.id === value)?.id ?? DEFAULT_SCENE;
+}
+
+/**
+ * How a scene meets a dark card, or null on a light one.
+ *
+ * Each painting ends in pale wash at its top and its foot. Faded straight
+ * into a dark ground, pale paint at half strength over maroon is a band of
+ * pinkish brown, and over navy or black a band of grey: mud, whatever the
+ * length of the fade. So on a dark card the ends pass through a colour on the
+ * way: the card's ground, then a deep, clear shade of the card's own hue (its
+ * accent's hue where the ground has none of its own, as on Ink), thinning out
+ * over the painting like the last light of a dusk. See SceneScreen.
+ */
+export interface SceneDusk {
+  /** The card's ground. */
+  ground: string;
+  /** The glow between the ground and the painting, as hue, saturation and lightness. */
+  glow: string;
+}
+
+export function sceneDusk(background: string, accent: string): SceneDusk | null {
+  if (relativeLuminance(background) > 0.4) {
+    return null;
+  }
+
+  const own = hueAndSaturation(background);
+
+  /* Quieter where the hue is borrowed from the accent: a near-black card has no colour to glow in. */
+  return own.saturation >= 0.25
+    ? { ground: background, glow: `${own.hue.toFixed(0)} 50% 33%` }
+    : { ground: background, glow: `${hueAndSaturation(accent).hue.toFixed(0)} 36% 28%` };
 }
 
 /** The picture for a choice, or null for "off". */

@@ -51,9 +51,10 @@ import type { OccasionId } from "@/types/occasion";
  * THE FRAME IS AS WIDE AS THE CARD LETS IT BE: out through the screen's own
  * side padding to where a border's flowers begin, less a little air, and
  * never nearer the card's edge than 16px. A wide frame is bound by that width
- * and a tall one by the height it is given. FRAME_HEIGHT is more than any of
- * the four needs at the card's full width, so with a screen to itself every
- * frame is as wide as the card allows.
+ * and a tall one by the height it is given. FRAME_HEIGHT is more than the
+ * three wide frames need at the card's full width, so each of those is as
+ * wide as the card allows; the varmala, which is taller than it is wide, is
+ * as tall as FRAME_HEIGHT where the screen has the room.
  *
  * THE NAMES NEVER TOUCH THE FRAME. They are set in the box the frame's
  * picture has clear (`words`), and FrameStage brings them down a size until
@@ -65,7 +66,7 @@ import type { OccasionId } from "@/types/occasion";
  */
 
 /** The frame's full height and its least, in card px. */
-const FRAME_HEIGHT = 360;
+const FRAME_HEIGHT = 420;
 const FRAME_MIN = 120;
 
 /** The gap either side of the frame, and the least it closes to, in card px. */

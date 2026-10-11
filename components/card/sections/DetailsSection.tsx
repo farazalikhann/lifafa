@@ -168,8 +168,8 @@ export default function DetailsSection({
   scroll?: ScrollArt | null;
   /**
    * The strip of paper over the date, on a card whose host chose to have it
-   * torn open: the date and the calendar button are under it, with no frame
-   * of roses round them. Null on every other card, and never with a scratch
+   * torn open: the month, the day and the weekday are under it, with no frame
+   * of roses round the date. Null on every other card, and never with a scratch
    * panel or the scroll.
    */
   tear?: TearConfig | null;
@@ -197,40 +197,10 @@ export default function DetailsSection({
     and nothing else — and grouped even without a panel, so the covered and
     uncovered cards lay out identically.
   */
-  const when =
-    page === null ? (
-      /* No date yet: the editor's placeholder, where the band will be. */
-      <div className="flex flex-col items-center text-center" style={{ gap: GAP }}>
-        <Rise shown={isInView} step={0}>
-          <p
-            className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.3em] uppercase"
-            style={{ ...small, opacity: placeholderOpacity(true, "muted") }}
-          >
-            {copy.details.dayPlaceholder}
-          </p>
-        </Rise>
-        <Rise shown={isInView} step={1}>
-          <p
-            className="text-[1.825rem] leading-[1.2] font-medium"
-            style={{
-              opacity: placeholderOpacity(true, "primary"),
-              fontFamily: "var(--card-heading)",
-            }}
-          >
-            {copy.details.dateTimePlaceholder}
-          </p>
-        </Rise>
-      </div>
-    ) : (
-      <div
-        className="flex flex-col items-center text-center"
-        style={{ gap: "calc(0.5 * var(--card-rem, 1rem))" }}
-        /* Read as one date, in order, whatever the layout draws. */
-        aria-label={[page.weekday, page.day, page.month, page.year, page.time]
-          .filter((part) => part !== null)
-          .join(" ")}
-        role="group"
-      >
+  /* The month, the day and the weekday: the date's head, and all that a strip of paper covers. */
+  const dateHead =
+    page === null ? null : (
+      <>
         <Rise shown={isInView} step={0}>
           <Word
             text={page.month}
@@ -267,6 +237,13 @@ export default function DetailsSection({
           />
         </Rise>
 
+      </>
+    );
+
+  /* The rule, and the year and time under it. */
+  const dateTail =
+    page === null ? null : (
+      <>
         <Rise shown={isInView} step={3}>
           <span
             aria-hidden="true"
@@ -293,6 +270,54 @@ export default function DetailsSection({
             ) : null}
           </p>
         </Rise>
+      </>
+    );
+
+  const underPaper = page !== null && scroll === null && tear !== null;
+
+  const when =
+    page === null ? (
+      /* No date yet: the editor's placeholder, where the band will be. */
+      <div className="flex flex-col items-center text-center" style={{ gap: GAP }}>
+        <Rise shown={isInView} step={0}>
+          <p
+            className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.3em] uppercase"
+            style={{ ...small, opacity: placeholderOpacity(true, "muted") }}
+          >
+            {copy.details.dayPlaceholder}
+          </p>
+        </Rise>
+        <Rise shown={isInView} step={1}>
+          <p
+            className="text-[1.825rem] leading-[1.2] font-medium"
+            style={{
+              opacity: placeholderOpacity(true, "primary"),
+              fontFamily: "var(--card-heading)",
+            }}
+          >
+            {copy.details.dateTimePlaceholder}
+          </p>
+        </Rise>
+      </div>
+    ) : (
+      <div
+        className={`flex flex-col items-center text-center ${underPaper ? "w-full self-stretch" : ""}`}
+        style={{ gap: "calc(0.5 * var(--card-rem, 1rem))" }}
+        /* Read as one date, in order, whatever the layout draws. */
+        aria-label={[page.weekday, page.day, page.month, page.year, page.time]
+          .filter((part) => part !== null)
+          .join(" ")}
+        role="group"
+      >
+        {/* Under its strip of paper, on a card whose date is torn open; see TearReveal. */}
+        {underPaper && tear !== null ? (
+          <TearReveal {...tear} hindi={hindi}>
+            {dateHead}
+          </TearReveal>
+        ) : (
+          dateHead
+        )}
+        {dateTail}
       </div>
     );
 
@@ -301,25 +326,12 @@ export default function DetailsSection({
     when they hid it, and simply framed when they did neither.
   */
   const onScroll = page !== null && scroll !== null;
-  const underPaper = page !== null && scroll === null && tear !== null;
-  const calendarButton = (
-    <AddToCalendar
-      draft={draft}
-      theme={theme}
-      invite={invite}
-      occasionId={occasionId}
-      language={language}
-    />
-  );
   const framed =
     page === null ? (
       when
-    ) : tear !== null && scroll === null ? (
-      /* The date and its button, under one strip: both are what the paper is torn off. */
-      <TearReveal {...tear} hindi={hindi}>
-        {when}
-        {calendarButton}
-      </TearReveal>
+    ) : underPaper ? (
+      /* No frame of roses: the strip is the date's frame until it is torn off. */
+      when
     ) : scroll !== null ? (
       <RoyalScroll
         /*
@@ -419,9 +431,16 @@ export default function DetailsSection({
         </div>
       ) : null}
 
-      {/* Under the paper with the date, on a card whose date is torn open. */}
-      {page !== null && !underPaper ? (
-        <div className={`${REVEAL_BASE} ${revealClass(isInView)}`}>{calendarButton}</div>
+      {page !== null ? (
+        <div className={`${REVEAL_BASE} ${revealClass(isInView)}`}>
+          <AddToCalendar
+            draft={draft}
+            theme={theme}
+            invite={invite}
+            occasionId={occasionId}
+            language={language}
+          />
+        </div>
       ) : null}
     </section>
   );
