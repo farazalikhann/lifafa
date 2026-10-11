@@ -354,19 +354,13 @@ export interface TraditionPack {
   /** How the card sets the greeting and blessing, or null for the default. */
   cardHead: CardHeadType | null;
   /**
-   * Whether the card's opening and its names are one screen: the calligraphy,
-   * the blessing in its own script alone, with neither its reading nor its
-   * meaning, and under it the names inside a frame the host picks
-   * (lib/namesFrame.ts), with the event's title below. See
-   * components/card/NamesOpening.tsx.
-   *
-   * On such a card no greeting is drawn, the names have no screen of their
-   * own after the opening, and nothing is drawn above the names: the
-   * calligraphy already heads the card. The host's stored greeting and
-   * above-names ornament are kept as they are, and the panel does not offer
-   * either. The pair from the bottom corners stands beside the frame's foot.
+   * Whether the names' screen sets the names inside a frame the host picks
+   * (lib/namesFrame.ts): first names only, with the ornament for above the
+   * names over the frame and the event's title below it, between the pair
+   * from the bottom corners. The opening before it is the pack's own, as on
+   * every card. See components/card/NamesFrameScreen.tsx.
    */
-  namesOpening?: true;
+  framedNames?: true;
   /**
    * The box inside the pack's frame that the names are set in, as shares of
    * the frame's picture. Only for a pack whose slots have a `frame`.
@@ -642,7 +636,7 @@ const HINDU_PACK: TraditionPack = {
     topCorners: ["mandala"],
   },
   cardHead: DEVANAGARI_CARD_HEAD,
-  namesOpening: true,
+  framedNames: true,
   calligraphyIds: [
     "shubhVivah",
     "sadarNimantran",

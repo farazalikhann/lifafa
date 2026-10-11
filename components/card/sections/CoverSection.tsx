@@ -25,7 +25,7 @@ import type { OccasionId } from "@/types/occasion";
  * One name, set in the pair's names face at the cover's hero size.
  *
  * Pulled out because the pair layout draws it twice and the single-line layout
- * once (and the opening that carries the names, NamesOpening, draws it too), and the three have to be the same size to the pixel — a first name a
+ * once (and the names' screen with a frame, NamesFrameScreen, draws it too), and the three have to be the same size to the pixel — a first name a
  * shade larger than a second one would read as a ranking.
  *
  * `break-words` is the whole defence against a long unbroken token — the canvas

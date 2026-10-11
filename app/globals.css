@@ -464,47 +464,43 @@
 }
 
 /*
-  The opening that carries the names (components/card/NamesOpening.tsx).
+  The names' screen of a card that sets them in a frame
+  (components/card/NamesFrameScreen.tsx).
 
-  The calligraphy is a box of the piece's own shape, as wide as the opening's
-  calligraphy has always been: 16px into the screen's padding on each side,
-  and never more than 20 card rem. The frame's row is the frame's full height.
+  The frame's row is the frame's full height, and the screen at least a
+  section tall.
 
-  FITTED TO A SCREEN, three things are let move: the calligraphy, the two gaps
-  either side of the frame, and the frame. Each starts at its least and is
-  grown into whatever room the screen has, the frame first, then the gaps,
-  then the calligraphy, each a thousand times as readily as the next, so the
-  frame is at its full height before a gap opens, and the gaps are open
-  before the calligraphy gains a pixel. `fit-content` as the least
-  the block may be is what happens when even that does not fit: it is as tall
-  as the two at their least, and nothing is laid over anything.
+  FITTED TO ITS SCREEN where the browser has container units: the block is
+  exactly a section tall, and two things in it are let move, the gaps either
+  side of the frame and the frame. The frame is as tall as its picture is at
+  the width the card allows, up to its full height; on a screen too short for
+  that the gaps close first, a thousand times as readily, and only then does
+  the frame come down. `fit-content`
+  as the least the block may be is what happens when even that does not fit:
+  it is as tall as both at their least, and nothing is laid over anything.
 
-  Container units, because a flex item's least and most are lengths, and the
-  calligraphy's are a share of the opening's own width. A browser without
-  them draws both at full size and lets the screen be as tall as that takes.
+  Container units, because the frame is drawn as large as fits its cell both
+  ways. A browser without them draws the frame at full size and lets the
+  screen be as tall as that takes.
 */
-.lifafa-opening-calligraphy {
-  flex: none;
-  width: min(
-    calc(100% + 2rem),
-    calc(20 * var(--card-rem, 1rem) * var(--card-opening, 1))
-  );
+.lifafa-names-screen {
+  min-height: var(--names-screen-height);
 }
 
-.lifafa-opening-frame-row {
+.lifafa-names-frame-row {
   flex: none;
-  height: var(--opening-frame-height);
+  height: var(--names-frame-height);
 }
 
-/* Under the heading and under the calligraphy: a gap that does not move. */
-.lifafa-opening-fixed-gap {
-  margin-bottom: var(--opening-gap);
+/* Under the heading: a gap that does not move. */
+.lifafa-names-fixed-gap {
+  margin-bottom: var(--names-gap);
 }
 
 /* Either side of the frame: a gap that closes before the frame gives anything up. */
-.lifafa-opening-gap {
+.lifafa-names-gap {
   flex: none;
-  height: var(--opening-gap);
+  height: var(--names-gap);
 }
 
 /*
@@ -512,55 +508,66 @@
   flowers than 2px: the cell is the content column, which a border has already
   brought in from the edge by --card-content-inset.
 */
-.lifafa-opening-frame-cell {
-  --opening-frame-air: max(2px, calc(16px - var(--card-content-inset, 0px)));
-  --opening-frame-width: min(
-    calc(100% - 2 * var(--opening-frame-air)),
-    calc(var(--opening-frame-height) * var(--opening-frame-aspect))
+.lifafa-names-frame-cell {
+  --names-frame-air: max(2px, calc(16px - var(--card-content-inset, 0px)));
+  --names-frame-width: min(
+    calc(100% - 2 * var(--names-frame-air)),
+    calc(var(--names-frame-height) * var(--names-frame-aspect))
   );
 }
 
 @supports (width: 1cqw) {
-  .lifafa-names-opening {
-    container-type: inline-size;
-  }
-
-  .lifafa-opening-frame-cell {
-    container-type: size;
-    --opening-frame-width: min(
-      calc(100cqw - 2 * var(--opening-frame-air)),
-      calc(100cqh * var(--opening-frame-aspect))
-    );
-  }
-
-  .lifafa-names-opening-fitted {
+  .lifafa-names-screen {
+    height: var(--names-screen-height);
     min-height: fit-content;
   }
 
-  .lifafa-names-opening-fitted > .lifafa-opening-calligraphy {
-    --opening-calligraphy-height: calc(
-      min(
-          calc(100cqw + 2rem),
-          calc(20 * var(--card-rem, 1rem) * var(--card-opening, 1))
-        ) / var(--opening-calligraphy-aspect)
+  .lifafa-names-frame-cell {
+    container-type: size;
+    --names-frame-width: min(
+      calc(100cqw - 2 * var(--names-frame-air)),
+      calc(100cqh * var(--names-frame-aspect))
     );
-    flex: 1 0 calc(var(--opening-calligraphy-height) * var(--opening-calligraphy-min));
-    /* Or its own shape is its least, and it never comes down. */
-    min-height: 0;
-    max-height: var(--opening-calligraphy-height);
   }
 
-  .lifafa-names-opening-fitted > .lifafa-opening-gap {
-    flex: 1000 0 var(--opening-gap-min);
+  .lifafa-names-screen > .lifafa-names-gap {
+    flex: 0 1000 var(--names-gap);
     height: auto;
-    max-height: var(--opening-gap);
+    min-height: var(--names-gap-min);
   }
 
-  .lifafa-names-opening-fitted > .lifafa-opening-frame-row {
-    flex: 1000000 0 var(--opening-frame-min);
+  /*
+    As tall as the frame is at the row's own width, and no taller, so what is
+    above and below the frame stands next to it and not across a gap.
+  */
+  .lifafa-names-screen > .lifafa-names-frame-row {
+    flex: 0 1 auto;
     height: auto;
-    max-height: var(--opening-frame-height);
+    aspect-ratio: var(--names-frame-aspect);
+    min-height: var(--names-frame-min);
+    max-height: var(--names-frame-height);
   }
+}
+
+/*
+  The ornament above the names is left off a screen under 700px tall (a phone
+  with its browser's bars showing), where its height is the frame's and the
+  names would be set smaller to pay for it.
+*/
+@media (max-height: 699px) {
+  .lifafa-card-viewport .lifafa-names-above {
+    display: none;
+  }
+}
+
+/* On a sheet of paper the screen is as tall as what is in it, like every section. */
+.lifafa-print-sheet .lifafa-names-screen {
+  height: auto;
+}
+
+.lifafa-print-sheet .lifafa-names-screen > .lifafa-names-frame-row {
+  flex: none;
+  height: calc(240 * var(--card-px, 1px));
 }
 
 /* The scroll cue's arrow: a small, slow drop. See InvitedCue. */

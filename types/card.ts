@@ -171,8 +171,8 @@ export type RoyalTexturePattern = "damask" | "paisley" | "jaal";
 export type ScratchFrame = "oval" | "rect";
 
 /**
- * The frame the names are set in on a card whose opening carries them (a
- * Hindu card). See lib/namesFrame.ts.
+ * The frame the names are set in, on the names' screen of a card whose pack
+ * sets them in one (a Hindu card). See lib/namesFrame.ts.
  */
 export type NamesFrame = "jharokha" | "lotus" | "paisley" | "varmala";
 
@@ -370,8 +370,7 @@ export interface CardConfig {
    */
   divider?: DividerStyle;
   /**
-   * The frame the opening sets the names in, on a card whose opening carries
-   * them. Stored only when it is not the lotus ring: absent, and on every
+   * The frame the names are set in, on a card whose pack sets them in one. Stored only when it is not the lotus ring: absent, and on every
    * card saved before there was a choice, it is the lotus ring. Read it
    * through `namesFrameOf` in lib/namesFrame.ts.
    */

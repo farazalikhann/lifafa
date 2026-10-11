@@ -191,7 +191,7 @@ interface EditorState {
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
   royalTexturePattern: RoyalTexturePattern;
-  /** The frame the opening sets the names in. The lotus ring unless the host picked another. */
+  /** The frame the names are set in. The lotus ring unless the host picked another. */
   namesFrame: NamesFrame;
   /** Whether a guest may keep the card as a PDF. On unless the host turned it off. */
   pdfDownload: boolean;
@@ -1572,8 +1572,8 @@ export default function CardEditor({
                   onOrnamentConfigChange={setOrnamentConfig}
                   accordion={accordionFor("design")}
                 />
-                {/* Only for a card whose opening carries the names, which is where the frame is drawn. */}
-                {getTraditionPack(traditionId)?.namesOpening === true ? (
+                {/* Only for a card whose pack sets its names in a frame. */}
+                {getTraditionPack(traditionId)?.framedNames === true ? (
                   <NamesFramePanel
                     namesFrame={namesFrame}
                     onNamesFrameChange={setNamesFrame}

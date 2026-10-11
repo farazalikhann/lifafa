@@ -94,8 +94,8 @@ const NAME_PREFIXES = new Set(["dr", "mr", "mrs", "ms", "smt", "shri", "sri", "m
 /**
  * The first name of a name as the host typed it: its first word, or its
  * first two where the first is a title or prefix. A name of one word is that
- * word. For where the card has room for a first name only, the frame on an
- * opening that carries the names; everywhere else sets the name in full.
+ * word. For where the card has room for a first name only, the frame on the
+ * names' screen (NamesFrameScreen); everywhere else sets the name in full.
  */
 export function firstNameOf(name: string): string {
   const words = name.trim().split(/\s+/).filter((word) => word.length > 0);

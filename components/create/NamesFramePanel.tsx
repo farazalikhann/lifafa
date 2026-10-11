@@ -9,9 +9,9 @@ import { NAMES_FRAMES, namesFrameArt } from "@/lib/namesFrame";
 import type { NamesFrame } from "@/types/card";
 
 /**
- * The frame the card's opening sets its names in: one of four pictures.
+ * The frame the card sets its names in: one of four pictures.
  *
- * Only offered for a card whose opening carries the names (a Hindu card), and
+ * Only offered for a card whose pack frames its names (a Hindu card), and
  * the lotus ring on every such card until a host picks another. The tiles are
  * small cuts of the same pictures the card draws.
  */
@@ -76,8 +76,8 @@ export default function NamesFramePanel({
       </div>
 
       <p className="text-xs text-[var(--lifafa-muted)]">
-        Your names are set inside it on the first screen of your card, and
-        made smaller if they are long, so they never touch the artwork.
+        Your first names are set inside it on the names screen of your card,
+        and made smaller if they are long, so they never touch the artwork.
       </p>
     </CollapsibleSection>
   );

@@ -48,7 +48,7 @@ import BorderFrame, {
 } from "@/components/card/decor/BorderFrame";
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
-import NamesOpening from "@/components/card/NamesOpening";
+import NamesFrameScreen from "@/components/card/NamesFrameScreen";
 import ThankYouNote from "@/components/invite/ThankYouNote";
 import { namesFrameArt, namesFrameOf } from "@/lib/namesFrame";
 import TopCorners, {
@@ -74,7 +74,7 @@ import {
   SideFlag,
   cornerClearance,
 } from "@/components/card/decor/SlotOrnaments";
-import { resolveSlots, slottedIds } from "@/lib/ornaments/slots";
+import { resolveSlots, slottedIds, type CornerPair } from "@/lib/ornaments/slots";
 
 import {
   FIRST_SCREEN_ATTRIBUTE,
@@ -312,7 +312,6 @@ function Blessing({
   theme,
   sizeClass,
   kind,
-  scriptOnly = false,
 }: {
   entry: PackBlessing;
   pack: TraditionPack;
@@ -320,8 +319,6 @@ function Blessing({
   /** The script line's size where the pack sets no block of its own. */
   sizeClass: string;
   kind: "greeting" | "blessing";
-  /** Only the script line: neither its reading nor its meaning. For an opening that also carries the names. */
-  scriptOnly?: boolean;
 }): ReactElement | null {
   if (entry.script.length === 0) {
     return null;
@@ -376,7 +373,7 @@ function Blessing({
     */
     <div
       className={`flex w-full flex-col items-center gap-1.5 ${
-        head !== null && kind === "blessing" && !scriptOnly ? "mt-2" : ""
+        head !== null && kind === "blessing" ? "mt-2" : ""
       }`}
     >
       {/*
@@ -402,7 +399,7 @@ function Blessing({
         an unmarked Latin line there has its punctuation pushed to the wrong
         end. They inherit the card's body font from the canvas root.
       */}
-      {!scriptOnly && entry.transliteration.length > 0 ? (
+      {entry.transliteration.length > 0 ? (
         <p
           dir="ltr"
           className={`w-full text-center wrap-anywhere italic ${englishClass}`}
@@ -413,7 +410,7 @@ function Blessing({
       ) : null}
 
       {/* Not where it is the script line over again: an English pack's meaning is its own text. */}
-      {!scriptOnly && entry.translation.length > 0 && entry.translation !== entry.script ? (
+      {entry.translation.length > 0 && entry.translation !== entry.script ? (
         <p
           dir="ltr"
           className={`w-full text-center wrap-anywhere ${englishClass}`}
@@ -424,7 +421,7 @@ function Blessing({
       ) : null}
 
       {/* Where a quoted blessing is from: small, and quieter than the meaning above it. */}
-      {!scriptOnly && entry.source !== undefined && entry.source.length > 0 ? (
+      {entry.source !== undefined && entry.source.length > 0 ? (
         <p
           dir="ltr"
           className="w-full text-center text-[calc(0.75*var(--card-rem,1rem)*var(--card-opening-text,1))] tracking-[0.04em]"
@@ -659,6 +656,12 @@ interface CoverDecor {
   frame: FrameArt | null;
   /** The pair that stands either side of the names, for a pack that has one. */
   sides: { left: ReactNode; right: ReactNode } | null;
+  /**
+   * For a pack that sets its names in a frame the host picks (`framedNames`):
+   * the frame, and the bottom-corner pair that stands beside the title under
+   * it. The names' screen is then NamesFrameScreen, not CoverSection.
+   */
+  names: { frame: FrameArt; corners: CornerPair | null } | null;
 }
 
 function renderBlock(
@@ -706,6 +709,26 @@ function renderBlock(
 
   switch (block.id) {
     case "cover":
+      /* The names in the frame the host picked, where the pack sets them in one. */
+      if (coverDecor !== null && coverDecor.names !== null) {
+        return (
+          <NamesFrameScreen
+            draft={draft}
+            theme={theme}
+            occasionId={occasionId}
+            language={language}
+            invited={invited}
+            aboveNames={coverDecor.aboveNames}
+            frame={coverDecor.names.frame}
+            corners={coverDecor.names.corners}
+            height={minHeight}
+            /* It fills its screen, so it clears the dissolve above itself as the countdown does. */
+            padTop={countdownPadTop}
+            padBottom={pad}
+          />
+        );
+      }
+
       return (
         <CoverSection
           draft={draft}
@@ -1094,16 +1117,9 @@ export default function CardCanvas({
     Not drawn while the calligraphy above it says the same phrase: the card
     would read it twice. The choice itself is untouched.
   */
-  /*
-    And no greeting at all on a card whose opening carries the names: the
-    calligraphy heads it, and the host's stored greeting is left as it is.
-  */
-  const namesOpening = pack?.namesOpening === true;
-  const greeting =
-    namesOpening ||
-    greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
-      ? null
-      : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
+  const greeting = greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
+    ? null
+    : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
   const blessing = blessingSaidByCalligraphy(config.ornamentConfig.blessingId, ornaments)
     ? null
     : (pack?.findBlessing(config.ornamentConfig.blessingId) ?? null);
@@ -1222,7 +1238,7 @@ export default function CardCanvas({
     has such a screen: the cover block renders and carries a head.
   */
   const cardHasHead =
-    (namesOpening || hasBlessing || calligraphy.length > 0) &&
+    (hasBlessing || calligraphy.length > 0) &&
     visible.some((block) => block.kind === "builtin" && block.id === "cover");
   const { ref: headRef, isOnScreen: headOnScreen } = useOnScreen<HTMLDivElement>(
     0.5,
@@ -1324,7 +1340,10 @@ export default function CardCanvas({
     a border's own clearance, so a flower frame is never drawn over.
   */
   const cornerInset = Math.max(CORNER_INSET, clearance.x);
+  /* A pack that sets its names in a frame the host picks; see NamesFrameScreen. */
+  const framedNames = pack?.framedNames === true;
   const coverDecor: CoverDecor | null =
+    !framedNames &&
     slots.aboveNames === null &&
     slots.corners === null &&
     slots.frame === null &&
@@ -1369,6 +1388,12 @@ export default function CardCanvas({
             ) : null,
           bottomClearance:
             slots.corners !== null ? cornerClearance(cornerInset, slots.corners) : 0,
+          names: framedNames
+            ? {
+                frame: namesFrameArt(namesFrameOf(config.namesFrame)),
+                corners: slots.corners,
+              }
+            : null,
         };
 
   /* Normalised once here, so the gate below and the layer read the same thing. */
@@ -1943,10 +1968,7 @@ export default function CardCanvas({
               blessing is never hidden behind a panel a guest has to scratch.
             */
             const isCover = block.kind === "builtin" && block.id === "cover";
-            /* Always, where the opening carries the names: they are a head by themselves. */
-            const opensWithNames = isCover && namesOpening;
-            const hasHead =
-              isCover && (opensWithNames || hasBlessing || calligraphy.length > 0);
+            const hasHead = isCover && (hasBlessing || calligraphy.length > 0);
 
             /*
               The screen a guest lands on: the blessing, when the card opens with
@@ -1996,60 +2018,7 @@ export default function CardCanvas({
             );
 
             const head =
-              opensWithNames && pack !== null ? (
-                /*
-                  The opening and the names as one screen; see NamesOpening.
-                  As the first screen it stops short of the cue by the room
-                  the divider after it needs, which is the card's ordinary
-                  divider and may be a garland: the names' own screen is not
-                  under it any more to take the small rule.
-                */
-                <NamesOpening
-                  rootRef={headRef}
-                  rootProps={headIsFirstScreen ? { [FIRST_SCREEN_ATTRIBUTE]: "" } : undefined}
-                  draft={draft}
-                  theme={effectiveTheme}
-                  occasionId={config.occasionId}
-                  language={language}
-                  invited={headIsFirstScreen ? invitedHeading : null}
-                  calligraphy={calligraphy.map((panel) => ({
-                    id: panel.id,
-                    aspect: panel.aspect,
-                    Component: panel.Component,
-                  }))}
-                  calligraphyGround={calligraphyGround(effectiveTheme.background)}
-                  blessing={
-                    blessing !== null ? (
-                      <Blessing
-                        kind="blessing"
-                        entry={blessing}
-                        pack={pack}
-                        theme={effectiveTheme}
-                        scriptOnly
-                        sizeClass="text-[calc(1.375rem*var(--card-opening-text,1))] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]"
-                      />
-                    ) : null
-                  }
-                  frame={namesFrameArt(namesFrameOf(config.namesFrame))}
-                  corners={slots.corners}
-                  /* Fitted to the screen only where the card is sized to one. */
-                  fitted={headIsFirstScreen && sizing === "viewport"}
-                  style={
-                    headIsFirstScreen
-                      ? {
-                          [sizing === "viewport" ? "height" : "minHeight"]:
-                            sectionFirstScreenBox,
-                          paddingTop: `max(${cardPx(clearance.y)}, ${cardPx(headPadTop)} * var(--card-opening, 1))`,
-                          paddingBottom: cardPx(FIRST_SCREEN_FOOT),
-                        }
-                      : {
-                          minHeight,
-                          paddingTop: cardPx(headPadTop),
-                          paddingBottom: cardPx(headPadBottom),
-                        }
-                  }
-                />
-              ) : hasHead ? (
+hasHead ? (
                 /*
                   A screen of its own, not a header sitting on top of the names.
 
@@ -2199,9 +2168,8 @@ export default function CardCanvas({
                   of the next screen, showing above the cue, and the one thing
                   on the opening that says the card goes on.
                 */}
-                {headIsFirstScreen && !opensWithNames ? divider("head", false) : null}
-                {/* Not where the opening carries the names: they have no screen of their own. */}
-                {opensWithNames ? null : section}
+                {headIsFirstScreen ? divider("head", false) : null}
+                {section}
                 {blockKey(block) === calendarAnchor && !hasDateScreen && !still
                   ? saveTheDate
                   : null}

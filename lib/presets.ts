@@ -97,8 +97,8 @@ interface PresetSettings {
    */
   royalTexture?: true;
   /**
-   * The frame the names are set in, on a look for a card whose opening
-   * carries them. A look for such a card that names none gets the lotus ring,
+   * The frame the names are set in, on a look for a card that sets its
+   * names in one. A look for such a card that names none gets the lotus ring,
    * which is what the card has before anyone chooses; a look for any other
    * card leaves the host's frame as it was, for it is not drawn there.
    */
@@ -877,12 +877,12 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
 
   /*
     The names' frame: the look's own, or the lotus ring for a look that names
-    none on a card whose opening carries the names, or the host's where the
+    none on a card that sets its names in a frame, or the host's where the
     look is for a card that draws no such frame.
   */
   const namesFrame: NamesFrame =
     settings.namesFrame ??
-    (pack?.namesOpening === true ? DEFAULT_NAMES_FRAME : (design.namesFrame ?? DEFAULT_NAMES_FRAME));
+    (pack?.framedNames === true ? DEFAULT_NAMES_FRAME : (design.namesFrame ?? DEFAULT_NAMES_FRAME));
 
   return {
     style: {

@@ -161,12 +161,12 @@ function FlameGlow(): ReactElement {
   );
 }
 
-/** Height of one of the pair beside the title on an opening that carries the names, in card px. */
+/** Height of one of the pair beside the title on a names' screen with a frame, in card px. */
 const OPENING_CORNER_HEIGHT = 48;
 
 /**
- * One of the bottom-corner pair on a card whose opening carries the names
- * (NamesOpening): stood beside the event's title at the foot of that screen,
+ * One of the bottom-corner pair on a card that sets its names in a frame
+ * (NamesFrameScreen): stood beside the event's title at the foot of that screen,
  * in a row with it, so it is next to the title and never over it, and under
  * the frame and the names. Smaller than in the corners of a screen of its
  * own, which that screen grew to hold.

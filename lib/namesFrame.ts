@@ -2,10 +2,10 @@ import type { FrameArt } from "@/lib/cardDecor";
 import type { NamesFrame } from "@/types/card";
 
 /**
- * The frame a card's opening sets its names in, on a card whose pack opens
- * with the names (`namesOpening` in lib/traditionPacks.tsx): a jharokha arch,
+ * The frame a card sets its names in, on a card whose pack frames them
+ * (`framedNames` in lib/traditionPacks.tsx): a jharokha arch,
  * a ring of lotuses, a pair of paisleys or a varmala. Drawn by
- * components/card/NamesOpening.tsx and chosen in
+ * components/card/NamesFrameScreen.tsx and chosen in
  * components/create/NamesFramePanel.tsx.
  *
  * Each picture is cut by scripts/cut-flowers.mjs (`names-frames`) from art
@@ -48,8 +48,8 @@ export interface NamesFrameArt extends FrameArt {
                hang from its top, to 64%, where it is clear from 25% to 76.5%
                across; wider above that
 
-  `width` is not read for these: the opening sizes the frame to the room it
-  has (NamesOpening). It is the most the frame is ever drawn at.
+  `width` is not read for these: the names' screen sizes the frame to the room it
+  has (NamesFrameScreen). It is the most the frame is ever drawn at.
 */
 const ART: Record<NamesFrame, NamesFrameArt> = {
   jharokha: art("jharokha", 760 / 549, { x: 0.13, y: 0.52, width: 0.74, height: 0.45 }),
