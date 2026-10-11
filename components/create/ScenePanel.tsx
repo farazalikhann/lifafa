@@ -5,7 +5,7 @@ import CollapsibleSection, {
   sectionState,
   type Accordion,
 } from "@/components/editor/CollapsibleSection";
-import { SCENES, sceneArt } from "@/lib/scene";
+import { SCENES, sceneThumb } from "@/lib/scene";
 import type { Scene } from "@/types/card";
 
 /** An empty frame with a stroke through it: no picture. */
@@ -22,9 +22,9 @@ function OffPreview(): ReactElement {
  * The painted scene between the card's first screen and its second: one of
  * three pictures, or off.
  *
- * The floral arch on every card until a host picks another or turns it off.
- * The pictures are the same on every palette; the tiles here are small cuts
- * of them.
+ * The palace garden on every card until a host picks another or turns it
+ * off. A dark card draws each by night; the tiles here are small copies of
+ * the day paintings.
  */
 export default function ScenePanel({
   scene,
@@ -47,7 +47,7 @@ export default function ScenePanel({
       <div className="grid grid-cols-4 gap-2">
         {SCENES.map((option) => {
           const isSelected = option.id === scene;
-          const art = sceneArt(option.id);
+          const thumb = sceneThumb(option.id);
 
           return (
             <button
@@ -65,13 +65,13 @@ export default function ScenePanel({
                     : "border-[var(--lifafa-hairline)]",
                 ].join(" ")}
               >
-                {art === null ? (
+                {thumb === null ? (
                   <OffPreview />
                 ) : (
                   <img
-                    src={art.thumb}
+                    src={thumb}
                     alt=""
-                    width={135}
+                    width={160}
                     height={240}
                     loading="lazy"
                     decoding="async"

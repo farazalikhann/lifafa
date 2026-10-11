@@ -9,12 +9,13 @@
  * nothing here runs at build time. Uses the sharp that ships inside Next.js,
  * as scripts/cut-flowers.mjs does.
  *
- * THE SCENES ARE NOT CUT OUT. Each is a whole watercolour, 9:16, and is
- * published as it was painted: the card fades its top and bottom into its own
- * colour with a mask (components/card/SceneScreen.tsx), so nothing is baked
- * into the file and one file serves every palette. Each three times: 1080px
- * tall for a phone, 720px tall for a slow connection, and a small one for the
- * editor's chip. The quality is brought down a step at a time until the file
+ * THE SCENES ARE NOT CUT OUT. Each is a whole painting, 2:3, and is published
+ * as it was painted, with no crop: the card fades its top and bottom into its
+ * own colour with a mask (components/card/SceneScreen.tsx), so nothing is
+ * baked into the file. Each scene is painted twice, by day for a light card
+ * and by night for a dark one (sceneArtFor in lib/scene.ts), and each painting
+ * is published three times: 1080px tall for a phone, 720px tall for a slow
+ * connection, and a small one for the editor's chip. The quality is brought down a step at a time until the file
  * is under its limit.
  *
  * THE PAPER IS ALREADY SEAMLESS. It is brought down to a 512px tile and its
@@ -28,16 +29,22 @@ import { join } from "node:path";
 
 const SOURCE = "general photos";
 
+/** The scenes' own folder of paintings as supplied. */
+const SCENERY = "scenery";
+
 const SCENES = [
-  { name: "floral-arch", file: "Romantic Watercolor Garden Archway.png" },
-  { name: "garden-pavilion", file: "Dreamy Garden Wedding Mandap.png" },
-  { name: "lakeside-gazebo", file: "Dreamy Lakeside Wedding Gazebo.png" },
+  { name: "lake-palace-light", file: "Serene Lakeside Palace Garden.png" },
+  { name: "lake-palace-dark", file: "Moonlit Palace Reflections on a Rajasthani Lake.png" },
+  { name: "palace-garden-light", file: "Serene Symmetrical Palace Garden Reflection.png" },
+  { name: "palace-garden-dark", file: "Moonlit Lantern Garden Palace.png" },
+  { name: "valley-tree-light", file: "Golden Valley Blossom Landscape.png" },
+  { name: "valley-tree-dark", file: "Lantern-Lit Tree by the River.png" },
 ];
 
 /** The three sizes of a scene: its height in px, where it goes and the most it may weigh. */
 const SCENE_SIZES = [
-  { height: 1080, dir: "", maxBytes: 200 * 1024 },
-  { height: 720, dir: "small", maxBytes: 90 * 1024 },
+  { height: 1080, dir: "", maxBytes: 180 * 1024 },
+  { height: 720, dir: "small", maxBytes: 80 * 1024 },
   { height: 240, dir: "thumbs", maxBytes: 14 * 1024 },
 ];
 
@@ -68,7 +75,7 @@ async function scenes() {
 
       const { buffer, quality } = await underLimit(
         (q) =>
-          sharp(join(SOURCE, scene.file))
+          sharp(join(SCENERY, scene.file))
             .resize({ height: size.height })
             .webp({ quality: q, effort: 6, smartSubsample: true })
             .toBuffer(),

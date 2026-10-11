@@ -55,7 +55,7 @@ import InvitedHeadingPanel from "@/components/create/InvitedHeadingPanel";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
 import ScenePanel from "@/components/create/ScenePanel";
-import { sceneOf } from "@/lib/scene";
+import { DEFAULT_SCENE, sceneOf } from "@/lib/scene";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
 import NamesFramePanel from "@/components/create/NamesFramePanel";
 import { namesFrameOf } from "@/lib/namesFrame";
@@ -191,7 +191,7 @@ interface EditorState {
   invitedHeading: boolean;
   /** The painting above the venue's name. None unless the host picked one. */
   venueIllustration: VenueIllustration;
-  /** The painted scene after the first screen. The floral arch unless the host picked another or turned it off. */
+  /** The painted scene after the first screen. The palace garden unless the host picked another or turned it off. */
   scene: Scene;
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
@@ -258,7 +258,7 @@ function toState(snapshot: EditorSnapshot): EditorState {
     invitedHeading: invitedHeadingOn(config.invitedHeading),
     /* Missing on every card saved before the choice; those have none. */
     venueIllustration: venueIllustrationOf(config.venueIllustration),
-    /* Missing on every card saved before there were scenes: the floral arch. */
+    /* Missing on every card saved before there were scenes: the palace garden. */
     scene: sceneOf(config.scene),
     /* Missing on every card saved before the texture; those have none. */
     royalTexture: royalTextureOn(config.royalTexture),
@@ -345,7 +345,7 @@ function toSnapshot(state: EditorState): EditorSnapshot {
         ? { venueIllustration: state.venueIllustration }
         : null),
       /* Only ever stored when it is not the floral arch, so an older card is stored as it was. */
-      ...(state.scene !== "floralArch" ? { scene: state.scene } : null),
+      ...(state.scene !== DEFAULT_SCENE ? { scene: state.scene } : null),
       /* Only ever stored as on: a card that never had the key has no texture. */
       ...(state.royalTexture ? { royalTexture: true } : null),
       /* Only ever stored when it is not the damask, and kept while the texture is off. */

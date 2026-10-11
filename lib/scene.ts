@@ -2,24 +2,34 @@ import { hueAndSaturation, relativeLuminance } from "@/lib/contrast";
 import type { Scene } from "@/types/card";
 
 /**
- * The painted scene between a card's first screen and its second: a floral
- * arch, a garden pavilion or a lakeside gazebo, or none. A screen of its own
+ * The painted scene between a card's first screen and its second: a lake
+ * palace, a palace garden or a tree in a valley, or none. A screen of its own
  * on every tradition's card, drawn by components/card/SceneScreen.tsx and
  * chosen in components/create/ScenePanel.tsx.
  *
- * Each is a 9:16 watercolour published whole by scripts/cut-scenes.mjs. The
- * card fades its top and bottom into its own colour, so one file serves
- * every palette.
+ * Each is painted twice, by day and by night, 2:3, and published whole by
+ * scripts/cut-scenes.mjs: a light card draws the day and a dark card the
+ * night (sceneArtFor). The card fades its top and bottom into its own colour.
  */
 
-export const DEFAULT_SCENE: Scene = "floralArch";
+export const DEFAULT_SCENE: Scene = "palaceGarden";
 
 export const SCENES: readonly { id: Scene; label: string }[] = [
-  { id: "floralArch", label: "Floral arch" },
-  { id: "gardenPavilion", label: "Garden pavilion" },
-  { id: "lakesideGazebo", label: "Lakeside gazebo" },
+  { id: "lakePalace", label: "Lake palace" },
+  { id: "palaceGarden", label: "Palace garden" },
+  { id: "valleyTree", label: "Valley tree" },
   { id: "off", label: "Off" },
 ];
+
+/**
+ * The three scenes there were first, on cards saved with one of them: each is
+ * now the scene nearest it, so no saved card needs changing.
+ */
+const FORMER_SCENES: Record<string, Scene> = {
+  floralArch: "valleyTree",
+  gardenPavilion: "palaceGarden",
+  lakesideGazebo: "lakePalace",
+};
 
 export interface SceneArt {
   /** 1080px tall: what a phone draws. */
@@ -31,13 +41,17 @@ export interface SceneArt {
 }
 
 /** Every scene's shape: width over height. */
-export const SCENE_ASPECT = 9 / 16;
+export const SCENE_ASPECT = 2 / 3;
 
-const ART: Record<Exclude<Scene, "off">, SceneArt> = {
-  floralArch: art("floral-arch"),
-  gardenPavilion: art("garden-pavilion"),
-  lakesideGazebo: art("lakeside-gazebo"),
+/** A scene's two paintings: by day for a light card, by night for a dark one. */
+const ART: Record<Exclude<Scene, "off">, { light: SceneArt; dark: SceneArt }> = {
+  lakePalace: { light: art("lake-palace-light"), dark: art("lake-palace-dark") },
+  palaceGarden: { light: art("palace-garden-light"), dark: art("palace-garden-dark") },
+  valleyTree: { light: art("valley-tree-light"), dark: art("valley-tree-dark") },
 };
+
+/** A ground this dark or darker is a dark card: it gets the night painting, and a dusk at its ends. */
+const DARK_GROUND = 0.4;
 
 function art(name: string): SceneArt {
   return {
@@ -49,10 +63,15 @@ function art(name: string): SceneArt {
 
 /**
  * Absent from every card saved before there were scenes, and from every card
- * whose host has not chosen: a missing or unknown value is the floral arch,
- * so every card has one until its host turns it off.
+ * whose host has not chosen: a missing or unknown value is the palace
+ * garden, so every card has one until its host turns it off. A card saved
+ * with one of the first three scenes has the one that took its place.
  */
 export function sceneOf(value: unknown): Scene {
+  if (typeof value === "string" && Object.hasOwn(FORMER_SCENES, value)) {
+    return FORMER_SCENES[value];
+  }
+
   return SCENES.find((option) => option.id === value)?.id ?? DEFAULT_SCENE;
 }
 
@@ -75,7 +94,7 @@ export interface SceneDusk {
 }
 
 export function sceneDusk(background: string, accent: string): SceneDusk | null {
-  if (relativeLuminance(background) > 0.4) {
+  if (relativeLuminance(background) > DARK_GROUND) {
     return null;
   }
 
@@ -87,7 +106,20 @@ export function sceneDusk(background: string, accent: string): SceneDusk | null 
     : { ground: background, glow: `${hueAndSaturation(accent).hue.toFixed(0)} 36% 28%` };
 }
 
-/** The picture for a choice, or null for "off". */
-export function sceneArt(scene: Scene): SceneArt | null {
-  return scene === "off" ? null : ART[scene];
+/**
+ * The picture for a choice on a card of this ground, or null for "off": the
+ * night painting on a dark card, by the test sceneDusk makes, and the day
+ * painting on a light one.
+ */
+export function sceneArtFor(scene: Scene, background: string): SceneArt | null {
+  if (scene === "off") {
+    return null;
+  }
+
+  return relativeLuminance(background) > DARK_GROUND ? ART[scene].light : ART[scene].dark;
+}
+
+/** The editor's chip for a choice, or null for "off": the day painting, whatever the card. */
+export function sceneThumb(scene: Scene): string | null {
+  return scene === "off" ? null : ART[scene].light.thumb;
 }

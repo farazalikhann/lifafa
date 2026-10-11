@@ -163,7 +163,7 @@ export type DateReveal = "scroll" | "scratch" | "tear" | "simple";
  * The painted scene between the card's first screen and its second, or off.
  * See lib/scene.ts.
  */
-export type Scene = "floralArch" | "gardenPavilion" | "lakesideGazebo" | "off";
+export type Scene = "lakePalace" | "palaceGarden" | "valleyTree" | "off";
 
 /** The painting of the place above the venue's name, or none. See lib/venueIllustration.ts. */
 export type VenueIllustration = "none" | "garden" | "banquet" | "palace" | "poolside";
@@ -342,9 +342,10 @@ export interface CardConfig {
   venueIllustration?: VenueIllustration;
   /**
    * The painted scene between the card's first screen and its second. Stored
-   * only when it is not the floral arch: absent, and on every card saved
-   * before there were scenes, it is the floral arch. Read it through
-   * `sceneOf` in lib/scene.ts.
+   * only when it is not the palace garden: absent, and on every card saved
+   * before there were scenes, it is the palace garden. A card saved with one
+   * of the first three scenes still holds its old name here. Read it through
+   * `sceneOf` in lib/scene.ts, which knows them.
    */
   scene?: Scene;
   /**

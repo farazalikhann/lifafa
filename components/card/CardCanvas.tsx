@@ -95,7 +95,7 @@ import {
 } from "@/lib/royalScroll";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
-import { sceneArt, sceneDusk, sceneOf } from "@/lib/scene";
+import { sceneArtFor, sceneDusk, sceneOf } from "@/lib/scene";
 import { tearInkColor, tearPaperColor, type TearConfig } from "@/lib/tearReveal";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
@@ -1606,10 +1606,11 @@ export default function CardCanvas({
 
   /*
     The painted scene after the first screen, on every tradition's card: the
-    floral arch unless the host picked another or turned it off. In the
+    palace garden unless the host picked another or turned it off, by night on
+    a dark card. In the
     content column, so inside a flower frame; see SceneScreen.
   */
-  const scenePicture = sceneArt(sceneOf(config.scene));
+  const scenePicture = sceneArtFor(sceneOf(config.scene), effectiveTheme.background);
   const scene =
     scenePicture !== null ? (
       <SceneScreen

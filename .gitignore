@@ -41,3 +41,5 @@ next-env.d.ts
 /floating art/
 /texture art/
 /marketing/
+# The six scene paintings as supplied; scripts/cut-scenes.mjs publishes them to public/decor/scenes/.
+/scenery/

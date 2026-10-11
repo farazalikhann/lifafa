@@ -30,7 +30,7 @@ import { SCENE_ASPECT, type SceneArt, type SceneDusk } from "@/lib/scene";
  * page has finished loading and the browser is idle, or the guest has
  * scrolled to within a screen of it, whichever is first. The 720px copy on a
  * slow connection or for a guest who asked to save data, the 1080px one
- * otherwise. Its box is the picture's shape from the start, so nothing on
+ * otherwise, and the night painting on a dark card (sceneArtFor). Its box is the picture's shape from the start, so nothing on
  * the card moves when it arrives; it fades in.
  */
 
