@@ -84,6 +84,7 @@ export default function CoverSection({
   bottomClearance = 0,
   frame = null,
   sides = null,
+  padTop,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -131,6 +132,11 @@ export default function CoverSection({
    * larger of this and `pad`, so its content always ends above them.
    */
   bottomClearance?: number;
+  /**
+   * The inset at the top alone, in card px, where it is not `pad`: under the
+   * painted scene, whose end this screen starts a set distance from.
+   */
+  padTop?: number;
   /**
    * A frame the names are set inside: the gurudwara arch. The names, the
    * title and the rule under them go in its opening, brought down a size if
@@ -285,7 +291,7 @@ export default function CoverSection({
       className="relative flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
-        paddingTop: cardPx(pad),
+        paddingTop: cardPx(padTop ?? pad),
         paddingBottom: cardPx(Math.max(pad, bottomClearance)),
         /*
           1.25rem between the names, the title and the flourish. It

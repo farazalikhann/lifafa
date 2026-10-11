@@ -97,7 +97,7 @@ import {
 } from "@/lib/royalScroll";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
-import { sceneArtFor, sceneDusk, sceneOf } from "@/lib/scene";
+import { sceneArtFor, sceneDusk, sceneGrounding, sceneOf } from "@/lib/scene";
 import { tearInkColor, tearPaperColor, type TearConfig } from "@/lib/tearReveal";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
@@ -313,6 +313,9 @@ const CALLIGRAPHY_MAX_HEIGHT = 0.22;
 
 /** The most of the screen's height the painted scene on the opening may take. */
 const SCENE_MAX_HEIGHT = 0.78;
+
+/** How far under the end of the scene the first thing on the names' screen starts, in card px. */
+const NAMES_UNDER_SCENE = 48;
 
 /**
  * The sacred line on a card's opening screen: the shlok, the dua, the verse
@@ -708,6 +711,12 @@ function renderBlock(
   invited: ReactNode,
   /** The strip of paper over the date, for a card whose host chose to have it torn open. */
   tear: TearConfig | null,
+  /**
+   * Whether the names' screen follows the painted scene: then it starts
+   * NAMES_UNDER_SCENE under the painting's end and is as tall as what is in
+   * it, in place of a screen with the names in its middle.
+   */
+  underScene: boolean,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -736,8 +745,9 @@ function renderBlock(
             corners={coverDecor.names.corners}
             height={minHeight}
             /* It fills its screen, so it clears the dissolve above itself as the countdown does. */
-            padTop={countdownPadTop}
+            padTop={underScene ? NAMES_UNDER_SCENE : countdownPadTop}
             padBottom={pad}
+            flow={underScene}
           />
         );
       }
@@ -746,8 +756,9 @@ function renderBlock(
         <CoverSection
           draft={draft}
           theme={theme}
-          minHeight={minHeight}
+          minHeight={underScene ? "0px" : minHeight}
           pad={pad}
+          padTop={underScene ? NAMES_UNDER_SCENE : undefined}
           occasionId={occasionId}
           language={language}
           invited={invited}
@@ -1268,6 +1279,8 @@ export default function CardCanvas({
     0.5,
     cardHasHead,
   );
+  /* The painted scene's room in the first screen, which its layer is drawn over; see SceneScreen. */
+  const sceneSlot = useRef<HTMLDivElement>(null);
 
   /*
     The chosen calligraphy's mask, fetched as the page loads. A CSS mask image
@@ -1611,21 +1624,27 @@ export default function CardCanvas({
   /*
     The painted scene on the first screen, on every tradition's card: the
     palace garden unless the host picked another or turned it off, by night on
-    a dark card. In the flow of that screen, under its last line, and as wide
-    as the card: `inset` is how far the box it is put in stands in from the
-    card's edge, which is what it steps back out by. See SceneScreen.
+    a dark card. Its room is in the flow of that screen, under its last line,
+    and as wide as the card: `inset` is how far the box it is put in stands
+    in from the card's edge, which is what it steps back out by. The painting
+    itself is a layer of the card, drawn over that room from under the layer
+    that flies. See SceneScreen.
   */
   const scenePicture = sceneArtFor(sceneOf(config.scene), effectiveTheme.background);
   const sceneAt = (inset: string): ReactElement | null =>
     scenePicture !== null ? (
-      <SceneScreen
-        art={scenePicture}
-        dusk={sceneDusk(effectiveTheme.background, effectiveTheme.accent)}
-        inset={inset}
-        maxHeight={
-          sizing === "viewport"
-            ? `${SCENE_MAX_HEIGHT * 100}svh`
-            : `${Math.round(frameHeight * SCENE_MAX_HEIGHT)}px`
+      <div
+        ref={sceneSlot}
+        aria-hidden="true"
+        className="lifafa-scene-slot pointer-events-none"
+        style={
+          {
+            "--scene-inset": inset,
+            "--scene-cap":
+              sizing === "viewport"
+                ? `${SCENE_MAX_HEIGHT * 100}svh`
+                : `${Math.round(frameHeight * SCENE_MAX_HEIGHT)}px`,
+          } as CSSProperties
         }
       />
     ) : null;
@@ -1852,6 +1871,20 @@ export default function CardCanvas({
           the flower frames simply swallowed it. It never blocks a tap either —
           the layer is pointer-events-none and shoos from passive listeners.
         */}
+        {/*
+          The painted scene, over its room in the first screen. Above the
+          card's ground and whatever is scattered on it, under what flies and
+          under the column, so under the opening's words.
+        */}
+        {scenePicture !== null ? (
+          <SceneScreen
+            art={scenePicture}
+            dusk={sceneDusk(effectiveTheme.background, effectiveTheme.accent)}
+            grounding={sceneGrounding(scenePicture, effectiveTheme.background)}
+            slot={sceneSlot}
+          />
+        ) : null}
+
         {(butterflies !== "none" || leaves) && config.decorMotion !== "none" ? (
           <ButterflyLayer
             style={butterflies}
@@ -1864,6 +1897,14 @@ export default function CardCanvas({
             nature={natureKind(config.nature)}
             intensity={config.decorIntensity}
             bandHeight={bandHeight}
+            /*
+              While the opening is the screen being read, what flies goes
+              behind its words: back to front the card is its ground, the
+              scene, what flies, the opening's words, then the border and
+              what hangs. Everywhere else it is the nearest thing to the
+              guest, as it was.
+            */
+            behindWords={headOnScreen}
           />
         ) : null}
 
@@ -1884,6 +1925,7 @@ export default function CardCanvas({
             fall={petalsFall(petals) && config.decorMotion !== "none"}
             intensity={config.decorIntensity}
             bandHeight={bandHeight}
+            behindWords={headOnScreen}
           />
         ) : null}
 
@@ -2093,6 +2135,8 @@ export default function CardCanvas({
               sectionIsFirstScreen ? firstScreenPad : headPadTop,
               sectionIsFirstScreen ? invitedHeading : null,
               tear,
+              /* The names' screen under a scene starts where the painting ends. */
+              isCover && sceneInHead,
             );
 
             const head =

@@ -570,6 +570,40 @@
   }
 }
 
+/*
+  Under a scene the names' screen is not a screen: it starts where the
+  painting ends, with its first thing a set distance under that, and is as
+  tall as what is in it. Nothing is fitted to a height, so nothing gives way:
+  the gaps are their full size and the frame is the height its picture has at
+  the width the card allows, which is the most the fitted screen ever let it
+  be.
+*/
+.lifafa-names-screen.lifafa-names-flow {
+  height: auto;
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+.lifafa-names-screen.lifafa-names-flow > .lifafa-names-gap {
+  flex: none;
+  height: var(--names-gap);
+  max-height: none;
+}
+
+@supports (width: 1cqw) {
+  .lifafa-names-screen.lifafa-names-flow > .lifafa-names-frame-row {
+    flex: none;
+    height: min(
+      var(--names-frame-height),
+      calc(
+        (100cqw + 14 * var(--spacing) - 2 * var(--names-frame-air)) /
+          var(--names-frame-aspect)
+      )
+    );
+    max-height: none;
+  }
+}
+
 /* On a sheet of paper the screen is as tall as what is in it, like every section. */
 .lifafa-print-sheet .lifafa-names-screen {
   height: auto;
@@ -584,26 +618,22 @@
   The painted scene on a card's opening screen, under its sacred line and
   running on into the names' screen (components/card/SceneScreen.tsx).
 
-  FULL BLEED, from inside the reading column: the box is wider than what it
-  is laid out in by --scene-inset each side, which SceneScreen sets to how far
+  THE SLOT is the painting's room, in the flow of the opening screen, and
+  empty: the painting is drawn over it from a layer of the card that is under
+  what flies, which the column is not (SceneScreen says why).
+
+  FULL BLEED, from inside the reading column: the slot is wider than what it
+  is laid out in by --scene-inset each side, which CardCanvas sets to how far
   that stands in from the card's edge, and steps back out by the same. So it
-  is the card's width, and the border, a layer above the column, is drawn
-  over it.
+  is the card's width, and the border, a layer above, is drawn over it.
 
   The card's width by one and a half of it, the painting's own shape, and
   never taller than --scene-cap, 78% of the screen. Pulled up by 12% of that
   height, under the foot of the words above it: the lesser of 18% of its width
-  and 12% of the cap, since a percentage here is of the width. Behind the
-  column's words (z-index -1 inside the column's own stacking context) and in
-  front of nothing else.
-
-  Its top 22% and its bottom quarter fade into the card through a mask on the
-  box, which holds still; what shows through is the card's own ground. Eased,
-  because a straight ramp shows where it starts.
+  and 12% of the cap, since a percentage here is of the width.
 */
-.lifafa-scene {
+.lifafa-scene-slot {
   --scene-w: calc(100% + 2 * var(--scene-inset, 0px));
-  z-index: -1;
   flex: none;
   align-self: center;
   width: var(--scene-w);
@@ -612,6 +642,15 @@
   max-height: var(--scene-cap, 78svh);
   margin-inline: calc(-1 * var(--scene-inset, 0px));
   margin-top: max(calc(var(--scene-w) * -0.18), calc(var(--scene-cap, 78svh) * -0.12));
+}
+
+/*
+  THE PAINTING, over its slot. Its top 22% and its bottom quarter fade into
+  the card through a mask on the box, which holds still; what shows through
+  is the card's own ground. Eased, because a straight ramp shows where it
+  starts.
+*/
+.lifafa-scene {
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0%,
@@ -646,7 +685,7 @@
   is the card's width there too: the screen's, centred on the column.
 */
 @media (min-width: 26.3125rem) and (max-width: 47.99rem) and (orientation: portrait) {
-  .lifafa-card-phone .lifafa-scene {
+  .lifafa-card-phone .lifafa-scene-slot {
     --scene-w: 100vw;
     margin-inline: calc(50% - 50vw);
   }

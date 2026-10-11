@@ -39,6 +39,12 @@ export interface SceneArt {
   small: string;
   /** 240px tall, for the editor's chip. */
   thumb: string;
+  /**
+   * A night painting's sky: its hue in degrees, measured over the top of the
+   * published file, and how far down the painting it runs before the line of
+   * the hills, as a share of the height. See sceneGrounding.
+   */
+  sky?: { hue: number; clearBy: number };
 }
 
 /** Every scene's shape: width over height. */
@@ -46,9 +52,19 @@ export const SCENE_ASPECT = 2 / 3;
 
 /** A scene's two paintings: by day for a light card, by night for a dark one. */
 const ART: Record<Exclude<Scene, "off">, { light: SceneArt; dark: SceneArt }> = {
-  lakePalace: { light: art("lake-palace-light"), dark: art("lake-palace-dark") },
-  palaceGarden: { light: art("palace-garden-light"), dark: art("palace-garden-dark") },
-  valleyTree: { light: art("valley-tree-light"), dark: art("valley-tree-dark") },
+  lakePalace: {
+    light: art("lake-palace-light"),
+    dark: { ...art("lake-palace-dark"), sky: { hue: 213, clearBy: 0.4 } },
+  },
+  palaceGarden: {
+    light: art("palace-garden-light"),
+    /* A violet dusk over the garden, and the trees come up sooner than the hills do. */
+    dark: { ...art("palace-garden-dark"), sky: { hue: 275, clearBy: 0.3 } },
+  },
+  valleyTree: {
+    light: art("valley-tree-light"),
+    dark: { ...art("valley-tree-dark"), sky: { hue: 215, clearBy: 0.4 } },
+  },
 };
 
 /** A ground this dark or darker is a dark card: it gets the night painting, and a dusk at its ends. */
@@ -109,6 +125,71 @@ export function sceneDusk(background: string, accent: string): SceneDusk | null 
   return own.saturation >= 0.25
     ? { ground: background, glow: `${own.hue.toFixed(0)} 46% 21%` }
     : { ground: background, glow: `${hueAndSaturation(accent).hue.toFixed(0)} 32% 17%` };
+}
+
+/**
+ * How a night painting gives its sky up to a dark card of another colour, or
+ * null on every other card.
+ *
+ * Two of the three nights are navy: sky above, water below. On a maroon card
+ * that is a blue band between maroon and maroon, a picture laid on the card
+ * and not a part of it. So where the card's hue is far from the sky's, the
+ * card's own ground is the sky: the painting comes in only by the line of
+ * its hills (`top`), goes out sooner at its foot (`bottom`), and is leaned
+ * toward the card's colour by `tint`, the card's ground laid over it as
+ * colour alone.
+ *
+ * FAR is more than SKY_FAR degrees of hue, from the painting's own sky and
+ * from the navy of a night as well. The second half is what leaves a navy
+ * card alone under the one painting whose sky is violet and not navy: on
+ * Midnight every night already runs into the ground, and is drawn as it was.
+ * A light card never gets here; it has the day painting.
+ *
+ * A near-black ground (Ink, Forest) has little colour to give, so there the
+ * tint mostly quiets the navy: the lights stay warm and the band goes.
+ */
+export interface SceneGrounding {
+  /** Where the painting is all there, from the top, as a share of its height. */
+  top: number;
+  /** Where it starts to go, toward the foot. */
+  bottom: number;
+  /** How strongly the card's ground is laid over it as colour, 0 to 1. */
+  tint: number;
+}
+
+/** How many degrees of hue apart a card and a sky are before the card takes the sky over. */
+const SKY_FAR = 40;
+/** The navy of a night sky, in degrees: the lake's and the valley's. */
+const NIGHT_BLUE = 214;
+const GROUNDED_BOTTOM = 0.65;
+/** The least that takes the blue out of a navy night on Maroon: at 0.3 and 0.4 a strip of indigo is left over the hills. */
+const GROUNDED_TINT = 0.5;
+
+function hueApart(a: number, b: number): number {
+  const apart = Math.abs(a - b) % 360;
+
+  return apart > 180 ? 360 - apart : apart;
+}
+
+export function sceneGrounding(art: SceneArt, background: string): SceneGrounding | null {
+  if (art.sky === undefined || relativeLuminance(background) > DARK_GROUND) {
+    return null;
+  }
+
+  const ground = hueAndSaturation(background);
+
+  if (
+    hueApart(ground.hue, art.sky.hue) <= SKY_FAR ||
+    hueApart(ground.hue, NIGHT_BLUE) <= SKY_FAR
+  ) {
+    return null;
+  }
+
+  return {
+    top: art.sky.clearBy,
+    bottom: GROUNDED_BOTTOM,
+    tint: GROUNDED_TINT,
+  };
 }
 
 /**

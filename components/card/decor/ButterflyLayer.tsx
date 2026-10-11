@@ -1994,6 +1994,7 @@ export default function ButterflyLayer({
   nature,
   intensity,
   bandHeight,
+  behindWords = false,
 }: {
   /**
    * Which butterflies the host picked, or "none" on a card that carries only
@@ -2021,6 +2022,13 @@ export default function ButterflyLayer({
    * screen, or the editor's fixed frame.
    */
   bandHeight: string;
+  /**
+   * Whether the layer is drawn under the reading column and not over
+   * everything: while the card's opening screen is the one on screen, so
+   * what flies passes behind its words and over the painting under them.
+   * Under the border and what hangs too, for as long as that lasts.
+   */
+  behindWords?: boolean;
 }): ReactElement {
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const bandRef = useRef<HTMLDivElement>(null);
@@ -2070,7 +2078,9 @@ export default function ButterflyLayer({
     <div
       ref={pauseRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[17] overflow-clip"
+      className={`pointer-events-none absolute inset-0 overflow-clip ${
+        behindWords ? "z-[9]" : "z-[17]"
+      }`}
     >
       <div
         ref={bandRef}

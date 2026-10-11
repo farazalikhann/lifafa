@@ -388,6 +388,7 @@ export default function PetalLayer({
   fall,
   intensity,
   bandHeight,
+  behindWords = false,
 }: {
   /** Which flower comes down. Rose on every card saved before the choice. */
   flower: PetalFlower;
@@ -402,6 +403,8 @@ export default function PetalLayer({
   intensity: DecorIntensity;
   /** The pinned band's height, exactly as the other decor layers take it. */
   bandHeight: string;
+  /** Under the reading column while the opening screen is on screen; see ButterflyLayer. */
+  behindWords?: boolean;
 }): ReactElement | null {
   const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const gateOpen = useBurstGate();
@@ -456,7 +459,9 @@ export default function PetalLayer({
     <div
       ref={pauseRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[17] overflow-clip motion-reduce:hidden"
+      className={`pointer-events-none absolute inset-0 overflow-clip motion-reduce:hidden ${
+        behindWords ? "z-[9]" : "z-[17]"
+      }`}
     >
       <div
         className="sticky top-0 w-full overflow-clip"

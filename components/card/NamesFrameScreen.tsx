@@ -113,6 +113,7 @@ export default function NamesFrameScreen({
   height,
   padTop,
   padBottom,
+  flow = false,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -137,6 +138,12 @@ export default function NamesFrameScreen({
   /** The insets at its top and foot, in card px. */
   padTop: number;
   padBottom: number;
+  /**
+   * Whether it follows the painted scene: then it is not fitted to a screen.
+   * It is as tall as what is in it, from `padTop` under the painting's end,
+   * with the frame at its full size; see `lifafa-names-flow` in globals.css.
+   */
+  flow?: boolean;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
   const copy = cardCopy(language);
@@ -151,7 +158,9 @@ export default function NamesFrameScreen({
   return (
     <section
       ref={ref}
-      className="lifafa-names-screen relative flex flex-col items-center justify-center px-7 text-center"
+      className={`lifafa-names-screen relative flex flex-col items-center justify-center px-7 text-center ${
+        flow ? "lifafa-names-flow" : ""
+      }`}
       style={
         {
           "--names-screen-height": height,
