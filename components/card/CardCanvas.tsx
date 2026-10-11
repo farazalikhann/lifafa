@@ -49,6 +49,7 @@ import BorderFrame, {
 
 import CornerLayer from "@/components/card/decor/CornerLayer";
 import NamesOpening from "@/components/card/NamesOpening";
+import ThankYouNote from "@/components/invite/ThankYouNote";
 import { namesFrameArt, namesFrameOf } from "@/lib/namesFrame";
 import TopCorners, {
   topCornersHole,
@@ -825,6 +826,8 @@ export default function CardCanvas({
   fluid = false,
   fillsPhone = false,
   frame = true,
+  ground = "card",
+  closingNote,
   frameHeight = PREVIEW_FRAME_HEIGHT,
 }: {
   draft: EventDraft;
@@ -861,6 +864,27 @@ export default function CardCanvas({
    */
   frame?: boolean;
   /**
+   * Who lays the card's ground: its colour and its royal texture. The card
+   * itself, unless it is on the guest's page, where the page lays one ground
+   * under the card and everything after it, so the texture runs on past the
+   * card's end with no seam. The page's layer carries the texture's marker,
+   * so a pinned band still finds it and keeps its tile in register; see
+   * RoyalTextureFill.
+   */
+  ground?: "card" | "page";
+  /**
+   * Where the hosts' closing words go (ThankYouNote): the host's note, or the
+   * card's thanks where there is none.
+   *
+   * "card": at the card's own end, after its last section, in the editor's
+   * previews, where there is no reply form for them to follow. "page": the
+   * guest's page draws them after the reply form. Either way the note is not
+   * a section among the others, so the page does not close twice. Absent (a
+   * printed copy, the home page's demos): the note is the section it was,
+   * and there are no thanks.
+   */
+  closingNote?: "card" | "page";
+  /**
    * In "frame" sizing, how tall the frame is, in px: what a section is sized
    * against and how tall the pinned decor is. The editor's 620px box unless
    * said otherwise; the home page's phone frames are taller for their width.
@@ -894,8 +918,11 @@ export default function CardCanvas({
   const { style } = config;
   const minHeight = sectionMinHeight(sizing, style.density, frameHeight);
   const bandHeight = scrollportHeight(sizing, frameHeight);
-  const visible = config.blocks.filter((block) =>
-    blockRenders(block, draft, config.occasionId),
+  const visible = config.blocks.filter(
+    (block) =>
+      blockRenders(block, draft, config.occasionId) &&
+      /* The note is the closing words, where something draws them; see `closingNote`. */
+      !(closingNote !== undefined && block.kind === "builtin" && block.id === "message"),
   );
 
   /*
@@ -1583,7 +1610,8 @@ export default function CardCanvas({
         }`}
         style={{
           ...cssVariables,
-          backgroundColor: effectiveTheme.background,
+          /* Laid by the page under the card and what follows it; see `ground`. */
+          backgroundColor: ground === "page" ? undefined : effectiveTheme.background,
           color: effectiveTheme.textPrimary,
           fontFamily: effectiveTheme.fontFamily,
         }}
@@ -1599,7 +1627,7 @@ export default function CardCanvas({
           it scrolls with the paper it is woven into. Its tile, blend and
           opacity are worked out from the card's colour; see royalTextureLayer.
         */}
-        {texture !== null ? (
+        {texture !== null && ground === "card" ? (
           <div
             aria-hidden="true"
             {...{ [ROYAL_TEXTURE_ATTRIBUTE]: "" }}
@@ -2292,6 +2320,17 @@ export default function CardCanvas({
               theme={effectiveTheme}
               draft={draft}
               language={language}
+            />
+          ) : null}
+
+          {/* The closing words, at the card's end where nothing follows it; see `closingNote`. */}
+          {closingNote === "card" ? (
+            <ThankYouNote
+              draft={draft}
+              theme={effectiveTheme}
+              language={language}
+              placement="card"
+              borderStyle={config.borderStyle}
             />
           ) : null}
         </div>

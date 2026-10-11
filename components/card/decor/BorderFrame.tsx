@@ -3,6 +3,7 @@
 import { useId, type ReactElement, type ReactNode } from "react";
 import {
   flowerFrameClearance,
+  flowerFrameCornerHeight,
   flowerFrameScale,
   flowerFrameStyle,
   isPhotoBorder,
@@ -270,6 +271,30 @@ export function borderClearance(style: CardBorderStyle): {
   }
 
   return SPECS[style].clearance;
+}
+
+/**
+ * How far up from the foot of the screen a frame's bottom corners reach, in
+ * px: the bouquets of a photographic frame, the corner pieces of a drawn one.
+ *
+ * For the last thing on the page (BorderInset), which ends where the frame's
+ * foot is drawn. Its clearance keeps text off the run down the sides; across
+ * the middle of the screen a button as wide as the column reaches in under
+ * both corners, and has to end above them. The garland draws nothing at the
+ * foot.
+ */
+export function borderCornerDepth(style: CardBorderStyle): number {
+  if (style === "none") {
+    return 0;
+  }
+
+  if (isPhotoBorder(style)) {
+    return flowerFrameCornerHeight(style);
+  }
+
+  const spec = SPECS[style];
+
+  return spec.corner > 0 ? SCREEN_INSET + spec.corner : 0;
 }
 
 /**

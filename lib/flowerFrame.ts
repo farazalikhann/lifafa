@@ -298,6 +298,16 @@ function percent(slice: number, extent: number): string {
   return `${Math.round((slice / extent) * 1e6) / 1e4}%`;
 }
 
+/**
+ * How tall the frame's two bottom corner clusters are drawn on a card, in CSS
+ * px: the nine-slice's foot at the card's scale. Far more than its clearance,
+ * which is measured for the run down the sides; what is set across the middle
+ * of the last screen has to end above them. See BorderInset.
+ */
+export function flowerFrameCornerHeight(style: PhotoBorderStyle): number {
+  return Math.round(FRAMES[style].slice.bottom * flowerFrameScale(style));
+}
+
 /** The frame's one picture, for whoever needs to wait for it to arrive. */
 export function flowerFrameSrc(style: PhotoBorderStyle): string {
   return FRAMES[style].src;

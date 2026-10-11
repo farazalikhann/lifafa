@@ -38,6 +38,14 @@ import { getMotifs } from "@/lib/motifs";
 import { pdfDownloadOn, pdfTitle, printPath } from "@/lib/pdfDownload";
 import { cardPalette } from "@/lib/textColors";
 import { getTheme } from "@/lib/themes";
+import { hasMessage } from "@/lib/cardSections";
+import {
+  ROYAL_TEXTURE_ATTRIBUTE,
+  ROYAL_TEXTURE_TILE,
+  royalTextureLayer,
+  royalTextureOn,
+  royalTexturePatternOf,
+} from "@/lib/royalTexture";
 import type { CardLanguage } from "@/types/card";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
@@ -264,19 +272,6 @@ export default function InviteExperience({
       : (coverTitle ?? copy.invite.headingFallback);
 
   /*
-    What the note under the reply form calls the occasion. A wedding with its
-    two names is "the wedding of" them, as the card titles them; anything else
-    is named by its title, and by whoever it names where it has no title.
-  */
-  const thankYouCouple =
-    config.occasionId === "wedding" && names.kind === "pair";
-  const thankYouEventName = thankYouCouple
-    ? coverNameLine(names)
-    : draft.eventTitle.trim().length > 0
-      ? draft.eventTitle.trim()
-      : (coverTitle ?? null);
-
-  /*
     The page's heading, from the same resolution the cover prints. hostNames is
     only the fallback line and is empty on most pair cards, so reading it here
     announced "Wedding: " with nobody's name after the colon.
@@ -291,6 +286,11 @@ export default function InviteExperience({
     longer the last thing on the page.
   */
   const keepsake = pdfDownloadOn(config.pdfDownload);
+
+  /* The royal texture as the card's colour takes it, for the page's ground; null without it. */
+  const pageTexture = royalTextureOn(config.royalTexture)
+    ? royalTextureLayer(cardTheme.background, royalTexturePatternOf(config.royalTexturePattern))
+    : null;
 
   /*
     The link arrives from the server rather than being built here: this
@@ -455,7 +455,41 @@ export default function InviteExperience({
             The card and everything under it, in one box, so one border can
             run the whole length of it. See the frame at the foot of this box.
           */}
-          <div className="relative">
+          <div
+            /*
+              Isolated and painted in the card's colour, so the texture under
+              it blends with that colour and nothing else, as it does on the
+              card; see the layer below.
+            */
+            className="relative isolate"
+            style={{ backgroundColor: cardTheme.background }}
+          >
+          {/*
+            THE CARD'S GROUND, FOR THE WHOLE PAGE. The royal texture was the
+            card's own, drawn over the card's box alone, and the reply form,
+            the thanks and the way to keep the card came after it on a plain
+            ground with a line across where the pattern stopped. Laid here,
+            under the card and everything after it, it runs from the first
+            screen to the very end in one piece: the same tile, blend and
+            strength, and the card draws none of its own (`ground` on
+            CardCanvas). Under everything, so a form's fields and buttons keep
+            their own fills over it. It carries the texture's marker, so the
+            card's pinned bands find it and keep their tile in register.
+          */}
+          {pageTexture !== null ? (
+            <div
+              aria-hidden="true"
+              {...{ [ROYAL_TEXTURE_ATTRIBUTE]: "" }}
+              className="pointer-events-none absolute inset-0 -z-10"
+              style={{
+                backgroundImage: `url(${pageTexture.src})`,
+                backgroundSize: `${ROYAL_TEXTURE_TILE}px ${ROYAL_TEXTURE_TILE}px`,
+                backgroundRepeat: "repeat",
+                mixBlendMode: pageTexture.blend,
+                opacity: pageTexture.opacity,
+              }}
+            />
+          ) : null}
           <div
             className="relative"
             /*
@@ -477,6 +511,9 @@ export default function InviteExperience({
               audience="guest"
               /* The page draws the border, for the card and what is under it together. */
               frame={false}
+              /* And the ground, texture and all; and the closing words, after the reply form. */
+              ground="page"
+              closingNote="page"
               invite={invite}
               /*
                 Grows with a tablet or laptop screen from 768px up, and fills the
@@ -586,17 +623,18 @@ export default function InviteExperience({
           ) : null}
 
           {/*
-            The hosts' thanks, under the reply whatever stage it is at: the
-            form, the confirmation, or nothing at all on a card that takes no
-            replies. Not once the event is over, when "do come" has no day left
-            to come to.
+            The hosts' closing words, under the reply whatever stage it is
+            at: the form, the confirmation, or nothing at all on a card that
+            takes no replies, where they follow the card's last section. Once
+            the event is over only a note the host wrote, which was on the
+            card; the card's own thanks look forward to a day that has gone.
           */}
-          {ended ? null : (
+          {ended && !hasMessage(draft) ? null : (
             <ThankYouNote
-              eventName={thankYouEventName}
-              couple={thankYouCouple}
+              draft={draft}
               theme={cardTheme}
               language={language}
+              placement="page"
               borderStyle={config.borderStyle}
               last={!keepsake}
             />

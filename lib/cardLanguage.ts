@@ -260,12 +260,11 @@ export interface CardCopy {
     line: string;
   };
   /**
-   * The note under the reply form. `eventName` is what the card calls the
-   * occasion, or null on a card that names nothing. With `couple` it is the
-   * two names of a wedding, and the note says "the wedding of" them. See
-   * ThankYouNote.
+   * The hosts' thanks after the reply form, where the host has written no
+   * note of their own. Names no one, so it cannot set "Aarav weds Meera"
+   * inside a sentence. See ThankYouNote.
    */
-  thankYou: (eventName: string | null, couple: boolean) => string;
+  thankYou: string;
   /**
    * The last thing on the page, under the note: the way to keep the card as
    * a PDF. See components/invite/KeepsakeSection.tsx and lib/pdfDownload.ts.
@@ -555,14 +554,8 @@ const ENGLISH: CardCopy = {
     back: "Back to the invitation",
     fileFallback: "Invitation",
   },
-  thankYou: (eventName, couple) =>
-    `Thank you for being part of our special day. We would be truly honoured by your presence at ${
-      eventName === null
-        ? "our celebration"
-        : couple
-          ? `the wedding of ${eventName}`
-          : eventName
-    }. Please do come and bless us with your love.`,
+  thankYou:
+    "Thank you for being a part of our celebration. Your presence and blessings mean the world to us, and we look forward to celebrating with you.",
   invite: {
     headingFallback: "Invitation",
     shareTitleFallback: "Invitation · Lifafa",
@@ -806,7 +799,6 @@ const HINDI: CardCopy = {
     /* TODO(Faraz): verify this Hindi line with a native reader before launch. */
     line: "हृदय की प्रसन्नता के साथ, हम चाहते हैं कि आप हमारी ख़ुशियों में शामिल हों",
   },
-  /* TODO(Faraz): verify this Hindi note, and "के विवाह", with a native reader before launch. */
   /* TODO(Faraz): verify these Hindi lines. The button names are the browser's own, left in English. */
   keepsake: {
     heading: "इस निमंत्रण को संभाल कर रखें",
@@ -819,14 +811,9 @@ const HINDI: CardCopy = {
     back: "निमंत्रण पर वापस जाएँ",
     fileFallback: "Invitation",
   },
-  thankYou: (eventName, couple) =>
-    `हमारे इस ख़ास दिन का हिस्सा बनने के लिए आपका धन्यवाद। ${
-      eventName === null
-        ? "हमारे समारोह"
-        : couple
-          ? `${eventName} के विवाह`
-          : eventName
-    } में आपकी उपस्थिति हमारे लिए बड़े सम्मान की बात होगी। कृपया अवश्य पधारें और अपने प्रेम व आशीर्वाद से हमें अनुगृहीत करें।`,
+  /* TODO(Faraz): verify this Hindi thanks with a native reader before launch. */
+  thankYou:
+    "हमारे उत्सव का हिस्सा बनने के लिए आपका हार्दिक धन्यवाद। आपकी उपस्थिति और आशीर्वाद हमारे लिए अनमोल हैं, और हम आपके साथ यह ख़ुशी मनाने की प्रतीक्षा कर रहे हैं।",
   invite: {
     headingFallback: "निमंत्रण",
     shareTitleFallback: "निमंत्रण · Lifafa",

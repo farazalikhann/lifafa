@@ -802,6 +802,8 @@ export default function FullScreenPreview({
                 audience="guest"
                 weather={weather}
                 weatherTheme={weatherTheme}
+                /* The closing words at the card's end: there is no reply form here for them to follow. */
+                closingNote="card"
               />
             </div>
 

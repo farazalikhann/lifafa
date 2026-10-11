@@ -1,5 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
-import { borderClearance } from "@/components/card/decor/BorderFrame";
+import {
+  borderClearance,
+  borderCornerDepth,
+} from "@/components/card/decor/BorderFrame";
 import type { CardBorderStyle } from "@/types/card";
 
 /**
@@ -16,6 +19,9 @@ const PANEL_PAD_BOTTOM = 48;
  * stand right against a drawn border's vine.
  */
 const BREATHING = 10;
+
+/** Air between the last line on the page and the top of the border's bottom corners, in px. */
+const CORNER_AIR = 16;
 
 /**
  * A panel laid out under the card — the reply form, the note after it — held
@@ -34,7 +40,7 @@ const BREATHING = 10;
  * inset by, so no field or line of text can lie under the border's run. The
  * last panel on the page is padded at its foot as well: the page ends with
  * the border's foot across the bottom of the screen, and the last words have
- * to end above it.
+ * to end above it, and above its bottom corners.
  *
  * A card with no border gets its panel back exactly as it was.
  */
@@ -53,8 +59,16 @@ export default function BorderInset({
   }
 
   const clearance = borderClearance(borderStyle);
-  /* The garland hangs from the top edge only; nothing is drawn at the foot. */
-  const footClearance = borderStyle === "hangingGarland" ? 0 : clearance.y;
+  /*
+    The garland hangs from the top edge only; nothing is drawn at the foot.
+    Otherwise the last panel ends above the frame's bottom corners, not only
+    above its rule: "Save as PDF" is as wide as the column, and at the
+    clearance alone the bouquets either side lay over both its ends.
+  */
+  const footClearance =
+    borderStyle === "hangingGarland"
+      ? 0
+      : Math.max(clearance.y, borderCornerDepth(borderStyle) + CORNER_AIR);
 
   return (
     <div

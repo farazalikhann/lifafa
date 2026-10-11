@@ -19,6 +19,7 @@
  *   node scripts/cut-flowers.mjs dividers     just the floral dividers
  *   node scripts/cut-flowers.mjs sikh         just the Sikh pack's ornaments
  *   node scripts/cut-flowers.mjs names-frames just the frames a Hindu card sets its names in
+ *   node scripts/cut-flowers.mjs closing      just the bouquet over the hosts' closing words
  *   node scripts/cut-flowers.mjs scroll       just the royal scroll's rollers, paper and poster
  *   node scripts/cut-flowers.mjs couple       just the couple's figures, their card's corner and the monogram frame
  *   node scripts/cut-flowers.mjs floating     just the floating elements: what flies, drifts and falls
@@ -570,6 +571,30 @@ const NAMES_FRAMES = NAMES_FRAME_ART.flatMap(({ name, file, fit, thumb }) => [
   pocketMin: 40,
   source: "general photos",
 }));
+
+/**
+ * The bouquet over the hosts' closing words, after the reply form. See
+ * components/invite/ThankYouNote.tsx, which draws it 140px wide.
+ *
+ * On black, cut the way the names frames are: flooded from the edges through
+ * true black only, so the flowers' own dark shading stays solid, with the
+ * soft rim unmixed so no dark line is left round it on a cream card.
+ */
+const CLOSING = [
+  {
+    name: "thank-you-bouquet",
+    file: "thank-you-bouquet.png",
+    fit: { width: 420 },
+    quality: 78,
+    alphaQuality: 80,
+    background: "black",
+    solidInside: true,
+    floodBelow: LOW,
+    softRim: true,
+    source: "general photos",
+    out: join("public", "decor", "closing"),
+  },
+];
 
 /**
  * The royal scroll the date unrolls on: a roller, a strip of paper and the
@@ -1591,6 +1616,7 @@ const sets = [
   ...(which === "all" || which === "dividers" ? DIVIDERS : []),
   ...(which === "all" || which === "sikh" ? SIKH : []),
   ...(which === "all" || which === "names-frames" ? NAMES_FRAMES : []),
+  ...(which === "all" || which === "closing" ? CLOSING : []),
   ...(which === "all" || which === "scroll" ? SCROLL : []),
   ...(which === "all" || which === "couple" ? COUPLE : []),
   ...(which === "all" || which === "floating" ? FLOATING : []),

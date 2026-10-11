@@ -132,6 +132,8 @@ export default function CardPreview({
           audience="host-preview"
           weather={weather}
           weatherTheme={weatherTheme}
+          /* The closing words at the card's end: there is no reply form here for them to follow. */
+          closingNote="card"
         />
       </div>
 
