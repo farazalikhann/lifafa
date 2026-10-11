@@ -1,0 +1,102 @@
+"use client";
+
+import type { ReactElement } from "react";
+import CollapsibleSection, {
+  sectionState,
+  type Accordion,
+} from "@/components/editor/CollapsibleSection";
+import { SCENES, sceneArt } from "@/lib/scene";
+import type { Scene } from "@/types/card";
+
+/** An empty frame with a stroke through it: no picture. */
+function OffPreview(): ReactElement {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" className="h-9 w-9 opacity-60">
+      <circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M13.5 34.5 34.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * The painted scene between the card's first screen and its second: one of
+ * three pictures, or off.
+ *
+ * The floral arch on every card until a host picks another or turns it off.
+ * The pictures are the same on every palette; the tiles here are small cuts
+ * of them.
+ */
+export default function ScenePanel({
+  scene,
+  onSceneChange,
+  accordion,
+}: {
+  scene: Scene;
+  onSceneChange: (scene: Scene) => void;
+  /** The Design tab's open section; see CollapsibleSection. */
+  accordion: Accordion;
+}): ReactElement {
+  const current = SCENES.find((option) => option.id === scene);
+
+  return (
+    <CollapsibleSection
+      title="Scene"
+      summary={current?.label}
+      {...sectionState(accordion, "scene")}
+    >
+      <div className="grid grid-cols-4 gap-2">
+        {SCENES.map((option) => {
+          const isSelected = option.id === scene;
+          const art = sceneArt(option.id);
+
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSceneChange(option.id)}
+              className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              <span
+                className={[
+                  "flex h-24 w-full items-center justify-center overflow-hidden rounded-lg border bg-[var(--lifafa-ink-raised)] text-[var(--lifafa-cream)] transition-shadow duration-150",
+                  isSelected
+                    ? "border-transparent ring-2 ring-[var(--lifafa-marigold)] ring-offset-2 ring-offset-[var(--lifafa-ink)]"
+                    : "border-[var(--lifafa-hairline)]",
+                ].join(" ")}
+              >
+                {art === null ? (
+                  <OffPreview />
+                ) : (
+                  <img
+                    src={art.thumb}
+                    alt=""
+                    width={135}
+                    height={240}
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                    className="h-full w-full object-cover select-none"
+                  />
+                )}
+              </span>
+              <span
+                className={`text-center text-[0.6875rem] leading-tight ${
+                  isSelected ? "text-[var(--lifafa-cream)]" : "text-[var(--lifafa-muted)]"
+                }`}
+              >
+                {option.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-[var(--lifafa-muted)]">
+        {scene === "off"
+          ? "Your card goes straight from its first screen to the next."
+          : "A painting on a screen of its own, after the first screen of your card. It fades into your card's colour and moves gently as guests scroll."}
+      </p>
+    </CollapsibleSection>
+  );
+}

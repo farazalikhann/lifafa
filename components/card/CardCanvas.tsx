@@ -95,6 +95,7 @@ import {
 } from "@/lib/royalScroll";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
+import { sceneArt, sceneOf } from "@/lib/scene";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
   ROYAL_TEXTURE_TILE,
@@ -204,6 +205,10 @@ const SaveTheDate = dynamic(
 );
 const WeatherPanel = dynamic(
   () => import("@/components/card/WeatherPanel"),
+  { loading: () => null },
+);
+const SceneScreen = dynamic(
+  () => import("@/components/card/SceneScreen"),
   { loading: () => null },
 );
 const MusicToggle = dynamic(
@@ -1572,6 +1577,14 @@ export default function CardCanvas({
     );
 
   /*
+    The painted scene after the first screen, on every tradition's card: the
+    floral arch unless the host picked another or turned it off. In the
+    content column, so inside a flower frame; see SceneScreen.
+  */
+  const scenePicture = sceneArt(sceneOf(config.scene));
+  const scene = scenePicture !== null ? <SceneScreen art={scenePicture} /> : null;
+
+  /*
     The running head: the couple, or whoever the card names. Nothing for a
     card that names nobody yet, which would only pin the placeholder up there.
   */
@@ -2169,6 +2182,8 @@ hasHead ? (
                   on the opening that says the card goes on.
                 */}
                 {headIsFirstScreen ? divider("head", false) : null}
+                {/* After the first screen, which here is the opening: between it and the names. */}
+                {headIsFirstScreen ? scene : null}
                 {section}
                 {blockKey(block) === calendarAnchor && !hasDateScreen && !still
                   ? saveTheDate
@@ -2250,6 +2265,9 @@ hasHead ? (
                 ) : (
                   framed
                 )}
+
+                {/* After the first screen, on a card that has no opening before its first section. */}
+                {sectionIsFirstScreen ? scene : null}
 
                 {/*
                   Said only in the editor, and only under the panel it describes:

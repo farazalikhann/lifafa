@@ -20,7 +20,9 @@
  * WHAT PAPER CANNOT DO IS LEFT OFF IT. Nothing flies, falls or plays; the
  * countdown, which is only right at the moment it is read, is not printed at
  * all; a date or venue behind a scratch panel is simply shown, and the royal
- * scroll stands open (see hooks/useCardStill.ts).
+ * scroll stands open (see hooks/useCardStill.ts). The painted scene between
+ * the first two screens is left off: it is a screen to scroll through, and a
+ * sheet of its own would be a page of paint and no words.
  */
 
 import {
@@ -126,6 +128,7 @@ export function printSheets(draft: EventDraft, config: CardConfig): readonly Pri
           butterflies: "none",
           leaves: false,
           petals: "none",
+          scene: "off",
           /* Nothing to scratch on paper: what was hidden is simply printed. */
           scratchTarget: "none",
           ...(config.dateReveal === "scratch" ? { dateReveal: "simple" as const } : null),

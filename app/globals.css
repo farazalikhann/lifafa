@@ -570,6 +570,71 @@
   height: calc(240 * var(--card-px, 1px));
 }
 
+/*
+  The painted scene between a card's first two screens
+  (components/card/SceneScreen.tsx).
+
+  Its top and bottom fade into the card through a mask on the box, which
+  holds still; what shows through is the card's own ground. The fade is long
+  and eased, because each painting ends in a band of pale wash, and on a dark
+  card a short fade would leave that band as a bar of light.
+*/
+.lifafa-scene {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.12) 6%,
+    rgb(0 0 0 / 0.5) 13%,
+    rgb(0 0 0 / 0.88) 20%,
+    #000 26%,
+    #000 70%,
+    rgb(0 0 0 / 0.88) 76%,
+    rgb(0 0 0 / 0.5) 83%,
+    rgb(0 0 0 / 0.12) 91%,
+    transparent 97%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.12) 6%,
+    rgb(0 0 0 / 0.5) 13%,
+    rgb(0 0 0 / 0.88) 20%,
+    #000 26%,
+    #000 70%,
+    rgb(0 0 0 / 0.88) 76%,
+    rgb(0 0 0 / 0.5) 83%,
+    rgb(0 0 0 / 0.12) 91%,
+    transparent 97%
+  );
+}
+
+/*
+  The picture grows a little and drifts up as the guest scrolls through it:
+  from the moment its box enters the foot of the screen to the moment it
+  leaves the top. A view timeline, so the browser moves it with the scroll on
+  the compositor and no script runs; transform only. A browser without view
+  timelines, and a guest who asked for less motion, see it still.
+*/
+@keyframes lifafa-scene-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(0, -3%, 0) scale(1.08);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lifafa-scene-art {
+      animation: lifafa-scene-drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+      will-change: transform;
+    }
+  }
+}
+
 /* The scroll cue's arrow: a small, slow drop. See InvitedCue. */
 @keyframes lifafa-cue-bounce {
   0%,

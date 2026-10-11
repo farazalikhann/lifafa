@@ -54,6 +54,8 @@ import CoupleIllustrationPanel from "@/components/create/CoupleIllustrationPanel
 import InvitedHeadingPanel from "@/components/create/InvitedHeadingPanel";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
 import VenueIllustrationPanel from "@/components/create/VenueIllustrationPanel";
+import ScenePanel from "@/components/create/ScenePanel";
+import { sceneOf } from "@/lib/scene";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
 import NamesFramePanel from "@/components/create/NamesFramePanel";
 import { namesFrameOf } from "@/lib/namesFrame";
@@ -105,6 +107,7 @@ import type {
   PetalFlower,
   RoyalTexturePattern,
   VenueIllustration,
+  Scene,
   NamesFrame,
   PetalStyle,
   CardBorderStyle,
@@ -188,6 +191,8 @@ interface EditorState {
   invitedHeading: boolean;
   /** The painting above the venue's name. None unless the host picked one. */
   venueIllustration: VenueIllustration;
+  /** The painted scene after the first screen. The floral arch unless the host picked another or turned it off. */
+  scene: Scene;
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
   royalTexturePattern: RoyalTexturePattern;
@@ -253,6 +258,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
     invitedHeading: invitedHeadingOn(config.invitedHeading),
     /* Missing on every card saved before the choice; those have none. */
     venueIllustration: venueIllustrationOf(config.venueIllustration),
+    /* Missing on every card saved before there were scenes: the floral arch. */
+    scene: sceneOf(config.scene),
     /* Missing on every card saved before the texture; those have none. */
     royalTexture: royalTextureOn(config.royalTexture),
     /* Missing on every card saved before there was a choice: the damask. */
@@ -337,6 +344,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       ...(state.venueIllustration !== "none"
         ? { venueIllustration: state.venueIllustration }
         : null),
+      /* Only ever stored when it is not the floral arch, so an older card is stored as it was. */
+      ...(state.scene !== "floralArch" ? { scene: state.scene } : null),
       /* Only ever stored as on: a card that never had the key has no texture. */
       ...(state.royalTexture ? { royalTexture: true } : null),
       /* Only ever stored when it is not the damask, and kept while the texture is off. */
@@ -552,6 +561,7 @@ export default function CardEditor({
   const [venueIllustration, setVenueIllustration] = useState(
     initial.venueIllustration,
   );
+  const [scene, setScene] = useState(initial.scene);
   const [royalTexture, setRoyalTexture] = useState(initial.royalTexture);
   const [royalTexturePattern, setRoyalTexturePattern] = useState(
     initial.royalTexturePattern,
@@ -993,6 +1003,7 @@ export default function CardEditor({
     coupleIllustration,
     invitedHeading,
     venueIllustration,
+    scene,
     royalTexture,
     royalTexturePattern,
     namesFrame,
@@ -1590,6 +1601,11 @@ export default function CardEditor({
                 <CoupleIllustrationPanel
                   enabled={coupleIllustration}
                   onEnabledChange={setCoupleIllustration}
+                  accordion={accordionFor("design")}
+                />
+                <ScenePanel
+                  scene={scene}
+                  onSceneChange={setScene}
                   accordion={accordionFor("design")}
                 />
                 <VenueIllustrationPanel

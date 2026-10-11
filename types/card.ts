@@ -157,6 +157,12 @@ export type ScratchTarget = "none" | "date" | "venue" | "countdown";
  */
 export type DateReveal = "scroll" | "scratch" | "simple";
 
+/**
+ * The painted scene between the card's first screen and its second, or off.
+ * See lib/scene.ts.
+ */
+export type Scene = "floralArch" | "gardenPavilion" | "lakesideGazebo" | "off";
+
 /** The painting of the place above the venue's name, or none. See lib/venueIllustration.ts. */
 export type VenueIllustration = "none" | "garden" | "banquet" | "palace" | "poolside";
 
@@ -332,6 +338,13 @@ export interface CardConfig {
    * Read it through `venueIllustrationOf` in lib/venueIllustration.ts.
    */
   venueIllustration?: VenueIllustration;
+  /**
+   * The painted scene between the card's first screen and its second. Stored
+   * only when it is not the floral arch: absent, and on every card saved
+   * before there were scenes, it is the floral arch. Read it through
+   * `sceneOf` in lib/scene.ts.
+   */
+  scene?: Scene;
   /**
    * Whether the damask is woven into the card's ground. Stored only as `true`:
    * absent, and on every card saved before the texture existed, there is none.

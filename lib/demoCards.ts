@@ -195,5 +195,7 @@ export function demoSlideConfig(section: CardSectionId): CardConfig {
     butterflies: "none",
     leaves: false,
     petals: "none",
+    /* A screen to scroll through, in a frame nobody can scroll. */
+    scene: "off",
   };
 }
