@@ -1593,7 +1593,7 @@ export default function CardEditor({
                     accordion={accordionFor("design")}
                   />
                 ) : null}
-                {/* Under the opening it sits above: the calligraphy and greeting are chosen just before it. */}
+                {/* Under the opening it sits above: the calligraphy and blessing are chosen just before it. */}
                 <InvitedHeadingPanel
                   enabled={invitedHeading}
                   onEnabledChange={setInvitedHeading}

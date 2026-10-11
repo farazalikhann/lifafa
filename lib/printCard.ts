@@ -7,7 +7,8 @@
  * carries. Every sheet is the real card: the same components, the same faces,
  * the same palette, border and texture.
  *
- *   1  the opening and the names: calligraphy, greeting, blessing
+ *   1  the opening and the names: "You are invited", the calligraphy and
+ *      the sacred line in its own script, as on the card's first screen
  *   2  the couple and their families
  *   3  the date, the time and the venue
  *   4  every function, and the note

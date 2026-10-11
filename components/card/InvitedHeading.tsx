@@ -5,7 +5,7 @@ import type { CardLanguage } from "@/types/card";
 
 /**
  * "You are invited", small, over whatever opens the card's first screen: the
- * calligraphy, or the greeting, or the names where there is neither.
+ * calligraphy, or the sacred line, or the names where there is neither.
  *
  * In the card's display face and its accent, as the theme resolves the accent
  * for small text (`mark`), so it holds on a palette whose raw accent would be

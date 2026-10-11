@@ -207,32 +207,20 @@ interface OrnamentSlots {
 }
 
 /**
- * How the card sets a pack's greeting and blessing, for a pack that sets them
- * as one composed block rather than at the default sizes.
+ * How the card sets a pack's sacred line, for a pack that sets it in a face
+ * and at a size of its own rather than at the default.
  *
- * The Hindu opening is a mantra, its reading and its meaning, then a shlok and
- * its meaning, under brush calligraphy. Set at the default sizes, each line was
- * a different face and weight and the shlok out-shouted the mantra. So: one
- * traditional serif for every Devanagari line, the card's body face for every
- * English one (inherited, never named here), the mantra at a medium size and
- * the shlok smaller, both regular.
+ * The Hindu opening is a shlok under brush calligraphy. Set at the default
+ * size and in the script's text face it out-shouted the calligraphy over it.
+ * So: one traditional serif for the line, regular, a step smaller.
  */
 interface CardHeadType {
   /** The font stack for the script lines, in place of the script's text face. */
   scriptFace: string;
-  /** Size classes for the greeting's and the blessing's script line. */
-  greetingClass: string;
+  /** Size classes for the sacred line. */
   blessingClass: string;
-  /** Their leading. The blessing's is looser: it runs to two lines. */
-  greetingLeading: string;
+  /** Its leading: loose, because it runs to two lines and more. */
   blessingLeading: string;
-  /** Size class for the English lines under each. */
-  englishClass: string;
-  /**
-   * The font stack for those English lines, in place of the card's body face.
-   * A serif beside the serif Devanagari, inside this block and nowhere else.
-   */
-  englishFace: string;
   /**
    * Whether the opening screen sets its block from the top of the space it
    * has, rather than centred in it. The top is already held clear of the
@@ -351,7 +339,7 @@ export interface TraditionPack {
    * whose ornaments hang, frame and scatter as they always have.
    */
   slots: OrnamentSlots | null;
-  /** How the card sets the greeting and blessing, or null for the default. */
+  /** How the card sets the sacred line, or null for the default. */
   cardHead: CardHeadType | null;
   /**
    * Whether the names' screen sets the names inside a frame the host picks
@@ -550,7 +538,7 @@ const MUSLIM_PACK: TraditionPack = {
   greetings: MUSLIM_GREETINGS,
   blessings: MUSLIM_DUAS,
   blessingLabel: "Dua",
-  blessingNote: "The dua appears at the top of your card.",
+  blessingNote: "The dua appears at the top of your card, in Arabic alone.",
   ScriptRun: ArabicText,
   panelScriptClass: "text-[1.0625rem] leading-[1.9]",
   pendingLabel: "Arabic text pending",
@@ -593,16 +581,9 @@ const MUSLIM_PACK: TraditionPack = {
 const DEVANAGARI_CARD_HEAD: CardHeadType = {
   scriptFace:
     'var(--font-hi-tiro), var(--font-devanagari), "Noto Serif Devanagari", serif',
-  greetingClass:
-    "text-[calc(1.375rem*var(--card-opening-text,1))] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]",
   blessingClass:
     "text-[calc(1.0625rem*var(--card-opening-text,1))] sm:text-[calc(1.1875*var(--card-rem,1rem)*var(--card-opening-text,1))]",
-  greetingLeading: "1.6",
   blessingLeading: "1.9",
-  englishClass:
-    "text-[calc(0.875*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-[1.5]",
-  /* Lora, already loaded by app/layout.tsx for the card's pairs. */
-  englishFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
   alignTop: true,
 };
 
@@ -662,7 +643,7 @@ const SIKH_PACK: TraditionPack = {
   greetings: SIKH_GREETING_ROWS,
   blessings: SIKH_BLESSING_ROWS,
   blessingLabel: "Blessing",
-  blessingNote: "The blessing appears at the top of your card.",
+  blessingNote: "The blessing appears at the top of your card, in Gurmukhi alone.",
   ScriptRun: GurmukhiRun,
   /* No leading: GurmukhiText carries the measured one with the face. */
   panelScriptClass: "text-[1.0625rem]",
@@ -693,24 +674,17 @@ const SIKH_PACK: TraditionPack = {
   },
   frameOpening: GURUDWARA_ARCH_DOORWAY,
   /*
-    The Hindu block's type system, in Gurmukhi: Tiro Gurmukhi for the script
-    lines, with the card's own Gurmukhi face behind it, and Lora for the
-    English under them. The blessing is two lines of verse, each of which has
-    to stay one line on a 360px card, so it is set a step smaller than the
-    Hindu shlok.
+    The Hindu block's type system, in Gurmukhi: Tiro Gurmukhi for the line,
+    with the card's own Gurmukhi face behind it. The blessing is two lines of
+    verse, each of which has to stay one line on a 360px card, so it is set a
+    step smaller than the Hindu shlok.
   */
   cardHead: {
     scriptFace:
       'var(--font-pa-tiro), var(--font-gurmukhi), "Noto Serif Gurmukhi", "Noto Sans Gurmukhi", serif',
-    greetingClass:
-      "text-[calc(1.375rem*var(--card-opening-text,1))] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]",
     blessingClass:
       "text-[calc(1rem*var(--card-opening-text,1))] sm:text-[calc(1.125*var(--card-rem,1rem)*var(--card-opening-text,1))]",
-    greetingLeading: "1.7",
     blessingLeading: "1.9",
-    englishClass:
-      "text-[calc(0.875*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-[1.5]",
-    englishFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
     alignTop: true,
   },
   /* The order the panel offers them: the ceremony's own name first. */
@@ -780,7 +754,7 @@ const JAIN_PACK: TraditionPack = {
   greetings: JAIN_GREETING_ROWS,
   blessings: JAIN_BLESSING_ROWS,
   blessingLabel: "Blessing",
-  blessingNote: "The blessing appears at the top of your card.",
+  blessingNote: "The blessing appears at the top of your card, in Devanagari alone.",
   /* The Hindu pack's face, declared as Sanskrit rather than Hindi. */
   ScriptRun: devanagariRun(JAIN_LANG),
   panelScriptClass: "text-[1.0625rem]",
@@ -823,7 +797,7 @@ const BUDDHIST_PACK: TraditionPack = {
   greetings: BUDDHIST_GREETING_ROWS,
   blessings: BUDDHIST_BLESSING_ROWS,
   blessingLabel: "Blessing",
-  blessingNote: "The blessing appears at the top of your card.",
+  blessingNote: "The blessing appears at the top of your card, in Devanagari alone.",
   /* The Hindu pack's face, declared as Pali — see the header of lib/buddhistContent.ts. */
   ScriptRun: devanagariRun(PALI_LANG),
   panelScriptClass: "text-[1.0625rem]",

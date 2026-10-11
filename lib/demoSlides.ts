@@ -48,7 +48,7 @@ export const DEMO_NIKAH_SLIDES: readonly DemoSlide[] = [
     id: "bismillah",
     caption: "Bismillah and dua",
     label:
-      "Bismillah in black calligraphy under hanging lights and a crescent, then Assalamu Alaikum and Barakallahu feekum in Arabic, transliteration and English.",
+      "You are invited, then Bismillah in calligraphy under hanging lights and a crescent, and the dua Barakallahu feekum in Arabic.",
     screen: "cover",
   },
   {

@@ -39,7 +39,7 @@ export default function InvitedHeadingPanel({
         <p id={hintId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
           {enabled
             ? "A small heading in your card's accent colour, above the first thing on the card. In Hindi on a Hindi card."
-            : "The card opens straight on its calligraphy, greeting or names."}
+            : "The card opens straight on its calligraphy, blessing or names."}
         </p>
 
         <button

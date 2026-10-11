@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import {
   blessingSaidByCalligraphy,
-  greetingSaidByCalligraphy,
   tapCalligraphy,
 } from "@/lib/calligraphy";
 import { chosenCorners, chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
@@ -158,7 +157,11 @@ function ScriptLine({
   );
 }
 
-/** One single-select list — the greeting list and the blessing list are the same thing. */
+/**
+ * One single-select list: the blessings. Each row carries its reading and its
+ * meaning, which are how a host chooses one; the card draws the line in its
+ * own script alone.
+ */
 function BlessingList({
   rows,
   selectedId,
@@ -218,7 +221,7 @@ function BlessingList({
 }
 
 /**
- * Ornaments, greeting and blessing for one tradition's card.
+ * Ornaments, calligraphy and blessing for one tradition's card.
  *
  * ONE PANEL FOR EVERY TRADITION. The pack is the parameter — its ornaments, its
  * two lists, its script and its two muted notes — and nothing in this file
@@ -421,32 +424,18 @@ export default function OrnamentPanel({
           </div>
 
           <MutedNote>
-            A line of calligraphy sits at the head of your card, above the
-            greeting.
+            A line of calligraphy sits at the head of your card.
           </MutedNote>
         </div>
       ) : null}
 
-      {/* 3 — Greeting */}
-      <div className="flex flex-col gap-2.5">
-        <GroupHeading>Greeting</GroupHeading>
+      {/*
+        No greeting list: the card no longer draws a greeting, on any
+        tradition. A card's greetingId is left as it was saved, and nothing
+        here writes it.
+      */}
 
-        <BlessingList
-          rows={pack.greetings}
-          selectedId={config.greetingId}
-          pack={pack}
-          onSelect={(row) => onChange({ ...config, greetingId: row.id })}
-        />
-
-        {greetingSaidByCalligraphy(config.greetingId, config.enabledOrnaments) ? (
-          <MutedNote>
-            Your calligraphy already says this, so your card shows it once.
-            Your greeting is kept, and comes back if you change the calligraphy.
-          </MutedNote>
-        ) : null}
-      </div>
-
-      {/* 4 — Dua, or shlok, or whatever this tradition calls the slot */}
+      {/* 3 — Dua, or shlok, or whatever this tradition calls the slot */}
       <div className="flex flex-col gap-2.5">
         <GroupHeading>{pack.blessingLabel}</GroupHeading>
 

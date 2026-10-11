@@ -184,7 +184,7 @@ export const SHLOKS: readonly Shlok[] = [
 ];
 
 /** Sits under the shlok list in the editor. */
-export const SHLOK_NOTE = "The shlok appears at the top of your card.";
+export const SHLOK_NOTE = "The shlok appears at the top of your card, in Devanagari alone.";
 
 /**
  * Whether an entry is the deliberate opt-out rather than one still awaiting its

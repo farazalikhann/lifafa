@@ -5,16 +5,17 @@ import {
   type CSSProperties,
   type ReactElement,
   type ReactNode,
+  useRef,
 } from "react";
 import dynamic from "next/dynamic";
 import { useCardStill } from "@/hooks/useCardStill";
+import { useFitLines } from "@/hooks/useFitLines";
 import { preload } from "react-dom";
 import { useOnScreen } from "@/hooks/useOnScreen";
 import {
   calligraphyGround,
   calligraphyMask,
   blessingSaidByCalligraphy,
-  greetingSaidByCalligraphy,
   withOneCalligraphy,
   withoutRetiredCalligraphy,
   type CalligraphyId,
@@ -302,86 +303,81 @@ const FIRST_SCREEN_FOOT = 8;
 /** The pack divider's longer side, in px at the card's 420px design width. */
 const DIVIDER_SIZE = 168;
 
+/** The most lines the sacred line is set in, and the smallest it is set to keep to them, in px. */
+const SACRED_LINE_MAX_LINES = 4;
+const SACRED_LINE_FLOOR = 15;
+
+/** The most of the screen's height the calligraphy on the opening may take. */
+const CALLIGRAPHY_MAX_HEIGHT = 0.22;
+
 /**
- * One Arabic line with its transliteration and translation under it, or nothing
- * at all.
+ * The sacred line on a card's opening screen: the shlok, the dua, the verse
+ * or the shabad, in its own script, or nothing at all.
  *
- * The empty check is the whole safety mechanism behind lib/arabicContent.ts
- * shipping with every string blank: a greeting whose Arabic has not been
- * supplied yet renders as absence, not as a gap, a placeholder or a guess.
- * The two Latin lines are independent — a line that exists is shown even if its
- * neighbours do not.
+ * ITS OWN SCRIPT ONLY. The reading, the meaning and where it is from are not
+ * drawn: the opening is the heading, the calligraphy and this line, on every
+ * tradition's card. The host still sees all of them in the editor's list,
+ * where they are how the line is chosen.
+ *
+ * AT MOST FOUR LINES. A long one is set smaller until it is, and never under
+ * 15px; see useFitLines.
+ *
+ * The empty check is the safety mechanism behind a content file shipping a
+ * line blank: one whose script has not been supplied yet renders as absence,
+ * not as a gap, a placeholder or a guess.
  */
-function Blessing({
+function SacredLine({
   entry,
   pack,
   theme,
   sizeClass,
-  kind,
 }: {
   entry: PackBlessing;
   pack: TraditionPack;
   theme: Theme;
-  /** The script line's size where the pack sets no block of its own. */
+  /** The line's size where the pack sets no block of its own. */
   sizeClass: string;
-  kind: "greeting" | "blessing";
 }): ReactElement | null {
-  if (entry.script.length === 0) {
-    return null;
-  }
-
-  const { ScriptRun } = pack;
-
+  const holder = useRef<HTMLDivElement>(null);
   /*
     A pack that composes its opening as one block (see CardHeadType) brings its
-    own face, sizes and leading. The face and leading are handed to the script
+    own face, size and leading. The face and leading are handed to the script
     component as the two variables it already reads, so it keeps doing its own
     job — lang, dir, the leading travelling with the face — in the pack's
     chosen face. Regular weight, because the block's face has only that one.
   */
   const head = pack.cardHead;
-  const scriptClass =
-    head === null
-      ? sizeClass
-      : kind === "greeting"
-        ? head.greetingClass
-        : head.blessingClass;
+  const scriptClass = head === null ? sizeClass : head.blessingClass;
+
+  useFitLines(
+    holder,
+    `${entry.script}|${scriptClass}`,
+    SACRED_LINE_MAX_LINES,
+    SACRED_LINE_FLOOR,
+  );
+
+  if (entry.script.length === 0) {
+    return null;
+  }
+
+  const { ScriptRun } = pack;
   const scriptStyle = {
-    /* The mantra or shlok's own line: the accent on an older card, the Primary on one with a text pair. */
+    /* The shlok's own line: the accent on an older card, the Primary on one with a text pair. */
     color: textRoles(theme).heading,
     ...(head === null
       ? null
       : {
           fontWeight: 400,
           "--lifafa-devanagari": head.scriptFace,
-          "--lifafa-devanagari-leading":
-            kind === "greeting" ? head.greetingLeading : head.blessingLeading,
+          "--lifafa-devanagari-leading": head.blessingLeading,
           /* The same two for a pack whose script is Gurmukhi; each script component reads its own. */
           "--lifafa-gurmukhi": head.scriptFace,
-          "--lifafa-gurmukhi-leading":
-            kind === "greeting" ? head.greetingLeading : head.blessingLeading,
+          "--lifafa-gurmukhi-leading": head.blessingLeading,
         }),
   } as CSSProperties;
-  const englishClass =
-    head?.englishClass ??
-    "text-[calc(0.9*var(--card-rem,1rem)*var(--card-opening-text,1))] leading-relaxed";
-  /* The block's own serif where it has one; the card's body face otherwise. */
-  const englishStyle: CSSProperties = {
-    color: theme.textMuted,
-    ...(head === null ? null : { fontFamily: head.englishFace }),
-  };
 
   return (
-    /*
-      The blessing starts a second group under the greeting, a step further
-      down than the greeting's own lines are apart, where the pack composes
-      the two as one block.
-    */
-    <div
-      className={`flex w-full flex-col items-center gap-1.5 ${
-        head !== null && kind === "blessing" ? "mt-2" : ""
-      }`}
-    >
+    <div ref={holder} className="w-full">
       {/*
         The pack draws its own script line, because `dir` and `lang` belong on
         the element that actually holds the text — the bidi algorithm and the
@@ -398,44 +394,6 @@ function Blessing({
       >
         {entry.script}
       </ScriptRun>
-
-      {/*
-        Latin script, so both of these are explicitly left to right — under an
-        RTL pack they sit inside a block that has just been told it is RTL, and
-        an unmarked Latin line there has its punctuation pushed to the wrong
-        end. They inherit the card's body font from the canvas root.
-      */}
-      {entry.transliteration.length > 0 ? (
-        <p
-          dir="ltr"
-          className={`w-full text-center wrap-anywhere italic ${englishClass}`}
-          style={englishStyle}
-        >
-          {entry.transliteration}
-        </p>
-      ) : null}
-
-      {/* Not where it is the script line over again: an English pack's meaning is its own text. */}
-      {entry.translation.length > 0 && entry.translation !== entry.script ? (
-        <p
-          dir="ltr"
-          className={`w-full text-center wrap-anywhere ${englishClass}`}
-          style={englishStyle}
-        >
-          {entry.translation}
-        </p>
-      ) : null}
-
-      {/* Where a quoted blessing is from: small, and quieter than the meaning above it. */}
-      {entry.source !== undefined && entry.source.length > 0 ? (
-        <p
-          dir="ltr"
-          className="w-full text-center text-[calc(0.75*var(--card-rem,1rem)*var(--card-opening-text,1))] tracking-[0.04em]"
-          style={{ ...englishStyle, opacity: 0.8 }}
-        >
-          {entry.source}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -492,6 +450,24 @@ function sectionMinHeight(
   return sizing === "viewport"
     ? `${Math.round(scale * 100)}svh`
     : `${Math.round(frameHeight * scale)}px`;
+}
+
+/**
+ * The widest the calligraphy on the opening may be drawn: the width at which
+ * it is CALLIGRAPHY_MAX_HEIGHT of the screen tall. The screen is the guest's
+ * in "viewport" and the fixed frame in "frame", as for a section's height,
+ * and `svh` like a section, so the piece does not change size as the
+ * browser's bars come and go.
+ */
+function calligraphyMaxWidth(
+  sizing: CardSizing,
+  frameHeight: number,
+  /** The piece's width over its height. */
+  aspect: number,
+): string {
+  return sizing === "viewport"
+    ? `calc(${CALLIGRAPHY_MAX_HEIGHT * 100}svh * ${aspect})`
+    : `${Math.round(frameHeight * CALLIGRAPHY_MAX_HEIGHT * aspect)}px`;
 }
 
 /**
@@ -1134,12 +1110,12 @@ export default function CardCanvas({
       : [];
 
   /*
-    Not drawn while the calligraphy above it says the same phrase: the card
-    would read it twice. The choice itself is untouched.
+    The sacred line. Not drawn while the calligraphy above it says the same
+    phrase: the card would read it twice. The choice itself is untouched.
+
+    The greeting is not drawn on any card: the opening is the heading, the
+    calligraphy and this line. A card's greetingId stays as it was saved.
   */
-  const greeting = greetingSaidByCalligraphy(config.ornamentConfig.greetingId, ornaments)
-    ? null
-    : (pack?.findGreeting(config.ornamentConfig.greetingId) ?? null);
   const blessing = blessingSaidByCalligraphy(config.ornamentConfig.blessingId, ornaments)
     ? null
     : (pack?.findBlessing(config.ornamentConfig.blessingId) ?? null);
@@ -1148,8 +1124,7 @@ export default function CardCanvas({
     Resolves to nothing wherever a content file still ships empty strings, which
     today is every line of four of the six packs.
   */
-  const hasBlessing =
-    (greeting?.script.length ?? 0) > 0 || (blessing?.script.length ?? 0) > 0;
+  const hasBlessing = (blessing?.script.length ?? 0) > 0;
 
   /*
     The three claims a pack can make on an ornament, and what is left over.
@@ -2006,7 +1981,7 @@ export default function CardCanvas({
                 : null;
 
             /*
-              The greeting and dua head the cover, so they are anchored to the
+              The calligraphy and dua head the cover, so they are anchored to the
               cover block rather than to the top of the card. The host can reorder
               sections, and a blessing left pinned to position zero would end up
               introducing the venue.
@@ -2028,7 +2003,7 @@ export default function CardCanvas({
 
             /*
               "You are invited" opens the first screen and no other: above the
-              calligraphy or the greeting where the card has an opening, and
+              calligraphy or the sacred line where the card has an opening, and
               above the names where the names are what the guest lands on. A
               card whose host moved another section to the top has neither
               there, and goes without.
@@ -2127,12 +2102,9 @@ hasHead ? (
                   }
                 >
                   {/*
-                    Above the greeting, because they open what follows rather than
-                    sitting beside it: a card that carries the lot reads Bismillah,
-                    then the verse, then the address, then the dua, which is the
-                    order they are said in. Pack order, not the order the host
-                    switched them on in — an opening does not become a closing
-                    because it was chosen second.
+                    Above the sacred line, because it opens what follows rather
+                    than sitting beside it: a card that carries both reads
+                    Bismillah, then the dua, which is the order they are said in.
 
                     `className` rather than `size`, so the width is the column's
                     and not a number chosen here — calligraphy is the only
@@ -2149,6 +2121,13 @@ hasHead ? (
                     20 card-rem for a card with no border, where the Bismillah —
                     lettering to its very edges — would otherwise run nearly to
                     the edges of the card.
+
+                    NEVER TALLER THAN 22% OF THE SCREEN, on every tradition's
+                    card, so the heading, the piece and the sacred line share
+                    the opening the same way whatever the piece's shape. Held
+                    by its width, which is that height times the piece's own
+                    proportions: the piece is a box of its own shape filled
+                    with ink, and a height laid on it would only squash it.
                   */}
                   {headIsFirstScreen ? invitedHeading : null}
 
@@ -2165,7 +2144,7 @@ hasHead ? (
                         the most it gives up, and only there: the lettering is
                         still the widest thing on the screen.
                       */
-                      className={`-mx-4 block h-auto w-[calc(100%+2rem)] max-w-[calc(20*var(--card-rem,1rem)*var(--card-opening,1))] ${
+                      className={`-mx-4 block h-auto w-[calc(100%+2rem)] ${
                         headIsFirstScreen && invitedHeading !== null
                           ? "max-[389px]:w-[calc((100%+2rem)*0.85)]"
                           : ""
@@ -2176,28 +2155,15 @@ hasHead ? (
                         card's accent, so it follows the theme. A piece drawn
                         as a picture keeps its own ink and ignores it.
                       */
-                      style={{ color: effectiveTheme.accent }}
+                      style={{
+                        color: effectiveTheme.accent,
+                        maxWidth: `min(calc(20 * var(--card-rem, 1rem) * var(--card-opening, 1)), ${calligraphyMaxWidth(sizing, frameHeight, panel.aspect)})`,
+                      }}
                     />
                   ))}
 
-                  {greeting !== null && pack !== null ? (
-                    <Blessing
-                      kind="greeting"
-                      entry={greeting}
-                      pack={pack}
-                      theme={effectiveTheme}
-                      /*
-                        The greeting is the smaller of the two. It is a form of
-                        address; the blessing is what is being offered, and the
-                        card should read in that order of weight.
-                      */
-                      sizeClass="text-[calc(1.25rem*var(--card-opening-text,1))] leading-[2] sm:text-[calc(1.375*var(--card-rem,1rem)*var(--card-opening-text,1))]"
-                    />
-                  ) : null}
-
                   {blessing !== null && pack !== null ? (
-                    <Blessing
-                      kind="blessing"
+                    <SacredLine
                       entry={blessing}
                       pack={pack}
                       theme={effectiveTheme}
