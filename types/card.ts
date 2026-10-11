@@ -160,7 +160,7 @@ export type ScratchTarget = "none" | "date" | "venue" | "countdown";
 export type DateReveal = "scroll" | "scratch" | "tear" | "simple";
 
 /**
- * The painted scene between the card's first screen and its second, or off.
+ * The painted scene on the card's first screen, or off.
  * See lib/scene.ts.
  */
 export type Scene = "lakePalace" | "palaceGarden" | "valleyTree" | "off";
@@ -341,7 +341,7 @@ export interface CardConfig {
    */
   venueIllustration?: VenueIllustration;
   /**
-   * The painted scene between the card's first screen and its second. Stored
+   * The painted scene on the card's first screen. Stored
    * only when it is not the palace garden: absent, and on every card saved
    * before there were scenes, it is the palace garden. A card saved with one
    * of the first three scenes still holds its old name here. Read it through

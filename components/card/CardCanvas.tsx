@@ -79,6 +79,7 @@ import { resolveSlots, slottedIds, type CornerPair } from "@/lib/ornaments/slots
 
 import {
   FIRST_SCREEN_ATTRIBUTE,
+  FIRST_SCREEN_OPEN,
   INVITED_CUE_HEIGHT,
 } from "@/components/invite/InvitedCue";
 import type { ScratchConfig } from "@/components/card/ScratchPanel";
@@ -309,6 +310,9 @@ const SACRED_LINE_FLOOR = 15;
 
 /** The most of the screen's height the calligraphy on the opening may take. */
 const CALLIGRAPHY_MAX_HEIGHT = 0.22;
+
+/** The most of the screen's height the painted scene on the opening may take. */
+const SCENE_MAX_HEIGHT = 0.78;
 
 /**
  * The sacred line on a card's opening screen: the shlok, the dua, the verse
@@ -1605,19 +1609,29 @@ export default function CardCanvas({
     : null;
 
   /*
-    The painted scene after the first screen, on every tradition's card: the
+    The painted scene on the first screen, on every tradition's card: the
     palace garden unless the host picked another or turned it off, by night on
-    a dark card. In the
-    content column, so inside a flower frame; see SceneScreen.
+    a dark card. In the flow of that screen, under its last line, and as wide
+    as the card: `inset` is how far the box it is put in stands in from the
+    card's edge, which is what it steps back out by. See SceneScreen.
   */
   const scenePicture = sceneArtFor(sceneOf(config.scene), effectiveTheme.background);
-  const scene =
+  const sceneAt = (inset: string): ReactElement | null =>
     scenePicture !== null ? (
       <SceneScreen
         art={scenePicture}
         dusk={sceneDusk(effectiveTheme.background, effectiveTheme.accent)}
+        inset={inset}
+        maxHeight={
+          sizing === "viewport"
+            ? `${SCENE_MAX_HEIGHT * 100}svh`
+            : `${Math.round(frameHeight * SCENE_MAX_HEIGHT)}px`
+        }
       />
     ) : null;
+  /* The column's own inset, and the opening's 28px inside it (its px-7, which grows with a fluid card). */
+  const SCENE_IN_COLUMN = "var(--card-content-inset, 0px)";
+  const SCENE_IN_OPENING = `calc(var(--card-content-inset, 0px) + 7 * var(--spacing, 0.25rem))`;
 
   /*
     The running head: the couple, or whoever the card names. Nothing for a
@@ -1970,6 +1984,15 @@ export default function CardCanvas({
             this list, so its divider is absent with it.
           */}
           {visible.map((block, index) => {
+            /* Whether the first screen is a section and not the opening, and has the scene under it. */
+            const sceneAfterFirstSection =
+              scenePicture !== null &&
+              !(
+                visible[0]?.kind === "builtin" &&
+                visible[0].id === "cover" &&
+                (hasBlessing || calligraphy.length > 0)
+              );
+
             /*
               At most one panel per card, and only over a built-in section: the
               target names "date", "venue" or "countdown", none of which a custom
@@ -2025,6 +2048,12 @@ export default function CardCanvas({
             */
             const sectionIsFirstScreen = index === 0 && !hasHead;
             const headIsFirstScreen = index === 0 && hasHead;
+            /*
+              The opening carries the scene: under its last line, and on into
+              the names' screen, so it is as tall as it comes to and nothing
+              is drawn between the two.
+            */
+            const sceneInHead = headIsFirstScreen && scenePicture !== null;
 
             /*
               "You are invited" opens the first screen and no other: above the
@@ -2094,7 +2123,9 @@ hasHead ? (
                 */
                 <div
                   ref={headRef}
-                  {...(headIsFirstScreen ? { [FIRST_SCREEN_ATTRIBUTE]: "" } : null)}
+                  {...(headIsFirstScreen
+                    ? { [FIRST_SCREEN_ATTRIBUTE]: sceneInHead ? FIRST_SCREEN_OPEN : "" }
+                    : null)}
                   className={`relative flex flex-col items-center px-7 text-center ${
                     headIsFirstScreen ? "gap-3" : "gap-4"
                   } ${
@@ -2103,12 +2134,33 @@ hasHead ? (
                       pack that composes its block that way — the padding above
                       already clears the border and the fade.
                     */
-                    headIsFirstScreen && pack?.cardHead?.alignTop === true
-                      ? "justify-start"
-                      : "justify-center"
+                    sceneInHead
+                      ? /*
+                          Under a scene the block stands on the foot of its
+                          screen: on a tall phone a short opening has room to
+                          spare, and it goes above the words, so the painting
+                          still ends exactly where the names' screen starts.
+                        */
+                        "justify-end"
+                      : headIsFirstScreen && pack?.cardHead?.alignTop === true
+                        ? "justify-start"
+                        : "justify-center"
                   }`}
                   style={
-                    headIsFirstScreen
+                    sceneInHead
+                      ? {
+                          /*
+                            At least a screen, and as much taller as the words
+                            and the painting come to: the painting may run on
+                            under the fold, where it says the card goes on.
+                            Nothing under it, so its fade ends where the names'
+                            screen starts.
+                          */
+                          minHeight,
+                          paddingTop: `max(${cardPx(clearance.y)}, ${cardPx(headPadTop)} * var(--card-opening, 1))`,
+                          paddingBottom: 0,
+                        }
+                      : headIsFirstScreen
                       ? {
                           minHeight: firstScreenBox,
                           /*
@@ -2195,6 +2247,11 @@ hasHead ? (
                     />
                   ) : null}
 
+                  {/*
+                    Last, so straight under whatever the opening ends in: the
+                    sacred line, or the calligraphy where there is none.
+                  */}
+                  {sceneInHead ? sceneAt(SCENE_IN_OPENING) : null}
                 </div>
               ) : null;
 
@@ -2205,11 +2262,11 @@ hasHead ? (
                   The opening and the names are one block, and so had no rule
                   between them. On the first screen they get one: it is the top
                   of the next screen, showing above the cue, and the one thing
-                  on the opening that says the card goes on.
+                  on the opening that says the card goes on. Not under a
+                  scene: the painting fades out into the names' screen, and a
+                  rule across that would be the line it is there to avoid.
                 */}
-                {headIsFirstScreen ? divider("head", false) : null}
-                {/* After the first screen, which here is the opening: between it and the names. */}
-                {headIsFirstScreen ? scene : null}
+                {headIsFirstScreen && !sceneInHead ? divider("head", false) : null}
                 {section}
                 {blockKey(block) === calendarAnchor && !hasDateScreen && !still
                   ? saveTheDate
@@ -2257,7 +2314,10 @@ hasHead ? (
 
             return (
               <Fragment key={blockKey(block)}>
-                {index > 0 ? divider(String(index)) : null}
+                {/* No rule under a scene: it fades out into the section after it. */}
+                {index > 0 && !(index === 1 && sceneAfterFirstSection)
+                  ? divider(String(index))
+                  : null}
 
                 {/*
                   Two ways a block can be drawn now that the scratch panel has
@@ -2283,7 +2343,9 @@ hasHead ? (
                     it leaves them — see `revealAt` in types/coverAnimation.ts.
                   */
                   <div
-                    {...{ [FIRST_SCREEN_ATTRIBUTE]: "" }}
+                    {...{
+                      [FIRST_SCREEN_ATTRIBUTE]: scenePicture !== null ? FIRST_SCREEN_OPEN : "",
+                    }}
                     style={{ "--card-line-stagger": "0ms" } as CSSProperties}
                   >
                     {framed}
@@ -2292,8 +2354,12 @@ hasHead ? (
                   framed
                 )}
 
-                {/* After the first screen, on a card that has no opening before its first section. */}
-                {sectionIsFirstScreen ? scene : null}
+                {/*
+                  On a card with no opening before its first section the
+                  scene follows that section, pulled up under its foot the
+                  same way.
+                */}
+                {sectionIsFirstScreen ? sceneAt(SCENE_IN_COLUMN) : null}
 
                 {/*
                   Said only in the editor, and only under the panel it describes:

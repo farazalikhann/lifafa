@@ -66,6 +66,13 @@ const CUE_HEIGHT_VARIABLE = "--lifafa-cue-h";
 export const FIRST_SCREEN_ATTRIBUTE = "data-first-screen";
 
 /**
+ * The attribute's value on a first screen with the painted scene under it and
+ * no divider after it: the scene runs on under the fold, and the cue is set
+ * over its lower part, so there is no rule for the cue to keep off.
+ */
+export const FIRST_SCREEN_OPEN = "scene";
+
+/**
  * "Scroll", and under it a small arrow that bounces, pinned to the foot of the
  * screen in the card's accent. It was two lines of words and a chevron, which
  * was more to read than the thing it asks for and stood on a ground wide
@@ -238,8 +245,14 @@ export default function InvitedCue({
     */
     const overDivider = (): boolean => {
       const button = buttonRef.current;
-      const divider = (box ?? document).querySelector(`[${FIRST_SCREEN_ATTRIBUTE}]`)
-        ?.nextElementSibling;
+      const first = (box ?? document).querySelector(`[${FIRST_SCREEN_ATTRIBUTE}]`);
+
+      /* Nothing ruled under a screen that ends in the scene; the cue belongs over the painting. */
+      if (first?.getAttribute(FIRST_SCREEN_ATTRIBUTE) === FIRST_SCREEN_OPEN) {
+        return false;
+      }
+
+      const divider = first?.nextElementSibling;
 
       if (button === null || divider === null || divider === undefined) {
         return false;

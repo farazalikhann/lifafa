@@ -1,20 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
 import { useCardStill } from "@/hooks/useCardStill";
-import { SCENE_ASPECT, type SceneArt, type SceneDusk } from "@/lib/scene";
+import { type SceneArt, type SceneDusk } from "@/lib/scene";
 
 /**
- * The painted scene between a card's first screen and its second: a screen
- * of its own, as wide as the card's column, so inside a flower frame where
- * the card has one.
+ * The painted scene on a card's opening screen: in the flow of that screen,
+ * straight after the sacred line (or the calligraphy, where there is no
+ * line), and running on into the names' screen under it. Not a screen of its
+ * own, and never at a fixed place: it starts where the words end, whether
+ * they are a short Bismillah or a shlok of four lines, so there is no gap
+ * over it.
  *
- * ITS TOP AND BOTTOM FADE INTO THE CARD, by a mask on the box and not in the
- * picture: what shows through is the card's own ground, whatever its colour
- * and with its royal texture where it has one. The mask is on the box that
- * holds still; the picture moves inside it. On a dark card the ends pass
- * through a glow of the card's own hue on the way, so pale paint is never
- * simply thinned over a dark ground (sceneDusk in lib/scene.ts).
+ * FULL BLEED. As wide as the card, edge to edge, not the reading column: its
+ * box is wider than the column it is laid out in by the insets it is told of
+ * (`inset`), and the card's border, its corners, what hangs and what flies
+ * are all layers above the column, so they are drawn over the painting.
+ * Behind the column's own words, which it is pulled up under.
+ *
+ * ITS SIZE is the card's width by one and a half of it, the painting's own
+ * shape, and never more than 78% of the screen's height. Where that cuts it
+ * short the picture covers the box from 60% of the way down, so the horizon
+ * stays in it. All of it in globals.css (`lifafa-scene`), from the two
+ * lengths set here.
+ *
+ * IT MEETS THE WORDS AND THE NEXT SCREEN WITHOUT AN EDGE. It is pulled up by
+ * 12% of its height, so its plain sky is behind the foot of the sacred line,
+ * and its top 22% and bottom quarter fade into the card by a mask on the box
+ * and not in the picture: what shows through is the card's own ground, with
+ * its royal texture where it has one. The mask is on the box that holds
+ * still; the picture moves inside it. On a dark card the ends pass through a
+ * glow of the card's own hue on the way (sceneDusk in lib/scene.ts).
  *
  * IT MOVES WITH THE SCROLL, AND ONLY ON THE COMPOSITOR. As the guest scrolls
  * through it the picture grows from its own size to 1.08 of it and drifts up
@@ -23,16 +39,19 @@ import { SCENE_ASPECT, type SceneArt, type SceneDusk } from "@/lib/scene";
  * and nothing is measured. Still under reduced motion, on a card drawn still,
  * and in a browser without view timelines.
  *
- * IT NEVER COMPETES WITH THE COVER OR THE FIRST SCREEN. The picture is on the
- * second screen of a card that is mounted under its cover from the first
- * paint, which is near enough the top for a lazy image to be fetched at once.
- * So it has no address in the page as served: it is given one only when the
- * page has finished loading and the browser is idle, or the guest has
- * scrolled to within a screen of it, whichever is first. The 720px copy on a
- * slow connection or for a guest who asked to save data, the 1080px one
- * otherwise, and the night painting on a dark card (sceneArtFor). Its box is the picture's shape from the start, so nothing on
- * the card moves when it arrives; it fades in.
+ * IT IS ASKED FOR AS SOON AS THE CARD IS IN THE PAGE, which on a guest's link
+ * is while the cover is still over it: the film plays, and the painting is
+ * there when it lifts. Which copy is the guest's own business (the 720px one
+ * on a slow connection or for a guest who asked to save data, the 1080px one
+ * otherwise), so the address is set in the browser and not in the page as
+ * served. The box is its full size from the first paint and the picture
+ * carries its own width and height, so nothing on the card moves when it
+ * arrives; it fades in.
  */
+
+/** The painting's own size in px, at its larger copy. Both copies are this shape. */
+const ART_WIDTH = 720;
+const ART_HEIGHT = 1080;
 
 /** Which copy this guest's connection gets. */
 function copyFor(art: SceneArt): string {
@@ -81,97 +100,50 @@ function duskStops(dusk: SceneDusk): string {
 export default function SceneScreen({
   art,
   dusk = null,
+  inset,
+  maxHeight,
 }: {
   art: SceneArt;
   /** How its ends meet a dark card; null on a light one. See sceneDusk. */
   dusk?: SceneDusk | null;
+  /**
+   * How far the box it is laid out in stands in from the card's edge on each
+   * side, as a CSS length: what the scene steps back out by to reach the edge.
+   */
+  inset: string;
+  /** The most it may be tall, as a CSS length: 78% of the screen. */
+  maxHeight: string;
 }): ReactElement {
-  const ref = useRef<HTMLDivElement>(null);
   const still = useCardStill();
   const [src, setSrc] = useState<string | null>(null);
   const [shown, setShown] = useState<boolean>(false);
 
-  /* Keyed on the picture, so a host who picks another in the editor gets it. */
+  /* At once, and again when the host picks another painting or a ground that takes the other one. */
   useEffect(() => {
-    let live = true;
-    let idle = 0;
-    let timer = 0;
     setShown(false);
-
-    const fetchIt = (): void => {
-      if (live) {
-        setSrc(copyFor(art));
-      }
-    };
-
-    /* A card drawn still (a sheet of paper, a frame on the home page) is wanted whole, now. */
-    if (still) {
-      fetchIt();
-      return;
-    }
-
-    const whenIdle = (): void => {
-      if (typeof window.requestIdleCallback === "function") {
-        idle = window.requestIdleCallback(fetchIt, { timeout: 2000 });
-      } else {
-        timer = window.setTimeout(fetchIt, 200);
-      }
-    };
-
-    if (document.readyState === "complete") {
-      whenIdle();
-    } else {
-      window.addEventListener("load", whenIdle, { once: true });
-    }
-
-    /* Or the guest is nearly at it, on a page that is still loading something else. */
-    const element = ref.current;
-    const observer =
-      element !== null && typeof IntersectionObserver === "function"
-        ? new IntersectionObserver(
-            (entries) => {
-              if (entries.some((entry) => entry.isIntersecting)) {
-                fetchIt();
-              }
-            },
-            { rootMargin: "100% 0px" },
-          )
-        : null;
-
-    if (observer !== null && element !== null) {
-      observer.observe(element);
-    }
-
-    return () => {
-      live = false;
-      window.removeEventListener("load", whenIdle);
-      observer?.disconnect();
-      window.clearTimeout(timer);
-
-      if (idle !== 0 && typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idle);
-      }
-    };
-  }, [art, still]);
+    setSrc(copyFor(art));
+  }, [art]);
 
   return (
     <div
-      ref={ref}
       aria-hidden="true"
-      className={`lifafa-scene pointer-events-none relative w-full overflow-hidden ${
+      className={`lifafa-scene pointer-events-none relative overflow-hidden ${
         dusk !== null ? "lifafa-scene-dusk" : ""
       }`}
-      style={{ aspectRatio: String(SCENE_ASPECT) }}
+      style={{ "--scene-inset": inset, "--scene-cap": maxHeight } as CSSProperties}
     >
       {src !== null ? (
         <img
           key={src}
           src={src}
           alt=""
+          width={ART_WIDTH}
+          height={ART_HEIGHT}
+          loading="eager"
           decoding="async"
           draggable={false}
           onLoad={() => setShown(true)}
-          className={`absolute inset-0 h-full w-full object-cover select-none transition-opacity duration-700 ease-out motion-reduce:transition-none ${
+          className={`absolute inset-0 h-full w-full object-cover object-[center_60%] select-none transition-opacity duration-700 ease-out motion-reduce:transition-none ${
             still ? "" : "lifafa-scene-art"
           }`}
           style={{ opacity: shown || still ? 1 : 0 }}

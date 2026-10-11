@@ -19,8 +19,8 @@ function OffPreview(): ReactElement {
 }
 
 /**
- * The painted scene between the card's first screen and its second: one of
- * three pictures, or off.
+ * The painted scene on the card's first screen, under its opening lines:
+ * one of three pictures, or off.
  *
  * The palace garden on every card until a host picks another or turns it
  * off. A dark card draws each by night; the tiles here are small copies of
@@ -94,8 +94,8 @@ export default function ScenePanel({
 
       <p className="text-xs text-[var(--lifafa-muted)]">
         {scene === "off"
-          ? "Your card goes straight from its first screen to the next."
-          : "A painting on a screen of its own, after the first screen of your card. It fades into your card's colour and moves gently as guests scroll."}
+          ? "Your card opens on its words alone."
+          : "A painting under the opening lines of your card, edge to edge. It fades into your card's colour and moves gently as guests scroll."}
       </p>
     </CollapsibleSection>
   );

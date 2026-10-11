@@ -581,41 +581,75 @@
 }
 
 /*
-  The painted scene between a card's first two screens
-  (components/card/SceneScreen.tsx).
+  The painted scene on a card's opening screen, under its sacred line and
+  running on into the names' screen (components/card/SceneScreen.tsx).
 
-  Its top and bottom fade into the card through a mask on the box, which
-  holds still; what shows through is the card's own ground. The fade is long
-  and eased, because each painting ends in a band of pale wash, and on a dark
-  card a short fade would leave that band as a bar of light.
+  FULL BLEED, from inside the reading column: the box is wider than what it
+  is laid out in by --scene-inset each side, which SceneScreen sets to how far
+  that stands in from the card's edge, and steps back out by the same. So it
+  is the card's width, and the border, a layer above the column, is drawn
+  over it.
+
+  The card's width by one and a half of it, the painting's own shape, and
+  never taller than --scene-cap, 78% of the screen. Pulled up by 12% of that
+  height, under the foot of the words above it: the lesser of 18% of its width
+  and 12% of the cap, since a percentage here is of the width. Behind the
+  column's words (z-index -1 inside the column's own stacking context) and in
+  front of nothing else.
+
+  Its top 22% and its bottom quarter fade into the card through a mask on the
+  box, which holds still; what shows through is the card's own ground. Eased,
+  because a straight ramp shows where it starts.
 */
 .lifafa-scene {
+  --scene-w: calc(100% + 2 * var(--scene-inset, 0px));
+  z-index: -1;
+  flex: none;
+  align-self: center;
+  width: var(--scene-w);
+  max-width: none;
+  aspect-ratio: 2 / 3;
+  max-height: var(--scene-cap, 78svh);
+  margin-inline: calc(-1 * var(--scene-inset, 0px));
+  margin-top: max(calc(var(--scene-w) * -0.18), calc(var(--scene-cap, 78svh) * -0.12));
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    rgb(0 0 0 / 0.12) 6%,
-    rgb(0 0 0 / 0.5) 13%,
-    rgb(0 0 0 / 0.88) 20%,
-    #000 26%,
-    #000 70%,
-    rgb(0 0 0 / 0.88) 76%,
-    rgb(0 0 0 / 0.5) 83%,
-    rgb(0 0 0 / 0.12) 91%,
-    transparent 97%
+    rgb(0 0 0 / 0.1) 5%,
+    rgb(0 0 0 / 0.45) 11%,
+    rgb(0 0 0 / 0.85) 17%,
+    #000 22%,
+    #000 75%,
+    rgb(0 0 0 / 0.85) 81%,
+    rgb(0 0 0 / 0.45) 88%,
+    rgb(0 0 0 / 0.1) 95%,
+    transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    rgb(0 0 0 / 0.12) 6%,
-    rgb(0 0 0 / 0.5) 13%,
-    rgb(0 0 0 / 0.88) 20%,
-    #000 26%,
-    #000 70%,
-    rgb(0 0 0 / 0.88) 76%,
-    rgb(0 0 0 / 0.5) 83%,
-    rgb(0 0 0 / 0.12) 91%,
-    transparent 97%
+    rgb(0 0 0 / 0.1) 5%,
+    rgb(0 0 0 / 0.45) 11%,
+    rgb(0 0 0 / 0.85) 17%,
+    #000 22%,
+    #000 75%,
+    rgb(0 0 0 / 0.85) 81%,
+    rgb(0 0 0 / 0.45) 88%,
+    rgb(0 0 0 / 0.1) 95%,
+    transparent 100%
   );
+}
+
+/*
+  A wide phone held upright sets its text in a column that may be narrower
+  than the screen, and the card around it still fills the screen. The scene
+  is the card's width there too: the screen's, centred on the column.
+*/
+@media (min-width: 26.3125rem) and (max-width: 47.99rem) and (orientation: portrait) {
+  .lifafa-card-phone .lifafa-scene {
+    --scene-w: 100vw;
+    margin-inline: calc(50% - 50vw);
+  }
 }
 
 /*

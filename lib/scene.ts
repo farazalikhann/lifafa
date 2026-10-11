@@ -2,10 +2,11 @@ import { hueAndSaturation, relativeLuminance } from "@/lib/contrast";
 import type { Scene } from "@/types/card";
 
 /**
- * The painted scene between a card's first screen and its second: a lake
- * palace, a palace garden or a tree in a valley, or none. A screen of its own
- * on every tradition's card, drawn by components/card/SceneScreen.tsx and
- * chosen in components/create/ScenePanel.tsx.
+ * The painted scene on a card's first screen: a lake palace, a palace garden
+ * or a tree in a valley, or none. Under the opening's last line and running
+ * on into the names' screen, as wide as the card, on every tradition's card;
+ * drawn by components/card/SceneScreen.tsx and chosen in
+ * components/create/ScenePanel.tsx.
  *
  * Each is painted twice, by day and by night, 2:3, and published whole by
  * scripts/cut-scenes.mjs: a light card draws the day and a dark card the
@@ -85,6 +86,10 @@ export function sceneOf(value: unknown): Scene {
  * way: the card's ground, then a deep, clear shade of the card's own hue (its
  * accent's hue where the ground has none of its own, as on Ink), thinning out
  * over the painting like the last light of a dusk. See SceneScreen.
+ *
+ * A dark card draws the night painting now, whose own ends are dark, so the
+ * glow is only a little above the ground: at the strength it had under a pale
+ * painting it stood out over the night sky as a band of light.
  */
 export interface SceneDusk {
   /** The card's ground. */
@@ -102,8 +107,8 @@ export function sceneDusk(background: string, accent: string): SceneDusk | null 
 
   /* Quieter where the hue is borrowed from the accent: a near-black card has no colour to glow in. */
   return own.saturation >= 0.25
-    ? { ground: background, glow: `${own.hue.toFixed(0)} 50% 33%` }
-    : { ground: background, glow: `${hueAndSaturation(accent).hue.toFixed(0)} 36% 28%` };
+    ? { ground: background, glow: `${own.hue.toFixed(0)} 46% 21%` }
+    : { ground: background, glow: `${hueAndSaturation(accent).hue.toFixed(0)} 32% 17%` };
 }
 
 /**
