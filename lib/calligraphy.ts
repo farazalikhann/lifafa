@@ -72,9 +72,9 @@ interface CalligraphyArt {
   src: Record<CalligraphyGround, string>;
   /**
    * For a piece drawn as a shape rather than a picture: the one file whose
-   * alpha is the lettering, which the card fills with its own accent through
-   * a CSS mask. Both grounds get the same file, and the colour follows the
-   * card's theme instead of being fixed at publishing. See `devanagari`.
+   * alpha is the lettering, which the card fills with the calligraphy's ink
+   * (CALLIGRAPHY_INK) through a CSS mask. Both grounds get the same file. See
+   * `devanagari`.
    */
   mask?: string;
   /** The published box, width over height. Both inks share it exactly. */
@@ -96,9 +96,8 @@ interface CalligraphyArt {
  *
  * Both files are one alpha mask, filled once with black and once with white,
  * so the black file's alpha is the lettering and nothing else. The card uses
- * it as a CSS mask filled with its own accent, the way every other pack's
- * calligraphy is drawn: gold on Emerald and Midnight, the palette's own accent
- * on a light card, instead of a fixed black or white. The two inks stay
+ * it as a CSS mask filled with the calligraphy's ink (CALLIGRAPHY_INK), the
+ * way every other pack's calligraphy is drawn. The two inks stay
  * published as the `src` pair for anything that still wants a picture.
  */
 function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
@@ -119,9 +118,8 @@ function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
  * NOT TWO INKS, AND NOT A FIXED COLOUR, unlike every other piece in this file.
  * scripts/cut-flowers.mjs turns each into one white shape whose alpha is the
  * lettering's brightness, and the card draws it as a CSS mask filled with the
- * card's accent — so the lettering is the card's gold on a dark palette and the
- * card's own accent on a cream one, and changes with the theme without a
- * second file. The soft edge of every stroke is the mask's own, so it is as
+ * calligraphy's ink (CALLIGRAPHY_INK) — so the lettering is soft black on a
+ * light card and warm white on a dark one without a second file. The soft edge of every stroke is the mask's own, so it is as
  * sharp on cream as on ink.
  */
 function devanagari(
@@ -160,9 +158,8 @@ function gurmukhi(slug: string, aspect: number, alt: string): CalligraphyArt {
  * each supplied as black lettering on a transparent ground.
  *
  * Published as shapes, like the Devanagari and Gurmukhi ones: one file whose
- * alpha is the lettering, filled with the card's accent through a CSS mask,
- * so the line is the card's own colour on every palette and no second ink is
- * needed.
+ * alpha is the lettering, filled with the calligraphy's ink through a CSS
+ * mask, so no second file is needed.
  */
 function english(slug: string, aspect: number, alt: string): CalligraphyArt {
   const mask = `/decor/calligraphy/christian/${slug}.webp`;
@@ -175,7 +172,7 @@ function english(slug: string, aspect: number, alt: string): CalligraphyArt {
  * supplied as black lettering on a transparent ground.
  *
  * Published as shapes, like every piece since the Arabic ones: one file whose
- * alpha is the lettering, filled with the card's accent through a CSS mask.
+ * alpha is the lettering, filled with the calligraphy's ink through a CSS mask.
  * In a folder and under ids of their own, though two of them say what a Hindu
  * piece says: "shubhVivah" is the Hindu pack's artwork, and "mangalParinay"
  * is a retired Hindu id that RETIRED_CALLIGRAPHY below reads as Shubh Vivah.
@@ -270,7 +267,7 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
 
   /*
     The six Gurmukhi pieces, in the order the panel offers them. Published as
-    shapes, like the Devanagari ones, and filled with the card's accent.
+    shapes, like the Devanagari ones, and filled with the calligraphy's ink.
 
     Each was read letter by letter against the text beside it before it was
     published, and each agrees: the letters, the vowel signs, the tippi in
@@ -388,6 +385,19 @@ const ART: Record<CalligraphyId, CalligraphyArt> = {
 export function calligraphyGround(background: string): CalligraphyGround {
   return relativeLuminance(background) >= 0.5 ? "light" : "dark";
 }
+
+/**
+ * The one ink every piece of calligraphy is filled with, on every tradition's
+ * card: a soft black on a light ground and a warm white on a dark one. Never
+ * the card's accent and never its text colours. These are lines that are
+ * read, and an accent that suits a rule or a flower is on many palettes too
+ * faint for lettering. Which ground a card is comes from calligraphyGround,
+ * as it does for everything else that has a light and a dark form.
+ */
+export const CALLIGRAPHY_INK: Record<CalligraphyGround, string> = {
+  light: "#1a1a1a",
+  dark: "#f8f4ec",
+};
 
 export function calligraphySrc(
   id: CalligraphyId,

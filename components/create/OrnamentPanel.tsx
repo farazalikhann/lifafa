@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import {
   blessingSaidByCalligraphy,
+  calligraphyGround,
   tapCalligraphy,
 } from "@/lib/calligraphy";
 import { chosenCorners, chosenIn, slottedIds, tapSlotted } from "@/lib/ornaments/slots";
@@ -156,6 +157,13 @@ function ScriptLine({
     </ScriptRun>
   );
 }
+
+/**
+ * The editor's tiles as a ground for calligraphy. The editor is dark
+ * (--lifafa-ink, #12100E, and the raised tile a shade up from it), so a piece
+ * on a tile is drawn as it is on a dark card.
+ */
+const EDITOR_TILE_GROUND = calligraphyGround("#12100E");
 
 /**
  * One single-select list: the blessings. Each row carries its reading and its
@@ -402,16 +410,14 @@ export default function OrnamentPanel({
                   ].join(" ")}
                 >
                   {/*
-                    Gold on the tile. A piece drawn as a shape fills with this
-                    colour; one drawn as a picture keeps its own ink.
+                    The ink it has on a dark card, because the tile is dark:
+                    the same two plain inks as on the card, by the same rule.
                   */}
-                  <span
-                    aria-hidden="true"
-                    className="block w-full text-[var(--lifafa-marigold)]"
-                  >
+                  <span aria-hidden="true" className="block w-full">
                     <Component
                       instanceId={`chip-${id}`}
                       className="block h-auto w-full"
+                      ground={EDITOR_TILE_GROUND}
                     />
                   </span>
 

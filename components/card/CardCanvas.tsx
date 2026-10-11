@@ -314,13 +314,17 @@ const CALLIGRAPHY_MAX_HEIGHT = 0.22;
  * The sacred line on a card's opening screen: the shlok, the dua, the verse
  * or the shabad, in its own script, or nothing at all.
  *
- * ITS OWN SCRIPT ONLY. The reading, the meaning and where it is from are not
- * drawn: the opening is the heading, the calligraphy and this line, on every
- * tradition's card. The host still sees all of them in the editor's list,
- * where they are how the line is chosen.
+ * ITS OWN SCRIPT ONLY. The reading and the meaning are not drawn: the
+ * opening is the heading, the calligraphy and this line, on every tradition's
+ * card. The host still sees both in the editor's list, where they are how the
+ * line is chosen. Where a line is quoted, what it is from is set under it,
+ * small and quiet (chapter and verse, or the Ang): part of the line, not a
+ * fourth thing on the screen, and not counted among its lines.
  *
  * AT MOST FOUR LINES. A long one is set smaller until it is, and never under
- * 15px; see useFitLines.
+ * 15px; see useFitLines. Nor is it under 15px on a short screen, where the
+ * opening's type comes down a tenth: each size it is given is the larger of
+ * that and 15px.
  *
  * The empty check is the safety mechanism behind a content file shipping a
  * line blank: one whose script has not been supplied yet renders as absence,
@@ -377,8 +381,10 @@ function SacredLine({
   } as CSSProperties;
 
   return (
-    <div ref={holder} className="w-full">
+    <div ref={holder} className="flex w-full flex-col items-center gap-1.5">
       {/*
+        First in the box, which is where useFitLines looks for it.
+
         The pack draws its own script line, because `dir` and `lang` belong on
         the element that actually holds the text — the bidi algorithm and the
         font matcher both key off it — and the rules differ per script in ways a
@@ -394,6 +400,25 @@ function SacredLine({
       >
         {entry.script}
       </ScriptRun>
+
+      {/*
+        Where a quoted line is from. Latin script, so explicitly left to
+        right: under an RTL pack an unmarked Latin line has its punctuation
+        pushed to the wrong end.
+      */}
+      {entry.source !== undefined && entry.source.length > 0 ? (
+        <p
+          dir="ltr"
+          className="w-full text-center text-[calc(0.75*var(--card-rem,1rem)*var(--card-opening-text,1))] tracking-[0.04em]"
+          style={{
+            color: theme.textMuted,
+            opacity: 0.8,
+            ...(head === null ? null : { fontFamily: head.sourceFace }),
+          }}
+        >
+          {entry.source}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -2109,8 +2134,8 @@ hasHead ? (
                     `className` rather than `size`, so the width is the column's
                     and not a number chosen here — calligraphy is the only
                     ornament that spans the card rather than being placed on it.
-                    Which ink it uses is decided from the card's own background;
-                    see lib/calligraphy.ts.
+                    Which of its two inks it uses is decided from the card's own
+                    background; see lib/calligraphy.ts.
 
                     Wider than the column by 16px a side, into the screen's own
                     28px padding. Every piece ends in a hairline rule and a
@@ -2149,14 +2174,13 @@ hasHead ? (
                           ? "max-[389px]:w-[calc((100%+2rem)*0.85)]"
                           : ""
                       }`}
-                      ground={calligraphyGround(effectiveTheme.background)}
                       /*
-                        What a piece drawn as a shape is filled with: the
-                        card's accent, so it follows the theme. A piece drawn
-                        as a picture keeps its own ink and ignores it.
+                        Which of the two plain inks it is filled with: soft
+                        black on a light card, warm white on a dark one. Never
+                        the accent; see CALLIGRAPHY_INK.
                       */
+                      ground={calligraphyGround(effectiveTheme.background)}
                       style={{
-                        color: effectiveTheme.accent,
                         maxWidth: `min(calc(20 * var(--card-rem, 1rem) * var(--card-opening, 1)), ${calligraphyMaxWidth(sizing, frameHeight, panel.aspect)})`,
                       }}
                     />
@@ -2167,7 +2191,7 @@ hasHead ? (
                       entry={blessing}
                       pack={pack}
                       theme={effectiveTheme}
-                      sizeClass="text-[calc(1.375rem*var(--card-opening-text,1))] leading-[2.1] sm:text-[calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1))]"
+                      sizeClass="text-[length:max(0.9375rem,calc(1.375rem*var(--card-opening-text,1)))] leading-[2.1] sm:text-[length:max(calc(0.9375*var(--card-rem,1rem)),calc(1.5*var(--card-rem,1rem)*var(--card-opening-text,1)))]"
                     />
                   ) : null}
 

@@ -222,6 +222,11 @@ interface CardHeadType {
   /** Its leading: loose, because it runs to two lines and more. */
   blessingLeading: string;
   /**
+   * The font stack for the line under it that says where it is from, in place
+   * of the card's body face. A serif beside the serif script.
+   */
+  sourceFace: string;
+  /**
    * Whether the opening screen sets its block from the top of the space it
    * has, rather than centred in it. The top is already held clear of the
    * hanging border and the fade, so this only closes the extra gap centring
@@ -581,9 +586,12 @@ const MUSLIM_PACK: TraditionPack = {
 const DEVANAGARI_CARD_HEAD: CardHeadType = {
   scriptFace:
     'var(--font-hi-tiro), var(--font-devanagari), "Noto Serif Devanagari", serif',
+  /* Never under 15px, on a short screen as on any other: see SACRED_LINE_FLOOR in CardCanvas. */
   blessingClass:
-    "text-[calc(1.0625rem*var(--card-opening-text,1))] sm:text-[calc(1.1875*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+    "text-[length:max(0.9375rem,calc(1.0625rem*var(--card-opening-text,1)))] sm:text-[length:max(calc(0.9375*var(--card-rem,1rem)),calc(1.1875*var(--card-rem,1rem)*var(--card-opening-text,1)))]",
   blessingLeading: "1.9",
+  /* Lora, already loaded by app/layout.tsx for the card's pairs. */
+  sourceFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
   alignTop: true,
 };
 
@@ -683,8 +691,9 @@ const SIKH_PACK: TraditionPack = {
     scriptFace:
       'var(--font-pa-tiro), var(--font-gurmukhi), "Noto Serif Gurmukhi", "Noto Sans Gurmukhi", serif',
     blessingClass:
-      "text-[calc(1rem*var(--card-opening-text,1))] sm:text-[calc(1.125*var(--card-rem,1rem)*var(--card-opening-text,1))]",
+      "text-[length:max(0.9375rem,calc(1rem*var(--card-opening-text,1)))] sm:text-[length:max(calc(0.9375*var(--card-rem,1rem)),calc(1.125*var(--card-rem,1rem)*var(--card-opening-text,1)))]",
     blessingLeading: "1.9",
+    sourceFace: 'var(--font-lora), Georgia, "Times New Roman", serif',
     alignTop: true,
   },
   /* The order the panel offers them: the ceremony's own name first. */
