@@ -179,6 +179,13 @@ export interface CardCopy {
     /** On a patch for a guest who asked for less motion: it opens on a tap. */
     tap: string;
   };
+  /** The paper strip over the date. See components/card/TearReveal.tsx. */
+  tear: {
+    /** The words on the paper. */
+    hint: string;
+    /** What the strip is called as a button, for a screen reader. */
+    open: string;
+  };
   /** The royal scroll, rolled up and waiting for a tap. See components/card/RoyalScroll.tsx. */
   scroll: {
     /** The words under the closed scroll. */
@@ -486,6 +493,10 @@ const ENGLISH: CardCopy = {
     hint: "Scratch to reveal",
     tap: "Tap to reveal",
   },
+  tear: {
+    hint: "Swipe to reveal",
+    open: "Tear the paper to see the date",
+  },
   scroll: {
     hint: "Tap to open",
     open: "Open to see the date",
@@ -735,6 +746,11 @@ const HINDI: CardCopy = {
     revealed: "दिख गया।",
     hint: "देखने के लिए खुरचें",
     tap: "देखने के लिए टैप करें",
+  },
+  /* TODO(Faraz): verify the second Hindi line; the first is as supplied. */
+  tear: {
+    hint: "खोलने के लिए स्वाइप करें",
+    open: "तारीख़ देखने के लिए काग़ज़ फाड़ें",
   },
   /* TODO(Faraz): verify both Hindi lines. */
   scroll: {

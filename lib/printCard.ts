@@ -131,7 +131,10 @@ export function printSheets(draft: EventDraft, config: CardConfig): readonly Pri
           scene: "off",
           /* Nothing to scratch on paper: what was hidden is simply printed. */
           scratchTarget: "none",
-          ...(config.dateReveal === "scratch" ? { dateReveal: "simple" as const } : null),
+          /* Nor to tear: the date is printed as it is under the paper. */
+          ...(config.dateReveal === "scratch" || config.dateReveal === "tear"
+            ? { dateReveal: "simple" as const }
+            : null),
           ornamentConfig: first
             ? config.ornamentConfig
             : { ...config.ornamentConfig, enabledOrnaments: [] },

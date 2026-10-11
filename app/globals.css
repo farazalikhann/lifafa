@@ -635,6 +635,78 @@
   }
 }
 
+/*
+  The strip of paper over the date (components/card/TearReveal.tsx).
+
+  The arrow under its words drifts from left to right, the way the finger
+  should go: transform and opacity only, held while the strip is off screen or
+  the tab is hidden (useFloatingPause), and still under reduced motion.
+*/
+@keyframes lifafa-tear-hint {
+  0% {
+    transform: translate3d(-9px, 0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(11px, 0, 0);
+    opacity: 0;
+  }
+}
+
+/* The date as the paper leaves it: up to size, and a glow behind it that comes and goes. */
+@keyframes lifafa-tear-date-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes lifafa-tear-glow {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
+.lifafa-tear-glow {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lifafa-tear-arrow {
+    animation: lifafa-tear-hint 1.9s ease-in-out infinite;
+  }
+
+  .lifafa-tear-label[data-floating-paused] .lifafa-tear-arrow {
+    animation-play-state: paused;
+  }
+
+  .lifafa-tear-date-in {
+    animation: lifafa-tear-date-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .lifafa-tear-glow {
+    animation: lifafa-tear-glow 1300ms ease-out both;
+  }
+}
+
 /* The scroll cue's arrow: a small, slow drop. See InvitedCue. */
 @keyframes lifafa-cue-bounce {
   0%,

@@ -110,6 +110,7 @@ async function tear() {
   const { data, info } = await sharp(wrapped)
     .resize(TEAR.size * 2, TEAR.size * 2)
     .extract({ left: TEAR.size / 2, top: TEAR.size / 2, width: TEAR.size, height: TEAR.size })
+    .extractChannel(0)
     .raw()
     .toBuffer({ resolveWithObject: true });
 

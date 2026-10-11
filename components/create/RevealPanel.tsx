@@ -96,13 +96,15 @@ export function ScratchFramePicker({
  * this section has the other two sections and nothing else.
  *
  * A CARD HAS ONE SCRATCH PANEL. That has not changed. So while the date has
- * it, there is nothing here to choose: the options are shown, switched off,
+ * it, or is under the strip of paper a guest tears off ("Tear to reveal",
+ * which is that one panel in another form), there is nothing here to choose: the options are shown, switched off,
  * with a line saying why and a way to take the panel off the date. Shown and
  * not hidden, so a host looking for the venue's scratch panel finds where it
  * is and what is in its way.
  */
 export default function RevealPanel({
   scratchTarget,
+  dateTorn = false,
   onScratchSectionChange,
   onShowDateSimply,
   scratchFrame,
@@ -111,6 +113,8 @@ export default function RevealPanel({
 }: {
   /** Where the card's one panel is, the date included: that is what switches this section off. */
   scratchTarget: ScratchTarget;
+  /** The date is under a strip of paper the guest tears off, which is the card's one panel as much as a scratched date is. */
+  dateTorn?: boolean;
   onScratchSectionChange: (section: ScratchSection) => void;
   /** Takes the panel off the date and shows the date plainly, which frees the panel for here. */
   onShowDateSimply: () => void;
@@ -119,7 +123,7 @@ export default function RevealPanel({
   /** The Design tab's open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
-  const usedByDate = scratchTarget === "date";
+  const usedByDate = dateTorn || scratchTarget === "date";
   const usedByDateId = useId();
 
   return (
@@ -160,8 +164,9 @@ export default function RevealPanel({
       {usedByDate ? (
         <div className="flex flex-col items-start gap-1">
           <p id={usedByDateId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-            Your date already uses scratch to reveal. A card has one scratch
-            panel, so guests only scratch once.
+            {dateTorn
+              ? "Your date already uses tear to reveal. A card has one panel for guests to open, so they only do it once."
+              : "Your date already uses scratch to reveal. A card has one scratch panel, so guests only scratch once."}
           </p>
           <button
             type="button"

@@ -162,17 +162,28 @@ export function dateRevealOf(
     return "scroll";
   }
 
+  /* The paper strip is a host's own choice too, and has the date whatever the scratch target says. */
+  if (value === "tear") {
+    return "tear";
+  }
+
   return scratchTarget === "date" ? "scratch" : "simple";
 }
 
 /**
  * The scratch target a card obeys under this reveal: the scroll never has a
  * scratch layer over its date, so a date target left on the card from before
- * is not honoured while the scroll is the reveal.
+ * is not honoured while the scroll is the reveal. A date that is torn open
+ * is the card's one interactive panel, as a scratched date is, so no section
+ * has a scratch panel while it is the reveal.
  */
 export function scratchTargetUnder(
   reveal: DateReveal,
   scratchTarget: ScratchTarget,
 ): ScratchTarget {
+  if (reveal === "tear") {
+    return "none";
+  }
+
   return reveal === "scroll" && scratchTarget === "date" ? "none" : scratchTarget;
 }

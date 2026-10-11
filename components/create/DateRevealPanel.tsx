@@ -28,6 +28,12 @@ const REVEALS: readonly {
     summary: "Scratch",
     hint: "The guest scratches gold foil off the date.",
   },
+  {
+    id: "tear",
+    label: "Tear to reveal",
+    summary: "Tear",
+    hint: "The guest swipes a strip of handmade paper off the date.",
+  },
   { id: "simple", label: "Simple", summary: "Simple", hint: "The date is simply there." },
 ];
 
@@ -63,6 +69,36 @@ function ScratchPreview(): ReactElement {
   );
 }
 
+/** A strip of paper torn across, its two pieces parting on a white, ragged edge. */
+function TearPreview(): ReactElement {
+  const rip = "L44 27 L40 30 L36 26 L31 31 L27 27 L22 32 L17 28 L12 33 L8 29 L4 32";
+
+  return (
+    <svg viewBox="0 0 48 60" aria-hidden="true" focusable="false" className="h-full w-auto">
+      <path d={`M4 12 H44 ${rip} Z`} fill="#A4394F" transform="rotate(-4 24 20) translate(0 -2)" />
+      <path d={`M4 48 H44 ${rip} Z`} fill="#8E2F43" transform="translate(0 3)" />
+      <path
+        d={`M44 27 ${rip.slice(8)}`}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        opacity="0.9"
+        transform="translate(0 3)"
+      />
+      <path
+        d={`M44 27 ${rip.slice(8)}`}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        opacity="0.9"
+        transform="rotate(-4 24 20) translate(0 -2)"
+      />
+    </svg>
+  );
+}
+
 /** The date as it is set with nothing over it: a month, a numeral, a rule. */
 function SimplePreview(): ReactElement {
   return (
@@ -86,11 +122,11 @@ function SimplePreview(): ReactElement {
 
 /**
  * How the date arrives on its own screen: on the royal scroll, behind a
- * scratch panel, or simply there.
+ * scratch panel, under a strip of paper the guest tears off, or simply there.
  *
- * ONE OF THE THREE, AND ONLY EVER ONE. The scroll and the scratch panel are
- * both a way of making the guest wait a moment for the date, and a card that
- * did both would be making them wait twice for one thing. So choosing either
+ * ONE OF THE FOUR, AND ONLY EVER ONE. The scroll, the scratch panel and the
+ * paper strip are each a way of making the guest wait a moment for the date,
+ * and a card that did two would be making them wait twice for one thing. So choosing either
  * takes the other off the date; the editor does that in the handler this
  * calls, and the card will not draw both even if a saved one asks for it
  * (lib/royalScroll.ts).
@@ -128,7 +164,7 @@ export default function DateRevealPanel({
       summary={current?.summary}
       {...sectionState(accordion, "date-reveal")}
     >
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {REVEALS.map((option) => {
           const isSelected = option.id === dateReveal;
 
@@ -152,6 +188,8 @@ export default function DateRevealPanel({
                   <ScrollPreview variant={scrollVariant} />
                 ) : option.id === "scratch" ? (
                   <ScratchPreview />
+                ) : option.id === "tear" ? (
+                  <TearPreview />
                 ) : (
                   <SimplePreview />
                 )}

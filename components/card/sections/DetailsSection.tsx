@@ -19,6 +19,8 @@ import { cardCopy } from "@/lib/cardLanguage";
 import { cardPx, cardRem } from "@/lib/cardScale";
 import RoyalScroll from "@/components/card/RoyalScroll";
 import { scrollInks, type ScrollArt } from "@/lib/royalScroll";
+import TearReveal from "@/components/card/TearReveal";
+import type { TearConfig } from "@/lib/tearReveal";
 import { textRoles, type Theme } from "@/lib/themes";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -138,6 +140,7 @@ export default function DetailsSection({
   occasionId,
   venueScratched,
   scroll = null,
+  tear = null,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -163,6 +166,13 @@ export default function DetailsSection({
    * this section no `scratch` while the scroll is the reveal.
    */
   scroll?: ScrollArt | null;
+  /**
+   * The strip of paper over the date, on a card whose host chose to have it
+   * torn open: the date and the calendar button are under it, with no frame
+   * of roses round them. Null on every other card, and never with a scratch
+   * panel or the scroll.
+   */
+  tear?: TearConfig | null;
 }): ReactElement {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
 
@@ -291,9 +301,25 @@ export default function DetailsSection({
     when they hid it, and simply framed when they did neither.
   */
   const onScroll = page !== null && scroll !== null;
+  const underPaper = page !== null && scroll === null && tear !== null;
+  const calendarButton = (
+    <AddToCalendar
+      draft={draft}
+      theme={theme}
+      invite={invite}
+      occasionId={occasionId}
+      language={language}
+    />
+  );
   const framed =
     page === null ? (
       when
+    ) : tear !== null && scroll === null ? (
+      /* The date and its button, under one strip: both are what the paper is torn off. */
+      <TearReveal {...tear} hindi={hindi}>
+        {when}
+        {calendarButton}
+      </TearReveal>
     ) : scroll !== null ? (
       <RoyalScroll
         /*
@@ -393,16 +419,9 @@ export default function DetailsSection({
         </div>
       ) : null}
 
-      {page !== null ? (
-        <div className={`${REVEAL_BASE} ${revealClass(isInView)}`}>
-          <AddToCalendar
-            draft={draft}
-            theme={theme}
-            invite={invite}
-            occasionId={occasionId}
-            language={language}
-          />
-        </div>
+      {/* Under the paper with the date, on a card whose date is torn open. */}
+      {page !== null && !underPaper ? (
+        <div className={`${REVEAL_BASE} ${revealClass(isInView)}`}>{calendarButton}</div>
       ) : null}
     </section>
   );

@@ -152,10 +152,12 @@ export type ScratchTarget = "none" | "date" | "venue" | "countdown";
 
 /**
  * How the date arrives on its own screen: on a royal scroll that unrolls,
- * behind a scratch panel, or simply there. Only ever one of the three: the
- * scroll has no scratch layer. See lib/royalScroll.ts.
+ * behind a scratch panel, under a strip of paper the guest tears off, or
+ * simply there. Only ever one of the four: the scroll has no scratch layer,
+ * and a card whose date is torn open has no scratch panel anywhere. See
+ * lib/royalScroll.ts and lib/tearReveal.ts.
  */
-export type DateReveal = "scroll" | "scratch" | "simple";
+export type DateReveal = "scroll" | "scratch" | "tear" | "simple";
 
 /**
  * The painted scene between the card's first screen and its second, or off.

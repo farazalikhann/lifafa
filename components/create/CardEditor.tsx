@@ -575,7 +575,9 @@ export default function CardEditor({
     off the date: the scroll or the plain date clears a scratch panel that
     was over the date, and only one that was over the date; one over the venue
     or the countdown is the section below's, and is left exactly as it is.
-    Scratch puts the card's one panel on the date.
+    Scratch puts the card's one panel on the date. Tear is the card's one
+    interactive panel too, so it takes the scratch panel off whichever
+    section had it.
   */
   const handleDateReveal = useCallback(
     (next: DateReveal) => {
@@ -583,7 +585,7 @@ export default function CardEditor({
 
       if (next === "scratch") {
         setScratchTarget("date");
-      } else if (scratchTarget === "date") {
+      } else if (next === "tear" || scratchTarget === "date") {
         setScratchTarget("none");
       }
     },
@@ -1636,6 +1638,7 @@ export default function CardEditor({
                 />
                 <RevealPanel
                   scratchTarget={scratchTarget}
+                  dateTorn={dateRevealOf(dateReveal, scratchTarget) === "tear"}
                   onScratchSectionChange={handleScratchSection}
                   onShowDateSimply={handleShowDateSimply}
                   scratchFrame={scratchFrame}

@@ -96,6 +96,7 @@ import {
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { sceneArt, sceneOf } from "@/lib/scene";
+import { tearInkColor, tearPaperColor, type TearConfig } from "@/lib/tearReveal";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
   ROYAL_TEXTURE_TILE,
@@ -700,6 +701,8 @@ function renderBlock(
   countdownPadTop: number,
   /** "You are invited", for the names' screen when it is the one the guest lands on. */
   invited: ReactNode,
+  /** The strip of paper over the date, for a card whose host chose to have it torn open. */
+  tear: TearConfig | null,
 ): ReactElement | null {
   if (block.kind === "custom") {
     return (
@@ -763,6 +766,7 @@ function renderBlock(
           occasionId={occasionId}
           venueScratched={venueScratched}
           scroll={scroll}
+          tear={tear}
         />
       );
     case "countdown":
@@ -984,14 +988,24 @@ export default function CardCanvas({
     to carry the panel. The host's preview clears every panel, so nothing is
     concealed from them.
   */
+  /*
+    Or the date, under its strip of paper (TearReveal), on a card whose date
+    is torn open and has a screen to be torn open on. It is the same secret
+    as a scratched date: what repeats the date elsewhere waits for it.
+  */
+  const dateTorn =
+    dateReveal === "tear" &&
+    visible.some((block) => block.kind === "builtin" && block.id === "details");
   const concealed: ScratchTarget =
-    !isHostPreview &&
-    panelLabel !== null &&
-    visible.some(
-      (block) => block.kind === "builtin" && block.id === hiddenSection,
-    )
-      ? scratchTarget
-      : "none";
+    !isHostPreview && dateTorn
+      ? "date"
+      : !isHostPreview &&
+          panelLabel !== null &&
+          visible.some(
+            (block) => block.kind === "builtin" && block.id === hiddenSection,
+          )
+        ? scratchTarget
+        : "none";
 
   const fontPair = getFontPair(style.fontPairId);
   const namesFace = namesFaceOf(fontPair);
@@ -1052,7 +1066,8 @@ export default function CardCanvas({
     a hidden date away. All carry the "date" target, so any one opens all.
   */
   const dateScratch: ScratchConfig | null =
-    concealed === "date"
+    /* Not under the paper strip: that card has no scratch panel anywhere. */
+    concealed === "date" && !dateTorn
       ? {
           accent: effectiveTheme.accent,
           surface: effectiveTheme.surface,
@@ -1576,6 +1591,19 @@ export default function CardCanvas({
     </div>
     );
 
+  /* The paper over the date, in this card's colours; see lib/tearReveal.ts. */
+  const tearPaper = tearPaperColor(effectiveTheme);
+  const tear: TearConfig | null = dateTorn
+    ? {
+        paper: tearPaper,
+        ink: tearInkColor(effectiveTheme, tearPaper),
+        label: copy.tear.hint,
+        openLabel: copy.tear.open,
+        /* The host edits; the guest tears. */
+        preCleared: isHostPreview,
+      }
+    : null;
+
   /*
     The painted scene after the first screen, on every tradition's card: the
     floral arch unless the host picked another or turned it off. In the
@@ -2028,6 +2056,7 @@ export default function CardCanvas({
               hasDateScreen,
               sectionIsFirstScreen ? firstScreenPad : headPadTop,
               sectionIsFirstScreen ? invitedHeading : null,
+              tear,
             );
 
             const head =
@@ -2284,6 +2313,17 @@ hasHead ? (
                     style={{ color: effectiveTheme.textMuted }}
                   >
                     Guests will need to scratch this.
+                  </p>
+                ) : null}
+
+                {/* The same, for a date under its strip of paper. */}
+                {dateTorn && isHostPreview && block.kind === "builtin" && block.id === "details" ? (
+                  <p
+                    lang="en-IN"
+                    className="px-7 pb-6 text-center text-xs"
+                    style={{ color: effectiveTheme.textMuted }}
+                  >
+                    Guests will swipe a strip of paper off this.
                   </p>
                 ) : null}
               </Fragment>
