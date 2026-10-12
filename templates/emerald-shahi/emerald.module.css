@@ -1,0 +1,236 @@
+/*
+  Emerald Shahi's own styles: what its hero, its couple cards and its envelope
+  need that the card's shared utilities do not have. Colours are the artwork's
+  and are fixed; the template offers one colourway.
+
+  Everything that moves here moves by transform and opacity alone.
+*/
+
+.root {
+  --es-gold: #d8b26a;
+  --es-gold-bright: #ecd08f;
+  --es-ivory: #f3e7c9;
+  --es-emerald: #082a1c;
+  --es-emerald-deep: #04170f;
+  /* One step of the type scale. A fluid card (the guest's, from 768px) is set larger. */
+  --es: 1rem;
+
+  color: var(--es-ivory);
+  /* The lines that slide in start 40px off to one side; that must never widen the page. */
+  overflow-x: clip;
+}
+
+@media (min-width: 48rem) {
+  .fluid {
+    --es: 1.2rem;
+  }
+}
+
+/* ───────────────────────── The ground ───────────────────────── */
+
+/*
+  The pattern, and a dark emerald laid over it at 45% so type reads on it.
+  One layer the size of the screen: fixed under the guest's whole page, or
+  pinned to the top of a preview's own scroll box (`.groundPinned`).
+*/
+.ground {
+  pointer-events: none;
+  background-color: var(--es-emerald);
+  background-image:
+    linear-gradient(rgb(4 23 15 / 0.45), rgb(4 23 15 / 0.45)),
+    url("/templates/emerald-shahi/emerald-bg.webp");
+  background-position: center;
+  background-size: cover;
+}
+
+.groundFixed {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+}
+
+.groundPinned {
+  position: sticky;
+  top: 0;
+  z-index: -10;
+  height: var(--es-band);
+  margin-bottom: calc(-1 * var(--es-band));
+}
+
+/* ───────────────────────── Entrances ───────────────────────── */
+
+/*
+  A line that slides in from one side as it fades in, once, when its block
+  comes on screen. `--es-from` is how far and which way; `--es-delay` staggers
+  the lines of one block. Under reduced motion it only fades.
+*/
+.enter {
+  opacity: 0;
+  transform: translate3d(var(--es-from, -40px), 0, 0);
+  transition:
+    opacity 700ms ease-out var(--es-delay, 0ms),
+    transform 700ms ease-out var(--es-delay, 0ms);
+}
+
+.entered {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter {
+    transform: none;
+    transition: opacity 400ms ease-out;
+  }
+}
+
+/* ───────────────────────── Type ───────────────────────── */
+
+/* Headings: the serif in spaced gold capitals. Devanagari has no capitals and is never spaced. */
+.caps {
+  color: var(--es-gold);
+  font-size: calc(0.72 * var(--es));
+  letter-spacing: 0.3em;
+  /*
+    The spacing after the last letter pushes a centred line off centre, so the
+    same is added before the first. (Taking it off the end with a negative
+    margin makes the line narrower than its own letters, and it wraps.)
+  */
+  padding-left: 0.3em;
+  text-transform: uppercase;
+}
+
+.caps:lang(hi) {
+  font-size: calc(0.95 * var(--es));
+  letter-spacing: 0;
+  padding-left: 0;
+  text-transform: none;
+}
+
+/* The names: the script, in gold, with the light of foil across it. */
+.script {
+  color: var(--es-gold-bright);
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.35);
+}
+
+/* ───────────────────────── Hero ───────────────────────── */
+
+.hero {
+  position: relative;
+  display: flex;
+  /*
+    Each floral is half the hero wide and as tall, less what hangs off the
+    edge. The words are kept out of both boxes entirely, by padding the hero
+    by that much at its head and its foot, so no line can run under a flower
+    however long a name is: the hero grows instead.
+  */
+  --es-floral: min(50%, 21rem);
+  padding-block: min(43%, 18rem);
+}
+
+.floral {
+  position: absolute;
+  width: var(--es-floral);
+  aspect-ratio: 1;
+  background-image: url("/templates/emerald-shahi/floral-corner.webp");
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.floralTop {
+  top: 0;
+  right: 0;
+  transform: translate3d(7%, -7%, 0);
+}
+
+.floralFoot {
+  bottom: 0;
+  left: 0;
+  transform: translate3d(-7%, 7%, 0) rotate(180deg);
+}
+
+/* ───────────────────────── Couple ───────────────────────── */
+
+.person {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(216 178 106 / 0.55);
+  border-radius: 1rem;
+  background-color: rgb(4 28 18 / 0.78);
+  min-height: calc(11.5 * var(--es));
+}
+
+/*
+  The figure: against one edge of the card, a third of its ink, and gone by
+  the card's foot. The fade is a mask that never changes.
+*/
+.figure {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0;
+  width: 46%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.35;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+
+.figureGroom {
+  left: 0;
+  background-image: url("/templates/emerald-shahi/groom-line.webp");
+  background-position: left top;
+}
+
+.figureBride {
+  right: 0;
+  background-image: url("/templates/emerald-shahi/bride-line.webp");
+  background-position: right top;
+}
+
+/* ───────────────────────── The envelope ───────────────────────── */
+
+/*
+  The cover's own ground: the same pattern the page has, so the envelope lies
+  on what the card is printed on. It goes last, as the card behind is let go.
+*/
+.coverGround {
+  position: absolute;
+  inset: 0;
+  background-color: var(--es-emerald, #082a1c);
+  background-image:
+    linear-gradient(rgb(4 23 15 / 0.45), rgb(4 23 15 / 0.45)),
+    url("/templates/emerald-shahi/emerald-bg.webp");
+  background-position: center;
+  background-size: cover;
+}
+
+/* Initials pressed into the wax: dark gold, lit along its lower edge, shaded along its upper. */
+.engraved {
+  color: #7a5714;
+  text-shadow:
+    0 1px 0 rgb(255 236 170 / 0.6),
+    0 -1px 0 rgb(60 38 0 / 0.45);
+}
+
+.hint {
+  animation: es-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes es-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint {
+    animation: none;
+  }
+}

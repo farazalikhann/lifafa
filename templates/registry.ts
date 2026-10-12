@@ -3,6 +3,7 @@ import {
   CLASSIC_TEMPLATE,
   CLASSIC_TEMPLATE_ID,
 } from "@/templates/classic/config";
+import { EMERALD_SHAHI } from "@/templates/emerald-shahi/config";
 import { GURDWARA_IVORY } from "@/templates/gurdwara-ivory/config";
 import { KESRI_ANAND_KARAJ } from "@/templates/kesri-anand-karaj/config";
 import { LOTUS_BLUSH } from "@/templates/lotus-blush/config";
@@ -32,6 +33,7 @@ export const TEMPLATES: readonly TemplateConfig[] = [
   LOTUS_BLUSH,
   BODHI_IVORY,
   CLASSIC_TEMPLATE,
+  EMERALD_SHAHI,
 ];
 
 /**

@@ -316,6 +316,7 @@ function PreparingLoader({
  */
 export default function CoverShell({
   animationId,
+  option: ownOption,
   palette,
   accent,
   title,
@@ -326,6 +327,13 @@ export default function CoverShell({
   renderVisual,
   children,
 }: {
+  /**
+   * A cover that is not one of the host's choices: a template's own (see
+   * `cover` on TemplateConfig). Given, it is the cover, whatever
+   * `animationId` says; its timings, its pictures and its sound are read from
+   * it exactly as a chosen cover's are.
+   */
+  option?: CoverAnimationOption;
   /**
    * The card's language, which the prompt on the cover and the Skip button are
    * written in. The cover is the first thing a guest reads, so a Hindi card
@@ -367,7 +375,7 @@ export default function CoverShell({
   renderVisual?: (state: CoverVisualState) => ReactNode;
   children: ReactNode;
 }): ReactElement {
-  const option = getCoverAnimation(animationId);
+  const option = ownOption ?? getCoverAnimation(animationId);
   const hasCover = option.id !== "none";
   const colors = coverPalette(palette, accent);
   const copy = cardCopy(language);
@@ -394,6 +402,7 @@ export default function CoverShell({
   const burstAt = film !== undefined ? undefined : option.burstAt;
   const soundDelayMs = film?.soundDelayMs ?? 0;
   const artImages = art?.images ?? NO_ART;
+  const artTimeoutMs = art?.timeoutMs ?? COVER_ART_TIMEOUT_MS;
   /* Artwork whose middle and head are its subject: the words go to its foot. See CoverArt. */
   const wordsAtFoot = art?.wordsAt === "foot";
 
@@ -783,7 +792,7 @@ export default function CoverShell({
 
     void Promise.all([
       whenCardReady(cardRef.current, READY_TIMEOUT_MS),
-      whenPicturesReady(artImages, COVER_ART_TIMEOUT_MS),
+      whenPicturesReady(artImages, artTimeoutMs),
     ])
       .then(whenVisible)
       .then(() => {
@@ -795,7 +804,7 @@ export default function CoverShell({
     return () => {
       live = false;
     };
-  }, [hasCover, artImages]);
+  }, [hasCover, artImages, artTimeoutMs]);
 
   /*
     The cover's sound is fetched and decoded while the cover is closed, so it

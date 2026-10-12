@@ -1,8 +1,10 @@
 import type { ComponentProps, ComponentType } from "react";
 import type { StaticImageData } from "next/image";
 import type CardCanvas from "@/components/card/CardCanvas";
+import type { CoverVisualState } from "@/components/invite/CoverShell";
 import type { DesignState } from "@/lib/designDefaults";
 import type { CardBorderStyle, CardSectionId } from "@/types/card";
+import type { CoverAnimationOption } from "@/types/coverAnimation";
 import type { TraditionId } from "@/types/occasion";
 import type { FontPairId, PaletteId } from "@/types/style";
 
@@ -80,4 +82,16 @@ export interface TemplateConfig {
   baseDesign: DesignState;
   /** What draws the card. */
   Card: ComponentType<TemplateCardProps>;
+  /**
+   * The template's own opening cover, where its artwork has one. Then it is
+   * the cover on every card in this template, and the host is not offered the
+   * choice of animation: the envelope is part of the design. `option` is what
+   * the shell reads (how long, when the card is let go, which pictures to wait
+   * for, the sound); `Visual` is what is drawn. Absent, the card opens with
+   * the animation its host chose.
+   */
+  cover?: {
+    option: CoverAnimationOption;
+    Visual: ComponentType<CoverVisualState>;
+  };
 }

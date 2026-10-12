@@ -150,6 +150,8 @@ export default function CustomizeStep({
 
   return (
     <div className="flex min-w-0 flex-col gap-9">
+      {/* A template whose artwork is one colour has no colourway to choose. */}
+      {template.palettes.length > 1 ? (
       <Group id="customize-colours" title="Colours">
         <div
           role="radiogroup"
@@ -192,6 +194,7 @@ export default function CustomizeStep({
           })}
         </div>
       </Group>
+      ) : null}
 
       <Group id="customize-fonts" title="Fonts">
         <div
@@ -271,16 +274,23 @@ export default function CustomizeStep({
 
         <CollapsibleSection
           title="More options"
-          summary="Cover, weather, check-in, PDF"
+          summary={
+            template.cover === undefined
+              ? "Cover, weather, check-in, PDF"
+              : "Weather, check-in, PDF"
+          }
           isOpen={moreOpen}
           onToggle={() => setMoreOpen((open) => !open)}
         >
           <div className="flex min-w-0 flex-col gap-3">
-            <CoverAnimationPicker
-              coverAnimation={coverAnimation}
-              onChange={onCoverAnimationChange}
-              accordion={accordion}
-            />
+            {/* A template with a cover of its own opens with that one. */}
+            {template.cover === undefined ? (
+              <CoverAnimationPicker
+                coverAnimation={coverAnimation}
+                onChange={onCoverAnimationChange}
+                accordion={accordion}
+              />
+            ) : null}
             <WeatherPicker
               showWeather={showWeather}
               weatherTheme={weatherTheme}

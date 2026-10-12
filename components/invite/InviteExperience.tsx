@@ -9,6 +9,7 @@ import {
   type ReactElement,
 } from "react";
 import TemplateCard from "@/templates/TemplateCard";
+import { getTemplate } from "@/templates/registry";
 import Watermark, {
   WATERMARK_CLEARANCE,
   WATERMARK_PILL_SELECTOR,
@@ -251,6 +252,9 @@ export default function InviteExperience({
   const cardTheme = effectiveTheme(theme, config.style);
   const palette = cardPalette(config.style);
   const motifs = getMotifs(config.occasionId, config.traditionId);
+  /* A template with a cover of its own opens with that, whatever the host's choice of animation. */
+  const templateCover = getTemplate(config.templateId).cover;
+  const TemplateCoverVisual = templateCover?.Visual;
 
   /*
     Everything laid out around the card — the cover, the form, the pass — is
@@ -404,6 +408,7 @@ export default function InviteExperience({
     <>
       <CoverShell
         animationId={event.coverAnimation}
+        option={templateCover?.option}
         /*
           The card's own colours, so the cover a guest taps is made of the same
           material as the invitation behind it. The accent is resolved the same
@@ -423,7 +428,13 @@ export default function InviteExperience({
         topClearance={
           switchable ? LANGUAGE_SWITCH_CLEARANCE : "var(--lifafa-preview-h, 0px)"
         }
-        renderVisual={(state) => <CoverVisual {...state} />}
+        renderVisual={(state) =>
+          TemplateCoverVisual !== undefined ? (
+            <TemplateCoverVisual {...state} />
+          ) : (
+            <CoverVisual {...state} />
+          )
+        }
       >
         <main
           /*

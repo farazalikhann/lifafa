@@ -10,7 +10,7 @@ import {
   templateDemoPath,
 } from "@/lib/templateSamples";
 import { cardPalette } from "@/lib/textColors";
-import { findTemplate, listedTemplates } from "@/templates/registry";
+import { TEMPLATES, findTemplate } from "@/templates/registry";
 
 /**
  * A template's live demo: its sample invitation, opened as a guest opens one.
@@ -27,10 +27,13 @@ import { findTemplate, listedTemplates } from "@/templates/registry";
 type DemoParams = { params: Promise<{ templateId: string }> };
 
 export function generateStaticParams(): { templateId: string }[] {
-  return listedTemplates().map((template) => ({ templateId: template.id }));
+  return TEMPLATES.map((template) => ({ templateId: template.id }));
 }
 
-/* Only the listed templates; any other id is a 404 rather than a guess. */
+/*
+  Every template has one, in the gallery yet or not: a template being built is
+  looked at here before it is offered. Any other id is a 404.
+*/
 export const dynamicParams = false;
 
 export async function generateMetadata({
@@ -57,7 +60,7 @@ export default async function TemplateDemoPage({
   const { templateId } = await params;
   const template = findTemplate(templateId);
 
-  if (template === null || !template.listed) {
+  if (template === null) {
     notFound();
   }
 

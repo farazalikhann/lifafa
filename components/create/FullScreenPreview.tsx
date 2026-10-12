@@ -12,6 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import TemplateCard from "@/templates/TemplateCard";
+import { getTemplate } from "@/templates/registry";
 import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import Watermark, { WATERMARK_PILL_SELECTOR } from "@/components/card/Watermark";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
@@ -307,7 +308,10 @@ export default function FullScreenPreview({
     "--chip-selected": chrome.selectedFill,
   } as CSSProperties;
 
-  const coverOption = getCoverAnimation(coverAnimation);
+  /* A template's own cover, where it has one; see `cover` on TemplateConfig. */
+  const templateCover = getTemplate(config.templateId).cover;
+  const TemplateCoverVisual = templateCover?.Visual;
+  const coverOption = templateCover?.option ?? getCoverAnimation(coverAnimation);
   const hasCover = coverOption.id !== "none";
   /*
     The selection and the counter together. Replay bumps the counter; the id is
@@ -730,7 +734,14 @@ export default function FullScreenPreview({
         pair={names.kind === "pair" ? [names.first, names.second] : undefined}
         fontPairId={config.style.fontPairId}
         language={config.language}
-        renderVisual={(state) => <CoverVisual {...state} />}
+        option={templateCover?.option}
+        renderVisual={(state) =>
+          TemplateCoverVisual !== undefined ? (
+            <TemplateCoverVisual {...state} />
+          ) : (
+            <CoverVisual {...state} />
+          )
+        }
       >
         {/*
           min-h-0 is what lets this shrink inside the column: without it the flex

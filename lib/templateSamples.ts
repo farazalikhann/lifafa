@@ -86,6 +86,26 @@ const SAMPLES: Readonly<Record<TraditionId, Sample>> = {
     contacts: [
       { id: "demo-contact-1", label: "Rohit (groom's brother)", phone: "98765 43210" },
     ],
+    /*
+      The same wedding in Hindi, so these demos carry the language switch a
+      real two-language card has, and each template can be seen in Devanagari.
+    */
+    translations: {
+      hi: {
+        partyOneName: "आरव शर्मा",
+        partyTwoName: "मीरा अय्यर",
+        joinerWord: "संग",
+        eventTitle: "विवाह समारोह",
+        venueName: "द लोटस कोर्ट",
+        venueAddress: "सिविल लाइन्स, जयपुर 302006",
+        message:
+          "बड़ों के आशीर्वाद से, हम आपको अपने बच्चों के नए जीवन की शुरुआत में शामिल होने के लिए सादर आमंत्रित करते हैं। आपकी उपस्थिति से यह दिन पूरा होगा।",
+        partyOneParents: "श्री राजेश शर्मा एवं श्रीमती सुनीता शर्मा",
+        partyOneCity: "जयपुर",
+        partyTwoParents: "श्री वेंकट अय्यर एवं श्रीमती लक्ष्मी अय्यर",
+        partyTwoCity: "चेन्नई",
+      },
+    },
   }),
   muslim: {
     occasionId: "wedding",
@@ -297,7 +317,8 @@ export function templateDemoEvent(template: TemplateConfig): StoredEvent {
  * For the two routes under /i/[inviteCode] a sample's own buttons point at,
  * the calendar file and the printed copy: neither sample is in the database,
  * so both are answered from here. The Nikah sample on the home page keeps its
- * own card (lib/demoCards.ts); every other one is a listed template's.
+ * own card (lib/demoCards.ts); every other one is a template's, in the gallery
+ * yet or not.
  */
 export function sampleEvent(
   inviteCode: string,
@@ -312,7 +333,7 @@ export function sampleEvent(
 
   const template = findTemplate(inviteCode.slice(DEMO_CODE_PREFIX.length));
 
-  return template === null || !template.listed
+  return template === null
     ? null
     : { event: templateDemoEvent(template), path: templateDemoPath(template.id) };
 }

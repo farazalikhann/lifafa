@@ -34,6 +34,12 @@ export type CoverAnimationId =
  */
 export interface CoverArt {
   /**
+   * How long the cover waits for these pictures before it shows anyway, in
+   * milliseconds. Absent means the shell's own, longer wait, which is for a
+   * film's still; a cover made of a few small pictures says a shorter one.
+   */
+  timeoutMs?: number;
+  /**
    * Every picture the closed cover shows. They are on the first screen a guest
    * sees, so the shell asks for them as the page loads and keeps its loader up
    * until they are in; see CoverShell.
