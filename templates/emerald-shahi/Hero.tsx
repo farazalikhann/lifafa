@@ -112,8 +112,8 @@ function Shimmering({ text }: { text: string }): ReactElement {
 
 /**
  * The first screen: an ornate gold frame with the couple's seal on its top
- * edge, and inside it the invitation line, the names in gold script, a thin
- * gold rule and the date.
+ * edge, and inside it the invitation line, what the day is in small gold
+ * capitals, the names in gold script, a thin gold rule and the date.
  *
  * THE WORDS STAY INSIDE THE FRAME'S OPENING. The opening was measured off the
  * picture (see `.frameBox` in the stylesheet) and the words are laid in a box inset from it
@@ -158,13 +158,18 @@ export default function EmeraldShahiHero({
   const wordsRef = useRef<HTMLDivElement>(null);
   const copy = cardCopy(language);
   const names = resolveCoverNames(draft, config.occasionId, language);
+  const title = draft.eventTitle.trim();
 
   const reveal = dateRevealOf(config.dateReveal, config.scratchTarget);
   const dateHidden =
     config.scratchTarget === "date" || reveal === "scratch" || reveal === "tear";
   const when = dateHidden ? null : formatWhen(draft.eventDate, "", language);
 
-  useFitInside(boxRef, wordsRef, `${coverNameLine(names)}|${when}|${language}`);
+  useFitInside(
+    boxRef,
+    wordsRef,
+    `${title}|${coverNameLine(names)}|${when}|${language}`,
+  );
 
   const initials =
     names.kind === "pair"
@@ -237,12 +242,15 @@ export default function EmeraldShahiHero({
           )}
         </div>
 
-        {/* The frame's opening, less a margin on every side; the words never leave it. */}
-        <div ref={boxRef} className={styles.frameBox}>
+        {/*
+          The frame's opening, less a margin on every side; the words never
+          leave it. Marked so the butterflies can find it and fly round it.
+        */}
+        <div ref={boxRef} data-es-hero-box="" className={styles.frameBox}>
           <div
             ref={wordsRef}
             className="flex w-full flex-col items-center text-center"
-            style={{ gap: "0.75em" }}
+            style={{ gap: "0.62em" }}
           >
             <p
               {...line(0)}
@@ -257,19 +265,42 @@ export default function EmeraldShahiHero({
               {copy.coverInvite.heading}
             </p>
 
+            {/*
+              What the day is, over the names: "Wedding Ceremony" in the
+              heading's spaced gold capitals. Sized in `em` like every line
+              here, so a long title, or a Hindi one, shrinks with the rest.
+            */}
+            {title.length > 0 ? (
+              <p
+                {...line(1)}
+                className={`${styles.heroLine} max-w-full wrap-anywhere text-balance`}
+                style={{ ...line(1).style, lineHeight: 1.5 }}
+              >
+                <span
+                  className={styles.caps}
+                  style={{
+                    ...headingFont,
+                    fontSize: language === "hi" ? "0.9em" : "0.66em",
+                  }}
+                >
+                  {title}
+                </span>
+              </p>
+            ) : null}
+
             {names.kind === "pair" ? (
               <div className="flex max-w-full flex-col items-center">
                 <p
-                  {...line(1)}
+                  {...line(2)}
                   className={`${styles.heroLine} ${styles.script} max-w-full wrap-anywhere`}
-                  style={{ ...line(1).style, ...script }}
+                  style={{ ...line(2).style, ...script }}
                 >
                   <Shimmering text={names.first} />
                 </p>
                 <p
-                  {...line(2)}
+                  {...line(3)}
                   style={{
-                    ...line(2).style,
+                    ...line(3).style,
                     ...headingFont,
                     fontSize: "0.95em",
                     color: "var(--es-gold)",
@@ -279,18 +310,18 @@ export default function EmeraldShahiHero({
                   &amp;
                 </p>
                 <p
-                  {...line(3)}
+                  {...line(4)}
                   className={`${styles.heroLine} ${styles.script} max-w-full wrap-anywhere`}
-                  style={{ ...line(3).style, ...script }}
+                  style={{ ...line(4).style, ...script }}
                 >
                   <Shimmering text={names.second} />
                 </p>
               </div>
             ) : (
               <p
-                {...line(1)}
+                {...line(2)}
                 className={`${styles.heroLine} ${styles.script} max-w-full wrap-anywhere text-balance`}
-                style={{ ...line(1).style, ...script }}
+                style={{ ...line(2).style, ...script }}
               >
                 {names.isPlaceholder ? (
                   /* The editor's "Your names", fainter than a name; never seen by a guest. */
@@ -305,16 +336,16 @@ export default function EmeraldShahiHero({
 
             <span
               aria-hidden="true"
-              {...line(4)}
+              {...line(5)}
               className={`${styles.heroLine} ${styles.heroRule}`}
             />
 
             {when !== null ? (
               <p
-                {...line(5)}
+                {...line(6)}
                 className={`${styles.heroLine} text-balance`}
                 style={{
-                  ...line(5).style,
+                  ...line(6).style,
                   ...headingFont,
                   fontSize: "0.98em",
                   color: "var(--es-ivory)",

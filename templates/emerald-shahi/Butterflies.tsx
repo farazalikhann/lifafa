@@ -1,14 +1,26 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties, type ReactElement } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+} from "react";
 import { useCardStill } from "@/hooks/useCardStill";
-import { useRevealGate } from "@/hooks/useRevealGate";
+import { useCoverOpen } from "@/hooks/useCoverOpen";
 import { ART } from "@/templates/emerald-shahi/art";
 import styles from "@/templates/emerald-shahi/emerald.module.css";
 
 /**
  * Four gold butterflies (three on a narrow phone) roaming the edges of the
- * screen, from the moment the cover lets the card go.
+ * screen, once the card has arrived.
+ *
+ * NOT AT THE TAP, AND NOT DURING THE HERO'S ENTRANCE. They are mounted a
+ * second and a half after the cover has gone altogether, which is when the
+ * last line of the hero has faded up. Until then there is nothing of them on
+ * the page: no layer, no pictures decoding, no animations starting in the
+ * same frames the envelope and the frame are using.
  *
  * TWO MOVEMENTS, BOTH THE COMPOSITOR'S. The wings are a CSS animation on the
  * picture, its scaleX going between about a third and whole, each butterfly a
@@ -21,8 +33,16 @@ import styles from "@/templates/emerald-shahi/emerald.module.css";
  * WHERE THEY GO. Each leg ends in one of the screen's outer bands, the left
  * and right eighths and a strip under the top, and seven legs in ten end on
  * the edge the butterfly is already at. So it spends its time over the
- * margins and the artwork, and crosses the words only on the odd leg from one
- * edge to the other. It leans a little towards the way it is going.
+ * margins and the artwork. It leans a little towards the way it is going.
+ *
+ * NEVER OVER THE HERO'S WORDS. While the hero is on screen, the box its words
+ * are set in (`data-es-hero-box`, in Hero.tsx) is kept clear: a leg is only
+ * taken if the straight line of it misses that box by a butterfly's own
+ * width, a leg already under way is given up for another the moment a scroll
+ * brings the box into its path, and a butterfly shooed towards the words goes
+ * to the nearer edge instead. Where the box is, is read when the layer or
+ * the hero changes size and worked out from the scroll offset after that;
+ * nothing is measured while anything moves.
  *
  * SHOOED AWAY. A touch or a pointer coming near a butterfly sends it off, away
  * from that point, and it takes up roaming again from where it lands. The
@@ -32,8 +52,7 @@ import styles from "@/templates/emerald-shahi/emerald.module.css";
  * and the two ends of its leg: nothing is measured.
  *
  * PAUSED while the tab is hidden or the layer is off screen, and not there at
- * all for a guest who asked for less motion, on a printed sheet, or before
- * the cover opens. With the leaves and petals of Floating.tsx this is at most
+ * all for a guest who asked for less motion or on a printed sheet. With the leaves and petals of Floating.tsx this is at most
  * fourteen floating pieces, ten on a narrow phone.
  */
 
@@ -56,6 +75,8 @@ const SPECS: readonly Spec[] = [
   { size: 28, x: 0.1, y: 0.76, beat: 0.74, phase: -0.12 },
 ];
 
+/* How long after the cover has gone before they arrive: the hero's own entrance is over by then. */
+const ARRIVE_AFTER_MS = 1500;
 const NARROW_PX = 400;
 const NARROW_COUNT = 3;
 /* How near a touch has to come, and how far a butterfly goes from it. */
@@ -95,8 +116,21 @@ export default function EmeraldShahiButterflies({
 }): ReactElement | null {
   const layerRef = useRef<HTMLDivElement>(null);
   const still = useCardStill();
-  const gateOpen = useRevealGate();
-  const show = !still && gateOpen;
+  /* True once the cover has unmounted (and from the start where there is none). */
+  const coverGone = useCoverOpen();
+  const [arrived, setArrived] = useState(false);
+
+  useEffect(() => {
+    if (still || !coverGone) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setArrived(true), ARRIVE_AFTER_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [still, coverGone]);
+
+  const show = !still && arrived;
 
   useEffect(() => {
     const layer = layerRef.current;
@@ -128,6 +162,116 @@ export default function EmeraldShahiButterflies({
 
         return { node, size: spec.size, from: at, to: at, tilt: 0, animation: null };
       });
+
+    /*
+      THE HERO'S WORDS, AS A BOX TO FLY ROUND. Found once, by its mark, in the
+      card this layer belongs to. On the guest's page the layer is the screen,
+      so the box is kept in the page's own coordinates (read when it or the
+      layer changes size) and brought to the screen's by the scroll offset. In
+      a preview the layer is pinned in a box of its own that scrolls, and the
+      box is read against the layer when a leg is planned, which is once every
+      few seconds.
+    */
+    const heroBox =
+      layer.parentElement?.querySelector<HTMLElement>("[data-es-hero-box]") ?? null;
+    let heroOnPage: { left: number; top: number; right: number; bottom: number } | null =
+      null;
+
+    const measureHero = (): void => {
+      if (heroBox === null) {
+        heroOnPage = null;
+        return;
+      }
+
+      const rect = heroBox.getBoundingClientRect();
+
+      heroOnPage = {
+        left: rect.left + window.scrollX,
+        top: rect.top + window.scrollY,
+        right: rect.right + window.scrollX,
+        bottom: rect.bottom + window.scrollY,
+      };
+    };
+
+    measureHero();
+
+    /* The box in the layer's own coordinates, a butterfly's width larger all round; null when it is off screen. */
+    const keepOut = (
+      size: number,
+    ): { left: number; top: number; right: number; bottom: number } | null => {
+      let box: { left: number; top: number; right: number; bottom: number } | null;
+
+      if (pagewide) {
+        box =
+          heroOnPage === null
+            ? null
+            : {
+                left: heroOnPage.left - window.scrollX,
+                top: heroOnPage.top - window.scrollY,
+                right: heroOnPage.right - window.scrollX,
+                bottom: heroOnPage.bottom - window.scrollY,
+              };
+      } else if (heroBox === null) {
+        box = null;
+      } else {
+        const rect = heroBox.getBoundingClientRect();
+        const origin = layer.getBoundingClientRect();
+
+        box = {
+          left: rect.left - origin.left,
+          top: rect.top - origin.top,
+          right: rect.right - origin.left,
+          bottom: rect.bottom - origin.top,
+        };
+      }
+
+      if (box === null || box.bottom < 0 || box.top > height) {
+        return null;
+      }
+
+      /* A butterfly is placed by its top left corner, so the box grows by its width up and to the left, and a margin all round. */
+      return {
+        left: box.left - size - 6,
+        top: box.top - size - 6,
+        right: box.right + 6,
+        bottom: box.bottom + 6,
+      };
+    };
+
+    /* Whether the straight line from `a` to `b` passes through `box` (Liang and Barsky's clipping test). */
+    const crosses = (
+      a: { x: number; y: number },
+      b: { x: number; y: number },
+      box: { left: number; top: number; right: number; bottom: number } | null,
+    ): boolean => {
+      if (box === null) {
+        return false;
+      }
+
+      let enter = 0;
+      let leave = 1;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+
+      for (const [p, q] of [
+        [-dx, a.x - box.left],
+        [dx, box.right - a.x],
+        [-dy, a.y - box.top],
+        [dy, box.bottom - a.y],
+      ]) {
+        if (p === 0) {
+          if (q < 0) {
+            return false;
+          }
+        } else if (p < 0) {
+          enter = Math.max(enter, q / p);
+        } else {
+          leave = Math.min(leave, q / p);
+        }
+      }
+
+      return enter <= leave;
+    };
 
     const place = (point: { x: number; y: number }, tilt: number): string =>
       `translate3d(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
@@ -207,10 +351,34 @@ export default function EmeraldShahiButterflies({
       };
     };
 
-    /* The next leg: somewhere along an edge, at an unhurried pace, a few seconds away. */
+    /*
+      The next leg: somewhere along an edge, at an unhurried pace, a few
+      seconds away, and never through the hero's words. A few places are
+      tried; if the box is in the way of all of them the butterfly keeps to
+      the edge it is on, straight up or down it, which cannot cross the box:
+      the edge bands are outside it on either side.
+    */
     const roam = (flight: Flight): void => {
       const from = whereIs(flight);
-      const to = somewhere(flight);
+      const box = keepOut(flight.size);
+      let to = somewhere(flight);
+
+      for (let tries = 0; tries < 6 && crosses(from, to, box); tries += 1) {
+        to = somewhere(flight);
+      }
+
+      if (crosses(from, to, box)) {
+        to = { x: from.x, y: (0.06 + random() * 0.84) * height };
+      }
+
+      /* Over or under the box and not beside it (in the strip under the top): along to the nearer edge first. */
+      if (crosses(from, to, box)) {
+        to = {
+          x: from.x + flight.size / 2 < width / 2 ? 4 : width - flight.size - 4,
+          y: from.y,
+        };
+      }
+
       const distance = Math.hypot(to.x - from.x, to.y - from.y);
 
       fly(flight, to, Math.max(3200, Math.min(9000, distance * 26)), "ease-in-out");
@@ -251,16 +419,20 @@ export default function EmeraldShahiButterflies({
         }
 
         const reach = SHOO_DISTANCE / Math.max(near, 1);
+        let away = {
+          x: Math.max(0, Math.min(width - flight.size, at.x + dx * reach)),
+          y: Math.max(0, Math.min(height - flight.size, at.y + dy * reach)),
+        };
 
-        fly(
-          flight,
-          {
-            x: Math.max(0, Math.min(width - flight.size, at.x + dx * reach)),
-            y: Math.max(0, Math.min(height - flight.size, at.y + dy * reach)),
-          },
-          SHOO_MS,
-          "cubic-bezier(0.2, 0.7, 0.2, 1)",
-        );
+        /* Shooed towards the hero's words: to the nearer edge of the screen instead, level with where it is. */
+        if (crosses(at, away, keepOut(flight.size))) {
+          away = {
+            x: at.x + flight.size / 2 < width / 2 ? 4 : width - flight.size - 4,
+            y: at.y,
+          };
+        }
+
+        fly(flight, away, SHOO_MS, "cubic-bezier(0.2, 0.7, 0.2, 1)");
       }
     };
 
@@ -273,6 +445,30 @@ export default function EmeraldShahiButterflies({
       }
     };
 
+    /*
+      A scroll moves the hero's box under legs that were planned when it was
+      somewhere else. Looked at no more than five times a second while the
+      guest scrolls: any butterfly whose way ahead now runs through the box
+      takes another leg from where it is.
+    */
+    let lastScrollLook = 0;
+    const onScroll = (): void => {
+      const now = performance.now();
+
+      if (paused || !pagewide || now - lastScrollLook < 200) {
+        return;
+      }
+
+      lastScrollLook = now;
+
+      for (const flight of flights) {
+        if (crosses(whereIs(flight), flight.to, keepOut(flight.size))) {
+          roam(flight);
+        }
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("pointerdown", onPointer, { passive: true });
     window.addEventListener("touchstart", onTouch, { passive: true });
@@ -308,12 +504,18 @@ export default function EmeraldShahiButterflies({
         ? new ResizeObserver(() => {
             width = layer.clientWidth;
             height = layer.clientHeight;
+            measureHero();
           })
         : null;
     resized?.observe(layer);
 
+    if (heroBox !== null) {
+      resized?.observe(heroBox);
+    }
+
     return () => {
       live = false;
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       window.removeEventListener("touchstart", onTouch);
