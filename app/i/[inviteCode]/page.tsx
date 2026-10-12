@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import HostPreviewBanner from "@/components/invite/HostPreviewBanner";
+import { isUnderReview } from "@/lib/db/paymentReview";
 import InviteExperience from "@/components/invite/InviteExperience";
 import NotPublished from "@/components/invite/NotPublished";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
@@ -277,7 +278,11 @@ export default async function InvitePage({
     <>
       <style>{`html,body{background-color:${ground}}`}</style>
       {guest.kind === "preview" ? (
-        <HostPreviewBanner eventId={event.id} />
+        <HostPreviewBanner
+          eventId={event.id}
+          /* Paid for and being verified: no "Pay now" for this host. */
+          underReview={await isUnderReview(event.id)}
+        />
       ) : null}
       <InviteExperience
         event={event}

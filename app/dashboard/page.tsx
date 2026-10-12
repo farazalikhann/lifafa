@@ -3,6 +3,7 @@ import Link from "next/link";
 import EventCard from "@/components/dashboard/EventCard";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
+import { eventsUnderReview } from "@/lib/db/paymentReview";
 
 /**
  * The host's invitations, and the home a signed-in host comes back to.
@@ -33,6 +34,18 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
     countEventsForHost(),
   ]);
   const count = countResult.ok ? countResult.data : null;
+
+  /*
+    Which of the unpaid ones have been paid for and are being verified, so
+    their rows do not say "Not paid yet". One read for the list, and none at
+    all for a host whose invitations are all published. The ids are this
+    host's own: getEventsForHost read them under the host's session.
+  */
+  const underReview = await eventsUnderReview(
+    result.ok
+      ? result.data.filter((event) => !event.isPaid).map((event) => event.id)
+      : [],
+  );
 
   return (
     <div className="min-h-screen">
@@ -106,7 +119,11 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
         ) : (
           <ul className="flex flex-col gap-3">
             {result.data.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                underReview={underReview.has(event.id)}
+              />
             ))}
           </ul>
         )}

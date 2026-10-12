@@ -23,8 +23,11 @@ const LINK_CLASS =
  */
 export default function WizardSaved({
   event,
+  underReview = false,
 }: {
   event: StoredEvent;
+  /** A payment for it is being verified; see lib/paymentReview.ts. */
+  underReview?: boolean;
 }): ReactElement {
   const names = resolveCoverNames(
     event.draft,
@@ -65,6 +68,7 @@ export default function WizardSaved({
           isPaid={event.isPaid}
           eventId={event.id}
           pricePaise={templatePricePaise(event.config.templateId)}
+          underReview={underReview}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -80,10 +84,12 @@ export default function WizardSaved({
           </Link>
         </div>
 
-        <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-          You can also publish later from your dashboard. Your invitation and
-          everything in it is kept.
-        </p>
+        {underReview ? null : (
+          <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+            You can also publish later from your dashboard. Your invitation and
+            everything in it is kept.
+          </p>
+        )}
       </main>
     </div>
   );

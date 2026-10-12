@@ -35,9 +35,31 @@ export type CaptureOutcome =
   | { kind: "unknown" }
   /**
    * Money arrived that is not the money this invitation costs: see the check
-   * at the top of applyCapturedPayment. Nothing was written.
+   * at the top of applyCapturedPayment. The invitation was not published; the
+   * order was marked as under review (lib/paymentReview.ts) and nothing else
+   * was written.
    */
-  | { kind: "mismatch"; eventId: string; reason: string }
+  | {
+      kind: "mismatch";
+      eventId: string;
+      /** Who made the invitation, for the alert. Null when the event is gone. */
+      hostId: string | null;
+      reason: string;
+      /** Paise. What Razorpay captured. */
+      capturedPaise: number;
+      /** Paise. What the order asked for. */
+      orderPaise: number;
+      /** Paise. What the invitation's template costs now. */
+      pricePaise: number;
+      /** The template the invitation is on now, as stored; absent is Classic. */
+      templateId: string | null;
+      /**
+       * Whether this delivery is the one that marked the order. False on a
+       * repeat, so the owner is emailed once for a payment and not once for
+       * every delivery of it.
+       */
+      firstNotice: boolean;
+    }
   /** The database refused. The only case the route answers non-2xx for. */
   | { kind: "error"; message: string };
 
@@ -93,8 +115,10 @@ export async function applyCapturedPayment(
        to a cheaper template after ordering is the host's own loss and is let
        through.
 
-    An order that fails either is left exactly as it was, so it can be put
-    right by hand: the money is in Razorpay's records under this payment id.
+    An order that fails either is NOT settled and its invitation is not
+    published. It is marked as under review instead, by markUnderReview below,
+    so the host is told their money arrived and is never asked for it again,
+    and the admin lists it under Payments to review to be put right by hand.
   */
   const { data: order, error: orderError } = await admin
     .from("payments")
@@ -110,7 +134,7 @@ export async function applyCapturedPayment(
   if (order !== null && order.status === "created") {
     const { data: event, error: eventReadError } = await admin
       .from("events")
-      .select("card_config")
+      .select("host_id, card_config")
       .eq("id", order.event_id)
       .maybeSingle();
 
@@ -122,19 +146,32 @@ export async function applyCapturedPayment(
     const listPaise = order.amount + (order.discount_amount ?? 0);
     const pricePaise = templatePricePaise(event?.card_config?.templateId);
 
-    if (capturedPaise !== order.amount) {
-      return {
-        kind: "mismatch",
-        eventId: order.event_id,
-        reason: `captured ${capturedPaise} paise against an order for ${order.amount}`,
-      };
-    }
+    const reason =
+      capturedPaise !== order.amount
+        ? `captured ${capturedPaise} paise against an order for ${order.amount}`
+        : event !== null && listPaise < pricePaise
+          ? `the order was priced at ${listPaise} paise and the invitation's template now costs ${pricePaise}`
+          : null;
 
-    if (event !== null && listPaise < pricePaise) {
+    if (reason !== null) {
+      const marked = await markUnderReview(orderId, paymentId);
+
+      if (marked === "error") {
+        return { kind: "error", message: "payments review mark failed" };
+      }
+
+      const storedTemplate: unknown = event?.card_config?.templateId;
+
       return {
         kind: "mismatch",
         eventId: order.event_id,
-        reason: `the order was priced at ${listPaise} paise and the invitation's template now costs ${pricePaise}`,
+        hostId: event?.host_id ?? null,
+        reason,
+        capturedPaise,
+        orderPaise: order.amount,
+        pricePaise,
+        templateId: typeof storedTemplate === "string" ? storedTemplate : null,
+        firstNotice: marked === "marked",
       };
     }
   }
@@ -171,8 +208,111 @@ export async function applyCapturedPayment(
     return existing === null ? { kind: "unknown" } : { kind: "duplicate" };
   }
 
-  const eventId = updated[0].event_id;
-  const couponCode = updated[0].coupon_code;
+  return publishSettled(
+    updated[0].event_id,
+    paymentId,
+    updated[0].coupon_code,
+  );
+}
+
+/**
+ * Marks an order as paid for and not applied: under review.
+ *
+ * The row keeps its status and is given the payment's id, which is the whole
+ * mark; see lib/paymentReview.ts. The condition is in the UPDATE, as everywhere
+ * in this file: only a 'created' row with no payment id yet is matched, so of
+ * two deliveries of one capture exactly one is told "marked" and the other
+ * "already".
+ *
+ * A failure is an error for the route to answer 500 with, so Razorpay sends the
+ * capture again: an unmarked order is a host who has paid and is still shown a
+ * pay button.
+ */
+async function markUnderReview(
+  orderId: string,
+  paymentId: string,
+): Promise<"marked" | "already" | "error"> {
+  const { data, error } = await createAdminClient()
+    .from("payments")
+    .update({ razorpay_payment_id: paymentId })
+    .eq("razorpay_order_id", orderId)
+    .eq("status", "created")
+    .is("razorpay_payment_id", null)
+    .select("id");
+
+  if (error !== null) {
+    console.error(
+      `[razorpay] could not mark order ${orderId} (payment ${paymentId}) as under review:`,
+      error,
+    );
+    return "error";
+  }
+
+  return data.length > 0 ? "marked" : "already";
+}
+
+/** What settling a payment under review by hand did. */
+export type ReviewOutcome =
+  | { kind: "published"; eventId: string; paymentId: string }
+  /** No such row, or it is no longer under review: settled by someone else. */
+  | { kind: "gone" }
+  | { kind: "error"; message: string };
+
+/**
+ * Settles a payment under review as it stands, and publishes its invitation.
+ *
+ * ONLY EVER FROM AN ADMIN, who has looked at what was paid and decided it is
+ * enough: app/admin/payments/actions.ts checks the admin session before
+ * calling. Like applyCapturedPayment, this checks nothing about who is asking.
+ *
+ * The same two writes in the same order as a webhook's, with the same
+ * conditions, so pressing the button twice, or two admins pressing it at once,
+ * settles the row once. The amount on the row is left as the order's: what was
+ * actually captured is in Razorpay under the payment id the row now carries.
+ */
+export async function publishReviewedPayment(
+  paymentRowId: string,
+): Promise<ReviewOutcome> {
+  const { data: updated, error } = await createAdminClient()
+    .from("payments")
+    .update({ status: "paid", paid_at: new Date().toISOString() })
+    .eq("id", paymentRowId)
+    .eq("status", "created")
+    .not("razorpay_payment_id", "is", null)
+    .select("event_id, coupon_code, razorpay_payment_id");
+
+  if (error !== null) {
+    console.error("[admin] could not settle the reviewed payment:", error);
+    return { kind: "error", message: "payments update failed" };
+  }
+
+  const row = updated[0];
+
+  if (row === undefined || row.razorpay_payment_id === null) {
+    return { kind: "gone" };
+  }
+
+  const outcome = await publishSettled(
+    row.event_id,
+    row.razorpay_payment_id,
+    row.coupon_code,
+  );
+
+  return outcome.kind === "applied"
+    ? { kind: "published", eventId: row.event_id, paymentId: row.razorpay_payment_id }
+    : { kind: "error", message: outcome.message };
+}
+
+/**
+ * The second half of settling: the event, then the coupon's count. Reached
+ * only by a caller whose own UPDATE has just turned one 'created' row 'paid'.
+ */
+async function publishSettled(
+  eventId: string,
+  paymentId: string,
+  couponCode: string | null,
+): Promise<{ kind: "applied"; eventId: string } | { kind: "error"; message: string }> {
+  const admin = createAdminClient();
 
   /*
     The second write, and the one that actually publishes the invitation.
@@ -205,9 +345,9 @@ export async function applyCapturedPayment(
     Not when the host typed the code, not when the order was created — both of
     those are intentions, and a limited code consumed by intentions is a code
     exhausted by people who never paid. This line runs only on the branch where
-    the payments update matched exactly one 'created' row, which is to say only
-    when this delivery is the one that settled the order. A repeat delivery took
-    the `updated.length === 0` path above and never reached it.
+    a payments update matched exactly one 'created' row, which is to say only
+    for the delivery, or the admin's press, that settled the order. A repeat
+    took its caller's empty path and never reached it.
 
     LAST, AND DELIBERATELY. The invitation is published first. A counter that
     fails to tick is a reporting inaccuracy; an invitation that fails to publish

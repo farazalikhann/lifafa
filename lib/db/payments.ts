@@ -17,6 +17,8 @@ import {
   type CouponQuote,
 } from "@/lib/coupons/quote";
 import { eventEndDate } from "@/lib/eventLock";
+import { reviewState } from "@/lib/db/paymentReview";
+import { PAYMENT_UNDER_REVIEW_MESSAGE } from "@/lib/paymentReview";
 import { dbFailure, dbSuccess, postgresError, type DbResult } from "@/lib/db/result";
 import type { PaymentInsert } from "@/types/database";
 
@@ -240,6 +242,24 @@ async function requireUnpaidOwnedEvent(
 
   if (event.is_paid) {
     return { ok: false, error: "This invitation has already been published." };
+  }
+
+  /*
+    ALREADY PAID FOR, AND NOT YET PUBLISHED. A payment the webhook would not
+    apply is waiting for a person (lib/paymentReview.ts), and this host must
+    not be charged a second time while it does: no order, no coupon preview
+    and no free activation. Asked only now, after the row above was read under
+    the host's own session. A read that fails refuses too, since the one thing
+    it cannot be allowed to do is let a second payment through.
+  */
+  const review = await reviewState(event.id);
+
+  if (review === "review") {
+    return { ok: false, error: PAYMENT_UNDER_REVIEW_MESSAGE };
+  }
+
+  if (review === "unknown") {
+    return { ok: false, error: "Could not load this invitation, please try again." };
   }
 
   /*

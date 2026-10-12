@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactElement } from "react";
 import PinnedStrip, { PINNED_STRIP_ACTION } from "@/components/invite/PinnedStrip";
+import { PAYMENT_UNDER_REVIEW_MESSAGE } from "@/lib/paymentReview";
 
 /**
  * The strip across the top of an unpaid invitation, shown to its host only.
@@ -16,9 +17,23 @@ import PinnedStrip, { PINNED_STRIP_ACTION } from "@/components/invite/PinnedStri
  */
 export default function HostPreviewBanner({
   eventId,
+  underReview = false,
 }: {
   eventId: string;
+  /**
+   * The host has paid and the payment is being verified
+   * (lib/paymentReview.ts): the strip says that, with no way to pay again.
+   */
+  underReview?: boolean;
 }): ReactElement {
+  if (underReview) {
+    return (
+      <PinnedStrip label="Preview" action={null}>
+        {PAYMENT_UNDER_REVIEW_MESSAGE}
+      </PinnedStrip>
+    );
+  }
+
   return (
     <PinnedStrip
       label="Preview"

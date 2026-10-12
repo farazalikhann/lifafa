@@ -40,6 +40,7 @@ export default function ShareBar({
   editHref,
   eventId,
   isPaid,
+  underReview = false,
   defaultMessages,
   savedMessages,
 }: {
@@ -53,6 +54,8 @@ export default function ShareBar({
   editHref: string;
   eventId: string;
   isPaid: boolean;
+  /** A payment for it is being verified; see lib/paymentReview.ts. */
+  underReview?: boolean;
   /** The WhatsApp message built from the card, in each language. */
   defaultMessages: Record<CardLanguage, string>;
   /** The host's own wording, in each language they rewrote it in. */
@@ -209,6 +212,7 @@ export default function ShareBar({
           defaultMessage={defaultMessages[shareLanguage]}
           saved={saved[shareLanguage]}
           isPaid={isPaid}
+          underReview={underReview}
           onSaved={(message) =>
             setSaved((current) => {
               const next = { ...current };

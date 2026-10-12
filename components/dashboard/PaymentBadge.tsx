@@ -19,9 +19,23 @@ import type { ReactElement } from "react";
  */
 export default function PaymentBadge({
   isPaid,
+  underReview = false,
 }: {
   isPaid: boolean;
+  /**
+   * The host has paid and the payment is being checked by a person
+   * (lib/paymentReview.ts). Never "Not paid yet": they have paid.
+   */
+  underReview?: boolean;
 }): ReactElement {
+  if (!isPaid && underReview) {
+    return (
+      <span className="shrink-0 rounded-full border border-[var(--lifafa-marigold)]/40 px-2.5 py-1 text-xs font-medium text-[var(--lifafa-cream)]">
+        Verifying payment
+      </span>
+    );
+  }
+
   return isPaid ? (
     <span className="shrink-0 rounded-full border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/10 px-2.5 py-1 text-xs font-medium text-[var(--lifafa-marigold)]">
       Paid

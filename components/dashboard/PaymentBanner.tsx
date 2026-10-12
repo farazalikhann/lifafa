@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import PublishButton from "@/components/dashboard/PublishButton";
 import { isRazorpayTestMode, razorpayKeyId } from "@/lib/razorpay/keys";
 import { formatPrice } from "@/lib/pricing";
+import { PAYMENT_UNDER_REVIEW_MESSAGE } from "@/lib/paymentReview";
 
 /**
  * The unpaid state of one invitation, on that invitation's own dashboard.
@@ -24,7 +25,14 @@ export default function PaymentBanner({
   isPaid,
   eventId,
   pricePaise,
+  underReview = false,
 }: {
+  /**
+   * The host has paid and the payment is being checked by a person
+   * (lib/paymentReview.ts). The banner then says so and offers no way to pay:
+   * no price, no button, no coupon field.
+   */
+  underReview?: boolean;
   /**
    * What this invitation costs: its template's price, worked out by the server
    * page that read the event. Printed here and on the button; the amount
@@ -38,6 +46,23 @@ export default function PaymentBanner({
 }): ReactElement | null {
   if (isPaid) {
     return null;
+  }
+
+  if (underReview) {
+    return (
+      <section
+        aria-labelledby="payment-banner-heading"
+        className="rounded-2xl border border-[var(--lifafa-marigold)]/30 bg-[var(--lifafa-marigold)]/[0.06] px-5 py-4"
+      >
+        <p
+          id="payment-banner-heading"
+          role="status"
+          className="max-w-[60ch] text-sm leading-relaxed text-[var(--lifafa-cream)]"
+        >
+          {PAYMENT_UNDER_REVIEW_MESSAGE}
+        </p>
+      </section>
+    );
   }
 
   const configured = razorpayKeyId() !== null;

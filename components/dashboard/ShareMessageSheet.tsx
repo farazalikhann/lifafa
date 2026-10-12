@@ -56,6 +56,7 @@ export default function ShareMessageSheet({
   defaultMessage,
   saved,
   isPaid,
+  underReview = false,
   onSaved,
   onClose,
 }: {
@@ -68,6 +69,8 @@ export default function ShareMessageSheet({
   /** The host's own wording, if they kept one for this language. */
   saved: SavedShareMessage | undefined;
   isPaid: boolean;
+  /** A payment for it is being verified; see lib/paymentReview.ts. */
+  underReview?: boolean;
   /** Told what is now stored, so reopening the sheet shows it. */
   onSaved: (message: SavedShareMessage | null) => void;
   onClose: () => void;
@@ -234,7 +237,9 @@ export default function ShareMessageSheet({
 
         {isPaid ? null : (
           <p className="rounded-xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/10 px-4 py-3 text-[0.8125rem] leading-relaxed">
-            Guests can open this link after payment.
+            {underReview
+              ? "Guests can open this link once your payment is verified."
+              : "Guests can open this link after payment."}
           </p>
         )}
 

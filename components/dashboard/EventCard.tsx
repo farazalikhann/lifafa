@@ -64,8 +64,11 @@ function eventSubtitle(event: HostEvent, heading: string): string {
 
 export default function EventCard({
   event,
+  underReview = false,
 }: {
   event: HostEvent;
+  /** A payment for it is being verified; see lib/paymentReview.ts. */
+  underReview?: boolean;
 }): ReactElement {
   const heading = eventHeading(event);
 
@@ -97,7 +100,7 @@ export default function EventCard({
             it is the same distance from the heading on every row. It is the one
             fact here about the invitation rather than about the celebration.
           */}
-          <PaymentBadge isPaid={event.isPaid} />
+          <PaymentBadge isPaid={event.isPaid} underReview={underReview} />
         </div>
 
         {/*

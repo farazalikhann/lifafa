@@ -1,5 +1,6 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { applyCapturedPayment } from "@/lib/db/applyPayment";
+import { alertPaymentUnderReview } from "@/lib/email/paymentReviewAlert";
 import {
   readCapturedPayment,
   SIGNATURE_HEADER,
@@ -119,13 +120,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     case "mismatch":
       /*
         Money was captured that does not match what this invitation costs, so
-        it was not published. Answered 200: delivering it again would find the
-        same thing, and this is for a person to settle, with the payment id
-        below, by refund or by activating the invitation from the admin.
+        it was not published. The order is marked as under review: the host is
+        shown that their payment is being verified, and the admin lists it
+        under Payments to review, to publish by hand or refund. Answered 200:
+        delivering it again would find the same thing.
       */
       console.error(
         `[razorpay] AMOUNT MISMATCH on order ${captured.orderId} (payment ${captured.paymentId}, event ${outcome.eventId}): ${outcome.reason}. Nothing was published.`,
       );
+
+      /*
+        The owner is emailed once, by the delivery that marked the order, and
+        after the answer has gone: Razorpay waits five seconds for a webhook
+        and sends it again if it hears nothing, and an email is not worth a
+        retry. `after` keeps the function alive until it is sent.
+      */
+      if (outcome.firstNotice) {
+        const review = {
+          eventId: outcome.eventId,
+          hostId: outcome.hostId,
+          orderId: captured.orderId,
+          paymentId: captured.paymentId,
+          capturedPaise: outcome.capturedPaise,
+          orderPaise: outcome.orderPaise,
+          pricePaise: outcome.pricePaise,
+          templateId: outcome.templateId,
+          reason: outcome.reason,
+        };
+
+        after(() => alertPaymentUnderReview(review));
+      }
+
       return NextResponse.json({ ok: true, handled: false });
 
     case "error":

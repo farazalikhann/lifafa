@@ -15,6 +15,7 @@ import { formatWhen } from "@/lib/cardFormat";
 import { CARD_LANGUAGES } from "@/lib/cardLanguage";
 import { wordsWrittenIn } from "@/lib/cardTranslation";
 import { getEventById } from "@/lib/db/events";
+import { isUnderReview } from "@/lib/db/paymentReview";
 import { getGuestsForEvent } from "@/lib/db/guests";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { buildShareMessage } from "@/lib/shareMessage";
@@ -114,9 +115,15 @@ export default async function DashboardPage({
     Open-Meteo per request — time the headcount a host came here for used to
     spend queued behind a forecast.
   */
-  const [guestsResult, weather] = await Promise.all([
+  const [guestsResult, weather, underReview] = await Promise.all([
     getGuestsForEvent(event.id),
     readWeather(),
+    /*
+      Whether a payment for it is being verified (lib/paymentReview.ts). Only
+      an unpaid invitation can be, and the event was read above under the
+      host's own session.
+    */
+    event.isPaid ? false : isUnderReview(event.id),
   ]);
   const guests = guestsResult.ok ? guestsResult.data : [];
 
@@ -240,6 +247,7 @@ export default async function DashboardPage({
           eventId={event.id}
           /* This invitation's own price: its template's. */
           pricePaise={templatePricePaise(event.config.templateId)}
+          underReview={underReview}
         />
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
@@ -262,6 +270,7 @@ export default async function DashboardPage({
               editHref={`/dashboard/${event.id}/edit`}
               eventId={event.id}
               isPaid={event.isPaid}
+              underReview={underReview}
               /*
                 The WhatsApp message in every language, built here from the
                 stored card so the sheet only holds text, and the host's own

@@ -6,6 +6,7 @@ import EventNotFound from "@/components/dashboard/EventNotFound";
 import Wizard from "@/components/wizard/Wizard";
 import WizardSaved from "@/components/wizard/WizardSaved";
 import { getEventById } from "@/lib/db/events";
+import { isUnderReview } from "@/lib/db/paymentReview";
 
 /**
  * A new invitation, made in the wizard: a template, the details, the few
@@ -66,5 +67,11 @@ export default async function CreatePage({
     redirect(`/dashboard/${result.data.id}`);
   }
 
-  return <WizardSaved event={result.data} />;
+  return (
+    <WizardSaved
+      event={result.data}
+      /* Asked for the event this host's own session has just read. */
+      underReview={await isUnderReview(result.data.id)}
+    />
+  );
 }
