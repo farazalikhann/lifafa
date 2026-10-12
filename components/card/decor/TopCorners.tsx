@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { TOP_CORNER_ATTRIBUTE } from "@/hooks/useClearOfCorners";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
 import { cardPx } from "@/lib/cardScale";
 import type { PackOrnament } from "@/lib/traditionPacks";
@@ -86,11 +87,6 @@ export interface TopCornersHole {
   centre: number;
 }
 
-/** How far down the card the two corners reach, in card px: the foot of each circle. */
-export function topCornersDepth(inset: boolean): number {
-  return DESIGN_WIDTH * ((inset ? INSET : 0) + DIAMETER / 2);
-}
-
 export function topCornersHole(inset: boolean): TopCornersHole {
   const step = inset ? INSET : 0;
   const reach = step + DIAMETER / 2;
@@ -143,6 +139,8 @@ export default function TopCorners({
             a rotate and nothing else.
           */
           className="absolute top-0"
+          /* The circle's own box, which holds still: what the opening's words are kept clear of. */
+          {...{ [TOP_CORNER_ATTRIBUTE]: "" }}
           style={{
             left: side === "left" ? 0 : "100%",
             width: share(DIAMETER),

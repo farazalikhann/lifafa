@@ -9,6 +9,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { useCardStill } from "@/hooks/useCardStill";
+import { CORNER_CLEAR_VARIABLE, useClearOfCorners } from "@/hooks/useClearOfCorners";
 import { useFitLines } from "@/hooks/useFitLines";
 import { preload } from "react-dom";
 import { useOnScreen } from "@/hooks/useOnScreen";
@@ -53,7 +54,6 @@ import NamesFrameScreen from "@/components/card/NamesFrameScreen";
 import ThankYouNote from "@/components/invite/ThankYouNote";
 import { namesFrameArt, namesFrameOf } from "@/lib/namesFrame";
 import TopCorners, {
-  topCornersDepth,
   topCornersHole,
   topCornersStrength,
 } from "@/components/card/decor/TopCorners";
@@ -318,9 +318,9 @@ const SCENE_MAX_HEIGHT = 0.78;
 
 /**
  * Where the opening's words start when it carries a scene, in card px: this
- * far under the foot of whatever is at the top of the card (the garland, the
- * hanging lights, the corners). And where they start on a card with nothing
- * there, as a share of the screen's height.
+ * far under the foot of whatever is across the top of the card (the garland,
+ * the hanging lights). And where they start on a card with nothing across
+ * its top, as a share of the screen's height.
  */
 const OPENING_UNDER_DECOR = 32;
 const OPENING_FROM_TOP = 0.1;
@@ -1290,6 +1290,8 @@ export default function CardCanvas({
     0.5,
     cardHasHead,
   );
+  /* Its words are kept off what is drawn in the card's two top corners, where the pack has that. */
+  useClearOfCorners(headRef, cardHasHead && slots.topCorners !== null);
   /* The painted scene's room in the first screen, which its layer is drawn over; see SceneScreen. */
   const sceneSlot = useRef<HTMLDivElement>(null);
 
@@ -1663,24 +1665,26 @@ export default function CardCanvas({
     ) : null;
   /*
     Where the words of an opening with a scene start: a set step under the
-    foot of what is at the top of the card, whichever of it is lowest, and a
-    tenth of the screen down on a card with nothing there. Never above a
+    foot of what is across the top of the card, whichever of it is lowest, and
+    a tenth of the screen down on a card with nothing there. Never above a
     border's own clearance. What hangs comes down a size on a short screen
     (--card-opening), and the step is measured from where it then ends.
+
+    ONLY WHAT SPANS THE MIDDLE OF THE CARD COUNTS: a garland, the hanging
+    lights. What is drawn in the two top corners alone (the mandala) leaves
+    the middle clear, and the words start under it as on a card with nothing
+    there. They are only kept off the corner pieces themselves: brought down
+    by what the widest line needs to clear a circle, where it needs anything,
+    which is measured and left in CORNER_CLEAR_VARIABLE (useClearOfCorners).
   */
-  const cornersDepth =
-    slots.topCorners !== null ? topCornersDepth(isPhotoBorder(config.borderStyle)) : 0;
   const garlandDepth = config.borderStyle === "hangingGarland" ? clearance.y : 0;
-  const openingPadTop =
-    hangingBand > 0 || cornersDepth > 0 || garlandDepth > 0
-      ? `max(${cardPx(clearance.y)}, calc(max(${cardPx(hangingBand)} * var(--card-opening, 1), ${cardPx(
-          Math.max(cornersDepth, garlandDepth),
-        )}) + ${cardPx(OPENING_UNDER_DECOR)}))`
-      : `max(${cardPx(clearance.y)}, ${
-          sizing === "viewport"
-            ? `${OPENING_FROM_TOP * 100}svh`
-            : `${Math.round(frameHeight * OPENING_FROM_TOP)}px`
-        })`;
+  const openingPadTop = `max(${cardPx(clearance.y)}, var(${CORNER_CLEAR_VARIABLE}, 0px), ${
+    hangingBand > 0 || garlandDepth > 0
+      ? `calc(max(${cardPx(hangingBand)} * var(--card-opening, 1), ${cardPx(garlandDepth)}) + ${cardPx(OPENING_UNDER_DECOR)})`
+      : sizing === "viewport"
+        ? `${OPENING_FROM_TOP * 100}svh`
+        : `${Math.round(frameHeight * OPENING_FROM_TOP)}px`
+  })`;
   /* The opening is a screen tall where it fits, whatever the card's density makes of a section. */
   const openingScreen = sizing === "viewport" ? "100svh" : `${frameHeight}px`;
   /* Whether the card's first screen is an opening with the scene in it. */
