@@ -20,8 +20,8 @@ import { TEMPLATES, findTemplate } from "@/templates/registry";
  * in the database (lib/templateSamples.ts), so a reply here is answered and
  * sent nowhere, exactly as on the home page's sample at /demo/nikah.
  *
- * Kept out of search results for now: these go with the wizard, which is not
- * linked from anywhere yet.
+ * Kept out of search results: they are one sample wedding in every look, not
+ * pages of their own: the gallery is where a host meets them.
  */
 
 type DemoParams = { params: Promise<{ templateId: string }> };

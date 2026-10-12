@@ -230,6 +230,14 @@ export interface CardConfig {
    * also turns an id this build does not know into Classic.
    */
   templateId?: string;
+  /**
+   * Which editor the card is changed in. Stored as "wizard" on every card
+   * made in the step-by-step wizard, and absent on every card made before it:
+   * those open in the full tabbed editor they were designed in, whose
+   * controls reach things the wizard's few do not. The edit route reads it;
+   * nothing that draws a card does.
+   */
+  editor?: "wizard";
   themeId: ThemeId;
   /**
    * A link to an audio file the guest may choose to play, or null.

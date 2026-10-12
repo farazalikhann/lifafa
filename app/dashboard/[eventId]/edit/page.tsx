@@ -3,11 +3,13 @@ import EditEventEditor from "@/components/create/EditEventEditor";
 import EventEndedNotice from "@/components/create/EventEndedNotice";
 import GuestsRepliedNotice from "@/components/create/GuestsRepliedNotice";
 import EventNotFound from "@/components/dashboard/EventNotFound";
+import { EditWizard } from "@/components/wizard/Wizard";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { countGuestsForEvent } from "@/lib/db/guests";
 import { getEventById } from "@/lib/db/events";
 import { isEditLocked } from "@/lib/eventLock";
 import { getWeatherTheme } from "@/lib/weatherThemes";
+import { CLASSIC_TEMPLATE_ID, getTemplate } from "@/templates/registry";
 
 /**
  * Editing an invitation that already exists.
@@ -22,9 +24,23 @@ import { getWeatherTheme } from "@/lib/weatherThemes";
  * before any of the editor reaches their browser. Doing that check in the
  * client would mean shipping the editor first and apologising afterwards.
  *
- * THE EDITOR ITSELF IS THE SAME ONE /create MOUNTS. See CardEditor: this page
- * hands it a card out of the database instead of an empty one, and a save that
- * updates a row instead of inserting one. Everything between is identical.
+ * WHICH EDITOR. An invitation is changed in the editor it was made in:
+ *
+ *   The wizard, for a card made in the wizard: the same four steps /create
+ *   has, over the stored card, opening on the details and saving with "Save
+ *   changes". Such a card says so itself, `editor: "wizard"` in its config,
+ *   written by the wizard when it is saved (see CardConfig.editor). A card on
+ *   any template but Classic is the wizard's too, marked or not: nothing else
+ *   has ever been able to put a card on one, and the few saved from the
+ *   wizard before it started writing the mark are recognised by that.
+ *
+ *   The full tabbed editor (CardEditor), for every other card, which is every
+ *   one made before the wizard. Those were designed control by control, with
+ *   ornaments, custom accents and orders of sections the wizard's few
+ *   controls cannot reach, so they keep the editor that can.
+ *
+ * Both are handed the same card out of the database, the same lock, the same
+ * limits and the same notice, and both save through updateEvent.
  */
 export default async function EditEventPage({
   params,
@@ -83,6 +99,48 @@ export default async function EditEventPage({
   const coverAnimation = getCoverAnimation(event.coverAnimation).id;
   const weatherTheme = getWeatherTheme(event.weatherTheme).id;
 
+  const initial = {
+    draft: event.draft,
+    /*
+      The config as toStoredEvent hands it over: any section registered since
+      the card was saved has already been slotted into the running order, and
+      isPaid already reflects the column rather than the JSON's own copy. The
+      editor starts from exactly what a guest would see.
+    */
+    config: event.config,
+    coverAnimation,
+    showWeather: event.showWeather,
+    weatherTheme,
+    qrCheckinEnabled: event.qrCheckinEnabled,
+  };
+  /* After payment, the draft as saved and the changes it has used, for the notes on the date and names. */
+  const paidLimits = event.isPaid
+    ? { baseline: event.draft, allowance: event.changes }
+    : undefined;
+  const notice = locked ? (
+    <EventEndedNotice eventId={event.id} />
+  ) : (
+    <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
+  );
+
+  const madeInWizard =
+    event.config.editor === "wizard" ||
+    getTemplate(event.config.templateId).id !== CLASSIC_TEMPLATE_ID;
+
+  if (madeInWizard) {
+    return (
+      <EditWizard
+        eventId={event.id}
+        /* The column, as this server page just read it; see the note on the other editor below. */
+        isPaid={event.isPaid}
+        initial={initial}
+        readOnly={locked}
+        paidLimits={paidLimits}
+        notice={notice}
+      />
+    );
+  }
+
   return (
     <EditEventEditor
       eventId={event.id}
@@ -93,37 +151,10 @@ export default async function EditEventPage({
         a host who has paid sees their card as their guests do.
       */
       isPaid={event.isPaid}
-      initial={{
-        draft: event.draft,
-        /*
-          The config as toStoredEvent hands it over: any section registered
-          since the card was saved has already been slotted into the running
-          order, and isPaid already reflects the column rather than the JSON's
-          own copy. The editor starts from exactly what a guest would see.
-        */
-        config: event.config,
-        coverAnimation,
-        showWeather: event.showWeather,
-        weatherTheme,
-        qrCheckinEnabled: event.qrCheckinEnabled,
-      }}
+      initial={initial}
       readOnly={locked}
-      /*
-        After payment, the draft as saved and the changes it has used, so the
-        date and name fields can say how many are left.
-      */
-      paidLimits={
-        event.isPaid
-          ? { baseline: event.draft, allowance: event.changes }
-          : undefined
-      }
-      notice={
-        locked ? (
-          <EventEndedNotice eventId={event.id} />
-        ) : (
-          <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
-        )
-      }
+      paidLimits={paidLimits}
+      notice={notice}
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import {
   Component,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -16,6 +17,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AutoTranslate from "@/components/create/AutoTranslate";
 import CardPreview from "@/components/create/CardPreview";
 import ContactEditor from "@/components/create/ContactEditor";
+import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import EventForm from "@/components/create/EventForm";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
@@ -38,7 +40,8 @@ import {
 } from "@/hooks/useCardEditor";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { withContactBlock } from "@/lib/contacts";
-import { createEvent } from "@/lib/db/events";
+import { createEvent, updateEvent } from "@/lib/db/events";
+import type { ChangeAllowance } from "@/lib/eventLock";
 import { EMPTY_SNAPSHOT, arrivalFor, type Arrival } from "@/lib/newCard";
 import {
   clearPendingCard,
@@ -62,7 +65,7 @@ import {
 import { CLASSIC_TEMPLATE_ID, getTemplate } from "@/templates/registry";
 import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
-import type { EventContact } from "@/types/event";
+import type { EventContact, EventDraft } from "@/types/event";
 
 /**
  * A new invitation, made in four steps: a template, the details, the few
@@ -175,29 +178,79 @@ const PRIMARY_BUTTON =
 const QUIET_BUTTON =
   "min-h-12 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.9375rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
 
+/**
+ * What makes the wizard an editor of a saved invitation and not the maker of
+ * a new one. Everything about the steps is the same; this is the whole of
+ * what differs, and all of it is decided by the edit page on the server.
+ */
+interface EditContext {
+  eventId: string;
+  /** The event row's is_paid, which decides the watermark in the previews. */
+  isPaid: boolean;
+  /** The event is over and locked (lib/eventLock.ts): every control inert, nothing to save. */
+  readOnly: boolean;
+  /** After payment: the draft as saved and the changes used, for the notes on the date and names. */
+  paidLimits?: { baseline: EventDraft; allowance: ChangeAllowance };
+  /** What the edit page has to say first: guests have replied, or the event has ended. */
+  notice?: ReactNode;
+}
+
+/**
+ * The wizard over a saved invitation: what /dashboard/[eventId]/edit mounts
+ * for a card that was made in the wizard.
+ *
+ * The same four steps over the stored card, opening on the details, which is
+ * what a host coming back has almost always come to change. Saving updates
+ * the row and returns to the event's dashboard; there is no payment here. See
+ * `edit` in WizardSteps for the rest of what differs.
+ */
+export function EditWizard({
+  initial,
+  ...edit
+}: EditContext & {
+  /** The stored event, as the editor takes it. */
+  initial: EditorSnapshot;
+}): ReactElement {
+  return (
+    /* useSearchParams, which the step is read from, wants a boundary. */
+    <Suspense fallback={<EditorSkeleton />}>
+      <WizardSteps start={initial} problem={null} stashedStep={null} edit={edit} />
+    </Suspense>
+  );
+}
+
 function WizardSteps({
   start,
   problem,
   stashedStep,
+  edit,
 }: {
   start: EditorSnapshot;
   /** Why a card the host came back for is not here, if it is not. */
   problem: PendingCardProblem | null;
   /** The step a restored card was stashed on. */
   stashedStep: WizardStepId | null;
+  /** Given when this is a saved invitation being changed; absent for a new card. */
+  edit?: EditContext;
 }): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const editing = edit !== undefined;
+  const readOnly = edit?.readOnly === true;
+  /* Where the steps live: /create, or this invitation's own edit page. */
+  const path = editing ? `/dashboard/${edit.eventId}/edit` : WIZARD_PATH;
+  const dashboardHref = editing ? `/dashboard/${edit.eventId}` : "/dashboard";
 
   /*
     The URL's step, or the one the card was stashed on, or the first. The URL
     wins: a host back from signing in arrives on a link that names the step,
-    and after that every move writes it there.
+    and after that every move writes it there. A saved card opens on its
+    details, the second step: its template was chosen long ago.
   */
   const step: WizardStepId =
     wizardStepId(searchParams.get(WIZARD_STEP_PARAM)) ??
     stashedStep ??
-    WIZARD_STEPS[0].id;
+    (editing ? "details" : WIZARD_STEPS[0].id);
   const index = wizardStepIndex(step);
   const isLast = index === WIZARD_STEPS.length - 1;
 
@@ -205,14 +258,17 @@ function WizardSteps({
   const stepRef = useRef<WizardStepId>(step);
   stepRef.current = step;
 
-  const goTo = useCallback((next: WizardStepId): void => {
-    if (next === stepRef.current) {
-      return;
-    }
+  const goTo = useCallback(
+    (next: WizardStepId): void => {
+      if (next === stepRef.current) {
+        return;
+      }
 
-    window.history.pushState(null, "", wizardStepPath(next));
-    window.scrollTo({ top: 0 });
-  }, []);
+      window.history.pushState(null, "", wizardStepPath(next, path));
+      window.scrollTo({ top: 0 });
+    },
+    [path],
+  );
 
   /*
     A new step starts at its heading, for a keyboard and for a screen reader:
@@ -270,6 +326,42 @@ function WizardSteps({
    */
   const save = useCallback(
     async (snapshot: EditorSnapshot): Promise<SaveOutcome> => {
+      /*
+        A saved invitation: the row is updated, and the host goes back to its
+        dashboard. The link, the owner and whether it is paid are not this
+        save's to touch; see updateEvent for the whole list, and for the lock
+        and the change limits it holds a paid card to.
+      */
+      if (edit !== undefined) {
+        const result = await updateEvent(edit.eventId, {
+          draft: snapshot.draft,
+          cardConfig: snapshot.config,
+          coverAnimation: snapshot.coverAnimation,
+          weather: {
+            showWeather: snapshot.showWeather,
+            themeId: snapshot.weatherTheme,
+          },
+          qrCheckinEnabled: snapshot.qrCheckinEnabled,
+        });
+
+        if (!result.ok) {
+          return { ok: false, error: result.error };
+        }
+
+        /* Whether the guests need telling: only the date and the venue count. */
+        const detailsMoved =
+          snapshot.draft.eventDate !== start.draft.eventDate ||
+          snapshot.draft.eventTime !== start.draft.eventTime ||
+          snapshot.draft.venueName !== start.draft.venueName ||
+          snapshot.draft.venueAddress !== start.draft.venueAddress;
+
+        /* refresh() first, so the dashboard is built from the row as it now is. */
+        router.refresh();
+        router.push(`${dashboardHref}?saved=${detailsMoved ? "details" : "1"}`);
+
+        return { ok: true };
+      }
+
       const supabase = createClient();
       const { data, error: authError } = await supabase.auth.getUser();
       const user = authError === null ? data.user : null;
@@ -300,10 +392,12 @@ function WizardSteps({
 
       return { ok: true };
     },
-    [router, sendToSignIn],
+    [router, sendToSignIn, edit, start, dashboardHref],
   );
 
   const {
+    isDirty,
+    limitNotes,
     templateId,
     applySnapshot,
     draft,
@@ -354,10 +448,29 @@ function WizardSteps({
     preview,
   } = useCardEditor({
     start,
-    /* Nothing saved to lose yet, and the sign-in detour leaves on purpose. */
-    guardUnsaved: false,
+    /*
+      A new card has nothing saved to lose, and its sign-in detour leaves on
+      purpose. A saved one has: unsaved changes are asked about before they
+      are walked away from, here and by the browser's own prompt.
+    */
+    guardUnsaved: editing,
     onSave: save,
+    paidLimits: edit?.paidLimits,
   });
+
+  /*
+    Where a guarded control was trying to go, held while the host answers the
+    dialog. Only the one control that exists to walk away comes through here.
+  */
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const leave = (href: string): void => {
+    if (isDirty) {
+      setPendingHref(href);
+      return;
+    }
+
+    router.push(href);
+  };
 
   /*
     The numbers, and the section that shows them: a card has no contact block
@@ -417,12 +530,26 @@ function WizardSteps({
         <div className="mx-auto max-w-6xl px-4 pt-2.5 pb-1 sm:px-5 lg:px-8">
           <WizardProgress
             brand={
-              <Link
-                href="/"
-                className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-              >
-                Lifafa
-              </Link>
+              editing ? (
+                /* The way out of an edit, which asks first when there is something unsaved. */
+                <button
+                  type="button"
+                  onClick={() => leave(dashboardHref)}
+                  className="-my-2 min-h-11 rounded text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+                >
+                  <span aria-hidden="true" className="mr-1.5">
+                    ←
+                  </span>
+                  {readOnly ? "Back to dashboard" : "Cancel"}
+                </button>
+              ) : (
+                <Link
+                  href="/"
+                  className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+                >
+                  Lifafa
+                </Link>
+              )
             }
             current={step}
             onSelect={goTo}
@@ -442,16 +569,24 @@ function WizardSteps({
             here={displayHost(window.location.origin)}
           />
         ) : null}
-        <ExistingInvitationsNotice />
+        {/* A new card is told of the ones the host already has; a saved one, what its edit page has to say. */}
+        {editing ? edit.notice : <ExistingInvitationsNotice />}
 
-        {/* `min-w-0`, so nothing that refuses to wrap can widen a 360px page. */}
-        <div className="flex min-w-0 flex-col gap-8">
+        {/*
+          `min-w-0`, so nothing that refuses to wrap can widen a 360px page.
+          Inert once the event is over: every control out of reach, the steps
+          and the preview still there to look through.
+        */}
+        <div className="flex min-w-0 flex-col gap-8" inert={readOnly}>
           <h1
             ref={headingRef}
             tabIndex={-1}
             className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
           >
-            {WIZARD_STEPS[index].title}
+            {/* The last step publishes a new card; for a saved one it is only a last look. */}
+            {editing && step === "preview"
+              ? "Preview your changes"
+              : WIZARD_STEPS[index].title}
           </h1>
 
           {step === "template" ? (
@@ -482,10 +617,13 @@ function WizardSteps({
                     draft={draft}
                     blocks={blocks}
                     occasionId={occasionId}
-                    eventId={undefined}
+                    eventId={edit?.eventId}
                     onTranslated={handleTranslated}
                     onCardId={handleCardId}
-                    onSignInRequired={() => sendToSignIn(snapshot)}
+                    /* An edit page is behind sign-in already; only a new card can meet a signed-out host. */
+                    onSignInRequired={
+                      editing ? undefined : () => sendToSignIn(snapshot)
+                    }
                   />
                 </div>
                 <OccasionGrid
@@ -497,7 +635,8 @@ function WizardSteps({
                   onChange={handleChange}
                   occasionId={occasionId}
                   language={language}
-                  paidLimits={undefined}
+                  /* After payment: how many changes of date and of names are left, on those fields. */
+                  paidLimits={limitNotes}
                 />
                 <SubEventEditor
                   subEvents={draft.subEvents}
@@ -599,21 +738,15 @@ function WizardSteps({
                 </div>
               ) : null}
 
-              <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
-                Saving creates your invitation and its link. Publishing it is
-                the next step and costs {formatInr(INVITATION_PRICE_INR)}:
-                guests can open the link once it is published. Each invitation
-                is a separate payment.
-              </p>
-
-              {error !== null ? (
-                <p
-                  role="alert"
-                  className="rounded-xl border border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/10 px-4 py-3 text-sm leading-relaxed text-[var(--lifafa-cream)]"
-                >
-                  {error}
+              {/* A saved invitation is not being paid for here: its link, and its price, are as they were. */}
+              {editing ? null : (
+                <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
+                  Saving creates your invitation and its link. Publishing it is
+                  the next step and costs {formatInr(INVITATION_PRICE_INR)}:
+                  guests can open the link once it is published. Each
+                  invitation is a separate payment.
                 </p>
-              ) : null}
+              )}
             </div>
           ) : null}
         </div>
@@ -628,18 +761,36 @@ function WizardSteps({
             coverAnimation={coverAnimation}
             weather={previewWeather}
             weatherTheme={weatherTheme}
-            isPaid={false}
+            isPaid={edit?.isPaid === true}
           />
         </div>
       </main>
 
       {/*
         Back and Next, pinned to the bottom of the screen where a thumb is.
-        On a phone the way to the card is here too, between them; at lg the
-        card is already on the page. The last step's own button opens the
-        preview, so the bar gives its width to the longer label there.
+
+        A NEW CARD saves at the end: the last step's button is "Save and
+        continue", and on a phone the way to the card sits between Back and
+        Next on the steps before it.
+
+        A SAVED CARD can be saved from any step, since a host fixing a venue
+        should not have to walk to the end to do it: "Save changes" is always
+        here, beside Back and Next, and the preview is the last step's own
+        button (and the card itself at lg). At 360px the three are 306px of
+        the 328 there is. Nothing to save once the event is over.
+
+        What went wrong with a save is said here, over the buttons, so it is
+        seen from whichever step the save was pressed on.
       */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
+        {error !== null ? (
+          <p
+            role="alert"
+            className="mx-auto max-w-6xl border-b border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/15 px-4 py-2.5 text-[0.8125rem] leading-relaxed text-[var(--lifafa-cream)] sm:px-5 lg:px-8"
+          >
+            {error}
+          </p>
+        ) : null}
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 lg:px-8">
           {index > 0 ? (
             <button
@@ -651,7 +802,17 @@ function WizardSteps({
             </button>
           ) : null}
 
-          {isLast ? null : (
+          {editing ? (
+            isLast ? null : (
+              <button
+                type="button"
+                onClick={() => goTo(WIZARD_STEPS[index + 1].id)}
+                className={QUIET_BUTTON}
+              >
+                Next
+              </button>
+            )
+          ) : isLast ? null : (
             <button
               type="button"
               onClick={(event) => openPreview(event.currentTarget)}
@@ -662,7 +823,18 @@ function WizardSteps({
           )}
 
           <div className="ml-auto">
-            {isLast ? (
+            {editing ? (
+              readOnly ? null : (
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={PRIMARY_BUTTON}
+                >
+                  {isSaving ? "Saving…" : "Save changes"}
+                </button>
+              )
+            ) : isLast ? (
               <button
                 type="button"
                 onClick={handleSave}
@@ -684,6 +856,17 @@ function WizardSteps({
         </div>
       </div>
 
+      {pendingHref !== null ? (
+        <DiscardChangesDialog
+          onKeepEditing={() => setPendingHref(null)}
+          onDiscard={() => {
+            const href = pendingHref;
+            setPendingHref(null);
+            router.push(href);
+          }}
+        />
+      ) : null}
+
       {isPreviewOpen ? (
         <FullScreenPreview
           draft={preview.draft}
@@ -696,7 +879,7 @@ function WizardSteps({
           triggerRef={previewTrigger}
           onClose={closePreview}
           onPreviewLanguageChange={setPreviewLanguage}
-          isPaid={false}
+          isPaid={edit?.isPaid === true}
         />
       ) : null}
     </div>

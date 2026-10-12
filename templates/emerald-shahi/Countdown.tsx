@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useState, type ReactElement } from "react";
 import ScratchPanel, {
   type ScratchConfig,
 } from "@/components/card/ScratchPanel";
-import { useScratchReveal } from "@/components/card/ScratchReveal";
 import {
   measure,
   spokenCountdown,
@@ -15,10 +14,38 @@ import { eventInstant } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import Slide from "@/templates/emerald-shahi/Slide";
 import styles from "@/templates/emerald-shahi/emerald.module.css";
-import { scriptLeading, type EmeraldFonts } from "@/templates/emerald-shahi/shared";
+import {
+  emeraldCopy,
+  scriptLeading,
+  type EmeraldFonts,
+} from "@/templates/emerald-shahi/shared";
 import { useEnter } from "@/templates/emerald-shahi/useEnter";
 import type { CardAudience, CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
+
+/** Where a visit's scratched coins are kept, per invitation. */
+function coinsKey(persistKey: string): string {
+  return `lifafa:emerald-coins:${persistKey}`;
+}
+
+function readCoins(persistKey: string | null): readonly string[] {
+  if (persistKey === null) {
+    return [];
+  }
+
+  try {
+    const stored: unknown = JSON.parse(
+      window.sessionStorage.getItem(coinsKey(persistKey)) ?? "[]",
+    );
+
+    return Array.isArray(stored)
+      ? stored.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    /* Storage blocked or the entry unreadable: nothing scratched yet. */
+    return [];
+  }
+}
 
 /**
  * The countdown, struck as four gold coins: days, hours, minutes, seconds.
@@ -30,16 +57,20 @@ import type { EventDraft } from "@/types/event";
  * tab is hidden. Only the drawing is this template's.
  *
  * SCRATCH TO REVEAL, where the host has it on for the countdown: each coin is
- * then one of the card's own scratch panels, a canvas the size of that coin
- * and no larger. They share the card's one reveal, so the coins come clear
- * together, stay clear for the visit, and can be shown without scratching by
- * the button under them. In the editor's preview they are drawn open.
+ * its own scratch panel, the card's ScratchPanel with a canvas the size of
+ * that coin and no larger, and each is scratched on its own. Which coins a
+ * guest has cleared is kept for the visit under the invitation's code (the
+ * session's storage, where the card's other scratch panels keep theirs), so a
+ * reload shows the same coins open and the same ones still covered. The
+ * button under them opens all four for a guest who would rather not scratch,
+ * or cannot. In the editor's preview they are drawn open.
  */
 export default function EmeraldShahiCountdown({
   draft,
   language,
   scratch,
   audience,
+  persistKey,
   fonts,
 }: {
   draft: EventDraft;
@@ -47,12 +78,45 @@ export default function EmeraldShahiCountdown({
   /** Whether the host hides the countdown behind scratch panels. */
   scratch: boolean;
   audience: CardAudience;
+  /** The invitation's code, to remember the coins under; null in a preview, which remembers nothing. */
+  persistKey: string | null;
   fonts: EmeraldFonts;
 }): ReactElement | null {
   const { ref, entered } = useEnter<HTMLElement>();
   const copy = cardCopy(language);
-  const shared = useScratchReveal(scratch ? "countdown" : undefined);
   const [countdown, setCountdown] = useState<Countdown | null>(null);
+  /* The coins cleared so far. Read after the first paint, as storage is the browser's alone. */
+  const [cleared, setCleared] = useState<readonly string[]>([]);
+
+  useEffect(() => {
+    setCleared((current) => [...new Set([...readCoins(persistKey), ...current])]);
+  }, [persistKey]);
+
+  const clear = useCallback(
+    (ids: readonly string[]): void => {
+      setCleared((current) => {
+        const next = [...new Set([...current, ...ids])];
+
+        if (next.length === current.length) {
+          return current;
+        }
+
+        if (persistKey !== null) {
+          try {
+            window.sessionStorage.setItem(
+              coinsKey(persistKey),
+              JSON.stringify(next),
+            );
+          } catch {
+            /* Not kept; the coin is still open for as long as the page is. */
+          }
+        }
+
+        return next;
+      });
+    },
+    [persistKey],
+  );
 
   const target = eventInstant(draft.eventDate, draft.eventTime);
   const targetTime = target === null ? null : target.getTime();
@@ -101,15 +165,17 @@ export default function EmeraldShahiCountdown({
         ? copy.countdown.begun
         : copy.countdown.passed;
 
-  const panel: ScratchConfig = {
+  const scratching = scratch && audience === "guest";
+  const covered = units.filter((unit) => !cleared.includes(unit.id));
+  const anyCovered = scratching && covered.length > 0;
+
+  /* No shared target: each coin is cleared by its own scratching and nobody else's. */
+  const panel: Omit<ScratchConfig, "preCleared"> = {
     accent: "#D8B26A",
     surface: "#0B3A27",
     label: "",
     phrases: { ...copy.scratch, short: "" },
-    preCleared: audience === "host-preview",
-    target: "countdown",
   };
-  const covered = scratch && audience === "guest" && shared.revealed === null;
 
   return (
     <section
@@ -140,13 +206,16 @@ export default function EmeraldShahiCountdown({
       ) : (
         <>
           <p className="sr-only" role="timer" aria-live="off">
-            {covered ? copy.scratch.countdown : spokenCountdown(units)}
+            {anyCovered
+              ? emeraldCopy(language).scratchEach
+              : spokenCountdown(units)}
           </p>
           <div
             aria-hidden="true"
             className="grid w-full max-w-[22rem] grid-cols-4 gap-[calc(0.6*var(--es))]"
           >
             {units.map((unit, index) => {
+              const open = !scratching || cleared.includes(unit.id);
               const figure = (
                 <span
                   className={`${styles.coinFigure} text-[calc(1.55*var(--es))] leading-none`}
@@ -166,8 +235,21 @@ export default function EmeraldShahiCountdown({
                 >
                   <div className={styles.coin}>
                     {scratch ? (
+                      /*
+                        Keyed by whether it is open, so a coin found open in
+                        storage, or opened by the button, is drawn open from
+                        the start and not scratched away by a panel that
+                        thought it was covered.
+                      */
                       <ScratchPanel
+                        key={open ? "open" : "covered"}
                         {...panel}
+                        preCleared={open}
+                        onCoveredChange={(isCovered) => {
+                          if (!isCovered) {
+                            clear([unit.id]);
+                          }
+                        }}
                         showRevealButton={false}
                         fit="box"
                         fill
@@ -195,17 +277,17 @@ export default function EmeraldShahiCountdown({
             })}
           </div>
 
-          {covered ? (
+          {anyCovered ? (
             <div className="flex flex-col items-center gap-1">
               <p
                 className="text-[calc(0.85*var(--es))]"
                 style={{ ...fonts.body, color: "var(--es-ivory)" }}
               >
-                {copy.scratch.countdown}
+                {emeraldCopy(language).scratchEach}
               </p>
               <button
                 type="button"
-                onClick={shared.reveal}
+                onClick={() => clear(units.map((unit) => unit.id))}
                 className="min-h-11 rounded-full px-3 text-xs underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
                 style={{
                   ...fonts.body,

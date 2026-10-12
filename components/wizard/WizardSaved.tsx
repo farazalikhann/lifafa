@@ -16,7 +16,7 @@ const LINK_CLASS =
  * coupon field, the same order and webhook behind it. Nothing here is a second
  * way to pay.
  *
- * Reached at /create/wizard?step=preview&event=<id>, so a reload stays on it
+ * Reached at /create?step=preview&event=<id>, so a reload stays on it
  * and the card is not saved twice. The steps are no longer open from here: the
  * card is a saved invitation now, and changing it is the editor's job.
  */

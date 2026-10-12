@@ -13,9 +13,7 @@ import { DEFAULT_WEATHER_THEME } from "@/lib/weatherThemes";
  * finds: an empty card, the card they stashed before signing in, or an empty
  * card and the reason theirs is not in it.
  *
- * FOR THE WIZARD AT /create/wizard. app/create/page.tsx holds the same three
- * things for the tabbed editor, word for word, and is left as it is until the
- * wizard takes its place; this is then the one copy.
+ * For the wizard at /create, which is the only place a card is made.
  */
 
 const DEFAULT_OCCASION = getOccasion(DEFAULT_OCCASION_ID);
@@ -38,6 +36,8 @@ export const EMPTY_SNAPSHOT: EditorSnapshot = {
     subEvents: [],
   },
   config: {
+    /* Made in the wizard, so changed in the wizard; see CardConfig.editor. */
+    editor: "wizard",
     themeId: DEFAULT_OCCASION.defaultThemeId,
     /* Every built-in section starts enabled, in the registry order. */
     blocks: DEFAULT_SECTION_ORDER.map((id) => ({
@@ -82,7 +82,11 @@ export type Arrival =
 function restoredSnapshot(card: PendingCard): EditorSnapshot {
   return {
     draft: card.draft,
-    config: { ...card.config, isPaid: false },
+    /*
+      The wizard's, whatever stashed it: a card begun in the tabbed editor
+      before the wizard took its place is finished, and saved, here.
+    */
+    config: { ...card.config, isPaid: false, editor: "wizard" },
     coverAnimation: card.coverAnimation ?? DEFAULT_COVER_ANIMATION,
     showWeather: card.showWeather === true,
     weatherTheme: card.weatherTheme ?? DEFAULT_WEATHER_THEME,

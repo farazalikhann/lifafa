@@ -151,6 +151,7 @@ export default function EmeraldShahiCard(
             language={language}
             scratch={scratchCountdown}
             audience={audience}
+            persistKey={invite.url === null ? null : invite.code}
             fonts={fonts}
           />
         ) : null;
@@ -174,10 +175,13 @@ export default function EmeraldShahiCard(
   };
 
   return (
-    /* Every scratch panel on the card shares one reveal, kept for the visit under the invitation's code. */
+    /*
+      The card's scratch state, for anything on it that asks. The countdown's
+      coins keep their own, coin by coin; see Countdown.tsx.
+    */
     <ScratchRevealProvider
       persistKey={invite.url === null ? null : invite.code}
-      concealed={scratchCountdown ? "countdown" : "none"}
+      concealed="none"
     >
       <div
         lang={language}

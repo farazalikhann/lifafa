@@ -169,6 +169,8 @@ interface EditorState {
   isPaid: boolean;
   /** The card's template. Carried like `isPaid`: nothing in this editor changes it. */
   templateId: string;
+  /** Whether the card is the wizard's. Carried, never changed here; see CardConfig.editor. */
+  wizard: boolean;
   coverAnimation: CoverAnimationId;
   showWeather: boolean;
   weatherTheme: WeatherThemeId;
@@ -261,6 +263,7 @@ function toState(snapshot: EditorSnapshot): EditorState {
     isPaid: config.isPaid,
     /* Missing on every card saved before there were templates: Classic. */
     templateId: getTemplate(config.templateId).id,
+    wizard: config.editor === "wizard",
     coverAnimation: snapshot.coverAnimation,
     showWeather: snapshot.showWeather,
     weatherTheme: snapshot.weatherTheme,
@@ -285,6 +288,8 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       ...(state.templateId !== CLASSIC_TEMPLATE_ID
         ? { templateId: state.templateId }
         : null),
+      /* Only ever stored on the wizard's cards, so an older card is stored as it was. */
+      ...(state.wizard ? { editor: "wizard" as const } : null),
       /* The card's theme follows the draft's, which is what the occasion sets. */
       themeId: state.draft.themeId,
       blocks: state.blocks,
@@ -914,6 +919,7 @@ export function useCardEditor({
     musicUrl,
     isPaid: initial.isPaid,
     templateId,
+    wizard: initial.wizard,
     coverAnimation,
     showWeather,
     weatherTheme,

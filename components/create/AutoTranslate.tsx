@@ -123,7 +123,7 @@ const USED_NOTE =
  * translate that fully succeeds uses it up; a failed request, or one where
  * some fields did not come back, leaves the button ready to try again.
  *
- * Fills the other language's words at the end of this tab from the ones the
+ * Fills the other language's words, under the details, from the ones the
  * host typed, through /api/translate, and leaves every one of them editable
  * there. Never overwrites text silently: when a target field already has
  * words the host is asked, inline, whether to replace them.
@@ -450,7 +450,7 @@ export default function AutoTranslate({
           id={hintId}
           className="text-xs leading-relaxed text-[var(--lifafa-muted)] sm:max-w-[34ch]"
         >
-          Fills the {name} words at the end of this tab from what you type
+          Fills the {name} words, further down this page, from what you type
           here. Names and places keep their sound; other text is translated.
         </p>
 

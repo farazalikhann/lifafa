@@ -18,6 +18,7 @@ import type { TemplateConfig } from "@/templates/types";
  *   musicUrl        the host's own link
  *   pdfDownload     whether guests may keep a copy
  *   shareMessages   the host's wording of the WhatsApp message
+ *   editor          which editor the card is changed in
  *   isPaid          not the editor's to change
  *
  * and the three switches kept in their own columns beside it: the weather, its
@@ -58,6 +59,8 @@ export function switchTemplate(
       ...(config.shareMessages !== undefined
         ? { shareMessages: config.shareMessages }
         : null),
+      /* Which editor the card is changed in is the card's, not the look's. */
+      ...(config.editor !== undefined ? { editor: config.editor } : null),
       isPaid: config.isPaid,
 
       style: design.style,

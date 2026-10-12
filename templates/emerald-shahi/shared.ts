@@ -51,6 +51,8 @@ interface EmeraldCopy {
   venues: string;
   /** "No. 1" on a function's card. */
   number: (n: number) => string;
+  /** Under the countdown's coins, while any is still covered. */
+  scratchEach: string;
 }
 
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
@@ -60,12 +62,14 @@ const COPY: Readonly<Record<CardLanguage, EmeraldCopy>> = {
     viewOnMap: "View on map",
     venues: "The Venues",
     number: (n) => `No. ${n}`,
+    scratchEach: "Scratch each circle to reveal",
   },
   hi: {
     thankYou: "धन्यवाद",
     viewOnMap: "नक्शे पर देखें",
     venues: "समारोह स्थल",
     number: (n) => `क्र. ${n}`,
+    scratchEach: "हर गोले को खुरचकर देखें",
   },
 };
 

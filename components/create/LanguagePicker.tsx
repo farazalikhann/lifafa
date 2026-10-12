@@ -51,7 +51,7 @@ export default function LanguagePicker({
         >
           The language you write the card in. The date, the headings and the
           reply form follow it. To share the card in another language too, add
-          those words at the end of this tab.
+          those words under your details, further down this page.
         </p>
       </div>
 
