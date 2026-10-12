@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactElement } from "react";
 import PinnedStrip, { PINNED_STRIP_ACTION } from "@/components/invite/PinnedStrip";
-import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
+import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 
 /**
  * The strip across the top of the sample invitation.
@@ -29,7 +29,7 @@ export default function SampleBanner(): ReactElement {
       <span className="font-semibold text-[var(--lifafa-marigold)]">
         This is a sample invitation.
       </span>{" "}
-      Create yours for {formatInr(INVITATION_PRICE_INR)}.
+      Create yours from {formatPrice(LOWEST_PRICE_PAISE)}.
     </PinnedStrip>
   );
 }

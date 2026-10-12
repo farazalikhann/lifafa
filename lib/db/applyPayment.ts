@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { templatePricePaise } from "@/templates/registry";
 
 /**
  * Marking an order paid and publishing its invitation. The webhook's only write.
@@ -32,6 +33,11 @@ export type CaptureOutcome =
   | { kind: "duplicate" }
   /** No payments row carries this order id. Logged, then ignored. */
   | { kind: "unknown" }
+  /**
+   * Money arrived that is not the money this invitation costs: see the check
+   * at the top of applyCapturedPayment. Nothing was written.
+   */
+  | { kind: "mismatch"; eventId: string; reason: string }
   /** The database refused. The only case the route answers non-2xx for. */
   | { kind: "error"; message: string };
 
@@ -66,8 +72,72 @@ export type CaptureOutcome =
 export async function applyCapturedPayment(
   orderId: string,
   paymentId: string,
+  /** What Razorpay says was captured, in paise, from the signed webhook. */
+  capturedPaise: number,
 ): Promise<CaptureOutcome> {
   const admin = createAdminClient();
+
+  /*
+    THE AMOUNT IS CONFIRMED BEFORE ANYTHING IS WRITTEN. Two questions, both
+    answered from rows the server wrote or the host saved, neither from the
+    browser:
+
+    1. Was what was captured what the order asked for? The order's row holds
+       the amount this server computed when it made the order.
+
+    2. Was the order made for a template that costs at least what the
+       invitation's template costs now? An order's list price is what was
+       charged plus what its coupon took off. A host could make an order on a
+       ₹699 template, move the unpaid card to a ₹999 one in another tab, and
+       then pay the first order; that must not publish the dearer card. Moving
+       to a cheaper template after ordering is the host's own loss and is let
+       through.
+
+    An order that fails either is left exactly as it was, so it can be put
+    right by hand: the money is in Razorpay's records under this payment id.
+  */
+  const { data: order, error: orderError } = await admin
+    .from("payments")
+    .select("event_id, amount, discount_amount, status")
+    .eq("razorpay_order_id", orderId)
+    .maybeSingle();
+
+  if (orderError !== null) {
+    console.error("[razorpay] could not read the payment row:", orderError);
+    return { kind: "error", message: "payments read failed" };
+  }
+
+  if (order !== null && order.status === "created") {
+    const { data: event, error: eventReadError } = await admin
+      .from("events")
+      .select("card_config")
+      .eq("id", order.event_id)
+      .maybeSingle();
+
+    if (eventReadError !== null) {
+      console.error("[razorpay] could not read the event:", eventReadError);
+      return { kind: "error", message: "events read failed" };
+    }
+
+    const listPaise = order.amount + (order.discount_amount ?? 0);
+    const pricePaise = templatePricePaise(event?.card_config?.templateId);
+
+    if (capturedPaise !== order.amount) {
+      return {
+        kind: "mismatch",
+        eventId: order.event_id,
+        reason: `captured ${capturedPaise} paise against an order for ${order.amount}`,
+      };
+    }
+
+    if (event !== null && listPaise < pricePaise) {
+      return {
+        kind: "mismatch",
+        eventId: order.event_id,
+        reason: `the order was priced at ${listPaise} paise and the invitation's template now costs ${pricePaise}`,
+      };
+    }
+  }
 
   const { data: updated, error: paymentError } = await admin
     .from("payments")

@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { UPGRADE_AFTER_PAYMENT_MESSAGE } from "@/lib/templateUpgrade";
+import { templatePricePaise } from "@/templates/registry";
 import { generateInviteCode } from "@/lib/inviteCode";
 import {
   dbFailure,
@@ -550,6 +552,25 @@ export async function updateEvent(
         paidEditMessage(refusal),
       );
     }
+  }
+
+  /*
+    A PAID INVITATION MAY NOT MOVE TO A DEARER TEMPLATE. What was paid for was
+    a card on the template it had then; one at the same price or less is a
+    change of look, and one that costs more is an upgrade nobody has paid for.
+    Asked of the two template ids, the stored one and the one in this save,
+    through the same table of prices an order is made from.
+  */
+  if (
+    existing.is_paid &&
+    templatePricePaise(patch.cardConfig.templateId) >
+      templatePricePaise(existing.card_config.templateId)
+  ) {
+    return dbFailure(
+      "updateEvent/upgrade",
+      `event ${id}: paid on ${String(existing.card_config.templateId ?? "classic")}, asked for ${String(patch.cardConfig.templateId ?? "classic")}`,
+      UPGRADE_AFTER_PAYMENT_MESSAGE,
+    );
   }
 
   const venueMoved =

@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import PublishButton from "@/components/dashboard/PublishButton";
 import { isRazorpayTestMode, razorpayKeyId } from "@/lib/razorpay/keys";
-import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
 
 /**
  * The unpaid state of one invitation, on that invitation's own dashboard.
@@ -23,7 +23,15 @@ import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
 export default function PaymentBanner({
   isPaid,
   eventId,
+  pricePaise,
 }: {
+  /**
+   * What this invitation costs: its template's price, worked out by the server
+   * page that read the event. Printed here and on the button; the amount
+   * charged is worked out again, from the saved invitation, when the order is
+   * made.
+   */
+  pricePaise: number;
   isPaid: boolean;
   /** Which invitation this publishes. The server action re-checks ownership. */
   eventId: string;
@@ -46,12 +54,12 @@ export default function PaymentBanner({
         >
           This invitation is not published yet. Guests who open the link will be
           told it is not ready. Publish it for{" "}
-          {formatInr(INVITATION_PRICE_INR)} to share it.
+          {formatPrice(pricePaise)} to share it.
         </p>
 
         <div className="shrink-0">
           {configured ? (
-            <PublishButton eventId={eventId} />
+            <PublishButton eventId={eventId} pricePaise={pricePaise} />
           ) : (
             /*
               No key, so no checkout to open. A disabled button that says why
@@ -82,7 +90,7 @@ export default function PaymentBanner({
  *
  * Deliberately loud. Everything else in this palette is a hint; this is the one
  * thing on the page that must not be skimmed past, because the mistake it
- * prevents is only discovered later, in a bank statement that is missing ₹999.
+ * prevents is only discovered later, in a bank statement that is missing the money.
  */
 function TestModeNote({ show }: { show: boolean }): ReactElement | null {
   if (!show) {

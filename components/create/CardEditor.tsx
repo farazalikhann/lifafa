@@ -480,7 +480,7 @@ export default function CardEditor({
             */}
             {mode === "create" ? (
               <p className="text-right text-[0.6875rem] leading-snug text-[var(--lifafa-muted)]">
-                Each invitation is a separate ₹999 payment.
+                Each invitation is a separate payment.
               </p>
             ) : null}
 

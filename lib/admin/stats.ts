@@ -5,7 +5,6 @@ import {
   OVERVIEW_EVENT_LIMIT,
   type EventsQuery,
 } from "@/lib/admin/eventsQuery";
-import { INVITATION_PRICE_INR } from "@/lib/pricing";
 import { eventEndDate, hasEnded } from "@/lib/eventLock";
 import { toStoredEvent } from "@/types/database";
 import {
@@ -338,7 +337,12 @@ export async function getAdminOverview(): Promise<DbResult<AdminOverview>> {
         last7Days: weekEvents,
         last30Days: monthEvents,
         paid: paidEvents,
-        revenueInr: paidEvents * INVITATION_PRICE_INR,
+        /*
+          No longer "paid events times the price": there are two prices. What
+          each paid order's invitation listed at is what it charged plus what
+          its coupon took off, and both are on the payment's own row.
+        */
+        revenueInr: Math.round((money.receivedPaise + money.discountPaise) / 100),
         /* Paise on the row, rupees on the tile. Rounded once, here. */
         discountGivenInr: Math.round(money.discountPaise / 100),
         netReceivedInr: Math.round(money.receivedPaise / 100),

@@ -3,6 +3,7 @@ import Link from "next/link";
 import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { templatePricePaise } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
 
 const LINK_CLASS =
@@ -60,7 +61,11 @@ export default function WizardSaved({
           </p>
         </div>
 
-        <PaymentBanner isPaid={event.isPaid} eventId={event.id} />
+        <PaymentBanner
+          isPaid={event.isPaid}
+          eventId={event.id}
+          pricePaise={templatePricePaise(event.config.templateId)}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row">
           {/* The host's own preview of the real link, watermarked until it is published. */}

@@ -7,7 +7,7 @@ import {
   type ActivateFreeResult,
 } from "@/lib/admin/complimentary";
 import { ADMIN_UNLOCK_HOURS } from "@/lib/eventLock";
-import { INVITATION_PRICE_PAISE } from "@/lib/razorpay/pricing";
+import { templatePricePaise } from "@/templates/registry";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /*
@@ -137,15 +137,25 @@ export async function activateEventForFree(
     };
   }
 
-  const { data: outcome, error } = await createAdminClient().rpc(
-    "grant_complimentary",
-    {
-      p_event_id: eventId,
-      p_reason: trimmed,
-      p_granted_by: session.username,
-      p_list_price: INVITATION_PRICE_PAISE,
-    },
-  );
+  /*
+    What is being given away: the price of the template this invitation is
+    on, which is what the free row records as its discount. A card that
+    cannot be read is priced as Classic, and the function below still refuses
+    an id that names no event.
+  */
+  const admin = createAdminClient();
+  const { data: card } = await admin
+    .from("events")
+    .select("card_config")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  const { data: outcome, error } = await admin.rpc("grant_complimentary", {
+    p_event_id: eventId,
+    p_reason: trimmed,
+    p_granted_by: session.username,
+    p_list_price: templatePricePaise(card?.card_config?.templateId),
+  });
 
   if (error !== null) {
     console.error(`[admin] could not activate event ${eventId} for free:`, error);

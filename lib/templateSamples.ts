@@ -224,7 +224,6 @@ const SAMPLES: Readonly<Record<TraditionId, Sample>> = {
       { id: "demo-contact-1", label: "Anand Kamble", phone: "98765 43210" },
     ],
   }),
-  /* No Christian template yet; the sample is here so the record is whole. */
   christian: wedding({
     partyOneName: "Joel Fernandes",
     partyTwoName: "Maria D'Souza",
@@ -234,8 +233,28 @@ const SAMPLES: Readonly<Record<TraditionId, Sample>> = {
     venueName: "St. Thomas Church",
     venueAddress: "Bandra West, Mumbai 400050",
     message:
-      "Together with our families, we invite you to celebrate our wedding and the reception that follows.",
-    subEvents: [],
+      "Together with our families, and with joyful hearts, we invite you to witness our wedding and to celebrate with us at the reception that follows.",
+    subEvents: [
+      {
+        id: "demo-roce",
+        label: "Roce",
+        date: "2026-12-10",
+        time: "18:30",
+        venueName: "Fernandes Residence",
+        venueAddress: "Bandra West, Mumbai 400050",
+      },
+      {
+        id: "demo-reception",
+        label: "Reception",
+        date: "2026-12-12",
+        time: "19:00",
+        venueName: "The Seaside Lawn",
+        venueAddress: "Carter Road, Bandra West, Mumbai 400050",
+      },
+    ],
+    contacts: [
+      { id: "demo-contact-1", label: "Peter Fernandes", phone: "98765 43210" },
+    ],
     partyOneParents: "Mr. Peter Fernandes and Mrs. Rita Fernandes",
     partyOneCity: "Mumbai",
     partyTwoParents: "Mr. John D'Souza and Mrs. Anne D'Souza",

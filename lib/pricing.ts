@@ -1,31 +1,45 @@
 /**
- * What one invitation costs, as a number.
+ * What an invitation costs.
  *
- * The same ₹999 the landing page, the FAQ and the payment banner all state in
- * prose. Those are sentences written for a host and are left as sentences;
- * this is the figure arithmetic is done on, and the admin dashboard is the
- * first thing in the app that needs to multiply rather than print.
+ * TWO PRICES, BY TEMPLATE. A card in the Traditions Collection is ₹699 and one
+ * in the Premium Collection is ₹999. Each template carries its own price
+ * (`price` on TemplateConfig, in paise), and these two constants are the only
+ * figures those are ever set from.
  *
- * WHY REVENUE IS DERIVED FROM IT RATHER THAN READ FROM A ROW. public.events
- * records whether an invitation was paid for — is_paid — and not what was paid.
- * There is no amount column, no order and no payment webhook yet, so the only
- * revenue figure the database can support is "paid invitations times the
- * price". That is exact while there is one price and no discounts, and it
- * stops being exact the day either changes. When a real payment lands, the
- * amount belongs on the row and the dashboard should read it from there.
+ * PAISE, ALWAYS, wherever arithmetic is done. Razorpay takes amounts in
+ * currency subunits, the payments table stores them, and a price in rupees
+ * anywhere in that path is a conversion waiting to be forgotten. Rupees are
+ * for a sentence on screen and nothing else; `formatPrice` is the one place
+ * the two meet.
+ *
+ * NOTHING HERE DECIDES WHAT A HOST IS CHARGED. That is worked out on the
+ * server, at the moment an order is made, from the template the saved
+ * invitation is on; see templatePricePaise in templates/registry.ts and
+ * createPaymentOrder in lib/db/payments.ts. Everything that imports this file
+ * to show a price is showing a label.
+ *
+ * No imports, on purpose: the admin's coupon form reads the lowest price in
+ * the browser, and must not bring the template registry with it.
  */
-export const INVITATION_PRICE_INR = 999;
+export const TRADITIONS_PRICE_PAISE = 69900;
+export const PREMIUM_PRICE_PAISE = 99900;
 
-/**
- * A rupee figure with thousands separators, e.g. "₹1,23,456".
- *
- * en-IN, so the grouping is the Indian one — lakhs and crores, not thousands.
- * `Intl` is in every runtime this app targets, so this costs no dependency.
- */
+/** The least any invitation costs: what "starting at" means, and what a coupon is free against. */
+export const LOWEST_PRICE_PAISE = Math.min(
+  TRADITIONS_PRICE_PAISE,
+  PREMIUM_PRICE_PAISE,
+);
+
+/** Rupees, as a whole number, in India's own grouping: ₹1,499. */
 export function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+/** A price in paise as it is shown: 69900 is "₹699". */
+export function formatPrice(paise: number): string {
+  return formatInr(Math.round(paise / 100));
 }

@@ -1,4 +1,5 @@
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
+import { TRADITIONS_PRICE_PAISE } from "@/lib/pricing";
 import ClassicCard from "@/templates/classic/Card";
 import { SWITCHABLE_SECTIONS, plain } from "@/templates/shared/fromPreset";
 import preview from "@/templates/classic/preview.webp";
@@ -22,6 +23,8 @@ export const CLASSIC_TEMPLATE: TemplateConfig = {
   description: "A simple card in ink and gold, for any occasion.",
   category: "none",
   listed: true,
+  collection: "traditions",
+  price: TRADITIONS_PRICE_PAISE,
   preview,
   palettes: [
     {

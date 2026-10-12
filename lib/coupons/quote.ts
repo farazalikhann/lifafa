@@ -7,7 +7,7 @@ import type { CouponRow } from "@/types/database";
  * THE RULE THIS FILE EXISTS TO ENFORCE: the browser sends a code, and nothing
  * else. Not an amount, not a discount, not a final price. Every number below is
  * derived from a coupon row that was read out of the database a moment earlier
- * and from INVITATION_PRICE_PAISE, which is a server constant. There is no
+ * and from the price of the invitation's template, read on the server. There is no
  * parameter here that a request could supply.
  *
  * That is why this is a pure function of a row rather than a method on a

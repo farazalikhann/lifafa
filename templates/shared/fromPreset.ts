@@ -2,7 +2,8 @@ import ClassicCard from "@/templates/classic/Card";
 import type { TemplateConfig, TemplatePalette } from "@/templates/types";
 import { defaultDesign } from "@/lib/designDefaults";
 import { getPalette } from "@/lib/palettes";
-import { PRESET_GROUPS, applyPreset } from "@/lib/presets";
+import { PRESET_GROUPS, applyPreset, type Preset } from "@/lib/presets";
+import { TRADITIONS_PRICE_PAISE } from "@/lib/pricing";
 import type { CardSectionId } from "@/types/card";
 import type { FontPairId } from "@/types/style";
 
@@ -35,12 +36,24 @@ export const SWITCHABLE_SECTIONS: readonly CardSectionId[] = [
  */
 export function presetTemplate({
   presetId,
+  preset: ownPreset,
   preview,
   ownPaletteLabel,
   palettes,
   fontPairs,
+  scene,
 }: {
-  presetId: string;
+  /** The painted scene, where it is not the card's default; see `scene` on TemplateConfig. */
+  scene?: TemplateConfig["scene"];
+  /** One of the editor's presets, by its id; or */
+  presetId?: string;
+  /**
+   * a look written out in the template's own folder, in the same terms: for a
+   * tradition the editor has no preset for. It is put on the card by the
+   * same applyPreset, which only ever switches on what that tradition's own
+   * pack offers.
+   */
+  preset?: Preset;
   preview: TemplateConfig["preview"];
   /** What the preset's own colourway is called beside the alternatives. */
   ownPaletteLabel: string;
@@ -49,12 +62,14 @@ export function presetTemplate({
   /** One or two font pairs beside the preset's own. */
   fontPairs: readonly FontPairId[];
 }): TemplateConfig {
-  const preset = PRESET_GROUPS.flatMap((group) => group.presets).find(
-    (entry) => entry.id === presetId,
-  );
+  const preset =
+    ownPreset ??
+    PRESET_GROUPS.flatMap((group) => group.presets).find(
+      (entry) => entry.id === presetId,
+    );
 
   if (preset === undefined) {
-    throw new Error(`templates: no preset called "${presetId}"`);
+    throw new Error(`templates: no preset called "${String(presetId)}"`);
   }
 
   const baseDesign = applyPreset(defaultDesign("wedding"), preset);
@@ -65,6 +80,8 @@ export function presetTemplate({
     description: preset.description,
     category: preset.tradition,
     listed: true,
+    collection: "traditions",
+    price: TRADITIONS_PRICE_PAISE,
     preview,
     palettes: [
       {
@@ -81,6 +98,7 @@ export function presetTemplate({
     ],
     sections: SWITCHABLE_SECTIONS,
     baseDesign,
+    ...(scene !== undefined ? { scene } : null),
     Card: ClassicCard,
   };
 }

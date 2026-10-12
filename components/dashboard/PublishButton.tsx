@@ -6,7 +6,7 @@ import { activateWithFreeCoupon, createPaymentOrder } from "@/lib/db/payments";
 import CouponField, {
   type AppliedCoupon,
 } from "@/components/dashboard/CouponField";
-import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 
 /**
@@ -93,7 +93,7 @@ type Phase =
   | { kind: "failed"; message: string };
 
 /**
- * "Publish for ₹999", and everything that can happen after it is pressed.
+ * "Publish for ₹699", and everything that can happen after it is pressed.
  *
  * A CLIENT COMPONENT INSIDE A SERVER-RENDERED BANNER, on the same pattern as
  * DeleteEventButton: PaymentBanner stays a server component and only this
@@ -113,8 +113,11 @@ type Phase =
  */
 export default function PublishButton({
   eventId,
+  pricePaise,
 }: {
   eventId: string;
+  /** This invitation's list price, for the label. The charge is the server's to work out. */
+  pricePaise: number;
 }): ReactElement {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -327,7 +330,7 @@ export default function PublishButton({
         }
         className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50"
       >
-        {buttonLabel(phase, coupon)}
+        {buttonLabel(phase, coupon, pricePaise)}
       </button>
 
       <StatusLine phase={phase} onCheckAgain={() => router.refresh()} />
@@ -339,17 +342,17 @@ export default function PublishButton({
  * What the button itself says.
  *
  * The price on it follows the applied coupon, because a button reading "Publish
- * for ₹999" above a line reading "you pay ₹499" is a button that contradicts
+ * for ₹699" above a line reading "you pay ₹349" is a button that contradicts
  * the screen it is on. It is still only a label: the figure charged is computed
  * server side from the code, never from this.
  */
-function buttonLabel(phase: Phase, coupon: AppliedCoupon | null): string {
+function buttonLabel(
+  phase: Phase,
+  coupon: AppliedCoupon | null,
+  pricePaise: number,
+): string {
   const free = coupon !== null && coupon.finalPaise === 0;
-  const price = formatInr(
-    coupon === null
-      ? INVITATION_PRICE_INR
-      : Math.round(coupon.finalPaise / 100),
-  );
+  const price = formatPrice(coupon === null ? pricePaise : coupon.finalPaise);
 
   switch (phase.kind) {
     case "activating":

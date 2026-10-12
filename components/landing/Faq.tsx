@@ -15,7 +15,7 @@ const QUESTIONS: readonly Question[] = [
       "No. They open the link, read the invitation, and reply. Nothing to install and nothing to sign up for.",
   },
   {
-    question: "What does ₹999 cover?",
+    question: "What does the price cover?",
     answer:
       "One invitation for one event, with unlimited guests and every feature. If you are hosting a second event, that is a separate invitation.",
   },

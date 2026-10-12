@@ -81,6 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const outcome = await applyCapturedPayment(
     captured.orderId,
     captured.paymentId,
+    captured.amount,
   );
 
   switch (outcome.kind) {
@@ -112,6 +113,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       */
       console.error(
         `[razorpay] NO PAYMENT ROW for order ${captured.orderId} (payment ${captured.paymentId}, ${captured.amount} paise). Someone has paid and nothing was published.`,
+      );
+      return NextResponse.json({ ok: true, handled: false });
+
+    case "mismatch":
+      /*
+        Money was captured that does not match what this invitation costs, so
+        it was not published. Answered 200: delivering it again would find the
+        same thing, and this is for a person to settle, with the payment id
+        below, by refund or by activating the invitation from the admin.
+      */
+      console.error(
+        `[razorpay] AMOUNT MISMATCH on order ${captured.orderId} (payment ${captured.paymentId}, event ${outcome.eventId}): ${outcome.reason}. Nothing was published.`,
       );
       return NextResponse.json({ ok: true, handled: false });
 

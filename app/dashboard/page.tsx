@@ -62,7 +62,7 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
             {count !== null && count > 0 ? (
               <p className="mt-1 text-sm text-[var(--lifafa-muted)]">
                 {count} {count === 1 ? "invitation" : "invitations"} · each is a
-                separate ₹999 payment
+                separate payment
               </p>
             ) : null}
           </div>

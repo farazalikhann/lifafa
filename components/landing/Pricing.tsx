@@ -1,5 +1,6 @@
 "use client";
 
+import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { useInView } from "@/hooks/useInView";
@@ -69,8 +70,12 @@ export default function Pricing() {
           One event, one payment
         </p>
 
-        <p className="mt-5 text-center font-[family-name:var(--font-display)] text-[3.5rem] leading-none font-semibold tracking-[-0.02em] text-[var(--lifafa-cream)] sm:text-6xl">
-          ₹999
+        {/* The lowest price, from the one table of prices, and said to be the lowest. */}
+        <p className="mt-5 text-center text-sm text-[var(--lifafa-muted)]">
+          Starting at
+        </p>
+        <p className="mt-1 text-center font-[family-name:var(--font-display)] text-[3.5rem] leading-none font-semibold tracking-[-0.02em] text-[var(--lifafa-cream)] sm:text-6xl">
+          {formatPrice(LOWEST_PRICE_PAISE)}
         </p>
         <p className="mt-3 text-center text-sm text-[var(--lifafa-muted)]">
           No subscription. No per-guest charge.

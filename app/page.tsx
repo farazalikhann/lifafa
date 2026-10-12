@@ -56,7 +56,7 @@ export default function Page() {
         <Pricing />
         {/*
           After the price, because that is when these get asked: a visitor who
-          has just read ₹999 wants to know what it covers before they tap.
+          has just read the price wants to know what it covers before they tap.
         */}
         <Faq />
         <CallToAction />

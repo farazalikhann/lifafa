@@ -8,7 +8,7 @@ import {
   type CouponFormState,
 } from "@/lib/admin/couponForm";
 import { isFreeDiscount } from "@/lib/coupons/quote";
-import { INVITATION_PRICE_PAISE } from "@/lib/razorpay/pricing";
+import { LOWEST_PRICE_PAISE } from "@/lib/pricing";
 
 /**
  * The "new code" form.
@@ -298,6 +298,6 @@ function makesFree(discountType: "percent" | "flat", rawValue: string): boolean 
   return isFreeDiscount(
     discountType,
     discountType === "percent" ? value : value * 100,
-    INVITATION_PRICE_PAISE,
+    LOWEST_PRICE_PAISE,
   );
 }

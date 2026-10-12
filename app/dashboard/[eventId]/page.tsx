@@ -20,6 +20,7 @@ import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { buildShareMessage } from "@/lib/shareMessage";
 import { inviteUrl } from "@/lib/siteUrl";
 import { geocodeVenue, getEventWeather } from "@/lib/weather";
+import { templatePricePaise } from "@/templates/registry";
 import type { CardLanguage } from "@/types/card";
 
 /**
@@ -234,7 +235,12 @@ export default async function DashboardPage({
           about to copy the link is the moment they need to know it is there.
           Renders nothing once the event is paid for.
         */}
-        <PaymentBanner isPaid={event.isPaid} eventId={event.id} />
+        <PaymentBanner
+          isPaid={event.isPaid}
+          eventId={event.id}
+          /* This invitation's own price: its template's. */
+          pricePaise={templatePricePaise(event.config.templateId)}
+        />
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">

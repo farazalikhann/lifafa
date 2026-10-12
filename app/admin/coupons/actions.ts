@@ -6,7 +6,7 @@ import type { CouponFormState } from "@/lib/admin/couponForm";
 import { generateCouponCode } from "@/lib/coupons/generate";
 import { isPossibleCouponCode, normaliseCouponCode } from "@/lib/coupons/lookup";
 import { isFreeDiscount } from "@/lib/coupons/quote";
-import { INVITATION_PRICE_PAISE } from "@/lib/razorpay/pricing";
+import { LOWEST_PRICE_PAISE } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CouponInsert, CouponType } from "@/types/database";
 
@@ -139,7 +139,8 @@ export async function createCoupon(
   */
   if (
     maxUses === null &&
-    isFreeDiscount(discountType, discountValue, INVITATION_PRICE_PAISE)
+    /* Against the cheapest invitation: a code that frees any card needs the limit. */
+    isFreeDiscount(discountType, discountValue, LOWEST_PRICE_PAISE)
   ) {
     return {
       error:

@@ -102,7 +102,7 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
         <Stat
           label="Gross at list price"
           value={formatInr(events.revenueInr)}
-          note="Paid events × ₹999"
+          note="Charged plus discounts given"
         />
       </StatSection>
 

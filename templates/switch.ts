@@ -75,8 +75,18 @@ export function switchTemplate(
       petalFlower: design.petalFlower,
       traditionId: design.traditionId,
       ornamentConfig: design.ornamentConfig,
-      /* A date behind a scratch panel is the card's one panel, on the date. */
-      scratchTarget: design.dateReveal === "scratch" ? "date" : "none",
+      /*
+        A date behind a scratch panel is the card's one panel, on the date.
+        Otherwise a template that draws its own scratch coins for the countdown
+        (`countdownScratch`) starts a card with them covered, which the host
+        can switch off in step 3; any other starts with nothing hidden.
+      */
+      scratchTarget:
+        design.dateReveal === "scratch"
+          ? "date"
+          : template.countdownScratch === true
+            ? "countdown"
+            : "none",
       ...(design.dateReveal !== undefined
         ? { dateReveal: design.dateReveal }
         : null),
@@ -87,6 +97,8 @@ export function switchTemplate(
       ...(design.namesFrame !== undefined
         ? { namesFrame: design.namesFrame }
         : null),
+      /* The template's own scene, where it names one; otherwise the card's default. */
+      ...(template.scene !== undefined ? { scene: template.scene } : null),
     },
     coverAnimation: design.coverAnimation,
     showWeather: snapshot.showWeather,

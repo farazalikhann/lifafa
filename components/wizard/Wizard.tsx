@@ -50,7 +50,7 @@ import {
   stashOriginFromUrl,
   writePendingCard,
 } from "@/lib/pendingCard";
-import { INVITATION_PRICE_INR, formatInr } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/client";
 import { getTheme } from "@/lib/themes";
 import {
@@ -494,6 +494,13 @@ function WizardSteps({
   };
 
   const template = getTemplate(templateId);
+  /*
+    On a paid invitation, what it was paid on: the price of the template the
+    stored card is on. A template that costs more cannot be moved to after
+    payment (updateEvent refuses it); one at the same price or less can.
+  */
+  const paidPricePaise =
+    edit?.isPaid === true ? getTemplate(start.config.templateId).price : null;
 
   /**
    * A template chosen in the gallery: the card moved onto it, with everything
@@ -504,6 +511,11 @@ function WizardSteps({
    */
   const handleTemplate = (next: TemplateConfig): void => {
     if (next.id === template.id) {
+      return;
+    }
+
+    /* The gallery does not offer it and the server would refuse the save; this is the third lock, not the only one. */
+    if (paidPricePaise !== null && next.price > paidPricePaise) {
       return;
     }
 
@@ -593,6 +605,7 @@ function WizardSteps({
             <TemplateGallery
               selectedId={template.id}
               onSelect={handleTemplate}
+              paidPricePaise={paidPricePaise}
             />
           ) : null}
 
@@ -742,7 +755,7 @@ function WizardSteps({
               {editing ? null : (
                 <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
                   Saving creates your invitation and its link. Publishing it is
-                  the next step and costs {formatInr(INVITATION_PRICE_INR)}:
+                  the next step and costs {formatPrice(template.price)}:
                   guests can open the link once it is published. Each
                   invitation is a separate payment.
                 </p>

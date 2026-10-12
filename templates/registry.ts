@@ -5,6 +5,7 @@ import {
 } from "@/templates/classic/config";
 import { EMERALD_SHAHI } from "@/templates/emerald-shahi/config";
 import { GURDWARA_IVORY } from "@/templates/gurdwara-ivory/config";
+import { IVORY_CHAPEL } from "@/templates/ivory-chapel/config";
 import { KESRI_ANAND_KARAJ } from "@/templates/kesri-anand-karaj/config";
 import { LOTUS_BLUSH } from "@/templates/lotus-blush/config";
 import { MAROON_ROYAL } from "@/templates/maroon-royal/config";
@@ -17,7 +18,8 @@ import type { TraditionId } from "@/types/occasion";
 export { CLASSIC_TEMPLATE_ID };
 
 /**
- * Every template, in the order the gallery lays them out.
+ * Every template, in the order the gallery lays them out within its two
+ * collections (`collection` on each says which).
  *
  * Adding one is a folder under templates/ and a line here. An id is written
  * into every card saved with it, so one that has shipped is never renamed or
@@ -33,6 +35,7 @@ export const TEMPLATES: readonly TemplateConfig[] = [
   GURDWARA_IVORY,
   LOTUS_BLUSH,
   BODHI_IVORY,
+  IVORY_CHAPEL,
   CLASSIC_TEMPLATE,
 ];
 
@@ -58,10 +61,35 @@ export function listedTemplates(): readonly TemplateConfig[] {
   return TEMPLATES.filter((template) => template.listed);
 }
 
+/**
+ * What an invitation on this template costs, in paise.
+ *
+ * THE ONE PLACE A PRICE IS DECIDED, and only ever called on the server with
+ * the template id read out of the saved invitation: when an order is made,
+ * when a coupon is quoted, when a captured payment is checked, and when a paid
+ * card asks to move to another template. `unknown`, like getTemplate: a card
+ * with no id, or one this build does not know, is Classic and costs what
+ * Classic costs. Nothing a browser sends is ever passed here.
+ */
+export function templatePricePaise(templateId: unknown): number {
+  return getTemplate(templateId).price;
+}
+
 /** Every category a template is shown under: its own, then any others. */
 export function categoriesOf(template: TemplateConfig): readonly TraditionId[] {
   return [template.category, ...(template.alsoIn ?? [])];
 }
+
+/** The order of the Traditions Collection's chips. */
+export const CATEGORY_ORDER: readonly TraditionId[] = [
+  "hindu",
+  "muslim",
+  "sikh",
+  "jain",
+  "buddhist",
+  "christian",
+  "none",
+];
 
 /** What the gallery calls each category, on its filter chips. */
 export const CATEGORY_LABELS: Readonly<Record<TraditionId, string>> = {

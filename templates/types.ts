@@ -6,7 +6,7 @@ import type { DesignState } from "@/lib/designDefaults";
 import type { Theme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
-import type { CardBorderStyle, CardSectionId } from "@/types/card";
+import type { CardBorderStyle, CardSectionId, Scene } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 import type { TraditionId } from "@/types/occasion";
 import type { FontPairId, PaletteId } from "@/types/style";
@@ -74,6 +74,19 @@ export interface TemplateConfig {
   /** Whether the gallery offers it. */
   listed: boolean;
   /**
+   * Which of the gallery's two sections it is in. "premium" is the templates
+   * with a card of their own, each for any wedding and shown without chips;
+   * "traditions" is the rest, filtered by tradition.
+   */
+  collection: "premium" | "traditions";
+  /**
+   * What an invitation on this template costs, in paise, from lib/pricing.ts.
+   * Shown in the gallery, and read on the server (templatePricePaise in
+   * registry.ts) for the saved invitation when an order is made: the figure
+   * a host is charged never comes from a browser.
+   */
+  price: number;
+  /**
    * The first screen of the template's sample card at 360px, for the gallery.
    * Made by scripts/shoot-templates.mjs; null until it has been.
    */
@@ -93,6 +106,12 @@ export interface TemplateConfig {
    * what they can. Laid down whole when the template is chosen.
    */
   baseDesign: DesignState;
+  /**
+   * The painted scene on the card's first screen, where it is not the one a
+   * card has by default (the palace garden). Laid down with the base design
+   * when the template is chosen.
+   */
+  scene?: Scene;
   /** What draws the card. */
   Card: ComponentType<TemplateCardProps>;
   /**
@@ -133,6 +152,8 @@ export interface TemplateConfig {
   /**
    * Whether step 3 offers "scratch to reveal the countdown": a template that
    * draws its own countdown says whether it draws the scratch panels too.
+   * One that does starts a new card with them on, and the host can switch
+   * them off there; see switchTemplate.
    */
   countdownScratch?: boolean;
 }

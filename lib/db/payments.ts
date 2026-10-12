@@ -3,10 +3,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { createRazorpayClient } from "@/lib/razorpay/client";
-import {
-  INVITATION_CURRENCY,
-  INVITATION_PRICE_PAISE,
-} from "@/lib/razorpay/pricing";
+import { INVITATION_CURRENCY } from "@/lib/razorpay/pricing";
+import { templatePricePaise } from "@/templates/registry";
 import { razorpayKeyId } from "@/lib/razorpay/keys";
 import {
   couponRefusalMessage,
@@ -167,7 +165,7 @@ export async function previewCoupon(
     return { ok: false, error: couponRefusalMessage(lookup.kind) };
   }
 
-  const quote = quoteWithCoupon(lookup.coupon, INVITATION_PRICE_PAISE);
+  const quote = quoteWithCoupon(lookup.coupon, owned.pricePaise);
 
   return {
     ok: true,
@@ -190,7 +188,19 @@ export async function previewCoupon(
 async function requireUnpaidOwnedEvent(
   eventId: string,
 ): Promise<
-  | { ok: true; hostId: string; hostEmail: string | null; hostName: string | null }
+  | {
+      ok: true;
+      hostId: string;
+      hostEmail: string | null;
+      hostName: string | null;
+      /**
+       * What this invitation costs, in paise: its template's price, from the
+       * template id in the row this request has just read under the host's
+       * own session. The only source of a price anywhere in this file. No
+       * caller passes one in, and nothing from the browser reaches it.
+       */
+      pricePaise: number;
+    }
   | { ok: false; error: string }
 > {
   const supabase = await createClient();
@@ -209,7 +219,7 @@ async function requireUnpaidOwnedEvent(
 
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id, is_paid, event_draft")
+    .select("id, is_paid, event_draft, card_config")
     .eq("id", eventId)
     .eq("host_id", user.id)
     .maybeSingle();
@@ -263,6 +273,7 @@ async function requireUnpaidOwnedEvent(
     hostId: user.id,
     hostEmail: user.email ?? null,
     hostName,
+    pricePaise: templatePricePaise(event.card_config?.templateId),
   };
 }
 
@@ -270,7 +281,7 @@ async function requireUnpaidOwnedEvent(
  * Creates a Razorpay order for one invitation and records it.
  *
  * THE AMOUNT IS NEVER AN ARGUMENT, and a coupon does not make it one. It is
- * computed here, in this request, from INVITATION_PRICE_PAISE and — when a code
+ * computed here, in this request, from the price of the saved invitation's template and — when a code
  * was typed — from the coupon row read out of the database a few lines below. A
  * price that arrived from the browser would be a price the buyer chose: this is
  * a server action, and its arguments are whatever crossed the wire, not
@@ -347,7 +358,7 @@ export async function createPaymentOrder(
     Not carried over from the preview, not read from a hidden field, not taken
     from the argument list — there is no argument that could carry it. The
     coupon row is fetched again in this request, and quoteWithCoupon applies it
-    to INVITATION_PRICE_PAISE, a server constant. A host who previewed a code
+    to the template's price, read on the server. A host who previewed a code
     an hour ago and had it deactivated in the meantime is refused now, because
     "now" is the only moment this function consults.
     ────────────────────────────────────────────────────────────────────────
@@ -365,11 +376,11 @@ export async function createPaymentOrder(
       );
     }
 
-    quote = quoteWithCoupon(lookup.coupon, INVITATION_PRICE_PAISE);
+    quote = quoteWithCoupon(lookup.coupon, owned.pricePaise);
   }
 
   /* No coupon is not a special case — it is a quote with nothing taken off. */
-  const amount = quote?.finalPaise ?? INVITATION_PRICE_PAISE;
+  const amount = quote?.finalPaise ?? owned.pricePaise;
   const discountAmount = quote?.discountPaise ?? 0;
   const couponCode = quote?.code ?? null;
 
@@ -560,7 +571,7 @@ export async function activateWithFreeCoupon(
     );
   }
 
-  const quote = quoteWithCoupon(lookup.coupon, INVITATION_PRICE_PAISE);
+  const quote = quoteWithCoupon(lookup.coupon, owned.pricePaise);
 
   if (quote.finalPaise !== 0) {
     return dbFailure(
@@ -576,7 +587,7 @@ export async function activateWithFreeCoupon(
     {
       p_event_id: eventId,
       p_code: quote.code,
-      p_list_price: INVITATION_PRICE_PAISE,
+      p_list_price: owned.pricePaise,
     },
   );
 

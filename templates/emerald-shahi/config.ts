@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
+import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/emerald-shahi/art";
 import preview from "@/templates/emerald-shahi/preview.webp";
 import { paperTheme } from "@/templates/emerald-shahi/shared";
@@ -62,9 +63,13 @@ const COVER_OPTION: CoverAnimationOption = {
  * Its Card and its Cover are loaded on demand, so a guest of any other
  * template downloads neither.
  *
- * A CARD FOR ANY WEDDING: there is no symbol of any faith on it, so it is
- * under every tradition's chip in the gallery, and first, with a "New" badge.
- * Its sample is the Hindu wedding.
+ * A CARD FOR EVERY WEDDING: there is no symbol of any faith on it. It is in
+ * the Premium Collection, which is first in the gallery and has no tradition
+ * chips, with a "New" badge. Its sample is the Hindu wedding.
+ *
+ * SCRATCH ON THE COUNTDOWN, FROM THE START: a new card on this template has
+ * its four coins covered (`countdownScratch`; see switchTemplate), and the
+ * host can switch that off in step 3.
  *
  * ITS OWN PAGE TOO: the reply form sits on ivory paper and the closing words
  * are its own (`page`), and its printed copy is on ivory (`print`).
@@ -78,11 +83,13 @@ export const EMERALD_SHAHI: TemplateConfig = {
   name: "Emerald Shahi",
   description:
     "A velvet envelope and a gold seal, on emerald with ivory roses and gold line art.",
+  /* Only for which sample wedding its demo shows: the Premium Collection has no chips. */
   category: "hindu",
-  alsoIn: ["muslim", "sikh", "jain", "buddhist"],
-  categoryLabel: "Any wedding",
+  categoryLabel: "For every wedding",
   badge: "New",
   listed: true,
+  collection: "premium",
+  price: PREMIUM_PRICE_PAISE,
   preview,
   palettes: [
     { id: "own", label: "Emerald", paletteId: "forest", accentOverride: GOLD },
