@@ -1370,6 +1370,15 @@
   animation-play-state: paused !important;
 }
 
+/*
+  A floating piece over the words of the opening screen is not drawn: it
+  fades out while it is over them and back when it is clear. Opacity alone.
+  See lib/openingKeepOut.ts, which says when.
+*/
+.lifafa-veil {
+  transition: opacity 200ms linear;
+}
+
 /* --- Butterflies. Flown by ButterflyLayer's script; only the wingbeat is here. --- */
 
 /*

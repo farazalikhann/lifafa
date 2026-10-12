@@ -42,9 +42,13 @@ export interface SceneArt {
   /**
    * A night painting's sky: its hue in degrees, measured over the top of the
    * published file, and how far down the painting it runs before the line of
-   * the hills, as a share of the height. See sceneGrounding.
+   * the hills, as a share of the height. `lights` is the band of the painting
+   * its lit things are in (windows, lanterns, their reflections), from and to
+   * as shares of the height, where a tint is lifted so gold stays gold; none
+   * for a painting whose lights have the night's blue right beside them. See
+   * sceneGrounding.
    */
-  sky?: { hue: number; clearBy: number };
+  sky?: { hue: number; clearBy: number; lights?: readonly [number, number] };
 }
 
 /** Every scene's shape: width over height. */
@@ -54,15 +58,28 @@ export const SCENE_ASPECT = 2 / 3;
 const ART: Record<Exclude<Scene, "off">, { light: SceneArt; dark: SceneArt }> = {
   lakePalace: {
     light: art("lake-palace-light"),
-    dark: { ...art("lake-palace-dark"), sky: { hue: 213, clearBy: 0.4 } },
+    /* The palace's windows and the nearer half of their reflections; the water past that is navy and little else. */
+    dark: { ...art("lake-palace-dark"), sky: { hue: 213, clearBy: 0.4, lights: [0.42, 0.6] } },
   },
   palaceGarden: {
     light: art("palace-garden-light"),
-    /* A violet dusk over the garden, and the trees come up sooner than the hills do. */
-    dark: { ...art("palace-garden-dark"), sky: { hue: 275, clearBy: 0.3 } },
+    /*
+      A violet dusk over the garden, running to maroon behind the trees: gone
+      only once the trees have closed over it, so their tops fade a little.
+    */
+    dark: {
+      ...art("palace-garden-dark"),
+      /* Lit from the pavilion down to its foot, and no blue in it anywhere. */
+      sky: { hue: 275, clearBy: 0.42, lights: [0.45, 1] },
+    },
   },
   valleyTree: {
     light: art("valley-tree-light"),
+    /*
+      No band of its own: the lanterns hang in a tree with navy hills either
+      side of it at the same height, and a band clear of the tint is those
+      hills blue again.
+    */
     dark: { ...art("valley-tree-dark"), sky: { hue: 215, clearBy: 0.4 } },
   },
 };
@@ -128,22 +145,23 @@ export function sceneDusk(background: string, accent: string): SceneDusk | null 
 }
 
 /**
- * How a night painting gives its sky up to a dark card of another colour, or
- * null on every other card.
+ * How a night painting gives its sky up to a dark card, or null on a light
+ * one, which has the day painting.
  *
- * Two of the three nights are navy: sky above, water below. On a maroon card
- * that is a blue band between maroon and maroon, a picture laid on the card
- * and not a part of it. So where the card's hue is far from the sky's, the
- * card's own ground is the sky: the painting comes in only by the line of
- * its hills (`top`), goes out sooner at its foot (`bottom`), and is leaned
- * toward the card's colour by `tint`, the card's ground laid over it as
- * colour alone.
+ * ON EVERY DARK CARD the card's own ground is the sky: the painting comes in
+ * only by the line of its hills (`top`). A painted sky is a band of its own
+ * colour over the card, navy on two of the nights and violet running to
+ * maroon on the third, and no dark card's ground is that colour exactly.
  *
- * FAR is more than SKY_FAR degrees of hue, from the painting's own sky and
- * from the navy of a night as well. The second half is what leaves a navy
- * card alone under the one painting whose sky is violet and not navy: on
- * Midnight every night already runs into the ground, and is drawn as it was.
- * A light card never gets here; it has the day painting.
+ * ON A DARK CARD OF ANOTHER COLOUR there is the water too, and the cast of
+ * the whole painting: on Maroon a navy night is a blue band between maroon
+ * and maroon. So there the painting also goes out sooner at its foot
+ * (`bottom`), and is leaned toward the card's colour by `tint`, the card's
+ * ground laid over it as colour alone. Another colour is more than SKY_FAR
+ * degrees of hue, from the painting's own sky and from the navy of a night as
+ * well; the second half is what leaves a navy card untinted under the one
+ * painting whose sky is violet. On Midnight a night's water and its cast are
+ * the card's own already.
  *
  * A near-black ground (Ink, Forest) has little colour to give, so there the
  * tint mostly quiets the navy: the lights stay warm and the band goes.
@@ -151,10 +169,16 @@ export function sceneDusk(background: string, accent: string): SceneDusk | null 
 export interface SceneGrounding {
   /** Where the painting is all there, from the top, as a share of its height. */
   top: number;
-  /** Where it starts to go, toward the foot. */
-  bottom: number;
+  /** Where it starts to go, toward the foot; null where it goes as on any dark card. */
+  bottom: number | null;
   /** How strongly the card's ground is laid over it as colour, 0 to 1. */
   tint: number;
+  /**
+   * The band the tint is lifted from, from and to as shares of the height,
+   * or null for a tint laid evenly: where the painting's lights are, which
+   * are gold and under the card's colour were brown.
+   */
+  lights: readonly [number, number] | null;
 }
 
 /** How many degrees of hue apart a card and a sky are before the card takes the sky over. */
@@ -178,17 +202,14 @@ export function sceneGrounding(art: SceneArt, background: string): SceneGroundin
 
   const ground = hueAndSaturation(background);
 
-  if (
-    hueApart(ground.hue, art.sky.hue) <= SKY_FAR ||
-    hueApart(ground.hue, NIGHT_BLUE) <= SKY_FAR
-  ) {
-    return null;
-  }
+  const another =
+    hueApart(ground.hue, art.sky.hue) > SKY_FAR && hueApart(ground.hue, NIGHT_BLUE) > SKY_FAR;
 
   return {
     top: art.sky.clearBy,
-    bottom: GROUNDED_BOTTOM,
-    tint: GROUNDED_TINT,
+    bottom: another ? GROUNDED_BOTTOM : null,
+    tint: another ? GROUNDED_TINT : 0,
+    lights: art.sky.lights ?? null,
   };
 }
 

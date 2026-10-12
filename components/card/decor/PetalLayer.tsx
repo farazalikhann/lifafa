@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { preload } from "react-dom";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useBurstGate } from "@/hooks/useRevealGate";
 import { artWidth } from "@/lib/cardScale";
+import { LOOP_PIECE_ATTRIBUTE, keepLoopPiecesOffWords, loopPiece } from "@/lib/openingKeepOut";
 import { BURST_PIECES, FALL_PIECES, type FlowerPiece } from "@/lib/petals";
 import type { DecorIntensity, PetalFlower } from "@/types/card";
 
@@ -284,7 +285,14 @@ function FallingPetal({
 
   return (
     <span
-      className="absolute top-0 block"
+      className="lifafa-veil absolute top-0 block"
+      /*
+        It falls the height of the band in a strip of its own: its width and
+        a sway of 8px either side. Kept off the opening's words where that
+        strip reaches them, while it is passing them; see
+        lib/openingKeepOut.ts.
+      */
+      {...{ [LOOP_PIECE_ATTRIBUTE]: loopPiece(faller.left, null, [8, 0, size + 8, size]) }}
       style={{
         left: `${faller.left}%`,
         animationName: "lifafa-petal-fall",
@@ -410,6 +418,23 @@ export default function PetalLayer({
   const gateOpen = useBurstGate();
   /* Every fall here is a CSS loop: held while the tab is hidden or the card off screen. */
   const pauseRef = useFloatingPause();
+  const bandRef = useRef<HTMLDivElement>(null);
+  const falling = fall && !prefersReducedMotion;
+
+  /*
+    The petals that fall in the margins are kept off the words of the opening
+    screen. The shower as the card opens is not: it is thrown across the card
+    once, is gone in under four seconds, and is behind those words.
+  */
+  useEffect(() => {
+    const band = bandRef.current;
+
+    if (!falling || band === null) {
+      return;
+    }
+
+    return keepLoopPiecesOffWords(band);
+  }, [falling, intensity, flower]);
   /* Set once the shower has run its course, and never unset — it plays once. */
   const [burstDone, setBurstDone] = useState(false);
 
@@ -464,6 +489,7 @@ export default function PetalLayer({
       }`}
     >
       <div
+        ref={bandRef}
         className="sticky top-0 w-full overflow-clip"
         style={{ height: bandHeight, containerType: "size" }}
       >

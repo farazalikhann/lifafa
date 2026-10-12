@@ -97,6 +97,7 @@ import {
 } from "@/lib/royalScroll";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
+import { OPENING_TEXT_ATTRIBUTE } from "@/lib/openingKeepOut";
 import { sceneArtFor, sceneDusk, sceneGrounding, sceneOf } from "@/lib/scene";
 import { tearInkColor, tearPaperColor, type TearConfig } from "@/lib/tearReveal";
 import {
@@ -1902,7 +1903,8 @@ export default function CardCanvas({
               behind its words: back to front the card is its ground, the
               scene, what flies, the opening's words, then the border and
               what hangs. Everywhere else it is the nearest thing to the
-              guest, as it was.
+              guest, as it was. Behind the words it is not drawn at all: a
+              piece fades out while it is over them (lib/openingKeepOut.ts).
             */
             behindWords={headOnScreen}
           />
@@ -2167,6 +2169,8 @@ hasHead ? (
                 */
                 <div
                   ref={headRef}
+                  /* The block of words nothing floating is drawn over; see lib/openingKeepOut.ts. */
+                  {...{ [OPENING_TEXT_ATTRIBUTE]: "" }}
                   {...(headIsFirstScreen
                     ? { [FIRST_SCREEN_ATTRIBUTE]: sceneInHead ? FIRST_SCREEN_OPEN : "" }
                     : null)}

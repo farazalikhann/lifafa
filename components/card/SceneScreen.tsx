@@ -55,8 +55,8 @@ import { type SceneArt, type SceneDusk, type SceneGrounding } from "@/lib/scene"
  * its royal texture where it has one. The mask is on the box that holds
  * still; the picture moves inside it. On a dark card the ends pass through a
  * glow of the card's own hue on the way (sceneDusk in lib/scene.ts), and on
- * a dark card whose colour is far from the night sky's the painting gives its
- * sky up to the card altogether (sceneGrounding, and `groundedMask` below).
+ * every dark card the painting gives its sky up to the card altogether
+ * (sceneGrounding, and `groundedMask` below).
  *
  * IT MOVES WITH THE SCROLL, AND ONLY ON THE COMPOSITOR. As the guest scrolls
  * through it the picture grows from its own size to 1.08 of it and drifts up
@@ -127,23 +127,80 @@ function duskStops(dusk: SceneDusk): string {
  * The mask of a painting that gives its sky up to the card: nothing at the
  * top, all of it by `top` (the line of its hills), all of it down to
  * `bottom`, and nothing at the foot. Eased both ways, on the curve the
- * ordinary mask has.
+ * ordinary mask has. With no `bottom` of its own the foot is a dark card's
+ * as it was: the last tenth, the dusk laid in over it.
  */
 function groundedMask({ top, bottom }: SceneGrounding): string {
+  if (bottom === null) {
+    return groundedMaskOver(top, [
+      [0.91, 1],
+      [0.94, 0.8],
+      [0.97, 0.35],
+      [1, 0],
+    ]);
+  }
+
+  return groundedMaskOver(
+    top,
+    [
+      [0, 1],
+      [0.23, 0.85],
+      [0.5, 0.45],
+      [0.77, 0.1],
+      [1, 0],
+    ].map(([at, alpha]) => [bottom + (1 - bottom) * at, alpha]),
+  );
+}
+
+/**
+ * How strongly the tint is laid down the painting: all of it over the sky
+ * and the hills, and again over the water at the foot, and none across the
+ * band between, where the windows, the lanterns and their reflections are.
+ * Those are gold, and under the card's colour they were brown. Eased in and
+ * out over TINT_EDGE of the height, outside the band, so the band itself is
+ * clear from end to end. Fixed to the box, like the box's own mask.
+ */
+const TINT_EDGE = 0.08;
+
+function tintMask([from, to]: readonly [number, number]): string {
+  const fall = [
+    [0, 1],
+    [0.4, 0.6],
+    [0.75, 0.15],
+    [1, 0],
+  ];
+  const percent = (share: number): string => `${(Math.max(0, Math.min(1, share)) * 100).toFixed(1)}%`;
+
+  return `linear-gradient(to bottom, ${[
+    "rgb(0 0 0 / 1) 0%",
+    ...fall.map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(from - TINT_EDGE * (1 - at))}`),
+    ...(to >= 1
+      ? []
+      : [...fall]
+          .reverse()
+          .map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(to + TINT_EDGE * (1 - at))}`)),
+    ...(to >= 1 ? [] : ["rgb(0 0 0 / 1) 100%"]),
+  ].join(", ")})`;
+}
+
+function groundedMaskOver(top: number, foot: readonly (readonly number[])[]): string {
+  /*
+    Late and steep: next to nothing for the first three fifths of the way, so
+    the sky is gone and not thinned, and then all of it over the last of the
+    way, where the hills and the treetops are.
+  */
   const rise = [
     [0, 0],
-    [0.23, 0.1],
-    [0.5, 0.45],
-    [0.77, 0.85],
+    [0.6, 0.04],
+    [0.8, 0.3],
+    [0.92, 0.75],
     [1, 1],
   ];
   const percent = (share: number): string => `${(share * 100).toFixed(1)}%`;
 
   return `linear-gradient(to bottom, ${[
     ...rise.map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(top * at)}`),
-    ...[...rise]
-      .reverse()
-      .map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(bottom + (1 - bottom) * (1 - at))}`),
+    ...foot.map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(at)}`),
   ].join(", ")})`;
 }
 
@@ -156,7 +213,7 @@ export default function SceneScreen({
   art: SceneArt;
   /** How its ends meet a dark card; null on a light one. See sceneDusk. */
   dusk?: SceneDusk | null;
-  /** How it gives its sky up to a dark card of another colour; null on every other. See sceneGrounding. */
+  /** How it gives its sky up to a dark card; null on a light one. See sceneGrounding. */
   grounding?: SceneGrounding | null;
   /** The room it is drawn over: the slot CardCanvas put in the opening screen. */
   slot: RefObject<HTMLDivElement | null>;
@@ -279,6 +336,12 @@ export default function SceneScreen({
             backgroundColor: dusk.ground,
             mixBlendMode: "color",
             opacity: grounding.tint,
+            ...(grounding.lights !== null
+              ? {
+                  maskImage: tintMask(grounding.lights),
+                  WebkitMaskImage: tintMask(grounding.lights),
+                }
+              : null),
           }}
         />
       ) : null}

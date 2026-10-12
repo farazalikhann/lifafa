@@ -3,6 +3,14 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties, ReactElement } from "react";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
+import {
+  LOOP_PIECE_ATTRIBUTE,
+  type KeepOutWatch,
+  loopPiece,
+  keepLoopPiecesOffWords,
+  overWords,
+  watchOpeningText,
+} from "@/lib/openingKeepOut";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   fireflyGlow,
@@ -478,6 +486,11 @@ const REPLAN_AFTER_MS = 1500;
 /** How often the scheduler looks in, for replanning and the wingbeat rate. */
 const CHECK_MS = 250;
 /**
+ * How far ahead of itself a flyer is kept off the opening's words, in
+ * seconds of its own flight: a check and the fade that follows it.
+ */
+const VEIL_AHEAD = (CHECK_MS + 200) / 1000;
+/**
  * At most this many replanned in one look. They all start together, so without
  * a cap all six would be simulated in the same task, which on a slow phone is
  * long enough to drop a frame. The second of slack between REPLAN_AFTER_MS and
@@ -659,6 +672,44 @@ function startFlight(
   let pausedAt = timelineNow();
   let onScreen = true;
   const flightNow = (): number => timelineNow() - offset;
+
+  /*
+    Nothing that flies is drawn over the words of the opening screen. Each
+    one's place is looked up in the flight already planned for it (arithmetic,
+    like every other question asked of a plan) and it is faded out while it is
+    over the words' box and back when it is clear: on the span inside the one
+    the flight moves, so the two never write the same property. Asked on the
+    quarter-second check and once a frame while the card scrolls, and reaching
+    ahead by how far it flies before the next check and the fade are done, so
+    it is gone before it arrives.
+  */
+  let keepOut: KeepOutWatch | null = null;
+
+  function veil(): void {
+    const box = keepOut?.box() ?? null;
+    const now = flightNow();
+
+    for (const body of bodies) {
+      const cover = body.node.firstElementChild;
+
+      if (!(cover instanceof HTMLElement) || body.plan.length === 0) {
+        continue;
+      }
+
+      const sim = running ? sampleAt(body, now) : body.sim;
+      const ahead = sim.speed * VEIL_AHEAD;
+
+      cover.style.opacity = overWords(
+        box,
+        sim.x,
+        sim.y,
+        body.halfW + ahead,
+        body.halfH + ahead,
+      )
+        ? "0"
+        : "";
+    }
+  }
 
   const bodies: Body[] = nodes.map((node, index) => {
     const flyer = flyers[index];
@@ -1393,6 +1444,8 @@ function startFlight(
       }
     }
 
+    veil();
+
     timer = window.setTimeout(check, CHECK_MS);
   }
 
@@ -1666,6 +1719,8 @@ function startFlight(
   };
 
   measure();
+  keepOut = watchOpeningText(band, veil);
+  veil();
 
   const resize =
     typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
@@ -1715,8 +1770,15 @@ function startFlight(
     window.removeEventListener("scroll", staleRect, passiveCapture);
     window.removeEventListener("resize", staleBand, passive);
     document.removeEventListener("visibilitychange", sync);
+    keepOut?.stop();
 
     for (const body of bodies) {
+      const cover = body.node.firstElementChild;
+
+      if (cover instanceof HTMLElement) {
+        cover.style.opacity = "";
+      }
+
       body.motion?.cancel();
       body.node.style.transform = "";
       body.node.style.opacity = "";
@@ -1783,10 +1845,23 @@ function Butterfly({
   } as CSSProperties;
 
   return (
-    <span ref={nodeRef} className="absolute block" style={travel}>
-      {/* No opacity anywhere on a butterfly: it is fully opaque wherever it is. */}
+    <span
+      ref={nodeRef}
+      className={`absolute block ${still ? "lifafa-veil" : ""}`}
+      style={travel}
+      /* Held still it is where the table puts it, and is kept off the words from there. */
+      {...(still
+        ? {
+            [LOOP_PIECE_ATTRIBUTE]: loopPiece(flyer.left, flyer.top, [0, 0, width, width]),
+          }
+        : null)}
+    >
+      {/*
+        Fully opaque wherever it is drawn, and not drawn over the words of the
+        opening screen: the flight fades this span out while it is over them.
+      */}
       <span
-        className="block"
+        className="lifafa-veil block"
         style={{ transform: `rotate(${flyer.rotate}deg)` }}
       >
         <span
@@ -1904,7 +1979,12 @@ function Firefly({
   };
 
   return (
-    <span className="absolute block" style={wander}>
+    <span
+      className="lifafa-veil absolute block"
+      style={wander}
+      /* Its loop wanders under 50px from where it starts, halo and all. */
+      {...{ [LOOP_PIECE_ATTRIBUTE]: loopPiece(glow.left, glow.top, [50, 50, 50, 50]) }}
+    >
       <span className="block" style={pulse} />
     </span>
   );
@@ -1921,6 +2001,17 @@ const LEAF_MOTIONS: Record<NaturePiece["motion"], { travel: number; turns: boole
   leaf: { travel: 1, turns: true },
   seed: { travel: 0.9, turns: false },
   feather: { travel: 0.56, turns: false },
+};
+
+/**
+ * The furthest each kind's two drifts in globals.css carry it from where it
+ * starts, in px: across (either way), up and down. What keeps one off the
+ * words of the opening screen; see lib/openingKeepOut.ts.
+ */
+const LEAF_REACH: Record<NaturePiece["motion"], readonly [number, number, number]> = {
+  leaf: [8, 46, 54],
+  seed: [9, 50, 30],
+  feather: [15, 24, 124],
 };
 
 /**
@@ -1941,6 +2032,7 @@ function Leaf({
   /* The table's width is the green leaf's; another kind is drawn to its own. */
   const width = Math.round(drifter.size * piece.scale);
   const motion = LEAF_MOTIONS[piece.motion];
+  const reach = LEAF_REACH[piece.motion];
 
   const travel: CSSProperties = {
     left: `${drifter.left}%`,
@@ -1964,7 +2056,19 @@ function Leaf({
   };
 
   return (
-    <span className="absolute block motion-reduce:hidden" style={travel}>
+    <span
+      className="lifafa-veil absolute block motion-reduce:hidden"
+      style={travel}
+      /* As far as its own drift in globals.css ever carries it; see LEAF_REACH. */
+      {...{
+        [LOOP_PIECE_ATTRIBUTE]: loopPiece(drifter.left, drifter.top, [
+          reach[0],
+          reach[1],
+          width + reach[0],
+          width + reach[2],
+        ]),
+      }}
+    >
       <span
         className="block"
         style={{ opacity: LEAF_OPACITY, transform: `rotate(${drifter.rotate}deg)` }}
@@ -2073,6 +2177,26 @@ export default function ButterflyLayer({
 
     return startFlight(band, nodes, flyers, manner);
   }, [prefersReducedMotion, flyerCount, flyers, manner]);
+
+  /*
+    The pieces the compositor moves by a loop (the leaves, the fireflies, and
+    a butterfly held still) are kept off the opening's words by where their
+    loop can take them; see lib/openingKeepOut.ts.
+  */
+  useEffect(() => {
+    const band = bandRef.current;
+
+    if (band === null) {
+      return;
+    }
+
+    /* Nothing here for a card with only butterflies in flight: the flight keeps those off itself. */
+    if (leafCount === 0 && !fireflies && !(prefersReducedMotion && flyerCount > 0)) {
+      return;
+    }
+
+    return keepLoopPiecesOffWords(band);
+  }, [prefersReducedMotion, flyerCount, leafCount, fireflies, intensity]);
 
   return (
     <div
