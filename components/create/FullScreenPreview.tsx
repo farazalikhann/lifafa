@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
-import CardCanvas from "@/components/card/CardCanvas";
+import TemplateCard from "@/templates/TemplateCard";
 import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import Watermark, { WATERMARK_PILL_SELECTOR } from "@/components/card/Watermark";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
@@ -789,7 +789,7 @@ export default function FullScreenPreview({
               on that phone sees.
             */}
             <div className="lg:[&>*]:max-w-none">
-              <CardCanvas
+              <TemplateCard
                 draft={draft}
                 theme={theme}
                 config={config}

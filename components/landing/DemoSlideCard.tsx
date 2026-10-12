@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, type ReactElement } from "react";
-import CardCanvas from "@/components/card/CardCanvas";
+import TemplateCard from "@/templates/TemplateCard";
 import { CardStillContext } from "@/hooks/useCardStill";
 import { PREVIEW_INVITE } from "@/lib/calendar";
 import { DEMO_NIKAH, demoSlideConfig } from "@/lib/demoCards";
@@ -105,7 +105,7 @@ export default function DemoSlideCard({
   return (
     <div ref={boxRef} className="h-full w-full overflow-hidden">
       <CardStillContext value={true}>
-        <CardCanvas
+        <TemplateCard
           draft={draft}
           theme={getTheme(config.themeId)}
           config={config}

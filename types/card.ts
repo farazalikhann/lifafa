@@ -222,6 +222,13 @@ export type CardAudience = "guest" | "host-preview";
 export type CardSizing = "viewport" | "frame";
 
 export interface CardConfig {
+  /**
+   * The template the card is drawn with, by its id in templates/registry.ts.
+   * Stored only when it is not Classic: absent, and on every card saved before
+   * there were templates, it is Classic. Read it through `getTemplate`, which
+   * also turns an id this build does not know into Classic.
+   */
+  templateId?: string;
   themeId: ThemeId;
   /**
    * A link to an audio file the guest may choose to play, or null.

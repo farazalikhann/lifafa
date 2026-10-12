@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, type ReactElement } from "react";
-import CardCanvas from "@/components/card/CardCanvas";
+import TemplateCard from "@/templates/TemplateCard";
 import FullScreenPreview from "@/components/create/FullScreenPreview";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -115,7 +115,7 @@ export default function CardPreview({
         style={{ backgroundColor: palette.background }}
       >
         {/* Sections size against the 620px frame, which is what scrolls here. */}
-        <CardCanvas
+        <TemplateCard
           draft={draft}
           theme={theme}
           config={config}

@@ -8,7 +8,7 @@ import {
   useState,
   type ReactElement,
 } from "react";
-import CardCanvas from "@/components/card/CardCanvas";
+import TemplateCard from "@/templates/TemplateCard";
 import Watermark, {
   WATERMARK_CLEARANCE,
   WATERMARK_PILL_SELECTOR,
@@ -502,7 +502,7 @@ export default function InviteExperience({
               event.isPaid ? undefined : { paddingBottom: WATERMARK_CLEARANCE }
             }
           >
-            <CardCanvas
+            <TemplateCard
               draft={draft}
               theme={theme}
               config={config}

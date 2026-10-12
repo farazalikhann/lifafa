@@ -8,7 +8,7 @@ import {
   type CSSProperties,
   type ReactElement,
 } from "react";
-import CardCanvas from "@/components/card/CardCanvas";
+import TemplateCard from "@/templates/TemplateCard";
 import { borderClearance } from "@/components/card/decor/BorderFrame";
 import { CardStillContext } from "@/hooks/useCardStill";
 import { PREVIEW_INVITE } from "@/lib/calendar";
@@ -268,7 +268,7 @@ export default function PrintDocument({
             className="lifafa-print-sheet"
           >
             <CardStillContext value={true}>
-              <CardCanvas
+              <TemplateCard
                 draft={draft}
                 theme={getTheme(config.themeId)}
                 config={config}

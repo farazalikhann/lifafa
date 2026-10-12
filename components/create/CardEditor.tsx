@@ -98,6 +98,7 @@ import {
   type TextPairId,
 } from "@/lib/textColors";
 import { getOccasion } from "@/lib/occasions";
+import { CLASSIC_TEMPLATE_ID, getTemplate } from "@/templates/registry";
 import type { DesignState } from "@/lib/designDefaults";
 import { applyPreset, type Preset } from "@/lib/presets";
 import type {
@@ -207,6 +208,8 @@ interface EditorState {
   ornamentConfig: OrnamentConfig;
   musicUrl: string | null;
   isPaid: boolean;
+  /** The card's template. Carried like `isPaid`: nothing in this editor changes it. */
+  templateId: string;
   coverAnimation: CoverAnimationId;
   showWeather: boolean;
   weatherTheme: WeatherThemeId;
@@ -297,6 +300,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
       that trusts it.
     */
     isPaid: config.isPaid,
+    /* Missing on every card saved before there were templates: Classic. */
+    templateId: getTemplate(config.templateId).id,
     coverAnimation: snapshot.coverAnimation,
     showWeather: snapshot.showWeather,
     weatherTheme: snapshot.weatherTheme,
@@ -317,6 +322,10 @@ function toSnapshot(state: EditorState): EditorSnapshot {
   return {
     draft: state.draft,
     config: {
+      /* Only ever stored when it is not Classic, so an older card is stored as it was. */
+      ...(state.templateId !== CLASSIC_TEMPLATE_ID
+        ? { templateId: state.templateId }
+        : null),
       /* The card's theme follows the draft's, which is what the occasion sets. */
       themeId: state.draft.themeId,
       blocks: state.blocks,
@@ -1016,6 +1025,7 @@ export default function CardEditor({
     ornamentConfig,
     musicUrl,
     isPaid: initial.isPaid,
+    templateId: initial.templateId,
     coverAnimation,
     showWeather,
     weatherTheme,
