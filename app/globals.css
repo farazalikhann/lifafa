@@ -645,6 +645,82 @@
 }
 
 /*
+  IN AN OPENING the slot is sized from the painting and not from the screen.
+  The opening is a size container, so the card's width is a length that can
+  be multiplied into a height (a percentage could not: of a height, it is the
+  box's height).
+
+  The painting is drawn at the card's width, so it is --scene-full tall, and
+  stands on the foot of its slot. From its hill line (--scene-hill, a share
+  of its height, set per painting) down it is shown whole: that much of the
+  slot is under the hill line. Over the hill line is plain sky, and the slot
+  reaches up into it behind the words above: by 30% of the painting at most,
+  and never by so much that the sky left over above the slot is less than the
+  painting travels (--scene-room), so its top edge stays out of the slot as
+  it moves. --scene-gap is how far under the last line of the words the hill
+  line is.
+
+  The spare is what is left of a screen when the words and the painting do
+  not fill it: it is between the two, so the words keep their place at the
+  top, the painting ends at the foot of the screen, and the room is sky.
+*/
+.lifafa-scene-spare {
+  display: none;
+}
+
+/* At least a screen; exactly one, below, where the browser can fit it. */
+.lifafa-opening-scene {
+  min-height: var(--opening-screen, 100svh);
+}
+
+@supports (width: 1cqw) {
+  /*
+    A screen exactly, and as tall as what is in it only when that is more
+    than a screen even with the slot at its least. The slot is the one thing
+    that gives: its hill line may come up to --scene-give nearer the words,
+    which is what fits an opening that is a few px too tall for its screen.
+  */
+  .lifafa-opening-scene {
+    container-type: inline-size;
+    height: var(--opening-screen, 100svh);
+    min-height: fit-content;
+  }
+
+  .lifafa-opening-scene > * {
+    flex-shrink: 0;
+  }
+
+  .lifafa-opening-scene > .lifafa-scene-slot {
+    --scene-w: calc(100cqw + 2 * var(--scene-inset, 0px));
+    --scene-full: calc(var(--scene-w) * 1.5);
+    --scene-over: min(
+      calc(var(--scene-full) * 0.3),
+      calc(
+        var(--scene-full) * (var(--scene-hill, 0.36) - var(--scene-room, 0.06)) -
+          var(--scene-gap, 52px)
+      )
+    );
+    --scene-tall: calc(
+      var(--scene-over) + var(--scene-gap, 52px) + var(--scene-full) *
+        (1 - var(--scene-hill, 0.36))
+    );
+    aspect-ratio: auto;
+    height: auto;
+    max-height: var(--scene-tall);
+    /* Grown to its full height before the spare gets anything. */
+    flex: 1000 0 calc(var(--scene-tall) - var(--scene-give, 14px));
+    margin-top: calc(-1 * var(--scene-over));
+  }
+
+  /* No height of its own, and none taken by the gaps either side of it. */
+  .lifafa-opening-scene > .lifafa-scene-spare {
+    display: block;
+    flex: 1 0 0px;
+    margin-block: calc(var(--spacing, 0.25rem) * -3);
+  }
+}
+
+/*
   THE PAINTING, over its slot. Its top 22% and its bottom quarter fade into
   the card through a mask on the box, which holds still; what shows through
   is the card's own ground. Eased, because a straight ramp shows where it

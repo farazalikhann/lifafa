@@ -53,6 +53,7 @@ import NamesFrameScreen from "@/components/card/NamesFrameScreen";
 import ThankYouNote from "@/components/invite/ThankYouNote";
 import { namesFrameArt, namesFrameOf } from "@/lib/namesFrame";
 import TopCorners, {
+  topCornersDepth,
   topCornersHole,
   topCornersStrength,
 } from "@/components/card/decor/TopCorners";
@@ -314,6 +315,15 @@ const CALLIGRAPHY_MAX_HEIGHT = 0.22;
 
 /** The most of the screen's height the painted scene on the opening may take. */
 const SCENE_MAX_HEIGHT = 0.78;
+
+/**
+ * Where the opening's words start when it carries a scene, in card px: this
+ * far under the foot of whatever is at the top of the card (the garland, the
+ * hanging lights, the corners). And where they start on a card with nothing
+ * there, as a share of the screen's height.
+ */
+const OPENING_UNDER_DECOR = 32;
+const OPENING_FROM_TOP = 0.1;
 
 /** How far under the end of the scene the first thing on the names' screen starts, in card px. */
 const NAMES_UNDER_SCENE = 48;
@@ -1641,6 +1651,8 @@ export default function CardCanvas({
         style={
           {
             "--scene-inset": inset,
+            /* Where this painting's sky ends; an opening sizes the slot from it (globals.css). */
+            "--scene-hill": String(scenePicture.horizon),
             "--scene-cap":
               sizing === "viewport"
                 ? `${SCENE_MAX_HEIGHT * 100}svh`
@@ -1649,6 +1661,35 @@ export default function CardCanvas({
         }
       />
     ) : null;
+  /*
+    Where the words of an opening with a scene start: a set step under the
+    foot of what is at the top of the card, whichever of it is lowest, and a
+    tenth of the screen down on a card with nothing there. Never above a
+    border's own clearance. What hangs comes down a size on a short screen
+    (--card-opening), and the step is measured from where it then ends.
+  */
+  const cornersDepth =
+    slots.topCorners !== null ? topCornersDepth(isPhotoBorder(config.borderStyle)) : 0;
+  const garlandDepth = config.borderStyle === "hangingGarland" ? clearance.y : 0;
+  const openingPadTop =
+    hangingBand > 0 || cornersDepth > 0 || garlandDepth > 0
+      ? `max(${cardPx(clearance.y)}, calc(max(${cardPx(hangingBand)} * var(--card-opening, 1), ${cardPx(
+          Math.max(cornersDepth, garlandDepth),
+        )}) + ${cardPx(OPENING_UNDER_DECOR)}))`
+      : `max(${cardPx(clearance.y)}, ${
+          sizing === "viewport"
+            ? `${OPENING_FROM_TOP * 100}svh`
+            : `${Math.round(frameHeight * OPENING_FROM_TOP)}px`
+        })`;
+  /* The opening is a screen tall where it fits, whatever the card's density makes of a section. */
+  const openingScreen = sizing === "viewport" ? "100svh" : `${frameHeight}px`;
+  /* Whether the card's first screen is an opening with the scene in it. */
+  const openingHasScene =
+    scenePicture !== null &&
+    visible[0]?.kind === "builtin" &&
+    visible[0].id === "cover" &&
+    (hasBlessing || calligraphy.length > 0);
+
   /* The column's own inset, and the opening's 28px inside it (its px-7, which grows with a fluid card). */
   const SCENE_IN_COLUMN = "var(--card-content-inset, 0px)";
   const SCENE_IN_OPENING = `calc(var(--card-content-inset, 0px) + 7 * var(--spacing, 0.25rem))`;
@@ -1951,6 +1992,8 @@ export default function CardCanvas({
               ? topCornersHole(isPhotoBorder(config.borderStyle))
               : null
           }
+          /* Cleared by where the opening's words start, so its first line is not thinned. */
+          ramp={openingHasScene ? OPENING_UNDER_DECOR : undefined}
         />
 
         {/*
@@ -2175,6 +2218,8 @@ hasHead ? (
                     ? { [FIRST_SCREEN_ATTRIBUTE]: sceneInHead ? FIRST_SCREEN_OPEN : "" }
                     : null)}
                   className={`relative flex flex-col items-center px-7 text-center ${
+                    sceneInHead ? "lifafa-opening-scene" : ""
+                  } ${
                     headIsFirstScreen ? "gap-3" : "gap-4"
                   } ${
                     /*
@@ -2184,30 +2229,31 @@ hasHead ? (
                     */
                     sceneInHead
                       ? /*
-                          Under a scene the block stands on the foot of its
-                          screen: on a tall phone a short opening has room to
-                          spare, and it goes above the words, so the painting
-                          still ends exactly where the names' screen starts.
+                          Over a scene the words start where the padding puts
+                          them, a set step under the top decor, on every
+                          screen. Room to spare is between them and the
+                          painting, which ends at the foot of the screen; see
+                          `lifafa-scene-spare`.
                         */
-                        "justify-end"
+                        "justify-start"
                       : headIsFirstScreen && pack?.cardHead?.alignTop === true
                         ? "justify-start"
                         : "justify-center"
                   }`}
                   style={
                     sceneInHead
-                      ? {
+                      ? ({
                           /*
-                            At least a screen, and as much taller as the words
-                            and the painting come to: the painting may run on
-                            under the fold, where it says the card goes on.
-                            Nothing under it, so its fade ends where the names'
-                            screen starts.
+                            A screen exactly, where the words and the painting
+                            from its hill line down fit in one, and as much
+                            taller as they come to where they do not. Nothing
+                            under the painting, so its fade ends where the
+                            names' screen starts.
                           */
-                          minHeight,
-                          paddingTop: `max(${cardPx(clearance.y)}, ${cardPx(headPadTop)} * var(--card-opening, 1))`,
+                          "--opening-screen": openingScreen,
+                          paddingTop: openingPadTop,
                           paddingBottom: 0,
-                        }
+                        } as CSSProperties)
                       : headIsFirstScreen
                       ? {
                           minHeight: firstScreenBox,
@@ -2299,6 +2345,7 @@ hasHead ? (
                     Last, so straight under whatever the opening ends in: the
                     sacred line, or the calligraphy where there is none.
                   */}
+                  {sceneInHead ? <div aria-hidden="true" className="lifafa-scene-spare" /> : null}
                   {sceneInHead ? sceneAt(SCENE_IN_OPENING) : null}
                 </div>
               ) : null;

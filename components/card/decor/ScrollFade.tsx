@@ -169,6 +169,7 @@ export default function ScrollFade({
   hangingBand,
   bandHeight,
   spareTopCorners = null,
+  ramp = TOP_RAMP,
 }: {
   /** The card's resolved background. The dissolve is into this exact colour. */
   background: string;
@@ -194,10 +195,17 @@ export default function ScrollFade({
    * a card with an ornament there; see `sparing`.
    */
   spareTopCorners?: TopCornersHole | null;
+  /**
+   * How long the dissolve at the top takes to clear, in card px, where it is
+   * not TOP_RAMP: an opening that sets its words a fixed step under the top
+   * decor is given a ramp of that step, so its first line stands clear of the
+   * dissolve and is not thinned by it.
+   */
+  ramp?: number;
 }): ReactElement {
   /* Text is fully gone by here, which is at or above the deepest ornament. */
   const clearTo = Math.max(MIN_CLEARANCE, hangingBand);
-  const topFade = clearTo + TOP_RAMP;
+  const topFade = clearTo + ramp;
 
   /*
     One gradient shape, used twice. As a background it dissolves the text into

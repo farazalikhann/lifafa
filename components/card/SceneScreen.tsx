@@ -46,14 +46,15 @@ import { type SceneArt, type SceneDusk, type SceneGrounding } from "@/lib/scene"
  * (`inset`). The card's border and its corners are layers above, and are
  * drawn over the painting.
  *
- * ITS SIZE is the card's width by one and a half of it, the painting's own
- * shape, and never more than 78% of the screen's height. Where that cuts it
- * short the picture covers the box from 60% of the way down, so the horizon
- * stays in it.
+ * ITS SIZE is the painting's: the card's width by one and a half of it. The
+ * first screen shows it whole from its hill line down, a set distance under
+ * the last line of the words, and as much of the plain sky over that as the
+ * slot reaches up into, behind the words; see `lifafa-opening-scene` in
+ * globals.css.
  *
- * IT MEETS THE WORDS AND THE NEXT SCREEN WITHOUT AN EDGE. It is pulled up by
- * 12% of its height, so its plain sky is behind the foot of the sacred line,
- * and its top 22% and bottom quarter fade into the card by a mask on the box
+ * IT MEETS THE WORDS AND THE NEXT SCREEN WITHOUT AN EDGE. Its plain sky is
+ * behind the words, never its hills, and its top 22% and bottom quarter fade
+ * into the card by a mask on the box
  * and not in the picture: what shows through is the card's own ground, with
  * its royal texture where it has one. The mask is on the box that holds
  * still; the picture moves inside it. On a dark card the ends pass through a
@@ -65,9 +66,11 @@ import { type SceneArt, type SceneDusk, type SceneGrounding } from "@/lib/scene"
  * screen the painting goes up the screen at 85% of the speed the card does:
  * a translate on the painting inside its box, and nothing else. The box
  * holds still on the card, with its edge fades and its dusk, so the fades are
- * always at the box's edges, and the painting is PARALLAX_ROOM taller than
- * the box, so its own edges never come into it; once it has travelled that
- * far it goes on with the card. What belongs to the painting moves with it:
+ * always at the box's edges. The painting is its own size, the card's width
+ * by one and a half of it, and stands on the foot of the box, so at the top
+ * of the card its ground is all there; the box cuts off the top of its sky,
+ * and that is the room it travels in, so its own edges never come into the
+ * box. Once it has travelled that far it goes on with the card. What belongs to the painting moves with it:
  * the mask that takes its sky away at the line of its hills, and the tint
  * with its band over the lights. Fixed to the box, the sky would come back
  * under the hills as they moved, and the band would leave the lights.
@@ -96,11 +99,15 @@ const ART_HEIGHT = 1080;
 /** How fast the painting goes up the screen, as a share of the card's own speed. */
 const PARALLAX_SPEED = 0.85;
 /**
- * How much taller than its box the painting is drawn, as a share of the
- * box's height: the room it has to travel in. At 15% of the scroll that is
- * the first four fifths of the box's height of scrolling.
+ * How far the painting may travel down its box, as a share of its own
+ * height. The room is sky: the painting stands on the foot of its box, whole
+ * from its hill line down, and what the box cuts off is the top of its sky.
+ * It travels down into the box by no more than that, so its top edge never
+ * comes in, and by no more than this, so little of its ground goes out under
+ * the fade at the foot. The slot leaves this much sky over itself; see
+ * `--scene-room` in globals.css, which is the same number.
  */
-const PARALLAX_ROOM = 0.12;
+const PARALLAX_ROOM = 0.06;
 
 /** Whether this guest gets the parallax: not one who asked for less motion, nor a phone short of memory. */
 function parallaxWanted(): boolean {
@@ -384,8 +391,11 @@ export default function SceneScreen({
       const cardBox = card.getBoundingClientRect();
       const scale = card.offsetWidth > 0 ? cardBox.width / card.offsetWidth || 1 : 1;
 
+      /* The painting is the box's width by one and a half of it; what the box is short of that is sky. */
+      const full = room.offsetWidth * 1.5;
+
       travel.current = {
-        room: room.offsetHeight * PARALLAX_ROOM,
+        room: Math.max(0, Math.min(full * PARALLAX_ROOM, full - room.offsetHeight)),
         scroller,
         cardStart:
           scroller === null
@@ -431,16 +441,15 @@ export default function SceneScreen({
       }}
     >
       {/*
-        The painting and what belongs to it. With the parallax it is taller
-        than the box by the room it travels in, and starts that far up, so
-        the box is covered wherever it is; without, it is the box.
+        The painting and what belongs to it, at the painting's own size: the
+        box's width by one and a half of it, on the foot of the box. A box
+        shorter than that cuts off the top of its sky and nothing else.
       */}
       <div
         ref={mover}
-        className="absolute inset-x-0"
+        className="absolute inset-x-0 bottom-0"
         style={{
-          top: parallax ? `${-PARALLAX_ROOM * 100}%` : 0,
-          height: parallax ? `${(1 + PARALLAX_ROOM) * 100}%` : "100%",
+          aspectRatio: "2 / 3",
           willChange: parallax ? "transform" : undefined,
           ...(sky !== null ? { maskImage: sky, WebkitMaskImage: sky } : null),
         }}
@@ -456,7 +465,7 @@ export default function SceneScreen({
           decoding="async"
           draggable={false}
           onLoad={() => setShown(true)}
-          className="absolute inset-0 h-full w-full object-cover object-[center_60%] select-none transition-opacity duration-700 ease-out motion-reduce:transition-none"
+          className="absolute inset-0 h-full w-full object-cover select-none transition-opacity duration-700 ease-out motion-reduce:transition-none"
           style={{ opacity: shown || still ? 1 : 0 }}
         />
       ) : null}

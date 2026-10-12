@@ -86,6 +86,11 @@ export interface TopCornersHole {
   centre: number;
 }
 
+/** How far down the card the two corners reach, in card px: the foot of each circle. */
+export function topCornersDepth(inset: boolean): number {
+  return DESIGN_WIDTH * ((inset ? INSET : 0) + DIAMETER / 2);
+}
+
 export function topCornersHole(inset: boolean): TopCornersHole {
   const step = inset ? INSET : 0;
   const reach = step + DIAMETER / 2;

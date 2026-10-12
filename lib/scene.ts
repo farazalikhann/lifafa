@@ -40,6 +40,14 @@ export interface SceneArt {
   /** 240px tall, for the editor's chip. */
   thumb: string;
   /**
+   * The painting's hill line, as a share of its height from the top: the
+   * highest thing painted in it that is not sky (a hill, a roof, the top of a
+   * tree), measured off the published file. Over it is plain sky, which the
+   * opening's words may stand on; from it down is the painting proper, which
+   * they may not, and which the first screen shows whole.
+   */
+  horizon: number;
+  /**
    * A night painting's sky: its hue in degrees, measured over the top of the
    * published file, and how far down the painting it runs before the line of
    * the hills, as a share of the height. `lights` is the band of the painting
@@ -57,39 +65,40 @@ export const SCENE_ASPECT = 2 / 3;
 /** A scene's two paintings: by day for a light card, by night for a dark one. */
 const ART: Record<Exclude<Scene, "off">, { light: SceneArt; dark: SceneArt }> = {
   lakePalace: {
-    light: art("lake-palace-light"),
+    light: art("lake-palace-light", 0.38),
     /* The palace's windows and the nearer half of their reflections; the water past that is navy and little else. */
-    dark: { ...art("lake-palace-dark"), sky: { hue: 213, clearBy: 0.4, lights: [0.42, 0.6] } },
+    dark: { ...art("lake-palace-dark", 0.36), sky: { hue: 213, clearBy: 0.4, lights: [0.42, 0.6] } },
   },
   palaceGarden: {
-    light: art("palace-garden-light"),
+    light: art("palace-garden-light", 0.35),
     /*
       A violet dusk over the garden, running to maroon behind the trees, and
       down between them to the pavilion's roof: gone only there, so the tops
       of the trees fade a little.
     */
     dark: {
-      ...art("palace-garden-dark"),
+      ...art("palace-garden-dark", 0.34),
       /* Lit from the pavilion down to its foot, and no blue in it anywhere. */
       sky: { hue: 275, clearBy: 0.45, lights: [0.47, 1] },
     },
   },
   valleyTree: {
-    light: art("valley-tree-light"),
+    light: art("valley-tree-light", 0.34),
     /*
       No band of its own: the lanterns hang in a tree with navy hills either
       side of it at the same height, and a band clear of the tint is those
       hills blue again.
     */
-    dark: { ...art("valley-tree-dark"), sky: { hue: 215, clearBy: 0.4 } },
+    dark: { ...art("valley-tree-dark", 0.32), sky: { hue: 215, clearBy: 0.4 } },
   },
 };
 
 /** A ground this dark or darker is a dark card: it gets the night painting, and a dusk at its ends. */
 const DARK_GROUND = 0.4;
 
-function art(name: string): SceneArt {
+function art(name: string, horizon: number): SceneArt {
   return {
+    horizon,
     src: `/decor/scenes/${name}.webp`,
     small: `/decor/scenes/small/${name}.webp`,
     thumb: `/decor/scenes/thumbs/${name}.webp`,
