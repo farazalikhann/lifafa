@@ -26,6 +26,8 @@ export const ART = {
   envelopeOpen: `${DIR}/envelope-open.webp`,
   seal: `${DIR}/seal-gold.webp`,
   floral: `${DIR}/floral-corner.webp`,
+  heroFrame: `${DIR}/hero-frame.webp`,
+  butterfly: `${DIR}/butterfly-gold.webp`,
 } as const;
 
 /** What the cover waits for before it shows: its own pictures, and nothing of the card's. */

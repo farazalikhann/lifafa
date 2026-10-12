@@ -13,6 +13,7 @@ import {
 } from "@/lib/cardSections";
 import { effectiveTheme } from "@/lib/cardTheme";
 import { hasContacts } from "@/lib/contacts";
+import EmeraldShahiButterflies from "@/templates/emerald-shahi/Butterflies";
 import EmeraldShahiClosing from "@/templates/emerald-shahi/Closing";
 import EmeraldShahiCountdown from "@/templates/emerald-shahi/Countdown";
 import EmeraldShahiCouple from "@/templates/emerald-shahi/Couple";
@@ -120,6 +121,7 @@ export default function EmeraldShahiCard(
             minHeight={screen}
             namesFont={fonts.names}
             headingFont={fonts.heading}
+            bodyFont={fonts.body}
           />
         );
       case "family":
@@ -198,6 +200,7 @@ export default function EmeraldShahiCard(
         />
 
         <EmeraldShahiFloating pagewide={pagewide} band={band} />
+        <EmeraldShahiButterflies pagewide={pagewide} band={band} />
 
         {/*
           The music button, top right, for the whole length of the card: a row

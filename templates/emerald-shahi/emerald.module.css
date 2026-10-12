@@ -121,36 +121,304 @@
 .hero {
   position: relative;
   display: flex;
-  /*
-    Each floral is half the hero wide and as tall, less what hangs off the
-    edge. The words are kept out of both boxes entirely, by padding the hero
-    by that much at its head and its foot, so no line can run under a flower
-    however long a name is: the hero grows instead.
-  */
-  --es-floral: min(50%, 21rem);
-  padding-block: min(43%, 18rem);
+  /* The frame is sized from the hero's own width (cqw), so it is right in a preview's narrow box too. */
+  container-type: inline-size;
+  /* Room above for the half of the seal that stands over the frame, and for the florals that hang off it. */
+  padding-block: calc(4 * var(--es)) calc(3 * var(--es));
 }
 
+/*
+  The frame: 86% of the screen across, in the picture's own shape (760x1140).
+  Everything on it is placed in shares of it, and `--frame-w` is its width for
+  the things sized from it. Its words are set in `em` of the font size here,
+  which the hero then steps down until they fit (useFitInside).
+*/
+.frame {
+  /* Never taller than the screen can show whole, with the seal over it and the scroll cue under. */
+  --frame-w: min(86cqw, 25rem, (100svh - 10.5rem) * 0.6667);
+
+  position: relative;
+  width: var(--frame-w);
+  aspect-ratio: 760 / 1140;
+  font-size: calc(var(--frame-w) * 0.052);
+}
+
+.fluid .frame {
+  --frame-w: min(86cqw, 30rem, (100svh - 10.5rem) * 0.6667);
+}
+
+.frameArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/*
+  The opening of the frame, less a margin. Measured off the picture at its
+  full 1024x1536: the velvet runs from x 139 to 885 below the arch's shoulders
+  (y 300) and down to y 1330, where the bottom roses begin. The words are kept
+  to x 174 to 850 and y 307 to 1275: 17% in from each side, 20% down from the
+  top and 17% up from the foot, which is also clear of both florals.
+*/
+.frameBox {
+  position: absolute;
+  inset: 20% 17% 17%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/*
+  The florals: the same picture over the frame's top right corner and, turned
+  round, its bottom left. Each is 38% of the frame across and hangs 14% of
+  that off the frame, so it lies above the words' box at the top (it ends
+  16.6% down, the box starts at 20%) and below it at the foot.
+*/
 .floral {
   position: absolute;
-  width: var(--es-floral);
+  width: 38%;
   aspect-ratio: 1;
   background-image: url("/templates/emerald-shahi/floral-corner.webp");
   background-size: contain;
   background-repeat: no-repeat;
   pointer-events: none;
+  opacity: 0;
+  /*
+    The picture was drawn to hang off a corner of the screen and is cut
+    square along its top and its right. Here both of those edges are in view,
+    so they are faded out over their last seventh; the mask is the element's
+    own and turns with it for the bottom left.
+  */
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0, #000 15%),
+    linear-gradient(to left, transparent 0, #000 15%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0, #000 15%),
+    linear-gradient(to left, transparent 0, #000 15%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 .floralTop {
   top: 0;
   right: 0;
-  transform: translate3d(7%, -7%, 0);
+  transform: translate3d(14%, -14%, 0);
 }
 
 .floralFoot {
   bottom: 0;
   left: 0;
-  transform: translate3d(-7%, 7%, 0) rotate(180deg);
+  transform: translate3d(-14%, 14%, 0) rotate(180deg);
+}
+
+/* The seal: a quarter of the frame across, its middle on the frame's top edge. */
+.heroSeal {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: flex;
+  width: 25%;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.heroLine {
+  opacity: 0;
+  transform: translate3d(0, 0.7em, 0);
+}
+
+.heroRule {
+  display: block;
+  width: 3.2em;
+  height: 1px;
+  background-color: var(--es-gold);
+}
+
+/*
+  THE ENTRANCE, played once when `.heroIn` is set, which is when the cover
+  lets the card go: the frame grows in from 96% as it fades in, the florals
+  with it; the seal drops onto the top edge and presses; then each line fades
+  up, `--es-delay` after the start. Transform and opacity alone.
+*/
+.heroIn .frameArt {
+  animation: es-frame-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.heroIn .floral {
+  animation: es-fade-in 700ms ease-out 250ms both;
+}
+
+.heroIn .heroSeal {
+  animation: es-seal-drop 620ms cubic-bezier(0.3, 0.7, 0.3, 1) 480ms both;
+}
+
+.heroIn .heroLine {
+  animation: es-line-up 620ms ease-out var(--es-delay, 950ms) both;
+}
+
+@keyframes es-frame-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes es-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Down onto the frame, a little too far and a little flat, then at rest. */
+@keyframes es-seal-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, -95%, 0) scale(1.18);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(-50%, -47%, 0) scale(0.93);
+  }
+  78% {
+    transform: translate3d(-50%, -51%, 0) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+}
+
+@keyframes es-line-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.7em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/*
+  THE LIGHT ACROSS THE NAMES. `.shimmer` is a slanted window the size of the
+  name, masked down to a soft band in its middle; `.shimmerCopy` is the name
+  again inside it, in pale gold. The window crosses from left to right by a
+  transform and the copy goes the other way by the same amount, so the copy
+  never leaves the name and only the band of it in the window is seen. One
+  crossing takes 1.3s of an 8s cycle; the first starts as the lines finish
+  arriving. Paused with the hero (`data-floating-paused`).
+*/
+/*
+  A box that hides the window once it has slid off the name: the window is
+  75% of the name's width off to either side at each end of a crossing, and
+  must not widen anything. Taller than the name, so the light reaches a
+  letter's tail, and exactly as wide: a box any wider would itself count as
+  the name running past the frame's opening when the words are sized to it.
+*/
+.shimmerClip {
+  position: absolute;
+  inset: -0.3em 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shimmer {
+  position: absolute;
+  inset: 0.3em 0;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 38%, #000 50%, transparent 62%);
+  mask-image: linear-gradient(90deg, transparent 38%, #000 50%, transparent 62%);
+}
+
+.shimmerCopy {
+  position: absolute;
+  inset: 0;
+  color: #fff6d8;
+  text-shadow: none;
+}
+
+.heroIn .shimmer {
+  animation: es-shimmer-window 8s linear 2100ms infinite;
+  will-change: transform;
+}
+
+.heroIn .shimmerCopy {
+  animation: es-shimmer-copy 8s linear 2100ms infinite;
+  will-change: transform;
+}
+
+@keyframes es-shimmer-window {
+  0% {
+    opacity: 0;
+    transform: translate3d(-75%, 0, 0) skewX(-18deg);
+  }
+  1% {
+    opacity: 0.95;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  16.25% {
+    opacity: 0;
+    transform: translate3d(75%, 0, 0) skewX(-18deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(75%, 0, 0) skewX(-18deg);
+  }
+}
+
+@keyframes es-shimmer-copy {
+  0% {
+    transform: skewX(18deg) translate3d(75%, 0, 0);
+  }
+  16.25% {
+    transform: skewX(18deg) translate3d(-75%, 0, 0);
+  }
+  100% {
+    transform: skewX(18deg) translate3d(-75%, 0, 0);
+  }
+}
+
+.frame[data-floating-paused] .shimmer,
+.frame[data-floating-paused] .shimmerCopy {
+  animation-play-state: paused;
+}
+
+/* Less motion: everything is simply there after a fade, and no light crosses. */
+@media (prefers-reduced-motion: reduce) {
+  /* Each keeps the place its own rule gives it; only the fade is played. */
+  .heroIn .frameArt,
+  .heroIn .floral,
+  .heroIn .heroSeal,
+  .heroIn .heroLine {
+    animation: es-fade-in 400ms ease-out both;
+  }
+
+  .heroIn .frameArt,
+  .heroIn .heroLine {
+    transform: none;
+  }
+
+  .shimmerClip {
+    display: none;
+  }
 }
 
 /* ───────────────────────── Couple ───────────────────────── */
@@ -554,7 +822,7 @@
   animation-play-state: paused;
 }
 
-/* Fewer on a narrow phone: the last four are left out under 400px. */
+/* Fewer on a narrow phone: the last three are left out under 400px. */
 @media (max-width: 399px) {
   .pieceExtra {
     display: none;
@@ -583,6 +851,71 @@
 
 @media (prefers-reduced-motion: reduce) {
   .drift {
+    display: none;
+  }
+}
+
+/* ───────────────────────── Butterflies ───────────────────────── */
+
+/*
+  The layer the butterflies fly in: the screen, over the card, and no part of
+  it takes a tap. Each butterfly is a box moved by one Web Animations API
+  animation at a time (Butterflies.tsx), with the picture inside it beating
+  its wings: its scaleX between about a third and whole.
+*/
+.butterflies {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.butterfliesFixed {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+}
+
+.butterfliesPinned {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  height: var(--es-band);
+  margin-bottom: calc(-1 * var(--es-band));
+}
+
+/* Hidden until the script has placed it: a narrow phone never shows the fourth. */
+.butterfly {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  will-change: transform;
+}
+
+.wings {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation-name: es-wings;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes es-wings {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0.35);
+  }
+}
+
+.butterflies[data-floating-paused] .wings {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .butterflies {
     display: none;
   }
 }
@@ -619,8 +952,28 @@
   text-shadow: none;
 }
 
-:global(.lifafa-print-sheet) .hero {
-  padding-block: 12%;
+:global(.lifafa-print-sheet) .frameArt,
+:global(.lifafa-print-sheet) .heroSeal,
+:global(.lifafa-print-sheet) .shimmerClip,
+:global(.lifafa-print-sheet) .butterflies {
+  display: none;
+}
+
+/* The words where the frame was, with nothing round them, and all there at once. */
+:global(.lifafa-print-sheet) .frame {
+  aspect-ratio: auto;
+  padding-block: 18%;
+}
+
+:global(.lifafa-print-sheet) .frameBox {
+  position: static;
+  overflow: visible;
+}
+
+:global(.lifafa-print-sheet) .heroLine {
+  opacity: 1;
+  transform: none;
+  animation: none;
 }
 
 :global(.lifafa-print-sheet) .eventCard {

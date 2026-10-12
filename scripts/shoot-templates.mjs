@@ -117,6 +117,8 @@ for (const id of ids) {
   /* The sample banner is the demo page's, not the card's; nor is `next dev`'s own badge. */
   await evaluate(`(() => {
     document.querySelectorAll("nextjs-portal").forEach((node) => node.remove());
+    /* Nor the language switch a two-language sample carries: it is the page's, over the card. */
+    document.querySelectorAll('[role="group"][aria-label^="Language"]').forEach((node) => node.remove());
     for (const node of document.querySelectorAll("body *")) {
       if (getComputedStyle(node).position === "fixed" && /sample invitation/i.test(node.textContent ?? "") && node.getBoundingClientRect().height < 140) node.remove();
     }
