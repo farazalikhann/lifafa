@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -9,6 +10,8 @@ import {
   type RefObject,
 } from "react";
 import { useCardStill } from "@/hooks/useCardStill";
+import { useFloatingPause } from "@/hooks/useFloatingPause";
+import { scrollerOf } from "@/lib/openingKeepOut";
 import { type SceneArt, type SceneDusk, type SceneGrounding } from "@/lib/scene";
 
 /**
@@ -58,12 +61,23 @@ import { type SceneArt, type SceneDusk, type SceneGrounding } from "@/lib/scene"
  * every dark card the painting gives its sky up to the card altogether
  * (sceneGrounding, and `groundedMask` below).
  *
- * IT MOVES WITH THE SCROLL, AND ONLY ON THE COMPOSITOR. As the guest scrolls
- * through it the picture grows from its own size to 1.08 of it and drifts up
- * a little: one keyframe animation of transform alone, on a view timeline
- * (`lifafa-scene-art` in globals.css), so no script runs as the page scrolls
- * and nothing is measured. Still under reduced motion, on a card drawn still,
- * and in a browser without view timelines.
+ * IT IS A LITTLE FURTHER AWAY THAN THE CARD. As the guest scrolls the first
+ * screen the painting goes up the screen at 85% of the speed the card does:
+ * a translate on the painting inside its box, and nothing else. The box
+ * holds still on the card, with its edge fades and its dusk, so the fades are
+ * always at the box's edges, and the painting is PARALLAX_ROOM taller than
+ * the box, so its own edges never come into it; once it has travelled that
+ * far it goes on with the card. What belongs to the painting moves with it:
+ * the mask that takes its sky away at the line of its hills, and the tint
+ * with its band over the lights. Fixed to the box, the sky would come back
+ * under the hills as they moved, and the band would leave the lights.
+ *
+ * One write of transform per frame, in a requestAnimationFrame, and only
+ * while a scroll is under way: the scroll offset comes with the scroll event,
+ * and where the painting is on the card was read when it was placed. Not at
+ * all while the scene is off the screen or the tab is hidden
+ * (useFloatingPause), under reduced motion, on a card drawn still, or on a
+ * phone that says it has 4GB of memory or less.
  *
  * IT IS ASKED FOR AS SOON AS THE CARD IS IN THE PAGE, which on a guest's link
  * is while the cover is still over it: the film plays, and the painting is
@@ -78,6 +92,27 @@ import { type SceneArt, type SceneDusk, type SceneGrounding } from "@/lib/scene"
 /** The painting's own size in px, at its larger copy. Both copies are this shape. */
 const ART_WIDTH = 720;
 const ART_HEIGHT = 1080;
+
+/** How fast the painting goes up the screen, as a share of the card's own speed. */
+const PARALLAX_SPEED = 0.85;
+/**
+ * How much taller than its box the painting is drawn, as a share of the
+ * box's height: the room it has to travel in. At 15% of the scroll that is
+ * the first four fifths of the box's height of scrolling.
+ */
+const PARALLAX_ROOM = 0.12;
+
+/** Whether this guest gets the parallax: not one who asked for less motion, nor a phone short of memory. */
+function parallaxWanted(): boolean {
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+
+  return (
+    !(
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) && !(typeof memory === "number" && memory <= 4)
+  );
+}
 
 /** Which copy this guest's connection gets. */
 function copyFor(art: SceneArt): string {
@@ -123,33 +158,61 @@ function duskStops(dusk: SceneDusk): string {
   ].join(", ");
 }
 
-/**
- * The mask of a painting that gives its sky up to the card: nothing at the
- * top, all of it by `top` (the line of its hills), all of it down to
- * `bottom`, and nothing at the foot. Eased both ways, on the curve the
- * ordinary mask has. With no `bottom` of its own the foot is a dark card's
- * as it was: the last tenth, the dusk laid in over it.
- */
-function groundedMask({ top, bottom }: SceneGrounding): string {
-  if (bottom === null) {
-    return groundedMaskOver(top, [
-      [0.91, 1],
-      [0.94, 0.8],
-      [0.97, 0.35],
-      [1, 0],
-    ]);
-  }
+const percent = (share: number): string =>
+  `${(Math.max(0, Math.min(1, share)) * 100).toFixed(1)}%`;
 
-  return groundedMaskOver(
-    top,
-    [
-      [0, 1],
-      [0.23, 0.85],
-      [0.5, 0.45],
-      [0.77, 0.1],
-      [1, 0],
-    ].map(([at, alpha]) => [bottom + (1 - bottom) * at, alpha]),
-  );
+function gradient(stops: readonly (readonly number[])[]): string {
+  return `linear-gradient(to bottom, ${stops
+    .map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(at)}`)
+    .join(", ")})`;
+}
+
+/**
+ * The box's own mask on a dark card, which holds still: the first tenth at
+ * the top, the dusk laid in over it, and the foot. The foot is a dark card's
+ * last tenth, or from `bottom` on a card of another colour than the night,
+ * eased on the curve the ordinary mask has.
+ */
+function edgeMask({ bottom }: SceneGrounding): string {
+  return gradient([
+    [0, 0],
+    [0.03, 0.35],
+    [0.06, 0.8],
+    [0.09, 1],
+    ...(bottom === null
+      ? [
+          [0.91, 1],
+          [0.94, 0.8],
+          [0.97, 0.35],
+          [1, 0],
+        ]
+      : [
+          [0, 1],
+          [0.23, 0.85],
+          [0.5, 0.45],
+          [0.77, 0.1],
+          [1, 0],
+        ].map(([at, alpha]) => [bottom + (1 - bottom) * at, alpha])),
+  ]);
+}
+
+/**
+ * The painting's own mask on a dark card, which goes with the painting: its
+ * sky given up to the card. Nothing at the top and all of it by `top`, the
+ * line of its hills, as a share of the painting's height. Late and steep:
+ * next to nothing for the first three fifths of the way, so the sky is gone
+ * and not thinned, and then all of it over the last of the way, where the
+ * hills and the treetops are.
+ */
+function skyMask({ top }: SceneGrounding): string {
+  return gradient([
+    [0, 0],
+    [top * 0.6, 0.04],
+    [top * 0.8, 0.3],
+    [top * 0.92, 0.75],
+    [top, 1],
+    [1, 1],
+  ]);
 }
 
 /**
@@ -158,7 +221,8 @@ function groundedMask({ top, bottom }: SceneGrounding): string {
  * band between, where the windows, the lanterns and their reflections are.
  * Those are gold, and under the card's colour they were brown. Eased in and
  * out over TINT_EDGE of the height, outside the band, so the band itself is
- * clear from end to end. Fixed to the box, like the box's own mask.
+ * clear from end to end. In shares of the painting's height, and laid on the
+ * painting: it goes where the painting goes.
  */
 const TINT_EDGE = 0.08;
 
@@ -169,8 +233,6 @@ function tintMask([from, to]: readonly [number, number]): string {
     [0.75, 0.15],
     [1, 0],
   ];
-  const percent = (share: number): string => `${(Math.max(0, Math.min(1, share)) * 100).toFixed(1)}%`;
-
   return `linear-gradient(to bottom, ${[
     "rgb(0 0 0 / 1) 0%",
     ...fall.map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(from - TINT_EDGE * (1 - at))}`),
@@ -180,27 +242,6 @@ function tintMask([from, to]: readonly [number, number]): string {
           .reverse()
           .map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(to + TINT_EDGE * (1 - at))}`)),
     ...(to >= 1 ? [] : ["rgb(0 0 0 / 1) 100%"]),
-  ].join(", ")})`;
-}
-
-function groundedMaskOver(top: number, foot: readonly (readonly number[])[]): string {
-  /*
-    Late and steep: next to nothing for the first three fifths of the way, so
-    the sky is gone and not thinned, and then all of it over the last of the
-    way, where the hills and the treetops are.
-  */
-  const rise = [
-    [0, 0],
-    [0.6, 0.04],
-    [0.8, 0.3],
-    [0.92, 0.75],
-    [1, 1],
-  ];
-  const percent = (share: number): string => `${(share * 100).toFixed(1)}%`;
-
-  return `linear-gradient(to bottom, ${[
-    ...rise.map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(top * at)}`),
-    ...foot.map(([at, alpha]) => `rgb(0 0 0 / ${alpha}) ${percent(at)}`),
   ].join(", ")})`;
 }
 
@@ -219,15 +260,81 @@ export default function SceneScreen({
   slot: RefObject<HTMLDivElement | null>;
 }): ReactElement {
   const layer = useRef<HTMLDivElement>(null);
+  const mover = useRef<HTMLDivElement>(null);
   const still = useCardStill();
   const [src, setSrc] = useState<string | null>(null);
   const [shown, setShown] = useState<boolean>(false);
+  /* False on the server and for the first render, and set before the first paint. */
+  const [parallax, setParallax] = useState<boolean>(false);
+  /* What the parallax needs of the layout, written when the painting is placed and read on a scroll. */
+  const travel = useRef({ room: 0, cardStart: 0, scroller: null as HTMLElement | null });
+
+  /* Marks the layer while the scene is off the screen or the tab is hidden; the parallax reads the mark. */
+  const pause = useFloatingPause();
+  const setLayer = useCallback(
+    (node: HTMLDivElement | null) => {
+      layer.current = node;
+
+      return pause(node);
+    },
+    [pause],
+  );
 
   /* At once, and again when the host picks another painting or a ground that takes the other one. */
   useEffect(() => {
     setShown(false);
     setSrc(copyFor(art));
   }, [art]);
+
+  useLayoutEffect(() => {
+    setParallax(!still && parallaxWanted());
+  }, [still]);
+
+  /*
+    The painting, PARALLAX_SPEED as fast up the screen as the card: it is let
+    down its box by the rest of the scroll, until it has used the room it has.
+    The scroll offset is taken as its event arrives and the transform written
+    in the next frame, one write however many events the frame brought.
+  */
+  useEffect(() => {
+    const box = layer.current;
+    const painting = mover.current;
+
+    if (!parallax || box === null || painting === null) {
+      return;
+    }
+
+    let frame = 0;
+    let scrolled = 0;
+
+    const write = (): void => {
+      frame = 0;
+      const { room, cardStart } = travel.current;
+      const down = Math.min(Math.max((scrolled - cardStart) * (1 - PARALLAX_SPEED), 0), room);
+
+      painting.style.transform = `translate3d(0, ${down.toFixed(1)}px, 0)`;
+    };
+
+    const onScroll = (): void => {
+      const scroller = travel.current.scroller;
+      scrolled = scroller === null ? window.scrollY : scroller.scrollTop;
+
+      if (frame === 0 && !box.hasAttribute("data-floating-paused")) {
+        frame = window.requestAnimationFrame(write);
+      }
+    };
+
+    const passiveCapture: AddEventListenerOptions = { passive: true, capture: true };
+    /* Capture, so a scroll inside the editor's preview frame is heard too. */
+    window.addEventListener("scroll", onScroll, passiveCapture);
+    onScroll();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll, passiveCapture);
+      window.cancelAnimationFrame(frame);
+      painting.style.transform = "";
+    };
+  }, [parallax]);
 
   /*
     Over its slot. From offsets up to the card, which are the layout's own
@@ -267,6 +374,24 @@ export default function SceneScreen({
       box.style.width = `${room.offsetWidth}px`;
       box.style.height = `${room.offsetHeight}px`;
       box.style.visibility = "visible";
+
+      /*
+        For the parallax, while the layout is being read anyway: how far the
+        painting may travel, what scrolls the card, and how far down that the
+        card starts.
+      */
+      const scroller = scrollerOf(card);
+      const cardBox = card.getBoundingClientRect();
+      const scale = card.offsetWidth > 0 ? cardBox.width / card.offsetWidth || 1 : 1;
+
+      travel.current = {
+        room: room.offsetHeight * PARALLAX_ROOM,
+        scroller,
+        cardStart:
+          scroller === null
+            ? cardBox.top + window.scrollY
+            : (cardBox.top - scroller.getBoundingClientRect().top) / scale + scroller.scrollTop,
+      };
     };
 
     place();
@@ -289,11 +414,12 @@ export default function SceneScreen({
     };
   }, [slot]);
 
-  const mask = grounding !== null ? groundedMask(grounding) : null;
+  const mask = grounding !== null ? edgeMask(grounding) : null;
+  const sky = grounding !== null ? skyMask(grounding) : null;
 
   return (
     <div
-      ref={layer}
+      ref={setLayer}
       aria-hidden="true"
       className={`lifafa-scene pointer-events-none absolute z-[5] overflow-hidden ${
         dusk !== null ? "lifafa-scene-dusk" : ""
@@ -304,6 +430,21 @@ export default function SceneScreen({
         ...(mask !== null ? { maskImage: mask, WebkitMaskImage: mask } : null),
       }}
     >
+      {/*
+        The painting and what belongs to it. With the parallax it is taller
+        than the box by the room it travels in, and starts that far up, so
+        the box is covered wherever it is; without, it is the box.
+      */}
+      <div
+        ref={mover}
+        className="absolute inset-x-0"
+        style={{
+          top: parallax ? `${-PARALLAX_ROOM * 100}%` : 0,
+          height: parallax ? `${(1 + PARALLAX_ROOM) * 100}%` : "100%",
+          willChange: parallax ? "transform" : undefined,
+          ...(sky !== null ? { maskImage: sky, WebkitMaskImage: sky } : null),
+        }}
+      >
       {src !== null ? (
         <img
           key={src}
@@ -315,9 +456,7 @@ export default function SceneScreen({
           decoding="async"
           draggable={false}
           onLoad={() => setShown(true)}
-          className={`absolute inset-0 h-full w-full object-cover object-[center_60%] select-none transition-opacity duration-700 ease-out motion-reduce:transition-none ${
-            still ? "" : "lifafa-scene-art"
-          }`}
+          className="absolute inset-0 h-full w-full object-cover object-[center_60%] select-none transition-opacity duration-700 ease-out motion-reduce:transition-none"
           style={{ opacity: shown || still ? 1 : 0 }}
         />
       ) : null}
@@ -325,9 +464,10 @@ export default function SceneScreen({
       {/*
         The card's own colour laid over the painting as colour alone: the
         painting keeps its lights and darks and leans to the card's hue, so a
-        night of navy is not a blue band across a maroon card. Still, and one
-        flat fill; the box is its own group (it is masked), so it tints the
-        painting and nothing under it.
+        night of navy is not a blue band across a maroon card. One flat fill,
+        never animated, and still on the painting; the painting's box is its
+        own group (it is masked), so it tints the painting and nothing under
+        it.
       */}
       {grounding !== null && grounding.tint > 0 && dusk !== null ? (
         <div
@@ -345,17 +485,21 @@ export default function SceneScreen({
           }}
         />
       ) : null}
+      </div>
 
       {/*
-        On a dark card: a quarter of the height at each end, eased, from the
+        On a dark card: a quarter of the height at the foot, eased, from the
         card's ground through its glow to nothing. Over the picture and still;
-        the box's own mask is then only the first and last tenth.
+        the box's own mask is then only the first and last tenth. At the top
+        too only where the painting keeps its sky, which no night painting
+        does: there the top of the box is the card's ground already, and a
+        glow laid on it is a band of light under the words.
       */}
       {dusk !== null ? (
         <div
           className="absolute inset-0"
           style={{
-            background: ["to bottom", "to top"]
+            background: (grounding !== null ? ["to top"] : ["to bottom", "to top"])
               .map((side) => `linear-gradient(${side}, ${duskStops(dusk)})`)
               .join(", "),
           }}

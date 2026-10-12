@@ -46,7 +46,8 @@ export interface KeepOutWatch {
   stop: () => void;
 }
 
-function scrollerOf(element: HTMLElement): HTMLElement | null {
+/** What scrolls an element: the nearest box that scrolls up and down, or null for the page. */
+export function scrollerOf(element: HTMLElement): HTMLElement | null {
   for (let node = element.parentElement; node !== null; node = node.parentElement) {
     const overflow = getComputedStyle(node).overflowY;
 

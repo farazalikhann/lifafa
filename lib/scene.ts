@@ -64,13 +64,14 @@ const ART: Record<Exclude<Scene, "off">, { light: SceneArt; dark: SceneArt }> = 
   palaceGarden: {
     light: art("palace-garden-light"),
     /*
-      A violet dusk over the garden, running to maroon behind the trees: gone
-      only once the trees have closed over it, so their tops fade a little.
+      A violet dusk over the garden, running to maroon behind the trees, and
+      down between them to the pavilion's roof: gone only there, so the tops
+      of the trees fade a little.
     */
     dark: {
       ...art("palace-garden-dark"),
       /* Lit from the pavilion down to its foot, and no blue in it anywhere. */
-      sky: { hue: 275, clearBy: 0.42, lights: [0.45, 1] },
+      sky: { hue: 275, clearBy: 0.45, lights: [0.47, 1] },
     },
   },
   valleyTree: {

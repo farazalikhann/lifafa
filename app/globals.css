@@ -722,33 +722,6 @@
 }
 
 /*
-  The picture grows a little and drifts up as the guest scrolls through it:
-  from the moment its box enters the foot of the screen to the moment it
-  leaves the top. A view timeline, so the browser moves it with the scroll on
-  the compositor and no script runs; transform only. A browser without view
-  timelines, and a guest who asked for less motion, see it still.
-*/
-@keyframes lifafa-scene-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(0, -3%, 0) scale(1.08);
-  }
-}
-
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .lifafa-scene-art {
-      animation: lifafa-scene-drift linear both;
-      animation-timeline: view();
-      animation-range: entry 0% exit 100%;
-      will-change: transform;
-    }
-  }
-}
-
-/*
   The strip of paper over the date (components/card/TearReveal.tsx).
 
   The arrow under its words drifts from left to right, the way the finger
