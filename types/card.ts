@@ -11,6 +11,7 @@ export type CardSectionId =
   | "countdown"
   | "venue"
   | "timeline"
+  | "contact"
   | "message";
 
 /**

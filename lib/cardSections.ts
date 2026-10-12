@@ -47,13 +47,23 @@ export const CARD_SECTIONS: Record<CardSectionId, CardSectionMeta> = {
     description:
       "Every function in date order, the main event included. Hidden until there is one.",
   },
+  contact: {
+    label: "Contact numbers",
+    description: "Who to ring with a question. Hidden until a number is added.",
+  },
   message: {
     label: "Message",
     description: "A short personal note. Hidden when left empty.",
   },
 };
 
-/** Default running order, matching the registry above. */
+/**
+ * Default running order, matching the registry above.
+ *
+ * "contact" is not in it, on purpose: a card with no contact numbers carries
+ * no block for them. One is added when the first number is, by
+ * `withContactBlock` in lib/contacts.ts.
+ */
 export const DEFAULT_SECTION_ORDER: readonly CardSectionId[] = [
   "cover",
   "family",

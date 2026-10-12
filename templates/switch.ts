@@ -1,4 +1,4 @@
-import type { EditorSnapshot } from "@/components/create/CardEditor";
+import type { EditorSnapshot } from "@/hooks/useCardEditor";
 import { CLASSIC_TEMPLATE_ID } from "@/templates/registry";
 import type { TemplateConfig } from "@/templates/types";
 

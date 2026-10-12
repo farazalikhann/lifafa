@@ -154,6 +154,11 @@ export interface CardCopy {
     /** Under the disabled buttons while the venue is behind a scratch panel. */
     revealFirst: string;
   };
+  contact: {
+    heading: string;
+    /** Read out for a number's link, before the number itself. */
+    call: string;
+  };
   timeline: {
     heading: string;
     /** The directions link under a function with a venue of its own. */
@@ -475,6 +480,10 @@ const ENGLISH: CardCopy = {
     addressCopied: "Address copied",
     revealFirst: "Reveal the venue first",
   },
+  contact: {
+    heading: "For any questions",
+    call: "Call",
+  },
   timeline: {
     heading: "The celebrations",
     directions: "Get directions",
@@ -728,6 +737,10 @@ const HINDI: CardCopy = {
     copyAddress: "पता कॉपी करें",
     addressCopied: "पता कॉपी हो गया",
     revealFirst: "पहले स्थान देख लीजिए",
+  },
+  contact: {
+    heading: "किसी भी जानकारी के लिए",
+    call: "कॉल करें",
   },
   timeline: {
     heading: "सभी कार्यक्रम",

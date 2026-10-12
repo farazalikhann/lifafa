@@ -63,6 +63,12 @@ export interface PendingCard {
   weatherTheme?: WeatherThemeId;
   /** Nor does this. Absent reads as off. */
   qrCheckinEnabled?: boolean;
+  /**
+   * Which step of the wizard the host was on, by its id in lib/wizardSteps.ts.
+   * Absent on a card stashed by the tabbed editor, which has no steps. The
+   * template needs no field here: it is `config.templateId`, inside the card.
+   */
+  step?: string;
 }
 
 /** What is written: the card, and when and where it was stashed. */
@@ -110,6 +116,8 @@ function toPendingCard(card: PendingCard): PendingCard {
       ? card.weatherTheme
       : undefined,
     qrCheckinEnabled: card.qrCheckinEnabled === true,
+    /* Kept only as a string; the wizard checks it names a step before using it. */
+    step: typeof card.step === "string" ? card.step : undefined,
   };
 }
 
@@ -269,12 +277,19 @@ export function clearPendingCard(): void {
  * is. It is carried through the login page and the auth callback as
  * `redirectTo`, both of which keep it on every path, errors included.
  */
-export function pendingCardReturnPath(): string {
-  const params = new URLSearchParams({
-    [STASH_ORIGIN_PARAM]: window.location.origin,
-  });
+export function pendingCardReturnPath(
+  /**
+   * The page that stashed the card, with any query of its own: /create, or
+   * the wizard on the step the host was at.
+   */
+  path: string = "/create",
+): string {
+  const [pathname, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
 
-  return `/create?${params.toString()}`;
+  params.set(STASH_ORIGIN_PARAM, window.location.origin);
+
+  return `${pathname}?${params.toString()}`;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { cardLanguage } from "@/lib/cardLanguage";
 import { DEFAULT_SECTION_ORDER, rsvpEnabled } from "@/lib/cardSections";
+import { withContactBlock } from "@/lib/contacts";
 import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { Coordinates, WeatherThemeId } from "@/types/weather";
@@ -642,10 +643,11 @@ function withRegisteredSections(
     for (let i = next.length - 1; i >= 0; i -= 1) {
       const block = next[i];
 
-      if (
-        block.kind === "builtin" &&
-        DEFAULT_SECTION_ORDER.indexOf(block.id) < rank
-      ) {
+      /* A section outside the default order (see lib/contacts.ts) is no landmark. */
+      const blockRank =
+        block.kind === "builtin" ? DEFAULT_SECTION_ORDER.indexOf(block.id) : -1;
+
+      if (blockRank >= 0 && blockRank < rank) {
         at = i + 1;
         break;
       }
@@ -690,7 +692,14 @@ export function toStoredEvent(
     inviteCode: row.invite_code,
     config: {
       ...row.card_config,
-      blocks: withRegisteredSections(row.card_config.blocks),
+      /*
+        And the contact section, for a draft that has numbers and a card with
+        nowhere to put them. Only ever adds; see withContactBlock.
+      */
+      blocks: withContactBlock(
+        withRegisteredSections(row.card_config.blocks),
+        row.event_draft,
+      ),
       /*
         Both absent from every card saved before they existed, and both have
         a reading that keeps those cards exactly as they were: English, and

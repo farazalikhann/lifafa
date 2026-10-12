@@ -141,6 +141,7 @@ import type {
   ScratchTarget,
 } from "@/types/card";
 import type { CardDensity } from "@/types/style";
+import { hasContacts } from "@/lib/contacts";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
@@ -195,6 +196,9 @@ const TimelineSection = dynamic(
 const FamilySection = dynamic(
   () => import("@/components/card/sections/FamilySection"),
   { loading: () => null },
+);
+const ContactSection = dynamic(
+  () => import("@/components/card/sections/ContactSection"),
 );
 const MessageSection = dynamic(
   () => import("@/components/card/sections/MessageSection"),
@@ -589,6 +593,8 @@ function blockRenders(
   switch (block.id) {
     case "message":
       return hasMessage(draft);
+    case "contact":
+      return hasContacts(draft);
     case "countdown":
       return hasCountdown(draft);
     case "timeline":
@@ -851,6 +857,16 @@ function renderBlock(
           traditionId={couple.traditionId}
           language={language}
           illustration={couple.illustration}
+        />
+      );
+    case "contact":
+      return (
+        <ContactSection
+          draft={draft}
+          theme={theme}
+          minHeight={minHeight}
+          pad={pad}
+          language={language}
         />
       );
     case "message":

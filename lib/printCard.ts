@@ -32,6 +32,7 @@ import {
   hasMessage,
   hasTimeline,
 } from "@/lib/cardSections";
+import { hasContacts } from "@/lib/contacts";
 import type { CardConfig, CardSectionId } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
@@ -47,6 +48,7 @@ const SHEET_OF: Record<CardSectionId, number | null> = {
   details: 2,
   venue: 2,
   timeline: 3,
+  contact: 3,
   message: 3,
   countdown: null,
 };
@@ -71,6 +73,8 @@ function prints(block: CardBlock, draft: EventDraft, config: CardConfig): boolea
       return hasTimeline(draft);
     case "family":
       return hasFamily(draft, config.occasionId);
+    case "contact":
+      return hasContacts(draft);
     case "countdown":
       return false;
     default:

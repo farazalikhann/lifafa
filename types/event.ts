@@ -103,6 +103,22 @@ export interface SubEvent {
   translations?: Translations<SubEventWords>;
 }
 
+/**
+ * Somebody a guest can ring with a question: "Bride's side", "Rahul (groom's
+ * brother)", and a number.
+ *
+ * At most MAX_CONTACTS of them, and the card shows only the ones with a number
+ * that can be dialled. See lib/contacts.ts, which is the only reader.
+ */
+export interface EventContact {
+  /** Stable across renders, minted by a counter in the editor, like a SubEvent's. */
+  id: string;
+  /** Who this is, in the host's words. May be empty: the number then stands alone. */
+  label: string;
+  /** As the host typed it. Never used as a link without going through telHref. */
+  phone: string;
+}
+
 export interface EventDraft {
   /**
    * The first person being celebrated, e.g. "Aarav".
@@ -183,6 +199,12 @@ export interface EventDraft {
   partyOneCity?: string;
   partyTwoParents?: string;
   partyTwoCity?: string;
+  /**
+   * Who to ring with a question. Absent on every draft saved before it existed
+   * and on any whose host adds none, and the card's contact section draws
+   * nothing at all unless one of them has a number.
+   */
+  contacts?: readonly EventContact[];
   /**
    * The words above, in the card's other languages, so one invitation can be
    * shared in each. Absent on every draft saved before this existed and on
