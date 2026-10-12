@@ -3,7 +3,11 @@
 import { useState, type ReactElement } from "react";
 import { getPalette } from "@/lib/palettes";
 import { templateDemoPath } from "@/lib/templateSamples";
-import { CATEGORY_LABELS, listedTemplates } from "@/templates/registry";
+import {
+  CATEGORY_LABELS,
+  categoriesOf,
+  listedTemplates,
+} from "@/templates/registry";
 import type { TemplateConfig } from "@/templates/types";
 import type { TraditionId } from "@/types/occasion";
 
@@ -37,11 +41,9 @@ export default function TemplateGallery({
   const [filter, setFilter] = useState<Filter>("all");
 
   /* Only the categories that have a template, in the order they first appear. */
-  const categories = [
-    ...new Set(templates.map((template) => template.category)),
-  ];
+  const categories = [...new Set(templates.flatMap(categoriesOf))];
   const shown = templates.filter(
-    (template) => filter === "all" || template.category === filter,
+    (template) => filter === "all" || categoriesOf(template).includes(filter),
   );
 
   return (
@@ -111,6 +113,11 @@ export default function TemplateGallery({
                     Selected
                   </span>
                 ) : null}
+                {template.badge !== undefined ? (
+                  <span className="absolute top-2 right-2 rounded-full bg-[var(--lifafa-cream)] px-2.5 py-1 text-[0.6875rem] font-semibold text-[var(--lifafa-ink)]">
+                    {template.badge}
+                  </span>
+                ) : null}
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-2.5 p-3">
@@ -119,7 +126,7 @@ export default function TemplateGallery({
                     {template.name}
                   </h2>
                   <p className="text-xs text-[var(--lifafa-muted)]">
-                    {CATEGORY_LABELS[template.category]}
+                    {template.categoryLabel ?? CATEGORY_LABELS[template.category]}
                   </p>
                 </div>
 

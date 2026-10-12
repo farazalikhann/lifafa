@@ -122,7 +122,7 @@ function confettiKey(sessionKey: string): string {
  * a calendar question — and a caller handed a bare number would have to
  * re-derive them.
  */
-type Countdown =
+export type Countdown =
   | {
       readonly kind: "counting";
       readonly days: number;
@@ -146,7 +146,7 @@ type Countdown =
  * says "The celebration has begun" — a reception that began an hour ago is
  * still going — and from the next day it says thank you.
  */
-function measure(target: Date, now: Date): Countdown {
+export function measure(target: Date, now: Date): Countdown {
   const remaining = target.getTime() - now.getTime();
 
   if (remaining <= 0) {
@@ -170,7 +170,7 @@ function measure(target: Date, now: Date): Countdown {
  * Before the first tick every tile shows dashes, so the server and the first
  * paint agree and nothing claims a number it has not measured.
  */
-function unitsOf(
+export function unitsOf(
   countdown: Countdown | null,
   copy: CardCopy["countdown"],
 ): readonly TileUnit[] {
@@ -186,7 +186,7 @@ function unitsOf(
 }
 
 /** What a screen reader is told in place of the drawn tiles. */
-function spokenCountdown(units: readonly TileUnit[]): string {
+export function spokenCountdown(units: readonly TileUnit[]): string {
   return units
     .filter((unit) => !unit.digits.includes("–"))
     .map((unit) => `${Number(unit.digits)} ${unit.label}`)

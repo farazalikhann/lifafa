@@ -69,7 +69,14 @@ export default function KeepsakeSection({
   borderStyle,
   printHref,
   fileTitle,
+  art = true,
 }: {
+  /**
+   * Whether the little picture of a card tied in ribbon is drawn over the
+   * heading. Off for a template whose page has its own artwork, which that
+   * picture's red roses are not part of.
+   */
+  art?: boolean;
   /** The card's composed theme, as the note above is handed it. */
   theme: Theme;
   language: CardLanguage;
@@ -169,6 +176,7 @@ export default function KeepsakeSection({
         data-keepsake=""
         className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-4 px-5 pt-6 pb-12 text-center sm:px-6"
       >
+        {art ? (
         <img
           src={ART}
           alt=""
@@ -180,6 +188,7 @@ export default function KeepsakeSection({
           className="select-none"
           style={{ height: ART_HEIGHT, width: "auto" }}
         />
+        ) : null}
 
         <p
           className={`text-[1.25rem] text-balance ${

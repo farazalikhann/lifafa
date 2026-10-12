@@ -18,6 +18,7 @@ import { printSheets } from "@/lib/printCard";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { cardPalette } from "@/lib/textColors";
+import { getTemplate } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
 
 /**
@@ -144,7 +145,11 @@ export default async function PrintPage({
     color: { dark: "#1C1410", light: "#FFFFFF" },
   });
 
-  const palette = cardPalette(config.style);
+  /* A template that prints on a ground of its own says so; see `print` on TemplateConfig. */
+  const palette = {
+    ...cardPalette(config.style),
+    ...getTemplate(config.templateId).print,
+  };
 
   return (
     <div className="lifafa-print-doc" lang={copy.lang}>

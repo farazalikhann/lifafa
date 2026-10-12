@@ -24,6 +24,7 @@ export { CLASSIC_TEMPLATE_ID };
  * removed.
  */
 export const TEMPLATES: readonly TemplateConfig[] = [
+  EMERALD_SHAHI,
   SHUBH_VIVAH_IVORY,
   MAROON_ROYAL,
   NIKAH_BLUSH,
@@ -33,7 +34,6 @@ export const TEMPLATES: readonly TemplateConfig[] = [
   LOTUS_BLUSH,
   BODHI_IVORY,
   CLASSIC_TEMPLATE,
-  EMERALD_SHAHI,
 ];
 
 /**
@@ -56,6 +56,11 @@ export function findTemplate(id: string): TemplateConfig | null {
 /** The templates a host can pick from. */
 export function listedTemplates(): readonly TemplateConfig[] {
   return TEMPLATES.filter((template) => template.listed);
+}
+
+/** Every category a template is shown under: its own, then any others. */
+export function categoriesOf(template: TemplateConfig): readonly TraditionId[] {
+  return [template.category, ...(template.alsoIn ?? [])];
 }
 
 /** What the gallery calls each category, on its filter chips. */

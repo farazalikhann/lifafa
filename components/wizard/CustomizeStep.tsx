@@ -85,6 +85,8 @@ export default function CustomizeStep({
   onBlocksChange,
   rsvpEnabled,
   onRsvpEnabledChange,
+  countdownScratched,
+  onCountdownScratchedChange,
   musicUrl,
   onMusicUrlChange,
   coverAnimation,
@@ -109,6 +111,9 @@ export default function CustomizeStep({
   onBlocksChange: (blocks: readonly CardBlock[]) => void;
   rsvpEnabled: boolean;
   onRsvpEnabledChange: (enabled: boolean) => void;
+  /** Whether guests scratch to see the countdown. Offered only by a template that draws it. */
+  countdownScratched: boolean;
+  onCountdownScratchedChange: (scratched: boolean) => void;
   musicUrl: string | null;
   onMusicUrlChange: (musicUrl: string | null) => void;
   coverAnimation: CoverAnimationId;
@@ -262,6 +267,18 @@ export default function CustomizeStep({
               label="Reply form (RSVP)"
             />
           </li>
+          {template.countdownScratch === true ? (
+            <li className="flex min-h-14 items-center justify-between gap-3 py-1.5">
+              <span className="min-w-0 text-[0.9375rem] text-[var(--lifafa-cream)]">
+                Scratch to reveal the countdown
+              </span>
+              <ToggleSwitch
+                checked={countdownScratched}
+                onChange={onCountdownScratchedChange}
+                label="Scratch to reveal the countdown"
+              />
+            </li>
+          ) : null}
         </ul>
       </Group>
 

@@ -2,6 +2,8 @@ import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { COVER_IMAGES } from "@/templates/emerald-shahi/art";
+import preview from "@/templates/emerald-shahi/preview.webp";
+import { paperTheme } from "@/templates/emerald-shahi/shared";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
 import type { TemplateConfig } from "@/templates/types";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
@@ -60,9 +62,12 @@ const COVER_OPTION: CoverAnimationOption = {
  * Its Card and its Cover are loaded on demand, so a guest of any other
  * template downloads neither.
  *
- * NOT IN THE GALLERY YET (`listed: false`): its hero and its couple are built,
- * and the rest of the card is still the shared one in this template's colours.
- * It can be seen at /demo/emerald-shahi.
+ * A CARD FOR ANY WEDDING: there is no symbol of any faith on it, so it is
+ * under every tradition's chip in the gallery, and first, with a "New" badge.
+ * Its sample is the Hindu wedding.
+ *
+ * ITS OWN PAGE TOO: the reply form sits on ivory paper and the closing words
+ * are its own (`page`), and its printed copy is on ivory (`print`).
  *
  * ONE COLOURWAY, so step 3 offers no choice of colour. The font pairs are the
  * three that set names in a script and headings in a serif, each with its own
@@ -73,10 +78,12 @@ export const EMERALD_SHAHI: TemplateConfig = {
   name: "Emerald Shahi",
   description:
     "A velvet envelope and a gold seal, on emerald with ivory roses and gold line art.",
-  /* A wedding card with no symbol of any faith on it; shown with the Hindu wedding sample. */
   category: "hindu",
-  listed: false,
-  preview: null,
+  alsoIn: ["muslim", "sikh", "jain", "buddhist"],
+  categoryLabel: "Any wedding",
+  badge: "New",
+  listed: true,
+  preview,
   palettes: [
     { id: "own", label: "Emerald", paletteId: "forest", accentOverride: GOLD },
   ],
@@ -114,4 +121,13 @@ export const EMERALD_SHAHI: TemplateConfig = {
     option: COVER_OPTION,
     Visual: dynamic(() => import("@/templates/emerald-shahi/Cover")),
   },
+  page: {
+    RsvpFrame: dynamic(() => import("@/templates/emerald-shahi/RsvpFrame")),
+    rsvpTheme: paperTheme,
+    Closing: dynamic(() => import("@/templates/emerald-shahi/Closing")),
+    /* Its ribbon and petals are red roses, which are no part of this card. */
+    keepsakeArt: false,
+  },
+  print: { background: "#F6EFE0", textPrimary: "#0B3A27" },
+  countdownScratch: true,
 };

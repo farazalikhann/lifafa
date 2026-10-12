@@ -253,8 +253,23 @@ export default function InviteExperience({
   const palette = cardPalette(config.style);
   const motifs = getMotifs(config.occasionId, config.traditionId);
   /* A template with a cover of its own opens with that, whatever the host's choice of animation. */
-  const templateCover = getTemplate(config.templateId).cover;
+  const template = getTemplate(config.templateId);
+  const templateCover = template.cover;
   const TemplateCoverVisual = templateCover?.Visual;
+  /*
+    And one with a look of its own for what follows the card: the reply form,
+    the confirmation and the pass are the same components either way, put on
+    the template's paper in the theme it names; the closing note is the
+    template's. See `page` on TemplateConfig.
+  */
+  const templatePage = template.page;
+  const replyTheme = templatePage?.rsvpTheme(cardTheme) ?? cardTheme;
+  const onPaper = (panel: ReactElement): ReactElement => {
+    const Frame = templatePage?.RsvpFrame;
+
+    return Frame === undefined ? panel : <Frame>{panel}</Frame>;
+  };
+  const TemplateClosing = templatePage?.Closing;
 
   /*
     Everything laid out around the card — the cover, the form, the pass — is
@@ -576,13 +591,13 @@ export default function InviteExperience({
             reach it here — the config was read when the page was — and that
             guest meets the refusal in addOrUpdateReply instead.
           */}
-          {stage === "confirmed" && submitted !== null ? (
+          {stage === "confirmed" && submitted !== null ? onPaper(
             <BorderInset borderStyle={config.borderStyle}>
             <RsvpConfirmed
               status={submitted.status}
               partySize={submitted.partySize}
               name={submitted.name}
-              theme={cardTheme}
+              theme={replyTheme}
               language={language}
               onChangeReply={() => setStage("form")}
               pass={
@@ -598,13 +613,13 @@ export default function InviteExperience({
                     token={checkinToken}
                     guestName={submitted.name}
                     eventName={passEventName}
-                    theme={cardTheme}
+                    theme={replyTheme}
                     language={language}
                   />
                 ) : null
               }
             />
-            </BorderInset>
+            </BorderInset>,
           ) : ended && config.rsvpEnabled ? (
             /*
               Where the reply form was, once the event is over: the card is a
@@ -621,16 +636,16 @@ export default function InviteExperience({
                 {copy.invite.eventEnded}
               </p>
             </section>
-          ) : config.rsvpEnabled ? (
+          ) : config.rsvpEnabled ? onPaper(
             <RsvpPanel
-              theme={cardTheme}
+              theme={replyTheme}
               language={language}
               borderStyle={config.borderStyle}
               initial={submitted}
               onSubmit={handleSubmit}
               isSending={isSending}
               submitError={submitErrorText}
-            />
+            />,
           ) : null}
 
           {/*
@@ -640,7 +655,10 @@ export default function InviteExperience({
             the event is over only a note the host wrote, which was on the
             card; the card's own thanks look forward to a day that has gone.
           */}
-          {ended && !hasMessage(draft) ? null : (
+          {TemplateClosing !== undefined ? (
+            /* The template's own closing words; the host's note is a section of its card. */
+            ended ? null : <TemplateClosing draft={draft} config={config} />
+          ) : ended && !hasMessage(draft) ? null : (
             <ThankYouNote
               draft={draft}
               theme={cardTheme}
@@ -662,6 +680,7 @@ export default function InviteExperience({
               borderStyle={config.borderStyle}
               printHref={printPath(event.inviteCode, language)}
               fileTitle={pdfTitle(coverTitle ?? null, copy.keepsake.fileFallback)}
+              art={templatePage?.keepsakeArt ?? true}
             />
           ) : null}
 

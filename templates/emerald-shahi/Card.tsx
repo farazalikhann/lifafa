@@ -1,51 +1,67 @@
 "use client";
 
 import type { CSSProperties, ReactElement } from "react";
-import CardCanvas from "@/components/card/CardCanvas";
 import MusicToggle from "@/components/card/MusicToggle";
+import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
+import WeatherPanel from "@/components/card/WeatherPanel";
 import { cardLanguage } from "@/lib/cardLanguage";
-import { hasFamily } from "@/lib/cardSections";
-import { effectiveTheme } from "@/lib/cardTheme";
 import {
-  fontFamilyOf,
-  getFontPair,
-  namesFaceOf,
-  pairRoleVar,
-} from "@/lib/fontPairs";
+  hasCountdown,
+  hasCustomContent,
+  hasFamily,
+  hasMessage,
+} from "@/lib/cardSections";
+import { effectiveTheme } from "@/lib/cardTheme";
+import { hasContacts } from "@/lib/contacts";
+import EmeraldShahiClosing from "@/templates/emerald-shahi/Closing";
+import EmeraldShahiCountdown from "@/templates/emerald-shahi/Countdown";
 import EmeraldShahiCouple from "@/templates/emerald-shahi/Couple";
+import EmeraldShahiEvents from "@/templates/emerald-shahi/Events";
+import EmeraldShahiFloating from "@/templates/emerald-shahi/Floating";
 import EmeraldShahiHero from "@/templates/emerald-shahi/Hero";
+import {
+  EmeraldShahiContacts,
+  EmeraldShahiCustom,
+  EmeraldShahiNote,
+} from "@/templates/emerald-shahi/Notes";
+import EmeraldShahiSaveDate from "@/templates/emerald-shahi/SaveDate";
+import EmeraldShahiVenues from "@/templates/emerald-shahi/Venues";
 import styles from "@/templates/emerald-shahi/emerald.module.css";
+import { emeraldFonts } from "@/templates/emerald-shahi/shared";
 import type { TemplateCardProps } from "@/templates/types";
 import type { CardBlock } from "@/types/customSection";
 
 /* The editor's preview frame, where a caller names no height of its own. */
 const FRAME_HEIGHT = 620;
 
-const isBuiltin = (block: CardBlock, id: string): boolean =>
-  block.kind === "builtin" && block.id === id;
-
 /**
- * Emerald Shahi's card.
+ * Emerald Shahi's card: every section in this template's own dress.
  *
- * WHAT IS ITS OWN is the presentation of the first two things a guest meets:
- * the ground the whole card is printed on (the emerald pattern under a dark
- * emerald wash), the hero, and "Meet the Couple". Those are drawn here.
+ * THE PRESENTATION IS ITS OWN, THE LOGIC IS THE CARD'S. Each section here is
+ * drawn by this folder, and each one reads the event through the same
+ * functions the shared card does: the names through resolveCoverNames, the
+ * functions through timelineEntries, the countdown through CountdownSection's
+ * own `measure`, the calendar through AddToCalendar itself, a venue's link
+ * through directionsUrl, the numbers through contactsOf, the scratch panels
+ * through ScratchPanel and the card's one ScratchRevealProvider. Nothing about
+ * what an invitation says or does is decided a second time in this folder.
  *
- * EVERYTHING ELSE IS THE CARD'S, UNCHANGED. The date and its reveals, the
- * countdown, the venue and its map, every function, the contact numbers, the
- * host's own sections, the note, the weather and the calendar buttons are
- * drawn by CardCanvas, handed the same card with the two sections above taken
- * out of its running order. So the scratch panel, the strip of paper, the
- * calendar links and the rest are the same code a guest of any other card
- * gets, in this card's emerald and gold, and nothing about them is written a
- * second time. They get designs of their own in the template's second part.
+ * THE RUNNING ORDER IS THE CARD'S: `config.blocks`, in the host's order, each
+ * block drawn by the section that has taken its place here:
  *
- * So the hero is always first and the couple second, wherever a host who
- * reordered sections in the full editor put them; the rest keep their order.
+ *   cover       the hero                    venue      the venues, in tabs
+ *   family      Meet the Couple             timeline   a parchment card each
+ *   details     Save the Date               contact    who to ring
+ *   countdown   the four gold coins         message    the host's note
+ *   (a host's own section)                  the same emerald card
+ *
+ * A block that is switched off, or has nothing to say, is left out by the
+ * same tests the shared card uses, so the two agree on what a card contains.
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
  * same callers place it: the guest's page, the two previews and the printed
- * copy.
+ * copy. The printed copy is this card too, turned ink-friendly by the
+ * stylesheet; see "On paper" there.
  */
 export default function EmeraldShahiCard(
   props: TemplateCardProps,
@@ -55,47 +71,26 @@ export default function EmeraldShahiCard(
     theme,
     config,
     sizing,
+    audience,
+    invite,
+    weather = null,
+    weatherTheme = null,
     fluid = false,
     ground = "card",
+    closingNote,
     frameHeight = FRAME_HEIGHT,
   } = props;
 
   const language = cardLanguage(config.language);
   const cardTheme = effectiveTheme(theme, config.style);
-  const pair = getFontPair(config.style.fontPairId);
-  const namesFace = namesFaceOf(pair);
-
-  const namesFont: CSSProperties = {
-    fontFamily: fontFamilyOf(namesFace.variable, namesFace.fallback),
-    fontWeight: namesFace.weight,
-    letterSpacing: namesFace.tracking,
-  };
-  const headingFont: CSSProperties = {
-    fontFamily: fontFamilyOf(pairRoleVar(pair, "heading"), pair.headingFallback),
-    fontWeight: pair.headingWeight,
-  };
-  const bodyFont: CSSProperties = {
-    fontFamily: fontFamilyOf(pairRoleVar(pair, "body"), pair.bodyFallback),
-  };
-
-  /*
-    A printed sheet is this card with only that sheet's sections on it, so the
-    hero and the couple are each drawn only where their own block is.
-  */
-  const showHero = config.blocks.some(
-    (block) => isBuiltin(block, "cover") && block.kind === "builtin" && block.enabled,
-  );
-  const showCouple =
-    config.blocks.some(
-      (block) =>
-        isBuiltin(block, "family") && block.kind === "builtin" && block.enabled,
-    ) && hasFamily(draft, config.occasionId);
-  const rest = config.blocks.filter(
-    (block) => !isBuiltin(block, "cover") && !isBuiltin(block, "family"),
-  );
+  const fonts = emeraldFonts(config.style.fontPairId);
+  const { occasionId } = config;
 
   const screen = sizing === "viewport" ? "100svh" : `${frameHeight}px`;
+  const band = sizing === "viewport" ? "100dvh" : `${frameHeight}px`;
   const musicUrl = config.musicUrl ?? null;
+  /* Only the countdown is hidden on this card; the coins are its scratch panels. */
+  const scratchCountdown = config.scratchTarget === "countdown";
   /*
     On the guest's page the ground is fixed under the whole page, the reply
     form and all. Anywhere else the card is in a box that scrolls, and the
@@ -104,87 +99,153 @@ export default function EmeraldShahiCard(
   */
   const pagewide = ground === "page";
 
+  const section = (block: CardBlock): ReactElement | null => {
+    if (block.kind === "custom") {
+      return hasCustomContent(block.section) ? (
+        <EmeraldShahiCustom section={block.section} fonts={fonts} />
+      ) : null;
+    }
+
+    if (!block.enabled) {
+      return null;
+    }
+
+    switch (block.id) {
+      case "cover":
+        return (
+          <EmeraldShahiHero
+            draft={draft}
+            config={config}
+            language={language}
+            minHeight={screen}
+            namesFont={fonts.names}
+            headingFont={fonts.heading}
+          />
+        );
+      case "family":
+        return hasFamily(draft, occasionId) ? (
+          <EmeraldShahiCouple
+            draft={draft}
+            occasionId={occasionId}
+            language={language}
+            namesFont={fonts.names}
+            headingFont={fonts.heading}
+            bodyFont={fonts.body}
+          />
+        ) : null;
+      case "details":
+        return (
+          <EmeraldShahiSaveDate
+            draft={draft}
+            language={language}
+            occasionId={occasionId}
+            invite={invite}
+            theme={cardTheme}
+            fonts={fonts}
+          />
+        );
+      case "countdown":
+        return hasCountdown(draft) ? (
+          <EmeraldShahiCountdown
+            draft={draft}
+            language={language}
+            scratch={scratchCountdown}
+            audience={audience}
+            fonts={fonts}
+          />
+        ) : null;
+      case "venue":
+        return (
+          <EmeraldShahiVenues draft={draft} language={language} fonts={fonts} />
+        );
+      case "timeline":
+        return (
+          <EmeraldShahiEvents draft={draft} language={language} fonts={fonts} />
+        );
+      case "contact":
+        return hasContacts(draft) ? (
+          <EmeraldShahiContacts draft={draft} language={language} fonts={fonts} />
+        ) : null;
+      case "message":
+        return hasMessage(draft) ? (
+          <EmeraldShahiNote draft={draft} fonts={fonts} />
+        ) : null;
+    }
+  };
+
   return (
-    <div
-      lang={language}
-      className={`${styles.root} ${fluid ? styles.fluid : ""} relative ${
-        pagewide ? "" : "isolate"
-      }`}
+    /* Every scratch panel on the card shares one reveal, kept for the visit under the invitation's code. */
+    <ScratchRevealProvider
+      persistKey={invite.url === null ? null : invite.code}
+      concealed={scratchCountdown ? "countdown" : "none"}
     >
       <div
-        aria-hidden="true"
-        className={`${styles.ground} ${
-          pagewide ? styles.groundFixed : styles.groundPinned
+        lang={language}
+        className={`${styles.root} ${fluid ? styles.fluid : ""} relative ${
+          pagewide ? "" : "isolate"
         }`}
-        style={
-          pagewide
-            ? undefined
-            : ({
-                "--es-band": sizing === "viewport" ? "100dvh" : `${frameHeight}px`,
-              } as CSSProperties)
-        }
-      />
+      >
+        <div
+          aria-hidden="true"
+          className={`${styles.ground} ${
+            pagewide ? styles.groundFixed : styles.groundPinned
+          }`}
+          style={pagewide ? undefined : ({ "--es-band": band } as CSSProperties)}
+        />
 
-      {/*
-        The music button, top right, for the whole length of the card: a row
-        of no height pinned to the top of the screen, as on every card. Drawn
-        here and not by the card below, whose own would only appear once the
-        guest had scrolled down to it.
-      */}
-      {musicUrl !== null ? (
-        <div className="pointer-events-none sticky top-3 z-20 mx-auto h-0 w-full max-w-[26rem] px-4">
-          <MusicToggle
-            musicUrl={musicUrl}
-            accent={cardTheme.accent}
-            surface={cardTheme.surface}
+        <EmeraldShahiFloating pagewide={pagewide} band={band} />
+
+        {/*
+          The music button, top right, for the whole length of the card: a row
+          of no height pinned to the top of the screen. The card's own button,
+          with its own player; the wrapper only dresses it as an emerald disc
+          in a gold ring.
+        */}
+        {musicUrl !== null ? (
+          <div className={`${styles.music} pointer-events-none sticky top-3 z-20 mx-auto h-0 w-full max-w-[26rem]`}>
+            <MusicToggle
+              musicUrl={musicUrl}
+              accent={cardTheme.accent}
+              surface={cardTheme.surface}
+              language={language}
+            />
+          </div>
+        ) : null}
+
+        {/*
+          The reading column, under the name the printed copy looks for: it
+          measures this box on each sheet and zooms it to fit the paper
+          (fitSheets in components/print/PrintDocument.tsx), as it does the
+          shared card's.
+        */}
+        <div className="lifafa-card-content relative z-10">
+          {config.blocks.map((block) => {
+            const drawn = section(block);
+
+            return drawn === null ? null : (
+              <div key={block.kind === "custom" ? block.section.id : block.id}>
+                {drawn}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* After the last section, as on every card: the sky over the day belongs to no one section. */}
+        {weather !== null ? (
+          <WeatherPanel
+            weather={weather}
+            themeId={weatherTheme}
+            theme={cardTheme}
+            draft={draft}
             language={language}
           />
-        </div>
-      ) : null}
+        ) : null}
 
-      {showHero ? (
-        <EmeraldShahiHero
-          draft={draft}
-          config={config}
-          language={language}
-          minHeight={screen}
-          namesFont={namesFont}
-          headingFont={headingFont}
-        />
-      ) : null}
-
-      {showCouple ? (
-        <EmeraldShahiCouple
-          draft={draft}
-          occasionId={config.occasionId}
-          language={language}
-          namesFont={namesFont}
-          headingFont={headingFont}
-          bodyFont={bodyFont}
-        />
-      ) : null}
-
-      <CardCanvas
-        {...props}
-        config={{
-          ...config,
-          blocks: rest,
-          /* Drawn above, once. */
-          musicUrl: null,
-          /* None of these is this template's: its ground and its florals are its decoration. */
-          scene: "off",
-          invitedHeading: false,
-          borderStyle: "none",
-          royalTexture: false,
-          /* The garlands between sections are another card's flowers. */
-          divider: "none",
-        }}
-        /* It starts part way down this card: no band of flat colour across the pattern. */
-        dissolve={false}
-        /* This card lays the ground, here, whoever placed it. */
-        ground="page"
-        frame={false}
-      />
-    </div>
+        {/* The closing words end the card where nothing follows it; on the guest's page they follow the reply form. */}
+        {closingNote === "card" ? (
+          <EmeraldShahiClosing draft={draft} config={config} fluid={fluid} />
+        ) : null}
+      </div>
+    </ScratchRevealProvider>
   );
 }

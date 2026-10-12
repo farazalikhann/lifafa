@@ -904,7 +904,6 @@ export default function CardCanvas({
   ground = "card",
   closingNote,
   frameHeight = PREVIEW_FRAME_HEIGHT,
-  dissolve = true,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -967,15 +966,6 @@ export default function CardCanvas({
    * Does nothing in "viewport" sizing.
    */
   frameHeight?: number;
-  /**
-   * Whether text dissolves into the card's colour at the top and foot of the
-   * screen. On for every card that is the whole card. Off for a template that
-   * draws its own first sections on its own ground and hands the rest here
-   * (templates/emerald-shahi): there this card starts part way down the
-   * screen, and a band of flat colour pinned to its top is a seam across the
-   * template's pattern.
-   */
-  dissolve?: boolean;
   /** Decides whether guest interactions — the scratch panel — are live. */
   audience: CardAudience;
   /**
@@ -2012,7 +2002,6 @@ export default function CardCanvas({
           lanterns it is dissolving to avoid stay at full opacity, and so does the
           frame.
         */}
-        {dissolve ? (
         <ScrollFade
           background={effectiveTheme.background}
           texture={texture}
@@ -2026,7 +2015,6 @@ export default function CardCanvas({
           /* Cleared by where the opening's words start, so its first line is not thinned. */
           ramp={openingHasScene ? OPENING_UNDER_DECOR : undefined}
         />
-        ) : null}
 
         {/*
           The names, pinned once the opening screen has been scrolled past.

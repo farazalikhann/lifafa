@@ -1,8 +1,11 @@
-import type { ComponentProps, ComponentType } from "react";
+import type { ComponentProps, ComponentType, ReactNode } from "react";
 import type { StaticImageData } from "next/image";
 import type CardCanvas from "@/components/card/CardCanvas";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import type { DesignState } from "@/lib/designDefaults";
+import type { Theme } from "@/lib/themes";
+import type { CardConfig } from "@/types/card";
+import type { EventDraft } from "@/types/event";
 import type { CardBorderStyle, CardSectionId } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 import type { TraditionId } from "@/types/occasion";
@@ -58,6 +61,16 @@ export interface TemplateConfig {
    * is a card for any occasion.
    */
   category: TraditionId;
+  /**
+   * Other categories it is also shown under. A template that suits any
+   * wedding is not one tradition's: it is under each of their chips. Its
+   * sample invitation is still the one for `category`.
+   */
+  alsoIn?: readonly TraditionId[];
+  /** What the gallery calls its category on the card, where one tradition's name would be wrong. */
+  categoryLabel?: string;
+  /** A word on the corner of its gallery card: "New". */
+  badge?: string;
   /** Whether the gallery offers it. */
   listed: boolean;
   /**
@@ -94,4 +107,32 @@ export interface TemplateConfig {
     option: CoverAnimationOption;
     Visual: ComponentType<CoverVisualState>;
   };
+  /**
+   * What the template changes about the guest's page round its card, where it
+   * changes anything: the page places the card's own reply form and closing
+   * note under every card, and a template with a look of its own for them
+   * says so here. Presentation only. The form, its checks and what a reply
+   * does are the page's and are not replaceable.
+   */
+  page?: {
+    /** What the reply form, the confirmation and the pass are put on. */
+    RsvpFrame: ComponentType<{ children: ReactNode }>;
+    /** The theme those three are drawn in, on that. */
+    rsvpTheme: (theme: Theme) => Theme;
+    /** In place of the card's closing note, after the reply form. */
+    Closing: ComponentType<{ draft: EventDraft; config: CardConfig }>;
+    /** False to leave the ribboned-card picture off "Keep this invitation". */
+    keepsakeArt?: boolean;
+  };
+  /**
+   * The colours of the printed copy's page, where they are not the card's: a
+   * template with a dark ground prints on a pale one. The card's own sections
+   * are turned by the template itself.
+   */
+  print?: { background: string; textPrimary: string };
+  /**
+   * Whether step 3 offers "scratch to reveal the countdown": a template that
+   * draws its own countdown says whether it draws the scratch panels too.
+   */
+  countdownScratch?: boolean;
 }

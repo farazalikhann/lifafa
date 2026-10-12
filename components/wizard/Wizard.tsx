@@ -317,6 +317,8 @@ function WizardSteps({
     setFontPair,
     rsvpEnabled,
     setRsvpEnabled,
+    scratchTarget,
+    handleScratchSection,
     musicUrl,
     setMusicUrl,
     setCoverAnimation,
@@ -537,6 +539,10 @@ function WizardSteps({
               onBlocksChange={setBlocks}
               rsvpEnabled={rsvpEnabled}
               onRsvpEnabledChange={setRsvpEnabled}
+              countdownScratched={scratchTarget === "countdown"}
+              onCountdownScratchedChange={(scratched) =>
+                handleScratchSection(scratched ? "countdown" : "none")
+              }
               musicUrl={musicUrl}
               onMusicUrlChange={setMusicUrl}
               coverAnimation={coverAnimation}

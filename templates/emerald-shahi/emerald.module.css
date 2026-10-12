@@ -12,6 +12,9 @@
   --es-ivory: #f3e7c9;
   --es-emerald: #082a1c;
   --es-emerald-deep: #04170f;
+  /* A card on the ground: the couple, a contact, the host's own section, the note. */
+  --es-panel: rgb(4 28 18 / 0.78);
+  --es-panel-line: rgb(216 178 106 / 0.55);
   /* One step of the type scale. A fluid card (the guest's, from 768px) is set larger. */
   --es: 1rem;
 
@@ -155,39 +158,61 @@
 .person {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgb(216 178 106 / 0.55);
+  border: 1px solid var(--es-panel-line);
   border-radius: 1rem;
-  background-color: rgb(4 28 18 / 0.78);
+  background-color: var(--es-panel);
   min-height: calc(11.5 * var(--es));
 }
 
+/* The same card without a figure: a contact, a host's own section, the note. */
+.panel {
+  border: 1px solid var(--es-panel-line);
+  border-radius: 1rem;
+  background-color: var(--es-panel);
+}
+
 /*
-  The figure: against one edge of the card, a third of its ink, and gone by
-  the card's foot. The fade is a mask that never changes.
+  The figure: against one edge of the card at 60% of its ink, gone by the
+  card's foot, and gone towards the words. It is strong where it stands alone
+  and fades out across the part of it that reaches under the text, so the
+  names and the parents are never read through gold lines. Two masks, one
+  down and one across, kept where both keep; neither ever changes.
 */
 .figure {
   position: absolute;
   top: 0.5rem;
   bottom: 0;
-  width: 46%;
+  width: 50%;
   background-size: cover;
   background-repeat: no-repeat;
-  opacity: 0.35;
+  opacity: 0.6;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 .figureGroom {
   left: 0;
   background-image: url("/templates/emerald-shahi/groom-line.webp");
   background-position: left top;
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000 55%, transparent 100%),
+    linear-gradient(to right, #000 62%, transparent 96%);
+  mask-image:
+    linear-gradient(to bottom, #000 55%, transparent 100%),
+    linear-gradient(to right, #000 62%, transparent 96%);
 }
 
 .figureBride {
   right: 0;
   background-image: url("/templates/emerald-shahi/bride-line.webp");
   background-position: right top;
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000 55%, transparent 100%),
+    linear-gradient(to left, #000 62%, transparent 96%);
+  mask-image:
+    linear-gradient(to bottom, #000 55%, transparent 100%),
+    linear-gradient(to left, #000 62%, transparent 96%);
 }
 
 /* ───────────────────────── The envelope ───────────────────────── */
@@ -233,4 +258,390 @@
   .hint {
     animation: none;
   }
+}
+
+/* ───────────────────────── The music button ───────────────────────── */
+
+/*
+  The card's own music button, in this card's dress: an emerald disc in a gold
+  ring. The button sets its colours inline from the theme it is handed, so
+  these two are forced over them.
+*/
+.music button {
+  border: 1.5px solid var(--es-gold) !important;
+  background-color: var(--es-emerald) !important;
+  color: var(--es-gold-bright) !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ───────────────────────── Countdown ───────────────────────── */
+
+/*
+  A gold coin, drawn in gradients: a lit face, a darker rim inside a bright
+  edge, and the figure pressed into it. Nothing here is a picture.
+*/
+.coin {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background-image:
+    radial-gradient(circle at 34% 28%, rgb(255 244 200 / 0.75), transparent 46%),
+    radial-gradient(circle at 50% 50%, #e2bd6c 0%, #c99a3f 62%, #9b7222 100%);
+  box-shadow:
+    inset 0 0 0 2px #f0d595,
+    inset 0 0 0 5px #a67c26,
+    inset 0 0 0 6px rgb(255 240 190 / 0.5),
+    0 4px 10px rgb(0 0 0 / 0.4);
+}
+
+.coinFigure {
+  color: #5c400c;
+  text-shadow: 0 1px 0 rgb(255 236 170 / 0.65);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ───────────────────────── Event cards ───────────────────────── */
+
+/*
+  One function, on the parchment. The picture is laid as a nine-slice on a
+  layer under the words: its four corners are drawn at the size they have when
+  the picture is as wide as the card, never stretched, and only the plain
+  paper and the straight rules between them give. `cqw` is a hundredth of the
+  card's own width, so the corners keep their proportion at every width.
+*/
+.eventCard {
+  position: relative;
+  container-type: inline-size;
+  width: 100%;
+  color: #0b3a27;
+}
+
+.eventCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-width: 42.5cqw 37.5cqw;
+  border-image: url("/templates/emerald-shahi/event-card.webp") 340 300 fill;
+  pointer-events: none;
+}
+
+/*
+  The words stand clear of the four ornaments: below the top pair and above
+  the bottom pair, and in from the sides by more than an ornament is wide at
+  that height.
+*/
+.eventBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6cqw;
+  min-height: 118cqw;
+  padding: 31cqw 17cqw 31cqw;
+  justify-content: center;
+  text-align: center;
+}
+
+/* "No. 1", between the two top ornaments, under the rule. */
+.eventNumber {
+  position: absolute;
+  top: 13.5cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #8a6a1f;
+  white-space: nowrap;
+}
+
+.onPaperGold {
+  color: #8a6a1f;
+}
+
+/* ───────────────────────── Venues ───────────────────────── */
+
+.tab {
+  flex: none;
+  min-height: 2.75rem;
+  border: 1px solid var(--es-panel-line);
+  border-radius: 999px;
+  padding-inline: 1.1rem;
+  background-color: var(--es-panel);
+  color: var(--es-ivory);
+  white-space: nowrap;
+  transition:
+    background-color 200ms ease-out,
+    color 200ms ease-out;
+}
+
+.tabActive {
+  border-color: var(--es-gold);
+  background-color: var(--es-gold);
+  color: var(--es-emerald-deep);
+}
+
+/* The stages, one over another; the one for the tab that is open is the one seen. */
+.stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 450ms ease-in-out;
+}
+
+.stageShown {
+  opacity: 1;
+}
+
+.goldButton {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--es-gold);
+  border-radius: 999px;
+  padding-inline: 1.5rem;
+  color: var(--es-gold-bright);
+  background-color: var(--es-panel);
+  font-size: calc(0.9 * var(--es));
+  font-weight: 600;
+  transition: transform 150ms ease-out;
+}
+
+.goldButton:active {
+  transform: scale(0.98);
+}
+
+/* ───────────────────────── The reply form's paper ───────────────────────── */
+
+/*
+  Ivory paper under a thin emerald rule, with the parchment's gold corners.
+  The paper and the rules are CSS, so the panel is whatever height the form
+  comes to; the four corners are the one ornament from the picture, cropped
+  out of it and turned for each corner, at the size they have when the picture
+  is as wide as the panel. Nothing of the picture is stretched.
+*/
+.paper {
+  position: relative;
+  container-type: inline-size;
+  border-radius: 0.4rem;
+  background-color: #f2e8d7;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+}
+
+/* The double rule, at the distance from the edge the picture's own is. */
+.paperRule {
+  position: absolute;
+  inset: 2.7cqw 2.4cqw;
+  border: 0.55cqw solid #0f3d2b;
+  pointer-events: none;
+}
+
+.paperRule::after {
+  content: "";
+  position: absolute;
+  inset: 0.45cqw;
+  border: 1px solid #0f3d2b;
+}
+
+/*
+  The ornament: 255x285 of the 800px-wide picture, from (45, 50). Its edges
+  are faded into the paper, since the picture's paper has a grain the flat
+  ivory has not.
+*/
+.paperCorner {
+  position: absolute;
+  width: 31.875cqw;
+  height: 35.625cqw;
+  background-image: url("/templates/emerald-shahi/event-card.webp");
+  background-size: 100cqw auto;
+  background-position: -5.625cqw -6.25cqw;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  -webkit-mask-image:
+    linear-gradient(to right, #000 82%, transparent 100%),
+    linear-gradient(to bottom, #000 84%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, #000 82%, transparent 100%),
+    linear-gradient(to bottom, #000 84%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.paperCornerTL {
+  top: 0;
+  left: 0;
+}
+
+.paperCornerTR {
+  top: 0;
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.paperCornerBL {
+  bottom: 0;
+  left: 0;
+  transform: scaleY(-1);
+}
+
+.paperCornerBR {
+  right: 0;
+  bottom: 0;
+  transform: scale(-1, -1);
+}
+
+/* ───────────────────────── What drifts down ───────────────────────── */
+
+/*
+  A few gold leaves and ivory petals, falling slowly behind everything that
+  is read: under the words and the cards, over the ground. Each is a small
+  shape drawn in CSS and moved by one keyframe animation of transform and
+  opacity. `data-floating-paused` is set by the card's own useFloatingPause
+  while the tab is hidden or the layer is off screen. None at all for a guest
+  who asked for less motion.
+*/
+.drift {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.driftFixed {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+}
+
+.driftPinned {
+  position: sticky;
+  top: 0;
+  z-index: -5;
+  height: var(--es-band);
+  margin-bottom: calc(-1 * var(--es-band));
+}
+
+.piece {
+  position: absolute;
+  top: -6%;
+  left: var(--x);
+  width: var(--size);
+  height: calc(var(--size) * 1.5);
+  opacity: 0;
+  animation: es-fall var(--dur) linear var(--delay) infinite;
+  will-change: transform;
+}
+
+.leaf {
+  border-radius: 90% 0 90% 0;
+  background-image: linear-gradient(135deg, #f0d595, #b98a2c);
+}
+
+.petal {
+  border-radius: 60% 60% 55% 55% / 70% 70% 40% 40%;
+  background-image: linear-gradient(160deg, #fbf4e3, #e4d6b6);
+}
+
+.drift[data-floating-paused] .piece {
+  animation-play-state: paused;
+}
+
+/* Fewer on a narrow phone: the last four are left out under 400px. */
+@media (max-width: 399px) {
+  .pieceExtra {
+    display: none;
+  }
+}
+
+@keyframes es-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  8% {
+    opacity: var(--alpha);
+  }
+  50% {
+    transform: translate3d(var(--sway), 55vh, 0) rotate(160deg);
+  }
+  92% {
+    opacity: var(--alpha);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--sway) * -0.4), 112vh, 0) rotate(330deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drift {
+    display: none;
+  }
+}
+
+/* ───────────────────────── On paper ───────────────────────── */
+
+/*
+  The printed copy, which is kind to ink: ivory paper, emerald words, a gold
+  dark enough to print, and none of the pictures that are a sheet of colour.
+  No pattern, no florals, no parchment and no stages; the cards become a thin
+  gold line round their words. A print sheet is marked `.lifafa-print-sheet`
+  by PrintDocument, and everything here hangs off that.
+*/
+:global(.lifafa-print-sheet) .root {
+  --es-gold: #8a6a1f;
+  --es-gold-bright: #7a5714;
+  --es-ivory: #0b3a27;
+  --es-emerald: #f6efe0;
+  --es-panel: transparent;
+  --es-panel-line: rgb(138 106 31 / 0.6);
+
+  min-height: 100%;
+  background-color: #f6efe0;
+}
+
+:global(.lifafa-print-sheet) .ground,
+:global(.lifafa-print-sheet) .floral,
+:global(.lifafa-print-sheet) .drift,
+:global(.lifafa-print-sheet) .eventCard::before {
+  display: none;
+}
+
+:global(.lifafa-print-sheet) .script {
+  text-shadow: none;
+}
+
+:global(.lifafa-print-sheet) .hero {
+  padding-block: 12%;
+}
+
+:global(.lifafa-print-sheet) .eventCard {
+  border: 1px solid var(--es-panel-line);
+  border-radius: 0.6rem;
+}
+
+:global(.lifafa-print-sheet) .eventBody {
+  min-height: 0;
+  padding: 13cqw 8cqw 6cqw;
+}
+
+:global(.lifafa-print-sheet) .eventNumber {
+  top: 3cqw;
+}
+
+:global(.lifafa-print-sheet) .coin {
+  background-image: none;
+  box-shadow: inset 0 0 0 1.5px var(--es-gold);
+}
+
+:global(.lifafa-print-sheet) .coinFigure {
+  text-shadow: none;
 }
