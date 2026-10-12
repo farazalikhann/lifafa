@@ -11,7 +11,7 @@ import {
   requestedLanguage,
 } from "@/lib/cardTranslation";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
-import { DEMO_NIKAH, DEMO_NIKAH_CODE, DEMO_NIKAH_PATH } from "@/lib/demoCards";
+import { sampleEvent } from "@/lib/templateSamples";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import type { StoredEvent } from "@/types/database";
@@ -62,13 +62,14 @@ export async function GET(
   /*
     The sample invitation is not in the database, and its calendar buttons
     point here like any card's: its entries are written from the card in
-    lib/demoCards.ts, and link back to its own page.
+    lib/demoCards.ts, and link back to its own page. The same for a template's
+    sample; see sampleEvent.
   */
-  const isSample = inviteCode === DEMO_NIKAH_CODE;
+  const sample = sampleEvent(inviteCode);
   let event: StoredEvent;
 
-  if (isSample) {
-    event = DEMO_NIKAH;
+  if (sample !== null) {
+    event = sample.event;
   } else {
     const guest = await getGuestEvent(inviteCode);
 
@@ -94,8 +95,8 @@ export async function GET(
   const invite = {
     code: event.inviteCode,
     url: inviteLinkIn(
-      isSample
-        ? `${await serverSiteOrigin()}${DEMO_NIKAH_PATH}`
+      sample !== null
+        ? `${await serverSiteOrigin()}${sample.path}`
         : inviteUrl(event.inviteCode, await serverSiteOrigin()),
       language,
     ),

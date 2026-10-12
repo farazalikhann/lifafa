@@ -29,8 +29,10 @@ import type { TemplateConfig } from "@/templates/types";
  * every reader takes as that key's default. Nothing of the old look is left
  * behind for the new one to be drawn over.
  *
- * Moving to Classic changes only the id: Classic has no design of its own, so
- * the card keeps the one it has and can be changed control by control.
+ * Classic is a template like the others here: choosing it lays down the plain
+ * design a new card has always started with. Its id is the one that is never
+ * stored, so a card moved onto it is written exactly as a card that never had
+ * a template.
  */
 export function switchTemplate(
   snapshot: EditorSnapshot,
@@ -39,22 +41,12 @@ export function switchTemplate(
   const { config } = snapshot;
   const design = template.baseDesign;
 
-  if (design === null) {
-    const { templateId: _dropped, ...rest } = config;
-
-    return {
-      ...snapshot,
-      config:
-        template.id === CLASSIC_TEMPLATE_ID
-          ? rest
-          : { ...rest, templateId: template.id },
-    };
-  }
-
   return {
     draft: snapshot.draft,
     config: {
-      templateId: template.id,
+      ...(template.id !== CLASSIC_TEMPLATE_ID
+        ? { templateId: template.id }
+        : null),
       /* The card's theme follows the draft's, as it does in the editor. */
       themeId: snapshot.draft.themeId,
       blocks: config.blocks,

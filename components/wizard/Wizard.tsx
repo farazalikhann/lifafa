@@ -28,6 +28,8 @@ import PendingCardNotice, {
 } from "@/components/create/PendingCardNotice";
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TranslationPanel from "@/components/create/TranslationPanel";
+import CustomizeStep from "@/components/wizard/CustomizeStep";
+import TemplateGallery from "@/components/wizard/TemplateGallery";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import {
   useCardEditor,
@@ -57,7 +59,9 @@ import {
   wizardStepPath,
   type WizardStepId,
 } from "@/lib/wizardSteps";
-import { getTemplate } from "@/templates/registry";
+import { CLASSIC_TEMPLATE_ID, getTemplate } from "@/templates/registry";
+import { switchTemplate } from "@/templates/switch";
+import type { TemplateConfig } from "@/templates/types";
 import type { EventContact } from "@/types/event";
 
 /**
@@ -300,10 +304,29 @@ function WizardSteps({
   );
 
   const {
+    templateId,
+    applySnapshot,
     draft,
     blocks,
     setBlocks,
     occasionId,
+    setOccasionId,
+    style,
+    setStyle,
+    setBorderStyle,
+    setFontPair,
+    rsvpEnabled,
+    setRsvpEnabled,
+    musicUrl,
+    setMusicUrl,
+    setCoverAnimation,
+    showWeather,
+    setShowWeather,
+    setWeatherTheme,
+    qrCheckinEnabled,
+    setQrCheckinEnabled,
+    pdfDownload,
+    setPdfDownload,
     language,
     previewLanguage,
     setPreviewLanguage,
@@ -355,7 +378,30 @@ function WizardSteps({
     setIsPreviewOpen(true);
   };
 
-  const template = getTemplate(snapshot.config.templateId);
+  const template = getTemplate(templateId);
+
+  /**
+   * A template chosen in the gallery: the card moved onto it, with everything
+   * the host has typed kept. See switchTemplate for exactly what is the
+   * event's and goes across, and what is the look's and is replaced. Choosing
+   * the one the card is already on does nothing, so a look the host has since
+   * changed in step 3 is not put back by a stray tap.
+   */
+  const handleTemplate = (next: TemplateConfig): void => {
+    if (next.id === template.id) {
+      return;
+    }
+
+    applySnapshot(switchTemplate(snapshot, next));
+  };
+
+  /*
+    On Classic an occasion brings its own palette and motion, as it always
+    has. On any other template the look is the template's, so the occasion
+    only says what is being celebrated.
+  */
+  const handleOccasion =
+    template.id === CLASSIC_TEMPLATE_ID ? handleOccasionSelect : setOccasionId;
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
   const missing = [
     draft.eventTitle.trim().length === 0 ? "the event's title" : null,
@@ -407,11 +453,10 @@ function WizardSteps({
           </h1>
 
           {step === "template" ? (
-            <Placeholder title={`${template.name} template`}>
-              The template gallery arrives in the next update. For now every
-              card starts on the {template.name} template, and you can go
-              straight on to your details.
-            </Placeholder>
+            <TemplateGallery
+              selectedId={template.id}
+              onSelect={handleTemplate}
+            />
           ) : null}
 
           {step === "details" ? (
@@ -443,7 +488,7 @@ function WizardSteps({
                 </div>
                 <OccasionGrid
                   occasionId={occasionId}
-                  onOccasionChange={handleOccasionSelect}
+                  onOccasionChange={handleOccasion}
                 />
                 <EventForm
                   draft={draft}
@@ -479,11 +524,32 @@ function WizardSteps({
           ) : null}
 
           {step === "customize" ? (
-            <Placeholder title="Colours, fonts, music and sections">
-              The choices for your template arrive in the next update: two or
-              three colour palettes, two or three font pairs, music, and which
-              sections are shown. Your card keeps its current look until then.
-            </Placeholder>
+            <CustomizeStep
+              template={template}
+              namesLine={coverNameLine(names)}
+              style={style}
+              onLookChange={(nextStyle, nextBorder) => {
+                setStyle(nextStyle);
+                setBorderStyle(nextBorder);
+              }}
+              onFontPairChange={setFontPair}
+              blocks={blocks}
+              onBlocksChange={setBlocks}
+              rsvpEnabled={rsvpEnabled}
+              onRsvpEnabledChange={setRsvpEnabled}
+              musicUrl={musicUrl}
+              onMusicUrlChange={setMusicUrl}
+              coverAnimation={coverAnimation}
+              onCoverAnimationChange={setCoverAnimation}
+              showWeather={showWeather}
+              weatherTheme={weatherTheme}
+              onShowWeatherChange={setShowWeather}
+              onWeatherThemeChange={setWeatherTheme}
+              qrCheckinEnabled={qrCheckinEnabled}
+              onQrCheckinEnabledChange={setQrCheckinEnabled}
+              pdfDownload={pdfDownload}
+              onPdfDownloadChange={setPdfDownload}
+            />
           ) : null}
 
           {step === "preview" ? (
@@ -627,26 +693,6 @@ function WizardSteps({
           isPaid={false}
         />
       ) : null}
-    </div>
-  );
-}
-
-/** A step that is not built yet: what will be here, said plainly. */
-function Placeholder({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}): ReactElement {
-  return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-[var(--lifafa-hairline)] px-5 py-6">
-      <p className="text-[0.9375rem] font-medium text-[var(--lifafa-cream)]">
-        {title}
-      </p>
-      <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
-        {children}
-      </p>
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
   requestedLanguage,
 } from "@/lib/cardTranslation";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
-import { DEMO_NIKAH, DEMO_NIKAH_CODE, DEMO_NIKAH_PATH } from "@/lib/demoCards";
+import { sampleEvent } from "@/lib/templateSamples";
 import { PRINT_AUTO_PARAM, pdfDownloadOn, pdfTitle } from "@/lib/pdfDownload";
 import { printSheets } from "@/lib/printCard";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
@@ -50,9 +50,11 @@ type PrintParams = {
 
 /** The event this copy is of, or null where there is none to print. */
 async function printableEvent(inviteCode: string): Promise<StoredEvent | null> {
-  /* The sample is not in the database; see lib/demoCards.ts. */
-  if (inviteCode === DEMO_NIKAH_CODE) {
-    return DEMO_NIKAH;
+  /* A sample is not in the database; see sampleEvent. */
+  const sample = sampleEvent(inviteCode);
+
+  if (sample !== null) {
+    return sample.event;
   }
 
   const guest = await getGuestEvent(inviteCode);
@@ -118,12 +120,14 @@ export default async function PrintPage({
   const { draft, config } = cardInLanguage(event.draft, event.config, language);
   const copy = cardCopy(language);
   const sheets = printSheets(draft, config);
+  /* The page a sample lives on, which is not /i/<code>; null for a real invitation. */
+  const samplePath = sampleEvent(inviteCode)?.path ?? null;
 
   /* The live card, in the language this copy is in: what the QR code opens. */
   const origin = await serverSiteOrigin();
   const live = inviteLinkIn(
-    inviteCode === DEMO_NIKAH_CODE
-      ? `${origin}${DEMO_NIKAH_PATH}`
+    samplePath !== null
+      ? `${origin}${samplePath}`
       : inviteUrl(event.inviteCode, origin),
     language,
   );
@@ -154,8 +158,8 @@ export default async function PrintPage({
 
       <PrintBar
         backHref={
-          inviteCode === DEMO_NIKAH_CODE
-            ? DEMO_NIKAH_PATH
+          samplePath !== null
+            ? samplePath
             : `/i/${encodeURIComponent(event.inviteCode)}?lang=${language}`
         }
         backLabel={copy.keepsake.back}

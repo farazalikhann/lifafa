@@ -538,6 +538,57 @@ export function useCardEditor({
   const nextCustomId = useRef<number>(1);
 
   const [blocks, setBlocks] = useState<readonly CardBlock[]>(initial.blocks);
+  /*
+    The card's template. Nothing in the tabbed editor changes it; the wizard's
+    gallery does, through `applySnapshot` below.
+  */
+  const [templateId, setTemplateId] = useState<string>(initial.templateId);
+
+  /**
+   * Replaces the whole card with another: what choosing a template does, with
+   * the card switchTemplate hands back. Through toState, like the card the
+   * editor started from, so every value lands in the shape its control holds.
+   * The preview's language, the open rows and the save are left alone.
+   */
+  const applySnapshot = useCallback((next: EditorSnapshot): void => {
+    const state = toState(next);
+
+    setDraft(state.draft);
+    setBlocks(state.blocks);
+    setTemplateId(state.templateId);
+    setOccasionId(state.occasionId);
+    setTraditionId(state.traditionId);
+    setLanguage(state.language);
+    setRsvpEnabled(state.rsvpEnabled);
+    setDecorMotion(state.decorMotion);
+    setDecorIntensity(state.decorIntensity);
+    setButterflies(state.butterflies);
+    setLeaves(state.leaves);
+    setFlying(state.flying);
+    setNature(state.nature);
+    setPetals(state.petals);
+    setPetalFlower(state.petalFlower);
+    setBorderStyle(state.borderStyle);
+    setScratchTarget(state.scratchTarget);
+    setScratchFrame(state.scratchFrame);
+    setDateReveal(state.dateReveal);
+    setCoupleIllustration(state.coupleIllustration);
+    setInvitedHeading(state.invitedHeading);
+    setVenueIllustration(state.venueIllustration);
+    setScene(state.scene);
+    setRoyalTexture(state.royalTexture);
+    setRoyalTexturePattern(state.royalTexturePattern);
+    setNamesFrame(state.namesFrame);
+    setPdfDownload(state.pdfDownload);
+    setDivider(state.divider);
+    setMusicUrl(state.musicUrl);
+    setCoverAnimation(state.coverAnimation);
+    setShowWeather(state.showWeather);
+    setWeatherTheme(state.weatherTheme);
+    setQrCheckinEnabled(state.qrCheckinEnabled);
+    setOrnamentConfig(state.ornamentConfig);
+    setStyle(state.style);
+  }, []);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -862,7 +913,7 @@ export function useCardEditor({
     ornamentConfig,
     musicUrl,
     isPaid: initial.isPaid,
-    templateId: initial.templateId,
+    templateId,
     coverAnimation,
     showWeather,
     weatherTheme,
@@ -1002,6 +1053,8 @@ export function useCardEditor({
   const preview = cardInLanguage(draft, config, previewLanguage);
 
   return {
+    templateId,
+    applySnapshot,
     draft,
     setDraft,
     occasionId,
