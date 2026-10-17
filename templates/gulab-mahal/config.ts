@@ -3,6 +3,7 @@ import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/gulab-mahal/art";
+import preview from "@/templates/gulab-mahal/preview.webp";
 import {
   IVORY,
   IVORY_MUTED,
@@ -66,10 +67,9 @@ const COVER_OPTION: CoverAnimationOption = {
  * downloads neither.
  *
  * A CARD FOR EVERY WEDDING: roses and velvet, and no symbol of any faith. In
- * the Premium Collection at the premium price, and NOT YET OFFERED: `listed`
- * is false until its last pages are drawn, so the gallery leaves it out while
- * its live demo, /demo/gulab-mahal, is there to be looked at. Its sample is
- * the Hindu wedding.
+ * the Premium Collection at the premium price, after Emerald Shahi, with a
+ * "New" badge; its gallery preview is the closed envelope. Its sample is the
+ * Hindu wedding.
  *
  * ITS OWN PAGE TOO: the reply is its page 8 and the thanks its page 9
  * (`page`), and it draws its own "Swipe up", so the page's scroll cue is left
@@ -87,10 +87,10 @@ export const GULAB_MAHAL: TemplateConfig = {
   category: "hindu",
   categoryLabel: "For every wedding",
   badge: "New",
-  listed: false,
+  listed: true,
   collection: "premium",
   price: PREMIUM_PRICE_PAISE,
-  preview: null,
+  preview,
   palettes: [
     { id: "own", label: "Blush", paletteId: "blush", accentOverride: ROSE_GOLD },
   ],
