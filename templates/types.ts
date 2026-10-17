@@ -142,6 +142,12 @@ export interface TemplateConfig {
     Closing: ComponentType<{ draft: EventDraft; config: CardConfig }>;
     /** False to leave the ribboned-card picture off "Keep this invitation". */
     keepsakeArt?: boolean;
+    /**
+     * False for a card that draws its own way down, where the page's scroll
+     * cue would be a second one: a card of full-screen pages with its own
+     * "Swipe up" on the first of them.
+     */
+    scrollCue?: boolean;
   };
   /**
    * The colours of the printed copy's page, where they are not the card's: a

@@ -34,6 +34,7 @@ next-env.d.ts
 /fold video/
 /fold video light/
 /general photos/
+/gulab mahal/
 # Playwright screenshots taken while checking a change, and set-aside files.
 /screenshots/
 /_unused_backup/

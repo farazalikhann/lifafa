@@ -1,0 +1,659 @@
+/*
+  Gulab Mahal's own styles. One palette: blush velvet, wine ink, rose gold
+  and ivory, all fixed to the artwork.
+
+  Everything that moves here moves by transform and opacity alone, and every
+  loop is held by [data-floating-paused] (globals.css) while its page is off
+  the screen or the tab is hidden.
+*/
+
+/* ───────────────────────── Palette ───────────────────────── */
+
+/* On the card's root, and on the two pages the guest's page draws after it (the reply and the thanks). */
+.palette {
+  --gm-blush: #e9bdbb;
+  --gm-wine: #5a1e2b;
+  --gm-wine-soft: #7b3a48;
+  --gm-rose-gold: #b76e79;
+  --gm-rose-gold-deep: #97505c;
+  --gm-ivory: #fbf4ee;
+  /* Entrances: a soft spring that goes a touch past and settles. */
+  --gm-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  color: var(--gm-wine);
+}
+
+.root {
+  position: relative;
+  /* An entrance starts a little below or to one side; that must never widen the page. */
+  overflow-x: clip;
+}
+
+/* ───────────────────────── The ground ───────────────────────── */
+
+/*
+  The damask, pulled from its slight peach towards pink by a blush laid over
+  it, under a soft-light sheen like light across velvet. Three background
+  layers of one element, blended within it, so the whole ground is painted
+  once and moved as one picture.
+
+  Taller than the screen by 24vh, which the scroll uses for depth: as the
+  guest goes down the pages the ground rises a little (`gm-ground-depth`), far
+  slower than the pages do, and the petals in front of it a little faster.
+*/
+.ground {
+  pointer-events: none;
+  background-color: var(--gm-blush);
+  background-image:
+    linear-gradient(
+      160deg,
+      rgb(255 255 255 / 0) 18%,
+      rgb(255 238 242 / 0.6) 42%,
+      rgb(255 255 255 / 0) 60%,
+      rgb(90 30 43 / 0.22) 100%
+    ),
+    linear-gradient(rgb(236 168 186 / 0.34), rgb(236 168 186 / 0.34)),
+    url("/templates/gulab-mahal/gulab-bg.webp");
+  background-blend-mode: soft-light, normal, normal;
+  background-position: center;
+  background-size: cover;
+}
+
+.groundFixed {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: -10;
+  height: calc(100lvh + 24vh);
+}
+
+.groundPinned {
+  position: sticky;
+  top: 0;
+  z-index: -10;
+  height: var(--gm-band);
+  margin-bottom: calc(-1 * var(--gm-band));
+}
+
+@keyframes gm-ground-depth {
+  to {
+    transform: translate3d(0, -24vh, 0);
+  }
+}
+
+@keyframes gm-petals-depth {
+  to {
+    transform: translate3d(0, -40vh, 0);
+  }
+}
+
+/*
+  Driven by the page's own scroll, on the compositor; a browser without
+  scroll timelines leaves the ground and the petals where they are.
+*/
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .groundFixed {
+      animation: gm-ground-depth linear both;
+      animation-timeline: scroll(root block);
+    }
+
+    .driftFixed {
+      animation: gm-petals-depth linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+/* ───────────────────────── Pages ───────────────────────── */
+
+/*
+  One full screen each, landed on exactly by a swipe: the document is the
+  snap container while this card is the page (see Pager.tsx), and each page
+  is a stop it cannot skip. A page with more on it than a screen holds (many
+  functions, the reply form with its errors) is simply taller, and scrolls
+  within the flow: a snap area taller than the screen may be rested anywhere
+  inside it.
+*/
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 30rem;
+  min-height: calc(var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px));
+  margin-inline: auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  /* Sized from its own width, so its art is right in a preview's narrow box too. */
+  container-type: inline-size;
+}
+
+/* A page two or more away from the one on screen is not drawn until it comes near. */
+.page[data-gm-far] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto calc(var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px));
+}
+
+/* The last stop: the foot of the guest's page, under whatever the page puts after the card. */
+.snapEnd {
+  height: 1px;
+  margin-top: -1px;
+  scroll-snap-align: end;
+  pointer-events: none;
+}
+
+/* ───────────────────────── Entrances ───────────────────────── */
+
+/*
+  Each page's entrance plays once, when 60% of it is on the screen (the
+  pager marks it `data-gm-entered`). `--gm-delay` staggers the parts of one
+  page. Under reduced motion they only fade.
+
+  NEVER QUITE 0 BEFORE IT ENTERS. A browser does not paint what is fully
+  transparent, so a part waiting at 0 was painted for the first time on the
+  frame its entrance began, the cameo and the corners in the middle of the
+  rose's hand-over, and a page's sheet in the middle of a swipe. At 1% it is
+  invisible and already painted, and the large parts are their own layers
+  from the start (`will-change`), so an entrance only moves what is there.
+*/
+.rise {
+  opacity: 0.01;
+  transform: translate3d(0, 2.25rem, 0) scale(0.96);
+  will-change: transform, opacity;
+  transition:
+    opacity 650ms ease-out var(--gm-delay, 0ms),
+    transform 1000ms var(--gm-spring) var(--gm-delay, 0ms);
+}
+
+.lineUp {
+  opacity: 0.01;
+  transform: translate3d(0, 0.75rem, 0);
+  transition:
+    opacity 600ms ease-out var(--gm-delay, 0ms),
+    transform 800ms var(--gm-spring) var(--gm-delay, 0ms);
+}
+
+[data-gm-entered] .rise,
+[data-gm-entered] .lineUp {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .lineUp {
+    transform: none;
+    transition: opacity 400ms ease-out;
+  }
+}
+
+/* ───────────────────────── Type ───────────────────────── */
+
+/* Small spaced capitals in rose gold. Devanagari has no capitals and is never spaced. */
+.caps {
+  color: var(--gm-rose-gold-deep);
+  letter-spacing: 0.32em;
+  /* The spacing after the last letter, put before the first too, so a centred line is centred. */
+  padding-left: 0.32em;
+  text-transform: uppercase;
+}
+
+.caps:lang(hi) {
+  letter-spacing: 0;
+  padding-left: 0;
+  text-transform: none;
+}
+
+.script {
+  color: var(--gm-wine);
+}
+
+/* A thin rose-gold rule with a small diamond at its middle. */
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  width: 46%;
+  color: var(--gm-rose-gold);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.dividerMark {
+  width: 0.38em;
+  height: 0.38em;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+/* ───────────────────────── Page 1: the rose blooms ───────────────────────── */
+
+/* The cover's ground: the card's blush as velvet, with no picture to wait for. */
+.coverGround {
+  position: absolute;
+  inset: 0;
+  /* Its own layer while the cover waits, so its fade at the hand-over paints nothing. */
+  will-change: opacity;
+  background-color: var(--gm-blush, #e9bdbb);
+  background-image:
+    radial-gradient(120% 70% at 50% 42%, rgb(255 236 238 / 0.55), rgb(255 236 238 / 0) 62%),
+    linear-gradient(160deg, #edc6c4 0%, #e3aeae 55%, #d79c9f 100%);
+}
+
+/*
+  The rose, 45% of the screen across (of the phone column on a wide one),
+  centred a little above the middle. `--rose` is its width, which everything
+  in the bloom is sized from.
+*/
+.bloom {
+  --rose: min(45vw, 13.5rem, 30svh);
+
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  width: var(--rose);
+  translate: -50% -50%;
+}
+
+/* The rose-gold glow behind it: a soft disc, which costs nothing to move. */
+.bloomGlow {
+  position: absolute;
+  inset: -38%;
+  border-radius: 50%;
+  background-image: radial-gradient(
+    closest-side,
+    rgb(240 196 170 / 0.85),
+    rgb(214 150 140 / 0.42) 48%,
+    rgb(183 110 121 / 0) 100%
+  );
+  opacity: 0.8;
+  will-change: opacity;
+}
+
+.bloomRose {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+  will-change: transform, opacity;
+}
+
+/*
+  A petal: centred on the rose by `translate`, and moved only by `transform`,
+  which its animation writes. Behind the rose until it opens out.
+*/
+.bloomPetal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--w);
+  height: auto;
+  max-width: none;
+  translate: -50% -50%;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  user-select: none;
+}
+
+/* The ivory plate the rose becomes: engraved rose gold on ivory, in a fine rose-gold ring. */
+.plate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  aspect-ratio: 1;
+  margin: -40% 0 0 -40%;
+  border-radius: 50%;
+  background-image:
+    radial-gradient(circle at 36% 30%, #fffdf9 0%, #fbf3ec 45%, #efdcd0 100%);
+  box-shadow:
+    0 0 0 calc(var(--rose) * 0.012) #c88a90,
+    0 0 0 calc(var(--rose) * 0.03) #f6e6dd,
+    0 0 0 calc(var(--rose) * 0.038) #b76e79,
+    inset 0 calc(var(--rose) * 0.01) calc(var(--rose) * 0.04) rgb(90 30 43 / 0.16),
+    0 calc(var(--rose) * 0.05) calc(var(--rose) * 0.12) rgb(90 30 43 / 0.25);
+  /* Invisible but painted, so its rings and shadows are drawn, and their GPU programs built, before the tap. */
+  opacity: 0.01;
+  will-change: transform, opacity;
+}
+
+/* Pressed into the ivory: lit below, shaded above. */
+.monogram {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.08em;
+  color: #b76e79;
+  font-size: calc(var(--rose) * 0.25);
+  line-height: 1.3;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 0.9),
+    0 -1px 0 rgb(122 58 71 / 0.4);
+}
+
+.monogramAnd {
+  font-size: 0.42em;
+  color: #97505c;
+}
+
+.coverPrompt {
+  position: absolute;
+  top: calc(46% + min(45vw, 13.5rem, 30svh) * 0.5 + max(2.25rem, 5svh));
+  inset-inline: 1.5rem;
+  margin: 0;
+  text-align: center;
+  color: var(--gm-wine, #5a1e2b);
+  font-size: 1.0625rem;
+  text-shadow: 0 1px 1px rgb(255 240 240 / 0.7);
+}
+
+@keyframes gm-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.coverPromptIdle {
+  animation: gm-breathe 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coverPromptIdle {
+    animation: none;
+  }
+}
+
+/* ───────────────────────── Page 2: the names ───────────────────────── */
+
+/*
+  A rose corner, top right of the screen; the same turned round, bottom left.
+  Its soft shadow, which lifts the pink roses off the blush, is painted into
+  the picture (40px of it to the left and below the flowers, which is why the
+  box is 680/640 of the flowers' width): a filter here would be painted
+  again whenever the corner moved.
+*/
+.corner {
+  position: absolute;
+  z-index: 0;
+  width: calc(min(36cqw, 11rem) * 1.0625);
+  pointer-events: none;
+}
+
+.cornerArt {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  user-select: none;
+}
+
+.cornerTop {
+  top: 0;
+  right: 0;
+  --gm-from: translate3d(1.25rem, -1.25rem, 0);
+}
+
+.cornerFoot {
+  bottom: 0;
+  left: 0;
+  --gm-from: translate3d(-1.25rem, 1.25rem, 0);
+}
+
+/* Turned round inside its box, which slides in from its own corner. */
+.cornerFoot .cornerArt {
+  rotate: 180deg;
+}
+
+.cornerIn {
+  opacity: 0.01;
+  will-change: transform, opacity;
+  transform: var(--gm-from);
+  transition:
+    opacity 900ms ease-out var(--gm-delay, 0ms),
+    transform 1100ms var(--gm-spring) var(--gm-delay, 0ms);
+}
+
+[data-gm-entered] .cornerIn {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+  The cameo: 80% of the screen across, in the picture's own shape (2:3), and
+  never taller than the screen can show whole with room above for the
+  language switch and below for the hint. `--cameo-w` is its width.
+*/
+.cameo {
+  --cameo-w: min(80cqw, 24rem, (var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - 8.5rem) * 0.6667);
+
+  position: relative;
+  z-index: 1;
+  width: var(--cameo-w);
+  aspect-ratio: 2 / 3;
+  /* The words are set in em of this, which the page steps down until they fit. */
+  font-size: calc(var(--cameo-w) * 0.055);
+}
+
+/* Its shadow on the velvet: a soft oval under it, which costs nothing to paint or move. */
+.cameo::before {
+  content: "";
+  position: absolute;
+  inset: 4% 2% 0;
+  z-index: -1;
+  border-radius: 50%;
+  background-image: radial-gradient(closest-side, rgb(90 30 43 / 0.24), rgb(90 30 43 / 0) 100%);
+  translate: 0 3%;
+}
+
+.cameoArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/* The satin inside the oval, less a margin on every side; see CAMEO_BOX in art.ts. */
+.cameoBox {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.names {
+  font-size: 2.15em;
+}
+
+/* "Swipe up", at the foot of the names page, until the guest first scrolls. */
+.hint {
+  position: absolute;
+  bottom: max(0.75rem, 2svh);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 2.75rem;
+  padding: 0.25rem 1rem;
+  translate: -50% 0;
+  color: var(--gm-wine);
+  font-size: 0.6875rem;
+  opacity: 0;
+  transition: opacity 600ms ease-out 1900ms;
+}
+
+[data-gm-entered] .hint {
+  opacity: 0.9;
+}
+
+.hint:focus-visible {
+  outline: 2px solid var(--gm-rose-gold-deep);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+@keyframes gm-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.4rem, 0);
+  }
+}
+
+.hintBob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  animation: gm-bob 2.2s ease-in-out infinite;
+}
+
+[data-gm-scrolled] .hint {
+  opacity: 0;
+  pointer-events: none;
+  transition-delay: 0ms;
+}
+
+[data-gm-scrolled] .hintBob {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hintBob {
+    animation: none;
+  }
+}
+
+/* ───────────────────────── The dots ───────────────────────── */
+
+/* Down the right edge of the screen, or of the phone column on a wide one. */
+.dots {
+  position: fixed;
+  top: 50%;
+  right: max(0.5rem, calc((100vw - 30rem) / 2 + 0.5rem));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+.dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--gm-rose-gold);
+  box-shadow: 0 0 0 1px rgb(251 244 238 / 0.55);
+  opacity: 0.4;
+  transition:
+    opacity 300ms ease-out,
+    transform 400ms var(--gm-spring);
+}
+
+.dot[data-on] {
+  opacity: 1;
+  transform: scale(1.45);
+}
+
+/* ───────────────────────── Floating petals ───────────────────────── */
+
+.drift {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Taller than the screen by the 40vh the scroll lifts it through; see `gm-petals-depth`. */
+.driftFixed {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: -5;
+  height: calc(100lvh + 40vh);
+}
+
+.driftPinned {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  height: var(--gm-band);
+  margin-bottom: calc(-1 * var(--gm-band));
+}
+
+.fall {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Above the layer, out of sight, until its first fall is handed its path. */
+  transform: translate3d(0, -4rem, 0);
+  will-change: transform;
+}
+
+.fallPetal {
+  display: block;
+  width: var(--size);
+  height: auto;
+  max-width: none;
+  opacity: 0.85;
+  will-change: transform;
+}
+
+/* ───────────────────────── Placeholders (pages 3 to 9, for now) ───────────────────────── */
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: calc(100% - 3rem);
+  padding: 2rem 1.5rem;
+  border-radius: 1.25rem;
+  background: rgb(251 244 238 / 0.82);
+  box-shadow:
+    0 0 0 1px rgb(183 110 121 / 0.45),
+    0 1rem 2rem rgb(90 30 43 / 0.14);
+  text-align: center;
+}
+
+.sheetArt {
+  width: min(70%, 16rem);
+  height: auto;
+}
+
+/* ───────────────────────── On paper ───────────────────────── */
+
+@media print {
+  .page {
+    min-height: auto;
+    padding-block: 1.5rem;
+  }
+
+  .groundFixed,
+  .driftFixed,
+  .dots,
+  .hint {
+    display: none;
+  }
+}

@@ -24,7 +24,8 @@
  * that, but it makes no sound and opens no audio device: it decodes in an
  * offline context, which no autoplay policy applies to. The tap is also what
  * makes the audio work at all: every mobile browser refuses audio that no
- * gesture asked for, and the context that plays is built inside the tap.
+ * gesture asked for, and the context that plays is started inside the tap
+ * (built just before it, suspended, by warmCoverSound).
  *
  * THROUGH WEB AUDIO, NOT AN <audio> ELEMENT. On an iPhone an element ignores
  * the volume a page sets and plays through the silent switch. Web Audio
@@ -184,6 +185,7 @@ let playing: {
  */
 export function stopCoverSound(): void {
   dropPrimed();
+  dropWarmed();
 
   const current = playing;
 
@@ -221,14 +223,71 @@ function dropPrimed(): void {
 }
 
 /**
- * Builds and starts the audio context inside the tap, in silence, for a sound
- * that playCoverSound will start a moment later. Never throws.
+ * A context built ahead of the tap, suspended, for the tap to start. See
+ * warmCoverSound.
+ */
+let warmed: AudioContext | null = null;
+
+function dropWarmed(): void {
+  const context = warmed;
+  warmed = null;
+
+  if (context !== null) {
+    void context.close().catch(() => undefined);
+  }
+}
+
+/**
+ * Builds the audio context the tap will start, while the cover is still
+ * closed. Never throws, and makes no sound.
+ *
+ * BUILDING ONE IS THE SLOW PART. `new AudioContext()` starts the browser's
+ * audio thread, and on a slow phone it took the tap's whole first frame: the
+ * cover sat still under the guest's thumb for a tenth of a second or more
+ * before anything moved, on every cover that has a sound. Built here, while
+ * the guest is reading the cover, it is ready and suspended when they tap,
+ * and the tap only has to start it (primeCoverSound), which is nothing.
+ *
+ * Built with no gesture, so suspended, which is what every browser's autoplay
+ * policy wants: nothing plays until the tap resumes it, and an iPhone resumes
+ * a suspended context from inside a tap exactly as it starts a new one there.
+ * Only for a cover whose recording has been asked for; one at a time.
+ */
+export function warmCoverSound(sound: CoverSoundId | null | undefined): void {
+  if (
+    sound === null ||
+    sound === undefined ||
+    !requestedRecordings.has(sound) ||
+    (warmed !== null && warmed.state !== "closed")
+  ) {
+    return;
+  }
+
+  const Constructor = audioContextConstructor();
+
+  if (Constructor === null) {
+    return;
+  }
+
+  try {
+    warmed = new Constructor();
+  } catch {
+    /* The tap builds its own, as it always did. */
+    warmed = null;
+  }
+}
+
+/**
+ * Starts the audio context inside the tap, in silence, for a sound that
+ * playCoverSound will start a moment later. Never throws.
  *
  * The cover does not make its sound on the tap any more: it waits for the
  * screen to settle first (see enterFullscreenThen), and by then the gesture is
- * over. A context built then is one an iPhone refuses to start. So the tap
- * builds it, and a silent sample is played in it, which is what unlocks it;
- * the recording is started in the same context when the cover opens.
+ * over. A context started then is one an iPhone refuses to start. So the tap
+ * starts it, the one warmCoverSound built while the cover was closed or a new
+ * one where there is none, and a silent sample is played in it, which is what
+ * unlocks it; the recording is started in the same context when the cover
+ * opens.
  */
 export function primeCoverSound(sound: CoverSoundId | null | undefined): void {
   if (sound === null || sound === undefined || !readyRecordings.has(sound)) {
@@ -241,11 +300,15 @@ export function primeCoverSound(sound: CoverSoundId | null | undefined): void {
     return;
   }
 
+  /* Taken before the stop below, which would close it. */
+  const ready = warmed !== null && warmed.state !== "closed" ? warmed : null;
+  warmed = null;
+
   /* One at a time, as playCoverSound has it. */
   stopCoverSound();
 
   try {
-    const context = new Constructor();
+    const context = ready ?? new Constructor();
 
     if (context.state === "suspended") {
       void context.resume().catch(() => undefined);

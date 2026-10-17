@@ -574,12 +574,15 @@ export default function InviteExperience({
             Above the watermark pill on a card that shows one, which is only
             ever the host's own preview.
           */}
-          <InvitedCue
-            language={language}
-            theme={cardTheme}
-            clearOf={event.isPaid ? undefined : WATERMARK_PILL_SELECTOR}
-            footDepth={borderFootDepth(config.borderStyle)}
-          />
+          {/* Left off a template that draws its own; see `scrollCue` on TemplateConfig. */}
+          {templatePage?.scrollCue === false ? null : (
+            <InvitedCue
+              language={language}
+              theme={cardTheme}
+              clearOf={event.isPaid ? undefined : WATERMARK_PILL_SELECTOR}
+              footDepth={borderFootDepth(config.borderStyle)}
+            />
+          )}
 
           {/*
             Nothing at all when the host switched replies off: no heading, no

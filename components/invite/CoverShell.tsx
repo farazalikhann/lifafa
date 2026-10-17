@@ -28,6 +28,7 @@ import {
   primeCoverSound,
   restartCoverSound,
   stopCoverSound,
+  warmCoverSound,
 } from "@/lib/coverSound";
 import { enterFullscreen, enterFullscreenThen } from "@/lib/fullscreen";
 import type { CardLanguage } from "@/types/card";
@@ -819,11 +820,33 @@ export default function CoverShell({
       return;
     }
 
+    let idle: number | null = null;
     const timer = window.setTimeout(() => {
       preloadCoverSound(option.sound);
+
+      /*
+        And the audio context it will play in, built now, in an idle moment
+        while the guest reads the cover, rather than in the tap: building one
+        is slow on a slow phone and held the tap's first frame. The tap only
+        starts it. See warmCoverSound.
+      */
+      idle =
+        typeof window.requestIdleCallback === "function"
+          ? window.requestIdleCallback(() => warmCoverSound(option.sound), { timeout: 2000 })
+          : window.setTimeout(() => warmCoverSound(option.sound), 200);
     }, SOUND_PRELOAD_DELAY_MS);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+
+      if (idle !== null) {
+        if (typeof window.cancelIdleCallback === "function") {
+          window.cancelIdleCallback(idle);
+        } else {
+          window.clearTimeout(idle);
+        }
+      }
+    };
   }, [phase, reducedMotion, durationMs, option.sound]);
 
   /*

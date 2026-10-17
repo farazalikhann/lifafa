@@ -4,6 +4,7 @@ import {
   CLASSIC_TEMPLATE_ID,
 } from "@/templates/classic/config";
 import { EMERALD_SHAHI } from "@/templates/emerald-shahi/config";
+import { GULAB_MAHAL } from "@/templates/gulab-mahal/config";
 import { GURDWARA_IVORY } from "@/templates/gurdwara-ivory/config";
 import { IVORY_CHAPEL } from "@/templates/ivory-chapel/config";
 import { KESRI_ANAND_KARAJ } from "@/templates/kesri-anand-karaj/config";
@@ -27,6 +28,7 @@ export { CLASSIC_TEMPLATE_ID };
  */
 export const TEMPLATES: readonly TemplateConfig[] = [
   EMERALD_SHAHI,
+  GULAB_MAHAL,
   SHUBH_VIVAH_IVORY,
   MAROON_ROYAL,
   NIKAH_BLUSH,
