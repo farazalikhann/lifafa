@@ -756,7 +756,7 @@
   scroll's, so nothing on the page moves as it opens.
 */
 .scroll {
-  --scroll-w: min(86cqw, 24rem);
+  --scroll-w: min(96cqw, 27.5rem);
   --roll-h: calc(var(--scroll-w) / var(--roll-aspect));
   --paper-h: max(
     11rem,
@@ -783,13 +783,17 @@
   overflow: hidden;
 }
 
-/* The paper: all above the window when closed, and moved down by its whole travel to open. */
+/*
+  The paper: all above the window when closed, and moved down by its whole
+  travel to open. It clips its words, which are held still (see below).
+*/
 .scrollPaper {
   position: absolute;
   top: calc(var(--paper-h) * -1);
   left: 0;
   right: 0;
   height: calc(var(--paper-h) + var(--roll-h) * 0.95);
+  overflow: hidden;
   will-change: transform;
 }
 
@@ -803,11 +807,15 @@
   user-select: none;
 }
 
-/* The words, between the parts of the paper the two rolls cover. */
+/*
+  The words, between the parts of the open paper the two rolls cover. Placed
+  one paper's travel down the paper, and moved back up by as much as the
+  paper comes down, so they always stand there.
+*/
 .scrollWords {
   position: absolute;
-  top: calc(var(--roll-h) * 0.5 + 4cqw);
-  bottom: calc(var(--roll-h) * 0.5 + 4cqw);
+  top: calc(var(--paper-h) + var(--roll-h) * 0.5 + 4cqw);
+  height: calc(var(--paper-h) - var(--roll-h) * 0.05 - 8cqw);
   left: 6%;
   right: 6%;
   display: flex;
@@ -961,9 +969,19 @@
   color: var(--gm-rose-gold-deep);
 }
 
-/* The card's own calendar button, in wine, ringed in rose gold. */
+/* The card's own calendar button, in wine, ringed in rose gold; faded in under the scroll once it is open. */
 .calendarButton {
   margin-top: 1.1rem;
+  opacity: 0;
+  transform: translate3d(0, 0.5rem, 0);
+  transition:
+    opacity 500ms ease-out 250ms,
+    transform 700ms var(--gm-spring) 250ms;
+}
+
+.calendarButtonShown {
+  opacity: 1;
+  transform: none;
 }
 
 .calendarButton > div > button {
@@ -977,14 +995,14 @@
 /*
   The two tags, each hanging from a ribbon that comes down from the top of
   the page: `--tag-w` a tag's width, `--ribbon` the ribbon above it, so the
-  tags hang about a third of the way down the screen.
+  tags hang in the middle of the screen, as much room above as below.
 */
 .tags {
-  --tag-w: min(40cqw, 12rem);
+  --tag-w: min(12rem, (100cqw - 4.2rem - 3cqw - 1.5rem) / 2);
   --tag-h: calc(var(--tag-w) / var(--tag-aspect));
   --ribbon: max(
     0.5rem,
-    (var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - var(--tag-h)) * 0.42
+    (var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - var(--tag-h)) * 0.5
   );
 
   position: absolute;
@@ -992,7 +1010,9 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 3cqw;
+  gap: 1.5cqw;
+  /* At least 16px from each edge of the screen, and that much clear of the page dots on the right. */
+  padding-inline: 2.1rem;
 }
 
 .tagHang {
@@ -1121,7 +1141,7 @@
 .tagName {
   max-width: 100%;
   font-size: 1.6em;
-  /* Broken only between words: a long name is made smaller to fit (useFitInside), never cut in two. */
+  /* Sized with the other name (useNamesAlike), and broken only between words, never cut in two. */
   overflow-wrap: normal;
 }
 
@@ -1131,7 +1151,7 @@
 
 .tagParents {
   max-width: 100%;
-  font-size: 0.72em;
+  font-size: 0.83em;
   line-height: 1.35;
   color: var(--gm-wine-soft);
 }
@@ -1145,10 +1165,13 @@
 
 /* The "&" between the two tags, at the height of their names. */
 .tagsAnd {
+  flex: none;
+  width: 1.5rem;
+  text-align: center;
   align-self: flex-start;
   margin-top: calc(var(--ribbon) + var(--tag-h) * 0.6);
   color: var(--gm-rose-gold);
-  font-size: min(9cqw, 2.6rem);
+  font-size: min(8cqw, 2rem);
   line-height: 1;
 }
 

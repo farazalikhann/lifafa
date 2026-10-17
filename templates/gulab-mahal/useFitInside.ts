@@ -17,6 +17,21 @@ const FIT_STEP = 0.04;
  * again when the box changes size or the fonts arrive; never while anything
  * moves.
  */
+/** The step-down itself, once: for a caller that sizes something else first (the couple's tags). */
+export function fitInside(outer: HTMLElement, inner: HTMLElement): void {
+  let scale = 1;
+  inner.style.fontSize = "1em";
+
+  while (
+    scale > FIT_FLOOR &&
+    (inner.scrollHeight > outer.clientHeight ||
+      inner.scrollWidth > outer.clientWidth)
+  ) {
+    scale = Math.max(FIT_FLOOR, scale - FIT_STEP);
+    inner.style.fontSize = `${scale}em`;
+  }
+}
+
 export function useFitInside(
   box: RefObject<HTMLElement | null>,
   words: RefObject<HTMLElement | null>,
@@ -33,20 +48,8 @@ export function useFitInside(
     let live = true;
 
     const fit = (): void => {
-      if (!live) {
-        return;
-      }
-
-      let scale = 1;
-      inner.style.fontSize = "1em";
-
-      while (
-        scale > FIT_FLOOR &&
-        (inner.scrollHeight > outer.clientHeight ||
-          inner.scrollWidth > outer.clientWidth)
-      ) {
-        scale = Math.max(FIT_FLOOR, scale - FIT_STEP);
-        inner.style.fontSize = `${scale}em`;
+      if (live) {
+        fitInside(outer, inner);
       }
     };
 

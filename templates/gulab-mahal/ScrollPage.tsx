@@ -173,7 +173,12 @@ function calendarTheme(theme: Theme): Theme {
  * On the paper, in wine: "Save the Date" in spaced capitals, the weekday, the
  * day large in script, the month and year, the time, a thin rose-gold rule
  * and the countdown in four small rose-gold frames. Under the scroll, the
- * card's own Add to Calendar.
+ * card's own Add to Calendar, which fades in once the scroll is open.
+ *
+ * THE WORDS DO NOT MOVE. As the paper and the bottom roll come down, the
+ * words are moved up by exactly as much, so they stay where they are under
+ * the top roll, and the paper, which clips them, uncovers them from the top
+ * down, as a scroll is read.
  */
 export default function GulabScrollPage({
   draft,
@@ -201,6 +206,7 @@ export default function GulabScrollPage({
   const shown = open || openFromStart;
 
   const paperRef = useRef<HTMLDivElement>(null);
+  const wordsRef = useRef<HTMLDivElement>(null);
   const rollRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLParagraphElement>(null);
   const drag = useRef({
@@ -216,13 +222,22 @@ export default function GulabScrollPage({
 
   const page = calendarPageText(draft.eventDate, draft.eventTime, language);
 
-  /* Both moving parts, `progress` of the way open. */
+  /*
+    Both moving parts, `progress` of the way open, and the words held still
+    against the paper's movement: they stay where they are under the top
+    roll and the paper's edge, which clips them, uncovers them from the top.
+  */
   const write = useCallback((progress: number): void => {
     const state = drag.current;
-    const y = `translate3d(0, ${(progress * state.height).toFixed(1)}px, 0)`;
+    const travel = (progress * state.height).toFixed(1);
+    const y = `translate3d(0, ${travel}px, 0)`;
 
     if (paperRef.current !== null) {
       paperRef.current.style.transform = y;
+    }
+
+    if (wordsRef.current !== null) {
+      wordsRef.current.style.transform = `translate3d(0, -${travel}px, 0)`;
     }
 
     if (rollRef.current !== null) {
@@ -265,6 +280,18 @@ export default function GulabScrollPage({
         paper.animate([{ transform: from }, { transform: end }], timing),
         roll.animate([{ transform: from }, { transform: end }], timing),
       ];
+
+      if (wordsRef.current !== null) {
+        state.settling.push(
+          wordsRef.current.animate(
+            [
+              { transform: `translate3d(0, -${(state.progress * state.height).toFixed(1)}px, 0)` },
+              { transform: `translate3d(0, -${(to * state.height).toFixed(1)}px, 0)` },
+            ],
+            timing,
+          ),
+        );
+      }
 
       if (hintRef.current !== null) {
         state.settling.push(
@@ -431,7 +458,14 @@ export default function GulabScrollPage({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={ART.scrollPaper} alt="" loading="lazy" decoding="async" draggable={false} className={styles.scrollPaperArt} />
-            <div className={styles.scrollWords} style={{ color: WINE }}>
+            <div
+              ref={wordsRef}
+              className={styles.scrollWords}
+              style={{
+                color: WINE,
+                ...(shown ? { transform: "translate3d(0, calc(var(--paper-h) * -1), 0)" } : null),
+              }}
+            >
               {date}
               {showCountdown ? (
                 <>
@@ -488,7 +522,8 @@ export default function GulabScrollPage({
         </div>
       </div>
 
-      <div className={`${styles.lineUp} ${styles.calendarButton}`} style={{ "--gm-delay": "350ms" } as CSSProperties}>
+      {/* Under the scroll, and only once it is open: until then it keeps its place, unseen and out of reach. */}
+      <div className={`${styles.calendarButton} ${shown ? styles.calendarButtonShown : ""}`} inert={!shown}>
         <AddToCalendar
           draft={draft}
           theme={calendarTheme(theme)}
