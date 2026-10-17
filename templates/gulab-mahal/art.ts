@@ -35,11 +35,13 @@ export const ART = {
 export const PETAL_ASPECT: readonly number[] = [184 / 209, 230 / 257, 305 / 316, 277 / 297];
 
 /**
- * What the cover waits for before it shows: the envelope's three pictures,
- * the letter that comes out of it and the four petals the seal bursts into,
- * and nothing of the card's. (The fonts are waited for by the shell.)
+ * What the cover waits for before it shows: the damask and the rose corner it
+ * is set on, the envelope's three pictures, the letter that comes out of it
+ * and the four petals the seal bursts into, and nothing of the card's. (The fonts are waited for by the shell.)
  */
 export const COVER_IMAGES: readonly string[] = [
+  ART.ground,
+  ART.corner,
   ART.envelopeBody,
   ART.envelopeFlap,
   ART.seal,
@@ -108,6 +110,19 @@ export const POCKET_CLIP = `polygon(${[
   ...POCKET_EDGE.map(([x, y]) => `${percent(across(x))} ${percent(down(y - 3))}`),
   "100% 100%",
   "0% 100%",
+].join(", ")})`;
+
+/*
+  The lining, which the closed flap does not wholly cover: the art leaves a
+  strip of it between the flap's edges and the pocket's. The cover lays the
+  flap's own paper over it, cut to this shape: the body's box above the
+  pocket's edge, reaching 6px under the pocket so no hairline is left between
+  them.
+*/
+export const LINING_CLIP = `polygon(${[
+  "0% 0%",
+  "100% 0%",
+  ...[...POCKET_EDGE].reverse().map(([x, y]) => `${percent(across(x))} ${percent(down(y + 6))}`),
 ].join(", ")})`;
 
 /** The V's lowest point, which the letter waits below. */

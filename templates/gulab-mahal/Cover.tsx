@@ -16,6 +16,7 @@ import {
   FLAP_BOX,
   FLAP_TIP,
   LETTER_ASPECT,
+  LINING_CLIP,
   PETAL_ASPECT,
   POCKET_CLIP,
   POCKET_DEPTH,
@@ -45,6 +46,8 @@ import { useFitInside } from "@/templates/gulab-mahal/useFitInside";
  *   the pocket            the body again, cut to the pocket's front by a
  *                         clip that never changes: the letter slides out
  *                         from behind it
+ *   the liner             the flap's paper over the strips of lining the
+ *                         closed flap leaves, until the flap lifts
  *   the closed flap       from 0 to 90 degrees
  *   the petals, the seal  the seal whole, and its two halves, each cut along
  *                         the same jagged line by a clip that never changes
@@ -161,6 +164,7 @@ interface Parts {
   letter: HTMLElement;
   letterFace: HTMLElement;
   front: HTMLElement;
+  liner: HTMLElement;
   closedFlap: HTMLElement;
   glow: HTMLElement;
   press: HTMLElement;
@@ -302,6 +306,14 @@ function buildOpening(parts: Parts, m: Measure): Animation[] {
     { offset: 1, opacity: 0 },
   ]);
 
+  /* The paper over the lining goes as the seal cracks, just before the flap lifts. */
+  add(parts.liner, [
+    { offset: 0, opacity: 1 },
+    { offset: at(180), opacity: 1, easing: "ease-in" },
+    { offset: at(FLAP_AT + 40), opacity: 0 },
+    { offset: 1, opacity: 0 },
+  ]);
+
   /* The flap: its front to 90 degrees, then gone; its darkened back from 90 to 180, behind the letter. */
   const flapEnd = FLAP_AT + FLAP_HALF;
   add(parts.closedFlap, [
@@ -425,6 +437,7 @@ export default function GulabMahalCover({
   const letterFaceRef = useRef<HTMLDivElement>(null);
   const frontRef = useRef<HTMLDivElement>(null);
   const closedFlapRef = useRef<HTMLDivElement>(null);
+  const linerRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLSpanElement>(null);
   const pressRef = useRef<HTMLDivElement>(null);
   const wholeRef = useRef<HTMLDivElement>(null);
@@ -455,6 +468,7 @@ export default function GulabMahalCover({
       letter: letterRef.current,
       letterFace: letterFaceRef.current,
       front: frontRef.current,
+      liner: linerRef.current,
       closedFlap: closedFlapRef.current,
       glow: glowRef.current,
       press: pressRef.current,
@@ -569,8 +583,25 @@ export default function GulabMahalCover({
 
   return (
     <div ref={layerRef} aria-hidden="true" className="pointer-events-none absolute inset-0">
-      {/* The cover's own ground, which it fades itself; see CoverVisualState. */}
-      <div ref={groundRef} className={styles.coverGround} />
+      {/*
+        The cover's own ground, which it fades itself (see CoverVisualState):
+        the pages' own damask, blush and sheen, laid exactly as theirs is, and
+        page 2's two rose corners where page 2 has them, so the cover fades to
+        the same ground and the same roses.
+      */}
+      <div ref={groundRef} className={styles.coverGround}>
+        <div className={`${styles.ground} ${styles.coverDamask}`} />
+        <div className={styles.coverColumn}>
+          <div className={`${styles.coverCorner} ${styles.cornerTop}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ART.corner} alt="" draggable={false} className={styles.cornerArt} />
+          </div>
+          <div className={`${styles.coverCorner} ${styles.cornerFoot}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ART.corner} alt="" draggable={false} className={styles.cornerArt} />
+          </div>
+        </div>
+      </div>
 
       <div className={styles.envelopePlace}>
         <div ref={bobRef} className={styles.envelopeBob}>
@@ -633,8 +664,19 @@ export default function GulabMahalCover({
               </div>
             </div>
 
-            {/* The front: the pocket, the closed flap, the petals and the seal. */}
+            {/* The front: the paper over the lining, the pocket, the closed flap, the petals and the seal. */}
             <div ref={frontRef} className={styles.envelopeLayer}>
+              {/*
+                The flap's own paper over the strips of lining the closed flap
+                leaves showing, so the closed envelope is closed: the flap's
+                picture at twice its size, of which only its plain middle is
+                inside the lining's shape. Behind the pocket, which covers its
+                lower edge.
+              */}
+              <div ref={linerRef} className={styles.liner} style={{ clipPath: LINING_CLIP }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ART.envelopeFlap} alt="" draggable={false} className={styles.linerArt} />
+              </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={ART.envelopeBody}
