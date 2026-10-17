@@ -13,18 +13,14 @@ import {
 } from "@/lib/cardSections";
 import { effectiveTheme } from "@/lib/cardTheme";
 import { contactsOf, hasContacts } from "@/lib/contacts";
-import { dateRevealOf } from "@/lib/royalScroll";
 import GulabClosing from "@/templates/gulab-mahal/Closing";
 import GulabNamesPage from "@/templates/gulab-mahal/NamesPage";
 import GulabPager from "@/templates/gulab-mahal/Pager";
 import GulabPetals from "@/templates/gulab-mahal/Petals";
-import {
-  GulabCouplePage,
-  GulabDatePage,
-  GulabDetailsPage,
-  GulabFunctionsPage,
-  GulabVenuePage,
-} from "@/templates/gulab-mahal/Placeholders";
+import { GulabDetailsPage, GulabVenuePage } from "@/templates/gulab-mahal/Placeholders";
+import GulabScrollPage from "@/templates/gulab-mahal/ScrollPage";
+import GulabStackPage from "@/templates/gulab-mahal/StackPage";
+import GulabTagsPage from "@/templates/gulab-mahal/TagsPage";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
 import { gulabFonts } from "@/templates/gulab-mahal/shared";
 import type { TemplateCardProps } from "@/templates/types";
@@ -58,7 +54,8 @@ const FRAME_HEIGHT = 620;
  *
  * Which of them a card has is still the host's: a section switched off in
  * `config.blocks`, or one with nothing to say, is not a page. Pages 3 to 9
- * are placeholders for now (Placeholders.tsx).
+ * are drawn (ScrollPage, TagsPage, StackPage); 6 and 7 are placeholders for
+ * now (Placeholders.tsx).
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
  * same callers place it: the guest's page, the two previews and the printed
@@ -96,10 +93,6 @@ export default function GulabMahalCard(props: TemplateCardProps): ReactElement {
 
   const on = (id: CardSectionId): boolean =>
     config.blocks.some((block) => block.kind !== "custom" && block.id === id && block.enabled);
-
-  const reveal = dateRevealOf(config.dateReveal, config.scratchTarget);
-  const dateHidden =
-    config.scratchTarget === "date" || reveal === "scratch" || reveal === "tear";
 
   const custom = config.blocks.flatMap((block) =>
     block.kind === "custom" && hasCustomContent(block.section) ? [block.section] : [],
@@ -156,21 +149,25 @@ export default function GulabMahalCard(props: TemplateCardProps): ReactElement {
         <div className="lifafa-card-content relative z-10">
           <GulabNamesPage draft={draft} config={config} language={language} fonts={fonts} />
 
+          {/* The scroll is this card's own reveal: the host's scratch panels are not used here. */}
           {on("details") || (on("countdown") && hasCountdown(draft)) ? (
-            <GulabDatePage
+            <GulabScrollPage
               draft={draft}
               language={language}
-              dateHidden={dateHidden}
+              occasionId={occasionId}
+              invite={invite}
+              theme={cardTheme}
               fonts={fonts}
+              showCountdown={on("countdown") && hasCountdown(draft)}
             />
           ) : null}
 
           {on("family") && hasFamily(draft, occasionId) ? (
-            <GulabCouplePage language={language} fonts={fonts} />
+            <GulabTagsPage draft={draft} occasionId={occasionId} language={language} fonts={fonts} />
           ) : null}
 
           {on("timeline") ? (
-            <GulabFunctionsPage draft={draft} language={language} fonts={fonts} />
+            <GulabStackPage draft={draft} language={language} fonts={fonts} />
           ) : null}
 
           {on("venue") ? (

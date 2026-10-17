@@ -1,6 +1,4 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
-import { formatWhen } from "@/lib/cardFormat";
-import { timelineEntries } from "@/lib/cardSections";
 import { ART } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
 import GulabPage from "@/templates/gulab-mahal/Page";
@@ -9,7 +7,7 @@ import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /**
- * Pages 3 to 7 as they stand for now: each page's place in the stack, its
+ * Pages 6 and 7 as they stand for now: each page's place in the stack, its
  * heading and the picture it will be drawn on, with the little it says
  * already. Their own drawings replace these one by one; the paging, the
  * entrances and the preloading are already theirs.
@@ -58,67 +56,6 @@ export function GulabSheet({
         </div>
       ) : null}
     </div>
-  );
-}
-
-export function GulabDatePage({
-  draft,
-  language,
-  dateHidden,
-  fonts,
-}: {
-  draft: EventDraft;
-  language: CardLanguage;
-  dateHidden: boolean;
-  fonts: GulabFonts;
-}): ReactElement {
-  const title = gulabCopy(language).pages.date;
-
-  return (
-    <GulabPage label={title} images={[ART.scrollRoll]}>
-      <GulabSheet title={title} art={ART.scrollRoll} fonts={fonts}>
-        {dateHidden ? null : <p>{formatWhen(draft.eventDate, draft.eventTime, language)}</p>}
-      </GulabSheet>
-    </GulabPage>
-  );
-}
-
-export function GulabCouplePage({
-  language,
-  fonts,
-}: {
-  language: CardLanguage;
-  fonts: GulabFonts;
-}): ReactElement {
-  const title = gulabCopy(language).pages.couple;
-
-  return (
-    <GulabPage label={title} images={[ART.coupleTag]}>
-      <GulabSheet title={title} art={ART.coupleTag} fonts={fonts} />
-    </GulabPage>
-  );
-}
-
-export function GulabFunctionsPage({
-  draft,
-  language,
-  fonts,
-}: {
-  draft: EventDraft;
-  language: CardLanguage;
-  fonts: GulabFonts;
-}): ReactElement {
-  const title = gulabCopy(language).pages.functions;
-  const entries = timelineEntries(draft, language);
-
-  return (
-    <GulabPage label={title} images={[ART.eventCard]}>
-      <GulabSheet title={title} art={ART.eventCard} fonts={fonts}>
-        {entries.map((entry, index) => (
-          <p key={index}>{entry.label}</p>
-        ))}
-      </GulabSheet>
-    </GulabPage>
   );
 }
 

@@ -747,6 +747,557 @@
   }
 }
 
+/* ───────────────────────── Page 3: the date scroll ───────────────────────── */
+
+/*
+  The scroll, sized from the page's width: `--roll-h` is a roll's height and
+  `--paper-h` how far the paper comes down, never so far that the open scroll
+  and the button under it are taller than the screen. Its box is the open
+  scroll's, so nothing on the page moves as it opens.
+*/
+.scroll {
+  --scroll-w: min(86cqw, 24rem);
+  --roll-h: calc(var(--scroll-w) / var(--roll-aspect));
+  --paper-h: max(
+    11rem,
+    min(
+      var(--scroll-w) * 1.05,
+      var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - 11rem - var(--roll-h) * 1.95
+    )
+  );
+
+  position: relative;
+  width: var(--scroll-w);
+  height: calc(var(--paper-h) + var(--roll-h) * 1.95);
+  container-type: inline-size;
+}
+
+/* The paper's window, from under the top roll's middle to the bottom roll's middle when open. */
+.scrollWindow {
+  position: absolute;
+  top: calc(var(--roll-h) * 0.5);
+  left: calc((1 - var(--paper-share)) * 50%);
+  z-index: 1;
+  width: calc(var(--paper-share) * 100%);
+  height: calc(var(--paper-h) + var(--roll-h) * 0.95);
+  overflow: hidden;
+}
+
+/* The paper: all above the window when closed, and moved down by its whole travel to open. */
+.scrollPaper {
+  position: absolute;
+  top: calc(var(--paper-h) * -1);
+  left: 0;
+  right: 0;
+  height: calc(var(--paper-h) + var(--roll-h) * 0.95);
+  will-change: transform;
+}
+
+.scrollPaperArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* The words, between the parts of the paper the two rolls cover. */
+.scrollWords {
+  position: absolute;
+  top: calc(var(--roll-h) * 0.5 + 4cqw);
+  bottom: calc(var(--roll-h) * 0.5 + 4cqw);
+  left: 6%;
+  right: 6%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6cqw;
+  text-align: center;
+}
+
+.scrollCaps {
+  font-size: 3.4cqw;
+  color: var(--gm-wine);
+}
+
+.scrollWeekday {
+  font-size: 3.6cqw;
+  letter-spacing: 0.2em;
+  padding-left: 0.2em;
+  text-transform: uppercase;
+  color: var(--gm-rose-gold-deep);
+}
+
+.scrollWeekday:lang(hi) {
+  font-size: 4.2cqw;
+  letter-spacing: 0;
+  padding-left: 0;
+}
+
+.scrollDay {
+  font-size: 17cqw;
+}
+
+.scrollMonth {
+  font-size: 5.2cqw;
+}
+
+.scrollTime {
+  font-size: 3.8cqw;
+  color: var(--gm-wine-soft);
+}
+
+.rollTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* The bottom roll, which a finger pulls down; once open it lets a swipe up the page through. */
+.rollBottom {
+  position: absolute;
+  top: calc(var(--roll-h) * 0.95);
+  left: 0;
+  z-index: 3;
+  width: 100%;
+  touch-action: none;
+  cursor: grab;
+  will-change: transform;
+}
+
+.rollBottom:focus-visible {
+  outline: 2px solid var(--gm-rose-gold-deep);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.scrollOpen .rollBottom {
+  touch-action: pan-y;
+  cursor: default;
+}
+
+.rollArt {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.scrollHint {
+  position: absolute;
+  top: 100%;
+  left: -15%;
+  right: -15%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  color: var(--gm-wine-soft);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.scrollHintArrow {
+  width: 1.1rem;
+  height: 0.7rem;
+  animation: gm-bob 2.2s ease-in-out infinite;
+}
+
+/* The countdown's four frames. */
+.countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2.4cqw;
+  width: 86%;
+}
+
+.countdownBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6cqw;
+  padding: 2.2cqw 0 1.8cqw;
+  border-radius: 1.6cqw;
+  background: rgb(251 244 238 / 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgb(183 110 121 / 0.85),
+    inset 0 0 0 3px rgb(251 244 238 / 0.7),
+    inset 0 0 0 4px rgb(183 110 121 / 0.35);
+}
+
+.countdownFigure {
+  font-size: 6cqw;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--gm-wine);
+}
+
+.countdownLabel {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 2.3cqw;
+  letter-spacing: 0.16em;
+  padding-left: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gm-rose-gold-deep);
+}
+
+.countdownLabelHi {
+  font-size: 3cqw;
+  line-height: 1.4;
+  color: var(--gm-rose-gold-deep);
+}
+
+/* The card's own calendar button, in wine, ringed in rose gold. */
+.calendarButton {
+  margin-top: 1.1rem;
+}
+
+.calendarButton > div > button {
+  box-shadow:
+    0 0 0 3px rgb(251 244 238 / 0.65),
+    0 0 0 4px rgb(183 110 121 / 0.7);
+}
+
+/* ───────────────────────── Page 4: the couple's tags ───────────────────────── */
+
+/*
+  The two tags, each hanging from a ribbon that comes down from the top of
+  the page: `--tag-w` a tag's width, `--ribbon` the ribbon above it, so the
+  tags hang about a third of the way down the screen.
+*/
+.tags {
+  --tag-w: min(40cqw, 12rem);
+  --tag-h: calc(var(--tag-w) / var(--tag-aspect));
+  --ribbon: max(
+    0.5rem,
+    (var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - var(--tag-h)) * 0.42
+  );
+
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3cqw;
+}
+
+.tagHang {
+  position: relative;
+  width: var(--tag-w);
+}
+
+.tagDrop {
+  opacity: 0.01;
+  transform: translate3d(0, -105%, 0);
+  transition:
+    opacity 300ms ease-out var(--gm-delay, 0ms),
+    transform 1100ms var(--gm-spring) var(--gm-delay, 0ms);
+  will-change: transform;
+}
+
+[data-gm-entered] .tagDrop {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes gm-tag-sway {
+  from {
+    transform: rotate(-2deg);
+  }
+  to {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes gm-tag-settle {
+  0% {
+    transform: rotate(6deg);
+  }
+  25% {
+    transform: rotate(-4.5deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+  72% {
+    transform: rotate(-1.5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Both turn about the top of the ribbon. */
+.tagSway,
+.tagKick {
+  transform-origin: calc(var(--tag-pivot) * 100%) 0;
+  will-change: transform;
+}
+
+.tagSway {
+  animation: gm-tag-sway 3.4s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+[data-gm-entered] .tagSway {
+  animation-play-state: running;
+}
+
+[data-gm-entered] .tagKick {
+  animation: gm-tag-settle 1.8s ease-in-out var(--gm-delay, 0ms) both;
+}
+
+.tagKick {
+  cursor: pointer;
+}
+
+/* The ribbon from the top of the page down to the tag's own, the same satin and width. */
+.tagRibbon {
+  display: block;
+  width: 18%;
+  height: var(--ribbon);
+  margin-left: calc(var(--tag-pivot) * 100% - 9%);
+  background-image: linear-gradient(
+    90deg,
+    #c48287 0%,
+    #e7b3b3 22%,
+    #f3cfcc 42%,
+    #e0a8aa 68%,
+    #c17f85 100%
+  );
+}
+
+.tag {
+  position: relative;
+  width: 100%;
+  container-type: inline-size;
+}
+
+.tagArt {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  user-select: none;
+}
+
+/* The bride's tag: the picture turned over, its roses on the other side; her words are not. */
+.tagArtTurned {
+  transform: scaleX(-1);
+}
+
+.tagBox {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5cqw;
+}
+
+.tagWords {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  text-align: center;
+  color: var(--gm-wine);
+}
+
+.tagName {
+  max-width: 100%;
+  font-size: 1.6em;
+  /* Broken only between words: a long name is made smaller to fit (useFitInside), never cut in two. */
+  overflow-wrap: normal;
+}
+
+.tagChildOf {
+  font-size: 0.55em;
+}
+
+.tagParents {
+  max-width: 100%;
+  font-size: 0.72em;
+  line-height: 1.35;
+  color: var(--gm-wine-soft);
+}
+
+.tagCity {
+  max-width: 100%;
+  font-size: 0.66em;
+  line-height: 1.3;
+  color: var(--gm-rose-gold-deep);
+}
+
+/* The "&" between the two tags, at the height of their names. */
+.tagsAnd {
+  align-self: flex-start;
+  margin-top: calc(var(--ribbon) + var(--tag-h) * 0.6);
+  color: var(--gm-rose-gold);
+  font-size: min(9cqw, 2.6rem);
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tagDrop {
+    transform: none;
+    transition: opacity 400ms ease-out;
+  }
+
+  .tagSway,
+  [data-gm-entered] .tagKick {
+    animation: none;
+  }
+}
+
+/* ───────────────────────── Page 5: the functions stack ───────────────────────── */
+
+.stackHeading {
+  margin-bottom: 1.25rem;
+  font-size: 0.75rem;
+}
+
+/* The stack: room for the top card and the two turned behind it. Vertical pans are the page's. */
+.stack {
+  --card-w: min(72cqw, 20rem, (var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - 13rem) * 0.716);
+
+  position: relative;
+  width: var(--card-w);
+  height: calc(var(--card-w) / var(--card-aspect) * 1.1);
+  touch-action: pan-y;
+}
+
+.stackCard {
+  position: absolute;
+  inset: 0 0 auto;
+  aspect-ratio: var(--card-aspect);
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+  container-type: inline-size;
+  user-select: none;
+}
+
+.stackArt {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  user-select: none;
+  filter: drop-shadow(0 0.6rem 0.9rem rgb(90 30 43 / 0.2));
+}
+
+.stackBox {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6cqw;
+}
+
+.stackWords {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45em;
+  text-align: center;
+  color: var(--gm-wine);
+}
+
+.stackNumber {
+  font-size: 0.62em;
+}
+
+.stackName {
+  max-width: 100%;
+  font-size: 1.9em;
+  overflow-wrap: normal;
+}
+
+.stackDate {
+  font-size: 0.95em;
+}
+
+.stackWeekday {
+  font-size: 0.62em;
+  letter-spacing: 0.22em;
+  padding-left: 0.22em;
+  text-transform: uppercase;
+  color: var(--gm-rose-gold-deep);
+}
+
+.stackWeekday:lang(hi) {
+  font-size: 0.8em;
+  letter-spacing: 0;
+  padding-left: 0;
+}
+
+.stackTime {
+  font-size: 0.8em;
+  color: var(--gm-wine-soft);
+}
+
+.stackVenue {
+  max-width: 100%;
+  margin-top: 0.3em;
+  font-size: 0.82em;
+  line-height: 1.35;
+  color: var(--gm-wine-soft);
+}
+
+.stackControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.stackButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  color: var(--gm-wine);
+  font-size: 0.875rem;
+  background: rgb(251 244 238 / 0.7);
+  box-shadow: inset 0 0 0 1px rgb(183 110 121 / 0.6);
+}
+
+.stackButton svg {
+  width: 0.55rem;
+  height: 0.9rem;
+}
+
+.stackButton:focus-visible {
+  outline: 2px solid var(--gm-rose-gold-deep);
+  outline-offset: 2px;
+}
+
+.stackCounter {
+  min-width: 3.5rem;
+  text-align: center;
+  color: var(--gm-wine);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ───────────────────────── The dots ───────────────────────── */
 
 /* Down the right edge of the screen, or of the phone column on a wide one. */

@@ -135,6 +135,26 @@ export const POCKET_DEPTH = down(643);
 export const SEAL_ASPECT = 1222 / 1182;
 export const SEAL_DISC = { x: 617 / 1222, y: 591 / 1182, radius: 325 / 1222 };
 
+/**
+ * The scroll's roll (1100x209): its finials are at either end, and the paper
+ * that comes off it is 80% of its width, from the middle of its cylinder.
+ */
+export const ROLL_ASPECT = 1100 / 209;
+export const ROLL_PAPER = 0.8;
+
+/**
+ * The couple's tag (560x1161): it hangs from the top of its ribbon, 50.4%
+ * across, and its roses reach 48% down its left side. Its words go below them
+ * and inside its rose-gold border, measured off the picture.
+ */
+export const TAG_ASPECT = 560 / 1161;
+export const TAG_PIVOT = 0.504;
+export const TAG_BOX = { top: 0.48, bottom: 0.07, side: 0.11 } as const;
+
+/** A function's card (800x1117): its roses reach 27% down its middle; its words go under them, inside its border. */
+export const EVENT_CARD_ASPECT = 800 / 1117;
+export const EVENT_CARD_BOX = { top: 0.27, bottom: 0.08, side: 0.1 } as const;
+
 /** The letter's own shape (800x1064). */
 export const LETTER_ASPECT = 800 / 1064;
 

@@ -84,6 +84,15 @@ export function scriptLeading(language: CardLanguage): number {
 
 interface GulabCopy {
   swipeUp: string;
+  /** Under the closed scroll. */
+  pullScroll: string;
+  /** "No. 1" on a function's card. */
+  number: (n: number) => string;
+  previous: string;
+  next: string;
+  /** "2 / 4", and what it says aloud. */
+  counter: (at: number, of: number) => string;
+  counterSpoken: (at: number, of: number) => string;
   /** What each page is called, for its dot and its placeholder. */
   pages: {
     date: string;
@@ -100,6 +109,12 @@ interface GulabCopy {
 const COPY: Readonly<Record<CardLanguage, GulabCopy>> = {
   en: {
     swipeUp: "Swipe up",
+    pullScroll: "Pull the scroll to open",
+    number: (n) => `No. ${n}`,
+    previous: "Previous",
+    next: "Next",
+    counter: (at, of) => `${at} / ${of}`,
+    counterSpoken: (at, of) => `Celebration ${at} of ${of}`,
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -112,6 +127,12 @@ const COPY: Readonly<Record<CardLanguage, GulabCopy>> = {
   },
   hi: {
     swipeUp: "ऊपर स्वाइप करें",
+    pullScroll: "खोलने के लिए स्क्रॉल नीचे खींचें",
+    number: (n) => `क्र. ${n}`,
+    previous: "पिछला",
+    next: "अगला",
+    counter: (at, of) => `${at} / ${of}`,
+    counterSpoken: (at, of) => `समारोह ${at}, कुल ${of}`,
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",
