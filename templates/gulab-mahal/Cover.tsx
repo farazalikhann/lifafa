@@ -23,7 +23,9 @@ import {
   SEAL_ASPECT,
   SEAL_DISC,
 } from "@/templates/gulab-mahal/art";
+import { Corners, Foil, Shadow } from "@/templates/gulab-mahal/Decor";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { velvetStyle } from "@/templates/gulab-mahal/Page";
 import { scriptLeading, whenIdle } from "@/templates/gulab-mahal/shared";
 import { useFitInside } from "@/templates/gulab-mahal/useFitInside";
 
@@ -582,25 +584,33 @@ export default function GulabMahalCover({
   );
 
   return (
-    <div ref={layerRef} aria-hidden="true" className="pointer-events-none absolute inset-0">
+    <div
+      ref={layerRef}
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 ${opening ? styles.coverOpening : ""}`}
+    >
       {/*
         The cover's own ground, which it fades itself (see CoverVisualState):
-        the pages' own damask, blush and sheen, laid exactly as theirs is, and
-        page 2's two rose corners where page 2 has them, so the cover fades to
-        the same ground and the same roses.
+        the velvet, laid exactly as page 2 lays it (in the phone column, over
+        the same velvet darkened across a wide screen), so the cover fades to
+        the same ground.
       */}
       <div ref={groundRef} className={styles.coverGround}>
         <div className={`${styles.ground} ${styles.coverDamask}`} />
         <div className={styles.coverColumn}>
-          <div className={`${styles.coverCorner} ${styles.cornerTop}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ART.corner} alt="" draggable={false} className={styles.cornerArt} />
-          </div>
-          <div className={`${styles.coverCorner} ${styles.cornerFoot}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ART.corner} alt="" draggable={false} className={styles.cornerArt} />
-          </div>
+          <span className={styles.pageClip} style={velvetStyle(0)}>
+            <span className={`${styles.pageVelvet} ${styles.pageVelvetStill}`} />
+          </span>
         </div>
+        {/*
+          A satin pill and a page dot, at 1%: unseen, and painted while the
+          envelope waits, so the GPU has what it needs to draw page 2's own
+          when the card is handed over, not then.
+        */}
+        <span className={styles.coverWarm}>
+          <span className={`${styles.satin} ${styles.coverWarmPill}`} />
+          <span className={`${styles.dot} ${styles.coverWarmDot}`} />
+        </span>
       </div>
 
       <div className={styles.envelopePlace}>
@@ -612,6 +622,7 @@ export default function GulabMahalCover({
           >
             {/* The back: the body, and the flap once it has turned past 90 degrees. */}
             <div ref={backRef} className={styles.envelopeLayer}>
+              <Shadow src={ART.shadow.envelope} aspect={BODY_ASPECT} drop={0.03} />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={ART.envelopeBody} alt="" draggable={false} className={styles.envelopeArt} />
               <div className={styles.flapHinge}>
@@ -652,6 +663,7 @@ export default function GulabMahalCover({
                   top: pc((SLEEVE.above + POCKET_DEPTH + 0.03) / SLEEVE.height),
                 }}
               >
+                <Shadow src={ART.shadow.letter} aspect={LETTER_ASPECT} />
                 <div ref={letterFaceRef} className={styles.letterFace}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={ART.letterPaper} alt="" draggable={false} className={styles.letterArt} />
@@ -692,6 +704,9 @@ export default function GulabMahalCover({
                 </div>
               </div>
 
+              {/* Tucked over the envelope's top right and bottom left, under the seal. */}
+              <Corners size={0.3} />
+
               <div
                 className={styles.sealPlace}
                 style={{
@@ -730,6 +745,7 @@ export default function GulabMahalCover({
 
                 <div ref={pressRef} className={styles.sealPress}>
                   <div ref={wholeRef} className={styles.sealFace}>
+                    <Shadow src={ART.shadow.seal} aspect={SEAL_ASPECT} drop={0.05} />
                     {sealFace}
                   </div>
                   <div ref={leftRef} className={`${styles.sealFace} ${styles.sealHalf}`} style={{ clipPath: LEFT_HALF }}>
@@ -836,13 +852,13 @@ function LetterNames({
     return (
       <>
         <p className={`${styles.letterName} wrap-anywhere`} style={script}>
-          {pair[0]}
+          <Foil text={pair[0]} />
         </p>
         <p className={styles.letterAnd} style={namesFont}>
           &amp;
         </p>
         <p className={`${styles.letterName} wrap-anywhere`} style={script}>
-          {pair[1]}
+          <Foil text={pair[1]} />
         </p>
       </>
     );
@@ -850,7 +866,7 @@ function LetterNames({
 
   return title !== undefined && title.length > 0 ? (
     <p className={`${styles.letterName} wrap-anywhere text-balance`} style={script}>
-      {title}
+      <Foil text={title} />
     </p>
   ) : (
     <GoldFlower hi="#d39aa2" body="#b76e79" lo="#8e4b57" className="w-[30%]" />

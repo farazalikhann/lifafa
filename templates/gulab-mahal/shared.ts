@@ -22,6 +22,10 @@ export const ROSE_GOLD = "#B76E79";
 /* Rose gold dark enough for small type on ivory. */
 export const ROSE_GOLD_DEEP = "#97505C";
 export const IVORY = "#FBF4EE";
+/* Ivory a step quieter, for the lesser lines set on the velvet. */
+export const IVORY_MUTED = "#EBD6CE";
+/* The velvet's own colour, for what shows before it has loaded. */
+export const VELVET = "#8A4C48";
 
 export interface GulabFonts {
   /** The couple's names and the initials: the pair's script. */

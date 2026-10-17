@@ -4,10 +4,11 @@ import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/gulab-mahal/art";
 import {
-  BLUSH,
+  IVORY,
+  IVORY_MUTED,
   ROSE_GOLD,
+  VELVET,
   WINE,
-  WINE_SOFT,
   letterTheme,
 } from "@/templates/gulab-mahal/shared";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
@@ -37,10 +38,11 @@ const ENVELOPE = getCoverAnimation("envelope-seal");
 const COVER_ART = {
   images: COVER_IMAGES,
   timeoutMs: 5000,
-  tone: "light" as const,
+  /* Ivory on the velvet, over a soft dark shadow. */
+  tone: "dark" as const,
   wordsLine: false,
-  ink: WINE,
-  inkMuted: WINE_SOFT,
+  ink: IVORY,
+  inkMuted: IVORY_MUTED,
 };
 
 const COVER_OPTION: CoverAnimationOption = {
@@ -103,10 +105,16 @@ export const GULAB_MAHAL: TemplateConfig = {
       density: "comfortable",
       accentOverride: ROSE_GOLD,
       /* The ground and the inks themselves; these are what the card is painted in. */
+      /*
+        The velvet's own colour for the ground (what shows before it has
+        loaded, and round the edges of the page), and ivory for anything the
+        guest's page sets straight on it; what is on ivory paper is in wine,
+        drawn by the pages themselves and the letter theme.
+      */
       textColors: {
-        textPrimary: WINE,
-        textSecondary: WINE_SOFT,
-        cardColor: BLUSH,
+        textPrimary: IVORY,
+        textSecondary: IVORY_MUTED,
+        cardColor: VELVET,
         accent: ROSE_GOLD,
         chosen: false,
       },

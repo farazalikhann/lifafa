@@ -24,6 +24,7 @@ import { cardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
 import { ART, ROLL_ASPECT, ROLL_PAPER } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { Corners, Shadow } from "@/templates/gulab-mahal/Decor";
 import GulabPage from "@/templates/gulab-mahal/Page";
 import {
   IVORY,
@@ -207,6 +208,7 @@ export default function GulabScrollPage({
 
   const paperRef = useRef<HTMLDivElement>(null);
   const wordsRef = useRef<HTMLDivElement>(null);
+  const paperShadowRef = useRef<HTMLImageElement>(null);
   const rollRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLParagraphElement>(null);
   const drag = useRef({
@@ -238,6 +240,11 @@ export default function GulabScrollPage({
 
     if (wordsRef.current !== null) {
       wordsRef.current.style.transform = `translate3d(0, -${travel}px, 0)`;
+    }
+
+    /* The paper's shadow, as long as the paper that has come down. */
+    if (paperShadowRef.current !== null) {
+      paperShadowRef.current.style.transform = `scaleY(${progress.toFixed(4)})`;
     }
 
     if (rollRef.current !== null) {
@@ -280,6 +287,15 @@ export default function GulabScrollPage({
         paper.animate([{ transform: from }, { transform: end }], timing),
         roll.animate([{ transform: from }, { transform: end }], timing),
       ];
+
+      if (paperShadowRef.current !== null) {
+        state.settling.push(
+          paperShadowRef.current.animate(
+            [{ transform: `scaleY(${state.progress})` }, { transform: `scaleY(${to})` }],
+            timing,
+          ),
+        );
+      }
 
       if (wordsRef.current !== null) {
         state.settling.push(
@@ -438,7 +454,11 @@ export default function GulabScrollPage({
   );
 
   return (
-    <GulabPage label={copy.calendar.heading} images={[ART.scrollRoll, ART.scrollPaper]}>
+    <GulabPage
+      label={copy.calendar.heading}
+      images={[ART.scrollRoll, ART.scrollPaper, ART.shadow.roll, ART.shadow.paper]}
+      variant={1}
+    >
       <div
         className={`${styles.scroll} ${styles.rise} ${shown ? styles.scrollOpen : ""}`}
         style={
@@ -448,6 +468,23 @@ export default function GulabScrollPage({
           } as CSSProperties
         }
       >
+        {/*
+          The paper's shadow: the window's size, and as long as the paper
+          that has come down (a scale, from the top). Outside the window,
+          which would cut its soft edges off.
+        */}
+        <img
+          ref={paperShadowRef}
+          src={ART.shadow.paper}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          className={styles.paperShadow}
+          style={shown ? { transform: "scaleY(1)" } : undefined}
+        />
+
         {/* The paper's window: it starts under the top roll's middle and hides whatever of the paper is above. */}
         <div className={styles.scrollWindow}>
           <div
@@ -479,16 +516,12 @@ export default function GulabScrollPage({
           </div>
         </div>
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={ART.scrollRoll}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          className={styles.rollTop}
-          onClick={onActivate}
-        />
+        <div className={styles.rollTop} onClick={onActivate}>
+          <Shadow src={ART.shadow.roll} aspect={ROLL_ASPECT} drop={0.012} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ART.scrollRoll} alt="" loading="lazy" decoding="async" draggable={false} className={styles.rollArt} />
+          <Corners size={0.24} which="top" className={styles.rollCorner} />
+        </div>
 
         {/* The bottom roll, which the guest pulls; the hint rides under it. */}
         <div
@@ -509,10 +542,12 @@ export default function GulabScrollPage({
             }
           }}
         >
+          <Shadow src={ART.shadow.roll} aspect={ROLL_ASPECT} drop={0.012} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ART.scrollRoll} alt="" loading="lazy" decoding="async" draggable={false} className={styles.rollArt} />
+          <Corners size={0.24} which="foot" className={styles.rollCorner} />
           {shown ? null : (
-            <p ref={hintRef} className={styles.scrollHint} style={fonts.italic(language)}>
+            <p ref={hintRef} className={`${styles.scrollHint} ${styles.onVelvet}`} style={fonts.italic(language)}>
               <span>{own.pullScroll}</span>
               <svg viewBox="0 0 20 12" aria-hidden="true" focusable="false" className={styles.scrollHintArrow}>
                 <path d="M2 2 L10 9 L18 2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

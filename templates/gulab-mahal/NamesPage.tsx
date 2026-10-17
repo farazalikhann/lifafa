@@ -15,7 +15,8 @@ import {
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import { dateRevealOf } from "@/lib/royalScroll";
-import { ART, CAMEO_BOX, CAMEO_LINES } from "@/templates/gulab-mahal/art";
+import { ART, CAMEO_ASPECT, CAMEO_BOX, CAMEO_LINES } from "@/templates/gulab-mahal/art";
+import { Corners, Foil, Shadow } from "@/templates/gulab-mahal/Decor";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
 import GulabPage from "@/templates/gulab-mahal/Page";
 import { useFitInside } from "@/templates/gulab-mahal/useFitInside";
@@ -62,8 +63,10 @@ function Line({
  * Page 2: the names, in a cameo of roses.
  *
  * The cameo is 80% of the screen across (less on a short screen, so it is
- * always seen whole), with a rose corner at the top right of the screen and
- * the same turned round at the bottom left, each wholly clear of the words.
+ * always seen whole), on a soft shadow of its own outline, with a rose corner
+ * tucked over its top right and the same turned round over its bottom left,
+ * each on the cameo's own roses and wholly clear of the words. The names are
+ * in rose-gold foil, with a band of light across them now and then.
  *
  * THE WORDS STAY ON THE SATIN. They are laid in a box measured off the
  * picture (CAMEO_BOX in art.ts), the first and last lines held narrower where
@@ -74,7 +77,7 @@ function Line({
  * this would otherwise give away.
  *
  * THE ENTRANCE, once, as the envelope hands over: the cameo rises and settles on
- * a soft spring, the corners come in from their own corners, then the lines
+ * a soft spring with its corners and its shadow, then the lines
  * fade up one by one, the names last.
  */
 export default function GulabNamesPage({
@@ -118,21 +121,9 @@ export default function GulabNamesPage({
   const namesOrder = 3 + (when !== null ? 1 : 0);
 
   return (
-    <GulabPage label={coverNameLine(names)} images={[ART.cameo, ART.corner]}>
-      <div aria-hidden="true" className={`${styles.corner} ${styles.cornerTop} ${styles.cornerIn}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ART.corner} alt="" draggable={false} className={styles.cornerArt} />
-      </div>
-      <div
-        aria-hidden="true"
-        className={`${styles.corner} ${styles.cornerFoot} ${styles.cornerIn}`}
-        style={{ "--gm-delay": "120ms" } as CSSProperties}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ART.corner} alt="" draggable={false} className={styles.cornerArt} />
-      </div>
-
+    <GulabPage label={coverNameLine(names)} images={[ART.cameo, ART.corner, ART.shadow.cameo]} variant={0}>
       <div className={`${styles.cameo} ${styles.rise}`}>
+        <Shadow src={ART.shadow.cameo} aspect={CAMEO_ASPECT} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={ART.cameo}
@@ -141,6 +132,8 @@ export default function GulabNamesPage({
           fetchPriority="high"
           className={styles.cameoArt}
         />
+        {/* Over the cameo's own roses at its top right and bottom left, nowhere near the words. */}
+        <Corners size={0.34} />
 
         <div
           ref={boxRef}
@@ -193,7 +186,7 @@ export default function GulabNamesPage({
                   className={`${styles.script} ${styles.names} wrap-anywhere`}
                   style={script}
                 >
-                  {names.first}
+                  <Foil text={names.first} />
                 </Line>
                 <Line
                   order={namesOrder + 1}
@@ -211,7 +204,7 @@ export default function GulabNamesPage({
                   className={`${styles.script} ${styles.names} wrap-anywhere`}
                   style={script}
                 >
-                  {names.second}
+                  <Foil text={names.second} />
                 </Line>
               </div>
             ) : (
@@ -226,7 +219,7 @@ export default function GulabNamesPage({
                     {names.text}
                   </span>
                 ) : (
-                  names.text
+                  <Foil text={names.text} />
                 )}
               </Line>
             )}
@@ -274,7 +267,7 @@ function SwipeHint({ language }: { language: CardLanguage }): ReactElement {
   return (
     <button
       type="button"
-      className={styles.hint}
+      className={`${styles.satin} ${styles.hint}`}
       onClick={(event) => {
         /* The page after this one, wherever it is drawn: the card's next, or the reply. */
         const pages = [...document.querySelectorAll("[data-gm-page]")];

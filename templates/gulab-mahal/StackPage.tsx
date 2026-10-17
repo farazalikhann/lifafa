@@ -14,6 +14,7 @@ import { cardCopy } from "@/lib/cardLanguage";
 import { timelineEntries, type TimelineEntry } from "@/lib/cardSections";
 import { ART, EVENT_CARD_ASPECT, EVENT_CARD_BOX } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { Corners, Shadow } from "@/templates/gulab-mahal/Decor";
 import GulabPage from "@/templates/gulab-mahal/Page";
 import { gulabCopy, scriptLeading, type GulabFonts } from "@/templates/gulab-mahal/shared";
 import { useFitInside } from "@/templates/gulab-mahal/useFitInside";
@@ -58,6 +59,7 @@ function EventCard({
 
   return (
     <>
+      <Shadow src={ART.shadow.eventCard} aspect={EVENT_CARD_ASPECT} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={ART.eventCard} alt="" loading="lazy" decoding="async" draggable={false} className={styles.stackArt} />
       <div
@@ -314,8 +316,8 @@ export default function GulabStackPage({
   const front = order[0] ?? 0;
 
   return (
-    <GulabPage label={copy.timeline.heading} images={[ART.eventCard]}>
-      <p className={`${styles.caps} ${styles.lineUp} ${styles.stackHeading}`} style={fonts.heading}>
+    <GulabPage label={copy.timeline.heading} images={[ART.eventCard, ART.shadow.eventCard]} variant={3}>
+      <p className={`${styles.caps} ${styles.lineUp} ${styles.stackHeading} ${styles.onVelvet}`} style={fonts.heading}>
         {copy.timeline.heading}
       </p>
 
@@ -327,6 +329,9 @@ export default function GulabStackPage({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
+        {/* Tucked over the stack's top right and bottom left, above every card, clear of their words. */}
+        <Corners size={0.3} className={styles.stackCorner} />
+
         {entries.map((entry, index) => {
           const place = order.indexOf(index);
           const hidden = place >= SLOTS.length;
@@ -357,17 +362,17 @@ export default function GulabStackPage({
 
       {count > 1 ? (
         <div className={`${styles.stackControls} ${styles.lineUp}`} style={{ "--gm-delay": "400ms" } as CSSProperties}>
-          <button type="button" className={styles.stackButton} onClick={bringBack} style={fonts.heading}>
+          <button type="button" className={`${styles.satin} ${styles.stackButton}`} onClick={bringBack} style={fonts.heading}>
             <svg viewBox="0 0 12 20" aria-hidden="true" focusable="false">
               <path d="M10 2 L3 10 L10 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span>{own.previous}</span>
           </button>
-          <p className={styles.stackCounter} style={fonts.heading} aria-live="polite">
+          <p className={`${styles.stackCounter} ${styles.onVelvet}`} style={fonts.heading} aria-live="polite">
             <span aria-hidden="true">{own.counter(front + 1, count)}</span>
             <span className="sr-only">{own.counterSpoken(front + 1, count)}</span>
           </p>
-          <button type="button" className={styles.stackButton} onClick={() => send(-1)} style={fonts.heading}>
+          <button type="button" className={`${styles.satin} ${styles.stackButton}`} onClick={() => send(-1)} style={fonts.heading}>
             <span>{own.next}</span>
             <svg viewBox="0 0 12 20" aria-hidden="true" focusable="false">
               <path d="M2 2 L9 10 L2 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

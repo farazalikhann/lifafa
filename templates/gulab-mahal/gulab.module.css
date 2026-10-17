@@ -44,16 +44,10 @@
 */
 .ground {
   pointer-events: none;
-  background-color: var(--gm-blush, #e9bdbb);
+  background-color: #6e3a37;
   background-image:
-    linear-gradient(
-      160deg,
-      rgb(255 255 255 / 0) 18%,
-      rgb(255 242 245 / 0.26) 42%,
-      rgb(255 255 255 / 0) 60%,
-      rgb(90 30 43 / 0.1) 100%
-    ),
-    url("/templates/gulab-mahal/gulab-bg.webp");
+    linear-gradient(rgb(28 6 10 / 0.42), rgb(28 6 10 / 0.42)),
+    url("/templates/gulab-mahal/velvet-bg.webp");
   background-position: center;
   background-size: cover;
 }
@@ -91,11 +85,6 @@
 */
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
-    .groundFixed {
-      animation: gm-ground-depth linear both;
-      animation-timeline: scroll(root block);
-    }
-
     .driftFixed {
       animation: gm-petals-depth linear both;
       animation-timeline: scroll(root block);
@@ -125,8 +114,81 @@
   margin-inline: auto;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  /* Sized from its own width, so its art is right in a preview's narrow box too. */
+}
+
+/*
+  Everything on a page. Sized from its own width (container queries), so the
+  art is right in a preview's narrow box too; that also makes it a layer of
+  its own, over the velvet and the falling petals.
+*/
+.pageInner {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   container-type: inline-size;
+}
+
+/*
+  A page's own piece of the velvet: under the falling petals, which are under
+  the page's words. Clipped to the page, with a soft shadow down its sides
+  that shows only where the page is narrower than the screen.
+*/
+.pageClip {
+  position: absolute;
+  inset: 0;
+  z-index: -6;
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow:
+    -1.5rem 0 2rem -1rem rgb(15 3 6 / 0.55),
+    1.5rem 0 2rem -1rem rgb(15 3 6 / 0.55);
+  /* Turned over on alternate pages, about the page's own middle. */
+  scale: var(--bg-flip, 1) 1;
+}
+
+/*
+  The velvet itself: one picture, at the page's zoom, point and turn
+  (`velvetStyle` in Page.tsx). A little taller than the page, and moved by
+  the page's own scroll, slower than the page, for depth.
+*/
+.pageVelvet {
+  position: absolute;
+  top: -8%;
+  bottom: -8%;
+  left: 0;
+  right: 0;
+  background-color: #8a4c48;
+  background-image: url("/templates/gulab-mahal/velvet-bg.webp");
+  background-position: var(--bg-x, 50%) var(--bg-y, 50%);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+@keyframes gm-velvet-depth {
+  from {
+    transform: translate3d(0, -6%, 0) scale(var(--bg-zoom, 1));
+  }
+  to {
+    transform: translate3d(0, 6%, 0) scale(var(--bg-zoom, 1));
+  }
+}
+
+.pageVelvet {
+  transform: scale(var(--bg-zoom, 1));
+  transform-origin: var(--bg-x, 50%) var(--bg-y, 50%);
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .pageVelvet:not(.pageVelvetStill) {
+      animation: gm-velvet-depth linear both;
+      animation-timeline: view();
+    }
+  }
 }
 
 /* A page two or more away from the one on screen is not drawn until it comes near. */
@@ -246,6 +308,33 @@
   will-change: opacity;
 }
 
+/* Seen only beside the phone column: on a phone the column's velvet covers it, and it is not drawn at all. */
+@media (max-width: 30rem) {
+  .coverDamask {
+    display: none;
+  }
+}
+
+/* The unseen satin pill and dot; see Cover.tsx. */
+.coverWarm {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  gap: 1rem;
+  opacity: 0.01;
+  pointer-events: none;
+}
+
+.coverWarmPill {
+  width: 6rem;
+  height: 2.75rem;
+}
+
+.coverWarmDot {
+  display: block;
+}
+
 /* The pages' damask, the same height as theirs, so it is the same picture at the same size. */
 .coverDamask {
   position: absolute;
@@ -265,11 +354,6 @@
 }
 
 /* A rose corner as page 2 has it: the same width, 36% of the column. */
-.coverCorner {
-  position: absolute;
-  width: calc(min(36vw, 10.8rem) * 1.0625);
-}
-
 /*
   The envelope and the prompt under it, centred together in the space under
   "You are invited". Placed by its box, never by a transform, so the layout
@@ -429,7 +513,7 @@
 .letterName {
   max-width: 100%;
   color: var(--gm-wine, #5a1e2b);
-  font-size: 2em;
+  font-size: 2.4em;
 }
 
 .letterAnd {
@@ -512,7 +596,6 @@
   height: 100%;
   max-width: none;
   user-select: none;
-  filter: drop-shadow(0 0.25rem 0.4rem rgb(90 30 43 / 0.3));
 }
 
 /* The initials, engraved in deep wine, which reads on the rose gold, with a soft light under each stroke. */
@@ -537,9 +620,11 @@
 .coverPrompt {
   margin: max(1.75rem, 4svh) 1.5rem 0;
   text-align: center;
-  color: var(--gm-wine, #5a1e2b);
+  color: #fbf3ee;
   font-size: 1.0625rem;
-  text-shadow: 0 1px 1px rgb(255 240 240 / 0.7);
+  text-shadow:
+    0 1px 2px rgb(30 6 12 / 0.6),
+    0 0 0.75rem rgb(30 6 12 / 0.4);
 }
 
 @keyframes gm-breathe {
@@ -567,76 +652,6 @@
 /* ───────────────────────── Page 2: the names ───────────────────────── */
 
 /*
-  A rose corner, top right of the screen; the same turned round, bottom left.
-  Its soft shadow, which lifts the pink roses off the blush, is painted into
-  the picture (40px of it to the left and below the flowers, which is why the
-  box is 680/640 of the flowers' width): a filter here would be painted
-  again whenever the corner moved.
-*/
-.corner {
-  position: absolute;
-  z-index: 0;
-  width: calc(min(36cqw, 10.8rem) * 1.0625);
-  pointer-events: none;
-}
-
-.cornerArt {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-width: none;
-  user-select: none;
-}
-
-.cornerTop {
-  top: 0;
-  right: 0;
-  --gm-from: translate3d(1.25rem, -1.25rem, 0);
-}
-
-.cornerFoot {
-  bottom: 0;
-  left: 0;
-  --gm-from: translate3d(-1.25rem, 1.25rem, 0);
-}
-
-/* Turned round inside its box, which slides in from its own corner. */
-.cornerFoot .cornerArt {
-  rotate: 180deg;
-}
-
-/*
-  The top one keeps clear of the language switch: down by as much of the
-  corner as the switch takes while it shows (it publishes that), so the
-  switch sits on plain damask; back up as the switch tucks itself away.
-*/
-.cornerTop .cornerArt {
-  translate: 0 min(var(--lifafa-header-clear, 0px), 4.75rem);
-  transition: translate 300ms ease-out;
-}
-
-/* On a screen wide enough that the switch is beside the phone column, not over it, the corner stays in its corner. */
-@media (min-width: 46.25rem) {
-  .cornerTop .cornerArt {
-    translate: none;
-  }
-}
-
-.cornerIn {
-  opacity: 0.01;
-  will-change: transform, opacity;
-  transform: var(--gm-from);
-  transition:
-    opacity 900ms ease-out var(--gm-delay, 0ms),
-    transform 1100ms var(--gm-spring) var(--gm-delay, 0ms);
-}
-
-[data-gm-entered] .cornerIn {
-  opacity: 1;
-  transform: none;
-}
-
-/*
   The cameo: 80% of the screen across, in the picture's own shape (2:3), and
   never taller than the screen can show whole with room above for the
   language switch and below for the hint. `--cameo-w` is its width.
@@ -653,16 +668,6 @@
 }
 
 /* Its shadow on the velvet: a soft oval under it, which costs nothing to paint or move. */
-.cameo::before {
-  content: "";
-  position: absolute;
-  inset: 4% 2% 0;
-  z-index: -1;
-  border-radius: 50%;
-  background-image: radial-gradient(closest-side, rgb(90 30 43 / 0.24), rgb(90 30 43 / 0) 100%);
-  translate: 0 3%;
-}
-
 .cameoArt {
   position: absolute;
   inset: 0;
@@ -681,26 +686,25 @@
 }
 
 .names {
-  font-size: 2.15em;
+  font-size: 2.58em;
 }
 
 /* "Swipe up", at the foot of the names page, until the guest first scrolls. */
 .hint {
   position: absolute;
-  bottom: max(0.75rem, 2svh);
+  bottom: max(1rem, 2.5svh);
   left: 50%;
   z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
   min-height: 2.75rem;
-  padding: 0.25rem 1rem;
+  padding: 0.3rem 1.25rem 0.35rem;
   translate: -50% 0;
-  color: var(--gm-wine);
   font-size: 0.6875rem;
   opacity: 0;
   transition: opacity 600ms ease-out 1900ms;
+  animation: gm-bob 2.2s ease-in-out infinite;
 }
 
 [data-gm-entered] .hint {
@@ -727,8 +731,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  animation: gm-bob 2.2s ease-in-out infinite;
+  gap: 0.1rem;
 }
 
 [data-gm-scrolled] .hint {
@@ -737,12 +740,12 @@
   transition-delay: 0ms;
 }
 
-[data-gm-scrolled] .hintBob {
+[data-gm-scrolled] .hint {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hintBob {
+  .hint {
     animation: none;
   }
 }
@@ -864,9 +867,6 @@
   left: 0;
   z-index: 2;
   width: 100%;
-  height: auto;
-  max-width: none;
-  user-select: none;
   cursor: pointer;
 }
 
@@ -1170,7 +1170,7 @@
   text-align: center;
   align-self: flex-start;
   margin-top: calc(var(--ribbon) + var(--tag-h) * 0.6);
-  color: var(--gm-rose-gold);
+  color: #f3dcc8;
   font-size: min(8cqw, 2rem);
   line-height: 1;
 }
@@ -1190,7 +1190,7 @@
 /* ───────────────────────── Page 5: the functions stack ───────────────────────── */
 
 .stackHeading {
-  margin-bottom: 1.25rem;
+  margin-bottom: 2.6rem;
   font-size: 0.75rem;
 }
 
@@ -1220,7 +1220,6 @@
   height: auto;
   max-width: none;
   user-select: none;
-  filter: drop-shadow(0 0.6rem 0.9rem rgb(90 30 43 / 0.2));
 }
 
 .stackBox {
@@ -1287,7 +1286,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-top: 1.1rem;
+  margin-top: 2rem;
 }
 
 .stackButton {
@@ -1295,12 +1294,8 @@
   align-items: center;
   gap: 0.4rem;
   min-height: 2.75rem;
-  padding: 0 1rem;
-  border-radius: 999px;
-  color: var(--gm-wine);
+  padding: 0 1.1rem;
   font-size: 0.875rem;
-  background: rgb(251 244 238 / 0.7);
-  box-shadow: inset 0 0 0 1px rgb(183 110 121 / 0.6);
 }
 
 .stackButton svg {
@@ -1340,9 +1335,9 @@
   width: 0.375rem;
   height: 0.375rem;
   border-radius: 50%;
-  background: var(--gm-rose-gold);
-  box-shadow: 0 0 0 1px rgb(251 244 238 / 0.55);
-  opacity: 0.4;
+  background: #fbf3ee;
+  box-shadow: 0 0 0.25rem rgb(20 4 8 / 0.5);
+  opacity: 0.45;
   transition:
     opacity 300ms ease-out,
     transform 400ms var(--gm-spring);
@@ -1397,6 +1392,7 @@
 /* ───────────────────────── Placeholders (pages 3 to 9, for now) ───────────────────────── */
 
 .sheet {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1430,4 +1426,248 @@
   .hint {
     display: none;
   }
+}
+
+/* ───────────────────────── Depth: shadows and corners ───────────────────────── */
+
+/*
+  An object's soft shadow (scripts/gulab-shadows.mjs, placed by shadowBox):
+  a picture of its own, under the object and moving with it.
+*/
+.objShadow {
+  position: absolute;
+  z-index: -1;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The objects whose shadows sit inside them are layers of their own, so the shadow stays under them. */
+.cameo,
+.tag,
+.stackCard,
+.letter,
+.sealFace,
+.rollTop,
+.rollBottom,
+.envelopeLayer {
+  isolation: isolate;
+}
+
+/* The scroll's paper's shadow: the window's size, stretched down as the paper comes. */
+.paperShadow {
+  position: absolute;
+  top: calc(var(--roll-h) * 0.5);
+  left: calc((1 - var(--paper-share)) * 50% - var(--paper-share) * 100% * 0.14);
+  z-index: 0;
+  width: calc(var(--paper-share) * 100% * 1.28);
+  height: calc(var(--paper-h) + var(--roll-h) * 0.95 + var(--paper-share) * var(--scroll-w) * 0.28);
+  max-width: none;
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* A rose corner tucked over an object's edge: its own soft shadow is painted in. */
+.objCorner {
+  position: absolute;
+  z-index: 3;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* A quarter of the corner hangs outside the object, by the corner's own size, whatever the object's height. */
+.objCornerTop {
+  top: 0;
+  right: 0;
+  translate: 24% -24%;
+}
+
+/* Turned round: its flowers at the bottom left. */
+.objCornerFoot {
+  bottom: 0;
+  left: 0;
+  translate: -24% 24%;
+  rotate: 180deg;
+}
+
+/* On the scroll, at the ends of the rolls. */
+.rollCorner.objCornerTop {
+  translate: 14% -30%;
+}
+
+.rollCorner.objCornerFoot {
+  translate: -14% 30%;
+}
+
+/* Over every card of the stack. */
+.stackCorner {
+  z-index: 40;
+}
+
+/* ───────────────────────── The names in foil ───────────────────────── */
+
+/* Rose gold, from deep to champagne, filled into the letters. */
+.foil {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.foilFill {
+  background-image: linear-gradient(
+    172deg,
+    #6b2b36 0%,
+    #8e4850 34%,
+    #ad7262 58%,
+    #c4946f 74%,
+    #8c4a4e 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/*
+  The light across the name: `.shimmer` a slanted window the size of the
+  name, masked to a soft band; `.shimmerCopy` the name again inside it, in
+  pale champagne. The window crosses by a transform and the copy goes back by
+  as much, so only the band of light on the letters is seen. 1.3s of an 8s
+  cycle, the first as the page's names arrive.
+*/
+.shimmerClip {
+  position: absolute;
+  inset: -0.3em 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shimmer {
+  position: absolute;
+  inset: 0.3em 0;
+  opacity: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 38%, #000 50%, transparent 62%);
+  mask-image: linear-gradient(90deg, transparent 38%, #000 50%, transparent 62%);
+}
+
+.shimmerCopy {
+  position: absolute;
+  inset: 0;
+  color: #fff3e2;
+  -webkit-text-fill-color: #fff3e2;
+}
+
+@keyframes gm-shimmer-window {
+  0% {
+    opacity: 0;
+    transform: translate3d(-75%, 0, 0) skewX(-18deg);
+  }
+  1% {
+    opacity: 0.9;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  16.25% {
+    opacity: 0;
+    transform: translate3d(75%, 0, 0) skewX(-18deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(75%, 0, 0) skewX(-18deg);
+  }
+}
+
+@keyframes gm-shimmer-copy {
+  0% {
+    transform: skewX(18deg) translate3d(75%, 0, 0);
+  }
+  16.25% {
+    transform: skewX(18deg) translate3d(-75%, 0, 0);
+  }
+  100% {
+    transform: skewX(18deg) translate3d(-75%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-gm-entered] .shimmer,
+  .coverOpening .shimmer {
+    animation: gm-shimmer-window 8s linear 1600ms infinite;
+    will-change: transform;
+  }
+
+  [data-gm-entered] .shimmerCopy,
+  .coverOpening .shimmerCopy {
+    animation: gm-shimmer-copy 8s linear 1600ms infinite;
+    will-change: transform;
+  }
+}
+
+/* ───────────────────────── Satin buttons ───────────────────────── */
+
+/* A tiny rose-gold rose, clasped on a button's top edge. (Swipe up is placed on its own.) */
+.stackButton,
+.calendarButton {
+  position: relative;
+}
+
+.satin::before,
+.calendarButton::before {
+  content: "";
+  position: absolute;
+  top: -0.45rem;
+  left: 50%;
+  z-index: 1;
+  width: 1.7rem;
+  height: 0.9rem;
+  translate: -50% 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 18'%3E%3Cpath d='M1 10h8M25 10h8' stroke='%23b76e79' stroke-width='1.1' stroke-linecap='round'/%3E%3Cpath d='M10 12.5c-2 1.4-4 1.6-6 .6M24 12.5c2 1.4 4 1.6 6 .6' fill='none' stroke='%2397505c' stroke-width='1' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='9' r='6.2' fill='%23f1d2cd' stroke='%23b76e79' stroke-width='1.1'/%3E%3Cpath d='M17 9m-3 0a3 3 0 1 1 3 3a1.8 1.8 0 1 1-1.8-1.8a0.9 0.9 0 1 1 .9.9' fill='none' stroke='%2397505c' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  pointer-events: none;
+}
+
+/* Ivory satin, with a thin rose-gold edge: a sheen across its top half, a soft shade under it. */
+.satin,
+.calendarButton > div > button {
+  border-radius: 999px;
+  color: var(--gm-wine) !important;
+  background:
+    linear-gradient(
+      180deg,
+      #fffbf6 0%,
+      #fbefe7 42%,
+      #f1ddd2 58%,
+      #f9ece4 100%
+    ) !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(183 110 121 / 0.9),
+    inset 0 0 0 3px rgb(255 251 246 / 0.75),
+    inset 0 0 0 4px rgb(183 110 121 / 0.3),
+    0 0.35rem 0.8rem rgb(20 4 8 / 0.35) !important;
+  border-color: transparent !important;
+}
+
+.satin:focus-visible,
+.calendarButton > div > button:focus-visible {
+  outline: 2px solid #fbf3ee;
+  outline-offset: 3px;
+}
+
+.calendarButton {
+  display: inline-block;
+}
+
+/* ───────────────────────── On the velvet ───────────────────────── */
+
+/* Words set straight on the velvet: ivory over a soft dark shadow. Last, so it wins over each one's own colour. */
+.onVelvet {
+  color: #fbf3ee;
+  text-shadow:
+    0 1px 2px rgb(30 6 12 / 0.6),
+    0 0 0.75rem rgb(30 6 12 / 0.4);
 }

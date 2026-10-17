@@ -11,6 +11,7 @@ import { cardCopy } from "@/lib/cardLanguage";
 import { coupleOf, familyBlocks, type FamilyBlock } from "@/lib/cardSections";
 import { ART, TAG_ASPECT, TAG_BOX, TAG_PIVOT } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { Foil, Shadow } from "@/templates/gulab-mahal/Decor";
 import GulabPage from "@/templates/gulab-mahal/Page";
 import { scriptLeading, type GulabFonts } from "@/templates/gulab-mahal/shared";
 import { fitInside } from "@/templates/gulab-mahal/useFitInside";
@@ -30,7 +31,7 @@ const KICK: Keyframe[] = [
 ];
 
 /* A name's largest size, as a share of the tag's type, and how small it may go on one line before both may take two. */
-const NAME_MAX = 1.6;
+const NAME_MAX = 1.92;
 const ONE_LINE_FLOOR = 0.62;
 const TWO_LINE_FLOOR = 0.4;
 /* What a name is measured at; any size will do, as width goes with size. */
@@ -93,9 +94,11 @@ function useNamesAlike(parts: RefObject<TagParts[]>, key: string): void {
 
       if (named.length > 0 && room > 0) {
         /* The size each name fits one line at, and the size its longest word fits at. */
-        const oneLine = named.map((name) => (room / Math.max(1, widthOf(name.textContent ?? "", name))) * MEASURE_PX);
+        /* The name itself, from its mark: the element holds it twice, for its light. */
+        const textOf = (name: HTMLElement): string => name.dataset.name ?? name.textContent ?? "";
+        const oneLine = named.map((name) => (room / Math.max(1, widthOf(textOf(name), name))) * MEASURE_PX);
         const longestWord = named.map((name) => {
-          const words = (name.textContent ?? "").split(/\s+/).filter((word) => word.length > 0);
+          const words = textOf(name).split(/\s+/).filter((word) => word.length > 0);
           const widest = Math.max(1, ...words.map((word) => widthOf(word, name)));
           return (room / widest) * MEASURE_PX;
         });
@@ -181,6 +184,7 @@ function Tag({
         >
           <span aria-hidden="true" className={styles.tagRibbon} />
           <div className={styles.tag} style={{ aspectRatio: String(TAG_ASPECT) }}>
+            <Shadow src={ART.shadow.tag} aspect={TAG_ASPECT} className={side === "right" ? styles.tagArtTurned : ""} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={ART.coupleTag}
@@ -213,10 +217,11 @@ function Tag({
                     ref={(element) => {
                       register.name = element;
                     }}
+                    data-name={person.name}
                     className={`${styles.script} ${styles.tagName}`}
                     style={{ ...fonts.names, lineHeight: scriptLeading(language) }}
                   >
-                    {person.name}
+                    <Foil text={person.name} />
                   </h3>
                 ) : null}
                 {person.parents !== null ? (
@@ -253,7 +258,8 @@ function Tag({
  * on it, under its roses and inside its border (TAG_BOX, measured off the
  * picture), the name in wine script, "Son of" or "Daughter of" and the
  * parents, and the home town if there is one. The two names are set at one
- * size (useNamesAlike); a name with nothing under it is set in the middle.
+ * size (useNamesAlike), in rose-gold foil; a name with nothing under it is set
+ * in the middle. Each tag has its soft shadow under it, swinging with it.
  *
  * THE SWING, about the top of each ribbon: the tags drop in from above on a
  * spring and swing to rest; at rest they sway by about two degrees, out of
@@ -291,7 +297,7 @@ export default function GulabTagsPage({
   }
 
   return (
-    <GulabPage label={copy.family.heading} images={[ART.coupleTag]}>
+    <GulabPage label={copy.family.heading} images={[ART.coupleTag, ART.shadow.tag]} variant={2}>
       <div
         className={styles.tags}
         style={{ "--tag-aspect": String(TAG_ASPECT), "--tag-pivot": String(TAG_PIVOT) } as CSSProperties}
@@ -301,7 +307,7 @@ export default function GulabTagsPage({
             <Tag person={people[0]} side="left" order={0} language={language} fonts={fonts} register={parts.current[0]} />
             <span
               aria-hidden="true"
-              className={`${styles.tagsAnd} ${styles.lineUp}`}
+              className={`${styles.tagsAnd} ${styles.onVelvet} ${styles.lineUp}`}
               style={{ ...fonts.names, "--gm-delay": "700ms" } as CSSProperties}
             >
               &amp;

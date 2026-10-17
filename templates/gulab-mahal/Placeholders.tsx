@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { ART } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { Corners } from "@/templates/gulab-mahal/Decor";
 import GulabPage from "@/templates/gulab-mahal/Page";
 import { gulabCopy, type GulabFonts } from "@/templates/gulab-mahal/shared";
 import type { CardLanguage } from "@/types/card";
@@ -26,6 +27,7 @@ export function GulabSheet({
 }): ReactElement {
   return (
     <div className={`${styles.sheet} ${styles.rise}`}>
+      <Corners size={0.26} />
       <h2
         className={styles.script}
         style={{ ...fonts.names, fontSize: "2.25rem", lineHeight: 1.3 }}
@@ -74,7 +76,7 @@ export function GulabVenuePage({
   const title = gulabCopy(language).pages.venue;
 
   return (
-    <GulabPage label={title}>
+    <GulabPage label={title} variant={4}>
       <GulabSheet title={title} fonts={fonts}>
         <p>{draft.venueName}</p>
         <p className="opacity-80">{draft.venueAddress}</p>
@@ -96,7 +98,7 @@ export function GulabDetailsPage({
   const title = gulabCopy(language).pages.details;
 
   return (
-    <GulabPage label={title}>
+    <GulabPage label={title} variant={5}>
       <GulabSheet title={title} fonts={fonts}>
         {children}
       </GulabSheet>

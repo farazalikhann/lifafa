@@ -11,7 +11,8 @@
 const DIR = "/templates/gulab-mahal";
 
 export const ART = {
-  ground: `${DIR}/gulab-bg.webp`,
+  /* The velvet every page and the cover are set on: one file, decoded once, shown a different way on each page. */
+  velvet: `${DIR}/velvet-bg.webp`,
   envelopeBody: `${DIR}/envelope-body.webp`,
   envelopeFlap: `${DIR}/envelope-flap.webp`,
   seal: `${DIR}/seal-rose.webp`,
@@ -29,18 +30,51 @@ export const ART = {
   eventCard: `${DIR}/event-card.webp`,
   letterPaper: `${DIR}/letter-paper.webp`,
   envelope: `${DIR}/envelope-rsvp.webp`,
+  /* Each object's soft shadow, made from its own outline by scripts/gulab-shadows.mjs. */
+  shadow: {
+    envelope: `${DIR}/shadow-envelope-body.webp`,
+    seal: `${DIR}/shadow-seal-rose.webp`,
+    roll: `${DIR}/shadow-scroll-roll.webp`,
+    paper: `${DIR}/shadow-scroll-paper.webp`,
+    tag: `${DIR}/shadow-couple-tag.webp`,
+    eventCard: `${DIR}/shadow-event-card.webp`,
+    cameo: `${DIR}/shadow-cameo-frame.webp`,
+    letter: `${DIR}/shadow-letter-paper.webp`,
+  },
 } as const;
+
+/*
+  Where an object's shadow goes, as CSS for an absolutely placed picture in the
+  object's own box: the shadow picture is the object's outline with PAD of its
+  width added on every side (scripts/gulab-shadows.mjs uses the same PAD), set
+  `drop` of the object's width lower, so it falls beneath and a little below.
+*/
+const SHADOW_PAD = 0.14;
+
+export function shadowBox(
+  aspect: number,
+  drop = 0.035,
+): { left: string; width: string; top: string; height: string } {
+  const percent = (share: number): string => `${(share * 100).toFixed(2)}%`;
+
+  return {
+    left: percent(-SHADOW_PAD),
+    width: percent(1 + SHADOW_PAD * 2),
+    top: percent((-SHADOW_PAD + drop) * aspect),
+    height: percent(1 + SHADOW_PAD * 2 * aspect),
+  };
+}
 
 /** The petals' own sizes, width over height, as cut. */
 export const PETAL_ASPECT: readonly number[] = [184 / 209, 230 / 257, 305 / 316, 277 / 297];
 
 /**
- * What the cover waits for before it shows: the damask and the rose corner it
- * is set on, the envelope's three pictures, the letter that comes out of it
+ * What the cover waits for before it shows: the velvet and the rose corners
+ * it is set with, the envelope's three pictures, the letter that comes out of it
  * and the four petals the seal bursts into, and nothing of the card's. (The fonts are waited for by the shell.)
  */
 export const COVER_IMAGES: readonly string[] = [
-  ART.ground,
+  ART.velvet,
   ART.corner,
   ART.envelopeBody,
   ART.envelopeFlap,

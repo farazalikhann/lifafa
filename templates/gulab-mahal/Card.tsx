@@ -146,7 +146,7 @@ export default function GulabMahalCard(props: TemplateCardProps): ReactElement {
           The pages, under the name the printed copy looks for: it measures
           this box and zooms it to fit the paper, as it does every card's.
         */}
-        <div className="lifafa-card-content relative z-10">
+        <div className="lifafa-card-content relative">
           <GulabNamesPage draft={draft} config={config} language={language} fonts={fonts} />
 
           {/* The scroll is this card's own reveal: the host's scratch panels are not used here. */}

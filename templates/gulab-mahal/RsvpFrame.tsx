@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { ART } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { Corners } from "@/templates/gulab-mahal/Decor";
 import GulabPage from "@/templates/gulab-mahal/Page";
 
 /**
@@ -22,9 +23,11 @@ export default function GulabRsvpFrame({
     <GulabPage
       label="RSVP"
       images={[ART.letterPaper, ART.envelope]}
+      variant={6}
       className={`${styles.palette} py-10`}
     >
       <div className={`${styles.sheet} ${styles.rise} !gap-0 !px-0 !py-4`}>
+        <Corners size={0.26} />
         <div className="w-full">{children}</div>
       </div>
     </GulabPage>

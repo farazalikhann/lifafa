@@ -4,6 +4,7 @@ import type { CSSProperties, ReactElement } from "react";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardLanguage } from "@/lib/cardLanguage";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { Corners } from "@/templates/gulab-mahal/Decor";
 import GulabPage from "@/templates/gulab-mahal/Page";
 import { gulabCopy, gulabFonts } from "@/templates/gulab-mahal/shared";
 import type { CardConfig } from "@/types/card";
@@ -26,8 +27,9 @@ export default function GulabClosing({
   const thanks = gulabCopy(language).pages.thanks;
 
   return (
-    <GulabPage label={thanks} className={styles.palette}>
+    <GulabPage label={thanks} className={styles.palette} variant={7}>
       <div className={`${styles.sheet} ${styles.rise}`}>
+        <Corners size={0.26} />
         <h2
           className={styles.script}
           style={{ ...fonts.names, fontSize: "2.75rem", lineHeight: 1.3 }}
