@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  useLayoutEffect,
   useRef,
   type CSSProperties,
   type ReactElement,
   type ReactNode,
-  type RefObject,
 } from "react";
 import { preload } from "react-dom";
 import {
@@ -20,6 +18,7 @@ import { dateRevealOf } from "@/lib/royalScroll";
 import { ART, CAMEO_BOX, CAMEO_LINES } from "@/templates/gulab-mahal/art";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
 import GulabPage from "@/templates/gulab-mahal/Page";
+import { useFitInside } from "@/templates/gulab-mahal/useFitInside";
 import {
   gulabCopy,
   scriptLeading,
@@ -27,67 +26,6 @@ import {
 } from "@/templates/gulab-mahal/shared";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
-
-/* How small the words may be set to fit the oval, as a share of their full size, and the step down. */
-const FIT_FLOOR = 0.5;
-const FIT_STEP = 0.04;
-
-/**
- * Sets the words inside the oval as large as fits, and no larger.
- *
- * Every size in the words is in `em`, so one font size on `words` scales the
- * lot: stepped down from full size until they are no taller and no wider than
- * the box, which keeps a long pair of names, or the taller lines of
- * Devanagari, on the satin and off the roses. Before the first paint, and
- * again when the box changes size or the fonts arrive; never while anything
- * moves.
- */
-function useFitInside(
-  box: RefObject<HTMLElement | null>,
-  words: RefObject<HTMLElement | null>,
-  key: string,
-): void {
-  useLayoutEffect(() => {
-    const outer = box.current;
-    const inner = words.current;
-
-    if (outer === null || inner === null) {
-      return;
-    }
-
-    let live = true;
-
-    const fit = (): void => {
-      if (!live) {
-        return;
-      }
-
-      let scale = 1;
-      inner.style.fontSize = "1em";
-
-      while (
-        scale > FIT_FLOOR &&
-        (inner.scrollHeight > outer.clientHeight ||
-          inner.scrollWidth > outer.clientWidth)
-      ) {
-        scale = Math.max(FIT_FLOOR, scale - FIT_STEP);
-        inner.style.fontSize = `${scale}em`;
-      }
-    };
-
-    fit();
-
-    const observer =
-      typeof ResizeObserver === "function" ? new ResizeObserver(fit) : null;
-    observer?.observe(outer);
-    void document.fonts?.ready.then(fit);
-
-    return () => {
-      live = false;
-      observer?.disconnect();
-    };
-  }, [box, words, key]);
-}
 
 /** One line of the words, fading up in its turn once the frame has settled. */
 function Line({
@@ -135,7 +73,7 @@ function Line({
  * date is left off a card whose host hides it behind a scratch panel, which
  * this would otherwise give away.
  *
- * THE ENTRANCE, once, as the rose hands over: the cameo rises and settles on
+ * THE ENTRANCE, once, as the envelope hands over: the cameo rises and settles on
  * a soft spring, the corners come in from their own corners, then the lines
  * fade up one by one, the names last.
  */
@@ -150,7 +88,7 @@ export default function GulabNamesPage({
   language: CardLanguage;
   fonts: GulabFonts;
 }): ReactElement {
-  /* The first thing seen as the rose fades; fetched early, though the cover does not wait on it. */
+  /* The first thing seen as the letter fades; fetched early, though the cover does not wait on it. */
   preload(ART.cameo, { as: "image", fetchPriority: "high" });
   preload(ART.corner, { as: "image" });
 

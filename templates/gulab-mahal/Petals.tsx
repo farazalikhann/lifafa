@@ -18,7 +18,7 @@ import styles from "@/templates/gulab-mahal/gulab.module.css";
  * 400px, no more.
  *
  * Mounted once page 2 has arrived (a little after the cover lets the card
- * go), so nothing falls through the bloom. Each petal is one element falling
+ * go), so nothing falls through the opening. Each petal is one element falling
  * along a path planned here a whole fall at a time, a few seconds of
  * waypoints with a sway and a turn, handed to the Web Animations API, which
  * runs it on the compositor; when it lands, the next fall is planned from a

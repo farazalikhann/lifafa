@@ -31,7 +31,7 @@ export interface GulabFonts {
   /** Sentences: the pair's text face. */
   body: CSSProperties;
   /**
-   * The italic lines (the invitation, "Tap the rose to open"): Lora's own
+   * The italic lines (the invitation line, the prompt under the envelope): Lora's own
    * italic, which is loaded, rather than a slanted copy of an upright face.
    * Devanagari has no italic and is set upright in the pair's text face.
    */
@@ -64,6 +64,17 @@ export function gulabFonts(fontPairId: FontPairId): GulabFonts {
             fontStyle: "italic",
           },
   };
+}
+
+/** Runs `run` once the browser has a moment, or soon; returns how to call it off. */
+export function whenIdle(run: () => void): () => void {
+  if (typeof window.requestIdleCallback === "function") {
+    const handle = window.requestIdleCallback(run, { timeout: 600 });
+    return () => window.cancelIdleCallback(handle);
+  }
+
+  const handle = window.setTimeout(run, 200);
+  return () => window.clearTimeout(handle);
 }
 
 /** Script lines sit taller in Devanagari, whose marks reach above and below the line. */

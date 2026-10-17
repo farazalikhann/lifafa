@@ -45,7 +45,7 @@ const FRAME_HEIGHT = 620;
  * THE ORDER IS THE TEMPLATE'S, NOT `config.blocks`': a stack of pages reads as
  * one story, and its order is part of the design.
  *
- *   1  the opening         the rose blooms: the cover, Cover.tsx
+ *   1  the opening         the envelope and its seal: the cover, Cover.tsx
  *   2  the names           in the rose cameo
  *   3  the date            the scroll and the countdown
  *   4  the couple          their tags

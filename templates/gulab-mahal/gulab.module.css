@@ -236,125 +236,266 @@
   transform: rotate(45deg);
 }
 
-/* ───────────────────────── Page 1: the rose blooms ───────────────────────── */
+/* ───────────────────────── Page 1: the envelope ───────────────────────── */
 
 /* The cover's ground: the card's blush as velvet, with no picture to wait for. */
 .coverGround {
   position: absolute;
   inset: 0;
-  /* Its own layer while the cover waits, so its fade at the hand-over paints nothing. */
-  will-change: opacity;
   background-color: var(--gm-blush, #e9bdbb);
   background-image:
-    radial-gradient(120% 70% at 50% 42%, rgb(255 236 238 / 0.55), rgb(255 236 238 / 0) 62%),
+    radial-gradient(120% 70% at 50% 45%, rgb(255 236 238 / 0.55), rgb(255 236 238 / 0) 62%),
     linear-gradient(160deg, #edc6c4 0%, #e3aeae 55%, #d79c9f 100%);
+  /* Its own layer while the cover waits, so its fade at the hand-over paints nothing. */
+  will-change: opacity;
 }
 
 /*
-  The rose, 45% of the screen across (of the phone column on a wide one),
-  centred a little above the middle. `--rose` is its width, which everything
-  in the bloom is sized from.
+  The envelope and the prompt under it. Placed by its box, never by a
+  transform, so the layout the opening is measured from is the layout seen.
+  The envelope's middle is a little above the screen's.
 */
-.bloom {
-  --rose: min(45vw, 13.5rem, 30svh);
-
+.envelopePlace {
   position: absolute;
-  top: 46%;
-  left: 50%;
-  width: var(--rose);
-  translate: -50% -50%;
+  inset-inline: 0;
+  top: calc(47% - min(84vw, 25rem) * 0.3039);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* The rose-gold glow behind it: a soft disc, which costs nothing to move. */
-.bloomGlow {
-  position: absolute;
-  inset: -38%;
-  border-radius: 50%;
-  background-image: radial-gradient(
-    closest-side,
-    rgb(240 196 170 / 0.85),
-    rgb(214 150 140 / 0.42) 48%,
-    rgb(183 110 121 / 0) 100%
-  );
-  opacity: 0.8;
-  will-change: opacity;
+@keyframes gm-envelope-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.45rem, 0);
+  }
 }
 
-.bloomRose {
+/* The gentle bob while it waits; held where it is at the tap. */
+.envelopeBob {
+  position: relative;
+  animation: gm-envelope-bob 3.4s ease-in-out infinite;
+}
+
+/*
+  The envelope's body, which every layer is placed in by shares of it: 84% of
+  the screen across, at most 25rem, sized by width alone so that the screen
+  growing as the browser's bars go moves nothing. Leaning 4 degrees at rest;
+  the opening brings it upright.
+*/
+.envelope {
+  position: relative;
+  width: min(84vw, 25rem);
+  transform: rotate(-4deg);
+  will-change: transform;
+}
+
+.envelopeLayer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+
+.envelopeArt {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   max-width: none;
   user-select: none;
+}
+
+/* The flap turns about its top edge in real perspective, seen from the envelope's middle. */
+.flapHinge {
+  position: absolute;
+  inset: 0;
+  perspective: calc(min(84vw, 25rem) * 2.4);
+  perspective-origin: 50% 0;
+}
+
+.flap {
+  position: absolute;
+  transform-origin: 50% 0;
   will-change: transform, opacity;
 }
 
+.flapArt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/* The flap's back: the same picture, turned over by its own rotation and darkened. */
+.flapBack {
+  filter: brightness(0.8) saturate(0.92);
+}
+
 /*
-  A petal: centred on the rose by `translate`, and moved only by `transform`,
-  which its animation writes. Behind the rose until it opens out.
+  The letter's sleeve; see SLEEVE in Cover.tsx. Its foot a hair above the
+  envelope's, whose bottom edge is soft: the letter never shows through it.
 */
-.bloomPetal {
+.sleeve {
+  position: absolute;
+  bottom: 1%;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.letter {
+  position: absolute;
+  height: auto;
+  will-change: transform;
+}
+
+.letterFace {
+  position: absolute;
+  inset: 0;
+  will-change: opacity;
+}
+
+.letterArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/*
+  Where the names go on the letter: under the roses in its top left corner,
+  which reach 40% down at their edge and half across at their top, and above
+  the pocket once the letter has risen.
+*/
+.letterNames {
+  position: absolute;
+  top: 33%;
+  bottom: 42%;
+  left: 12%;
+  right: 12%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(min(84vw, 25rem) * 0.74 * 0.052);
+}
+
+.letterName {
+  max-width: 100%;
+  color: var(--gm-wine, #5a1e2b);
+  font-size: 2em;
+}
+
+.letterAnd {
+  color: var(--gm-rose-gold, #b76e79);
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+/* The seal: its middle on the flap's tip, a little up the flap. */
+.sealPlace {
+  position: absolute;
+  translate: -50% -60%;
+}
+
+/* A soft rose-gold glow behind the seal, breathing slowly while the envelope waits. */
+.sealGlow {
+  position: absolute;
+  inset: -30%;
+  will-change: opacity;
+}
+
+@keyframes gm-seal-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.sealGlowPulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: radial-gradient(
+    closest-side,
+    rgb(255 214 190 / 0.9),
+    rgb(226 160 140 / 0.45) 50%,
+    rgb(183 110 121 / 0) 100%
+  );
+  animation: gm-seal-glow 3.2s ease-in-out infinite;
+}
+
+/* A petal of the burst, full size and hidden behind the seal until the crack. */
+.burstPetal {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--w);
   height: auto;
   max-width: none;
   translate: -50% -50%;
-  transform-origin: 50% 50%;
   will-change: transform, opacity;
   user-select: none;
 }
 
-/* The ivory plate the rose becomes: engraved rose gold on ivory, in a fine rose-gold ring. */
-.plate {
+.sealPress {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 80%;
-  aspect-ratio: 1;
-  margin: -40% 0 0 -40%;
-  border-radius: 50%;
-  background-image:
-    radial-gradient(circle at 36% 30%, #fffdf9 0%, #fbf3ec 45%, #efdcd0 100%);
-  box-shadow:
-    0 0 0 calc(var(--rose) * 0.012) #c88a90,
-    0 0 0 calc(var(--rose) * 0.03) #f6e6dd,
-    0 0 0 calc(var(--rose) * 0.038) #b76e79,
-    inset 0 calc(var(--rose) * 0.01) calc(var(--rose) * 0.04) rgb(90 30 43 / 0.16),
-    0 calc(var(--rose) * 0.05) calc(var(--rose) * 0.12) rgb(90 30 43 / 0.25);
-  /* Invisible but painted, so its rings and shadows are drawn, and their GPU programs built, before the tap. */
-  opacity: 0.01;
+  inset: 0;
+  will-change: transform;
+}
+
+.sealFace {
+  position: absolute;
+  inset: 0;
   will-change: transform, opacity;
 }
 
-/* Pressed into the ivory: lit below, shaded above. */
-.monogram {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.08em;
-  color: #b76e79;
-  font-size: calc(var(--rose) * 0.25);
-  line-height: 1.3;
-  text-shadow:
-    0 1px 0 rgb(255 255 255 / 0.9),
-    0 -1px 0 rgb(122 58 71 / 0.4);
+/* A half, waiting at 1% over the whole seal: painted, and unseen until the crack. */
+.sealHalf {
+  opacity: 0.01;
 }
 
-.monogramAnd {
-  font-size: 0.42em;
-  color: #97505c;
+.sealArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+  filter: drop-shadow(0 0.25rem 0.4rem rgb(90 30 43 / 0.3));
+}
+
+/* The initials, engraved: a deeper copper, lit below and shaded above. */
+.sealMark {
+  position: absolute;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.06em;
+  translate: -50% -50%;
+  color: #8f4b3f;
+  font-size: calc(min(84vw, 25rem) * 0.27 * 0.2);
+  line-height: 1.3;
+  text-align: center;
+  text-shadow:
+    0 1px 0 rgb(255 226 210 / 0.65),
+    0 -1px 0 rgb(80 34 26 / 0.45);
+}
+
+.sealAnd {
+  font-size: 0.5em;
 }
 
 .coverPrompt {
-  position: absolute;
-  top: calc(46% + min(45vw, 13.5rem, 30svh) * 0.5 + max(2.25rem, 5svh));
-  inset-inline: 1.5rem;
-  margin: 0;
+  margin: max(1.75rem, 4svh) 1.5rem 0;
   text-align: center;
   color: var(--gm-wine, #5a1e2b);
   font-size: 1.0625rem;
@@ -376,7 +517,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .coverPromptIdle {
+  .coverPromptIdle,
+  .envelopeBob,
+  .sealGlowPulse {
     animation: none;
   }
 }

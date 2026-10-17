@@ -15,24 +15,25 @@ import type { TemplateConfig } from "@/templates/types";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
 /**
- * The rose: the template's own cover, on every card in it.
+ * The envelope: the template's own cover, on every card in it.
  *
- * Built on the Rose Bloom the editor already offers, for its id (so a stored
- * card names a cover the database knows), its tick and its sound (the
- * breeze's petals: the nearest there is until this cover has its own), with
- * this template's own drawing and timings:
+ * Built on the envelope the editor already offers, for its id (so a stored
+ * card names a cover the database knows), its prompt ("Tap the seal to open",
+ * in both languages), its tick and its own sound, with this template's own
+ * drawing and timings:
  *
- *   2.6s in all. The card is let go under the cover at 1.7s, as the petals
- *   start to drift away and the blush ground to fade, which is `revealAt`.
+ *   2.8s in all. The card is let go under the cover at 2.15s, as the letter
+ *   that has grown across the screen starts to fade, which is `revealAt`.
  *   See Cover.tsx for the parts.
  *
- *   It waits for the rose and the four petals, and the fonts, and no longer
- *   than five seconds; the film the stock Rose Bloom plays is never fetched.
+ *   It waits for the envelope's three pictures, the letter and the four
+ *   petals, and the fonts, and no longer than five seconds; none of the films
+ *   or drawings the stock envelope falls back to are fetched.
  *
- *   The prompt is lettered by the cover itself, under the rose; the shell
+ *   The prompt is lettered by the cover itself, under the envelope; the shell
  *   sets only "You are invited" over it.
  */
-const BLOOM = getCoverAnimation("rose-bloom");
+const ENVELOPE = getCoverAnimation("envelope-seal");
 const COVER_ART = {
   images: COVER_IMAGES,
   timeoutMs: 5000,
@@ -43,14 +44,9 @@ const COVER_ART = {
 };
 
 const COVER_OPTION: CoverAnimationOption = {
-  ...BLOOM,
-  openPromptText: {
-    en: "Tap the rose to open",
-    /* TODO(Faraz): verify this Hindi line with a native reader before launch. */
-    hi: "खोलने के लिए गुलाब को छुएँ",
-  },
-  durationMs: 2600,
-  revealAt: 1700 / 2600,
+  ...ENVELOPE,
+  durationMs: 2800,
+  revealAt: 2150 / 2800,
   burstAt: undefined,
   wordsOn: "visual",
   art: () => COVER_ART,
@@ -60,7 +56,8 @@ const COVER_OPTION: CoverAnimationOption = {
 /**
  * Gulab Mahal: rose and velvet, a card of full-screen pages.
  *
- * A rose blooms open into a plate with the couple's initials, onto a stack of
+ * A blush envelope under a rose-gold seal cracks open and gives up a letter
+ * with the couple's names, onto a stack of
  * pages that a swipe moves through one at a time, each with an entrance of
  * its own, over blush damask with rose petals drifting down behind them. Its
  * Card and its Cover are loaded on demand, so a guest of any other template
@@ -83,7 +80,7 @@ export const GULAB_MAHAL: TemplateConfig = {
   id: "gulab-mahal",
   name: "Gulab Mahal",
   description:
-    "A rose that blooms open, and a card of full-screen pages in blush velvet and rose gold.",
+    "A blush envelope under a rose-gold seal, and a card of full-screen pages in blush velvet.",
   /* Only for which sample wedding its demo shows: the Premium Collection has no chips. */
   category: "hindu",
   categoryLabel: "For every wedding",
@@ -120,7 +117,7 @@ export const GULAB_MAHAL: TemplateConfig = {
     butterflies: "none",
     leaves: false,
     petals: "none",
-    coverAnimation: "rose-bloom",
+    coverAnimation: "envelope-seal",
     traditionId: "none",
     dateReveal: "simple",
   },

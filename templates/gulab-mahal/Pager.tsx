@@ -10,6 +10,7 @@ import {
 import { useCardStill } from "@/hooks/useCardStill";
 import { useRevealGate } from "@/hooks/useRevealGate";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
+import { whenIdle } from "@/templates/gulab-mahal/shared";
 
 /**
  * The paging: Gulab Mahal is a stack of full-screen pages, one swipe each.
@@ -31,7 +32,7 @@ import styles from "@/templates/gulab-mahal/gulab.module.css";
  *   each page's share of the screen. A page 60% on screen (or covering 60%
  *   of the screen, for one taller than it) is marked `data-gm-entered`, once,
  *   which is what plays its entrance; held until the cover lets the card go
- *   (useRevealGate), so page 2 arrives as the rose hands over. A page with
+ *   (useRevealGate), so page 2 arrives as the envelope hands over. A page with
  *   nothing of it on screen is marked `data-floating-paused`, which holds
  *   every CSS loop inside it (globals.css).
  *
@@ -61,17 +62,6 @@ function scrollBoxOf(element: HTMLElement): HTMLElement | null {
   }
 
   return null;
-}
-
-/** Once the browser has a moment, or soon. */
-function whenIdle(run: () => void): () => void {
-  if (typeof window.requestIdleCallback === "function") {
-    const handle = window.requestIdleCallback(run, { timeout: 600 });
-    return () => window.cancelIdleCallback(handle);
-  }
-
-  const handle = window.setTimeout(run, 200);
-  return () => window.clearTimeout(handle);
 }
 
 export default function GulabPager({
