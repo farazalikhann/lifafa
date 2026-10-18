@@ -6,7 +6,7 @@ import type { DesignState } from "@/lib/designDefaults";
 import type { Theme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
-import type { CardBorderStyle, CardSectionId, Scene } from "@/types/card";
+import type { CardBorderStyle, CardLanguage, CardSectionId, Scene } from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 import type { TraditionId } from "@/types/occasion";
 import type { FontPairId, PaletteId } from "@/types/style";
@@ -134,8 +134,16 @@ export interface TemplateConfig {
    * does are the page's and are not replaceable.
    */
   page?: {
-    /** What the reply form, the confirmation and the pass are put on. */
-    RsvpFrame: ComponentType<{ children: ReactNode }>;
+    /**
+     * What the reply form, the confirmation and the pass are put on, told
+     * which of them it is showing, for a frame that draws the change from one
+     * to the other.
+     */
+    RsvpFrame: ComponentType<{
+      children: ReactNode;
+      stage?: "form" | "confirmed";
+      language?: CardLanguage;
+    }>;
     /** The theme those three are drawn in, on that. */
     rsvpTheme: (theme: Theme) => Theme;
     /** In place of the card's closing note, after the reply form. */

@@ -31,6 +31,9 @@ export const ART = {
   letterPaper: `${DIR}/letter-paper.webp`,
   envelope: `${DIR}/envelope-rsvp.webp`,
   venueArch: `${DIR}/venue-arch.webp`,
+  box: `${DIR}/box-empty.webp`,
+  lid: `${DIR}/lid.webp`,
+  bow: `${DIR}/bow.webp`,
   /* Each object's soft shadow, made from its own outline by scripts/gulab-shadows.mjs. */
   shadow: {
     envelope: `${DIR}/shadow-envelope-body.webp`,
@@ -42,6 +45,7 @@ export const ART = {
     cameo: `${DIR}/shadow-cameo-frame.webp`,
     letter: `${DIR}/shadow-letter-paper.webp`,
     arch: `${DIR}/shadow-venue-arch.webp`,
+    box: `${DIR}/shadow-box-empty.webp`,
   },
 } as const;
 
@@ -200,6 +204,24 @@ export const EVENT_CARD_BOX = { top: 0.27, bottom: 0.08, side: 0.1 } as const;
 export const ARCH_ASPECT = 640 / 981;
 export const ARCH_PANEL = { top: 0.215, bottom: 0.055, side: 0.19 } as const;
 export const ARCH_WORDS = { top: 0.33, bottom: 0.13, side: 0.245 } as const;
+
+/*
+  The gift box (page 9), measured off its pictures, all three 900 across but
+  the bow: the open box (900x499) has its front rim 240 down; the lid
+  (900x445) sits with its front band's foot 40 below that rim, so 165 above
+  the box's top; the bow (700x608, 45% of the box across) has its knot a
+  third of the way down it, on the middle of the lid's top. In shares of the
+  box's width.
+*/
+export const BOX_ASPECT = 900 / 499;
+export const GIFT = {
+  lidTop: -165 / 900,
+  lidHeight: 445 / 900,
+  bowWidth: 0.45,
+  bowTop: (-165 + 157) / 900 - 0.45 * (608 / 700) * 0.33,
+  /* The opening, where the petals come from: the middle of the rim. */
+  openingY: 120 / 900,
+} as const;
 
 /** The letter's own shape (800x1064). */
 export const LETTER_ASPECT = 800 / 1064;

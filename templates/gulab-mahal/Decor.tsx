@@ -14,9 +14,16 @@ import styles from "@/templates/gulab-mahal/gulab.module.css";
  * is off the screen, and not played under reduced motion. The copy is hidden
  * from screen readers, which read the name once.
  */
-export function Foil({ text }: { text: string }): ReactElement {
+export function Foil({
+  text,
+  light = false,
+}: {
+  text: string;
+  /** Champagne to pale gold, for a name set straight on the velvet rather than on ivory. */
+  light?: boolean;
+}): ReactElement {
   return (
-    <span className={styles.foil}>
+    <span className={`${styles.foil} ${light ? styles.foilLight : ""}`}>
       <span className={styles.foilFill}>{text}</span>
       <span aria-hidden="true" className={styles.shimmerClip}>
         <span className={styles.shimmer}>

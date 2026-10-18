@@ -1532,6 +1532,26 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* On the velvet: champagne to pale gold, with a soft dark edge so it reads. */
+.foilLight .foilFill {
+  background-image: linear-gradient(
+    172deg,
+    #fff4e6 0%,
+    #f3d7bd 38%,
+    #e5b896 62%,
+    #f8e3cc 100%
+  );
+  filter: none;
+}
+
+.foilLight {
+  text-shadow: none;
+}
+
+.foilLight::after {
+  content: none;
+}
+
 /*
   The light across the name: `.shimmer` a slanted window the size of the
   name, masked to a soft band; `.shimmerCopy` the name again inside it, in
@@ -1898,6 +1918,336 @@
 @media (prefers-reduced-motion: reduce) {
   .archWords {
     animation-duration: 160ms;
+  }
+}
+
+/* ───────────────────────── Page 8: the reply on a letter ───────────────────────── */
+
+.replyPage {
+  /* Room at the top for the language switch over the line that follows a sent reply. */
+  padding-block: 5.5rem 3rem;
+  /* The envelope waits below and flies off above: never past the page. */
+  overflow: clip;
+}
+
+/* The lid tipping off to the side, and the petals: never past the page. */
+.thanksPage {
+  overflow: clip;
+}
+
+/* After the letter has gone: on the velvet, in the script. */
+.onItsWay {
+  margin-bottom: 1.25rem;
+  font-family: var(--font-parisienne), var(--font-hi-tillana), cursive;
+  font-size: 2.1rem;
+  line-height: 1.3;
+  text-align: center;
+  animation: gm-fade 600ms ease-out both;
+}
+
+.replyLetter {
+  position: relative;
+  z-index: 1;
+  width: min(92cqw, 27rem);
+  transform-origin: 50% 0;
+  container-type: inline-size;
+}
+
+/* The confirmation and the pass, coming up on the letter. */
+@keyframes gm-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.replyArrive {
+  animation: gm-arrive 700ms var(--gm-spring) both;
+}
+
+/* The letter's paper: the heading to the right of the roses, the form below them. */
+.replySheet {
+  padding: 12cqw 5cqw 8cqw 8cqw;
+}
+
+.replyForm {
+  color: var(--gm-wine);
+}
+
+/* The card's own form, set on the letter: its own box's padding and width given up to the paper's. */
+.replyForm section {
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+.replyForm h2 {
+  display: flex;
+  min-height: 40cqw;
+  align-items: center;
+  justify-content: center;
+  margin-left: 30cqw;
+  font-size: 9cqw !important;
+  font-weight: 400 !important;
+  line-height: 1.25;
+}
+
+/* Fields as fine rose-gold lines on the paper, not boxes. */
+.replyForm input,
+.replyForm textarea {
+  border: 0 !important;
+  border-bottom: 1px solid rgb(151 80 92 / 0.65) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding-inline: 0.2rem !important;
+  box-shadow: none !important;
+  color: var(--gm-wine) !important;
+}
+
+.replyForm input:focus,
+.replyForm textarea:focus {
+  outline: none !important;
+  border-bottom: 2px solid var(--gm-wine) !important;
+}
+
+.replyForm label {
+  color: var(--gm-wine-soft) !important;
+}
+
+/* The three replies, as pills with a rose-gold edge; the chosen one filled. */
+.replyForm button[aria-pressed] {
+  border-radius: 999px !important;
+}
+
+.replyForm button[aria-pressed="false"] {
+  border-color: rgb(183 110 121 / 0.7) !important;
+  background: rgb(255 251 246 / 0.55) !important;
+}
+
+/* Send, in ivory satin with its rose clasp. */
+.replyForm section > button {
+  position: relative;
+  border-radius: 999px !important;
+  color: var(--gm-wine) !important;
+  background:
+    linear-gradient(180deg, #fffbf6 0%, #fbefe7 42%, #f1ddd2 58%, #f9ece4 100%) !important;
+  border: 0 !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(183 110 121 / 0.9),
+    inset 0 0 0 3px rgb(255 251 246 / 0.75),
+    inset 0 0 0 4px rgb(183 110 121 / 0.3),
+    0 0.35rem 0.8rem rgb(20 4 8 / 0.25) !important;
+}
+
+.replyForm section > button:disabled {
+  opacity: 0.55;
+}
+
+.replyForm section > button::before {
+  content: "";
+  position: absolute;
+  top: -0.45rem;
+  left: 50%;
+  width: 1.7rem;
+  height: 0.9rem;
+  translate: -50% 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 18'%3E%3Cpath d='M1 10h8M25 10h8' stroke='%23b76e79' stroke-width='1.1' stroke-linecap='round'/%3E%3Cpath d='M10 12.5c-2 1.4-4 1.6-6 .6M24 12.5c2 1.4 4 1.6 6 .6' fill='none' stroke='%2397505c' stroke-width='1' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='9' r='6.2' fill='%23f1d2cd' stroke='%23b76e79' stroke-width='1.1'/%3E%3Cpath d='M17 9m-3 0a3 3 0 1 1 3 3a1.8 1.8 0 1 1-1.8-1.8a0.9 0.9 0 1 1 .9.9' fill='none' stroke='%2397505c' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  pointer-events: none;
+}
+
+/* The envelope the letter is sent in, below the letter, out of sight until then. */
+.post {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14%;
+  z-index: 2;
+  width: min(80cqw, 22rem);
+  margin-inline: auto;
+  transform: translate3d(0, 120vh, 0);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.postEnvelope {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  filter: none;
+  box-shadow: 0 0.8rem 1.6rem rgb(20 4 8 / 0.35);
+  border-radius: 0.25rem;
+}
+
+.postSeal {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: 22%;
+  height: auto;
+  max-width: none;
+  opacity: 0;
+}
+
+/* ───────────────────────── Page 9: thank you, with a gift ───────────────────────── */
+
+.thanksWords {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100% - 3rem);
+  margin-bottom: 2.75rem;
+  text-align: center;
+}
+
+.thanksHeading {
+  font-size: min(15cqw, 3.6rem);
+}
+
+.thanksLine {
+  max-width: 24rem;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.thanksNames {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+/* The box, with room above for its lid and bow. */
+.gift {
+  width: min(70cqw, 19rem);
+  padding-top: calc(min(70cqw, 19rem) * 0.2);
+}
+
+.giftBox {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--box-aspect);
+  container-type: inline-size;
+  isolation: isolate;
+}
+
+.giftArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+.giftLid {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  max-width: none;
+  user-select: none;
+  transform-origin: 70% 100%;
+  will-change: transform, opacity;
+}
+
+.giftBow {
+  position: absolute;
+  height: auto;
+  max-width: none;
+  user-select: none;
+  will-change: transform, opacity;
+}
+
+.giftRain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.giftPetal {
+  position: absolute;
+  height: auto;
+  max-width: none;
+  opacity: 0;
+  transform: translate3d(-50%, 0, 0);
+  will-change: transform, opacity;
+}
+
+@keyframes gm-gift-bow {
+  to {
+    opacity: 0;
+    transform: scale(1.18) translate3d(0, -6%, 0);
+  }
+}
+
+@keyframes gm-gift-lid {
+  0% {
+    transform: none;
+  }
+  40% {
+    opacity: 1;
+    transform: translate3d(4%, -46%, 0) rotate(-5deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(70%, -30%, 0) rotate(24deg);
+  }
+}
+
+@keyframes gm-gift-petal {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, 0, 0) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  38% {
+    transform: translate3d(calc(-50% + var(--drift) * 0.45), var(--rise), 0) rotate(calc(var(--turn) * 0.35));
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-50% + var(--drift)), var(--fall), 0) rotate(var(--turn));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-gm-entered] .giftBow {
+    animation: gm-gift-bow 600ms ease-out 250ms both;
+  }
+
+  [data-gm-entered] .giftLid {
+    animation: gm-gift-lid 1300ms cubic-bezier(0.45, 0, 0.2, 1) 600ms both;
+  }
+
+  [data-gm-entered] .giftPetal {
+    animation: gm-gift-petal 1900ms cubic-bezier(0.3, 0.2, 0.5, 1) var(--gm-delay, 0ms) both;
+  }
+}
+
+/* Under 400px, eight petals rather than twelve. */
+@media (max-width: 399.98px) {
+  .giftPetalExtra {
+    display: none;
+  }
+}
+
+/* Less motion: the box is open from the start, and nothing falls. */
+@media (prefers-reduced-motion: reduce) {
+  .giftLid,
+  .giftBow,
+  .giftPetal {
+    display: none;
+  }
+
+  .replyArrive {
+    animation: gm-fade 300ms ease-out both;
   }
 }
 

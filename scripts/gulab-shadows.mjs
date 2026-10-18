@@ -34,6 +34,7 @@ const OBJECTS = [
   ["cameo-frame", 0.045],
   ["letter-paper", 0.045],
   ["venue-arch", 0.035],
+  ["box-empty", 0.04],
 ];
 
 for (const [name, softness] of OBJECTS) {

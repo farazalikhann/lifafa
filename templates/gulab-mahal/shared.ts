@@ -102,6 +102,8 @@ interface GulabCopy {
   viewOnMap: string;
   /** Page 7: the host's note's heading. */
   noteHeading: string;
+  /** Page 8, once the letter has gone. */
+  onItsWay: string;
   /** What each page is called, for its dot and its placeholder. */
   pages: {
     date: string;
@@ -127,6 +129,7 @@ const COPY: Readonly<Record<CardLanguage, GulabCopy>> = {
     venueHeading: "Venue",
     viewOnMap: "View on map",
     noteHeading: "A Note for You",
+    onItsWay: "Your reply is on its way",
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -148,6 +151,7 @@ const COPY: Readonly<Record<CardLanguage, GulabCopy>> = {
     venueHeading: "स्थल",
     viewOnMap: "नक्शे पर देखें",
     noteHeading: "आपके लिए संदेश",
+    onItsWay: "आपका उत्तर रवाना हो गया है",
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",
@@ -166,12 +170,21 @@ export function gulabCopy(language: CardLanguage): GulabCopy {
 
 /**
  * The theme the reply form is drawn in on this card: ivory letter paper, wine
- * ink, rose gold for its marks. The form sets every colour it has from the
+ * ink, rose gold for its marks, and its headings in the card's script. The form sets every colour it has from the
  * theme it is handed, so this is all that puts it on the paper.
  */
 export function letterTheme(theme: Theme): Theme {
+  /*
+    The letter's headings in the pair's script: its display face is the
+    pair's heading stack, `var(--pair-<id>-heading)`, beside which every pair
+    has its names stack under the same id.
+  */
+  const script = theme.displayFontFamily?.replace("-heading)", "-names)");
+
   return {
     ...theme,
+    displayFontFamily: script ?? theme.displayFontFamily,
+    displayFontWeight: 400,
     background: "#F7EAE4",
     surface: IVORY,
     accent: ROSE_GOLD_DEEP,

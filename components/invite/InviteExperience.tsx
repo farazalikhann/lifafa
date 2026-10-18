@@ -264,10 +264,16 @@ export default function InviteExperience({
   */
   const templatePage = template.page;
   const replyTheme = templatePage?.rsvpTheme(cardTheme) ?? cardTheme;
-  const onPaper = (panel: ReactElement): ReactElement => {
+  /*
+    The frame is told which of the two it is showing, the form or the
+    confirmation, for a template that draws the change between them (a
+    letter sent off in an envelope). Presentation only: what a reply does is
+    decided here and nowhere else.
+  */
+  const onPaper = (panel: ReactElement, shows: "form" | "confirmed"): ReactElement => {
     const Frame = templatePage?.RsvpFrame;
 
-    return Frame === undefined ? panel : <Frame>{panel}</Frame>;
+    return Frame === undefined ? panel : <Frame stage={shows} language={language}>{panel}</Frame>;
   };
   const TemplateClosing = templatePage?.Closing;
 
@@ -623,6 +629,7 @@ export default function InviteExperience({
               }
             />
             </BorderInset>,
+            "confirmed",
           ) : ended && config.rsvpEnabled ? (
             /*
               Where the reply form was, once the event is over: the card is a
@@ -649,6 +656,7 @@ export default function InviteExperience({
               isSending={isSending}
               submitError={submitErrorText}
             />,
+            "form",
           ) : null}
 
           {/*
