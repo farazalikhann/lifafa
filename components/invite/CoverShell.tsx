@@ -682,6 +682,15 @@ export default function CoverShell({
       });
     });
 
+    /* Whatever the cover itself must ask for inside the gesture (see `onTap`). */
+    if (!reducedMotion && option.onTap !== undefined) {
+      try {
+        option.onTap();
+      } catch {
+        /* The cover opens without it. */
+      }
+    }
+
     if (sounds) {
       /*
         The audio context is built here, inside the gesture, in silence: the
@@ -708,6 +717,7 @@ export default function CoverShell({
     burstAt,
     durationMs,
     option.haptic,
+    option.onTap,
     option.sound,
     reducedMotion,
     revealAt,

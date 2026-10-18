@@ -1,0 +1,1134 @@
+/*
+  Sheesh Mahal's own styles. One palette: midnight indigo, antique gold,
+  mirror silver, ivory and the warm orange of a diya, all fixed to the
+  artwork.
+
+  Everything that moves here moves by transform and opacity alone. Every
+  loop inside a room is held by [data-floating-paused] (globals.css), which
+  the pager sets on a room while its page is off the screen.
+*/
+
+/* ───────────────────────── Palette ───────────────────────── */
+
+/* On the card's root, and on the two pages the guest's page draws after it (the reply and the thanks). */
+.palette {
+  --sm-indigo: #0e1030;
+  --sm-ink: #181c4a;
+  --sm-gold: #c9a45c;
+  --sm-gold-deep: #7e5f24;
+  --sm-silver: #d9dee8;
+  --sm-ivory: #f8f1e3;
+  --sm-ivory-muted: #d8cdb8;
+  --sm-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  /* Below the guest page's language switch and the music button. */
+  --sm-top-safe: calc(max(12px, env(safe-area-inset-top)) + 4.25rem);
+
+  color: var(--sm-ivory);
+}
+
+.root {
+  position: relative;
+  /* A room grown to 1.6 is clipped by its own page; nothing may ever widen the page. */
+  overflow-x: clip;
+}
+
+/* The night under every room: indigo, a little lighter at its middle. */
+.ground {
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 45%, #1a1d4a 0%, #0e1030 60%, #080920 100%),
+    #0e1030;
+}
+
+.groundFixed {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+}
+
+.groundPinned {
+  position: sticky;
+  top: 0;
+  z-index: -10;
+  height: var(--sm-band);
+  margin-bottom: calc(-1 * var(--sm-band));
+}
+
+/* ───────────────────────── Pages: the rooms ───────────────────────── */
+
+/*
+  ONE ROOM A PAGE, ONE SWIPE A ROOM. Each page is a screen tall and a stop
+  the snapping document cannot skip (Pager.tsx sets the snapping). What is on
+  it is its room, in two boxes:
+
+    .pin    held on the screen while its page goes by: moved down as the page
+            moves up, exactly, by the page's own view timeline, so the room
+            does not scroll at all. It clips what is inside it to the screen.
+    .zoom   the camera: a room arriving comes up from 0.85 and nothing to 1;
+            one being left grows to 1.6 and fades, as if walked through.
+
+  Both are driven by the scroll itself, on the compositor, with nothing in
+  script. A browser without scroll timelines leaves the rooms where they are
+  in the flow and fades each in as it arrives (below), and so does the
+  printed copy.
+*/
+.page {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: calc(var(--sm-screen, 100svh) - var(--lifafa-preview-h, 0px));
+  margin-inline: auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* A page that may be taller than a screen (the reply form): it scrolls in the flow, unpinned. */
+.pageFlow {
+  height: auto;
+  min-height: calc(var(--sm-screen, 100svh) - var(--lifafa-preview-h, 0px));
+}
+
+.pin,
+.zoom {
+  position: absolute;
+  inset: 0;
+}
+
+.pin {
+  overflow: clip;
+}
+
+.room {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--sm-indigo);
+  /* Everything in a room is sized from its own width, so it is right in a preview's narrow box too. */
+  container-type: inline-size;
+}
+
+.pageFlow .room {
+  position: relative;
+  inset: auto;
+  min-height: inherit;
+  overflow: visible;
+}
+
+@keyframes sm-pin {
+  from {
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+/*
+  Arriving, the room is whole by 42% of its way in, so the one it replaces,
+  which is under it, is never left fading into the night alone; leaving, it
+  has gone by 85% of its way out.
+*/
+@keyframes sm-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  42% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  85% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* Less motion: the same rooms, crossfading in place. */
+@keyframes sm-fade {
+  0% {
+    opacity: 0;
+  }
+  42%,
+  50% {
+    opacity: 1;
+  }
+  85%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .page {
+    view-timeline: --sm-page block;
+    /* Under the host's preview strip, where there is one (0 for every guest). */
+    view-timeline-inset: var(--lifafa-preview-h, 0px) 0px;
+  }
+
+  .pin {
+    animation: sm-pin linear both;
+    animation-timeline: --sm-page;
+    animation-range: cover 0% cover 100%;
+    will-change: transform;
+    /* An empty box held over the screen: it must never be what a tap lands on. */
+    pointer-events: none;
+  }
+
+  .zoom {
+    animation: sm-zoom linear both;
+    animation-timeline: --sm-page;
+    animation-range: cover 0% cover 100%;
+    will-change: transform, opacity;
+    /* Every room is held over the screen; only the one being read takes a tap. */
+    pointer-events: none;
+  }
+
+  .page[data-sm-current] .zoom {
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zoom {
+      animation-name: sm-fade;
+    }
+  }
+}
+
+/* No scroll timelines: each room fades in once, as it arrives. */
+@supports not (animation-timeline: view()) {
+  .zoom {
+    opacity: 0.01;
+    transition: opacity 700ms ease-out;
+  }
+
+  .page[data-sm-entered] .zoom {
+    opacity: 1;
+  }
+}
+
+/* The printed copy, and a card laid out as a picture of itself: every room as it rests. */
+.still .pin,
+.still .zoom {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+
+/* A page two or more away from the one on screen is not drawn until it comes near. */
+.page[data-sm-far] {
+  content-visibility: auto;
+}
+
+/* One whose height is its own is held at the height it last had, or a screen before it ever had one. */
+.pageFlow[data-sm-far] {
+  contain-intrinsic-size: auto calc(var(--sm-screen, 100svh) - var(--lifafa-preview-h, 0px));
+}
+
+/* The last stop: the foot of the guest's page, under whatever the page puts after the card. */
+.snapEnd {
+  height: 1px;
+  margin-top: -1px;
+  scroll-snap-align: end;
+  pointer-events: none;
+}
+
+/* ───────────────────────── A room's picture ───────────────────────── */
+
+/* Covering the room. */
+.roomArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* Set on the night, whole: a frame, a scroll, a lantern. */
+.roomObject {
+  position: absolute;
+  top: 56%;
+  left: 50%;
+  width: min(74cqw, 22rem);
+  max-height: 64%;
+  translate: -50% -50%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* ───────────────────────── Entrances ───────────────────────── */
+
+/*
+  Each page's words arrive once, when 60% of the page is on the screen (the
+  pager marks it `data-sm-entered`); `--sm-delay` staggers them. Never quite
+  0 before: a browser does not paint what is wholly transparent, and a line
+  first painted mid-swipe is a dropped frame.
+*/
+.lineUp {
+  opacity: 0.01;
+  transform: translate3d(0, 0.7rem, 0);
+  transition:
+    opacity 650ms ease-out var(--sm-delay, 0ms),
+    transform 900ms var(--sm-spring) var(--sm-delay, 0ms);
+}
+
+[data-sm-entered] .lineUp {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lineUp {
+    transform: none;
+    transition: opacity 400ms ease-out;
+  }
+}
+
+/* ───────────────────────── Type ───────────────────────── */
+
+/* Small spaced capitals. Devanagari has no capitals and is never spaced. */
+.caps {
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  text-transform: uppercase;
+}
+
+.caps:lang(hi) {
+  letter-spacing: 0;
+  padding-left: 0;
+  text-transform: none;
+}
+
+/* Words set straight on the night, over a soft dark shadow that never moves. */
+.onNight {
+  color: var(--sm-ivory);
+  text-shadow:
+    0 1px 2px rgb(4 5 20 / 0.85),
+    0 0 14px rgb(4 5 20 / 0.6);
+}
+
+/* A room's heading, below the page's buttons. */
+.roomHeading {
+  position: absolute;
+  top: var(--sm-top-safe);
+  left: 1.5rem;
+  right: 1.5rem;
+  z-index: 2;
+  margin: 0;
+  font-size: clamp(2rem, 11cqw, 3rem);
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* ───────────────────────── Gold foil, and its light ───────────────────────── */
+
+/* Antique gold, from deep to champagne, filled into the letters. */
+.foil {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* Its shadow on the night: the name again, unseen, casting only its shadow; never moving. */
+.foilShade {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0 1px 2px rgb(4 5 20 / 0.95),
+    0 0 12px rgb(4 5 20 / 0.55);
+  white-space: inherit;
+  pointer-events: none;
+}
+
+.foilFill {
+  position: relative;
+  background-image: linear-gradient(
+    172deg,
+    #f7e7b4 0%,
+    #e2c27c 30%,
+    #b98a3e 55%,
+    #e9cf8e 78%,
+    #a87a34 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/*
+  The light across the name (Emerald Shahi's): a slanted window the size of
+  the name, masked to a soft band, crossing by a transform while the name's
+  pale copy inside it goes back by as much, so only the band of light on the
+  letters is seen. 1.3s of an 8s cycle, the first as the names arrive; held
+  off screen and not played under reduced motion.
+*/
+.shimmerClip {
+  position: absolute;
+  inset: -0.3em 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shimmer {
+  position: absolute;
+  inset: 0.3em 0;
+  opacity: 0;
+  transform: translate3d(-75%, 0, 0) skewX(-18deg);
+  -webkit-mask-image: linear-gradient(90deg, transparent 38%, #000 50%, transparent 62%);
+  mask-image: linear-gradient(90deg, transparent 38%, #000 50%, transparent 62%);
+}
+
+.shimmerCopy {
+  position: absolute;
+  inset: 0;
+  color: #fffbea;
+  -webkit-text-fill-color: #fffbea;
+  white-space: inherit;
+}
+
+@keyframes sm-shimmer-window {
+  0% {
+    opacity: 0;
+    transform: translate3d(-75%, 0, 0) skewX(-18deg);
+  }
+  1% {
+    opacity: 0.85;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  16.25% {
+    opacity: 0;
+    transform: translate3d(75%, 0, 0) skewX(-18deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(75%, 0, 0) skewX(-18deg);
+  }
+}
+
+@keyframes sm-shimmer-copy {
+  0% {
+    transform: skewX(18deg) translate3d(75%, 0, 0);
+  }
+  16.25% {
+    transform: skewX(18deg) translate3d(-75%, 0, 0);
+  }
+  100% {
+    transform: skewX(18deg) translate3d(-75%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-sm-entered] .shimmer {
+    animation: sm-shimmer-window 8s linear 1500ms infinite;
+    will-change: transform;
+  }
+
+  [data-sm-entered] .shimmerCopy {
+    animation: sm-shimmer-copy 8s linear 1500ms infinite;
+    will-change: transform;
+  }
+}
+
+/* ───────────────────────── The glints ───────────────────────── */
+
+/*
+  The layer slides a few pixels against the phone's tilt and each of its four
+  groups brightens or dims (Glints.tsx); each glint twinkles at its own pace.
+*/
+.glints {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.glintGroup {
+  position: absolute;
+  inset: 0;
+  opacity: 0.85;
+}
+
+.glintPlace {
+  position: absolute;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+/* A four-pointed star: a bright point and two thin rays, painted once. */
+.glint,
+.glintFlash {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #fff 0 8%, rgb(255 252 240 / 0.95) 14%, rgb(255 246 225 / 0.35) 26%, rgb(255 244 220 / 0) 44%),
+    radial-gradient(50% 5% at 50% 50%, #fff, rgb(255 255 255 / 0)),
+    radial-gradient(5% 50% at 50% 50%, #fff, rgb(255 255 255 / 0));
+}
+
+.glint {
+  opacity: 0.25;
+  transform: scale(0.45);
+  animation: sm-twinkle var(--tw, 4s) ease-in-out var(--tw-at, 0s) infinite;
+}
+
+@keyframes sm-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.35) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(22deg);
+  }
+}
+
+/* The ripple's warmer, larger star, waiting at 1%. */
+.glintFlash {
+  inset: -70%;
+  background:
+    radial-gradient(circle, #fffaf0 0 6%, rgb(255 214 140 / 0.9) 12%, rgb(255 180 80 / 0) 34%),
+    radial-gradient(50% 4% at 50% 50%, rgb(255 236 200 / 0.95), rgb(255 236 200 / 0)),
+    radial-gradient(4% 50% at 50% 50%, rgb(255 236 200 / 0.95), rgb(255 236 200 / 0));
+  opacity: 0.01;
+  transform: scale(0.2);
+}
+
+@media (max-width: 399.98px) {
+  .glintExtra {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glint {
+    animation: none;
+    opacity: 0.55;
+    transform: scale(0.7);
+  }
+}
+
+/* ───────────────────────── Page 1: the cover ───────────────────────── */
+
+.cover {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Indigo, and the wall again, darkened, beyond the wall on a wide screen. */
+.coverGround {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgb(14 16 48 / 0.78), rgb(14 16 48 / 0.78)),
+    url("/templates/sheesh-mahal/wall.webp") center bottom / cover no-repeat,
+    #0e1030;
+  will-change: opacity;
+}
+
+/* The hall, in exactly the box page 2 gives its room. */
+.coverHallColumn {
+  position: absolute;
+  top: var(--lifafa-preview-h, 0px);
+  left: 50%;
+  width: min(100%, 30rem);
+  height: calc(100svh - var(--lifafa-preview-h, 0px));
+  translate: -50% 0;
+  overflow: hidden;
+}
+
+.coverHall {
+  position: absolute;
+  inset: 0;
+  transform: scale(1.15);
+  transform-origin: 50% 60%;
+  will-change: transform, opacity;
+}
+
+/*
+  The wall's box: covering the screen, its doorway in the middle and its foot
+  on the screen's foot. On a wider screen it is held to 0.75 of the screen's
+  height across and the night is seen beyond it, so a laptop sees the
+  doorway's arch whole, not a close-up of the doors.
+*/
+.coverScene {
+  --wall-w: max(66.667dvh, min(100vw, 75dvh));
+
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - var(--wall-w) / 2);
+  width: var(--wall-w);
+  aspect-ratio: 2 / 3;
+  transform-origin: 50% 66%;
+  will-change: transform, opacity;
+}
+
+.doorStage {
+  position: absolute;
+  inset: 0;
+  perspective: calc(var(--wall-w) * 1.3);
+  perspective-origin: 50% 62%;
+}
+
+.door {
+  position: absolute;
+  will-change: transform;
+}
+
+.doorLeft {
+  transform-origin: 0% 50%;
+}
+
+.doorRight {
+  transform-origin: 100% 50%;
+}
+
+.doorArt,
+.wallArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/* The medallion on the seam, cut in two: each door carries its half. */
+.medallion {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  container-type: inline-size;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 58%, rgb(60 40 10 / 0.55) 59% 61%, transparent 62%),
+    radial-gradient(circle at 36% 30%, #fff1c4 0%, #e3c27a 28%, #b88d43 58%, #7a5822 86%, #563c14 100%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(255 236 190 / 0.55),
+    0 2px 4px rgb(10 6 2 / 0.6);
+  will-change: transform;
+}
+
+.medallionLeft {
+  clip-path: inset(-20% 50% -20% -20%);
+}
+
+.medallionRight {
+  clip-path: inset(-20% -20% -20% 50%);
+}
+
+.medallionMark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.04em;
+  font-size: 34cqw;
+  line-height: 1;
+  color: #4a3410;
+  text-shadow:
+    0 1px 0 rgb(255 240 200 / 0.6),
+    0 -0.5px 0 rgb(40 26 6 / 0.6);
+}
+
+.medallionAnd {
+  font-size: 0.62em;
+  opacity: 0.85;
+}
+
+/* The diya, at the foot, over the prompt. */
+.diyaPlace {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(3.5svh, 1.25rem) + 2.4rem);
+  z-index: 2;
+  width: clamp(7.5rem, 36vw, 12rem);
+  translate: -50% 0;
+  container-type: inline-size;
+}
+
+/* The warm glow that grows from the wick, over the wall. */
+.diyaGlow {
+  position: absolute;
+  width: 96vmin;
+  aspect-ratio: 1;
+  margin: -48vmin 0 0 -48vmin;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 184 90 / 0.5) 0%,
+    rgb(255 156 64 / 0.24) 30%,
+    rgb(255 130 40 / 0.08) 52%,
+    rgb(255 130 40 / 0) 70%
+  );
+  opacity: 0.01;
+  transform: scale(0.25);
+  will-change: transform, opacity;
+}
+
+.diya {
+  position: relative;
+  width: 100%;
+  will-change: transform, opacity;
+}
+
+.diyaArt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+/* The wick's tip: the flame stands on it, and its light may spill well outside the diya. */
+.wick {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.flameHalo {
+  position: absolute;
+  left: -24cqw;
+  top: -32cqw;
+  width: 48cqw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 214 130 / 0.7) 0%,
+    rgb(255 170 70 / 0.28) 38%,
+    rgb(255 150 50 / 0) 70%
+  );
+  opacity: 0.01;
+  transform: scale(0.3);
+}
+
+.flame {
+  position: absolute;
+  left: -3.4cqw;
+  bottom: -1.2cqw;
+  width: 6.8cqw;
+  height: 15cqw;
+  transform-origin: 50% 92%;
+  opacity: 0.01;
+  transform: scale(0.2);
+}
+
+.flameFlicker {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 92%;
+}
+
+.flameBody,
+.flameCore {
+  position: absolute;
+  border-radius: 50% 50% 50% 50% / 72% 72% 28% 28%;
+}
+
+.flameBody {
+  inset: 0;
+  background: radial-gradient(
+    ellipse 50% 62% at 50% 72%,
+    #fff7da 0%,
+    #ffd77e 30%,
+    #ff9d33 64%,
+    rgb(255 110 20 / 0) 100%
+  );
+}
+
+.flameCore {
+  left: 30%;
+  right: 30%;
+  top: 52%;
+  bottom: 6%;
+  background: radial-gradient(ellipse at 50% 70%, #fffef4 0%, rgb(255 250 225 / 0.6) 55%, rgb(255 240 200 / 0) 100%);
+}
+
+@keyframes sm-flicker {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+  22% {
+    opacity: 0.9;
+    transform: translate3d(-4%, 0, 0) scale(0.93, 1.07);
+  }
+  47% {
+    opacity: 1;
+    transform: translate3d(3%, 0, 0) scale(1.05, 0.95);
+  }
+  71% {
+    opacity: 0.88;
+    transform: translate3d(-2%, 0, 0) scale(0.96, 1.09);
+  }
+}
+
+.coverOpening .flameFlicker {
+  animation: sm-flicker 1.4s ease-in-out infinite;
+}
+
+/* Less motion: the tap lights the flame, still, as the cover crossfades away. */
+@media (prefers-reduced-motion: reduce) {
+  :global([data-phase="opening"]) .flame,
+  :global([data-phase="opening"]) .flameHalo {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.coverPrompt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(3.5svh, 1.25rem);
+  z-index: 3;
+  margin: 0;
+  padding-inline: 4.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--sm-ivory, #f8f1e3);
+  text-shadow:
+    0 1px 2px rgb(4 5 20 / 0.9),
+    0 0 12px rgb(4 5 20 / 0.75);
+}
+
+.coverPrompt:lang(hi) {
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.9375rem;
+}
+
+@keyframes sm-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.coverPromptIdle {
+  animation: sm-breathe 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coverPromptIdle {
+    animation: none;
+  }
+}
+
+/* ───────────────────────── Page 2: the names ───────────────────────── */
+
+/*
+  The words, inside the hall's dark oval, between 30% and 58% of its height:
+  `--names-w` is the oval's clear width, 0.56 of the picture as it covers a
+  page, never wider than the page allows.
+*/
+.namesBox {
+  --names-w: min(86cqw, (var(--sm-screen, 100svh) - var(--lifafa-preview-h, 0px)) * 0.37);
+
+  position: absolute;
+  top: 30%;
+  height: 28%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--names-w);
+  translate: -50% 0;
+  font-size: calc(var(--names-w) * 0.056);
+}
+
+.namesWords {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  text-align: center;
+}
+
+.inviteLine {
+  margin: 0;
+  font-size: 0.74em;
+  line-height: 1.5;
+  color: var(--sm-ivory-muted);
+}
+
+.inviteLine:lang(hi) {
+  font-size: 0.95em;
+}
+
+/* Each name on one line at the largest size that fits (`--fit`, NamesPage.tsx), two only if it must. */
+.nameLine {
+  margin: 0;
+  max-width: 100%;
+  font-size: calc(var(--fit, 1) * 3.2em);
+  white-space: nowrap;
+}
+
+.nameLine[data-wrap] {
+  white-space: normal;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.ampersand {
+  margin: -0.15em 0;
+  font-size: 1.5em;
+  line-height: 1;
+  color: var(--sm-gold);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9);
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 42%;
+  color: var(--sm-gold);
+}
+
+.rule::before,
+.rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.ruleMark {
+  width: 0.36em;
+  height: 0.36em;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.dateLine {
+  margin: 0;
+  font-size: 1em;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+}
+
+/* "Swipe up", at the foot of the names page, until the guest first scrolls. */
+.hint {
+  position: absolute;
+  bottom: max(1rem, 2.5svh);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.35rem 1.3rem 0.4rem;
+  translate: -50% 0;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  color: var(--sm-ivory);
+  background: rgb(14 16 48 / 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgb(201 164 92 / 0.85),
+    inset 0 0 0 3px rgb(14 16 48 / 0.6),
+    inset 0 0 0 4px rgb(201 164 92 / 0.3);
+  opacity: 0;
+  transition: opacity 600ms ease-out 1900ms;
+}
+
+[data-sm-entered] .hint {
+  opacity: 0.95;
+}
+
+.hint:focus-visible {
+  outline: 2px solid var(--sm-gold);
+  outline-offset: 3px;
+}
+
+@keyframes sm-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.35rem, 0);
+  }
+}
+
+.hintBob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  animation: sm-bob 2.2s ease-in-out infinite;
+}
+
+[data-sm-scrolled] .hint {
+  opacity: 0;
+  pointer-events: none;
+  transition-delay: 0ms;
+}
+
+[data-sm-scrolled] .hintBob {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hintBob {
+    animation: none;
+  }
+}
+
+/* ───────────────────────── The dots ───────────────────────── */
+
+/* Down the right edge of the screen, or of the phone column on a wide one. */
+.dots {
+  position: fixed;
+  top: 50%;
+  right: max(0.5rem, calc((100vw - 30rem) / 2 + 0.5rem));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+.dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #e9d39c;
+  box-shadow: 0 0 0.25rem rgb(4 5 20 / 0.7);
+  opacity: 0.4;
+  transition:
+    opacity 300ms ease-out,
+    transform 400ms var(--sm-spring, ease-out);
+}
+
+.dot[data-on] {
+  opacity: 1;
+  transform: scale(1.45);
+}
+
+/* ───────────────────────── Page 8: the reply, on the farmaan ───────────────────────── */
+
+.flowRoom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--sm-top-safe) - 1rem) 0 2.5rem;
+}
+
+/*
+  The farmaan, stretched as a three-slice: its top 19% (the rod and the top
+  ornaments) and its foot from 82% down kept at their own size, only the
+  plain paper between stretched, and never sideways. `--f-w` is its width.
+*/
+.farmaan {
+  --f-w: min(94cqw, 27rem);
+
+  box-sizing: border-box;
+  width: var(--f-w);
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(var(--f-w) * 0.2787) 0 calc(var(--f-w) * 0.264);
+  border-image: url("/templates/sheesh-mahal/farmaan.webp") 19% 0 18% fill stretch;
+  padding: 0 calc(var(--f-w) * 0.15);
+  color: var(--sm-ink);
+}
+
+/* The card's own form on the paper: its own box's margins given back to the paper's. */
+.farmaan > section {
+  padding: 0.25rem 0 0.5rem !important;
+}
+
+/* ───────────────────────── Page 9: thank you ───────────────────────── */
+
+@keyframes sm-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.6rem, 0);
+  }
+}
+
+.kandeel {
+  position: absolute;
+  top: calc(var(--sm-top-safe) + 0.5rem);
+  left: 50%;
+  width: min(38cqw, 11rem);
+  translate: -50% 0;
+  animation: sm-float 5s ease-in-out infinite;
+}
+
+.kandeel img {
+  display: block;
+  width: 100%;
+  user-select: none;
+}
+
+.thanksWords {
+  position: absolute;
+  top: 46%;
+  left: 1.75rem;
+  right: 1.75rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.thanksHeading {
+  margin: 0;
+  font-size: clamp(2.5rem, 14cqw, 3.5rem);
+}
+
+.thanksLine {
+  margin: 0;
+  max-width: 22rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.thanksNames {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--sm-gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kandeel {
+    animation: none;
+  }
+}

@@ -166,6 +166,13 @@ export interface CoverAnimationOption {
    * `navigator.vibrate` — and never under reduced motion. Absent for none.
    */
   haptic?: number;
+  /**
+   * Called inside the guest's tap itself, for a cover that must ask the
+   * browser for something only a gesture may ask for: the phone's tilt, on
+   * an iPhone. Never under reduced motion, and never allowed to stop the
+   * cover opening.
+   */
+  onTap?: () => void;
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
   /**

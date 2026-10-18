@@ -44,3 +44,5 @@ next-env.d.ts
 /marketing/
 # The six scene paintings as supplied; scripts/cut-scenes.mjs publishes them to public/decor/scenes/.
 /scenery/
+
+/sheesh mahal/

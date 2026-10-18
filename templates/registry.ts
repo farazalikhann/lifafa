@@ -12,6 +12,7 @@ import { LOTUS_BLUSH } from "@/templates/lotus-blush/config";
 import { MAROON_ROYAL } from "@/templates/maroon-royal/config";
 import { MIDNIGHT_LANTERN } from "@/templates/midnight-lantern/config";
 import { NIKAH_BLUSH } from "@/templates/nikah-blush/config";
+import { SHEESH_MAHAL } from "@/templates/sheesh-mahal/config";
 import { SHUBH_VIVAH_IVORY } from "@/templates/shubh-vivah-ivory/config";
 import type { TemplateConfig } from "@/templates/types";
 import type { TraditionId } from "@/types/occasion";
@@ -29,6 +30,8 @@ export { CLASSIC_TEMPLATE_ID };
 export const TEMPLATES: readonly TemplateConfig[] = [
   EMERALD_SHAHI,
   GULAB_MAHAL,
+  /* Unlisted while it is built; seen at /demo/sheesh-mahal. */
+  SHEESH_MAHAL,
   SHUBH_VIVAH_IVORY,
   MAROON_ROYAL,
   NIKAH_BLUSH,

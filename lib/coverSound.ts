@@ -47,7 +47,7 @@
  */
 
 /** Which recording a cover plays. One per cover that has anything to say. */
-export type CoverSoundId = "curtain" | "envelope" | "petal-dust" | "fold";
+export type CoverSoundId = "curtain" | "envelope" | "petal-dust" | "fold" | "sheesh-mahal";
 
 /** Served from public/, so the path is also the URL. */
 const RECORDINGS: Record<CoverSoundId, string> = {
@@ -55,6 +55,8 @@ const RECORDINGS: Record<CoverSoundId, string> = {
   envelope: "/sounds/envelope-open.mp3",
   "petal-dust": "/sounds/petal-dust-open.mp3",
   fold: "/sounds/fold-open.mp3",
+  /* Sheesh Mahal's own: the diya lit, the mirrors' chimes, the doors. */
+  "sheesh-mahal": "/sounds/sheesh-mahal-open.mp3",
 };
 
 /**
