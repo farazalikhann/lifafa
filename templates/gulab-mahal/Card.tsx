@@ -17,10 +17,11 @@ import GulabClosing from "@/templates/gulab-mahal/Closing";
 import GulabNamesPage from "@/templates/gulab-mahal/NamesPage";
 import GulabPager from "@/templates/gulab-mahal/Pager";
 import GulabPetals from "@/templates/gulab-mahal/Petals";
-import { GulabDetailsPage, GulabVenuePage } from "@/templates/gulab-mahal/Placeholders";
+import GulabDetailsPage from "@/templates/gulab-mahal/DetailsPage";
 import GulabScrollPage from "@/templates/gulab-mahal/ScrollPage";
 import GulabStackPage from "@/templates/gulab-mahal/StackPage";
 import GulabTagsPage from "@/templates/gulab-mahal/TagsPage";
+import GulabVenuePage from "@/templates/gulab-mahal/VenuePage";
 import styles from "@/templates/gulab-mahal/gulab.module.css";
 import { gulabFonts } from "@/templates/gulab-mahal/shared";
 import type { TemplateCardProps } from "@/templates/types";
@@ -53,9 +54,9 @@ const FRAME_HEIGHT = 620;
  *                          or here in a preview, which has no reply form
  *
  * Which of them a card has is still the host's: a section switched off in
- * `config.blocks`, or one with nothing to say, is not a page. Pages 3 to 9
- * are drawn (ScrollPage, TagsPage, StackPage); 6 and 7 are placeholders for
- * now (Placeholders.tsx).
+ * `config.blocks`, or one with nothing to say, is not a page. Pages 3 to 7
+ * are each their own file (ScrollPage, TagsPage, StackPage, VenuePage,
+ * DetailsPage); 8 and 9 are RsvpFrame and Closing.
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
  * same callers place it: the guest's page, the two previews and the printed
@@ -186,20 +187,13 @@ export default function GulabMahalCard(props: TemplateCardProps): ReactElement {
           ) : null}
 
           {hasDetails ? (
-            <GulabDetailsPage language={language} fonts={fonts}>
-              {contacts.map((contact) => (
-                <p key={contact.id}>
-                  {contact.label.length > 0 ? `${contact.label}: ` : ""}
-                  {contact.phone}
-                </p>
-              ))}
-              {custom.map((section) => (
-                <p key={section.id} className="font-semibold">
-                  {section.heading}
-                </p>
-              ))}
-              {note !== null ? <p className="italic text-balance">{note}</p> : null}
-            </GulabDetailsPage>
+            <GulabDetailsPage
+              contacts={contacts}
+              custom={custom}
+              note={note}
+              language={language}
+              fonts={fonts}
+            />
           ) : null}
 
           {/* The thanks end the card where nothing follows it; on the guest's page they follow the reply. */}

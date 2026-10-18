@@ -30,6 +30,7 @@ export const ART = {
   eventCard: `${DIR}/event-card.webp`,
   letterPaper: `${DIR}/letter-paper.webp`,
   envelope: `${DIR}/envelope-rsvp.webp`,
+  venueArch: `${DIR}/venue-arch.webp`,
   /* Each object's soft shadow, made from its own outline by scripts/gulab-shadows.mjs. */
   shadow: {
     envelope: `${DIR}/shadow-envelope-body.webp`,
@@ -40,6 +41,7 @@ export const ART = {
     eventCard: `${DIR}/shadow-event-card.webp`,
     cameo: `${DIR}/shadow-cameo-frame.webp`,
     letter: `${DIR}/shadow-letter-paper.webp`,
+    arch: `${DIR}/shadow-venue-arch.webp`,
   },
 } as const;
 
@@ -188,6 +190,16 @@ export const TAG_BOX = { top: 0.48, bottom: 0.07, side: 0.11 } as const;
 /** A function's card (800x1117): its roses reach 27% down its middle; its words go under them, inside its border. */
 export const EVENT_CARD_ASPECT = 800 / 1117;
 export const EVENT_CARD_BOX = { top: 0.27, bottom: 0.08, side: 0.1 } as const;
+
+/**
+ * The venue's garden arch (640x981): its opening, clear of its roses and the
+ * vines that hang from its crown, measured off the picture, is from 23% to
+ * 77% across and 32% to 88% down. The ivory panel fills a little more than
+ * that, behind the arch's posts; the words keep to WORDS.
+ */
+export const ARCH_ASPECT = 640 / 981;
+export const ARCH_PANEL = { top: 0.215, bottom: 0.055, side: 0.19 } as const;
+export const ARCH_WORDS = { top: 0.33, bottom: 0.13, side: 0.245 } as const;
 
 /** The letter's own shape (800x1064). */
 export const LETTER_ASPECT = 800 / 1064;

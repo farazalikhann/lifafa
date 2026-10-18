@@ -97,6 +97,11 @@ interface GulabCopy {
   /** "2 / 4", and what it says aloud. */
   counter: (at: number, of: number) => string;
   counterSpoken: (at: number, of: number) => string;
+  /** Page 6's heading, and its way to the map. */
+  venueHeading: string;
+  viewOnMap: string;
+  /** Page 7: the host's note's heading. */
+  noteHeading: string;
   /** What each page is called, for its dot and its placeholder. */
   pages: {
     date: string;
@@ -119,6 +124,9 @@ const COPY: Readonly<Record<CardLanguage, GulabCopy>> = {
     next: "Next",
     counter: (at, of) => `${at} / ${of}`,
     counterSpoken: (at, of) => `Celebration ${at} of ${of}`,
+    venueHeading: "Venue",
+    viewOnMap: "View on map",
+    noteHeading: "A Note for You",
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -137,6 +145,9 @@ const COPY: Readonly<Record<CardLanguage, GulabCopy>> = {
     next: "अगला",
     counter: (at, of) => `${at} / ${of}`,
     counterSpoken: (at, of) => `समारोह ${at}, कुल ${of}`,
+    venueHeading: "स्थल",
+    viewOnMap: "नक्शे पर देखें",
+    noteHeading: "आपके लिए संदेश",
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",

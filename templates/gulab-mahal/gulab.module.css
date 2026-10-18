@@ -1662,6 +1662,245 @@
   display: inline-block;
 }
 
+/* ───────────────────────── Page 6: the venue arch ───────────────────────── */
+
+/* A satin tab for each function, above the arch, when they are in different places. */
+.venueTabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 0.45rem;
+  max-width: calc(100% - 3rem);
+  margin-bottom: 1.1rem;
+}
+
+.venueTab {
+  position: relative;
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  font-size: 0.78rem;
+  opacity: 0.78;
+  transition: opacity 200ms ease-out;
+}
+
+.venueTab::before {
+  display: none;
+}
+
+/* The chosen one: wholly there, with the rose clasp on it. */
+.venueTab[data-on] {
+  opacity: 1;
+}
+
+.venueTab[data-on]::before {
+  display: block;
+}
+
+/*
+  The arch: as large as the page's height allows with room for the page dots,
+  the language switch and the tabs, and never wider than the page's 86%.
+*/
+.arch {
+  --arch-w: min(
+    86cqw,
+    25rem,
+    (var(--gm-screen, 100svh) - var(--lifafa-preview-h, 0px) - 7rem - var(--tabs-room, 0) * 6.5rem) *
+      var(--arch-aspect)
+  );
+
+  position: relative;
+  width: var(--arch-w);
+  aspect-ratio: var(--arch-aspect);
+  container-type: inline-size;
+}
+
+/* The ivory behind the arch's posts, a little see-through, its top rounded to the arch's own curve. */
+.archPanel {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50% 50% 1.1rem 1.1rem / 24% 24% 1.1rem 1.1rem;
+  background: rgb(251 244 238 / 0.84);
+  box-shadow: inset 0 0 0 1px rgb(183 110 121 / 0.35);
+}
+
+.archArt {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+.archBox {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes gm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The venue's words; a new tab's come in with a quick fade. */
+.archWords {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45em;
+  text-align: center;
+  color: var(--gm-wine);
+  font-size: 5cqw;
+  animation: gm-fade 260ms ease-out;
+}
+
+.archHeading {
+  font-size: 2.3em;
+}
+
+.archName {
+  max-width: 100%;
+  font-size: 1.15em;
+  line-height: 1.35;
+}
+
+.archAddress {
+  max-width: 100%;
+  font-size: 0.92em;
+  line-height: 1.45;
+  color: var(--gm-wine-soft);
+}
+
+.archMap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-top: 0.6em;
+  padding: 0 1.1rem;
+  font-size: max(0.8em, 0.8125rem);
+}
+
+/* ───────────────────────── Page 7: the details on letter paper ───────────────────────── */
+
+.detailsPage {
+  padding-block: 3.5rem;
+}
+
+/* One card, a little askew; the next slightly over its foot. */
+.paperCard {
+  position: relative;
+  width: min(84cqw, 22rem);
+  rotate: var(--paper-tilt, 0deg);
+  container-type: inline-size;
+}
+
+.paperCard + .paperCard {
+  margin-top: -1.25rem;
+}
+
+/* The paper's soft shadow, stretched with it. */
+.paperShadow2 {
+  position: absolute;
+  inset: -4% -12% -8%;
+  width: 124%;
+  height: 112%;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+  The paper, drawn round its words: letter-paper.webp cut into nine. Its top
+  44% (the roses in its corner) and its 4% border kept whole, its plain
+  middle stretched; measured off the picture (800x1064).
+*/
+.paperSheet {
+  position: relative;
+  min-height: 66cqw;
+  padding: 13cqw 8cqw 11cqw 13cqw;
+  border: 1px solid transparent;
+  border-image-source: url("/templates/gulab-mahal/letter-paper.webp");
+  border-image-slice: 470 40 60 40 fill;
+  border-image-width: 58.75cqw 5cqw 7.5cqw 5cqw;
+  border-image-repeat: stretch;
+  color: var(--gm-wine);
+}
+
+/* The heading to the right of the roses, and the words below them. */
+.paperHeading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 31cqw;
+  margin-left: 32cqw;
+  font-size: 8cqw;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+
+.paperBody {
+  font-size: 4.3cqw;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.paperText {
+  white-space: pre-line;
+}
+
+.paperNote {
+  font-size: 1.05em;
+}
+
+.contactList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1em;
+}
+
+.contactRow {
+  display: flex;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.contactCall {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
+  font-size: max(1em, 0.9rem);
+}
+
+.contactCall svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archWords {
+    animation-duration: 160ms;
+  }
+}
+
 /* ───────────────────────── On the velvet ───────────────────────── */
 
 /* Words set straight on the velvet: ivory over a soft dark shadow. Last, so it wins over each one's own colour. */
