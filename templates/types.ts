@@ -3,6 +3,7 @@ import type { StaticImageData } from "next/image";
 import type CardCanvas from "@/components/card/CardCanvas";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import type { DesignState } from "@/lib/designDefaults";
+import type { PrintLayout } from "@/lib/printCard";
 import type { Theme } from "@/lib/themes";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -163,6 +164,11 @@ export interface TemplateConfig {
    * are turned by the template itself.
    */
   print?: { background: string; textPrimary: string };
+  /**
+   * Which sheet of the printed copy each section goes on, for a card read in
+   * an order of its own; the shared grouping (lib/printCard.ts) otherwise.
+   */
+  printLayout?: PrintLayout;
   /**
    * Whether step 3 offers "scratch to reveal the countdown": a template that
    * draws its own countdown says whether it draws the scratch panels too.

@@ -120,7 +120,8 @@ export default async function PrintPage({
   const language = requestedLanguage(query.lang, event.config.language);
   const { draft, config } = cardInLanguage(event.draft, event.config, language);
   const copy = cardCopy(language);
-  const sheets = printSheets(draft, config);
+  /* In the template's own order where it reads in one; see `printLayout` on TemplateConfig. */
+  const sheets = printSheets(draft, config, getTemplate(config.templateId).printLayout);
   /* The page a sample lives on, which is not /i/<code>; null for a real invitation. */
   const samplePath = sampleEvent(inviteCode)?.path ?? null;
 

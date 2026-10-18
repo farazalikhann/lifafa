@@ -13,10 +13,12 @@ import {
 } from "@/lib/cardSections";
 import { effectiveTheme } from "@/lib/cardTheme";
 import { contactsOf, hasContacts } from "@/lib/contacts";
+import { useCardStill } from "@/hooks/useCardStill";
 import GulabClosing from "@/templates/gulab-mahal/Closing";
 import GulabNamesPage from "@/templates/gulab-mahal/NamesPage";
 import GulabPager from "@/templates/gulab-mahal/Pager";
 import GulabPetals from "@/templates/gulab-mahal/Petals";
+import GulabPrintCopy from "@/templates/gulab-mahal/PrintCopy";
 import GulabDetailsPage from "@/templates/gulab-mahal/DetailsPage";
 import GulabScrollPage from "@/templates/gulab-mahal/ScrollPage";
 import GulabStackPage from "@/templates/gulab-mahal/StackPage";
@@ -77,6 +79,7 @@ export default function GulabMahalCard(props: TemplateCardProps): ReactElement {
   } = props;
 
   const rootRef = useRef<HTMLDivElement>(null);
+  const still = useCardStill();
   const language = cardLanguage(config.language);
   const cardTheme = effectiveTheme(theme, config.style);
   const fonts = gulabFonts(config.style.fontPairId);
@@ -101,6 +104,11 @@ export default function GulabMahalCard(props: TemplateCardProps): ReactElement {
   const contacts = on("contact") && hasContacts(draft) ? contactsOf(draft) : [];
   const note = on("message") && hasMessage(draft) ? draft.message.trim() : null;
   const hasDetails = contacts.length > 0 || custom.length > 0 || note !== null;
+
+  /* The printed copy: the words on ivory paper, one sheet's sections at a time (PrintCopy.tsx). */
+  if (still) {
+    return <GulabPrintCopy draft={draft} config={config} language={language} fonts={fonts} />;
+  }
 
   return (
     <ScratchRevealProvider

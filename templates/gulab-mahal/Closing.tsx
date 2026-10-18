@@ -49,8 +49,6 @@ const RAIN: readonly { petal: number; x: number; rise: number; drift: number; tu
  * transform and opacity, started by the page's own entrance (the pager marks
  * it once). Under reduced motion the box is open from the start and nothing
  * falls.
- *
- * The other gift box picture, with a card standing in it, is not used.
  */
 export default function GulabClosing({
   draft,

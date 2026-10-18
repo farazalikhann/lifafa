@@ -142,4 +142,13 @@ export const GULAB_MAHAL: TemplateConfig = {
     scrollCue: false,
   },
   print: { background: "#FBF4EE", textPrimary: WINE },
+  /*
+    Its sheets in the card's own order: the names with the date, the couple,
+    the functions, the venue, and then who to ring, the host's sections and
+    their note together. The countdown is not printed.
+  */
+  printLayout: {
+    sheetOf: { cover: 0, details: 0, family: 1, timeline: 2, venue: 3, contact: 4, message: 4, countdown: null },
+    customSheet: 4,
+  },
 };

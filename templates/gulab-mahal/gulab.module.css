@@ -759,7 +759,8 @@
   scroll's, so nothing on the page moves as it opens.
 */
 .scroll {
-  --scroll-w: min(96cqw, 27.5rem);
+  /* Centred, with 1.5rem each side: clear of the screen's edges and of the page dots on the right. */
+  --scroll-w: min(100cqw - 3rem, 27.5rem);
   --roll-h: calc(var(--scroll-w) / var(--roll-aspect));
   --paper-h: max(
     11rem,
@@ -2249,6 +2250,112 @@
   .replyArrive {
     animation: gm-fade 300ms ease-out both;
   }
+}
+
+/* ───────────────────────── The printed copy ───────────────────────── */
+
+/*
+  Ivory paper, kind to ink: wine words, rose-gold small capitals and rules,
+  and no pictures at all (PrintCopy.tsx). The column is what the print fit
+  measures and zooms to its sheet.
+*/
+.printCopy {
+  min-height: 100%;
+  background: var(--gm-ivory);
+  color: var(--gm-wine);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.printColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 2.5rem 1.75rem;
+  text-align: center;
+}
+
+.printPart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.printPart > .divider {
+  margin-block: 1.5rem;
+}
+
+.printSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.printHeading {
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.printLine {
+  font-size: 1rem;
+  color: var(--gm-wine-soft);
+}
+
+.printNames {
+  font-size: 2.6rem;
+  color: var(--gm-wine);
+  overflow-wrap: anywhere;
+}
+
+.printAnd {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--gm-rose-gold-deep);
+}
+
+.printDay {
+  font-size: 3rem;
+  color: var(--gm-wine);
+}
+
+.printPerson {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.printPerson + .printPerson {
+  margin-top: 0.9rem;
+}
+
+.printPersonName {
+  font-size: 1.9rem;
+  color: var(--gm-wine);
+  overflow-wrap: anywhere;
+}
+
+.printNumber {
+  font-size: 0.7rem;
+}
+
+.printText {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.printSmall {
+  max-width: 24rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--gm-wine-soft);
 }
 
 /* ───────────────────────── On the velvet ───────────────────────── */

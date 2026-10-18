@@ -56,6 +56,16 @@ const SHEET_OF: Record<CardSectionId, number | null> = {
 /** The host's own sections, after everything the card supplies. */
 const CUSTOM_SHEET = 4;
 
+/**
+ * Which sheet each section goes on, for a template whose card is read in an
+ * order of its own (`printLayout` on TemplateConfig); the card's own
+ * grouping above otherwise.
+ */
+export interface PrintLayout {
+  sheetOf: Record<CardSectionId, number | null>;
+  customSheet: number;
+}
+
 /** Whether a block puts anything on paper: on the card, and not empty. */
 function prints(block: CardBlock, draft: EventDraft, config: CardConfig): boolean {
   if (block.kind === "custom") {
@@ -99,7 +109,11 @@ export interface PrintSheet {
  * the ornaments: they hang from the top of the card, which is the first
  * sheet's top and no other's.
  */
-export function printSheets(draft: EventDraft, config: CardConfig): readonly PrintSheet[] {
+export function printSheets(
+  draft: EventDraft,
+  config: CardConfig,
+  layout: PrintLayout = { sheetOf: SHEET_OF, customSheet: CUSTOM_SHEET },
+): readonly PrintSheet[] {
   const sheets = new Map<number, CardBlock[]>();
 
   for (const block of config.blocks) {
@@ -107,7 +121,7 @@ export function printSheets(draft: EventDraft, config: CardConfig): readonly Pri
       continue;
     }
 
-    const sheet = block.kind === "custom" ? CUSTOM_SHEET : SHEET_OF[block.id];
+    const sheet = block.kind === "custom" ? layout.customSheet : layout.sheetOf[block.id];
 
     if (sheet === null) {
       continue;
