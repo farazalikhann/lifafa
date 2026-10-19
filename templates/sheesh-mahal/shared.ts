@@ -80,6 +80,16 @@ interface SheeshCopy {
     bride: string;
     swipe: string;
   };
+  /** Page 5: each card's number, the buttons under the cards, and the count between them. */
+  functions: {
+    number: (n: number) => string;
+    previous: string;
+    next: string;
+    counter: (at: number, of: number) => string;
+    counterSpoken: (at: number, of: number) => string;
+  };
+  /** Page 6: the venue's map, as Gulab Mahal says it. */
+  viewOnMap: string;
   /** What each page is called, for its heading and a screen reader. */
   pages: {
     date: string;
@@ -103,6 +113,14 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
       bride: "The Bride",
       swipe: "Swipe",
     },
+    functions: {
+      number: (n) => `No. ${n}`,
+      previous: "Previous",
+      next: "Next",
+      counter: (at, of) => `${at} / ${of}`,
+      counterSpoken: (at, of) => `Celebration ${at} of ${of}`,
+    },
+    viewOnMap: "View on map",
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -122,6 +140,14 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
       bride: "वधू",
       swipe: "स्वाइप करें",
     },
+    functions: {
+      number: (n) => `क्र. ${n}`,
+      previous: "पिछला",
+      next: "अगला",
+      counter: (at, of) => `${at} / ${of}`,
+      counterSpoken: (at, of) => `समारोह ${at}, कुल ${of}`,
+    },
+    viewOnMap: "नक्शे पर देखें",
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",

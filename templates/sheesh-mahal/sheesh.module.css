@@ -1777,3 +1777,934 @@
     transition-duration: 1ms;
   }
 }
+
+/* ───────────────────────── Page 5: the celebrations, down the hall ───────────────────────── */
+
+/*
+  The hall, nearer and higher than page 2: the picture in a box covering the
+  room as on page 3, its far end (--far-x, --far-y) a little above the room's
+  middle, grown 1.15 about that point. On a phone the picture is as tall as
+  the room, so raised it stops short of the room's foot; the vignette is
+  indigo by then, and the buttons sit on it.
+*/
+.fnScene {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+  --box-w: max(100cqw, var(--room-h) * var(--hall-aspect));
+  --box-h: max(var(--room-h), 100cqw / var(--hall-aspect));
+
+  position: absolute;
+  top: calc(var(--room-h) * 0.46 - var(--box-h) * var(--far-y));
+  left: calc(50% - var(--box-w) * var(--far-x));
+  width: var(--box-w);
+  height: var(--box-h);
+  transform: scale(1.15);
+  transform-origin: calc(var(--far-x) * 100%) calc(var(--far-y) * 100%);
+}
+
+.fnHall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/* Still: the night at the top for the heading, at the foot for the buttons, and dark at the sides. */
+.fnVignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(14 16 48 / 0.94) 0%,
+      rgb(14 16 48 / 0.62) calc(var(--sm-top-safe) + 1.75rem),
+      rgb(14 16 48 / 0) 34%
+    ),
+    linear-gradient(
+      0deg,
+      #0e1030 0%,
+      #0e1030 9%,
+      rgb(14 16 48 / 0.62) 17%,
+      rgb(14 16 48 / 0) 32%
+    ),
+    radial-gradient(130% 80% at 50% 46%, rgb(8 9 32 / 0) 46%, rgb(8 9 32 / 0.55) 78%, rgb(8 9 32 / 0.85) 100%);
+}
+
+/*
+  The cards' place: under the heading, over the buttons. The front card is
+  about 78% of the width, or less where the room is short: it and the tops
+  of the two behind it (about a fifth of its height more) fit between the
+  two. Its middle is a little below the room's.
+*/
+.functions {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+  --fn-top: calc(var(--sm-top-safe) + 2rem);
+  --fn-foot: calc(var(--sm-bars, 0px) + 4.25rem);
+  --fc-w: min(78cqw, 24rem, (var(--room-h) - var(--fn-top) - var(--fn-foot)) / 1.2 * var(--fc-aspect));
+  --fc-h: calc(var(--fc-w) / var(--fc-aspect));
+  --fc-top: clamp(
+    var(--fn-top) + var(--fc-h) * 0.19,
+    var(--room-h) * 0.535 - var(--fc-h) * 0.5,
+    var(--room-h) - var(--fn-foot) - var(--fc-h)
+  );
+
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.functionsAlone {
+  --fn-foot: calc(var(--sm-bars, 0px) + 1.5rem);
+}
+
+.fnHeading {
+  position: absolute;
+  top: var(--sm-top-safe);
+  left: 1.5rem;
+  right: 1.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--sm-gold);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9);
+  opacity: 0.01;
+  transform: translate(0, 0.6rem);
+  transition:
+    opacity 700ms ease-out,
+    transform 900ms var(--sm-spring);
+}
+
+.fnHeading:lang(hi) {
+  font-size: 0.95rem;
+}
+
+[data-fn-in] .fnHeading {
+  opacity: 1;
+  transform: none;
+}
+
+/* The cards' swipe: a sideways drag is theirs, and every vertical pan the page's. Its cards, even one walked past, stay under the buttons. */
+.fnDeck {
+  position: absolute;
+  z-index: 0;
+  top: var(--fn-top);
+  right: 0;
+  bottom: var(--fn-foot);
+  left: 0;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/*
+  A card in its place in the corridor (FunctionsPage's PLACES): a transform
+  and an opacity, and a step between places a transition of both. A card out
+  of sight is hidden once its step is over, and shown at once when one
+  begins.
+*/
+.fnCard {
+  --fn-ease: cubic-bezier(0.45, 0, 0.2, 1);
+
+  position: absolute;
+  top: calc(var(--fc-top) - var(--fn-top));
+  left: calc(50% - var(--fc-w) / 2);
+  width: var(--fc-w);
+  aspect-ratio: var(--fc-aspect);
+  container-type: inline-size;
+  transition:
+    transform 600ms var(--fn-ease),
+    opacity 520ms var(--fn-ease),
+    visibility 0s linear 0s;
+}
+
+.fnCard[data-off] {
+  visibility: hidden;
+  transition:
+    transform 600ms var(--fn-ease),
+    opacity 520ms var(--fn-ease),
+    visibility 0s linear 600ms;
+}
+
+/* The entrance, once the page is at rest: each card up into its place from a little lower, back to front. */
+.fnRise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.01;
+  transform: translate(0, 5%);
+  transition:
+    opacity 650ms ease-out var(--sm-delay, 0ms),
+    transform 900ms var(--sm-spring) var(--sm-delay, 0ms);
+}
+
+[data-fn-in] .fnRise {
+  opacity: 1;
+  transform: none;
+}
+
+.fnArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/*
+  The lantern's light, over its glass: a small warm glow. On the front card
+  it flickers slowly, by its opacity, at uneven steps; held while the page
+  moves and off the screen, and still under reduced motion.
+*/
+.fnLantern {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    rgb(255 236 180 / 0.75) 0%,
+    rgb(255 196 110 / 0.42) 30%,
+    rgb(255 170 80 / 0.14) 62%,
+    rgb(255 170 80 / 0) 100%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes sm-lantern {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  9% {
+    opacity: 0.82;
+  }
+  17% {
+    opacity: 0.66;
+  }
+  31% {
+    opacity: 0.95;
+  }
+  38% {
+    opacity: 0.72;
+  }
+  52% {
+    opacity: 0.88;
+  }
+  61% {
+    opacity: 0.55;
+  }
+  74% {
+    opacity: 0.9;
+  }
+  86% {
+    opacity: 0.7;
+  }
+}
+
+.fnCard[data-front] .fnLantern {
+  animation: sm-lantern 5.3s ease-in-out infinite;
+}
+
+.page:not([data-sm-rest]) .fnLantern {
+  animation-play-state: paused;
+}
+
+/* The words on the ivory, sized from the card's width and stepped down together to fit (fit.ts). */
+.fnText {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5.4cqw;
+}
+
+.fnWords {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3em;
+  text-align: center;
+  overflow-wrap: normal;
+}
+
+.fnWords > * {
+  max-width: 100%;
+  margin: 0;
+}
+
+.fnNumber {
+  font-size: 0.62em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--sm-gold-deep);
+}
+
+.fnName {
+  font-size: 2.3em;
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+/* A thin gold rule with a small diamond at its middle. */
+.fnRule {
+  position: relative;
+  display: block;
+  width: 46%;
+  height: 0.5em;
+  flex: none;
+  background: linear-gradient(90deg, rgb(176 141 74 / 0), #b08d4a 22%, #b08d4a 78%, rgb(176 141 74 / 0)) center / 100% 1px no-repeat;
+}
+
+.fnRule::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.36em;
+  height: 0.36em;
+  background: #b08d4a;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.fnDate {
+  font-size: 1.08em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.fnWhen {
+  font-size: 0.95em;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.fnVenue {
+  font-size: 0.86em;
+  font-weight: 600;
+  line-height: 1.35;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+  text-wrap: balance;
+  color: var(--sm-gold-deep);
+}
+
+.fnWords > :lang(hi) {
+  line-height: 1.55;
+}
+
+.fnVenue:lang(hi) {
+  letter-spacing: 0;
+}
+
+/* Under the cards: Previous, the count, Next. */
+.fnControls {
+  position: absolute;
+  top: min(var(--fc-top) + var(--fc-h) + 1rem, var(--room-h) - var(--sm-bars, 0px) - 3.5rem);
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  opacity: 0.01;
+  transition: opacity 650ms ease-out 520ms;
+}
+
+[data-fn-in] .fnControls {
+  opacity: 1;
+}
+
+/* Ivory satin, with a thin antique gold edge, as page 3's calendar button. */
+.fnPill {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--sm-ink);
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(176 141 74 / 0.95),
+    inset 0 0 0 3px rgb(255 252 244 / 0.7),
+    inset 0 0 0 4px rgb(176 141 74 / 0.35),
+    0 0.3rem 0.7rem rgb(2 3 14 / 0.45);
+  cursor: pointer;
+  transition: opacity 250ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fnPill:lang(hi) {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+}
+
+.fnPill svg {
+  width: 0.45rem;
+  height: 0.75rem;
+}
+
+.fnPill:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.fnPill:focus-visible {
+  outline: 2px solid var(--sm-ivory);
+  outline-offset: 3px;
+}
+
+.fnCounter {
+  min-width: 3rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: center;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--sm-ivory);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9);
+}
+
+/* ───────────────────────── Page 6: the venue, a lake palace at night ───────────────────────── */
+
+/* The picture covering the room, in a box of its own shape (as page 3's), so the lights on it are placed in its shares. */
+.vnScene {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, var(--room-h) * var(--vn-aspect));
+  height: max(var(--room-h), 100cqw / var(--vn-aspect));
+  translate: -50% -50%;
+  container-type: inline-size;
+}
+
+.vnArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/*
+  The living water and the stars: drawn only while the page is at rest,
+  fading in, and gone as soon as it moves. Even held, a light that loops is a
+  layer of its own, which the swipe that brings this room near (the one into
+  the page before) would have to make.
+*/
+.vnLights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.vnLights,
+.vnStars {
+  animation: sm-lights-in 1200ms ease-out 300ms both;
+}
+
+@keyframes sm-lights-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page:not([data-sm-rest]) .vnLights,
+.page:not([data-sm-rest]) .vnStars {
+  display: none;
+}
+
+/* Light on the reflection: tall, narrow and warm, rising and falling, each at its own pace. */
+.vnShimmer {
+  position: absolute;
+  background: radial-gradient(
+    closest-side,
+    rgb(255 214 140 / 0.5) 0%,
+    rgb(255 196 112 / 0.24) 45%,
+    rgb(255 186 100 / 0) 100%
+  );
+  opacity: 0.2;
+  pointer-events: none;
+  animation: sm-water var(--vn-p, 5s) ease-in-out var(--vn-d, 0s) infinite;
+}
+
+@keyframes sm-water {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  55% {
+    opacity: 0.3;
+  }
+  78% {
+    opacity: 0.6;
+  }
+}
+
+/* A floating diya's flame and its glow on the water. */
+.vnDiya {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    rgb(255 232 170 / 0.8) 0%,
+    rgb(255 180 71 / 0.4) 32%,
+    rgb(255 160 60 / 0.12) 64%,
+    rgb(255 160 60 / 0) 100%
+  );
+  opacity: 0.7;
+  pointer-events: none;
+  animation: sm-diya var(--vn-p, 3s) ease-in-out var(--vn-d, 0s) infinite;
+}
+
+@keyframes sm-diya {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  13% {
+    opacity: 0.95;
+  }
+  21% {
+    opacity: 0.6;
+  }
+  37% {
+    opacity: 0.9;
+  }
+  49% {
+    opacity: 0.74;
+  }
+  62% {
+    opacity: 1;
+  }
+  76% {
+    opacity: 0.64;
+  }
+  88% {
+    opacity: 0.88;
+  }
+}
+
+/* Small stars in the sky, beside the panel. */
+.vnStars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.vnStar {
+  position: absolute;
+  width: 0.7rem;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #fff 0 9%, rgb(255 252 240 / 0.8) 16%, rgb(255 246 225 / 0) 42%),
+    radial-gradient(50% 5% at 50% 50%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0)),
+    radial-gradient(5% 50% at 50% 50%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0));
+  opacity: 0.3;
+  animation: sm-star var(--vn-p, 4s) ease-in-out var(--vn-d, 0s) infinite;
+}
+
+@keyframes sm-star {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.venue {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* The sky: under the page's buttons, down to VENUE_SKY of the room; the tabs and the panel in its middle. */
+.vnSky {
+  position: absolute;
+  top: var(--sm-top-safe);
+  left: 0;
+  right: 0;
+  height: calc(var(--room-h) * var(--vn-sky) - var(--sm-top-safe));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  opacity: 0.01;
+  transform: translate(0, 12px);
+  transition:
+    opacity 700ms ease-out,
+    transform 900ms var(--sm-spring);
+}
+
+[data-vn-in] .vnSky {
+  opacity: 1;
+  transform: none;
+}
+
+/* One a function, in a line; one too many for the width scrolls across. */
+.vnTabs {
+  display: flex;
+  flex: none;
+  max-width: 100%;
+  gap: 0.4rem;
+  padding: 0.15rem 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vnTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.vnTabs > :first-child {
+  margin-left: auto;
+}
+
+.vnTabs > :last-child {
+  margin-right: auto;
+}
+
+.vnTab {
+  flex: none;
+  max-width: 11rem;
+  min-height: 1.9rem;
+  padding: 0 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--sm-ivory);
+  background: rgb(14 16 48 / 0.72);
+  box-shadow: inset 0 0 0 1px rgb(201 164 92 / 0.75);
+  cursor: pointer;
+  transition:
+    color 250ms ease-out,
+    background-color 250ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vnTab:lang(hi) {
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+
+.vnTab[aria-selected="true"] {
+  color: var(--sm-ink);
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%);
+  box-shadow: inset 0 0 0 1px rgb(176 141 74 / 0.95);
+}
+
+.vnTab:focus-visible {
+  outline: 2px solid var(--sm-ivory);
+  outline-offset: 2px;
+}
+
+/*
+  Deep indigo, a little see-through, a thin antique gold border and a second,
+  fainter line inside it. No shadow under it: on the dark sky it would not
+  be seen, and a wide blur is the dearest thing to draw when the room is
+  first drawn, in the swipe into the page before.
+*/
+.vnPanel {
+  position: relative;
+  display: flex;
+  width: min(86cqw, 24rem);
+  min-height: 0;
+  flex: 0 1 auto;
+  flex-direction: column;
+  padding: 0.95rem 1.1rem;
+  border: 1px solid rgb(201 164 92 / 0.9);
+  border-radius: 0.9rem;
+  background: rgb(14 16 48 / 0.8);
+  box-shadow:
+    inset 0 0 0 3px rgb(14 16 48 / 0.8),
+    inset 0 0 0 4px rgb(201 164 92 / 0.32);
+}
+
+/* A small gold corner: two short strokes and a diamond. */
+.vnCorner {
+  position: absolute;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 0 solid var(--sm-gold);
+  pointer-events: none;
+}
+
+.vnCorner::after {
+  content: "";
+  position: absolute;
+  width: 0.24rem;
+  height: 0.24rem;
+  background: var(--sm-gold);
+  transform: rotate(45deg);
+}
+
+.vnCornerTL {
+  top: 0.4rem;
+  left: 0.4rem;
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+  border-top-left-radius: 0.3rem;
+}
+
+.vnCornerTR {
+  top: 0.4rem;
+  right: 0.4rem;
+  border-top-width: 1.5px;
+  border-right-width: 1.5px;
+  border-top-right-radius: 0.3rem;
+}
+
+.vnCornerBL {
+  bottom: 0.4rem;
+  left: 0.4rem;
+  border-bottom-width: 1.5px;
+  border-left-width: 1.5px;
+  border-bottom-left-radius: 0.3rem;
+}
+
+.vnCornerBR {
+  right: 0.4rem;
+  bottom: 0.4rem;
+  border-right-width: 1.5px;
+  border-bottom-width: 1.5px;
+  border-bottom-right-radius: 0.3rem;
+}
+
+.vnCornerTL::after,
+.vnCornerTR::after {
+  top: 0.22rem;
+}
+
+.vnCornerBL::after,
+.vnCornerBR::after {
+  bottom: 0.22rem;
+}
+
+.vnCornerTL::after,
+.vnCornerBL::after {
+  left: 0.22rem;
+}
+
+.vnCornerTR::after,
+.vnCornerBR::after {
+  right: 0.22rem;
+}
+
+/* As tall as the words, up to what the sky leaves: past that the words are stepped down (fit.ts). */
+.vnBox {
+  min-height: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  font-size: clamp(0.92rem, 4.3cqw, 1.1rem);
+}
+
+.vnWords {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  text-align: center;
+  overflow-wrap: normal;
+}
+
+.vnWords > * {
+  max-width: 100%;
+  margin: 0;
+}
+
+.vnHeading {
+  font-size: 0.68em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--sm-gold);
+}
+
+.vnName {
+  font-size: 2em;
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+/* The script's last letter reaches past its box: the gold is widened, and taken back by a margin (as page 4's names). */
+.vnName .foilFill {
+  margin: 0 -0.2em;
+  padding: 0 0.2em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.vnAddress {
+  font-size: 0.92em;
+  line-height: 1.4;
+  text-wrap: balance;
+  color: var(--sm-ivory);
+}
+
+.vnWords > :lang(hi) {
+  line-height: 1.6;
+}
+
+.vnMapLine {
+  padding-top: 0.2em;
+}
+
+.vnMap {
+  display: inline-flex;
+  min-height: 2.4em;
+  align-items: center;
+  padding: 0 1.15em;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--sm-ink);
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(176 141 74 / 0.95),
+    inset 0 0 0 3px rgb(255 252 244 / 0.7),
+    inset 0 0 0 4px rgb(176 141 74 / 0.35);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vnMap:lang(hi) {
+  letter-spacing: 0;
+}
+
+.vnMap:focus-visible {
+  outline: 2px solid var(--sm-ivory);
+  outline-offset: 3px;
+}
+
+/*
+  After the panel, its lines one after another: by their opacity alone, as a
+  line moved inside the panel would count as overflow, and the words be
+  fitted smaller than they need be.
+*/
+.vnLine {
+  opacity: 0.01;
+  transition: opacity 600ms ease-out var(--sm-delay, 0ms);
+}
+
+[data-vn-in] .vnLine {
+  opacity: 1;
+}
+
+/* A short screen: the panel's frame and the tabs a little closer, so its words keep their size. */
+@media (max-height: 700px) {
+  .vnSky {
+    gap: 0.35rem;
+  }
+
+  .vnTab {
+    min-height: 1.65rem;
+  }
+
+  .vnPanel {
+    padding: 0.55rem 0.9rem;
+  }
+
+  .vnCorner {
+    width: 0.6rem;
+    height: 0.6rem;
+  }
+
+  .vnCornerTL,
+  .vnCornerTR {
+    top: 0.25rem;
+  }
+
+  .vnCornerBL,
+  .vnCornerBR {
+    bottom: 0.25rem;
+  }
+
+  .vnCornerTL,
+  .vnCornerBL {
+    left: 0.25rem;
+  }
+
+  .vnCornerTR,
+  .vnCornerBR {
+    right: 0.25rem;
+  }
+
+  .vnWords {
+    gap: 0.28em;
+  }
+}
+
+/* The printed copy, laid out as it rests: every entrance already over. */
+.still .fnHeading,
+.still .fnRise,
+.still .fnControls,
+.still .vnSky,
+.still .vnLine,
+.still .vnLights,
+.still .vnStars {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fnCard,
+  .fnCard[data-off] {
+    transition: none;
+  }
+
+  .fnHeading,
+  .fnRise,
+  .vnSky {
+    transform: none;
+    transition: opacity 400ms ease-out var(--sm-delay, 0ms);
+  }
+
+  .fnCard[data-front] .fnLantern,
+  .vnShimmer,
+  .vnDiya,
+  .vnStar {
+    animation: none;
+  }
+
+  .vnShimmer {
+    opacity: 0.35;
+  }
+
+  .vnStar {
+    opacity: 0.6;
+  }
+}

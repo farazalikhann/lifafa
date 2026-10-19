@@ -17,6 +17,7 @@ import { ART } from "@/templates/sheesh-mahal/art";
 import SheeshClosing from "@/templates/sheesh-mahal/Closing";
 import SheeshCouplePage from "@/templates/sheesh-mahal/CouplePage";
 import SheeshDatePage from "@/templates/sheesh-mahal/DatePage";
+import SheeshFunctionsPage from "@/templates/sheesh-mahal/FunctionsPage";
 import { useLite } from "@/templates/sheesh-mahal/lite";
 import SheeshNamesPage from "@/templates/sheesh-mahal/NamesPage";
 import SheeshPager from "@/templates/sheesh-mahal/Pager";
@@ -24,6 +25,7 @@ import SheeshRoomPage from "@/templates/sheesh-mahal/RoomPage";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { INDIGO, sheeshCopy, sheeshFonts } from "@/templates/sheesh-mahal/shared";
 import { SCREEN_VAR, useStableScreen } from "@/templates/sheesh-mahal/stableScreen";
+import SheeshVenuePage from "@/templates/sheesh-mahal/VenuePage";
 import type { TemplateCardProps } from "@/templates/types";
 import type { CardSectionId } from "@/types/card";
 
@@ -52,15 +54,15 @@ const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{backg
  *   2  the names        in the hall of mirrors, NamesPage.tsx
  *   3  the date         on the moon, through the jharokha (DatePage.tsx)
  *   4  the couple       one at a time in a jharokha (CouplePage.tsx)
- *   5  the functions    down the hall
- *   6  the venue        the jharokha again
+ *   5  the functions    one card each, down the hall (FunctionsPage.tsx)
+ *   6  the venue        a lake palace at night (VenuePage.tsx)
  *   7  the details      on a farmaan; only if any
  *   8  the reply        drawn by the guest's page, on a farmaan (RsvpFrame)
  *   9  the thanks       under a kandeel, after the reply (Closing), or here
  *                       in a preview, which has no reply form
  *
- * Pages 5 to 7 are their rooms and headings for now (RoomPage), so the walk
- * through all nine can be seen; what they say is built in the parts to come.
+ * Page 7 is its room and heading for now (RoomPage), so the walk through
+ * all nine can be seen; what it says is built in a part to come.
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
  * same callers place it: the guest's page, the two previews and the printed
@@ -172,29 +174,9 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
             <SheeshCouplePage draft={draft} occasionId={occasionId} language={language} fonts={fonts} />
           ) : null}
 
-          {on("timeline") ? (
-            <SheeshRoomPage
-              heading={own.pages.functions}
-              src={ART.hall}
-              lay="cover"
-              /* Further down the hall than page 2, its floor and far arches. */
-              framing={{ scale: 1.4, origin: "50% 78%" }}
-              language={language}
-              fonts={fonts}
-            />
-          ) : null}
+          {on("timeline") ? <SheeshFunctionsPage draft={draft} language={language} fonts={fonts} /> : null}
 
-          {on("venue") ? (
-            <SheeshRoomPage
-              heading={own.pages.venue}
-              src={ART.jharokhaMoon}
-              lay="cover"
-              /* Nearer than page 3, the moon lower, below the heading. */
-              framing={{ scale: 1.3, origin: "50% 0%" }}
-              language={language}
-              fonts={fonts}
-            />
-          ) : null}
+          {on("venue") ? <SheeshVenuePage draft={draft} language={language} fonts={fonts} /> : null}
 
           {hasDetails ? (
             <SheeshRoomPage heading={own.pages.details} src={ART.farmaan} lay="object" language={language} fonts={fonts} />

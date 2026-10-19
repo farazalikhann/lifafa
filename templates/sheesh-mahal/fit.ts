@@ -155,6 +155,9 @@ export interface CoupleFit {
  * Each slide's name fitted to its column (fitName), and the words in its
  * window stepped down to fit the window's safe area (fitInside).
  *
+ * Pages 5 and 6 use it too, for the words alone (no `name`): each function's
+ * card on its ivory, and the venue's panel in the sky.
+ *
  * Measured with layout widths, which a scale on a room around them (the walk
  * between rooms) does not change, and which a slide's own transform does not
  * either. Before the first paint, again at an idle moment when the page

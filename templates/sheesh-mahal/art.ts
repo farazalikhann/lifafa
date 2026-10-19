@@ -20,6 +20,8 @@ export const ART = {
   jharokhaMoon: `${DIR}/jharokha-moon.webp`,
   jharokhaFrame: `${DIR}/jharokha-frame.webp`,
   functionCard: `${DIR}/function-card.webp`,
+  /* Page 6: a lake palace at night, across the water. */
+  venueNight: `${DIR}/venue-night.webp`,
   farmaan: `${DIR}/farmaan.webp`,
   kandeel: `${DIR}/kandeel.webp`,
 } as const;
@@ -241,6 +243,66 @@ export const COUPLE_GLINTS = constellation(
   },
   0.5,
 );
+
+/*
+  PAGE 5, THE CELEBRATIONS. The hall again, nearer than page 2 and higher:
+  its corridor's far end (the vanishing point, HALL_FAR, in shares of the
+  picture) a little above the room's middle.
+
+  THE FUNCTION CARD (function-card.webp, 600x968), transparent outside its
+  arch. `words` is the safe area on the ivory, below the lantern and inside
+  the border; `lantern` is the lantern's glass, its centre and how wide a
+  glow over it is, as a share of the card's width.
+*/
+export const HALL_FAR = { x: 0.5, y: 0.6 } as const;
+export const FUNCTION_CARD_ASPECT = 600 / 968;
+export const FUNCTION_CARD = {
+  words: { top: 0.32, bottom: 0.88, left: 0.2, right: 0.8 },
+  lantern: { x: 0.498, y: 0.19, size: 0.34 },
+} as const;
+
+/*
+  PAGE 6, THE VENUE (venue-night.webp, 864x1296, opaque). The sky, dark and
+  calm, is the top third; the palace is from 35.5% (the dome's finial) to 58%
+  down, its reflection on the lake from 58% to 85%, brightest in narrow
+  columns under its lit arches; the floating diyas are at either edge, from
+  68% to 88% down. Every place is a share of the picture's own box.
+*/
+export const VENUE_ASPECT = 864 / 1296;
+/* How far down the room the panel may reach: never over the palace. */
+export const VENUE_SKY = 0.36;
+/* The reflection's brightest columns: centre, width, and its own time to rise and fall. */
+export const VENUE_SHIMMER = [
+  { x: 0.3, width: 0.06, top: 0.6, bottom: 0.8, period: 5.2, delay: -1.3 },
+  { x: 0.42, width: 0.07, top: 0.59, bottom: 0.83, period: 6.6, delay: -3.9 },
+  { x: 0.5, width: 0.08, top: 0.58, bottom: 0.86, period: 4.4, delay: -0.4 },
+  { x: 0.61, width: 0.065, top: 0.6, bottom: 0.82, period: 5.9, delay: -2.6 },
+] as const;
+/* The floating diyas' flames, and each one's own flicker. */
+export const VENUE_DIYAS = [
+  { x: 0.025, y: 0.682, size: 0.07, period: 3.1, delay: -0.7 },
+  { x: 0.061, y: 0.758, size: 0.08, period: 3.7, delay: -2.2 },
+  { x: 0.077, y: 0.87, size: 0.1, period: 2.9, delay: -1.4 },
+  { x: 0.957, y: 0.712, size: 0.08, period: 3.4, delay: -0.2 },
+  { x: 0.876, y: 0.828, size: 0.09, period: 4.1, delay: -2.9 },
+] as const;
+/*
+  Small stars in the sky, outside the panel: down either edge beside it, and
+  in the sky either side of the palace's dome. In shares of the room, not the
+  picture, as the panel is placed in the room.
+*/
+export const VENUE_STARS = [
+  { x: 0.035, y: 0.16, period: 3.6, delay: -0.4 },
+  { x: 0.958, y: 0.13, period: 4.4, delay: -2.1 },
+  { x: 0.05, y: 0.27, period: 5.1, delay: -3.3 },
+  { x: 0.965, y: 0.24, period: 3.9, delay: -1.2 },
+  { x: 0.03, y: 0.33, period: 4.7, delay: -2.8 },
+  { x: 0.945, y: 0.32, period: 5.5, delay: -0.9 },
+  { x: 0.12, y: 0.37, period: 4.2, delay: -1.8 },
+  { x: 0.24, y: 0.385, period: 5.8, delay: -4.1 },
+  { x: 0.8, y: 0.372, period: 3.8, delay: -2.5 },
+  { x: 0.9, y: 0.392, period: 4.9, delay: -0.6 },
+] as const;
 
 /** Where the ripple of light starts on the wall: the medallion the guest tapped. */
 export const RIPPLE_FROM = { x: MEDALLION.x, y: MEDALLION.y } as const;

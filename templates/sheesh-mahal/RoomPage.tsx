@@ -6,7 +6,7 @@ import { scriptLeading, type SheeshFonts } from "@/templates/sheesh-mahal/shared
 import type { CardLanguage } from "@/types/card";
 
 /**
- * One of the rooms still to be furnished (pages 3 to 7): its picture, laid
+ * One of the rooms still to be furnished (page 7 now): its picture, laid
  * as it will be, and its heading in gold, so the walk from room to room can
  * be seen whole. What each says is built in the parts to come.
  *
