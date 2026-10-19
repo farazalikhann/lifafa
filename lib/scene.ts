@@ -5,8 +5,7 @@ import type { Scene } from "@/types/card";
  * The painted scene on a card's first screen: a lake palace, a palace garden
  * or a tree in a valley, or none. Under the opening's last line and running
  * on into the names' screen, as wide as the card, on every tradition's card;
- * drawn by components/card/SceneScreen.tsx and chosen in
- * components/create/ScenePanel.tsx.
+ * drawn by components/card/SceneScreen.tsx and set by a card's template.
  *
  * Each is painted twice, by day and by night, 2:3, and published whole by
  * scripts/cut-scenes.mjs: a light card draws the day and a dark card the
@@ -236,7 +235,3 @@ export function sceneArtFor(scene: Scene, background: string): SceneArt | null {
   return relativeLuminance(background) > DARK_GROUND ? ART[scene].light : ART[scene].dark;
 }
 
-/** The editor's chip for a choice, or null for "off": the day painting, whatever the card. */
-export function sceneThumb(scene: Scene): string | null {
-  return scene === "off" ? null : ART[scene].light.thumb;
-}

@@ -3,8 +3,7 @@ import type { VenueIllustration } from "@/types/card";
 /**
  * The painting of the place above the venue's name: a garden, a banquet hall,
  * a palace courtyard or a poolside, or none. Drawn by
- * components/card/sections/VenueSection.tsx and chosen in
- * components/create/VenueIllustrationPanel.tsx.
+ * components/card/sections/VenueSection.tsx.
  */
 
 export const DEFAULT_VENUE_ILLUSTRATION: VenueIllustration = "none";

@@ -45,16 +45,6 @@ const TILES: Record<RoyalTexturePattern, { dark: string; light: string }> = {
   },
 };
 
-/** The patterns, in the order the panel offers them: the damask every card had first. */
-export const ROYAL_TEXTURE_PATTERNS: readonly {
-  id: RoyalTexturePattern;
-  label: string;
-}[] = [
-  { id: "damask", label: "Damask" },
-  { id: "paisley", label: "Paisley" },
-  { id: "jaal", label: "Jaal" },
-];
-
 /**
  * The pattern, read out of a card config that may predate the choice. A card
  * with the texture and no pattern is a damask, which is what it has always

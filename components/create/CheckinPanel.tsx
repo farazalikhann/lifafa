@@ -16,8 +16,8 @@ import CollapsibleSection, {
  * supabase/migrations/0005.
  *
  * A button with role="switch" rather than WeatherPicker's styled checkbox, so it
- * looks and announces itself the way the section switches in SectionManager
- * do: aria-checked carries the state, and it is named after its section, so a
+ * looks and announces itself the way the section switches in step 3 of the
+ * wizard do: aria-checked carries the state, and it is named after its section, so a
  * screen reader says "Guest check-in, switch, off" rather than a bare
  * "switch". It used to borrow that name from its visible heading, which is
  * now the section's header button, a control of its own. The helper line is attached with
@@ -40,7 +40,7 @@ export default function CheckinPanel({
    * guests holding passes, and still needs the scanner on the day.
    */
   repliesOpen: boolean;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   const hintId = useId();

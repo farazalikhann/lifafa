@@ -3,9 +3,8 @@ import type { Theme } from "@/lib/themes";
 
 /**
  * "Tear to reveal": the date under a strip of handmade paper that the guest
- * tears off with a swipe. Drawn by components/card/TearReveal.tsx, chosen
- * under "Date reveal" (components/create/DateRevealPanel.tsx) and stored as
- * dateReveal "tear".
+ * tears off with a swipe. Drawn by components/card/TearReveal.tsx and stored
+ * as dateReveal "tear".
  */
 
 /** The seamless paper, 512px, grey about the middle grey. See scripts/cut-scenes.mjs. */

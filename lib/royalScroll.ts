@@ -83,10 +83,6 @@ export function scrollArtFor(cardBackground: string): ScrollArt {
   return ART[calligraphyGround(cardBackground) === "light" ? "ivory" : "maroon"];
 }
 
-export function scrollArt(variant: ScrollVariant): ScrollArt {
-  return ART[variant];
-}
-
 /**
  * The inks the date is set in on this scroll.
  *

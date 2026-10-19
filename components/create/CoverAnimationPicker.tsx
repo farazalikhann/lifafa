@@ -31,7 +31,7 @@ export default function CoverAnimationPicker({
 }: {
   coverAnimation: CoverAnimationId;
   onChange: (id: CoverAnimationId) => void;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   return (

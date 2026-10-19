@@ -231,11 +231,11 @@ export interface CardConfig {
    */
   templateId?: string;
   /**
-   * Which editor the card is changed in. Stored as "wizard" on every card
-   * made in the step-by-step wizard, and absent on every card made before it:
-   * those open in the full tabbed editor they were designed in, whose
-   * controls reach things the wizard's few do not. The edit route reads it;
-   * nothing that draws a card does.
+   * Whether the card was made in the step-by-step wizard: stored as "wizard"
+   * on every card made there, and absent on every card made before it in the
+   * tabbed editor, since retired. Every card is now changed in the wizard;
+   * on one without the mark an occasion click keeps the card's own palette
+   * and motion. Nothing that draws a card reads it.
    */
   editor?: "wizard";
   themeId: ThemeId;

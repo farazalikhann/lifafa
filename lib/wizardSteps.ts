@@ -25,6 +25,13 @@ export const WIZARD_STEPS: readonly WizardStep[] = [
 export const WIZARD_PATH = "/create";
 export const WIZARD_STEP_PARAM = "step";
 
+/**
+ * Where every "Create" on the site leads: the wizard on its first step, the
+ * template gallery. A card waiting from before a sign-in opens on the step it
+ * was stashed on instead, which the sign-in's own way back names.
+ */
+export const NEW_CARD_HREF = "/create?step=template";
+
 /** The step a value names, or null: it comes out of a URL or out of storage. */
 export function wizardStepId(value: unknown): WizardStepId | null {
   return WIZARD_STEPS.find((step) => step.id === value)?.id ?? null;

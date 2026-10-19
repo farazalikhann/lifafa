@@ -4,6 +4,7 @@ import EventCard from "@/components/dashboard/EventCard";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
 import { eventsUnderReview } from "@/lib/db/paymentReview";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /**
  * The host's invitations, and the home a signed-in host comes back to.
@@ -87,7 +88,7 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
             is what sent them round the houses in the first place.
           */}
           <Link
-            href="/create"
+            href={NEW_CARD_HREF}
             className="flex min-h-11 items-center rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
           >
             Create a new invitation
@@ -110,7 +111,7 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
               Build a card, save it, and share the link. Every reply lands here.
             </p>
             <Link
-              href="/create"
+              href={NEW_CARD_HREF}
               className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
             >
               Make your first invitation

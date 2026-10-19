@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { PaidLimitNotes } from "@/components/create/EventForm";
-import type { ScratchSection } from "@/components/create/RevealPanel";
 import { useWeatherPreview } from "@/hooks/useWeatherPreview";
 import {
   applyToBlocks,
@@ -23,8 +22,6 @@ import { venueIllustrationOf } from "@/lib/venueIllustration";
 import { namesFrameOf } from "@/lib/namesFrame";
 import { pdfDownloadOn } from "@/lib/pdfDownload";
 import { royalTextureOn, royalTexturePatternOf } from "@/lib/royalTexture";
-import { withOneCalligraphy, withoutRetiredCalligraphy } from "@/lib/calligraphy";
-import { getTraditionPack } from "@/lib/traditionPacks";
 import { deepEqual } from "@/lib/deepEqual";
 import {
   DATE_CHANGE_LIMIT,
@@ -47,19 +44,9 @@ import {
   rsvpEnabled as readRsvpEnabled,
 } from "@/lib/cardSections";
 import { getMotifs } from "@/lib/motifs";
-import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
-import {
-  getTextPair,
-  paletteTextColors,
-  withCustomInk,
-  withPalette,
-  withTextPair,
-  type TextPairId,
-} from "@/lib/textColors";
+import { paletteTextColors } from "@/lib/textColors";
 import { getOccasion } from "@/lib/occasions";
 import { CLASSIC_TEMPLATE_ID, getTemplate } from "@/templates/registry";
-import type { DesignState } from "@/lib/designDefaults";
-import { applyPreset, type Preset } from "@/lib/presets";
 import type {
   ButterflyStyle,
   FlyingKind,
@@ -83,7 +70,7 @@ import type {
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { WeatherThemeId } from "@/types/weather";
 import type { CardBlock, CustomSectionWords } from "@/types/customSection";
-import type { CardDensity, CardStyle, FontPairId, PaletteId } from "@/types/style";
+import type { CardStyle, FontPairId } from "@/types/style";
 import type { DraftWords, EventDraft, SubEventWords } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
 import type { OrnamentConfig } from "@/types/ornament";
@@ -95,7 +82,7 @@ import type { OrnamentConfig } from "@/types/ornament";
  * rather than inside CardConfig because they are their own columns — see
  * supabase/migrations 0003, 0004 and 0005 — and this is the shape that has to
  * travel whole: to the sign-in stash on /create, to createEvent, to
- * updateEvent, and back out of the row when a host reopens the editor.
+ * updateEvent, and back out of the row when a host reopens the wizard.
  */
 export interface EditorSnapshot {
   draft: EventDraft;
@@ -109,7 +96,7 @@ export interface EditorSnapshot {
 /**
  * What a route's save does, as far as the editor needs to know.
  *
- * `ok` means the page is on its way somewhere else — the new dashboard, the
+ * `ok` means the page is on its way somewhere else — the saved screen, the
  * event's dashboard, or the sign-in page — so the button stays busy rather than
  * flicking back to its resting label under a host who has already left. The
  * failure carries a sentence written for a host; the editor shows it and does
@@ -118,19 +105,15 @@ export interface EditorSnapshot {
 export type SaveOutcome = { ok: true } | { ok: false; error: string };
 
 /**
- * Every value the editor holds, flat, in one object.
+ * The parts of a card's look the wizard has no control for.
  *
- * The point of naming this shape is the pair of functions under it. A snapshot
- * out of the database and a snapshot the editor has just built have to be
- * comparable — that is what tells a host with unsaved work apart from one who
- * has changed nothing — and the only way to be sure they are is to put both of
- * them through the same construction. Everything here is state; `isPaid` is the
- * exception and is carried rather than edited.
+ * A template lays all of them down when it is chosen, and nothing else in the
+ * wizard changes them: they are carried, in one value, from the card the
+ * wizard was handed (or the template last chosen) to the card it saves. A card
+ * made in the old tabbed editor may have any of them set by hand, ornaments
+ * and all, and keeps them.
  */
-interface EditorState {
-  draft: EventDraft;
-  blocks: readonly CardBlock[];
-  decorMotion: DecorMotion;
+interface CardLook {
   decorIntensity: DecorIntensity;
   butterflies: ButterflyStyle;
   leaves: boolean;
@@ -138,36 +121,53 @@ interface EditorState {
   nature: NatureKind;
   petals: PetalStyle;
   petalFlower: PetalFlower;
-  occasionId: OccasionId;
   traditionId: TraditionId;
-  language: CardLanguage;
-  rsvpEnabled: boolean;
-  scratchTarget: ScratchTarget;
   scratchFrame: ScratchFrame;
-  /** The date's reveal once the host or a preset has chosen one; undefined on a card that never has. */
+  /** The date's reveal once a host or a template has chosen one; undefined on a card that never has. */
   dateReveal: DateReveal | undefined;
   /** Whether "Meet the Couple" carries its figures. On unless the host turned it off. */
   coupleIllustration: boolean;
   invitedHeading: boolean;
-  /** The painting above the venue's name. None unless the host picked one. */
+  /** The painting above the venue's name. None unless one was picked. */
   venueIllustration: VenueIllustration;
-  /** The painted scene after the first screen. The palace garden unless the host picked another or turned it off. */
+  /** The painted scene after the first screen. */
   scene: Scene;
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
   royalTexturePattern: RoyalTexturePattern;
-  /** The frame the names are set in. The lotus ring unless the host picked another. */
+  /** The frame the names are set in. The lotus ring unless another was picked. */
   namesFrame: NamesFrame;
+  /** A divider chosen by hand, or undefined while the tradition's default stands. */
+  divider: DividerStyle | undefined;
+  ornamentConfig: OrnamentConfig;
+}
+
+/**
+ * Every value the editor holds, flat, in one object.
+ *
+ * The point of naming this shape is the pair of functions under it. A snapshot
+ * out of the database and a snapshot the editor has just built have to be
+ * comparable — that is what tells a host with unsaved work apart from one who
+ * has changed nothing — and the only way to be sure they are is to put both of
+ * them through the same construction. `isPaid`, `templateId` aside, and
+ * `wizard` are carried rather than edited.
+ */
+interface EditorState {
+  draft: EventDraft;
+  blocks: readonly CardBlock[];
+  decorMotion: DecorMotion;
+  occasionId: OccasionId;
+  language: CardLanguage;
+  rsvpEnabled: boolean;
+  scratchTarget: ScratchTarget;
   /** Whether a guest may keep the card as a PDF. On unless the host turned it off. */
   pdfDownload: boolean;
-  /** The host's own choice of divider, or undefined while the tradition's default stands. */
-  divider: DividerStyle | undefined;
   borderStyle: CardBorderStyle;
   style: CardStyle;
-  ornamentConfig: OrnamentConfig;
   musicUrl: string | null;
+  look: CardLook;
   isPaid: boolean;
-  /** The card's template. Carried like `isPaid`: nothing in this editor changes it. */
+  /** The card's template, changed only by choosing another in the gallery. */
   templateId: string;
   /** Whether the card is the wizard's. Carried, never changed here; see CardConfig.editor. */
   wizard: boolean;
@@ -183,8 +183,8 @@ interface EditorState {
  * This is where a saved card meets the fields it did not have when it was
  * saved. `musicUrl` is the live example: a config written before music existed
  * has no such key at all, and the editor's state has to start at null rather
- * than at undefined — otherwise the very first comparison against the stored
- * card finds a difference that no host made and offers to discard it.
+ * than at undefined. What these readings fill in is never written back unless
+ * the host changes that value; see keepStoredForm.
  */
 function toState(snapshot: EditorSnapshot): EditorState {
   const { config } = snapshot;
@@ -193,19 +193,7 @@ function toState(snapshot: EditorSnapshot): EditorState {
     draft: snapshot.draft,
     blocks: config.blocks,
     decorMotion: config.decorMotion,
-    decorIntensity: config.decorIntensity,
-    /* A key that may be missing, a boolean, or the colour — see butterflyStyle. */
-    butterflies: butterflyStyle(config.butterflies),
-    /* Missing on older cards; see leavesOn and petalStyle. */
-    leaves: leavesOn(config.leaves, config.butterflies),
-    /* Missing on every card saved before there were kinds: butterflies, and the green leaf. */
-    flying: flyingKind(config.flying),
-    nature: natureKind(config.nature),
-    petals: petalStyle(config.petals),
-    /* Missing on every card saved before the choice; those are roses. */
-    petalFlower: petalFlowerType(config.petalFlower),
     occasionId: config.occasionId,
-    traditionId: config.traditionId,
     /*
       Both missing from a card stashed by an older build, which toStoredEvent
       never sees — so they are resolved again here, to English and to on, the
@@ -214,51 +202,51 @@ function toState(snapshot: EditorSnapshot): EditorState {
     language: cardLanguage(config.language),
     rsvpEnabled: readRsvpEnabled(config.rsvpEnabled),
     scratchTarget: config.scratchTarget,
-    /* Both absent from a card saved before they existed; see lib/cardDecor.ts. */
-    scratchFrame: scratchFrameOf(config.scratchFrame),
-    /* Kept as stored, absent included, so opening an older card is not an edit to it. */
-    dateReveal: config.dateReveal,
-    coupleIllustration: coupleIllustrationOn(config.coupleIllustration),
-    invitedHeading: invitedHeadingOn(config.invitedHeading),
-    /* Missing on every card saved before the choice; those have none. */
-    venueIllustration: venueIllustrationOf(config.venueIllustration),
-    /* Missing on every card saved before there were scenes: the palace garden. */
-    scene: sceneOf(config.scene),
-    /* Missing on every card saved before the texture; those have none. */
-    royalTexture: royalTextureOn(config.royalTexture),
-    /* Missing on every card saved before there was a choice: the damask. */
-    royalTexturePattern: royalTexturePatternOf(config.royalTexturePattern),
-    /* Missing on every card saved before there was a choice: the lotus ring. */
-    namesFrame: namesFrameOf(config.namesFrame),
     /* Missing on every card saved before the switch; those offer the copy. */
     pdfDownload: pdfDownloadOn(config.pdfDownload),
-    divider: hasChosenDivider(config.divider) ? config.divider : undefined,
     borderStyle: config.borderStyle,
     style: config.style,
-    /*
-      A retired calligraphy id is shown as its replacement, and a card saved
-      with several pieces keeps only the one added last; both are saved that way
-      on the next save — see withoutRetiredCalligraphy and withOneCalligraphy.
-    */
-    ornamentConfig: {
-      ...config.ornamentConfig,
-      enabledOrnaments: withOneCalligraphy(
-        withoutRetiredCalligraphy(config.ornamentConfig.enabledOrnaments),
-        getTraditionPack(config.traditionId)?.calligraphyIds ?? [],
-      ),
-    },
     /* Null on every card saved before this field existed. */
     musicUrl: config.musicUrl ?? null,
+    look: {
+      decorIntensity: config.decorIntensity,
+      /* A key that may be missing, a boolean, or the colour — see butterflyStyle. */
+      butterflies: butterflyStyle(config.butterflies),
+      /* Missing on older cards; see leavesOn and petalStyle. */
+      leaves: leavesOn(config.leaves, config.butterflies),
+      /* Missing on every card saved before there were kinds: butterflies, and the green leaf. */
+      flying: flyingKind(config.flying),
+      nature: natureKind(config.nature),
+      petals: petalStyle(config.petals),
+      /* Missing on every card saved before the choice; those are roses. */
+      petalFlower: petalFlowerType(config.petalFlower),
+      traditionId: config.traditionId,
+      /* Absent from a card saved before it existed; see lib/cardDecor.ts. */
+      scratchFrame: scratchFrameOf(config.scratchFrame),
+      /* Kept as stored, absent included, so opening an older card is not an edit to it. */
+      dateReveal: config.dateReveal,
+      coupleIllustration: coupleIllustrationOn(config.coupleIllustration),
+      invitedHeading: invitedHeadingOn(config.invitedHeading),
+      venueIllustration: venueIllustrationOf(config.venueIllustration),
+      scene: sceneOf(config.scene),
+      royalTexture: royalTextureOn(config.royalTexture),
+      royalTexturePattern: royalTexturePatternOf(config.royalTexturePattern),
+      namesFrame: namesFrameOf(config.namesFrame),
+      divider: hasChosenDivider(config.divider) ? config.divider : undefined,
+      /*
+        As stored. The card reads a retired calligraphy id, or several pieces,
+        the way it always has (see CardCanvas), and there is no control here
+        that would show them any other way.
+      */
+      ornamentConfig: config.ornamentConfig,
+    },
     /*
       Carried, never edited.
 
-      /create starts it false, because nothing in an unsaved editor has been
-      paid for — that is what /create is. An edit carries whatever the row says,
-      so a host who has paid does not have the fact quietly written out of their
-      card's JSON by fixing a typo. The column is what a payment writes to and
-      toStoredEvent lets it win over this copy on the way out either way, but a
-      stored config that contradicts its own row is a lie waiting for a reader
-      that trusts it.
+      /create starts it false, because nothing unsaved has been paid for. An
+      edit carries whatever the row says, so a host who has paid does not have
+      the fact quietly written out of their card's JSON by fixing a typo. The
+      column is what a payment writes to and wins on the way out either way.
     */
     isPaid: config.isPaid,
     /* Missing on every card saved before there were templates: Classic. */
@@ -281,6 +269,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
  * that one side happens to be missing can make them differ on its own.
  */
 function toSnapshot(state: EditorState): EditorSnapshot {
+  const { look } = state;
+
   return {
     draft: state.draft,
     config: {
@@ -294,46 +284,46 @@ function toSnapshot(state: EditorState): EditorSnapshot {
       themeId: state.draft.themeId,
       blocks: state.blocks,
       decorMotion: state.decorMotion,
-      decorIntensity: state.decorIntensity,
-      butterflies: state.butterflies,
-      leaves: state.leaves,
-      flying: state.flying,
-      nature: state.nature,
-      petals: state.petals,
-      petalFlower: state.petalFlower,
+      decorIntensity: look.decorIntensity,
+      butterflies: look.butterflies,
+      leaves: look.leaves,
+      flying: look.flying,
+      nature: look.nature,
+      petals: look.petals,
+      petalFlower: look.petalFlower,
       occasionId: state.occasionId,
-      traditionId: state.traditionId,
+      traditionId: look.traditionId,
       language: state.language,
       rsvpEnabled: state.rsvpEnabled,
       scratchTarget: state.scratchTarget,
-      scratchFrame: state.scratchFrame,
+      scratchFrame: look.scratchFrame,
       /* Left off the card until somebody chooses, so an older card keeps what it has always shown. */
-      ...(state.dateReveal !== undefined ? { dateReveal: state.dateReveal } : null),
+      ...(look.dateReveal !== undefined ? { dateReveal: look.dateReveal } : null),
       /* Only ever stored as off: a card that never had the key shows its figures. */
-      ...(state.coupleIllustration ? null : { coupleIllustration: false }),
-      /* The same: only a host who turned the heading off has anything stored. */
-      ...(state.invitedHeading ? null : { invitedHeading: false }),
+      ...(look.coupleIllustration ? null : { coupleIllustration: false }),
+      /* The same: only a card with the heading off has anything stored. */
+      ...(look.invitedHeading ? null : { invitedHeading: false }),
       /* Left off the card while there is none, so an older card is stored as it was. */
-      ...(state.venueIllustration !== "none"
-        ? { venueIllustration: state.venueIllustration }
+      ...(look.venueIllustration !== "none"
+        ? { venueIllustration: look.venueIllustration }
         : null),
       /* Only ever stored when it is not the floral arch, so an older card is stored as it was. */
-      ...(state.scene !== DEFAULT_SCENE ? { scene: state.scene } : null),
+      ...(look.scene !== DEFAULT_SCENE ? { scene: look.scene } : null),
       /* Only ever stored as on: a card that never had the key has no texture. */
-      ...(state.royalTexture ? { royalTexture: true } : null),
+      ...(look.royalTexture ? { royalTexture: true } : null),
       /* Only ever stored when it is not the damask, and kept while the texture is off. */
-      ...(state.royalTexturePattern !== "damask"
-        ? { royalTexturePattern: state.royalTexturePattern }
+      ...(look.royalTexturePattern !== "damask"
+        ? { royalTexturePattern: look.royalTexturePattern }
         : null),
       /* Only ever stored when it is not the lotus ring, so an older card is stored as it was. */
-      ...(state.namesFrame !== "lotus" ? { namesFrame: state.namesFrame } : null),
+      ...(look.namesFrame !== "lotus" ? { namesFrame: look.namesFrame } : null),
       /* Only ever stored as off: a card that never had the key offers the copy. */
       ...(state.pdfDownload ? null : { pdfDownload: false }),
-      /* Left off the card until the host chooses, so the tradition's default goes on applying. */
-      ...(state.divider !== undefined ? { divider: state.divider } : null),
+      /* Left off the card until it is chosen, so the tradition's default goes on applying. */
+      ...(look.divider !== undefined ? { divider: look.divider } : null),
       borderStyle: state.borderStyle,
       style: state.style,
-      ornamentConfig: state.ornamentConfig,
+      ornamentConfig: look.ornamentConfig,
       musicUrl: state.musicUrl,
       isPaid: state.isPaid,
     },
@@ -345,13 +335,55 @@ function toSnapshot(state: EditorState): EditorSnapshot {
 }
 
 /**
- * The state of a card being made or changed: every value, every handler that
- * writes one, the card as it stands, the dirty check and the save.
+ * The card as built, with every key the host has not changed put back exactly
+ * as it was stored.
  *
- * Lifted out of CardEditor so the tabbed editor and the wizard at
- * /create/wizard hold a card the same way: one construction of the snapshot,
- * one dirty check, one save. Nothing here draws anything or knows which of
- * the two is on screen.
+ * toState reads a stored card into the editor's terms: a missing key becomes
+ * its default, an old boolean becomes the value that replaced it. Written
+ * straight back, that would rewrite an invitation nobody touched, and it would
+ * lose any key the editor does not know of at all. So each key is compared
+ * between the card as built now and the card as built from what was stored
+ * (`read`): where they agree the host has not changed it, and the stored value
+ * goes back, or no key where there was none; where they differ the new value
+ * is the host's. A key this editor does not build is never in either, so it
+ * always agrees and is always kept.
+ *
+ * `stored` is the card this editor was handed, a saved invitation's, a stashed
+ * card's or the empty one.
+ */
+function keepStoredForm(
+  config: CardConfig,
+  stored: CardConfig,
+  read: CardConfig,
+): CardConfig {
+  const now = config as unknown as Record<string, unknown>;
+  const was = stored as unknown as Record<string, unknown>;
+  const then = read as unknown as Record<string, unknown>;
+  const kept: Record<string, unknown> = {};
+
+  for (const key of new Set([
+    ...Object.keys(now),
+    ...Object.keys(was),
+    ...Object.keys(then),
+  ])) {
+    if (deepEqual(now[key], then[key])) {
+      if (key in was) {
+        kept[key] = was[key];
+      }
+    } else if (now[key] !== undefined) {
+      kept[key] = now[key];
+    }
+  }
+
+  return kept as unknown as CardConfig;
+}
+
+/**
+ * The state of a card being made or changed in the wizard: every value, every
+ * handler that writes one, the card as it stands, the dirty check and the save.
+ *
+ * Nothing here draws anything; components/wizard/Wizard.tsx is the only
+ * caller, for a new card on /create and a saved one on its edit page.
  */
 export function useCardEditor({
   start,
@@ -368,7 +400,7 @@ export function useCardEditor({
   guardUnsaved: boolean;
   /** What saving does. The hook never writes a row. */
   onSave: (snapshot: EditorSnapshot) => Promise<SaveOutcome>;
-  /** After payment: see CardEditor. */
+  /** After payment: the draft as saved and the changes used, for the notes on the date and names. */
   paidLimits?: { baseline: EventDraft; allowance: ChangeAllowance };
 }) {
   /*
@@ -378,11 +410,17 @@ export function useCardEditor({
   */
   const initial = toState(start);
 
+  /*
+    The card as it was handed over, and as the editor first built it from
+    that: the two keepStoredForm compares against. Fixed at the first render.
+  */
+  const [storedForm] = useState(() => ({
+    stored: start.config,
+    read: toSnapshot(initial).config,
+  }));
+
   const [draft, setDraft] = useState<EventDraft>(initial.draft);
   const [occasionId, setOccasionId] = useState<OccasionId>(initial.occasionId);
-  const [traditionId, setTraditionId] = useState<TraditionId>(
-    initial.traditionId,
-  );
   const [language, setLanguage] = useState<CardLanguage>(initial.language);
   /*
     Which language the preview shows, which is not the card's language.
@@ -395,98 +433,12 @@ export function useCardEditor({
   const [previewLanguage, setPreviewLanguage] = useState<CardLanguage>(
     initial.language,
   );
-  /* On unless the host turns it off; see ReplyFormPanel. */
   const [rsvpEnabled, setRsvpEnabled] = useState<boolean>(initial.rsvpEnabled);
   const [decorMotion, setDecorMotion] = useState(initial.decorMotion);
-  const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>(
-    initial.decorIntensity,
-  );
-  const [butterflies, setButterflies] = useState(initial.butterflies);
-  const [leaves, setLeaves] = useState(initial.leaves);
-  /* The kinds stay in the card while their switches are off, as the flower does. */
-  const [flying, setFlying] = useState(initial.flying);
-  const [nature, setNature] = useState(initial.nature);
-  const [petals, setPetals] = useState(initial.petals);
-  const [petalFlower, setPetalFlower] = useState(initial.petalFlower);
-  /*
-    What the Butterflies and Flower petals switches turn back on to: the last
-    colour and the last mode the card had, however it got them — a chip, a
-    preset or the saved card. Mixed and Both before there was one. Display
-    memory only, never saved; kept here rather than in MotionPicker because
-    that unmounts with the Design tab. Updated while rendering, React's
-    pattern for state that follows other state, so it is never a frame behind.
-  */
-  const [lastButterflies, setLastButterflies] = useState<
-    Exclude<ButterflyStyle, "none">
-  >(initial.butterflies === "none" ? "mixed" : initial.butterflies);
-  const [lastPetals, setLastPetals] = useState<Exclude<PetalStyle, "none">>(
-    initial.petals === "none" ? "both" : initial.petals,
-  );
-  if (butterflies !== "none" && butterflies !== lastButterflies) {
-    setLastButterflies(butterflies);
-  }
-  if (petals !== "none" && petals !== lastPetals) {
-    setLastPetals(petals);
-  }
   const [borderStyle, setBorderStyle] = useState(initial.borderStyle);
   const [scratchTarget, setScratchTarget] = useState(initial.scratchTarget);
-  const [scratchFrame, setScratchFrame] = useState(initial.scratchFrame);
-  const [dateReveal, setDateReveal] = useState(initial.dateReveal);
-  const [coupleIllustration, setCoupleIllustration] = useState(
-    initial.coupleIllustration,
-  );
-  const [invitedHeading, setInvitedHeading] = useState(initial.invitedHeading);
-  const [venueIllustration, setVenueIllustration] = useState(
-    initial.venueIllustration,
-  );
-  const [scene, setScene] = useState(initial.scene);
-  const [royalTexture, setRoyalTexture] = useState(initial.royalTexture);
-  const [royalTexturePattern, setRoyalTexturePattern] = useState(
-    initial.royalTexturePattern,
-  );
-  const [namesFrame, setNamesFrame] = useState(initial.namesFrame);
   const [pdfDownload, setPdfDownload] = useState(initial.pdfDownload);
-
-  /*
-    THE DATE'S REVEAL, AND THE ONLY PLACE IT IS SET. The royal scroll and the
-    scratch panel are both chosen here, and choosing either takes the other
-    off the date: the scroll or the plain date clears a scratch panel that
-    was over the date, and only one that was over the date; one over the venue
-    or the countdown is the section below's, and is left exactly as it is.
-    Scratch puts the card's one panel on the date. Tear is the card's one
-    interactive panel too, so it takes the scratch panel off whichever
-    section had it.
-  */
-  const handleDateReveal = useCallback(
-    (next: DateReveal) => {
-      setDateReveal(next);
-
-      if (next === "scratch") {
-        setScratchTarget("date");
-      } else if (next === "tear" || scratchTarget === "date") {
-        setScratchTarget("none");
-      }
-    },
-    [scratchTarget],
-  );
-
-  /*
-    "Scratch to reveal": the panel over the venue or the countdown, or off.
-    It sets that and nothing else. It cannot put the panel on the date, which
-    is not among its options, and it never touches the date's reveal: a royal
-    scroll on the date and a scratch panel on the venue are two choices in two
-    sections, and changing one leaves the other alone. While the date has the
-    panel this section is switched off, so it is never asked to take it away.
-  */
-  const handleScratchSection = useCallback((next: ScratchSection) => {
-    setScratchTarget(next);
-  }, []);
-
-  /* The way out the switched-off section offers: the date shown plainly, the panel free. */
-  const handleShowDateSimply = useCallback(() => {
-    handleDateReveal("simple");
-  }, [handleDateReveal]);
-  const [divider, setDivider] = useState(initial.divider);
+  const [look, setLook] = useState<CardLook>(initial.look);
   /* A link the host pastes. Null is "no music", and nothing ever autoplays. */
   const [musicUrl, setMusicUrl] = useState<string | null>(initial.musicUrl);
   /*
@@ -515,38 +467,20 @@ export function useCardEditor({
     venueAddress: draft.venueAddress,
     eventDate: draft.eventDate,
   });
-  /* Its own column as well; see 0005. Only the switch exists so far. */
+  /* Its own column as well; see 0005. */
   const [qrCheckinEnabled, setQrCheckinEnabled] = useState(
     initial.qrCheckinEnabled,
-  );
-  /*
-    The current tradition's ornament pack choices. Kept here rather than inside
-    the panel, because the panel unmounts the moment the host leaves a tradition
-    that has a pack, and state that unmounts with its editor would quietly
-    survive on the card.
-  */
-  const [ornamentConfig, setOrnamentConfig] = useState<OrnamentConfig>(
-    initial.ornamentConfig,
   );
   const [style, setStyle] = useState<CardStyle>(initial.style);
 
   /*
-    Which function in the timeline has its fields open, and the counter that
-    names a new custom section.
-
-    Both were local to their own editor until those editors started unmounting
-    every time the host switched tab. The open row would have collapsed under
-    them; the counter would have restarted at 1 and minted an id a section in
-    the list already had. See the props on SubEventEditor and SectionManager.
+    Which function in the timeline has its fields open. Here rather than in
+    SubEventEditor, which unmounts whenever the host leaves the details step.
   */
   const [openSubEventId, setOpenSubEventId] = useState<string | null>(null);
-  const nextCustomId = useRef<number>(1);
 
   const [blocks, setBlocks] = useState<readonly CardBlock[]>(initial.blocks);
-  /*
-    The card's template. Nothing in the tabbed editor changes it; the wizard's
-    gallery does, through `applySnapshot` below.
-  */
+  /* The card's template, which the gallery changes through `applySnapshot` below. */
   const [templateId, setTemplateId] = useState<string>(initial.templateId);
 
   /**
@@ -562,62 +496,23 @@ export function useCardEditor({
     setBlocks(state.blocks);
     setTemplateId(state.templateId);
     setOccasionId(state.occasionId);
-    setTraditionId(state.traditionId);
     setLanguage(state.language);
     setRsvpEnabled(state.rsvpEnabled);
     setDecorMotion(state.decorMotion);
-    setDecorIntensity(state.decorIntensity);
-    setButterflies(state.butterflies);
-    setLeaves(state.leaves);
-    setFlying(state.flying);
-    setNature(state.nature);
-    setPetals(state.petals);
-    setPetalFlower(state.petalFlower);
     setBorderStyle(state.borderStyle);
     setScratchTarget(state.scratchTarget);
-    setScratchFrame(state.scratchFrame);
-    setDateReveal(state.dateReveal);
-    setCoupleIllustration(state.coupleIllustration);
-    setInvitedHeading(state.invitedHeading);
-    setVenueIllustration(state.venueIllustration);
-    setScene(state.scene);
-    setRoyalTexture(state.royalTexture);
-    setRoyalTexturePattern(state.royalTexturePattern);
-    setNamesFrame(state.namesFrame);
     setPdfDownload(state.pdfDownload);
-    setDivider(state.divider);
+    setLook(state.look);
     setMusicUrl(state.musicUrl);
     setCoverAnimation(state.coverAnimation);
     setShowWeather(state.showWeather);
     setWeatherTheme(state.weatherTheme);
     setQrCheckinEnabled(state.qrCheckinEnabled);
-    setOrnamentConfig(state.ornamentConfig);
     setStyle(state.style);
   }, []);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  /**
-   * The next unused `custom-n`.
-   *
-   * The skip loop is not belt and braces. A card that arrives already holding
-   * custom-1 and custom-2 — restored from the sign-in stash, or loaded out of a
-   * saved event — leaves this counter at 1 while those ids exist, so it is
-   * stepped past anything the list already holds rather than trusted blind.
-   */
-  const mintCustomId = useCallback((): string => {
-    let id = "";
-
-    do {
-      id = `custom-${nextCustomId.current}`;
-      nextCustomId.current += 1;
-    } while (
-      blocks.some((block) => block.kind === "custom" && block.section.id === id)
-    );
-
-    return id;
-  }, [blocks]);
 
   const handleChange = useCallback<
     <K extends keyof EventDraft>(field: K, value: EventDraft[K]) => void
@@ -626,10 +521,10 @@ export function useCardEditor({
   }, []);
 
   /**
-   * An occasion click is the only thing that overwrites the theme and motion.
-   * Every other render leaves them alone, so a host who picks a theme after
-   * choosing an occasion keeps their choice — and a host who opens a saved card
-   * and never touches the occasion keeps everything they chose last time.
+   * An occasion click on a Classic card is the only thing that overwrites the
+   * theme and motion. Every other render leaves them alone, so a host who
+   * opens a saved card and never touches the occasion keeps everything they
+   * chose last time.
    */
   const handleOccasionSelect = useCallback((id: OccasionId) => {
     const occasion = getOccasion(id);
@@ -717,7 +612,7 @@ export function useCardEditor({
 
   /*
     Bumped each time the Translate button fills words, so the panel at the end
-    of the tab opens on them. See `revealSignal` in TranslationPanel.
+    of the step opens on them. See `revealSignal` in TranslationPanel.
   */
   const [translatedSignal, setTranslatedSignal] = useState(0);
 
@@ -767,156 +662,24 @@ export function useCardEditor({
     );
   }, []);
 
-  /**
-   * A tradition click is the one thing that can clear the ornament pack.
-   *
-   * EVERY tradition click resets it, including a click that lands on another
-   * tradition with a pack of its own. That is what stops a selection crossing
-   * between packs: a host who picks Bismillah under Muslim and then chooses
-   * Hindu gets an empty Hindu panel, not a greeting id from the wrong content
-   * file sitting in the slot. It also covers leaving a pack entirely — a host
-   * who tries the lanterns, changes their mind, and never opens that panel
-   * again would otherwise ship a Sikh or a Christian card with a lantern
-   * hanging off it and no control anywhere on the page that could switch it
-   * off. Arriving at a pack resets it too, so a pack always opens from a known
-   * state.
-   */
-  const handleTraditionSelect = useCallback((id: TraditionId) => {
-    setTraditionId(id);
-    setOrnamentConfig(DEFAULT_ORNAMENT_CONFIG);
-  }, []);
-
   const setFontPair = useCallback((fontPairId: FontPairId) => {
     setStyle((previous) => ({ ...previous, fontPairId }));
   }, []);
 
-  /*
-    A palette brings the nearest text pair with it, unless the host chose
-    their own inks and they still read on the new card colour. See withPalette.
-  */
-  const setPalette = useCallback((paletteId: PaletteId) => {
-    setStyle((previous) => withPalette(previous, paletteId));
-  }, []);
-
-  /* A text pair: its two inks, on the card colour as it is. Nothing else changes. */
-  const setTextPair = useCallback((pairId: TextPairId) => {
-    setStyle((previous) => withTextPair(previous, getTextPair(pairId)));
-  }, []);
-
-  /* One ink, picked by hand from the curated set. */
-  const setCustomInk = useCallback(
-    (role: "primary" | "secondary", ink: string) => {
-      setStyle((previous) => withCustomInk(previous, role, ink));
-    },
-    [],
-  );
-
-  const setDensity = useCallback((density: CardDensity) => {
-    setStyle((previous) => ({ ...previous, density }));
-  }, []);
-
-  const setAccent = useCallback((accentOverride: string | null) => {
-    setStyle((previous) => ({ ...previous, accentOverride }));
-  }, []);
-
-  /*
-    The design values, gathered for the presets. A preset reads this and hands
-    back the next one; nothing outside it — the draft, the sections, the
-    replies — is in reach.
-  */
-  const design: DesignState = {
-    style,
-    borderStyle,
-    decorMotion,
-    decorIntensity,
-    butterflies,
-    leaves,
-    flying,
-    nature,
-    petals,
-    petalFlower,
-    coverAnimation,
-    traditionId,
-    ornamentConfig,
-    ...(dateReveal !== undefined ? { dateReveal } : null),
-    ...(royalTexture ? { royalTexture: true as const } : null),
-    ...(royalTexturePattern !== "damask" ? { royalTexturePattern } : null),
-    ...(namesFrame !== "lotus" ? { namesFrame } : null),
-  };
-
-  /**
-   * A preset click: every design value it names, set at once.
-   *
-   * Through the same setters the controls use, so a preset leaves the card in
-   * a state a host could have reached by hand. applyPreset keeps the rule
-   * handleTraditionSelect keeps — a new tradition starts its pack empty.
-   */
-  const handleApplyPreset = (preset: Preset): void => {
-    const next = applyPreset(design, preset);
-
-    setStyle(next.style);
-    setBorderStyle(next.borderStyle);
-    setDecorMotion(next.decorMotion);
-    setDecorIntensity(next.decorIntensity);
-    setButterflies(next.butterflies);
-    setLeaves(next.leaves);
-    setFlying(next.flying);
-    setNature(next.nature);
-    setPetals(next.petals);
-    setPetalFlower(next.petalFlower);
-    setCoverAnimation(next.coverAnimation);
-    setTraditionId(next.traditionId);
-    setOrnamentConfig(next.ornamentConfig);
-    /*
-      A look whose date unrolls on the scroll takes a scratch panel off that
-      date, and only off the date: one over the venue or the countdown stays.
-    */
-    setDateReveal(next.dateReveal);
-    if (next.dateReveal === "scroll" && scratchTarget === "date") {
-      setScratchTarget("none");
-    }
-    /* Only ever turned on by a look: one that does not name it leaves it as it was. */
-    if (next.royalTexture === true) {
-      setRoyalTexture(true);
-    }
-    /* A look that asks for the texture asks for the damask; see applyPreset. */
-    setRoyalTexturePattern(next.royalTexturePattern ?? "damask");
-    /* The look's frame for the names, or the lotus ring; see applyPreset. */
-    setNamesFrame(next.namesFrame ?? "lotus");
-  };
-
   /* The card as it stands, and the only place this component builds one. */
-  const snapshot = toSnapshot({
+  const built = toSnapshot({
     draft,
     blocks,
     decorMotion,
-    decorIntensity,
-    butterflies,
-    leaves,
-    flying,
-    nature,
-    petals,
-    petalFlower,
     occasionId,
-    traditionId,
     language,
     rsvpEnabled,
     scratchTarget,
-    scratchFrame,
-    dateReveal,
-    coupleIllustration,
-    invitedHeading,
-    venueIllustration,
-    scene,
-    royalTexture,
-    royalTexturePattern,
-    namesFrame,
     pdfDownload,
-    divider,
     borderStyle,
     style,
-    ornamentConfig,
     musicUrl,
+    look,
     isPaid: initial.isPaid,
     templateId,
     wizard: initial.wizard,
@@ -925,49 +688,44 @@ export function useCardEditor({
     weatherTheme,
     qrCheckinEnabled,
   });
+  const snapshot: EditorSnapshot = {
+    ...built,
+    config: keepStoredForm(built.config, storedForm.stored, storedForm.read),
+  };
   const config: CardConfig = snapshot.config;
 
   /*
     What the editor was handed, and what "unchanged" is measured against.
 
-    Built by toSnapshot over the same unpacked state the controls started from,
-    rather than from the props directly, so the two sides of the comparison
-    below are the same construction over the same values. A stored card missing
-    a field the editor now has cannot register as an edit nobody made.
+    Built the same way as the card above, over the state the controls started
+    from, so a stored card missing a field the editor now has cannot register
+    as an edit nobody made.
 
     State rather than a memo, because it moves exactly once: a successful save
     makes what was just written the new baseline, so the guard stops guarding
-    something that is now safely in the database. A card recovered from the
-    sign-in stash does not move it: /create hands that card over as the initial
-    one, so it is the baseline from the first render.
+    something that is now safely in the database.
   */
-  const [baseline, setBaseline] = useState<EditorSnapshot>(() =>
-    toSnapshot(initial),
-  );
+  const [baseline, setBaseline] = useState<EditorSnapshot>(() => ({
+    ...toSnapshot(initial),
+    config: keepStoredForm(storedForm.read, storedForm.stored, storedForm.read),
+  }));
 
   /*
     Structural, not by reference. Every control here replaces state rather than
     mutating it, so re-picking the palette that was already selected builds a
-    new object holding the same choices — and a dirty check that counted that
-    would put a "discard your changes?" prompt in front of a host who changed
-    nothing. See lib/deepEqual.ts.
+    new object holding the same choices. See lib/deepEqual.ts.
 
-    Only in edit mode. On /create the baseline is an empty card and a host who
-    has typed their own name is "dirty" by the second keystroke; there is
-    nothing saved to lose there, no Cancel, and the sign-in detour deliberately
-    navigates away, so the guard would be pure friction on the commonest path
-    this editor has.
+    Only for a saved card. On /create the baseline is an empty card and a host
+    who has typed their own name is "dirty" by the second keystroke; there is
+    nothing saved to lose there, and the sign-in detour deliberately navigates
+    away, so the guard would be pure friction.
   */
   const isDirty = guardUnsaved && !deepEqual(snapshot, baseline);
 
   /*
     The browser's own "leave site?" prompt, and the only thing here that can
-    catch a closed tab or a typed URL.
-
-    Registered only while there is something to lose and torn down the moment
-    there is not — which covers the save, because a successful one moves the
-    baseline and clears `isDirty` — and on unmount, by the cleanup. A handler
-    left behind would prompt a host who had already saved.
+    catch a closed tab or a typed URL. Registered only while there is
+    something to lose, and torn down the moment there is not.
   */
   useEffect(() => {
     if (!isDirty) {
@@ -977,8 +735,7 @@ export function useCardEditor({
     const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
       /*
         Both halves, and neither is redundant: preventDefault is what the spec
-        now asks for, `returnValue` is what older browsers still read. Whatever
-        string is assigned, every current browser shows its own wording.
+        now asks for, `returnValue` is what older browsers still read.
       */
       event.preventDefault();
       event.returnValue = "";
@@ -1010,8 +767,9 @@ export function useCardEditor({
         /*
           Clean, as of what was just written. This is what removes the
           beforeunload handler, and it has to happen whether the route is
-          navigating to a new dashboard, back to this event's, or off to sign in.
-          `isSaving` deliberately stays true: the page is leaving.
+          navigating to the saved screen, back to this event's dashboard, or
+          off to sign in. `isSaving` deliberately stays true: the page is
+          leaving.
         */
         setBaseline(snapshot);
       })
@@ -1022,7 +780,7 @@ export function useCardEditor({
       });
   }, [isSaving, onSave, snapshot]);
 
-  const motifs = getMotifs(occasionId, traditionId);
+  const motifs = getMotifs(occasionId, look.traditionId);
 
   /*
     After payment, what each allowance has left and whether the change on
@@ -1032,9 +790,9 @@ export function useCardEditor({
     paidLimits === undefined
       ? undefined
       : (() => {
-          const { baseline, allowance } = paidLimits;
-          const dateRefusal = dateEditRefusal(baseline, draft, allowance);
-          const nameRefusal = nameEditRefusal(baseline, draft, allowance);
+          const { baseline: paidBaseline, allowance } = paidLimits;
+          const dateRefusal = dateEditRefusal(paidBaseline, draft, allowance);
+          const nameRefusal = nameEditRefusal(paidBaseline, draft, allowance);
 
           return {
             dates: {
@@ -1062,66 +820,18 @@ export function useCardEditor({
     templateId,
     applySnapshot,
     draft,
-    setDraft,
     occasionId,
     setOccasionId,
-    traditionId,
-    setTraditionId,
     language,
-    setLanguage,
     previewLanguage,
     setPreviewLanguage,
     rsvpEnabled,
     setRsvpEnabled,
-    decorMotion,
-    setDecorMotion,
-    decorIntensity,
-    setDecorIntensity,
-    butterflies,
-    setButterflies,
-    leaves,
-    setLeaves,
-    flying,
-    setFlying,
-    nature,
-    setNature,
-    petals,
-    setPetals,
-    petalFlower,
-    setPetalFlower,
-    lastButterflies,
-    setLastButterflies,
-    lastPetals,
-    setLastPetals,
-    borderStyle,
     setBorderStyle,
     scratchTarget,
     setScratchTarget,
-    scratchFrame,
-    setScratchFrame,
-    dateReveal,
-    setDateReveal,
-    coupleIllustration,
-    setCoupleIllustration,
-    invitedHeading,
-    setInvitedHeading,
-    venueIllustration,
-    setVenueIllustration,
-    scene,
-    setScene,
-    royalTexture,
-    setRoyalTexture,
-    royalTexturePattern,
-    setRoyalTexturePattern,
-    namesFrame,
-    setNamesFrame,
     pdfDownload,
     setPdfDownload,
-    handleDateReveal,
-    handleScratchSection,
-    handleShowDateSimply,
-    divider,
-    setDivider,
     musicUrl,
     setMusicUrl,
     coverAnimation,
@@ -1133,8 +843,6 @@ export function useCardEditor({
     previewWeather,
     qrCheckinEnabled,
     setQrCheckinEnabled,
-    ornamentConfig,
-    setOrnamentConfig,
     style,
     setStyle,
     openSubEventId,
@@ -1142,10 +850,7 @@ export function useCardEditor({
     blocks,
     setBlocks,
     isSaving,
-    setIsSaving,
     error,
-    setError,
-    mintCustomId,
     handleChange,
     handleOccasionSelect,
     handleLanguageSelect,
@@ -1153,22 +858,10 @@ export function useCardEditor({
     handleSubEventWord,
     handleSectionWord,
     translatedSignal,
-    setTranslatedSignal,
     handleTranslated,
     handleCardId,
-    handleTraditionSelect,
     setFontPair,
-    setPalette,
-    setTextPair,
-    setCustomInk,
-    setDensity,
-    setAccent,
-    design,
-    handleApplyPreset,
     snapshot,
-    config,
-    baseline,
-    setBaseline,
     isDirty,
     handleSave,
     motifs,

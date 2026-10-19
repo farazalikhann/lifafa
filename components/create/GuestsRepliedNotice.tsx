@@ -42,7 +42,7 @@ export default function GuestsRepliedNotice({
         `lg:col-span-2` for the same reason ExistingInvitationsNotice carries
         it: this is a grid item in the editor's two-column layout, and a wrapper
         that spanned the columns would occupy a row even on the renders where
-        there is nothing to say. The grid is defined in CardEditor.
+        there is nothing to say. The grid is defined in the wizard.
       */
       role="status"
       className="rounded-2xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/10 px-4 py-3.5 text-sm leading-relaxed text-[var(--lifafa-cream)] sm:px-5 lg:col-span-2"

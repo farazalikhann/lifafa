@@ -150,15 +150,6 @@ export function naturePiece(kind: NatureKind): NaturePiece {
   return NATURE_PIECES[kind] ?? GREEN_LEAF;
 }
 
-/** Every flying kind, in the order the panel offers them. */
-export const FLYING_KINDS: readonly { id: FlyingKind; label: string }[] = [
-  { id: "butterflies", label: "Butterflies" },
-  { id: "lovebirds", label: "Lovebirds" },
-  { id: "dragonflies", label: "Dragonflies" },
-  { id: "hearts", label: "Hearts" },
-  { id: "fireflies", label: "Fireflies" },
-];
-
 /**
  * THE ONE LIST that says which flying kinds a card can have: the panel shows
  * a chip for each, and `flyingKind` reads any other as butterflies. A kind is
@@ -201,15 +192,6 @@ export function fireflyGlow(
   };
 }
 
-/** Every nature kind, in the order the panel offers them. */
-export const NATURE_KINDS: readonly { id: NatureKind; label: string }[] = [
-  { id: "greenLeaves", label: "Green leaves" },
-  { id: "goldLeaves", label: "Gold leaves" },
-  { id: "autumnLeaves", label: "Autumn leaves" },
-  { id: "dandelion", label: "Dandelion" },
-  { id: "feathers", label: "Feathers" },
-];
-
 /** The same list for the nature kinds. */
 export const AVAILABLE_NATURE: readonly NatureKind[] = [
   "greenLeaves",
@@ -217,18 +199,6 @@ export const AVAILABLE_NATURE: readonly NatureKind[] = [
   "autumnLeaves",
   "dandelion",
   "feathers",
-];
-
-/** In the order the panel offers them, coldest first and the mixture last. */
-export const BUTTERFLY_STYLES: readonly {
-  id: ButterflyStyle;
-  label: string;
-}[] = [
-  { id: "none", label: "Off" },
-  { id: "red", label: "Red" },
-  { id: "yellow", label: "Yellow" },
-  { id: "purple", label: "Purple" },
-  { id: "mixed", label: "Mixed" },
 ];
 
 /**

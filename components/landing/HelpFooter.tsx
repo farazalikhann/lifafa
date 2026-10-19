@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /**
  * The support mailbox. Change the local part here and every mention follows.
@@ -36,7 +37,7 @@ interface FooterLink {
 
 const FOOTER_LINKS: readonly FooterLink[] = [
   { href: "/login", label: "Sign in", prefetch: true },
-  { href: "/create", label: "Create an invitation", prefetch: true },
+  { href: NEW_CARD_HREF, label: "Create an invitation", prefetch: true },
   /*
     Linked before the pages are written, so the footer does not change shape
     the day they are. Until then both land on the not-found page.

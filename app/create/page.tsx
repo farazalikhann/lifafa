@@ -12,10 +12,10 @@ import { isUnderReview } from "@/lib/db/paymentReview";
  * A new invitation, made in the wizard: a template, the details, the few
  * things that can be changed about the look, and a last look before saving.
  *
- * This is where every "Create" link on the site leads. It was the tabbed
- * editor until the wizard took its place; that editor is still what
- * /dashboard/[eventId]/edit opens for an invitation made in it (see
- * CardConfig.editor), and is no longer a way to start a new one.
+ * This is where every "Create" link on the site leads, at
+ * /create?step=template (NEW_CARD_HREF). Without a step it opens on the
+ * template gallery too, or on the step a card waiting from before a sign-in
+ * was stashed on.
  *
  * OPEN TO EVERYONE. The middleware lets anyone reach this page; the account
  * is asked for when the card is saved, which is the first moment it is

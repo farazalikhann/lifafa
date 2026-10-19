@@ -26,7 +26,7 @@ export default function PdfPanel({
 }: {
   enabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   const hintId = useId();

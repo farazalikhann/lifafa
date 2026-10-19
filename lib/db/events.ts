@@ -57,6 +57,59 @@ const CODE_ATTEMPTS = 5;
 const UNIQUE_VIOLATION = "23505";
 
 /**
+ * Every key a CardConfig has, which is every key the wizard writes or means to
+ * leave off. Checked against the type both ways, so a key added to CardConfig
+ * has to be added here before this builds.
+ */
+const CARD_CONFIG_KEYS = {
+  templateId: true,
+  editor: true,
+  themeId: true,
+  musicUrl: true,
+  blocks: true,
+  decorMotion: true,
+  decorIntensity: true,
+  butterflies: true,
+  leaves: true,
+  flying: true,
+  nature: true,
+  petals: true,
+  petalFlower: true,
+  occasionId: true,
+  traditionId: true,
+  language: true,
+  rsvpEnabled: true,
+  scratchTarget: true,
+  coupleIllustration: true,
+  invitedHeading: true,
+  venueIllustration: true,
+  scene: true,
+  royalTexture: true,
+  royalTexturePattern: true,
+  dateReveal: true,
+  scratchFrame: true,
+  divider: true,
+  namesFrame: true,
+  pdfDownload: true,
+  borderStyle: true,
+  style: true,
+  ornamentConfig: true,
+  isPaid: true,
+  shareMessages: true,
+} as const satisfies Record<keyof CardConfig, true>;
+
+/**
+ * The keys of a stored card that no CardConfig has: written by some older
+ * build, or by hand. Nothing in this build reads them, so nothing in it can
+ * mean to remove them, and a save carries them across untouched.
+ */
+function unknownConfigKeys(config: CardConfig): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(config).filter(([key]) => !(key in CARD_CONFIG_KEYS)),
+  );
+}
+
+/**
  * The two ways a write naming a column the database does not have comes back.
  *
  * Postgres raises 42703 itself; PostgREST answers PGRST204 when the column is
@@ -615,6 +668,8 @@ export async function updateEvent(
       its own row because a request claimed a payment that never happened.
     */
     card_config: {
+      /* Under the save, so nothing of the host's can be overwritten by them. */
+      ...unknownConfigKeys(existing.card_config),
       ...patch.cardConfig,
       /*
         The editor never holds the host's WhatsApp wording (it builds its

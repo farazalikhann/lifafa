@@ -256,17 +256,6 @@ const FRAMES: Record<PhotoBorderStyle, FrameArt> = {
  */
 const FLOWER_FRAME_SCALE = 0.3;
 
-/**
- * How much of a 44px chip the two horizontal bands may take between them.
- *
- * A chip scale cannot be shared the way the card scale is: the three frames are
- * cut at different depths, so one number would leave the rose's bands meeting
- * in the middle of the chip or the purple's barely showing. Fixing what the
- * bands add up to instead shows the same amount of frame whichever is drawn,
- * and leaves 12px of plate between them to read as the inside of a border.
- */
-const CHIP_BAND = 32;
-
 /** Whether this border is placed as a photograph rather than drawn as line art. */
 export function isPhotoBorder(
   style: CardBorderStyle,
@@ -285,13 +274,6 @@ export function flowerFrameClearance(style: PhotoBorderStyle): {
   y: number;
 } {
   return FRAMES[style].clearance;
-}
-
-/** The scale that fits this frame into a chip — see CHIP_BAND. */
-export function flowerChipScale(style: PhotoBorderStyle): number {
-  const { top, bottom } = FRAMES[style].slice;
-
-  return CHIP_BAND / (top + bottom);
 }
 
 function percent(slice: number, extent: number): string {

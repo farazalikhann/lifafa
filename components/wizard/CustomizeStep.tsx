@@ -69,8 +69,7 @@ function Group({
  *
  * Under those, folded away, the things that are not about the look at all and
  * are off or at their default until asked for: the opening animation, the
- * weather, check-in at the door and the PDF copy. They are the tabbed editor's
- * own panels, unchanged.
+ * weather, check-in at the door and the PDF copy.
  *
  * Holds nothing of the card's. Every value comes in and every change goes out
  * to the wizard's useCardEditor; only what is folded open is kept here.

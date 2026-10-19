@@ -29,9 +29,9 @@ const FRAME_QUERY = "(min-width: 64rem)";
  * The card used to flow inline at the top of the phone layout with every
  * control beneath it, which meant a host changing a colour or a font had to
  * scroll several screens back up to see the result and several screens back
- * down to make the next change. On a phone the card now lives behind
- * PreviewBar, pinned to the bottom of the screen and reachable from anywhere in
- * the form, and the controls get the top of the page to themselves.
+ * down to make the next change. On a phone the card now lives behind the
+ * wizard's Preview button, pinned to the bottom of the screen and reachable
+ * from every step, and the controls get the top of the page to themselves.
  *
  * Not merely hidden with a class either: `isFramed` gates the mount, so a phone
  * does not pay to render and re-render a several-screen-tall card on every
@@ -96,7 +96,7 @@ export default function CardPreview({
     setIsPreviewOpen(false);
   }, []);
 
-  /* The phone gets PreviewBar instead — see the note above. */
+  /* The phone gets the wizard's Preview button instead — see the note above. */
   if (!isFramed) {
     return null;
   }

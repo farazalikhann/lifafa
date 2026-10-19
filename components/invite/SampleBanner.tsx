@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactElement } from "react";
 import PinnedStrip, { PINNED_STRIP_ACTION } from "@/components/invite/PinnedStrip";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /**
  * The strip across the top of the sample invitation.
@@ -21,7 +22,7 @@ export default function SampleBanner(): ReactElement {
       label="Sample invitation"
       slim
       action={
-        <Link href="/create" className={PINNED_STRIP_ACTION}>
+        <Link href={NEW_CARD_HREF} className={PINNED_STRIP_ACTION}>
           Create yours
         </Link>
       }

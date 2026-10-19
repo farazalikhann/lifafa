@@ -30,7 +30,7 @@ export default function WeatherPicker({
   weatherTheme: WeatherThemeId;
   onShowWeatherChange: (show: boolean) => void;
   onWeatherThemeChange: (id: WeatherThemeId) => void;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   return (

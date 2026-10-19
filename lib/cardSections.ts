@@ -15,8 +15,8 @@ export interface CardSectionMeta {
  * The registry of card sections — the single source of truth for what a card
  * can contain and the order sections appear in.
  *
- * The editor's section list (components/create/SectionManager.tsx) reads its
- * labels from this map. Adding a section here means adding its id to
+ * The wizard's section switches (components/wizard/CustomizeStep.tsx) read
+ * their labels from this map. Adding a section here means adding its id to
  * CardSectionId and a renderer in CardCanvas.
  */
 export const CARD_SECTIONS: Record<CardSectionId, CardSectionMeta> = {

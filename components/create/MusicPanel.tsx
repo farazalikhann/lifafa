@@ -9,9 +9,8 @@ import CollapsibleSection, {
 /**
  * The link to a track that plays behind the card.
  *
- * Was the sixth group inside StylePanel, and it sits in the Extras tab now,
- * with the cover and the weather: it is another thing the invitation carries,
- * not a typographic choice. The field, its label and its note are unchanged.
+ * In step 3 of the wizard, beside the cover and the weather: it is another
+ * thing the invitation carries, not a typographic choice.
  */
 export default function MusicPanel({
   musicUrl,
@@ -27,7 +26,7 @@ export default function MusicPanel({
   */
   musicUrl: string | null;
   onMusicUrlChange: (url: string | null) => void;
-  /** The Extras tab's open section; see CollapsibleSection. */
+  /** The open section; see CollapsibleSection. */
   accordion: Accordion;
 }): ReactElement {
   return (

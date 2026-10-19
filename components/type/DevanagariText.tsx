@@ -7,7 +7,7 @@ import { DEVANAGARI_LANG } from "@/lib/devanagariContent";
  * Noto Sans Devanagari, loaded by next/font in app/layout.tsx and resolved
  * through one variable declared in globals.css, with the system faces behind
  * it. The exact arrangement the Arabic uses — see ARABIC_FONT_STACK in
- * components/card/CardCanvas.tsx and components/create/OrnamentPanel.tsx.
+ * components/card/CardCanvas.tsx.
  */
 const DEVANAGARI_FONT_STACK = "var(--lifafa-devanagari)";
 

@@ -4,6 +4,7 @@ import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { useInView } from "@/hooks/useInView";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /*
   What one payment buys, and every line has to be something the product does
@@ -104,7 +105,7 @@ export default function Pricing() {
           third one this close to the second would compete with it.
         */}
         <Link
-          href="/create"
+          href={NEW_CARD_HREF}
           className="mt-9 flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--lifafa-marigold)]/60 px-6 text-[0.9375rem] font-semibold text-[var(--lifafa-marigold)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] hover:bg-[var(--lifafa-marigold)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
         >
           Start your invitation

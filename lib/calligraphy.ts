@@ -564,16 +564,3 @@ export function withOneCalligraphy<T extends string>(
   return ids.filter((id) => id === kept || !calligraphyIds.includes(id));
 }
 
-/**
- * The ornament list after a tap on a calligraphy tile: the tapped piece
- * replaces whichever one the card had, and tapping the chosen piece again
- * takes it off, so a card can head with none.
- */
-export function tapCalligraphy<T extends string>(
-  ids: readonly T[],
-  calligraphyIds: readonly string[],
-  id: T,
-): readonly T[] {
-  const others = ids.filter((current) => !calligraphyIds.includes(current));
-  return ids.includes(id) ? others : [...others, id];
-}

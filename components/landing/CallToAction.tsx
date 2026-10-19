@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useInView } from "@/hooks/useInView";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 export default function CallToAction() {
   const { ref, isInView } = useInView<HTMLElement>();
@@ -24,7 +25,7 @@ export default function CallToAction() {
       </p>
 
       <Link
-        href="/create"
+        href={NEW_CARD_HREF}
         className={[
           "mt-10 inline-flex items-center justify-center rounded-full",
           "bg-[var(--lifafa-marigold)] px-9 py-4 text-base font-semibold text-[var(--lifafa-ink)] sm:text-lg",

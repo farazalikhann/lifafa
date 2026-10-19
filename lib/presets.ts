@@ -1,4 +1,3 @@
-import { deepEqual } from "@/lib/deepEqual";
 import type { DesignState } from "@/lib/designDefaults";
 import { DEFAULT_NAMES_FRAME } from "@/lib/namesFrame";
 import { DEFAULT_ORNAMENT_CONFIG } from "@/lib/ornaments/muslim";
@@ -31,8 +30,8 @@ import type { CardDensity, FontPairId, PaletteId } from "@/types/style";
 /**
  * Ready-made looks a host can put on their card in one click.
  *
- * A PRESET IS A LOOK AND NOTHING ELSE. It writes to the same design values the
- * Design tab's own controls write to, and to none of the rest: never the
+ * A PRESET IS A LOOK AND NOTHING ELSE. It writes to the card's design values,
+ * and to none of the rest: never the
  * names, the date, the venue, the note, the sections or the replies. The
  * greeting and the dua are never changed either — those are words a family
  * chose to put on their card, and a palette click must not choose them again;
@@ -932,68 +931,3 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
   };
 }
 
-/**
- * Whether two designs put the same thing on the card.
- *
- * Structural like the editor's dirty check, with one allowance: the ornament
- * list is compared as a set. A host who switches the lantern off and on again
- * has moved it to the end of the list, and that is not a different card.
- */
-export function sameDesign(a: DesignState, b: DesignState): boolean {
-  const left = a.ornamentConfig.enabledOrnaments;
-  const right = b.ornamentConfig.enabledOrnaments;
-
-  return (
-    left.length === right.length &&
-    left.every((id) => right.includes(id)) &&
-    deepEqual(
-      { ...a, ornamentConfig: { ...a.ornamentConfig, enabledOrnaments: [] } },
-      { ...b, ornamentConfig: { ...b.ornamentConfig, enabledOrnaments: [] } },
-    )
-  );
-}
-
-/**
- * The preset this design is wearing, if it is wearing one exactly.
- *
- * Worked out from the design rather than remembered, so it holds across a tab
- * switch, a reload and a saved card reopened a month later — and so it turns
- * to null the moment the host changes anything the preset set.
- */
-export function matchingPreset(design: DesignState): Preset | null {
-  /*
-    A card saved before there were text pairs has none, and is still wearing
-    the preset it was saved in: the inks are left out of the comparison for it.
-  */
-  const hasInks = design.style.textColors !== undefined;
-
-  return (
-    PRESETS.find((preset) => {
-      const applied = applyPreset(design, preset);
-
-      /* And the same for the date's reveal, on a card saved before there was a choice of one. */
-      const compared = { ...applied };
-      if (design.dateReveal === undefined) {
-        delete compared.dateReveal;
-      }
-
-      /*
-        And for the names' frame. A card saved before there was a choice of
-        one has none stored, which is the lotus ring, and is still wearing
-        the look it was saved in, whichever frame that look has since been
-        given. So a card on the lotus ring is not told apart by its frame.
-      */
-      if (design.namesFrame === undefined) {
-        delete compared.namesFrame;
-      }
-
-      if (!hasInks) {
-        const style = { ...applied.style };
-        delete style.textColors;
-        return sameDesign({ ...compared, style }, design);
-      }
-
-      return sameDesign(compared, design);
-    }) ?? null
-  );
-}

@@ -71,10 +71,9 @@ import type { EventContact, EventDraft } from "@/types/event";
  * A new invitation, made in four steps: a template, the details, the few
  * things that can be changed about the look, and a last look before saving.
  *
- * THE CARD IS HELD BY useCardEditor, the same hook the tabbed editor uses, so
- * a card made here is the same object, built and saved the same way. What is
- * here is only what the steps are: which one is on screen, how to move
- * between them, and what each one shows.
+ * THE CARD IS HELD BY useCardEditor, for a new card and a saved one alike.
+ * What is here is only what the steps are: which one is on screen, how to
+ * move between them, and what each one shows.
  *
  * THE STEP IS IN THE URL (`?step=details`), so the browser's Back goes back a
  * step and a reload stays where it was. It is moved with history.pushState,
@@ -197,7 +196,7 @@ interface EditContext {
 
 /**
  * The wizard over a saved invitation: what /dashboard/[eventId]/edit mounts
- * for a card that was made in the wizard.
+ * for every invitation, whichever editor it was made in.
  *
  * The same four steps over the stored card, opening on the details, which is
  * what a host coming back has almost always come to change. Saving updates
@@ -412,7 +411,7 @@ function WizardSteps({
     rsvpEnabled,
     setRsvpEnabled,
     scratchTarget,
-    handleScratchSection,
+    setScratchTarget,
     musicUrl,
     setMusicUrl,
     setCoverAnimation,
@@ -525,10 +524,15 @@ function WizardSteps({
   /*
     On Classic an occasion brings its own palette and motion, as it always
     has. On any other template the look is the template's, so the occasion
-    only says what is being celebrated.
+    only says what is being celebrated. So it does on a card made before the
+    wizard, whose palette, accent and motion may have been set by hand in an
+    editor that is gone: nothing here could put them back.
   */
+  const madeBeforeWizard = editing && start.config.editor !== "wizard";
   const handleOccasion =
-    template.id === CLASSIC_TEMPLATE_ID ? handleOccasionSelect : setOccasionId;
+    template.id === CLASSIC_TEMPLATE_ID && !madeBeforeWizard
+      ? handleOccasionSelect
+      : setOccasionId;
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
   const missing = [
     draft.eventTitle.trim().length === 0 ? "the event's title" : null,
@@ -614,7 +618,7 @@ function WizardSteps({
               {/*
                 Typing in the card's own words turns the preview back to the
                 card's own language, after the host has been writing the other
-                one in the panel below. As in the tabbed editor.
+                one in the panel below.
               */}
               <div
                 className="flex min-w-0 flex-col gap-9"
@@ -693,7 +697,7 @@ function WizardSteps({
               onRsvpEnabledChange={setRsvpEnabled}
               countdownScratched={scratchTarget === "countdown"}
               onCountdownScratchedChange={(scratched) =>
-                handleScratchSection(scratched ? "countdown" : "none")
+                setScratchTarget(scratched ? "countdown" : "none")
               }
               musicUrl={musicUrl}
               onMusicUrlChange={setMusicUrl}

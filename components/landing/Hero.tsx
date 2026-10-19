@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /**
  * Hero — first viewport. Pure CSS entrance so it stays a server component and
@@ -83,7 +84,7 @@ export default function Hero() {
         Same pill as the closing call to action, so the two read as one control.
       */}
       <Link
-        href="/create"
+        href={NEW_CARD_HREF}
         className="mt-10 inline-flex min-h-12 animate-[lifafa-rise_800ms_ease-out_both] items-center justify-center rounded-full bg-[var(--lifafa-marigold)] px-8 text-base font-semibold text-[var(--lifafa-ink)] shadow-[0_10px_30px_-12px_rgba(232,163,61,0.55)] transition-[transform,box-shadow] duration-200 ease-out [animation-delay:480ms] hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-14px_rgba(232,163,61,0.75)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)] motion-reduce:animate-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
       >
         Create your invitation

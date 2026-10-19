@@ -202,66 +202,9 @@ export function getTextPair(id: TextPairId): TextPair {
   return TEXT_PAIRS.find((pair) => pair.id === id) ?? TEXT_PAIRS[0];
 }
 
-/**
- * The inks a host may pick one at a time, under "Custom": about a dozen for
- * each role, dark ones for pale cards and pale ones for dark cards. Curated
- * rather than a colour wheel, because a wheel offers ten thousand colours that
- * cannot be read for every one that can. Which of them a card may use is not
- * decided here: see `inkAllowed`.
- */
-export const CUSTOM_PRIMARIES: readonly { hex: string; label: string }[] = [
-  { hex: "#1F1B16", label: "Espresso" },
-  { hex: "#2B1A1A", label: "Dark plum" },
-  { hex: "#2A2A2A", label: "Charcoal" },
-  { hex: "#24332A", label: "Deep green" },
-  { hex: "#16203A", label: "Navy" },
-  { hex: "#3A1420", label: "Wine" },
-  { hex: "#5A1E0E", label: "Henna" },
-  { hex: "#FFFFFF", label: "White" },
-  { hex: "#F7EBDD", label: "Cream" },
-  { hex: "#F4EFE6", label: "Ivory" },
-  { hex: "#F6E7C8", label: "Pale gold" },
-  { hex: "#EAF1EC", label: "Mist" },
-];
-
-export const CUSTOM_SECONDARIES: readonly { hex: string; label: string }[] = [
-  { hex: "#8C2F39", label: "Rose" },
-  { hex: "#86672E", label: "Antique gold" },
-  { hex: "#7A5C2E", label: "Bronze" },
-  { hex: "#A0521A", label: "Saffron" },
-  { hex: "#6B4A2F", label: "Brown" },
-  { hex: "#55633A", label: "Olive" },
-  { hex: "#3E5C76", label: "Slate blue" },
-  { hex: "#6C5C57", label: "Taupe" },
-  { hex: "#E2B968", label: "Gold" },
-  { hex: "#D6B36A", label: "Soft gold" },
-  { hex: "#D9B7AA", label: "Rose beige" },
-  { hex: "#A8CBC6", label: "Pale teal" },
-];
-
 /** Whether the card colour is a pale one, which dark inks are read on. */
 function isPale(color: string): boolean {
   return relativeLuminance(color) > 0.4;
-}
-
-/** Whether this ink reads on this card colour, at its role's ratio. */
-export function inkAllowed(
-  ink: string,
-  card: string,
-  role: "primary" | "secondary",
-): boolean {
-  return (
-    contrastRatio(ink, card) >=
-    (role === "primary" ? PRIMARY_MIN_RATIO : SECONDARY_MIN_RATIO)
-  );
-}
-
-/**
- * Why an ink is not offered on this card, in the host's words: it fails
- * because it is too close to the card, and which way depends on the card.
- */
-export function inkRefusal(card: string): string {
-  return isPale(card) ? "Too light for this card" : "Too dark for this card";
 }
 
 /**
@@ -271,23 +214,6 @@ export function inkRefusal(card: string): string {
  */
 export function pairSuits(pair: TextPair, card: string): boolean {
   return isPale(pair.card) === isPale(card);
-}
-
-/** The pairs a host is offered on this card colour, in the table's order. */
-export function suitableTextPairs(card: string): readonly TextPair[] {
-  return TEXT_PAIRS.filter((pair) => pairSuits(pair, card));
-}
-
-/**
- * A pair's two inks as they are on this card colour: its own where they pass,
- * and moved just far enough where they do not. What a tile in the panel shows
- * and what choosing it stores are both this, so they cannot differ.
- */
-export function pairInks(
-  pair: TextPair,
-  card: string,
-): Pick<CardTextColors, "textPrimary" | "textSecondary"> {
-  return fitted(pair.primary, pair.secondary, card);
 }
 
 /** Both inks, moved just far enough to pass on `card` if they do not already. */
@@ -358,135 +284,6 @@ export function paletteTextColors(paletteId: PaletteId): CardTextColors {
     accent: null,
     chosen: false,
   };
-}
-
-/**
- * A pair as the host picked it, on the card colour they have: its two inks,
- * fitted to that colour, and nothing else. No card colour and no accent: those
- * are not a pair's to set.
- */
-export function pairTextColors(pair: TextPair, card: string): CardTextColors {
-  return {
-    ...pairInks(pair, card),
-    cardColor: null,
-    accent: null,
-    chosen: true,
-  };
-}
-
-/**
- * The style with a pair chosen: the two inks change and nothing else does.
- *
- * The palette, the accent and a custom accent are all left as they were, and
- * the inks are fitted to the card colour on screen, so what the host picked a
- * tile for is what they get.
- *
- * A card saved while a pair still brought its own card colour has that colour
- * stored, and it is kept, with the accent stored beside it: picking new
- * lettering must not be what repaints such a card either. It goes back to its
- * palette's colour when the host picks a palette; see `withPalette`.
- */
-export function withTextPair(style: CardStyle, pair: TextPair): CardStyle {
-  const current = style.textColors;
-
-  return {
-    ...style,
-    textColors: {
-      ...pairTextColors(pair, cardPalette(style).background),
-      cardColor: current?.cardColor ?? null,
-      accent: current?.accent ?? null,
-    },
-  };
-}
-
-/**
- * The style with a palette chosen.
- *
- * The card colour is the palette's again. The inks follow it, the nearest
- * pair's, unless the host chose theirs and they still belong on the new card:
- *
- *   A pair they picked, that suits the new card colour, is kept as that pair
- *   and fitted to the new colour, so the tile they chose is still the one
- *   marked.
- *
- *   Inks they picked one at a time are kept where both can still be read.
- *
- *   Anything else gives way to the nearest pair that suits. Inks that cannot
- *   be read are never kept, whoever chose them: cream on cream is not a
- *   preference.
- */
-export function withPalette(style: CardStyle, paletteId: PaletteId): CardStyle {
-  const card = getPalette(paletteId).background;
-  const current = style.textColors;
-
-  if (current !== undefined && current.chosen) {
-    const pair = matchingTextPair(style);
-
-    if (pair !== null && pairSuits(pair, card)) {
-      return { ...style, paletteId, textColors: pairTextColors(pair, card) };
-    }
-
-    if (
-      inkAllowed(current.textPrimary, card, "primary") &&
-      inkAllowed(current.textSecondary, card, "secondary")
-    ) {
-      return {
-        ...style,
-        paletteId,
-        textColors: { ...current, cardColor: null, accent: null },
-      };
-    }
-  }
-
-  return { ...style, paletteId, textColors: paletteTextColors(paletteId) };
-}
-
-/** The style with one ink chosen by hand, the other as it stood. */
-export function withCustomInk(
-  style: CardStyle,
-  role: "primary" | "secondary",
-  ink: string,
-): CardStyle {
-  const current = style.textColors ?? paletteTextColors(style.paletteId);
-
-  return {
-    ...style,
-    textColors: {
-      ...current,
-      ...(role === "primary" ? { textPrimary: ink } : { textSecondary: ink }),
-      chosen: true,
-    },
-  };
-}
-
-/**
- * Which pair the card is set in, if it is one of them exactly: the one whose
- * two inks, on the card colour on screen, are the card's two inks. By its
- * inks alone. Which card colour the card has is no part of it, since a pair
- * no longer has one of its own.
- *
- * Looked for among the pairs that suit the card, which are the ones the panel
- * shows: inks from any other are a host's own, and the panel says "Custom".
- */
-export function matchingTextPair(style: CardStyle): TextPair | null {
-  const current = style.textColors;
-
-  if (current === undefined) {
-    return null;
-  }
-
-  const card = cardPalette(style).background;
-
-  return (
-    suitableTextPairs(card).find((pair) => {
-      const inks = pairInks(pair, card);
-
-      return (
-        inks.textPrimary === current.textPrimary &&
-        inks.textSecondary === current.textSecondary
-      );
-    }) ?? null
-  );
 }
 
 /**

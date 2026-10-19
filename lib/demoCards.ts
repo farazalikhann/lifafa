@@ -11,9 +11,10 @@
  * a reply to it is kept in the browser tab and nowhere else (see `demo` on
  * InviteExperience). The people on it are invented.
  *
- * EVERY FIELD IS ONE THE EDITOR CAN SET. The design below is a card a host
- * could make by hand in the Design tab: the Cream palette with the inks that
- * come with it, the Royal fonts, the slim rose gold border, the Muslim pack's
+ * EVERY FIELD IS ONE A CARD CAN CARRY. The design below is one a host could
+ * once make by hand in the tabbed editor, since retired: the Cream palette
+ * with the inks that come with it, the Royal fonts, the slim rose gold border,
+ * the Muslim pack's
  * hanging lights, crescent and stars with Bismillah above the names, the
  * royal texture, the scroll for the date, the banquet hall above the venue,
  * red butterflies and rose petals, behind the Curtain reveal.

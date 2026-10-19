@@ -5,8 +5,7 @@ import type { NamesFrame } from "@/types/card";
  * The frame a card sets its names in, on a card whose pack frames them
  * (`framedNames` in lib/traditionPacks.tsx): a jharokha arch,
  * a ring of lotuses, a pair of paisleys or a varmala. Drawn by
- * components/card/NamesFrameScreen.tsx and chosen in
- * components/create/NamesFramePanel.tsx.
+ * components/card/NamesFrameScreen.tsx and set by a card's template.
  *
  * Each picture is cut by scripts/cut-flowers.mjs (`names-frames`) from art
  * supplied on black with an empty middle.

@@ -340,7 +340,7 @@ function LanguageWords({
           /*
             Focusing any box here turns the preview to this language, so the
             host sees the English card while typing English — and the details
-            above turn it back. See `previewLanguage` in CardEditor.
+            above turn it back. See `previewLanguage` in hooks/useCardEditor.ts.
           */
           onFocusCapture={() => onFocusLanguage(language)}
           className="flex flex-col gap-7"

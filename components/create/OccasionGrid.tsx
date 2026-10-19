@@ -8,12 +8,8 @@ import type { OccasionId } from "@/types/occasion";
 /**
  * What kind of celebration this is.
  *
- * Half of what used to be OccasionPicker. The other half — the tradition pills
- * and the ornament pack behind them — is TraditionPicker, and the two are apart
- * because the editor's tabs put them in different places: the occasion is a
- * fact about the event and belongs with the names and the date, while the
- * motifs are decoration a host adds afterwards or never. Mounting one component
- * in both tabs would have meant two occasion grids and two sets of pills.
+ * A fact about the event, so it sits with the names and the date in the
+ * wizard's details step. The tradition and its ornaments are the template's.
  */
 export default function OccasionGrid({
   occasionId,

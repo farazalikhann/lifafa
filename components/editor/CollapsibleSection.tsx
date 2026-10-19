@@ -46,8 +46,7 @@ export function sectionState(
  * A closed section's controls stay mounted, and `inert` takes them out of the
  * tab order and the accessibility tree while they are folded away. Mounted
  * because that is what they were before this existed, and because unmounting
- * would lose anything a control keeps for itself, like the scroll target in
- * SectionManager.
+ * would lose anything a control keeps for itself.
  */
 export default function CollapsibleSection({
   title,

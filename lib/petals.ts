@@ -165,41 +165,6 @@ export const BURST_PIECES: Record<PetalFlower, readonly FlowerPiece[]> = {
   confetti: CONFETTI,
 };
 
-/** The picture on each flower's chip in the panel. */
-export const FLOWER_CHIPS: Record<PetalFlower, readonly FlowerPiece[]> = {
-  rose: PETALS,
-  marigold: [MARIGOLD_FLOWER],
-  mogra: [MOGRA_FLOWER],
-  lotus: [LOTUS_FLOWER],
-  mixed: [MARIGOLD_FLOWER, MOGRA_FLOWER, ROSE_A],
-  cherryBlossom: [CHERRY_FLOWER],
-  /* Three small pieces, one of each of the brighter papers. */
-  confetti: [
-    paper(PAPER_GOLD, "strip"),
-    paper(PAPER_ROSE_GOLD, "dot"),
-    paper(PAPER_BLUSH, "strip"),
-  ],
-};
-
-/** In the order the panel offers them. */
-export const PETAL_STYLES: readonly { id: PetalStyle; label: string }[] = [
-  { id: "none", label: "Off" },
-  { id: "open", label: "When opened" },
-  { id: "fall", label: "Falling" },
-  { id: "both", label: "Both" },
-];
-
-/** In the order the panel offers them, the rose every card had first. */
-export const PETAL_FLOWERS: readonly { id: PetalFlower; label: string }[] = [
-  { id: "rose", label: "Rose" },
-  { id: "marigold", label: "Marigold" },
-  { id: "mogra", label: "Mogra" },
-  { id: "lotus", label: "Lotus" },
-  { id: "cherryBlossom", label: "Cherry blossom" },
-  { id: "mixed", label: "Mixed" },
-  { id: "confetti", label: "Confetti" },
-];
-
 /**
  * THE ONE LIST that says which of them a card can have: the panel shows a chip
  * for each, and `petalFlowerType` reads any other as a rose.
