@@ -187,5 +187,54 @@ export const HALL_GLINTS = constellation(
   HALL_ASPECT,
 );
 
+/*
+  PAGE 3, THE MOON (jharokha-moon.webp, 864x1296, opaque). The moon's centre
+  is 49.9% across and 27.5% down, its radius 18% of the picture's width; its
+  craters are faint, so the date is written straight on it. The dark
+  mirror-work wall for the countdown is from about 80% to 92% down, under
+  the ledge with the diyas (70% to 72%).
+*/
+export const MOON_ASPECT = 864 / 1296;
+export const MOON = { x: 0.499, y: 0.275, r: 0.18 } as const;
+
+/*
+  PAGE 4, THE JHAROKHA (jharokha-frame.webp, 560x862), transparent outside
+  the frame and in its window. Every box is a share of the picture's own.
+
+  The window: its arch's tip at 30.4% down, the railing's top at 72.7%, its
+  sides at 21.9% and 77.8%; measured row by row, it is about 31% to 69%
+  across at 38% down, 25% to 75% from 42% and 20% to 80% from 60%.
+
+  `text` is where the words may go: under the arch's cusps and inside the
+  sides all the way down. `panel` is the ivory behind them, a little larger
+  than the window so the frame hides its edges. `shutters` are the two
+  halves of the cover's door (400x1360 each) as a pair a little wider than
+  the window, their tops just above the arch's tip, behind the frame, which
+  hides their outer edges; they are cut off at the railing's top bar. Each
+  half is a third of the picture's width across, and so 0.729 of its height
+  tall.
+*/
+export const JHAROKHA_ASPECT = 560 / 862;
+export const JHAROKHA = {
+  text: { top: 0.405, bottom: 0.71, left: 0.27, right: 0.73 },
+  panel: { top: 0.295, bottom: 0.74, left: 0.185, right: 0.815 },
+  shutters: { top: 0.295, bottom: 0.74, left: 0.17, right: 0.83 },
+  /** Each half's height, as a share of the picture's height. */
+  shutterHeight: (0.33 * 560 * (1360 / 400)) / 862,
+} as const;
+
+/*
+  Page 4's glints, a few, on the night to either side of the two jharokhas
+  (which take the middle 46% to 56% of the width), never on them or their
+  words, nor in the top band the page's buttons use.
+*/
+export const COUPLE_GLINTS = constellation(
+  16,
+  10,
+  { x0: 0.03, x1: 0.97, y0: 0.12, y1: 0.92 },
+  (x) => x < 0.18 || x > 0.82,
+  0.5,
+);
+
 /** Where the ripple of light starts on the wall: the medallion the guest tapped. */
 export const RIPPLE_FROM = { x: MEDALLION.x, y: MEDALLION.y } as const;

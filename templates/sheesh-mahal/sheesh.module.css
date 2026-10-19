@@ -1167,3 +1167,462 @@
     animation: none;
   }
 }
+
+/* ───────────────────────── Page 3: the date on the moon ───────────────────────── */
+
+/*
+  The picture in a box of its own shape, covering the room as object-fit:
+  cover would lay it: as wide as the room, or as the room is tall, whichever
+  is more, and centred. What is on the picture is placed in shares of this
+  box, and sized from its width (its own container).
+*/
+.moonScene {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, var(--room-h) * var(--moon-aspect));
+  height: max(var(--room-h), 100cqw / var(--moon-aspect));
+  translate: -50% -50%;
+  container-type: inline-size;
+}
+
+.moonArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+/*
+  The moon's breath: a warm ring of light just outside its edge (clear over
+  the moon itself, where the words are), its opacity rising and falling over
+  eight seconds. Held while the page moves (`data-sm-rest`, rest.ts) and off
+  the screen (`data-floating-paused`).
+*/
+.moonGlow {
+  position: absolute;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    rgb(255 238 196 / 0) 50%,
+    rgb(255 232 180 / 0.55) 56%,
+    rgb(255 214 150 / 0.22) 70%,
+    rgb(255 196 120 / 0.06) 86%,
+    rgb(255 196 120 / 0) 100%
+  );
+  opacity: 0.3;
+  pointer-events: none;
+  animation: sm-moon-breathe 8s ease-in-out infinite;
+}
+
+@keyframes sm-moon-breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.page:not([data-sm-rest]) .moonGlow {
+  animation-play-state: paused;
+}
+
+/* The words on the moon, centred on its centre; `--fit` (DatePage's fitMoon) keeps them inside its circle. */
+.moonWords {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  width: max-content;
+  flex-direction: column;
+  align-items: center;
+  translate: -50% -50%;
+  font-size: calc(2.45cqw * var(--fit, 1));
+  text-align: center;
+}
+
+.moonWords > p {
+  width: fit-content;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.moonCaps {
+  font-size: 0.78em;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.26em;
+  padding-left: 0.26em;
+}
+
+.moonWeekday {
+  font-size: 1.35em;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.moonDay {
+  font-size: 3.9em;
+  font-weight: 700;
+  line-height: 1.02;
+  font-variant-numeric: lining-nums;
+}
+
+.moonMonth {
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  padding-left: 0.2em;
+}
+
+.moonTime {
+  font-size: 1.1em;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.moonWords > p:lang(hi) {
+  line-height: 1.55;
+}
+
+/* The countdown and the calendar on the mirror-work wall, clear of the browser's bars. */
+.moonFoot {
+  --tile: min(14cqw, 4rem, (var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px)) * 0.072);
+
+  position: absolute;
+  right: 0;
+  bottom: calc(max(0.9rem, 2svh) + var(--sm-bars, 0px));
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.tiles {
+  display: flex;
+  gap: min(3.4cqw, 1rem);
+}
+
+/* Each tile, and what follows them, drops in in its turn once the page has come in. */
+.tileDrop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0.01;
+  transform: translate3d(0, -0.9rem, 0);
+  transition:
+    opacity 450ms ease-out var(--sm-delay, 0ms),
+    transform 750ms var(--sm-spring) var(--sm-delay, 0ms);
+}
+
+[data-sm-entered] .tileDrop {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+  A mirror tile: silver in CSS, a thin antique gold edge, the number in deep
+  indigo. Its face is two halves, each the whole number cut to its half, so
+  a half can turn about the tile's middle (FlipTile).
+*/
+.tile {
+  position: relative;
+  width: var(--tile);
+  height: var(--tile);
+  border-radius: 16%;
+  color: var(--sm-ink);
+  font-size: calc(var(--tile) * 0.46);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  perspective: calc(var(--tile) * 3.5);
+  box-shadow: 0 0.2rem 0.55rem rgb(2 3 14 / 0.55);
+}
+
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 1px solid #b08d4a;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+  pointer-events: none;
+}
+
+.tileHalf {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 50%;
+  overflow: hidden;
+  backface-visibility: hidden;
+  background: linear-gradient(
+    160deg,
+    #f6f8fb 0%,
+    #c9ced8 26%,
+    #eef1f6 44%,
+    #a9b0be 63%,
+    #e4e8ef 82%,
+    #b8bfcb 100%
+  );
+  background-size: 100% 200%;
+}
+
+.tileTop {
+  top: 0;
+  border-radius: 16% 16% 0 0 / 32% 32% 0 0;
+  background-position: 0 0;
+  transform-origin: 50% 100%;
+}
+
+.tileBottom {
+  bottom: 0;
+  border-radius: 0 0 16% 16% / 0 0 32% 32%;
+  background-position: 0 100%;
+  transform-origin: 50% 0;
+  box-shadow: inset 0 1px 0 rgb(24 28 74 / 0.22);
+}
+
+.tileFlap {
+  z-index: 1;
+}
+
+.tileFigure {
+  position: absolute;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 200%;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.tileTop .tileFigure {
+  top: 0;
+}
+
+.tileBottom .tileFigure {
+  bottom: 0;
+}
+
+.tileLabel {
+  font-size: max(0.56rem, calc(var(--tile) * 0.17));
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  padding-left: 0.18em;
+  white-space: nowrap;
+  color: var(--sm-ivory);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9);
+}
+
+.tileLabel:lang(hi) {
+  line-height: 1.5;
+}
+
+/* After the moment: the card's own words for it, in place of the tiles. */
+.moonAfter {
+  max-width: 22rem;
+  margin: 0;
+  padding: 0 1.5rem;
+  font-size: clamp(1.1rem, 5.4cqw, 1.45rem);
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--sm-ivory);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9), 0 0 12px rgb(4 5 20 / 0.6);
+}
+
+/* The card's own Add to Calendar in ivory satin, with a thin antique gold edge. */
+.calendarPill > div > button {
+  border-radius: 999px;
+  color: var(--sm-ink) !important;
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(176 141 74 / 0.95),
+    inset 0 0 0 3px rgb(255 252 244 / 0.7),
+    inset 0 0 0 4px rgb(176 141 74 / 0.35),
+    0 0.35rem 0.8rem rgb(2 3 14 / 0.45) !important;
+}
+
+.calendarPill > div > button:focus-visible {
+  outline: 2px solid var(--sm-ivory);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moonGlow {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .tileDrop {
+    transform: none;
+    transition: opacity 400ms ease-out var(--sm-delay, 0ms);
+  }
+}
+
+/* ───────────────────────── Page 4: the couple in two jharokhas ───────────────────────── */
+
+/*
+  The two jharokhas, one above the other in the middle of what shows of the
+  page, each about 40% of its height (less, if the page is short or narrow),
+  with the "&" between them.
+*/
+.couple {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+  --jh-h: min(
+    var(--room-h) * 0.4,
+    (var(--room-h) - var(--sm-bars, 0px) - 6rem) / 2,
+    (100cqw - 2rem) / var(--jh-aspect)
+  );
+
+  position: absolute;
+  inset: 0 0 var(--sm-bars, 0px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2.75rem;
+}
+
+.jharokhaPlace {
+  display: contents;
+}
+
+.jharokha {
+  position: relative;
+  flex: none;
+  width: calc(var(--jh-h) * var(--jh-aspect));
+  height: var(--jh-h);
+  container-type: inline-size;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.coupleAnd {
+  display: block;
+  margin: -0.3rem 0 -0.2rem;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--sm-gold);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9);
+}
+
+/* Back to front: the ivory panel, its words, the shutters, the frame. */
+.jhPanel {
+  position: absolute;
+  background: radial-gradient(120% 90% at 50% 42%, #fffaf0 0%, #f8f1e3 55%, #eadcc0 100%);
+}
+
+.jhText {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5.2cqw;
+}
+
+.jhWords {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2em;
+  text-align: center;
+  overflow-wrap: normal;
+}
+
+.jhName {
+  max-width: 100%;
+  margin: 0 0 0.1em;
+  font-size: 2.2em;
+  font-weight: 400;
+  white-space: nowrap;
+  text-wrap: balance;
+}
+
+/* Gold foil, a shade deeper for ivory, and a shadow that only just lifts it. */
+.jhName .foilFill {
+  background-image: linear-gradient(172deg, #d6b066 0%, #b3863a 34%, #86601f 58%, #c09650 80%, #7a5720 100%);
+  /*
+    The gold is painted only within its box, and a script's last letter (in
+    Devanagari above all) reaches past it: the box is widened on every line
+    and the widening taken back by a margin, so nothing moves.
+  */
+  margin: 0 -0.2em;
+  padding: 0 0.2em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.jhName .foilShade {
+  text-shadow: 0 1px 1px rgb(90 60 20 / 0.3);
+}
+
+.jhChildOf {
+  margin: 0;
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.2em;
+  padding-left: 0.2em;
+  color: var(--sm-gold-deep);
+}
+
+.jhParents {
+  margin: 0;
+  font-size: 1em;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.jhCity {
+  margin: 0;
+  font-size: 0.92em;
+  font-style: italic;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+
+.jhWords > p:lang(hi) {
+  line-height: 1.55;
+}
+
+/* The shutters' window, cut at the railing; each half turns about its outer edge, in its parent's perspective. */
+.jhShutters {
+  position: absolute;
+  overflow: clip;
+  perspective: calc(100cqw * 1.4);
+  perspective-origin: 50% 40%;
+}
+
+.jhShutter {
+  position: absolute;
+  top: 0;
+  width: 50%;
+}
+
+.jhFrame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}

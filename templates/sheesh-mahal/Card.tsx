@@ -15,6 +15,8 @@ import { hasContacts } from "@/lib/contacts";
 import { useCardStill } from "@/hooks/useCardStill";
 import { ART } from "@/templates/sheesh-mahal/art";
 import SheeshClosing from "@/templates/sheesh-mahal/Closing";
+import SheeshCouplePage from "@/templates/sheesh-mahal/CouplePage";
+import SheeshDatePage from "@/templates/sheesh-mahal/DatePage";
 import { useLite } from "@/templates/sheesh-mahal/lite";
 import SheeshNamesPage from "@/templates/sheesh-mahal/NamesPage";
 import SheeshPager from "@/templates/sheesh-mahal/Pager";
@@ -48,8 +50,8 @@ const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{backg
  *
  *   1  the opening      the doors of mirrors: the cover, Cover.tsx
  *   2  the names        in the hall of mirrors, NamesPage.tsx
- *   3  the date         through the jharokha, under the moon
- *   4  the couple       two jharokhas
+ *   3  the date         on the moon, through the jharokha (DatePage.tsx)
+ *   4  the couple       in two jharokhas (CouplePage.tsx)
  *   5  the functions    down the hall
  *   6  the venue        the jharokha again
  *   7  the details      on a farmaan; only if any
@@ -57,7 +59,7 @@ const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{backg
  *   9  the thanks       under a kandeel, after the reply (Closing), or here
  *                       in a preview, which has no reply form
  *
- * Pages 3 to 7 are their rooms and headings for now (RoomPage), so the walk
+ * Pages 5 to 7 are their rooms and headings for now (RoomPage), so the walk
  * through all nine can be seen; what they say is built in the parts to come.
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
@@ -155,11 +157,19 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
           <SheeshNamesPage draft={draft} config={config} language={language} fonts={fonts} />
 
           {on("details") || (on("countdown") && hasCountdown(draft)) ? (
-            <SheeshRoomPage heading={own.pages.date} src={ART.jharokhaMoon} lay="cover" language={language} fonts={fonts} />
+            <SheeshDatePage
+              draft={draft}
+              language={language}
+              occasionId={occasionId}
+              invite={invite}
+              theme={cardTheme}
+              fonts={fonts}
+              showCountdown={on("countdown") && hasCountdown(draft)}
+            />
           ) : null}
 
           {on("family") && hasFamily(draft, occasionId) ? (
-            <SheeshRoomPage heading={own.pages.couple} src={ART.jharokhaFrame} lay="object" language={language} fonts={fonts} />
+            <SheeshCouplePage draft={draft} occasionId={occasionId} language={language} fonts={fonts} />
           ) : null}
 
           {on("timeline") ? (
