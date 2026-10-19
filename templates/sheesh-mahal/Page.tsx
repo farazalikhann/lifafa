@@ -10,17 +10,23 @@ import styles from "@/templates/sheesh-mahal/sheesh.module.css";
  * Pager.tsx. `images` are the pictures in it, fetched and decoded while the
  * guest is in the room before.
  *
- * A ROOM IS HELD ON THE SCREEN AND WALKED THROUGH: `.pin` keeps it still while
- * its page scrolls by, `.zoom` is the camera (see the stylesheet). A `flow`
- * page, one that may be taller than a screen (the reply form), is neither: it
- * scrolls in the flow like any page, and arrives over the room before it.
+ * THE PAGE IS ONLY A STOP; THE ROOM STANDS STILL. The page is an empty box a
+ * screen tall in the document, which the swipe scrolls and snaps to. Its
+ * room is in `.frame`, fixed over the screen, so the scroll never moves it
+ * and nothing has to hold it still. `.zoom` inside it is the camera, driven
+ * by the page's own view timeline: scale and opacity, nothing else (see the
+ * stylesheet). Every room's frame is in the same place, in page order.
+ *
+ * A `flow` page, one that may be taller than a screen (the reply form), is
+ * the exception: its room is in the page itself and scrolls with it, over the
+ * room before.
  *
  * `ground` is what the room is painted on, under everything else in it.
  *
- * `overlay` is laid over the room but not in it: held on the screen with the
- * room, never scaled with it (so a zoom never redraws it), and seen only while
- * the room is at rest, fading as soon as a swipe begins (`.overlay`). The
- * glints go here. Nothing in it may take a tap or cover a word.
+ * `overlay` is laid over the room but not in it: a frame of its own, never
+ * scaled with the room (so a zoom never redraws it), and seen only while the
+ * room is at rest, fading as soon as a swipe begins (`.overlay`). The glints
+ * go here. Nothing in it may take a tap or cover a word.
  */
 export default function SheeshPage({
   label,
@@ -58,10 +64,14 @@ export default function SheeshPage({
       {flow ? (
         room
       ) : (
-        <div className={styles.pin}>
-          <div className={styles.zoom}>{room}</div>
-          {overlay !== undefined ? <div className={styles.overlay}>{overlay}</div> : null}
-        </div>
+        <>
+          <div className={styles.frame}>
+            <div className={styles.zoom}>{room}</div>
+          </div>
+          {overlay !== undefined ? (
+            <div className={`${styles.frame} ${styles.overlay}`}>{overlay}</div>
+          ) : null}
+        </>
       )}
     </section>
   );

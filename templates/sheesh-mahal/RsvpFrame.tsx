@@ -15,9 +15,9 @@ import type { CardLanguage } from "@/types/card";
  * farmaan's theme (`farmaanTheme` in shared.ts). Nothing about what a reply
  * does is here.
  *
- * A page in the flow, not a held room: the form can be longer than a screen
+ * A page in the flow, not a fixed room: the form can be longer than a screen
  * (its errors, the pass), so it scrolls like any page and arrives over the
- * room before it. The farmaan is a three-slice (see `.farmaan`): its rod and
+ * room before it, with only the night behind it. The farmaan is a three-slice (see `.farmaan`): its rod and
  * its foot at their own size, only its plain paper stretched to the form.
  */
 export default function SheeshRsvpFrame({

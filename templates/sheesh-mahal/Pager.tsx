@@ -20,7 +20,10 @@ import { whenIdle } from "@/templates/sheesh-mahal/shared";
  * and put back on the way out, and every page is a stop that cannot be
  * skipped. The swipe is the browser's own scroll, and the walk through each
  * room is the stylesheet's, driven by that scroll on the compositor (see
- * `.pin` and `.zoom`): nothing here moves anything.
+ * `.frame` and `.zoom`): nothing here moves anything. The rooms are fixed
+ * over the screen and the pages are the stops; so focus arriving in a room
+ * that is not on the screen (a keyboard, a screen reader) brings its page
+ * there, as it would a page that scrolls.
  *
  * A PAGE IS ANYTHING MARKED `data-sm-page`, in the document's order: the
  * card's own and the two the guest's page draws after it (the reply and the
@@ -44,9 +47,11 @@ import { whenIdle } from "@/templates/sheesh-mahal/shared";
  *   before) are marked `data-sm-live`: the only two rooms given will-change,
  *   so only the two in a swipe hold layers of their own. Once the scroll has
  *   come to rest the next page's pictures are fetched and decoded, and every
- *   page two or more away is marked `data-sm-far`, which leaves it undrawn
- *   (content-visibility: auto). Both wait for an idle moment, so a page
- *   changing its drawing is never part of a swipe's frames.
+ *   page two or more away is marked `data-sm-far`, which sets its room aside
+ *   undrawn. Both wait for an idle moment, so a page changing its drawing is
+ *   never part of a swipe's frames. Past the last page (what the guest's
+ *   page sets after the card) no page is the one being read, and no room
+ *   takes a tap.
  *
  * Every change is an attribute set directly: a swipe re-renders nothing. In a
  * preview the card is in a box that scrolls; that is watched instead, with no
@@ -57,6 +62,26 @@ const PAGE = "data-sm-page";
 const THRESHOLDS = Array.from({ length: 21 }, (_, index) => index / 20);
 /* Less of a page than this on screen, and the loops in its room are held. */
 const PAUSE_BELOW = 0.02;
+/* The page being read, once the guest has gone on past the last page. */
+const PAST_LAST = -2;
+/* How far up a fixed last page has gone before it is left behind: its room has faded out by then. */
+const LEFT_BEHIND = 0.06;
+
+/** Whether a fixed room's page has gone up past where it rests, by more than LEFT_BEHIND of a screen. */
+function leftBehind(entry: IntersectionObserverEntry): boolean {
+  const page = entry.target as HTMLElement;
+  /* A page rests under the host's preview strip, where there is one. */
+  const strip =
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--lifafa-preview-h")) || 0;
+  const top = (entry.rootBounds?.top ?? 0) + strip;
+  const screen = entry.rootBounds?.height ?? window.innerHeight;
+
+  return (
+    page.classList.contains(styles.page) &&
+    !page.classList.contains(styles.pageFlow) &&
+    entry.boundingClientRect.top < top - LEFT_BEHIND * screen
+  );
+}
 
 /** The nearest box that scrolls, for a card drawn inside one; null for the window. */
 function scrollBoxOf(element: HTMLElement): HTMLElement | null {
@@ -196,18 +221,27 @@ export default function SheeshPager({
     /* Which way the guest last went: forward, or back. */
     let heading = 1;
 
+    /* `index` is a page, or -1 before any has been read, or PAST_LAST. */
     const mark = (index: number, from = index): void => {
-      if (index !== from) {
+      if (index !== from && index >= 0 && from >= 0) {
         heading = index > from ? 1 : -1;
       }
 
-      /* At either end the only way on is back. */
+      /*
+        At either end the only way on is back. Before any page, the first two
+        are the ones coming; past the last, the last is.
+      */
       const ahead = index + heading;
-      const next = index === -1 ? 1 : ahead >= 0 && ahead < pages.length ? ahead : index - heading;
+      const live =
+        index === -1
+          ? [0, 1]
+          : index === PAST_LAST
+            ? [pages.length - 1]
+            : [index, ahead >= 0 && ahead < pages.length ? ahead : index - heading];
 
       pages.forEach((page, n) => {
         page.toggleAttribute("data-sm-current", n === index);
-        page.toggleAttribute("data-sm-live", n === index || n === next || (index === -1 && n === 0));
+        page.toggleAttribute("data-sm-live", live.includes(n));
       });
       const dots = dotsRef.current?.children;
 
@@ -227,6 +261,20 @@ export default function SheeshPager({
           const room = page.querySelector<HTMLElement>("[data-sm-room]");
           room?.toggleAttribute("data-floating-paused", entry.intersectionRatio < PAUSE_BELOW);
 
+          /* The last page, left for what the guest's page sets after it, or come back to. */
+          const last = pages.length - 1;
+
+          if (page === pages[last]) {
+            if (leftBehind(entry) && currentRef.current === last) {
+              currentRef.current = PAST_LAST;
+              mark(PAST_LAST, last);
+            } else if (!leftBehind(entry) && currentRef.current === PAST_LAST && entry.isIntersecting) {
+              currentRef.current = last;
+              mark(last, PAST_LAST);
+              settle();
+            }
+          }
+
           if (!gateOpen || !entry.isIntersecting || page.hasAttribute("data-sm-entered")) {
             continue;
           }
@@ -245,11 +293,27 @@ export default function SheeshPager({
     const middle = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
+          const index = pages.indexOf(entry.target as HTMLElement);
+
           if (!entry.isIntersecting) {
+            /* The page being read has left the middle, and none has come: past the last. */
+            if (index !== -1 && index === currentRef.current) {
+              currentRef.current = PAST_LAST;
+              mark(PAST_LAST, index);
+            }
+
             continue;
           }
 
-          const index = pages.indexOf(entry.target as HTMLElement);
+          if (index === pages.length - 1 && leftBehind(entry)) {
+            if (currentRef.current !== PAST_LAST) {
+              const from = currentRef.current;
+              currentRef.current = PAST_LAST;
+              mark(PAST_LAST, from);
+            }
+
+            continue;
+          }
 
           if (index !== -1 && index !== currentRef.current) {
             const from = currentRef.current;
@@ -274,6 +338,10 @@ export default function SheeshPager({
       pages = found;
       setCount(found.length);
 
+      for (const [n, page] of pages.entries()) {
+        page.toggleAttribute("data-sm-last", n === pages.length - 1);
+      }
+
       for (const page of pages) {
         visibility.observe(page);
         middle.observe(page);
@@ -283,6 +351,18 @@ export default function SheeshPager({
     };
 
     watch();
+
+    /* Focus in a fixed room whose page is not the one on the screen: the page is brought there. */
+    const onFocus = (event: Event): void => {
+      const target = event.target instanceof Element ? event.target : null;
+      const page = target?.closest(`.${styles.frame}`)?.closest<HTMLElement>(`[${PAGE}]`);
+
+      if (page !== null && page !== undefined && !page.hasAttribute("data-sm-current")) {
+        page.scrollIntoView({ block: "start" });
+      }
+    };
+    const focusScope = pagewide ? (root.closest("main") ?? document) : null;
+    focusScope?.addEventListener("focusin", onFocus);
 
     let frame = 0;
     const mutations = new MutationObserver(() => {
@@ -302,6 +382,7 @@ export default function SheeshPager({
       visibility.disconnect();
       middle.disconnect();
       mutations.disconnect();
+      focusScope?.removeEventListener("focusin", onFocus);
       window.cancelAnimationFrame(frame);
       cancelIdle?.();
     };

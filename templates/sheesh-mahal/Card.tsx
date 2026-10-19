@@ -96,9 +96,10 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
   const band = sizing === "viewport" ? "100dvh" : `${frameHeight}px`;
   const musicUrl = config.musicUrl ?? null;
   /*
-    On the guest's page the night is fixed under the whole page and the
-    document is what pages. Anywhere else the card is in a box that scrolls,
-    and the night is pinned to the top of that box instead.
+    On the guest's page the night is fixed under the whole page, the
+    document is what pages and every room is fixed over the screen. Anywhere
+    else the card is in a box that scrolls: the night is pinned to the top of
+    that box instead, and each room goes by in its own page (`.boxed`).
   */
   const pagewide = ground === "page";
   useStableScreen(sizing === "viewport" && !still);
@@ -121,7 +122,7 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
         ref={rootRef}
         lang={language}
         data-sm-root=""
-        className={`${styles.palette} ${styles.root} ${still ? styles.still : ""} ${lite ? styles.lite : ""} ${pagewide ? "" : "isolate"}`}
+        className={`${styles.palette} ${styles.root} ${still ? styles.still : ""} ${lite ? styles.lite : ""} ${pagewide ? "" : `isolate ${styles.boxed}`}`}
         style={{ "--sm-screen": screen, "--sm-bars": bars } as CSSProperties}
       >
         {pagewide ? <style>{NIGHT_BEHIND}</style> : null}

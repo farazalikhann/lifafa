@@ -28,7 +28,7 @@
 
 .root {
   position: relative;
-  /* A room grown to 1.6 is clipped by its own page; nothing may ever widen the page. */
+  /* A room grown by its camera is clipped by its frame; nothing may ever widen the page. */
   overflow-x: clip;
 }
 
@@ -58,55 +58,83 @@
 
 /*
   ONE ROOM A PAGE, ONE SWIPE A ROOM. Each page is a screen tall and a stop
-  the snapping document cannot skip (Pager.tsx sets the snapping). What is on
-  it is its room, in two boxes:
+  the snapping document cannot skip (Pager.tsx sets the snapping), and is
+  otherwise empty: the swipe scrolls the pages, and nothing on the screen
+  moves with it. Its room is in two boxes:
 
-    .pin    held on the screen while its page goes by: moved down as the page
-            moves up, exactly, by the page's own view timeline, so the room
-            does not scroll at all. It clips what is inside it to the screen.
-    .zoom   the camera: a room arriving comes up from 0.92 and nothing to 1;
-            one being left grows to 1.25 and fades, as if walked through.
+    .frame  fixed over the screen, in the same place for every room, stacked
+            in page order. The scroll never moves it, so nothing has to hold
+            it still: a room counter-moved against the scroll is held still
+            only where the browser applies both in the same frame, and a
+            phone often does not, which shook the screen. It clips the room.
+    .zoom   the camera, on the page's own view timeline: a room arriving comes
+            up from 0.92 and nothing to 1; one being left grows to 1.25 and
+            fades, as if walked through. Scale and opacity only.
+
+  Where the card is in a box of its own (the editor's preview) or laid out
+  still (the printed copy), the frame is the page's own box instead and goes
+  by with it (`.boxed`, `.still`): the box is not the screen.
 
   A PAGE IS A SCREEN TALL, AND ITS HEIGHT NEVER CHANGES WHILE IT SCROLLS:
   `--sm-screen` on the guest's page is the screen with the browser's bars
   away (100lvh), measured once and held (stableScreen.ts): an address bar
   coming and going changes nothing, only the screen itself changing does
-  (fullscreen, or turning the phone).
+  (fullscreen, or turning the phone). The frame is exactly a page, where a
+  page rests.
 
-  Only the page being read and the one the guest is likely to go to next
-  (`data-sm-live`, Pager.tsx) are given will-change. A modest phone
-  (`.lite`) crossfades its rooms instead of zooming them.
+  Only the room being read takes a tap (`data-sm-current`), and only it and
+  the one the guest is likely to go to next (`data-sm-live`, Pager.tsx) are
+  given will-change. A modest phone (`.lite`) crossfades its rooms instead of
+  zooming them.
 
-  Both are driven by the scroll itself, on the compositor, with nothing in
-  script. A browser without scroll timelines leaves the rooms where they are
-  in the flow and fades each in as it arrives (below), and so does the
-  printed copy.
+  The camera is driven by the scroll itself, on the compositor, with nothing
+  in script. A browser without scroll timelines shows the room being read
+  and fades between rooms as it changes (below).
 */
 .page {
   position: relative;
   display: block;
   width: 100%;
   max-width: 30rem;
-  height: calc(var(--sm-screen, 100lvh) - var(--lifafa-preview-h, 0px));
+  height: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
   margin-inline: auto;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
-/* A page that may be taller than a screen (the reply form): it scrolls in the flow, unpinned. */
+/* A page that may be taller than a screen (the reply form): its room scrolls in the flow, not fixed. */
 .pageFlow {
   height: auto;
-  min-height: calc(var(--sm-screen, 100lvh) - var(--lifafa-preview-h, 0px));
+  min-height: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
 }
 
-.pin,
+.frame {
+  position: fixed;
+  top: var(--lifafa-preview-h, 0px);
+  left: 0;
+  right: 0;
+  max-width: 30rem;
+  height: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+  margin-inline: auto;
+  overflow: clip;
+  /* Only the room being read takes a tap: every frame is over the screen. */
+  pointer-events: none;
+}
+
+.boxed .frame,
+.still .frame {
+  position: absolute;
+  inset: 0;
+  height: auto;
+}
+
 .zoom {
   position: absolute;
   inset: 0;
 }
 
-.pin {
-  overflow: clip;
+.page[data-sm-current] .zoom {
+  pointer-events: auto;
 }
 
 .room {
@@ -123,15 +151,6 @@
   inset: auto;
   min-height: inherit;
   overflow: visible;
-}
-
-@keyframes sm-pin {
-  from {
-    transform: translate3d(0, -100%, 0);
-  }
-  to {
-    transform: translate3d(0, 100%, 0);
-  }
 }
 
 /*
@@ -182,32 +201,15 @@
     view-timeline-inset: var(--lifafa-preview-h, 0px) 0px;
   }
 
-  .pin {
-    animation: sm-pin linear both;
-    animation-timeline: --sm-page;
-    animation-range: cover 0% cover 100%;
-    /* An empty box held over the screen: it must never be what a tap lands on. */
-    pointer-events: none;
-  }
-
+  /* The frame is fixed; the page, which scrolls, is what drives it. */
   .zoom {
     animation: sm-zoom linear both;
     animation-timeline: --sm-page;
     animation-range: cover 0% cover 100%;
-    /* Every room is held over the screen; only the one being read takes a tap. */
-    pointer-events: none;
-  }
-
-  .page[data-sm-live] .pin {
-    will-change: transform;
   }
 
   .page[data-sm-live] .zoom {
     will-change: transform, opacity;
-  }
-
-  .page[data-sm-current] .zoom {
-    pointer-events: auto;
   }
 
   /* What is held over a room: seen only while the room is at rest, gone as a swipe begins. */
@@ -215,6 +217,17 @@
     animation: sm-at-rest linear both;
     animation-timeline: --sm-page;
     animation-range: cover 0% cover 100%;
+  }
+
+  /*
+    The last room, with what the guest's page sets after the card coming up
+    over the night: gone as soon as it is left, and from then it takes no tap
+    (Pager.tsx), so nothing after it is ever under it.
+  */
+  .page[data-sm-last] > .frame:not(.overlay) {
+    animation: sm-left-behind linear both;
+    animation-timeline: --sm-page;
+    animation-range: cover 50% cover 100%;
   }
 
   .lite .zoom {
@@ -225,6 +238,17 @@
     .zoom {
       animation-name: sm-fade;
     }
+  }
+}
+
+/* Over the second half of the last page's timeline: gone by 56%, as an overlay is. */
+@keyframes sm-left-behind {
+  0% {
+    opacity: 1;
+  }
+  12%,
+  100% {
+    opacity: 0;
   }
 }
 
@@ -244,27 +268,26 @@
   }
 }
 
-.overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* No scroll timelines: each room fades in once, as it arrives. */
+/*
+  No scroll timelines: the room being read is shown and every other is not,
+  switched by the pager as the next page crosses the middle of the screen,
+  with a short fade between.
+*/
 @supports not (animation-timeline: view()) {
-  .zoom {
-    opacity: 0.01;
-    transition: opacity 700ms ease-out;
+  .zoom,
+  .overlay {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
   }
 
-  .page[data-sm-entered] .zoom {
+  .page[data-sm-current] .zoom,
+  .page[data-sm-current] .overlay {
     opacity: 1;
   }
 }
 
 /* The printed copy, and a card laid out as a picture of itself: every room as it rests. */
-.still .pin,
+.still .frame,
 .still .zoom,
 .still .overlay {
   animation: none !important;
@@ -273,14 +296,32 @@
   pointer-events: auto !important;
 }
 
-/* A page two or more away from the one on screen is not drawn until it comes near. */
-.page[data-sm-far] {
+/*
+  A room two or more away from the one being read is not drawn until it
+  comes near: its frame is set aside below the screen, where it is left
+  undrawn (content-visibility) and still read by a screen reader. Set and
+  undone by the pager only once a swipe has come to rest, while the room is
+  wholly faded out; nothing seen moves.
+*/
+.page[data-sm-far] > .frame {
+  top: 200lvh;
   content-visibility: auto;
+}
+
+/* In a box of its own, the page itself is left undrawn, as it goes by. */
+.boxed .page[data-sm-far] {
+  content-visibility: auto;
+}
+
+.boxed .page[data-sm-far] > .frame {
+  top: 0;
+  content-visibility: visible;
 }
 
 /* One whose height is its own is held at the height it last had, or a screen before it ever had one. */
 .pageFlow[data-sm-far] {
-  contain-intrinsic-size: auto calc(var(--sm-screen, 100lvh) - var(--lifafa-preview-h, 0px));
+  content-visibility: auto;
+  contain-intrinsic-size: auto calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
 }
 
 /* The last stop: the foot of the guest's page, under whatever the page puts after the card. */
