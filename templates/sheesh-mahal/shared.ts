@@ -74,6 +74,12 @@ interface SheeshCopy {
   swipeUp: string;
   /** Page 2's small line over the names. */
   invitationLine: string;
+  /** Page 4: the line over each name, and the hint under the dots. */
+  couple: {
+    groom: string;
+    bride: string;
+    swipe: string;
+  };
   /** What each page is called, for its heading and a screen reader. */
   pages: {
     date: string;
@@ -92,6 +98,11 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
     tapToOpen: "Tap to open",
     swipeUp: "Swipe up",
     invitationLine: "Together with their families",
+    couple: {
+      groom: "The Groom",
+      bride: "The Bride",
+      swipe: "Swipe",
+    },
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -106,6 +117,11 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
     tapToOpen: "खोलने के लिए टैप करें",
     swipeUp: "ऊपर स्वाइप करें",
     invitationLine: "अपने परिवारों के आशीर्वाद के साथ",
+    couple: {
+      groom: "वर",
+      bride: "वधू",
+      swipe: "स्वाइप करें",
+    },
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",

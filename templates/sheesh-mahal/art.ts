@@ -224,15 +224,21 @@ export const JHAROKHA = {
 } as const;
 
 /*
-  Page 4's glints, a few, on the night to either side of the two jharokhas
-  (which take the middle 46% to 56% of the width), never on them or their
-  words, nor in the top band the page's buttons use.
+  Page 4's glints, a few: on the night at either edge, and lower down on the
+  jharokha's outer pillars, whose mirror work they catch. Never over the name
+  above it (the top third, across), the words in its window (the middle),
+  the dots and the hint under it, nor the top band the page's buttons use.
 */
 export const COUPLE_GLINTS = constellation(
-  16,
-  10,
-  { x0: 0.03, x1: 0.97, y0: 0.12, y1: 0.92 },
-  (x) => x < 0.18 || x > 0.82,
+  18,
+  11,
+  { x0: 0.02, x1: 0.98, y0: 0.12, y1: 0.95 },
+  (x, y) => {
+    const atEdge = x < 0.08 || x > 0.92;
+    const onPillars = y > 0.4 && y < 0.85 && (x < 0.2 || x > 0.8);
+    const overDots = y > 0.86 && x > 0.3 && x < 0.7;
+    return (atEdge || onPillars) && !overDots;
+  },
   0.5,
 );
 

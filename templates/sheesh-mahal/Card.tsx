@@ -51,7 +51,7 @@ const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{backg
  *   1  the opening      the doors of mirrors: the cover, Cover.tsx
  *   2  the names        in the hall of mirrors, NamesPage.tsx
  *   3  the date         on the moon, through the jharokha (DatePage.tsx)
- *   4  the couple       in two jharokhas (CouplePage.tsx)
+ *   4  the couple       one at a time in a jharokha (CouplePage.tsx)
  *   5  the functions    down the hall
  *   6  the venue        the jharokha again
  *   7  the details      on a farmaan; only if any
