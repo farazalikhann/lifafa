@@ -15,16 +15,25 @@ import { hasContacts } from "@/lib/contacts";
 import { useCardStill } from "@/hooks/useCardStill";
 import { ART } from "@/templates/sheesh-mahal/art";
 import SheeshClosing from "@/templates/sheesh-mahal/Closing";
+import { useLite } from "@/templates/sheesh-mahal/lite";
 import SheeshNamesPage from "@/templates/sheesh-mahal/NamesPage";
 import SheeshPager from "@/templates/sheesh-mahal/Pager";
 import SheeshRoomPage from "@/templates/sheesh-mahal/RoomPage";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
-import { sheeshCopy, sheeshFonts } from "@/templates/sheesh-mahal/shared";
+import { INDIGO, sheeshCopy, sheeshFonts } from "@/templates/sheesh-mahal/shared";
+import { SCREEN_VAR, useStableScreen } from "@/templates/sheesh-mahal/stableScreen";
 import type { TemplateCardProps } from "@/templates/types";
 import type { CardSectionId } from "@/types/card";
 
 /* The editor's preview frame, where a caller names no height of its own. */
 const FRAME_HEIGHT = 620;
+
+/*
+  Nothing may ever show black behind the card: going fullscreen, the browser
+  draws the page's root, and a fullscreen element's backdrop is black unless
+  told otherwise. Both in the night's own indigo, on the guest's page only.
+*/
+const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{background-color:${INDIGO}}`;
 
 /**
  * Sheesh Mahal's card: a night palace of mirrors, walked through room by
@@ -37,7 +46,7 @@ const FRAME_HEIGHT = 620;
  *
  * THE ORDER IS THE TEMPLATE'S:
  *
- *   1  the opening      the diya and the doors: the cover, Cover.tsx
+ *   1  the opening      the doors of mirrors: the cover, Cover.tsx
  *   2  the names        in the hall of mirrors, NamesPage.tsx
  *   3  the date         through the jharokha, under the moon
  *   4  the couple       two jharokhas
@@ -75,7 +84,15 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
   const own = sheeshCopy(language);
   const { occasionId } = config;
 
-  const screen = sizing === "viewport" ? "100svh" : `${frameHeight}px`;
+  /*
+    A page is the screen with the browser's bars away, measured once and held
+    (useStableScreen), so no page ever changes height while the guest
+    scrolls. `--sm-bars` is what the bars take while they show, for what sits
+    at a page's foot.
+  */
+  const screen = sizing === "viewport" ? `var(${SCREEN_VAR}, 100lvh)` : `${frameHeight}px`;
+  const bars = sizing === "viewport" ? "calc(100lvh - 100svh)" : "0px";
+  const lite = useLite();
   const band = sizing === "viewport" ? "100dvh" : `${frameHeight}px`;
   const musicUrl = config.musicUrl ?? null;
   /*
@@ -84,6 +101,7 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
     and the night is pinned to the top of that box instead.
   */
   const pagewide = ground === "page";
+  useStableScreen(sizing === "viewport" && !still);
 
   const on = (id: CardSectionId): boolean =>
     config.blocks.some((block) => block.kind !== "custom" && block.id === id && block.enabled);
@@ -103,9 +121,11 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
         ref={rootRef}
         lang={language}
         data-sm-root=""
-        className={`${styles.palette} ${styles.root} ${still ? styles.still : ""} ${pagewide ? "" : "isolate"}`}
-        style={{ "--sm-screen": screen } as CSSProperties}
+        className={`${styles.palette} ${styles.root} ${still ? styles.still : ""} ${lite ? styles.lite : ""} ${pagewide ? "" : "isolate"}`}
+        style={{ "--sm-screen": screen, "--sm-bars": bars } as CSSProperties}
       >
+        {pagewide ? <style>{NIGHT_BEHIND}</style> : null}
+
         <div
           aria-hidden="true"
           className={`${styles.ground} ${pagewide ? styles.groundFixed : styles.groundPinned}`}

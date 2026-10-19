@@ -39,7 +39,10 @@ import { whenIdle } from "@/templates/sheesh-mahal/shared";
  *
  *   which page is across the middle of the screen: the one being read. It is
  *   marked `data-sm-current` (the only room that takes a tap, and the one
- *   whose glints follow the tilt) and its dot is lit; once the scroll has
+ *   whose glints follow the tilt) and its dot is lit. It and the page the
+ *   guest is likely to go to next (the one after it, or coming back the one
+ *   before) are marked `data-sm-live`: the only two rooms given will-change,
+ *   so only the two in a swipe hold layers of their own. Once the scroll has
  *   come to rest the next page's pictures are fetched and decoded, and every
  *   page two or more away is marked `data-sm-far`, which leaves it undrawn
  *   (content-visibility: auto). Both wait for an idle moment, so a page
@@ -190,8 +193,22 @@ export default function SheeshPager({
       });
     };
 
-    const mark = (index: number): void => {
-      pages.forEach((page, n) => page.toggleAttribute("data-sm-current", n === index));
+    /* Which way the guest last went: forward, or back. */
+    let heading = 1;
+
+    const mark = (index: number, from = index): void => {
+      if (index !== from) {
+        heading = index > from ? 1 : -1;
+      }
+
+      /* At either end the only way on is back. */
+      const ahead = index + heading;
+      const next = index === -1 ? 1 : ahead >= 0 && ahead < pages.length ? ahead : index - heading;
+
+      pages.forEach((page, n) => {
+        page.toggleAttribute("data-sm-current", n === index);
+        page.toggleAttribute("data-sm-live", n === index || n === next || (index === -1 && n === 0));
+      });
       const dots = dotsRef.current?.children;
 
       if (dots === undefined) {
@@ -235,8 +252,9 @@ export default function SheeshPager({
           const index = pages.indexOf(entry.target as HTMLElement);
 
           if (index !== -1 && index !== currentRef.current) {
+            const from = currentRef.current;
             currentRef.current = index;
-            mark(index);
+            mark(index, from);
             settle();
           }
         }

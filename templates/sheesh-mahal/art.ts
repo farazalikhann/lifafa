@@ -13,6 +13,7 @@ export const ART = {
   wall: `${DIR}/wall.webp`,
   doorLeft: `${DIR}/door-left.webp`,
   doorRight: `${DIR}/door-right.webp`,
+  /* Not on the cover since 19 Oct; kept for a room that may want it. */
   diya: `${DIR}/diya.webp`,
   /* The hall behind the doors, and page 2's ground: its dark oval for the names is painted in. */
   hall: `${DIR}/hall.webp`,
@@ -28,7 +29,6 @@ export const COVER_IMAGES: readonly string[] = [
   ART.wall,
   ART.doorLeft,
   ART.doorRight,
-  ART.diya,
   ART.hall,
 ];
 
@@ -71,13 +71,6 @@ export const MEDALLION = {
   y: 1020 / WALL_H,
   size: 0.078,
 } as const;
-
-/**
- * The diya (480x408, spout to the right), and its wick's tip, where the flame
- * stands: 98.5% across and 40.5% down the picture.
- */
-export const DIYA_ASPECT = 480 / 408;
-export const WICK = { x: 0.985, y: 0.405 } as const;
 
 /** The hall (864x1296): its dark oval for words runs 24% to 66% down; the names keep to 30% to 58%. */
 export const HALL_ASPECT = 864 / 1296;
@@ -162,8 +155,7 @@ function constellation(
 }
 
 /*
-  The wall's: forty, off the doorway (and so off the doors and the diya in
-  front of them) and within the wall's middle 76%, which is what a phone
+  The wall's: forty, off the doorway (and so off the doors) and within the wall's middle 76%, which is what a phone
   shows of it; twenty-six on a narrow phone.
 */
 export const WALL_GLINTS = constellation(
@@ -195,5 +187,5 @@ export const HALL_GLINTS = constellation(
   HALL_ASPECT,
 );
 
-/** Where the ripple of light starts on the wall: the diya, at the foot of the doorway. */
-export const RIPPLE_FROM = { x: 0.5, y: 0.9 } as const;
+/** Where the ripple of light starts on the wall: the medallion the guest tapped. */
+export const RIPPLE_FROM = { x: MEDALLION.x, y: MEDALLION.y } as const;

@@ -69,6 +69,8 @@ export function scriptLeading(language: CardLanguage): number {
 }
 
 interface SheeshCopy {
+  /** The cover's prompt. */
+  tapToOpen: string;
   swipeUp: string;
   /** Page 2's small line over the names. */
   invitationLine: string;
@@ -87,6 +89,7 @@ interface SheeshCopy {
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
 const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
   en: {
+    tapToOpen: "Tap to open",
     swipeUp: "Swipe up",
     invitationLine: "Together with their families",
     pages: {
@@ -100,6 +103,7 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
     },
   },
   hi: {
+    tapToOpen: "खोलने के लिए टैप करें",
     swipeUp: "ऊपर स्वाइप करें",
     invitationLine: "अपने परिवारों के आशीर्वाद के साथ",
     pages: {

@@ -173,6 +173,12 @@ export interface CoverAnimationOption {
    * cover opening.
    */
   onTap?: () => void;
+  /**
+   * The longest, in ms from the tap, the opening waits for the screen to go
+   * fullscreen before it starts anyway; where fullscreen is not given at all
+   * it starts at once. Left off, the shell's own wait (enterFullscreenThen).
+   */
+  settleLimitMs?: number;
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
   /**

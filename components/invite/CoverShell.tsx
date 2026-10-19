@@ -639,6 +639,8 @@ export default function CoverShell({
       does anything start. See enterFullscreenThen.
 
       On an iPhone, which has no page fullscreen to give, that is two frames.
+      A cover may cap the wait (`settleLimitMs`), and then starts at once where
+      there is no fullscreen to wait for.
     */
     const sounds = !reducedMotion && durationMs > 0;
 
@@ -680,7 +682,7 @@ export default function CoverShell({
 
         return "opening";
       });
-    });
+    }, { limitMs: option.settleLimitMs });
 
     /* Whatever the cover itself must ask for inside the gesture (see `onTap`). */
     if (!reducedMotion && option.onTap !== undefined) {
@@ -718,6 +720,7 @@ export default function CoverShell({
     durationMs,
     option.haptic,
     option.onTap,
+    option.settleLimitMs,
     option.sound,
     reducedMotion,
     revealAt,

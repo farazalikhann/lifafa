@@ -16,11 +16,17 @@ import styles from "@/templates/sheesh-mahal/sheesh.module.css";
  * scrolls in the flow like any page, and arrives over the room before it.
  *
  * `ground` is what the room is painted on, under everything else in it.
+ *
+ * `overlay` is laid over the room but not in it: held on the screen with the
+ * room, never scaled with it (so a zoom never redraws it), and seen only while
+ * the room is at rest, fading as soon as a swipe begins (`.overlay`). The
+ * glints go here. Nothing in it may take a tap or cover a word.
  */
 export default function SheeshPage({
   label,
   images,
   ground,
+  overlay,
   flow = false,
   className = "",
   children,
@@ -29,6 +35,7 @@ export default function SheeshPage({
   label: string;
   images?: readonly string[];
   ground?: ReactNode;
+  overlay?: ReactNode;
   flow?: boolean;
   className?: string;
   children: ReactNode;
@@ -36,6 +43,7 @@ export default function SheeshPage({
   const room = (
     <div data-sm-room="" className={`${styles.room} ${flow ? styles.flowRoom : ""}`}>
       {ground}
+      {flow ? overlay : null}
       {children}
     </div>
   );
@@ -52,6 +60,7 @@ export default function SheeshPage({
       ) : (
         <div className={styles.pin}>
           <div className={styles.zoom}>{room}</div>
+          {overlay !== undefined ? <div className={styles.overlay}>{overlay}</div> : null}
         </div>
       )}
     </section>

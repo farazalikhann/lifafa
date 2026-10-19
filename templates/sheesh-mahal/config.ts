@@ -3,7 +3,7 @@ import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/sheesh-mahal/art";
-import { DURATION, REVEAL_AT } from "@/templates/sheesh-mahal/coverTiming";
+import { DURATION, REVEAL_AT, SETTLE_LIMIT } from "@/templates/sheesh-mahal/coverTiming";
 import {
   GOLD,
   INDIGO,
@@ -11,6 +11,7 @@ import {
   IVORY,
   IVORY_MUTED,
   farmaanTheme,
+  sheeshCopy,
 } from "@/templates/sheesh-mahal/shared";
 import { askTilt } from "@/templates/sheesh-mahal/tilt";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
@@ -18,22 +19,23 @@ import type { TemplateConfig } from "@/templates/types";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
 /**
- * The diya and the doors: the template's own cover, on every card in it.
+ * The doors of mirrors: the template's own cover, on every card in it.
  *
  * Built on the doors the editor already offers ("fold-unfold", the gatefold),
  * for its id only, so a stored card names a cover the database knows; the
  * drawing, the timings, the prompt and the sound are this template's:
  *
- *   3.9s in all: the camera is through the doors at 3.5s, and the cover's
- *   hall fades into page 2's own by 3.85s. The card is let go under it at
- *   3.3s (`revealAt`), so its names arrive as that fade begins. See Cover.tsx.
+ *   3.3s in all: the camera is through the doors at 3s, and the cover's hall
+ *   has faded into page 2's own by 3.25s. The card is let go at the very end
+ *   (`revealAt`), so page 2's names make their entrance in front of the
+ *   guest. See Cover.tsx. The opening waits at most a quarter of a second
+ *   for fullscreen (`settleLimitMs`).
  *
- *   It waits for the wall, both doors, the diya and the hall, and the fonts,
- *   and no longer than five seconds; nothing of the stock doors' film is
- *   fetched.
+ *   It waits for the wall, both doors and the hall, and the fonts, and no
+ *   longer than five seconds; nothing of the stock doors' film is fetched.
  *
- *   The prompt is lettered by the cover itself, under the diya; the shell sets
- *   only "You are invited" over it.
+ *   "Tap to open" is lettered by the cover itself, over the doors' foot; the
+ *   shell sets only "You are invited" over it.
  *
  *   The tap asks for the phone's tilt, where the browser wants asking, for
  *   the mirrors' glints (tilt.ts): the one prompt an iPhone may show.
@@ -52,8 +54,8 @@ const COVER_ART = {
 const COVER_OPTION: CoverAnimationOption = {
   ...DOORS,
   openPromptText: {
-    en: "Tap to light the diya",
-    hi: "दीया जलाने के लिए टैप करें",
+    en: sheeshCopy("en").tapToOpen,
+    hi: sheeshCopy("hi").tapToOpen,
   },
   durationMs: DURATION,
   revealAt: REVEAL_AT / DURATION,
@@ -64,13 +66,15 @@ const COVER_OPTION: CoverAnimationOption = {
   art: () => COVER_ART,
   film: undefined,
   onTap: askTilt,
+  /* Starts within a quarter of a second of the tap, fullscreen or not. */
+  settleLimitMs: SETTLE_LIMIT,
 };
 
 /**
  * Sheesh Mahal: a night palace of mirrors, the most premium of the cards.
  *
- * The guest lights a diya before a door of mirror-work, the doors swing open
- * and the camera walks in, and then through room after room, one swipe each:
+ * The guest taps a door of mirror-work, the doors swing open and the camera
+ * walks in, and then through room after room, one swipe each:
  * the hall where the names are, the moon through a jharokha, the couple, the
  * functions down the hall, the venue, a farmaan, the reply and a kandeel.
  * The glints on the mirrors answer the phone's tilt. Its Card and its Cover
@@ -93,7 +97,7 @@ export const SHEESH_MAHAL: TemplateConfig = {
   id: "sheesh-mahal",
   name: "Sheesh Mahal",
   description:
-    "Light a diya, walk through doors of mirror-work, and on through a night palace, room by room.",
+    "Open doors of mirror-work and walk on through a night palace, room by room.",
   /* Only for which sample wedding its demo shows. */
   category: "hindu",
   categoryLabel: "For every wedding",

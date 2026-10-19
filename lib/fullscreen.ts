@@ -169,7 +169,14 @@ function requestPageFullscreen(): Promise<boolean> | null {
  * iPhone or a page already in fullscreen, there is nothing to wait for and
  * only the two frames are.
  */
-export function enterFullscreenThen(done: () => void): () => void {
+export function enterFullscreenThen(
+  done: () => void,
+  options: { limitMs?: number } = {},
+): () => void {
+  if (options.limitMs !== undefined) {
+    return enterFullscreenWithin(done, options.limitMs);
+  }
+
   const startedAt = performance.now();
   let live = true;
   let settled = false;
@@ -233,4 +240,70 @@ export function enterFullscreenThen(done: () => void): () => void {
     window.cancelAnimationFrame(frame);
     document.removeEventListener("fullscreenchange", changed);
   };
+}
+
+/**
+ * enterFullscreenThen with a hard limit: `done` is called on the second frame
+ * painted after the screen last changed (`fullscreenchange`, or a resize after
+ * it), and never later than `limitMs` after the tap. A browser that gives no
+ * fullscreen (an iPhone), or refuses it, is not waited on at all: `done` runs
+ * as soon as the tap's own handler has returned.
+ *
+ * For a cover that would rather start a little early than keep the guest
+ * waiting; the others keep the wait above.
+ */
+function enterFullscreenWithin(done: () => void, limitMs: number): () => void {
+  const startedAt = performance.now();
+  let live = true;
+  let frame = 0;
+  let net = 0;
+
+  const since = (): number => Math.round(performance.now() - startedAt);
+
+  const stop = (): void => {
+    live = false;
+    window.cancelAnimationFrame(frame);
+    window.clearTimeout(net);
+    document.removeEventListener("fullscreenchange", changed);
+    window.removeEventListener("resize", changed);
+  };
+
+  const finish = (how: string): void => {
+    if (!live) {
+      return;
+    }
+
+    stop();
+    coverDebug(`${how} ${since()} ms after the tap: the cover starts`);
+    done();
+  };
+
+  /* Each change of the screen starts the two frames again. */
+  function changed(): void {
+    if (!live) {
+      return;
+    }
+
+    window.cancelAnimationFrame(frame);
+    frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => finish("two frames painted"));
+    });
+  }
+
+  const answer = requestPageFullscreen();
+
+  if (answer === null) {
+    queueMicrotask(() => finish("no fullscreen to wait for"));
+  } else {
+    document.addEventListener("fullscreenchange", changed);
+    window.addEventListener("resize", changed);
+    net = window.setTimeout(() => finish(`limit of ${limitMs} ms reached`), limitMs);
+    void answer.then((granted) => {
+      if (!granted) {
+        finish("fullscreen refused");
+      }
+    });
+  }
+
+  return stop;
 }

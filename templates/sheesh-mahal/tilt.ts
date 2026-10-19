@@ -10,31 +10,53 @@
  * tilt, where it has a sensor, without asking.
  *
  * WHAT A LISTENER IS GIVEN is the tilt away from how the phone was being held,
- * in -1..1 across (x) and down (y): smoothed, at most once a frame, and only
- * while something moves. The resting pose follows the phone slowly, so a
- * guest who settles into a new way of holding it is back at the middle. No
- * reading at all (no sensor, permission refused, a computer) means no call:
- * the glints then twinkle on their own.
+ * in -1..1 across (x) and down (y), heavily smoothed, so the glints' light
+ * shifts slowly and never twitches with the hand:
  *
- * The sensor is listened to only while a listener is registered and the tab
- * is showing.
+ *   a low-pass with a time constant of 400ms, and a reading less than 3
+ *   degrees from the last one taken ignored;
+ *   at most ten calls a second, and only while something changes;
+ *   frozen while a finger is on the screen, while anything scrolls and for
+ *   600ms after: the hand that swipes moves the phone, and that is not a tilt.
+ *   What the phone turns through meanwhile becomes its new resting pose.
+ *
+ * The resting pose also follows the phone slowly, so a guest who settles into
+ * a new way of holding it is back at the middle. No reading at all (no
+ * sensor, permission refused, a computer) means no call: the glints then
+ * twinkle on their own. A listener only ever changes brightness (Glints.tsx);
+ * nothing moves with the tilt.
+ *
+ * The sensor, the touches and the scrolling are listened to only while a
+ * listener is registered and the tab is showing. The scroll listener only
+ * notes the time.
  */
 
 export type TiltListener = (x: number, y: number) => void;
 
 /* How far, in degrees from the resting pose, is a full tilt. */
 const RANGE = 18;
-/* How much of the way to the reading each frame goes, and how fast the resting pose follows. */
-const EASE = 0.16;
+/* Smaller changes than this, in degrees, are not a tilt. */
+const DEAD_ZONE = 3;
+/* The low-pass's time constant, and how often a listener may be called. */
+const TAU = 400;
+const EVERY = 100;
+/* How long after the last scroll the tilt stays frozen. */
+const SCROLL_REST = 600;
+/* How fast the resting pose follows the phone, per reading. */
 const DRIFT = 0.012;
 
 const listeners = new Set<TiltListener>();
 let permission: "unasked" | "pending" | "granted" | "refused" = "unasked";
 let attached = false;
 let rest: { beta: number; gamma: number } | null = null;
+/* The last reading taken, for the dead zone. */
+let taken: { beta: number; gamma: number } | null = null;
 const target = { x: 0, y: 0 };
 const now = { x: 0, y: 0 };
-let frame = 0;
+let timer = 0;
+let lastStep = 0;
+let touching = 0;
+let scrolledAt = -Infinity;
 
 type PermissionApi = { requestPermission?: () => Promise<"granted" | "denied"> };
 
@@ -47,17 +69,32 @@ function needsAsking(): boolean {
 
 const clamp = (value: number): number => Math.max(-1, Math.min(1, value));
 
+function frozen(): boolean {
+  return touching > 0 || performance.now() - scrolledAt < SCROLL_REST;
+}
+
 function step(): void {
-  frame = 0;
-  now.x += (target.x - now.x) * EASE;
-  now.y += (target.y - now.y) * EASE;
+  timer = 0;
+  const time = performance.now();
+  const dt = Math.min(500, time - lastStep);
+  lastStep = time;
+
+  /* Frozen: the light stays exactly where it is, and goes on once the hand is still. */
+  if (frozen()) {
+    timer = window.setTimeout(step, EVERY);
+    return;
+  }
+  const share = 1 - Math.exp(-dt / TAU);
+
+  now.x += (target.x - now.x) * share;
+  now.y += (target.y - now.y) * share;
 
   for (const listener of listeners) {
     listener(now.x, now.y);
   }
 
-  if (Math.abs(target.x - now.x) > 0.002 || Math.abs(target.y - now.y) > 0.002) {
-    frame = window.requestAnimationFrame(step);
+  if (Math.abs(target.x - now.x) > 0.01 || Math.abs(target.y - now.y) > 0.01) {
+    timer = window.setTimeout(step, EVERY);
   }
 }
 
@@ -68,19 +105,52 @@ function onOrientation(event: DeviceOrientationEvent): void {
     return;
   }
 
-  if (rest === null) {
+  if (rest === null || taken === null) {
     rest = { beta, gamma };
+    taken = { beta, gamma };
+    return;
   }
 
+  /*
+    Frozen: whatever the phone turns through is taken as how it is now held,
+    so the light stays exactly where it was.
+  */
+  if (frozen()) {
+    rest.beta += beta - taken.beta;
+    rest.gamma += gamma - taken.gamma;
+    taken = { beta, gamma };
+    return;
+  }
+
+  if (Math.abs(beta - taken.beta) < DEAD_ZONE && Math.abs(gamma - taken.gamma) < DEAD_ZONE) {
+    return;
+  }
+
+  taken = { beta, gamma };
   rest.beta += (beta - rest.beta) * DRIFT;
   rest.gamma += (gamma - rest.gamma) * DRIFT;
   target.x = clamp((gamma - rest.gamma) / RANGE);
   target.y = clamp((beta - rest.beta) / RANGE);
 
-  if (frame === 0) {
-    frame = window.requestAnimationFrame(step);
+  if (timer === 0) {
+    lastStep = performance.now() - EVERY;
+    timer = window.setTimeout(step, 0);
   }
 }
+
+const onTouchStart = (): void => {
+  touching += 1;
+};
+const onTouchEnd = (event: TouchEvent): void => {
+  touching = event.touches.length;
+  /* The swipe's own scroll follows the finger's lifting; it is frozen from now. */
+  scrolledAt = performance.now();
+};
+const onScroll = (): void => {
+  scrolledAt = performance.now();
+};
+
+const QUIET = { passive: true, capture: true } as const;
 
 function sync(): void {
   if (typeof window === "undefined") {
@@ -92,14 +162,29 @@ function sync(): void {
 
   if (want && !attached) {
     window.addEventListener("deviceorientation", onOrientation, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, QUIET);
+    window.addEventListener("touchend", onTouchEnd, QUIET);
+    window.addEventListener("touchcancel", onTouchEnd, QUIET);
+    /* Captured, so the scrolling of any box is heard, not only the page's. */
+    document.addEventListener("scroll", onScroll, QUIET);
     attached = true;
   } else if (!want && attached) {
     window.removeEventListener("deviceorientation", onOrientation);
+    window.removeEventListener("touchstart", onTouchStart, QUIET);
+    window.removeEventListener("touchend", onTouchEnd, QUIET);
+    window.removeEventListener("touchcancel", onTouchEnd, QUIET);
+    document.removeEventListener("scroll", onScroll, QUIET);
     attached = false;
-    window.cancelAnimationFrame(frame);
-    frame = 0;
+    window.clearTimeout(timer);
+    timer = 0;
+    touching = 0;
     /* Back at the middle when it is next looked at. */
     rest = null;
+    taken = null;
+    target.x = 0;
+    target.y = 0;
+    now.x = 0;
+    now.y = 0;
   }
 }
 

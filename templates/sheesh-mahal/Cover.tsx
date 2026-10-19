@@ -11,31 +11,29 @@ import GoldFlower from "@/components/invite/covers/GoldFlower";
 import { initialOf, initialsOf } from "@/components/invite/covers/initials";
 import {
   ART,
-  DIYA_ASPECT,
   DOOR,
-  DOORWAY_FOCUS,
   MEDALLION,
   RIPPLE_FROM,
   WALL_ASPECT,
   WALL_GLINTS,
-  WICK,
 } from "@/templates/sheesh-mahal/art";
 import { DURATION } from "@/templates/sheesh-mahal/coverTiming";
 import Glints from "@/templates/sheesh-mahal/Glints";
+import { isLite } from "@/templates/sheesh-mahal/lite";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { whenIdle } from "@/templates/sheesh-mahal/shared";
 
 /**
- * Sheesh Mahal's opening: the guest lights a diya before a palace door of
- * mirrors, and walks in.
+ * Sheesh Mahal's opening: the guest taps a palace door of mirrors, and walks
+ * in.
  *
  * ONLY THE DRAWING. The tap, the tick on Android, the guard against a second
  * tap, the wait for the pictures and the fonts, the loader in the card's
- * indigo, the sound and what a guest who asked for less motion gets are all
- * CoverShell's: this is handed a phase and draws it. Under reduced motion the
- * shell never hands over "opening": the flame is lit by the stylesheet off
- * the shell's own `data-phase` as the whole cover crossfades to page 2 in
- * 300ms, with no sound, no ripple and no zoom.
+ * indigo, the wait for fullscreen (at most SETTLE_LIMIT), the sound and what a
+ * guest who asked for less motion gets are all CoverShell's: this is handed a
+ * phase and draws it. Under reduced motion the shell never hands over
+ * "opening": the closed doors crossfade to page 2 in 300ms, with no sound, no
+ * ripple and no zoom.
  *
  * THE LAYERS, back to front:
  *
@@ -47,24 +45,26 @@ import { whenIdle } from "@/templates/sheesh-mahal/shared";
  *     the doors       behind the wall, 650/1024 of it across, each turning
  *                     about its outer edge in 3D, each carrying its half of
  *                     the medallion on the seam
+ *     the glow        soft gold round the medallion, breathing with it
  *     the wall        its doorway truly transparent
  *     the glints      forty stars on its mirror-work (Glints.tsx), which
  *                     answer the phone's tilt
- *   the warm glow     from the diya, over the wall
- *   the diya          at the foot, its flame at the wick, and the prompt
+ *   the prompt        "Tap to open" on a small indigo pill over the doors' foot
  *
- * THE OPENING, about 3.5 seconds, to the sound's own timeline (NOTES.md):
+ * The whole screen is the shell's button; the medallion, breathing until the
+ * tap, is where the eye goes.
  *
- *   0             the flame catches at the wick and flickers on; a warm glow
- *                 grows from the diya
- *   450 to 1300   a ripple of light runs out across the mirrors from the diya
- *   1100          the medallion splits along the seam
- *   1250 to 2800  the doors swing open into the hall
- *   2600 to 3500  the camera moves in: the wall and the doors grow and fade,
- *                 the diya passes below, and the hall settles from 1.15 to 1
- *   3300          the card is let go under the cover (`revealAt`), on the
- *                 same hall, so its names arrive as the cover's hall fades
- *                 into page 2's own, never a blank frame
+ * THE OPENING, 3.3 seconds, to the sound's own timeline (NOTES.md, 19 Oct):
+ *
+ *   0 to 800      a ripple of light runs out across the mirrors from the
+ *                 medallion, as the chimes ring
+ *   600           the medallion splits along the seam
+ *   750 to 2300   the doors swing open into the hall, as they creak
+ *   2100 to 3000  the camera moves in: the wall and the doors grow and fade
+ *                 and the hall settles from 1.15 to 1
+ *   3000 to 3250  the cover's hall fades into page 2's own beneath it
+ *   3300          the card is let go (`revealAt`): page 2's words make their
+ *                 entrance now, in front of the guest
  *
  * EVERY ANIMATION IS MADE BEFORE THE TAP, in an idle moment once the closed
  * cover is showing, and held at its first frame; the tap only plays them.
@@ -72,22 +72,21 @@ import { whenIdle } from "@/templates/sheesh-mahal/shared";
  * painted.
  */
 
-const SPRING = "cubic-bezier(0.34, 1.5, 0.64, 1)";
 const SOFT = "cubic-bezier(0.22, 1, 0.36, 1)";
 /* Slow start, glide, soft stop: the doors' swing. */
 const SWING = "cubic-bezier(0.45, 0.05, 0.25, 1)";
 /* The camera: gathering pace as it goes through. */
 const ONWARD = "cubic-bezier(0.5, 0, 0.7, 0.6)";
 
-const DOORS_AT = 1250;
-const DOORS_END = 2800;
-const SPLIT_AT = 1100;
-const CAMERA_AT = 2600;
-const CAMERA_END = 3500;
-/* The ripple: the first glint lights at 450, the farthest by 1000, each for 380. */
-const RIPPLE_AT = 450;
-const RIPPLE_SPREAD = 550;
-const RIPPLE_EACH = 380;
+const SPLIT_AT = 600;
+const DOORS_AT = 750;
+const DOORS_END = 2300;
+const CAMERA_AT = 2100;
+const CAMERA_END = 3000;
+const HALL_GONE = 3250;
+/* The ripple: the nearest glint lights at once, the farthest by 450, each for 350. */
+const RIPPLE_SPREAD = 450;
+const RIPPLE_EACH = 350;
 
 const pc = (share: number): string => `${(share * 100).toFixed(2)}%`;
 
@@ -100,9 +99,7 @@ interface Parts {
   halfLeft: HTMLElement;
   halfRight: HTMLElement;
   glow: HTMLElement;
-  diya: HTMLElement;
-  flame: HTMLElement;
-  halo: HTMLElement;
+  glints: HTMLElement;
 }
 
 /** Every animation of the opening, made now and held at its first frame. */
@@ -116,40 +113,29 @@ function buildOpening(parts: Parts, flashes: readonly HTMLElement[]): Animation[
     animations.push(animation);
   };
 
-  /* The flame catches: up from nothing on a spring, and its halo with it. */
-  add(parts.flame, [
-    { offset: 0, opacity: 0.01, transform: "scale(0.2)", easing: SPRING },
-    { offset: at(420), opacity: 1, transform: "scale(1)" },
-    { offset: 1, opacity: 1, transform: "scale(1)" },
-  ]);
-  add(parts.halo, [
-    { offset: 0, opacity: 0.01, transform: "scale(0.3)", easing: SOFT },
-    { offset: at(700), opacity: 1, transform: "scale(1)" },
-    { offset: 1, opacity: 1, transform: "scale(1)" },
-  ]);
-
-  /* The warm glow grows from the diya, and goes with the camera. */
+  /* The medallion's glow goes as the light leaves it for the mirrors. */
   add(parts.glow, [
-    { offset: 0, opacity: 0.01, transform: "scale(0.25)", easing: SOFT },
-    { offset: at(1300), opacity: 1, transform: "scale(1)" },
-    { offset: at(CAMERA_AT), opacity: 1, transform: "scale(1)", easing: "ease-in" },
-    { offset: at(3300), opacity: 0, transform: "scale(1.5)" },
-    { offset: 1, opacity: 0, transform: "scale(1.5)" },
+    { offset: 0, opacity: 1, easing: "ease-out" },
+    { offset: at(450), opacity: 0 },
+    { offset: 1, opacity: 0 },
   ]);
 
-  /* The ripple: each glint's warm star, lit in turn by how far it is from the diya. */
+  /* The ripple: each glint's warm star, lit in turn by how far it is from the medallion. */
   const narrow = window.matchMedia("(max-width: 399.98px)").matches;
-  const far = Math.hypot(0.5, 0.9 / WALL_ASPECT);
+  const lite = isLite();
+  /* The farthest a glint is: a top corner of the wall's middle. */
+  const far = Math.hypot(0.38, (RIPPLE_FROM.y - 0.04) / WALL_ASPECT);
 
   for (const flash of flashes) {
-    const glint = WALL_GLINTS[Number(flash.dataset.flash)];
+    const index = Number(flash.dataset.flash);
+    const glint = WALL_GLINTS[index];
 
-    if (glint === undefined || (narrow && !glint.core)) {
+    if (glint === undefined || (narrow && !glint.core) || (lite && index % 2 === 1)) {
       continue;
     }
 
     const reach = Math.hypot(glint.x - RIPPLE_FROM.x, (glint.y - RIPPLE_FROM.y) / WALL_ASPECT) / far;
-    const start = RIPPLE_AT + Math.min(1, reach) * RIPPLE_SPREAD;
+    const start = Math.min(1, reach) * RIPPLE_SPREAD;
 
     add(flash, [
       { offset: 0, opacity: 0.01, transform: "scale(0.2) rotate(0deg)" },
@@ -159,6 +145,14 @@ function buildOpening(parts: Parts, flashes: readonly HTMLElement[]): Animation[
       { offset: 1, opacity: 0.01, transform: "scale(0.5) rotate(45deg)" },
     ]);
   }
+
+  /* The glints go before the camera moves, so none is ever drawn growing. */
+  add(parts.glints, [
+    { offset: 0, opacity: 1 },
+    { offset: at(CAMERA_AT - 150), opacity: 1, easing: "ease-in" },
+    { offset: at(CAMERA_AT + 100), opacity: 0 },
+    { offset: 1, opacity: 0 },
+  ]);
 
   /* The medallion splits along the seam: each half drawn a little apart, then carried off on its door. */
   for (const [half, side] of [
@@ -194,20 +188,12 @@ function buildOpening(parts: Parts, flashes: readonly HTMLElement[]): Animation[
     { offset: 1, transform: "scale(2.6)", opacity: 0 },
   ]);
 
-  /* The diya passes below as we walk past it. */
-  add(parts.diya, [
-    { offset: 0, transform: "translate3d(0, 0, 0) scale(1)", opacity: 1 },
-    { offset: at(CAMERA_AT), transform: "translate3d(0, 0, 0) scale(1)", opacity: 1, easing: ONWARD },
-    { offset: at(3350), transform: "translate3d(0, 34vh, 0) scale(1.9)", opacity: 0 },
-    { offset: 1, transform: "translate3d(0, 34vh, 0) scale(1.9)", opacity: 0 },
-  ]);
-
   /* The hall settles to page 2's own size, then fades into page 2's own hall beneath it. */
   add(parts.hall, [
     { offset: 0, transform: "scale(1.15)", opacity: 1 },
     { offset: at(CAMERA_AT), transform: "scale(1.15)", opacity: 1, easing: SOFT },
     { offset: at(CAMERA_END), transform: "scale(1)", opacity: 1, easing: "ease-in-out" },
-    { offset: at(3850), transform: "scale(1)", opacity: 0 },
+    { offset: at(HALL_GONE), transform: "scale(1)", opacity: 0 },
     { offset: 1, transform: "scale(1)", opacity: 0 },
   ]);
 
@@ -241,9 +227,6 @@ export default function SheeshMahalCover({
   const halfLeftRef = useRef<HTMLDivElement>(null);
   const halfRightRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
-  const diyaRef = useRef<HTMLDivElement>(null);
-  const flameRef = useRef<HTMLSpanElement>(null);
-  const haloRef = useRef<HTMLSpanElement>(null);
   const preparedRef = useRef<Animation[] | null>(null);
   const startedRef = useRef(false);
 
@@ -252,25 +235,23 @@ export default function SheeshMahalCover({
       return preparedRef.current;
     }
 
+    const scene = sceneRef.current;
     const refs = {
       ground: groundRef.current,
       hall: hallRef.current,
-      scene: sceneRef.current,
+      scene,
       doorLeft: doorLeftRef.current,
       doorRight: doorRightRef.current,
       halfLeft: halfLeftRef.current,
       halfRight: halfRightRef.current,
       glow: glowRef.current,
-      diya: diyaRef.current,
-      flame: flameRef.current,
-      halo: haloRef.current,
+      glints: scene?.querySelector<HTMLElement>("[data-glints]") ?? null,
     };
 
-    if (Object.values(refs).some((element) => element === null)) {
+    if (scene === null || Object.values(refs).some((element) => element === null)) {
       return null;
     }
 
-    const scene = refs.scene as HTMLElement;
     const flashes = [...scene.querySelectorAll<HTMLElement>("[data-flash]")];
     preparedRef.current = buildOpening(refs as Parts, flashes);
     return preparedRef.current;
@@ -279,8 +260,8 @@ export default function SheeshMahalCover({
   /*
     Made ahead, in an idle moment once the closed cover is showing, a few
     frames after it was first painted. Nothing in them is measured: every
-    distance is a share of its own box, so a screen that changes size (the
-    browser's bars going at the tap) changes nothing.
+    distance is a share of its own box, so a screen that changes size (going
+    fullscreen at the tap) changes nothing.
   */
   useEffect(() => {
     if (!ready || opening || reducedMotion) {
@@ -301,7 +282,7 @@ export default function SheeshMahalCover({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, opening, reducedMotion]);
 
-  /* The tap: everything played. */
+  /* The tap, once the screen has settled: everything played. */
   useEffect(() => {
     if (!opening || startedRef.current) {
       return;
@@ -364,7 +345,7 @@ export default function SheeshMahalCover({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={ART.doorLeft} alt="" draggable={false} className={styles.doorArt} />
             <div ref={halfLeftRef} className={`${styles.medallion} ${styles.medallionLeft}`} style={medallionBox("right")}>
-              {medallion}
+              <div className={styles.medallionFace}>{medallion}</div>
             </div>
           </div>
           <div
@@ -380,35 +361,27 @@ export default function SheeshMahalCover({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={ART.doorRight} alt="" draggable={false} className={styles.doorArt} />
             <div ref={halfRightRef} className={`${styles.medallion} ${styles.medallionRight}`} style={medallionBox("left")}>
-              {medallion}
+              <div className={styles.medallionFace}>{medallion}</div>
             </div>
+          </div>
+
+          {/* The medallion's soft gold glow, breathing with it until the tap. */}
+          <div
+            ref={glowRef}
+            className={styles.medallionGlow}
+            style={{ left: pc(MEDALLION.x), top: pc(MEDALLION.y), width: pc(MEDALLION.size * 3.2) }}
+          >
+            <span className={styles.medallionGlowPulse} />
           </div>
         </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={ART.wall} alt="" draggable={false} fetchPriority="high" className={styles.wallArt} />
 
-        <Glints glints={WALL_GLINTS} listen={ready} flashes />
+        <Glints glints={WALL_GLINTS} listen={ready && !opening} flashes />
       </div>
 
-      <div className={styles.diyaPlace}>
-        <div ref={glowRef} className={styles.diyaGlow} style={{ left: pc(WICK.x), top: pc(WICK.y) }} />
-        <div ref={diyaRef} className={styles.diya} style={{ aspectRatio: String(DIYA_ASPECT) }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.diya} alt="" draggable={false} className={styles.diyaArt} />
-          <span className={styles.wick} style={{ left: pc(WICK.x), top: pc(WICK.y) }}>
-            <span ref={haloRef} className={styles.flameHalo} />
-            <span ref={flameRef} className={styles.flame}>
-              <span className={styles.flameFlicker}>
-                <span className={styles.flameBody} />
-                <span className={styles.flameCore} />
-              </span>
-            </span>
-          </span>
-        </div>
-      </div>
-
-      {/* Under the diya, where a thumb already is. */}
+      {/* Over the foot of the doors, where a thumb already is; clear of Skip. */}
       <p
         className={`${styles.coverPrompt} ${opening ? "" : styles.coverPromptIdle}`}
         style={{
@@ -417,7 +390,7 @@ export default function SheeshMahalCover({
           transition: opening ? "opacity 220ms ease-out" : undefined,
         }}
       >
-        {prompt}
+        <span className={styles.coverPromptPill}>{prompt}</span>
       </p>
     </div>
   );

@@ -37,6 +37,8 @@ import type { EventDraft } from "@/types/event";
 const ONE_LINE_FLOOR = 0.6;
 const BLOCK_FLOOR = 0.55;
 const BLOCK_STEP = 0.04;
+/* Each line of the entrance after the one before. */
+const STAGGER = 150;
 
 /**
  * Sets the names as large as fits: each on one line at the largest size the
@@ -93,7 +95,7 @@ function Line({
     <p
       data-name={name ? "" : undefined}
       className={`${styles.lineUp} ${className}`}
-      style={{ "--sm-delay": `${250 + order * 160}ms`, ...style } as CSSProperties}
+      style={{ "--sm-delay": `${order * STAGGER}ms`, ...style } as CSSProperties}
     >
       {children}
     </p>
@@ -113,8 +115,16 @@ function Line({
  * card whose host hides it behind a scratch panel. A band of light crosses
  * the names as they arrive and every eight seconds.
  *
+ * THE ENTRANCE plays once, in front of the guest: the card is let go only
+ * when the cover has finished (its `revealAt` is its end), and the pager
+ * marks this page entered then. The invitation line fades up, the first name
+ * rises, the "&", the second name, then the rule and the date, 150ms apart,
+ * and the light crosses the names just after. Coming back to the page does
+ * not play it again. Under reduced motion each line simply fades in.
+ *
  * The hall's own glints (Glints.tsx) answer the phone's tilt while this is
- * the room being read, on its arches, walls and floor, never over the words.
+ * the room being read, on its arches, walls and floor, never over the words;
+ * held over the room, not in it, so the walk to page 3 never scales them.
  * "Swipe up" bobs at the foot until the guest first scrolls.
  */
 export default function SheeshNamesPage({
@@ -191,8 +201,8 @@ export default function SheeshNamesPage({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={ART.hall} alt="" draggable={false} fetchPriority="high" className={styles.roomArt} />
       }
+      overlay={<Glints glints={HALL_GLINTS} listen followPage />}
     >
-      <Glints glints={HALL_GLINTS} listen followPage />
 
       <div ref={boxRef} className={styles.namesBox}>
         <div ref={wordsRef} className={styles.namesWords}>
@@ -230,11 +240,11 @@ export default function SheeshNamesPage({
               <span
                 aria-hidden="true"
                 className={`${styles.rule} ${styles.lineUp}`}
-                style={{ "--sm-delay": `${250 + 4 * 160}ms` } as CSSProperties}
+                style={{ "--sm-delay": `${4 * STAGGER}ms` } as CSSProperties}
               >
                 <span className={styles.ruleMark} />
               </span>
-              <Line order={5} className={`${styles.dateLine} ${styles.onNight} text-balance`} style={fonts.heading}>
+              <Line order={4} className={`${styles.dateLine} ${styles.onNight} text-balance`} style={fonts.heading}>
                 {when}
               </Line>
             </>
