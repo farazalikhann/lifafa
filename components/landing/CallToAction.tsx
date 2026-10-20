@@ -4,7 +4,7 @@ import { PRIMARY_BUTTON, SECTION_HEADING } from "@/components/landing/styles";
 import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
-/** The last word before the footer: one button, the same as the hero's. */
+/** The last word before the footer: one button, the same as the first screen's. */
 export default function CallToAction(): ReactElement {
   return (
     <section
@@ -26,7 +26,7 @@ export default function CallToAction(): ReactElement {
         about 10 minutes.
       </p>
       <Link href={NEW_CARD_HREF} className={`mt-8 ${PRIMARY_BUTTON}`}>
-        Choose your design
+        Create your card
       </Link>
       <p className="mt-5 text-sm text-[var(--lifafa-muted)]">
         From {formatPriceRs(LOWEST_PRICE_PAISE)} per event. One-time payment.

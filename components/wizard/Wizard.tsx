@@ -125,37 +125,92 @@ class RestoredCardBoundary extends Component<
   }
 }
 
-export default function Wizard(): ReactElement {
+export default function Wizard({
+  templateId = null,
+}: {
+  /**
+   * A template chosen before the wizard opened ("Create yours"), already
+   * checked by the page to be one the gallery offers.
+   */
+  templateId?: string | null;
+}): ReactElement {
   /*
     A stashed card is in the browser's storage, which the server cannot see, so
     the server draws the skeleton rather than guess at an empty wizard.
   */
-  return useIsClient() ? <WizardArrival /> : <EditorSkeleton />;
+  return useIsClient() ? (
+    <WizardArrival templateId={templateId} />
+  ) : (
+    <EditorSkeleton />
+  );
 }
 
-/** Reads the stash once, as the page mounts, and starts the wizard from it. */
-function WizardArrival(): ReactElement {
-  const [arrival] = useState<Arrival>(() =>
-    arrivalFor(
+/**
+ * The card on the template chosen before the wizard opened, everything typed
+ * into it kept (switchTemplate). A card already on it is left as it is, so a
+ * look changed in step 3 is not put back.
+ */
+function onChosenTemplate(
+  snapshot: EditorSnapshot,
+  templateId: string | null,
+): EditorSnapshot {
+  if (
+    templateId === null ||
+    getTemplate(snapshot.config.templateId).id === templateId
+  ) {
+    return snapshot;
+  }
+
+  return switchTemplate(snapshot, getTemplate(templateId));
+}
+
+/**
+ * Reads the stash once, as the page mounts, and starts the wizard from it.
+ *
+ * A template chosen before the wizard opened is laid onto whichever card it
+ * starts from. It needs no stash of its own across a sign-in: the card's
+ * config carries its templateId, and the card is stashed whole.
+ */
+function WizardArrival({
+  templateId,
+}: {
+  templateId: string | null;
+}): ReactElement {
+  const [{ arrival, start, fallback }] = useState<{
+    arrival: Arrival;
+    start: EditorSnapshot;
+    fallback: EditorSnapshot;
+  }>(() => {
+    const read = arrivalFor(
       readPendingCard(),
       stashOriginFromUrl(window.location.search),
       window.location.origin,
-    ),
-  );
+    );
+    const empty = onChosenTemplate(EMPTY_SNAPSHOT, templateId);
+
+    return {
+      arrival: read,
+      start:
+        read.kind === "restored"
+          ? onChosenTemplate(read.snapshot, templateId)
+          : empty,
+      fallback: empty,
+    };
+  });
 
   if (arrival.kind === "restored") {
     return (
       <RestoredCardBoundary
         fallback={
           <WizardSteps
-            start={EMPTY_SNAPSHOT}
+            start={fallback}
             problem={{ kind: "damaged" }}
             stashedStep={null}
           />
         }
       >
         <WizardSteps
-          start={arrival.snapshot}
+          start={start}
           problem={null}
           stashedStep={wizardStepId(arrival.step)}
         />
@@ -165,7 +220,7 @@ function WizardArrival(): ReactElement {
 
   return (
     <WizardSteps
-      start={EMPTY_SNAPSHOT}
+      start={start}
       problem={arrival.kind === "lost" ? arrival.problem : null}
       stashedStep={null}
     />

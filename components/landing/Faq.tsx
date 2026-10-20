@@ -1,11 +1,6 @@
 import type { ReactElement } from "react";
 import { EYEBROW, SECTION_HEADING } from "@/components/landing/styles";
 import { DATE_CHANGE_LIMIT, NAME_CHANGE_LIMIT } from "@/lib/eventLock";
-import {
-  PREMIUM_PRICE_PAISE,
-  TRADITIONS_PRICE_PAISE,
-  formatPriceRs,
-} from "@/lib/pricing";
 
 interface Question {
   question: string;
@@ -21,11 +16,6 @@ const QUESTIONS: readonly Question[] = [
       "No. Guests open the link in their phone's browser, read the invitation and reply. There is nothing to install and nothing to sign up for.",
   },
   {
-    question: "How do I share my invitation?",
-    answer:
-      "Your invitation has one link. Your dashboard has a Share on WhatsApp button with a message already written, or you can copy the link and send it any way you like.",
-  },
-  {
     question: "Can I edit it after sharing?",
     answer: `Yes. The link stays the same, so every guest sees the latest version. After payment, the date can be changed ${TIMES[DATE_CHANGE_LIMIT]} and the names ${TIMES[NAME_CHANGE_LIMIT]}, to correct spelling. Editing closes once the event is over.`,
   },
@@ -39,14 +29,11 @@ const QUESTIONS: readonly Question[] = [
     answer:
       "Your invitation, replies and guest list stay available until a few days after your event. After that, the event's data is removed.",
   },
-  {
-    question: "How does payment work?",
-    answer: `You make and preview your invitation for free. When you are ready to share it, you pay once for that event: ${formatPriceRs(TRADITIONS_PRICE_PAISE)} for a Traditions design or ${formatPriceRs(PREMIUM_PRICE_PAISE)} for a Premium design, securely through Razorpay with UPI, a card or net banking. Guests can open the link as soon as the payment is complete.`,
-  },
 ];
 
 /**
- * The questions a host asks before paying, answered in place.
+ * The four questions a host asks before paying, answered in place, each
+ * closed until it is opened.
  *
  * NATIVE `details` AND `summary`, AND NOTHING ELSE. Opening, closing, keyboard
  * support and the expanded state a screen reader announces all come from the

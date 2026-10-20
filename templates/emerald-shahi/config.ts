@@ -1,11 +1,10 @@
 import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
-import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/emerald-shahi/art";
-import preview from "@/templates/emerald-shahi/preview.webp";
 import { paperTheme } from "@/templates/emerald-shahi/shared";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
+import { EMERALD_SHAHI_LISTING } from "@/templates/premium";
 import type { TemplateConfig } from "@/templates/types";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -79,18 +78,13 @@ const COVER_OPTION: CoverAnimationOption = {
  * Devanagari faces for a Hindi card.
  */
 export const EMERALD_SHAHI: TemplateConfig = {
-  id: "emerald-shahi",
-  name: "Emerald Shahi",
+  ...EMERALD_SHAHI_LISTING,
   description:
     "A velvet envelope and a gold seal, on emerald with ivory roses and gold line art.",
   /* Only for which sample wedding its demo shows: the Premium Collection has no chips. */
   category: "hindu",
   categoryLabel: "For every wedding",
   badge: "New",
-  listed: true,
-  collection: "premium",
-  price: PREMIUM_PRICE_PAISE,
-  preview,
   palettes: [
     { id: "own", label: "Emerald", paletteId: "forest", accentOverride: GOLD },
   ],

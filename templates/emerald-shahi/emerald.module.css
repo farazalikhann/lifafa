@@ -158,15 +158,17 @@
 }
 
 /*
-  The opening of the frame, less a margin. Measured off the picture at its
-  full 1024x1536: the velvet runs from x 139 to 885 below the arch's shoulders
-  (y 300) and down to y 1330, where the bottom roses begin. The words are kept
-  to x 174 to 850 and y 307 to 1275: 17% in from each side, 20% down from the
-  top and 17% up from the foot, which is also clear of both florals.
+  The opening of the frame, less a margin. Measured off the round-arched
+  picture at its full 1024x1536: the velvet runs from x 141 to 883 between the
+  roses on its sides, the arch's curve ends at its shoulders (y 320, where the
+  velvet is x 164 to 860), and the bottom roses close it in from y 1210. The
+  words are kept to x 174 to 850 and y 338 to 1275: 17% in from each side, 22%
+  down from the top (below the curve, so no corner of the box meets it) and
+  17% up from the foot, which is also clear of both florals.
 */
 .frameBox {
   position: absolute;
-  inset: 20% 17% 17%;
+  inset: 22% 17% 17%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,7 +179,7 @@
   The florals: the same picture over the frame's top right corner and, turned
   round, its bottom left. Each is 38% of the frame across and hangs 14% of
   that off the frame, so it lies above the words' box at the top (it ends
-  16.6% down, the box starts at 20%) and below it at the foot.
+  16.6% down, the box starts at 22%) and below it at the foot.
 */
 .floral {
   position: absolute;

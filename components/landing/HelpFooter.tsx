@@ -37,7 +37,7 @@ interface FooterLink {
 
 const FOOTER_LINKS: readonly FooterLink[] = [
   { href: "/login", label: "Sign in", prefetch: true },
-  { href: NEW_CARD_HREF, label: "Choose your design", prefetch: true },
+  { href: NEW_CARD_HREF, label: "Create your card", prefetch: true },
   /*
     Linked before the pages are written, so the footer does not change shape
     the day they are. Until then both land on the not-found page.

@@ -144,6 +144,35 @@
   background-color: var(--lifafa-ink);
 }
 
+/*
+  The landing page's scroll cue: its arrow bobs a few pixels, a transform and
+  nothing else. Paused while the cue is off screen (ScrollCue sets
+  `data-offscreen`), and still under reduced motion.
+*/
+@keyframes lifafa-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 5px, 0);
+  }
+}
+
+.lifafa-bob {
+  animation: lifafa-bob 1.8s ease-in-out infinite;
+}
+
+[data-offscreen] .lifafa-bob {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-bob {
+    animation: none;
+  }
+}
+
 /* -------------------------------------------------------------------------
    Utilities.
    ------------------------------------------------------------------------- */

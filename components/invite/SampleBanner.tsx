@@ -14,15 +14,27 @@ import { NEW_CARD_HREF } from "@/lib/wizardSteps";
  * to a real wedding. This says it, for as long as the card is open, and
  * offers the one thing a visitor who likes it would do next.
  *
+ * On a template's live demo that is a card on that template: `start` is
+ * where its "Create yours" leads (the wizard's details step, the template
+ * already chosen) and what it costs. Without it, as on the Nikah sample, the
+ * button opens the gallery and the price is the lowest there is.
+ *
  * How it is pinned, and how the card keeps clear of it, is PinnedStrip's.
  */
-export default function SampleBanner(): ReactElement {
+export default function SampleBanner({
+  start,
+}: {
+  start?: { href: string; pricePaise: number };
+}): ReactElement {
   return (
     <PinnedStrip
       label="Sample invitation"
       slim
       action={
-        <Link href={NEW_CARD_HREF} className={PINNED_STRIP_ACTION}>
+        <Link
+          href={start?.href ?? NEW_CARD_HREF}
+          className={PINNED_STRIP_ACTION}
+        >
           Create yours
         </Link>
       }
@@ -30,7 +42,9 @@ export default function SampleBanner(): ReactElement {
       <span className="font-semibold text-[var(--lifafa-marigold)]">
         This is a sample invitation.
       </span>{" "}
-      Create yours from {formatPrice(LOWEST_PRICE_PAISE)}.
+      {start !== undefined
+        ? `Create yours for ${formatPrice(start.pricePaise)}.`
+        : `Create yours from ${formatPrice(LOWEST_PRICE_PAISE)}.`}
     </PinnedStrip>
   );
 }

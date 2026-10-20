@@ -12,6 +12,7 @@ import { LOTUS_BLUSH } from "@/templates/lotus-blush/config";
 import { MAROON_ROYAL } from "@/templates/maroon-royal/config";
 import { MIDNIGHT_LANTERN } from "@/templates/midnight-lantern/config";
 import { NIKAH_BLUSH } from "@/templates/nikah-blush/config";
+import { PREMIUM_LISTINGS } from "@/templates/premium";
 import { SHEESH_MAHAL } from "@/templates/sheesh-mahal/config";
 import { SHUBH_VIVAH_IVORY } from "@/templates/shubh-vivah-ivory/config";
 import type { TemplateConfig } from "@/templates/types";
@@ -43,6 +44,27 @@ export const TEMPLATES: readonly TemplateConfig[] = [
   IVORY_CHAPEL,
   CLASSIC_TEMPLATE,
 ];
+
+/*
+  A premium template is listed from templates/premium.ts, which the landing
+  page reads without the cards. One listed anywhere else would be in the
+  gallery and missing from the landing page, so the build stops here instead.
+*/
+for (const template of TEMPLATES) {
+  const listing = PREMIUM_LISTINGS.find((entry) => entry.id === template.id);
+
+  if (
+    template.collection === "premium" &&
+    (listing === undefined ||
+      listing.listed !== template.listed ||
+      listing.price !== template.price ||
+      listing.preview !== template.preview)
+  ) {
+    throw new Error(
+      `${template.id} is in the Premium Collection, so its listing belongs in templates/premium.ts.`,
+    );
+  }
+}
 
 /**
  * The template a card is drawn with.

@@ -7,6 +7,8 @@ import Wizard from "@/components/wizard/Wizard";
 import WizardSaved from "@/components/wizard/WizardSaved";
 import { getEventById } from "@/lib/db/events";
 import { isUnderReview } from "@/lib/db/paymentReview";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
+import { findTemplate } from "@/templates/registry";
 
 /**
  * A new invitation, made in the wizard: a template, the details, the few
@@ -16,6 +18,11 @@ import { isUnderReview } from "@/lib/db/paymentReview";
  * /create?step=template (NEW_CARD_HREF). Without a step it opens on the
  * template gallery too, or on the step a card waiting from before a sign-in
  * was stashed on.
+ *
+ * WITH `template` (templateStartHref: "Create yours" on the landing page and
+ * on a live demo) the card starts on that template, on the details step. The
+ * id is checked here, before anything is drawn: one the gallery does not
+ * offer, unknown or not yet listed, is sent to the gallery instead.
  *
  * OPEN TO EVERYONE. The middleware lets anyone reach this page; the account
  * is asked for when the card is saved, which is the first moment it is
@@ -36,15 +43,31 @@ export const metadata: Metadata = {
 export default async function CreatePage({
   searchParams,
 }: {
-  searchParams: Promise<{ event?: string | string[] }>;
+  searchParams: Promise<{
+    event?: string | string[];
+    template?: string | string[];
+  }>;
 }): Promise<ReactElement> {
-  const { event: eventId } = await searchParams;
+  const { event: eventId, template: templateParam } = await searchParams;
 
   if (typeof eventId !== "string") {
+    let templateId: string | null = null;
+
+    if (templateParam !== undefined) {
+      const template =
+        typeof templateParam === "string" ? findTemplate(templateParam) : null;
+
+      if (template === null || !template.listed) {
+        redirect(NEW_CARD_HREF);
+      }
+
+      templateId = template.id;
+    }
+
     return (
       /* useSearchParams, which the wizard reads its step from, wants a boundary. */
       <Suspense fallback={<EditorSkeleton />}>
-        <Wizard />
+        <Wizard templateId={templateId} />
       </Suspense>
     );
   }

@@ -10,6 +10,7 @@ import {
   templateDemoPath,
 } from "@/lib/templateSamples";
 import { cardPalette } from "@/lib/textColors";
+import { NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
 import { TEMPLATES, findTemplate } from "@/templates/registry";
 
 /**
@@ -71,7 +72,13 @@ export default async function TemplateDemoPage({
     <>
       {/* The card's colour from the first byte, as on a guest's link. */}
       <style>{`html,body{background-color:${ground}}`}</style>
-      <SampleBanner />
+      {/* A template the gallery does not offer yet cannot be started on: its button opens the gallery. */}
+      <SampleBanner
+        start={{
+          href: template.listed ? templateStartHref(template.id) : NEW_CARD_HREF,
+          pricePaise: template.price,
+        }}
+      />
       <InviteExperience
         event={event}
         initialLanguage={event.config.language}

@@ -1,9 +1,7 @@
 import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
-import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/gulab-mahal/art";
-import preview from "@/templates/gulab-mahal/preview.webp";
 import {
   IVORY,
   IVORY_MUTED,
@@ -13,6 +11,7 @@ import {
   letterTheme,
 } from "@/templates/gulab-mahal/shared";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
+import { GULAB_MAHAL_LISTING } from "@/templates/premium";
 import type { TemplateConfig } from "@/templates/types";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -79,18 +78,13 @@ const COVER_OPTION: CoverAnimationOption = {
  * script over an elegant serif, each with its own Devanagari faces.
  */
 export const GULAB_MAHAL: TemplateConfig = {
-  id: "gulab-mahal",
-  name: "Gulab Mahal",
+  ...GULAB_MAHAL_LISTING,
   description:
     "A blush envelope under a rose-gold seal, and a card of full-screen pages in blush velvet.",
   /* Only for which sample wedding its demo shows: the Premium Collection has no chips. */
   category: "hindu",
   categoryLabel: "For every wedding",
   badge: "New",
-  listed: true,
-  collection: "premium",
-  price: PREMIUM_PRICE_PAISE,
-  preview,
   palettes: [
     { id: "own", label: "Blush", paletteId: "blush", accentOverride: ROSE_GOLD },
   ],

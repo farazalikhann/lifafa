@@ -1,7 +1,6 @@
 import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
-import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
 import { COVER_IMAGES } from "@/templates/sheesh-mahal/art";
 import { DURATION, REVEAL_AT, SETTLE_LIMIT } from "@/templates/sheesh-mahal/coverTiming";
 import {
@@ -15,6 +14,7 @@ import {
 } from "@/templates/sheesh-mahal/shared";
 import { askTilt } from "@/templates/sheesh-mahal/tilt";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
+import { SHEESH_MAHAL_LISTING } from "@/templates/premium";
 import type { TemplateConfig } from "@/templates/types";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 
@@ -94,17 +94,12 @@ const COVER_OPTION: CoverAnimationOption = {
  * Cormorant first.
  */
 export const SHEESH_MAHAL: TemplateConfig = {
-  id: "sheesh-mahal",
-  name: "Sheesh Mahal",
+  ...SHEESH_MAHAL_LISTING,
   description:
     "Open doors of mirror-work and walk on through a night palace, room by room.",
   /* Only for which sample wedding its demo shows. */
   category: "hindu",
   categoryLabel: "For every wedding",
-  listed: false,
-  collection: "premium",
-  price: PREMIUM_PRICE_PAISE,
-  preview: null,
   palettes: [
     { id: "own", label: "Midnight", paletteId: "midnight", accentOverride: GOLD },
   ],

@@ -32,6 +32,18 @@ export const WIZARD_STEP_PARAM = "step";
  */
 export const NEW_CARD_HREF = "/create?step=template";
 
+/** The query parameter naming a template chosen before the wizard opened. */
+export const WIZARD_TEMPLATE_PARAM = "template";
+
+/**
+ * A new card already on one template, opened on its details: where "Create
+ * yours" leads from the landing page and from a template's live demo. The
+ * wizard checks the id; one the gallery does not offer opens the gallery.
+ */
+export function templateStartHref(templateId: string): string {
+  return `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=details&${WIZARD_TEMPLATE_PARAM}=${encodeURIComponent(templateId)}`;
+}
+
 /** The step a value names, or null: it comes out of a URL or out of storage. */
 export function wizardStepId(value: unknown): WizardStepId | null {
   return WIZARD_STEPS.find((step) => step.id === value)?.id ?? null;
