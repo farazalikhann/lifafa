@@ -1,46 +1,35 @@
-"use client";
-
+import type { ReactElement } from "react";
 import Link from "next/link";
-import { useInView } from "@/hooks/useInView";
+import { PRIMARY_BUTTON, SECTION_HEADING } from "@/components/landing/styles";
+import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
-export default function CallToAction() {
-  const { ref, isInView } = useInView<HTMLElement>();
-
+/** The last word before the footer: one button, the same as the hero's. */
+export default function CallToAction(): ReactElement {
   return (
     <section
-      ref={ref}
-      className={[
-        "flex min-h-[70svh] flex-col items-center justify-center px-6 py-20 text-center",
-        "transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none",
-        isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
-      ].join(" ")}
+      aria-labelledby="closing-heading"
+      className="relative isolate overflow-x-clip px-5 py-20 text-center sm:px-8 sm:py-28"
     >
-      <h2 className="max-w-[16ch] text-balance font-[family-name:var(--font-display)] text-[2.25rem] leading-[1.15] font-semibold tracking-[-0.02em] text-[var(--lifafa-cream)] sm:max-w-[20ch] sm:text-5xl">
-        Your guest list, finally settled.
-      </h2>
-
-      <p className="mt-5 max-w-[34ch] text-balance text-base leading-relaxed text-[var(--lifafa-muted)] sm:max-w-[46ch] sm:text-lg">
-        Create your invitation today and start collecting replies in minutes.
-      </p>
-
-      <Link
-        href={NEW_CARD_HREF}
-        className={[
-          "mt-10 inline-flex items-center justify-center rounded-full",
-          "bg-[var(--lifafa-marigold)] px-9 py-4 text-base font-semibold text-[var(--lifafa-ink)] sm:text-lg",
-          "shadow-[0_10px_30px_-12px_rgba(232,163,61,0.55)]",
-          "transition-[transform,box-shadow] duration-200 ease-out",
-          "hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-14px_rgba(232,163,61,0.75)]",
-          "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]",
-          "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-        ].join(" ")}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 left-1/2 -z-10 aspect-square w-[min(140vw,48rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(232,163,61,0.13),rgba(196,86,107,0.05)_60%,transparent)]"
+      />
+      <h2
+        id="closing-heading"
+        className={`mx-auto max-w-[18ch] ${SECTION_HEADING}`}
       >
-        Create your invitation
+        Your invitation can be ready tonight
+      </h2>
+      <p className="mx-auto mt-4 max-w-[36ch] text-base leading-relaxed text-balance text-[var(--lifafa-muted)] sm:text-lg">
+        Choose a design, add your details and start collecting replies in
+        about 10 minutes.
+      </p>
+      <Link href={NEW_CARD_HREF} className={`mt-8 ${PRIMARY_BUTTON}`}>
+        Choose your design
       </Link>
-
-      <p className="mt-6 text-sm text-[var(--lifafa-muted)]">
-        One event. One payment. No subscription.
+      <p className="mt-5 text-sm text-[var(--lifafa-muted)]">
+        From {formatPriceRs(LOWEST_PRICE_PAISE)} per event. One-time payment.
       </p>
     </section>
   );

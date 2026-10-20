@@ -1,10 +1,10 @@
 /**
  * The sample invitation: a Nikah card that exists only in this file.
  *
- * WHAT IT IS FOR. The home page shows it screen by screen, and /demo/nikah
- * opens it whole, exactly as a guest's link would. Both draw it with the real
- * card, from the same types a saved card has, so what a visitor is shown is
- * the product and cannot fall behind it the way a screenshot does.
+ * WHAT IT IS FOR. /demo/nikah opens it whole, exactly as a guest's link
+ * would, drawn with the real card from the same types a saved card has, so
+ * what a visitor is shown is the product and cannot fall behind it the way a
+ * screenshot does.
  *
  * IT NEVER TOUCHES THE DATABASE. Nothing reads it from Supabase and nothing
  * writes to it: there is no row, no invite code that resolves under /i/, and
@@ -22,15 +22,14 @@
 
 import { DEFAULT_SECTION_ORDER } from "@/lib/cardSections";
 import { cardPalette, paletteTextColors } from "@/lib/textColors";
-import type { CardConfig, CardSectionId } from "@/types/card";
+import type { CardConfig } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { StoredEvent } from "@/types/database";
 import type { EventDraft } from "@/types/event";
 
 /*
-  Where the card opens, and the carousel's own table, are in lib/demoSlides.ts:
-  the home page reads those before any of the card's code has arrived, and a
-  module that names a palette brings the palettes with it.
+  Where the card opens is in lib/demoSlides.ts, so a page that only links
+  here does not bring the card's palettes with it.
 */
 export { DEMO_NIKAH_PATH } from "@/lib/demoSlides";
 
@@ -162,41 +161,5 @@ export const DEMO_NIKAH: StoredEvent = {
   },
 };
 
-/** The sample card's own ground: what a frame shows until the card is in it. */
+/** The sample card's own ground, which /demo/nikah paints behind it. */
 export const DEMO_NIKAH_GROUND = cardPalette(CONFIG.style).background;
-
-/**
- * The sample as a carousel frame draws it: the screen the frame is of, with
- * nothing in motion.
- *
- * THE CARD, CUT DOWN TO WHAT THE FRAME NEEDS, never a section on its own. A
- * section alone would be drawn as no guest ever sees it: at the very top of
- * the card, under the hanging lights, with no names across the head of the
- * screen. So the cover is always kept before it, and the frame is scrolled to
- * the section (see DemoSlideCard), which is where the names band and the
- * dissolve under it come from. The date's screen is kept too: a card without
- * one offers its calendar button elsewhere, on a strip that is not part of
- * any screen shown here.
- *
- * Nothing flying or falling, because eight cards side by side on a low-end
- * phone cannot afford it, and a butterfly that settles on a line of text in a
- * frame nobody can scroll stays there. The ornaments, the border, the texture
- * and the words are the card's own, untouched.
- */
-export function demoSlideConfig(section: CardSectionId): CardConfig {
-  const kept: readonly CardSectionId[] =
-    section === "cover" || section === "details"
-      ? ["cover", "details"]
-      : ["cover", "details", section];
-
-  return {
-    ...CONFIG,
-    blocks: kept.map((id) => ({ kind: "builtin" as const, id, enabled: true })),
-    decorMotion: "none",
-    butterflies: "none",
-    leaves: false,
-    petals: "none",
-    /* A screen to scroll through, in a frame nobody can scroll. */
-    scene: "off",
-  };
-}

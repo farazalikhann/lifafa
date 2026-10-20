@@ -1,38 +1,15 @@
-"use client";
-
 import type { ReactElement } from "react";
-import { useInView } from "@/hooks/useInView";
-
-type Accent = "marigold" | "rose";
+import { EYEBROW, SECTION_HEADING, SECTION_LEAD } from "@/components/landing/styles";
 
 interface Step {
-  numeral: string;
   heading: string;
   copy: string;
-  accent: Accent;
   art: ReactElement;
 }
 
-/** Full class strings so Tailwind can see them at build time. */
-const ACCENT_TEXT: Record<Accent, string> = {
-  marigold: "text-[var(--lifafa-marigold)]",
-  rose: "text-[var(--lifafa-rose)]",
-};
-
 /**
- * The gap between one step arriving and the next.
- *
- * The same 80ms the invitation staggers its own lines by — see `lineDelay` in
- * lib/cardFormat.ts. Written again here rather than imported, because that
- * module brings the card's copy tables with it, and the landing page would ship
- * both languages of invitation wording to show three steps.
- */
-const STAGGER_MS = 80;
-
-/**
- * Shared frame for the line drawings, in the same hand as the scroll story:
- * `currentColor` strokes with round ends, so the step's accent colours the
- * whole drawing.
+ * Shared frame for the line drawings: `currentColor` strokes with round ends,
+ * so the marigold of the step colours the whole drawing.
  */
 function StepArt({ children }: { children: ReactElement }): ReactElement {
   return (
@@ -46,15 +23,29 @@ function StepArt({ children }: { children: ReactElement }): ReactElement {
       strokeWidth={2.2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-14 w-14 shrink-0"
+      className="h-12 w-12 shrink-0 text-[var(--lifafa-marigold)]"
     >
       {children}
     </svg>
   );
 }
 
-/* 1 — A card with a pencil at its edge. */
-function BuildArt(): ReactElement {
+/* 1. Three designs side by side, the middle one chosen. */
+function ChooseArt(): ReactElement {
+  return (
+    <StepArt>
+      <g>
+        <path d="M6 18 Q6 15 9 15 L19 15 Q22 15 22 18 L22 46 Q22 49 19 49 L9 49 Q6 49 6 46 Z" opacity={0.6} />
+        <path d="M24 12 Q24 9 27 9 L37 9 Q40 9 40 12 L40 52 Q40 55 37 55 L27 55 Q24 55 24 52 Z" />
+        <path d="M42 18 Q42 15 45 15 L55 15 Q58 15 58 18 L58 46 Q58 49 55 49 L45 49 Q42 49 42 46 Z" opacity={0.6} />
+        <path d="M28.5 32.5 L31 35 L35.5 29.5" />
+      </g>
+    </StepArt>
+  );
+}
+
+/* 2. A card with a pencil at its edge. */
+function DetailsArt(): ReactElement {
   return (
     <StepArt>
       <g>
@@ -69,7 +60,7 @@ function BuildArt(): ReactElement {
   );
 }
 
-/* 2 — A chat bubble carrying a link. */
+/* 3. A chat bubble carrying a link. */
 function ShareArt(): ReactElement {
   return (
     <StepArt>
@@ -82,122 +73,68 @@ function ShareArt(): ReactElement {
   );
 }
 
-/* 3 — A rising tally with a tick beside it. */
-function CountArt(): ReactElement {
-  return (
-    <StepArt>
-      <g>
-        <path d="M8 55 L56 55" opacity={0.5} />
-        <path d="M14 55 L14 43" />
-        <path d="M25 55 L25 33" />
-        <path d="M36 55 L36 22" />
-        <path d="M48 10 Q55 10 55 17 Q55 24 48 24 Q41 24 41 17 Q41 10 48 10 Z" />
-        <path d="M44.5 17.2 L47 19.7 L51.8 14.6" />
-      </g>
-    </StepArt>
-  );
-}
-
 const STEPS: readonly Step[] = [
   {
-    numeral: "1",
-    heading: "Build your card",
-    copy: "Pick an occasion, add your names and dates, choose how it looks. It takes a few minutes.",
-    accent: "marigold",
-    art: <BuildArt />,
+    heading: "Choose a design",
+    copy: "Browse the designs and open any of them as a live demo before you decide.",
+    art: <ChooseArt />,
   },
   {
-    numeral: "2",
-    heading: "Share one link",
-    copy: "Send it on WhatsApp. Guests open it, read it, and reply. They never sign up.",
-    accent: "rose",
+    heading: "Add your details",
+    copy: "Names, date, venue and your functions. You see the invitation take shape as you type.",
+    art: <DetailsArt />,
+  },
+  {
+    heading: "Share one link on WhatsApp",
+    copy: "Send it to every guest. They open it, read it and reply, with nothing to install.",
     art: <ShareArt />,
-  },
-  {
-    numeral: "3",
-    heading: "Watch the count",
-    copy: "Every reply lands on your dashboard, so you know your headcount long before the day.",
-    accent: "marigold",
-    art: <CountArt />,
   },
 ];
 
-/** The reveal every landing section uses, driven by one boolean. */
-function revealClass(isInView: boolean): string {
-  return [
-    "transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none motion-reduce:delay-0",
-    isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
-  ].join(" ");
-}
-
-function StepItem({ step, index }: { step: Step; index: number }): ReactElement {
-  /*
-    Each step watches itself rather than the whole row. Side by side at lg the
-    three arrive together and the stagger lays them out one after another;
-    stacked on a phone the lower two are a screen further down, and a single
-    observer on the row would have played their entrance before anyone could
-    see it — the fault the scroll story's note describes.
-  */
-  const { ref, isInView } = useInView<HTMLLIElement>();
-
-  return (
-    <li
-      ref={ref}
-      className={`flex flex-col items-center text-center ${revealClass(isInView)}`}
-      style={{ transitionDelay: `${(index + 1) * STAGGER_MS}ms` }}
-    >
-      <div className="flex items-center gap-5">
-        {/*
-          Hidden from assistive tech: the list is ordered, so a screen reader
-          already says "1 of 3", and a second "one" beside it is noise.
-        */}
-        <span
-          aria-hidden="true"
-          className="font-[family-name:var(--font-display)] text-[4.5rem] leading-none font-semibold tracking-[-0.04em] text-[var(--lifafa-muted)]/35"
-        >
-          {step.numeral}
-        </span>
-        <span className={ACCENT_TEXT[step.accent]}>{step.art}</span>
-      </div>
-
-      <h3 className="mt-6 font-[family-name:var(--font-display)] text-2xl leading-[1.2] font-semibold tracking-[-0.01em] text-[var(--lifafa-cream)] sm:text-[1.75rem]">
-        {step.heading}
-      </h3>
-      <p className="mt-3 max-w-[32ch] text-base leading-relaxed text-balance text-[var(--lifafa-muted)] sm:text-lg">
-        {step.copy}
-      </p>
-    </li>
-  );
-}
-
+/** Three steps, and how long they take. No script: the list is in the HTML. */
 export default function HowItWorks(): ReactElement {
-  const { ref, isInView } = useInView<HTMLHeadingElement>();
-
   return (
     <section
       aria-labelledby="how-it-works-heading"
-      className="px-6 py-20 sm:py-24"
+      className="border-y border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]/50 px-5 py-16 sm:px-8 sm:py-24"
     >
-      <h2
-        ref={ref}
-        id="how-it-works-heading"
-        className={`mx-auto max-w-[16ch] text-center font-[family-name:var(--font-display)] text-[2.25rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance text-[var(--lifafa-cream)] sm:max-w-[20ch] sm:text-5xl ${revealClass(isInView)}`}
-      >
-        How it works
-      </h2>
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <p className={EYEBROW}>How it works</p>
+          <h2 id="how-it-works-heading" className={`mt-3 ${SECTION_HEADING}`}>
+            Ready in about 10 minutes
+          </h2>
+          <p className={`mx-auto mt-4 max-w-[38ch] ${SECTION_LEAD}`}>
+            Three steps from choosing a design to replies arriving.
+          </p>
+        </div>
 
-      {/*
-        `role="list"` because Safari drops a list's semantics once its markers
-        are styled away, and the ordering is the point of this one.
-      */}
-      <ol
-        role="list"
-        className="mx-auto mt-14 grid max-w-6xl list-none gap-14 sm:mt-16 lg:grid-cols-3 lg:gap-10"
-      >
-        {STEPS.map((step, index) => (
-          <StepItem key={step.numeral} step={step} index={index} />
-        ))}
-      </ol>
+        {/* `role="list"`: Safari drops a list's semantics once its markers are styled away. */}
+        <ol
+          role="list"
+          className="mx-auto mt-12 grid max-w-md list-none gap-5 lg:max-w-none lg:grid-cols-3 lg:gap-6"
+        >
+          {STEPS.map((step, index) => (
+            <li
+              key={step.heading}
+              className="flex gap-4 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)] p-5 lg:flex-col lg:p-7"
+            >
+              {step.art}
+              <div className="min-w-0">
+                <p className="text-xs font-semibold tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
+                  Step {index + 1}
+                </p>
+                <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl leading-snug font-semibold text-[var(--lifafa-cream)] sm:text-2xl">
+                  {step.heading}
+                </h3>
+                <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--lifafa-muted)] sm:text-base">
+                  {step.copy}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
     </section>
   );
 }

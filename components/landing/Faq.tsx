@@ -1,43 +1,47 @@
-"use client";
-
 import type { ReactElement } from "react";
-import { useInView } from "@/hooks/useInView";
+import { EYEBROW, SECTION_HEADING } from "@/components/landing/styles";
+import { DATE_CHANGE_LIMIT, NAME_CHANGE_LIMIT } from "@/lib/eventLock";
+import {
+  PREMIUM_PRICE_PAISE,
+  TRADITIONS_PRICE_PAISE,
+  formatPriceRs,
+} from "@/lib/pricing";
 
 interface Question {
   question: string;
   answer: string;
 }
 
+const TIMES = ["", "once", "twice", "three times", "four times", "five times"];
+
 const QUESTIONS: readonly Question[] = [
   {
-    question: "Do my guests need an account?",
+    question: "Do my guests need an app or an account?",
     answer:
-      "No. They open the link, read the invitation, and reply. Nothing to install and nothing to sign up for.",
+      "No. Guests open the link in their phone's browser, read the invitation and reply. There is nothing to install and nothing to sign up for.",
   },
   {
-    question: "What does the price cover?",
+    question: "How do I share my invitation?",
     answer:
-      "One invitation for one event, with unlimited guests and every feature. If you are hosting a second event, that is a separate invitation.",
+      "Your invitation has one link. Your dashboard has a Share on WhatsApp button with a message already written, or you can copy the link and send it any way you like.",
   },
   {
-    question: "Can I change the card after sharing it?",
-    answer:
-      "Yes. The link stays the same, so anything you edit updates for everyone who already has it.",
+    question: "Can I edit it after sharing?",
+    answer: `Yes. The link stays the same, so every guest sees the latest version. After payment, the date can be changed ${TIMES[DATE_CHANGE_LIMIT]} and the names ${TIMES[NAME_CHANGE_LIMIT]}, to correct spelling. Editing closes once the event is over.`,
   },
   {
-    question: "How do I know who is coming?",
+    question: "Which languages can I use?",
     answer:
-      "Every reply goes to your dashboard. Open it any time for a headcount that is up to date, and export the full guest list whenever you need it.",
+      "English and Hindi. Write your invitation in one and add the other, and your guests can switch between them with one tap.",
   },
   {
-    question: "Does it work on an old phone?",
+    question: "How long does the link stay live?",
     answer:
-      "Yes. It opens in any browser and is built to stay light on a slow connection.",
+      "Your invitation, replies and guest list stay available until a few days after your event. After that, the event's data is removed.",
   },
   {
-    question: "Can I add my own functions?",
-    answer:
-      "You can add up to six, each with its own date, time and venue. They appear on the card as a timeline.",
+    question: "How does payment work?",
+    answer: `You make and preview your invitation for free. When you are ready to share it, you pay once for that event: ${formatPriceRs(TRADITIONS_PRICE_PAISE)} for a Traditions design or ${formatPriceRs(PREMIUM_PRICE_PAISE)} for a Premium design, securely through Razorpay with UPI, a card or net banking. Guests can open the link as soon as the payment is complete.`,
   },
 ];
 
@@ -45,55 +49,34 @@ const QUESTIONS: readonly Question[] = [
  * The questions a host asks before paying, answered in place.
  *
  * NATIVE `details` AND `summary`, AND NOTHING ELSE. Opening, closing, keyboard
- * support, the expanded state a screen reader announces: the browser does all
- * of it, before this page has hydrated and on a device that never runs its
- * JavaScript at all. This is a client component only for the scroll reveal.
- *
- * The marker is drawn in CSS on a span inside the summary, a plus whose bars
- * turn into a cross when the item is open. The browser's own triangle is
- * switched off — `list-none` for most engines, the webkit pseudo-element for
- * Safari — because it cannot be coloured or placed to match the page.
+ * support and the expanded state a screen reader announces all come from the
+ * browser, with no script. The marker is a plus drawn in CSS that turns into a
+ * cross when the item is open; the browser's own triangle is switched off.
  */
 export default function Faq(): ReactElement {
-  const { ref, isInView } = useInView<HTMLElement>();
-
   return (
-    <section
-      ref={ref}
-      aria-labelledby="faq-heading"
-      className={[
-        "px-6 py-20 sm:py-24",
-        "transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none",
-        isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
-      ].join(" ")}
-    >
-      <h2
-        id="faq-heading"
-        className="mx-auto max-w-[16ch] text-center font-[family-name:var(--font-display)] text-[2.25rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance text-[var(--lifafa-cream)] sm:max-w-[20ch] sm:text-5xl"
-      >
-        Questions hosts ask
-      </h2>
+    <section aria-labelledby="faq-heading" className="px-5 py-16 sm:px-8 sm:py-24">
+      <div className="text-center">
+        <p className={EYEBROW}>Questions</p>
+        <h2 id="faq-heading" className={`mt-3 ${SECTION_HEADING}`}>
+          Questions hosts ask
+        </h2>
+      </div>
 
-      <div className="mx-auto mt-12 max-w-2xl border-y border-[var(--lifafa-hairline)] sm:mt-14">
+      <div className="mx-auto mt-10 max-w-2xl border-y border-[var(--lifafa-hairline)] sm:mt-12">
         {QUESTIONS.map((item) => (
           <details
             key={item.question}
             className="group border-b border-[var(--lifafa-hairline)] last:border-b-0"
           >
-            {/*
-              44px is the floor, not the size: a question that wraps to two
-              lines on a phone simply grows the row.
-            */}
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-4 text-left text-base leading-snug font-medium text-[var(--lifafa-cream)] transition-colors duration-200 hover:text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-lg [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-4 text-left text-base leading-snug font-medium text-[var(--lifafa-cream)] transition-colors duration-200 hover:text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-lg [&::-webkit-details-marker]:hidden">
               <span>{item.question}</span>
-
               <span
                 aria-hidden="true"
                 className="relative h-3.5 w-3.5 shrink-0 text-[var(--lifafa-marigold)] transition-transform duration-200 ease-out group-open:rotate-45 motion-reduce:transition-none before:absolute before:top-1/2 before:left-0 before:h-[1.5px] before:w-full before:-translate-y-1/2 before:rounded-full before:bg-current before:content-[''] after:absolute after:top-0 after:left-1/2 after:h-full after:w-[1.5px] after:-translate-x-1/2 after:rounded-full after:bg-current after:content-['']"
               />
             </summary>
-
-            <p className="max-w-[60ch] pr-10 pb-5 text-[0.9375rem] leading-relaxed text-[var(--lifafa-muted)] sm:text-base">
+            <p className="max-w-[60ch] pr-8 pb-5 text-[0.9375rem] leading-relaxed text-[var(--lifafa-muted)] sm:text-base">
               {item.answer}
             </p>
           </details>

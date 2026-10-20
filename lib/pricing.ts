@@ -39,6 +39,20 @@ export function formatInr(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * A price in paise written with "Rs", for the landing page: 69900 is "Rs 699".
+ *
+ * The rupee sign is outside the basic Latin set the site's two fonts load
+ * first, and showing it on the first screen fetches a second file of each
+ * font, more than the hero's picture, on the slow connection that page is
+ * built for. "Rs" is read the same way and costs nothing.
+ */
+export function formatPriceRs(paise: number): string {
+  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
+    Math.round(paise / 100),
+  )}`;
+}
+
 /** A price in paise as it is shown: 69900 is "₹699". */
 export function formatPrice(paise: number): string {
   return formatInr(Math.round(paise / 100));

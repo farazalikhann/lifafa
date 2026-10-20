@@ -140,5 +140,14 @@ export default function nextConfig(phase: string): NextConfig {
     env: {
       LIFAFA_VERCEL_HOST: vercelHost(),
     },
+    images: {
+      /*
+        Next's defaults, with 480 added. A picture a quarter of a phone's
+        width wide, on the common 2x screen, otherwise jumps from 384 straight
+        to 640 and downloads nearly twice what it shows: the landing page's
+        hero is that picture, on the connection it can least afford.
+      */
+      imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 480],
+    },
   };
 }

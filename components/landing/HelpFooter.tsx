@@ -37,7 +37,7 @@ interface FooterLink {
 
 const FOOTER_LINKS: readonly FooterLink[] = [
   { href: "/login", label: "Sign in", prefetch: true },
-  { href: NEW_CARD_HREF, label: "Create an invitation", prefetch: true },
+  { href: NEW_CARD_HREF, label: "Choose your design", prefetch: true },
   /*
     Linked before the pages are written, so the footer does not change shape
     the day they are. Until then both land on the not-found page.
@@ -70,8 +70,8 @@ export default function HelpFooter() {
             Lifafa
           </p>
           <p className="mx-auto mt-3 max-w-[30ch] text-sm leading-relaxed text-[var(--lifafa-muted)] sm:mx-0">
-            Digital invitations with an up-to-date guest count, for every
-            Indian celebration.
+            Beautiful digital invitations that tell you who is coming, for
+            every Indian celebration.
           </p>
         </div>
 

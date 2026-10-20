@@ -1,29 +1,67 @@
-"use client";
-
-import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { useInView } from "@/hooks/useInView";
+import {
+  EYEBROW,
+  PRIMARY_BUTTON,
+  SECONDARY_BUTTON,
+  SECTION_HEADING,
+  SECTION_LEAD,
+} from "@/components/landing/styles";
+import {
+  PREMIUM_PRICE_PAISE,
+  TRADITIONS_PRICE_PAISE,
+  formatPriceRs,
+} from "@/lib/pricing";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /*
-  What one payment buys, and every line has to be something the product does
-  today. The tradition count is the ornament packs in lib/traditionPacks.tsx —
-  a card with no tradition has occasion motifs but nothing traditional — and
-  the functions are the host's own sub-events, which the card sets as a
-  timeline.
+  What every invitation includes, on either collection. Each line is
+  something the product does today.
 */
 const INCLUDED: readonly string[] = [
-  "Unlimited guests",
-  "Your headcount, always up to date when you open it",
-  "Every function: mehndi, sangeet, reception",
-  "Traditional motifs for six traditions",
-  "QR check-in on the event day",
-  "Guest list export",
-  "Works on every phone, no app needed",
+  "Unlimited guests and replies",
+  "Your dashboard with an up-to-date headcount",
+  "Every function: mehndi, sangeet, wedding, reception",
+  "QR check-in at the venue",
+  "English and Hindi",
+  "Add to Calendar and directions to the venue",
+  "Edits after sharing, on the same link",
+  "Guest list download",
 ];
 
-/** Hand drawn tick, marigold via currentColor on the list item. */
+interface Plan {
+  name: string;
+  price: number;
+  summary: string;
+  /** What the card lists: everything included, or what this plan adds to the other. */
+  lines: readonly string[];
+  featured: boolean;
+}
+
+const PLANS: readonly Plan[] = [
+  {
+    name: "Traditions",
+    price: TRADITIONS_PRICE_PAISE,
+    summary:
+      "Designs for Hindu, Muslim, Sikh, Jain, Buddhist and Christian weddings, and one for any occasion.",
+    lines: INCLUDED,
+    featured: false,
+  },
+  {
+    name: "Premium",
+    price: PREMIUM_PRICE_PAISE,
+    summary:
+      "Emerald Shahi or Gulab Mahal: our most detailed full-screen designs.",
+    lines: [
+      "Everything in Traditions",
+      "Its own opening animation",
+      "A full-screen design, page by page",
+    ],
+    featured: true,
+  },
+];
+
+/** A marigold tick for an included line. */
 function Tick(): ReactElement {
   return (
     <svg
@@ -36,80 +74,83 @@ function Tick(): ReactElement {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-[0.3rem] h-[18px] w-[18px] shrink-0 text-[var(--lifafa-marigold)]"
+      className="mt-[0.2rem] h-[18px] w-[18px] shrink-0 text-[var(--lifafa-marigold)]"
     >
       <path d="M3.5 10.5 Q6 12.5 8 15 Q11.5 7.5 16.5 4" />
     </svg>
   );
 }
 
-export default function Pricing() {
-  const { ref, isInView } = useInView<HTMLElement>();
+function PlanCard({ plan }: { plan: Plan }): ReactElement {
+  return (
+    <li
+      className={`flex flex-col rounded-3xl border bg-[var(--lifafa-ink-raised)] p-6 sm:p-8 ${
+        plan.featured
+          ? "border-[var(--lifafa-marigold)]/60"
+          : "border-[var(--lifafa-hairline)]"
+      }`}
+    >
+      <h3 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--lifafa-cream)]">
+        {plan.name}
+      </h3>
+      <p className="mt-4 font-[family-name:var(--font-display)] text-5xl leading-none font-semibold tracking-[-0.02em] text-[var(--lifafa-cream)]">
+        {formatPriceRs(plan.price)}
+      </p>
+      <p className="mt-2 text-sm text-[var(--lifafa-muted)]">
+        One-time payment per event
+      </p>
+      <p className="mt-4 text-[0.9375rem] leading-relaxed text-[var(--lifafa-cream-soft)]">
+        {plan.summary}
+      </p>
 
+      <div aria-hidden="true" className="my-6 h-px w-full bg-[var(--lifafa-hairline)]" />
+
+      <ul className="flex flex-1 flex-col gap-3">
+        {plan.lines.map((line) => (
+          <li key={line} className="flex items-start gap-3">
+            <Tick />
+            <span className="text-[0.9375rem] leading-relaxed text-[var(--lifafa-cream)]">
+              {line}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        href={NEW_CARD_HREF}
+        className={`mt-8 w-full ${plan.featured ? PRIMARY_BUTTON : SECONDARY_BUTTON}`}
+      >
+        Choose a {plan.name} design
+      </Link>
+    </li>
+  );
+}
+
+/** Two prices, by collection. A server component: no script. */
+export default function Pricing(): ReactElement {
   return (
     <section
-      ref={ref}
+      id="pricing"
       aria-labelledby="pricing-heading"
-      className={[
-        "flex min-h-[80svh] items-center justify-center px-6 py-20",
-        "transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none",
-        isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
-      ].join(" ")}
+      className="border-y border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]/50 px-5 py-16 sm:px-8 sm:py-24"
     >
-      <div className="w-full max-w-[420px] rounded-3xl border border-[var(--lifafa-marigold)]/45 bg-[var(--lifafa-ink-raised)] px-7 py-10 sm:px-9 sm:py-12">
-        {/*
-          The section's name for anything navigating by headings. The label
-          under it says what the price is, which is what a sighted visitor
-          needs above a number; "Pricing" above it said only what they could
-          already see.
-        */}
-        <h2 id="pricing-heading" className="sr-only">
-          Pricing
-        </h2>
+      <div className="mx-auto max-w-4xl">
+        <div className="text-center">
+          <p className={EYEBROW}>Pricing</p>
+          <h2 id="pricing-heading" className={`mt-3 ${SECTION_HEADING}`}>
+            One payment for each event
+          </h2>
+          <p className={`mx-auto mt-4 max-w-[40ch] ${SECTION_LEAD}`}>
+            No subscription and no charge per guest. Make and preview your
+            invitation first, and pay when you are ready to share it.
+          </p>
+        </div>
 
-        <p className="text-center text-[0.6875rem] tracking-[0.28em] text-[var(--lifafa-muted)] uppercase">
-          One event, one payment
-        </p>
-
-        {/* The lowest price, from the one table of prices, and said to be the lowest. */}
-        <p className="mt-5 text-center text-sm text-[var(--lifafa-muted)]">
-          Starting at
-        </p>
-        <p className="mt-1 text-center font-[family-name:var(--font-display)] text-[3.5rem] leading-none font-semibold tracking-[-0.02em] text-[var(--lifafa-cream)] sm:text-6xl">
-          {formatPrice(LOWEST_PRICE_PAISE)}
-        </p>
-        <p className="mt-3 text-center text-sm text-[var(--lifafa-muted)]">
-          No subscription. No per-guest charge.
-        </p>
-
-        <div
-          aria-hidden="true"
-          className="my-8 h-px w-full bg-[var(--lifafa-hairline)]"
-        />
-
-        <ul className="flex flex-col gap-4">
-          {INCLUDED.map((item) => (
-            <li key={item} className="flex items-start gap-3">
-              <Tick />
-              <span className="text-[0.9375rem] leading-relaxed text-[var(--lifafa-cream)] sm:text-base">
-                {item}
-              </span>
-            </li>
+        <ul className="mt-12 grid gap-5 md:grid-cols-2">
+          {PLANS.map((plan) => (
+            <PlanCard key={plan.name} plan={plan} />
           ))}
         </ul>
-
-        {/*
-          The card states a price and lists what it buys, and a visitor who
-          has just read both is ready to act on them. Outlined rather than
-          filled: the hero and the closing section carry the filled pill, and a
-          third one this close to the second would compete with it.
-        */}
-        <Link
-          href={NEW_CARD_HREF}
-          className="mt-9 flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--lifafa-marigold)]/60 px-6 text-[0.9375rem] font-semibold text-[var(--lifafa-marigold)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] hover:bg-[var(--lifafa-marigold)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
-        >
-          Start your invitation
-        </Link>
       </div>
     </section>
   );
