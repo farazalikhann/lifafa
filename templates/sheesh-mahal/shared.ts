@@ -90,6 +90,10 @@ interface SheeshCopy {
   };
   /** Page 6: the venue's map, as Gulab Mahal says it. */
   viewOnMap: string;
+  /** Page 7: the heading over the host's note, as Gulab Mahal says it. */
+  noteHeading: string;
+  /** Page 8, once a reply has gone. */
+  onItsWay: string;
   /** What each page is called, for its heading and a screen reader. */
   pages: {
     date: string;
@@ -121,6 +125,8 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
       counterSpoken: (at, of) => `Celebration ${at} of ${of}`,
     },
     viewOnMap: "View on map",
+    noteHeading: "A Note for You",
+    onItsWay: "Your reply is on its way",
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -148,6 +154,8 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
       counterSpoken: (at, of) => `समारोह ${at}, कुल ${of}`,
     },
     viewOnMap: "नक्शे पर देखें",
+    noteHeading: "आपके लिए संदेश",
+    onItsWay: "आपका उत्तर रवाना हो गया है",
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",

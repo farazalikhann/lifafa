@@ -324,6 +324,17 @@
   contain-intrinsic-size: auto calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
 }
 
+/* Where a page's resting is watched (rest.ts): 1.5% of the screen either side of its top edge, unseen. */
+.restMark {
+  position: absolute;
+  top: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) * -0.015);
+  left: 0;
+  width: 1px;
+  height: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) * 0.03);
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* The last stop: the foot of the guest's page, under whatever the page puts after the card. */
 .snapEnd {
   height: 1px;
@@ -1071,6 +1082,283 @@
   transform: scale(1.45);
 }
 
+/* ───────────────────────── The farmaan, pages 7 and 8 ───────────────────────── */
+
+/*
+  Farmaan.tsx: the top rod (the picture's top 19%, at its own size), and
+  under it a window that clips the paper: the plain middle stretched to the
+  words and the foot (from 82% down) at its own size, never sideways.
+  `--f-w` is its width; each slice's height is a share of it (FARMAAN in
+  art.ts). Rolled up (`.fmShut`), the paper is moved up into the window's top
+  by its own height less its foot, and its words down by as much, so they
+  stay where they are and are uncovered from the top as it unrolls.
+*/
+.fm {
+  --f-w: min(var(--fm-wide, 92cqw), 27rem);
+  --f-top: calc(var(--f-w) * 0.2787);
+  --f-foot: calc(var(--f-w) * 0.264);
+
+  position: relative;
+  width: var(--f-w);
+  color: var(--sm-ink);
+}
+
+.fmRod {
+  position: relative;
+  z-index: 1;
+  height: var(--f-top);
+  background: url("/templates/sheesh-mahal/farmaan.webp") 50% 0 / 100% auto no-repeat;
+}
+
+/* A pixel under the rod, so no hairline of the night shows between the two. */
+.fmWindow {
+  position: relative;
+  margin-top: -1px;
+  overflow: clip;
+}
+
+.fmBody {
+  position: relative;
+  overflow: hidden;
+}
+
+.fmPaper {
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 0 0 var(--f-foot);
+  border-image: url("/templates/sheesh-mahal/farmaan.webp") 19% 0 18% fill stretch;
+  pointer-events: none;
+}
+
+/* The paper is exactly as tall as its words, the foot's height under them. */
+.fmWords {
+  position: relative;
+  padding: 0.5rem calc(var(--f-w) * 0.2) calc(var(--f-foot) + 0.25rem);
+}
+
+.fmBody,
+.fmWords {
+  transition: transform 1100ms cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+.fmShut .fmBody {
+  transform: translate3d(0, calc(var(--f-foot) - 100%), 0);
+}
+
+.fmShut .fmWords {
+  transform: translate3d(0, calc(100% - var(--f-foot)), 0);
+}
+
+/* A heading on the paper, in gold script. */
+.fmHeading {
+  margin: 0 0 0.3rem;
+  font-size: calc(var(--f-w) * 0.085);
+  font-weight: 400;
+  color: var(--sm-gold-deep);
+  overflow-wrap: anywhere;
+}
+
+.fmHeading:lang(hi) {
+  font-size: calc(var(--f-w) * 0.068);
+}
+
+/* A thin gold rule with its small diamond, between one group and the next. */
+.fmRule {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 70%;
+  margin: 1rem auto;
+  font-size: 0.85rem;
+  color: var(--sm-gold-deep);
+}
+
+.fmRule::before,
+.fmRule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+/* ───────────────────────── Page 7: the details ───────────────────────── */
+
+/* The wall under a heavy wash of the night: a still gradient, darkest at the top and foot. */
+.dtGround {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.dtWall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  user-select: none;
+}
+
+.dtGround::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(8 9 28 / 0.9) 0%,
+    rgb(14 16 48 / 0.8) 30%,
+    rgb(14 16 48 / 0.78) 70%,
+    rgb(8 9 28 / 0.9) 100%
+  );
+}
+
+/* Page 7's glints twinkle at half their pace. */
+.glintsSlow .glint {
+  animation-duration: calc(var(--tw, 4s) * 2);
+}
+
+.details {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--sm-top-safe) 0 calc(1.25rem + var(--sm-bars, 0px));
+}
+
+/* Longer than the room: the page's own height, in the flow (`.pageFlow`). */
+.detailsFlow {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-height: inherit;
+}
+
+.detailsPage .flowRoom {
+  display: block;
+  padding: 0;
+}
+
+.dtHeading {
+  margin: 0 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--sm-gold);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.9);
+}
+
+.dtHeading:lang(hi) {
+  font-size: 0.95rem;
+}
+
+.dtScroll {
+  --fm-wide: 88cqw;
+
+  flex: none;
+  margin-top: 0.75rem;
+}
+
+.dtPart,
+.dtGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.dtContacts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dtContact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.dtName {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.dtRelation {
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: #3a3f6e;
+  overflow-wrap: anywhere;
+}
+
+.dtRelation:lang(hi) {
+  font-style: normal;
+}
+
+/* The number, a small ivory satin pill that rings it. */
+.dtCall {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.3rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--sm-ink);
+  white-space: nowrap;
+  text-decoration: none;
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(176 141 74 / 0.95),
+    inset 0 0 0 3px rgb(255 252 244 / 0.7),
+    inset 0 0 0 4px rgb(176 141 74 / 0.35),
+    0 0.15rem 0.4rem rgb(60 40 10 / 0.25);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dtCall svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--sm-gold-deep);
+}
+
+.dtCall:focus-visible {
+  outline: 2px solid var(--sm-gold-deep);
+  outline-offset: 3px;
+}
+
+.dtText {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.dtNote {
+  font-style: italic;
+}
+
+.dtNote:lang(hi) {
+  font-style: normal;
+}
+
 /* ───────────────────────── Page 8: the reply, on the farmaan ───────────────────────── */
 
 .flowRoom {
@@ -1081,89 +1369,433 @@
   padding: calc(var(--sm-top-safe) - 1rem) 0 2.5rem;
 }
 
-/*
-  The farmaan, stretched as a three-slice: its top 19% (the rod and the top
-  ornaments) and its foot from 82% down kept at their own size, only the
-  plain paper between stretched, and never sideways. `--f-w` is its width.
-*/
-.farmaan {
-  --f-w: min(94cqw, 27rem);
-
-  box-sizing: border-box;
-  width: var(--f-w);
-  border-style: solid;
-  border-color: transparent;
-  border-width: calc(var(--f-w) * 0.2787) 0 calc(var(--f-w) * 0.264);
-  border-image: url("/templates/sheesh-mahal/farmaan.webp") 19% 0 18% fill stretch;
-  padding: 0 calc(var(--f-w) * 0.15);
-  color: var(--sm-ink);
+/* The farmaan brought down into view and the kandeel rising off the top: never past the page. */
+.replyPage {
+  overflow: clip;
 }
 
-/* The card's own form on the paper: its own box's margins given back to the paper's. */
-.farmaan > section {
+.replyMover {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+@keyframes sm-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The confirmation and the pass, coming up on the farmaan. */
+.replyArrive {
+  animation: sm-arrive 700ms var(--sm-spring) 250ms both;
+}
+
+@keyframes sm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* After the kandeel has gone: on the night, in gold foil script. */
+.onItsWay {
+  margin: 0 1.5rem 1rem;
+  font-size: clamp(1.9rem, 9cqw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  animation: sm-fade-in 600ms ease-out both;
+}
+
+.onItsWay:lang(hi) {
+  font-size: clamp(1.5rem, 7cqw, 2rem);
+  line-height: 1.6;
+}
+
+/* The card's own form, set on the paper: its own box's padding and width given up to the paper's. */
+.replyMover section {
+  max-width: none !important;
   padding: 0.25rem 0 0.5rem !important;
+}
+
+.replyMover[data-stage="form"] h2 {
+  margin-bottom: 0.25rem;
+  font-size: calc(var(--f-w) * 0.1) !important;
+  font-weight: 400 !important;
+  line-height: 1.35;
+  color: var(--sm-gold-deep) !important;
+}
+
+.replyMover[data-stage="form"] h2:lang(hi) {
+  font-size: calc(var(--f-w) * 0.075) !important;
+  line-height: 1.6;
+}
+
+.replyMover[data-stage="confirmed"] h2 {
+  color: var(--sm-gold-deep) !important;
+  font-weight: 400 !important;
+  font-size: calc(var(--f-w) * 0.075) !important;
+  line-height: 1.4;
+}
+
+/* Fields as fine gold lines on the paper, not boxes. */
+.replyMover input,
+.replyMover textarea {
+  border: 0 !important;
+  border-bottom: 1px solid rgb(126 95 36 / 0.6) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding-inline: 0.15rem !important;
+  box-shadow: none !important;
+  color: var(--sm-ink) !important;
+}
+
+.replyMover input:focus,
+.replyMover textarea:focus {
+  outline: none !important;
+  border-bottom: 2px solid var(--sm-gold-deep) !important;
+}
+
+.replyMover label {
+  color: var(--sm-ink) !important;
+}
+
+/* The three replies: ivory satin with a thin gold edge; the chosen one filled soft gold. */
+.replyMover button[aria-pressed] {
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: var(--sm-ink) !important;
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(176 141 74 / 0.95),
+    inset 0 0 0 3px rgb(255 252 244 / 0.7),
+    inset 0 0 0 4px rgb(176 141 74 / 0.3) !important;
+}
+
+.replyMover button[aria-pressed="true"] {
+  font-weight: 700 !important;
+  background: linear-gradient(180deg, #f6e4b0 0%, #e8cd8b 45%, #d9b66c 60%, #ecd49a 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(126 95 36 / 0.95),
+    inset 0 0 0 3px rgb(255 246 220 / 0.55),
+    inset 0 0 0 4px rgb(126 95 36 / 0.35) !important;
+}
+
+/* The companions' steppers: a thin gold ring. */
+.replyMover button[aria-label]:not([aria-pressed]) {
+  border-color: rgb(126 95 36 / 0.6) !important;
+  color: var(--sm-ink) !important;
+}
+
+/* Send: a larger ivory satin pill. */
+.replyMover[data-stage="form"] section > button {
+  min-height: 3.4rem !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  font-size: 1.05rem !important;
+  letter-spacing: 0.04em;
+  color: var(--sm-ink) !important;
+  background: linear-gradient(180deg, #fffdf7 0%, #f8f1e3 42%, #ebdfc6 58%, #f6eedd 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(176 141 74 / 0.95),
+    inset 0 0 0 3px rgb(255 252 244 / 0.7),
+    inset 0 0 0 4px rgb(176 141 74 / 0.35),
+    0 0.3rem 0.7rem rgb(60 40 10 / 0.3) !important;
+}
+
+.replyMover[data-stage="form"] section > button:disabled {
+  opacity: 0.55;
+}
+
+/* The kandeel the farmaan becomes: placed when the reply is sent (RsvpFrame), and moved only by its own animation. */
+.sendLantern {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 3;
+  width: min(32cqw, 8.5rem);
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0);
+  pointer-events: none;
+}
+
+@keyframes sm-send-sway {
+  from {
+    transform: translate3d(-0.35rem, 0, 0) rotate(-4deg);
+  }
+  to {
+    transform: translate3d(0.35rem, 0, 0) rotate(4deg);
+  }
+}
+
+.sendSway {
+  position: relative;
+  display: block;
+  transform-origin: 50% 0;
+  animation: sm-send-sway 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes sm-glow-flicker {
+  0% {
+    opacity: 0.6;
+  }
+  35% {
+    opacity: 0.95;
+  }
+  60% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Its warm glow, behind it: a radial gradient, flickering. */
+.sendGlow {
+  position: absolute;
+  inset: -30% -55% -10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 196 120 / 0.6), rgb(255 160 70 / 0.22) 55%, rgb(255 140 50 / 0) 100%);
+  animation: sm-glow-flicker 0.9s ease-in-out infinite alternate;
+}
+
+.sendArt {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  user-select: none;
 }
 
 /* ───────────────────────── Page 9: thank you ───────────────────────── */
 
-@keyframes sm-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
+.thanks {
+  --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
+
+  position: absolute;
+  inset: 0;
+}
+
+/* The lanterns: drawn only at rest, fading in then; nothing of them is part of a swipe. */
+.tyLanterns {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  animation: sm-lights-in 1200ms ease-out 200ms both;
+}
+
+.page:not([data-sm-rest]) .tyLanterns {
+  display: none;
+}
+
+/*
+  One rise: from under the room's foot, over the lake, to above its top, a
+  little smaller as it goes (farther). Once in the sky, where the words are,
+  it is dimmed, so they always read over it.
+*/
+@keyframes sm-ty-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  5% {
+    opacity: var(--ty-o);
+  }
+  42% {
+    opacity: var(--ty-o);
   }
   50% {
-    transform: translate3d(0, -0.6rem, 0);
+    opacity: calc(var(--ty-o) * 0.3);
+  }
+  96% {
+    opacity: calc(var(--ty-o) * 0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, calc(-1 * (var(--room-h) + var(--ty-h) * 1.6)), 0) scale(0.72);
   }
 }
 
-.kandeel {
+.tyLantern {
   position: absolute;
-  top: calc(var(--sm-top-safe) + 0.5rem);
-  left: 50%;
-  width: min(38cqw, 11rem);
-  translate: -50% 0;
-  animation: sm-float 5s ease-in-out infinite;
+  top: 100%;
+  height: var(--ty-h);
+  opacity: 0;
+  animation: sm-ty-rise var(--ty-rise) linear var(--ty-at) infinite;
 }
 
-.kandeel img {
+@keyframes sm-ty-sway {
+  from {
+    transform: translate3d(-0.4rem, 0, 0) rotate(-3deg);
+  }
+  to {
+    transform: translate3d(0.4rem, 0, 0) rotate(3deg);
+  }
+}
+
+.tySway {
+  position: relative;
+  display: block;
+  height: 100%;
+  transform-origin: 50% 0;
+  animation: sm-ty-sway var(--ty-sway) ease-in-out infinite alternate;
+}
+
+.tyGlow {
+  position: absolute;
+  inset: -25% -60% -5%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 196 120 / 0.5), rgb(255 160 70 / 0.18) 55%, rgb(255 140 50 / 0) 100%);
+  animation: sm-glow-flicker var(--ty-flicker, 2.6s) ease-in-out infinite alternate;
+}
+
+.tyArt {
+  position: relative;
   display: block;
   width: 100%;
+  height: 100%;
+  max-width: none;
   user-select: none;
 }
 
-.thanksWords {
+@media (max-width: 399.98px) {
+  .tyLanternExtra {
+    display: none;
+  }
+}
+
+/* The words, in the sky: never over the palace (VENUE_SKY), and stepped down to fit it (fit.ts). */
+.tySky {
   position: absolute;
-  top: 46%;
-  left: 1.75rem;
-  right: 1.75rem;
+  top: var(--sm-top-safe);
+  left: 1.5rem;
+  right: 1.5rem;
   z-index: 2;
+  display: flex;
+  height: calc(var(--room-h) * var(--vn-sky) - var(--sm-top-safe));
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tyWords {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.45em;
+  font-size: clamp(0.95rem, 4.4cqw, 1.1rem);
   text-align: center;
 }
 
-.thanksHeading {
+.tyHeading {
   margin: 0;
-  font-size: clamp(2.5rem, 14cqw, 3.5rem);
+  font-size: 3.1em;
+  font-weight: 400;
 }
 
-.thanksLine {
+.tyHeading:lang(hi) {
+  font-size: 2.5em;
+}
+
+.tyText {
   margin: 0;
   max-width: 22rem;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 1em;
+  line-height: 1.55;
 }
 
-.thanksNames {
+.tyNames {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.7em;
+  font-weight: 400;
   color: var(--sm-gold);
+  text-shadow: 0 1px 2px rgb(4 5 20 / 0.85);
+  overflow-wrap: anywhere;
+}
+
+/* Line by line as the page comes to rest; by opacity alone, so nothing moved is ever measured (fit.ts). */
+.tyLine {
+  opacity: 0.01;
+  transition: opacity 800ms ease-out var(--sm-delay, 0ms);
+}
+
+[data-ty-in] .tyLine {
+  opacity: 1;
+}
+
+/* The palace's glints: only their flash, once, softly, all together as the words are in. */
+.tyGlints .glint {
+  display: none;
+}
+
+@keyframes sm-ty-flash {
+  0% {
+    opacity: 0.01;
+    transform: scale(0.2);
+  }
+  35% {
+    opacity: 0.65;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+[data-ty-in] .tyGlints .glintFlash {
+  animation: sm-ty-flash 1400ms ease-out 1300ms both;
+}
+
+/* Laid out as it rests: the farmaan open, every line in, the lanterns where they hang. */
+.still .fmBody,
+.still .fmWords,
+.still .tyLine,
+.still .tyLanterns {
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kandeel {
+  .fmBody,
+  .fmWords {
+    transition: none;
+  }
+
+  .replyArrive {
+    animation: sm-fade-in 400ms ease-out both;
+  }
+
+  .tyLantern {
+    animation: none;
+    opacity: calc(var(--ty-o) * (1 - 0.7 * clamp(0, (var(--ty-still) - 0.42) * 12.5, 1)));
+    transform: translate3d(0, calc(-1 * var(--ty-still) * (var(--room-h) + var(--ty-h) * 1.6)), 0)
+      scale(calc(1 - 0.28 * var(--ty-still)));
+  }
+
+  .tySway,
+  .tyGlow,
+  .sendSway,
+  .sendGlow {
+    animation: none;
+  }
+
+  [data-ty-in] .tyGlints .glintFlash {
     animation: none;
   }
 }

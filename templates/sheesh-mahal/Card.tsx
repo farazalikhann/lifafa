@@ -11,19 +11,18 @@ import {
   hasMessage,
 } from "@/lib/cardSections";
 import { effectiveTheme } from "@/lib/cardTheme";
-import { hasContacts } from "@/lib/contacts";
+import { contactsOf, hasContacts } from "@/lib/contacts";
 import { useCardStill } from "@/hooks/useCardStill";
-import { ART } from "@/templates/sheesh-mahal/art";
 import SheeshClosing from "@/templates/sheesh-mahal/Closing";
 import SheeshCouplePage from "@/templates/sheesh-mahal/CouplePage";
 import SheeshDatePage from "@/templates/sheesh-mahal/DatePage";
+import SheeshDetailsPage from "@/templates/sheesh-mahal/DetailsPage";
 import SheeshFunctionsPage from "@/templates/sheesh-mahal/FunctionsPage";
 import { useLite } from "@/templates/sheesh-mahal/lite";
 import SheeshNamesPage from "@/templates/sheesh-mahal/NamesPage";
 import SheeshPager from "@/templates/sheesh-mahal/Pager";
-import SheeshRoomPage from "@/templates/sheesh-mahal/RoomPage";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
-import { INDIGO, sheeshCopy, sheeshFonts } from "@/templates/sheesh-mahal/shared";
+import { INDIGO, sheeshFonts } from "@/templates/sheesh-mahal/shared";
 import { SCREEN_VAR, useStableScreen } from "@/templates/sheesh-mahal/stableScreen";
 import SheeshVenuePage from "@/templates/sheesh-mahal/VenuePage";
 import type { TemplateCardProps } from "@/templates/types";
@@ -56,13 +55,11 @@ const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{backg
  *   4  the couple       one at a time in a jharokha (CouplePage.tsx)
  *   5  the functions    one card each, down the hall (FunctionsPage.tsx)
  *   6  the venue        a lake palace at night (VenuePage.tsx)
- *   7  the details      on a farmaan; only if any
+ *   7  the details      on a farmaan; only if any (DetailsPage.tsx)
  *   8  the reply        drawn by the guest's page, on a farmaan (RsvpFrame)
- *   9  the thanks       under a kandeel, after the reply (Closing), or here
- *                       in a preview, which has no reply form
- *
- * Page 7 is its room and heading for now (RoomPage), so the walk through
- * all nine can be seen; what it says is built in a part to come.
+ *   9  the thanks       kandeels rising over the lake palace, after the
+ *                       reply (Closing), or here in a preview, which has no
+ *                       reply form
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
  * same callers place it: the guest's page, the two previews and the printed
@@ -85,7 +82,6 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
   const language = cardLanguage(config.language);
   const cardTheme = effectiveTheme(theme, config.style);
   const fonts = sheeshFonts(config.style.fontPairId);
-  const own = sheeshCopy(language);
   const { occasionId } = config;
 
   /*
@@ -111,11 +107,12 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
   const on = (id: CardSectionId): boolean =>
     config.blocks.some((block) => block.kind !== "custom" && block.id === id && block.enabled);
 
-  const hasCustom = config.blocks.some(
-    (block) => block.kind === "custom" && hasCustomContent(block.section),
+  const custom = config.blocks.flatMap((block) =>
+    block.kind === "custom" && hasCustomContent(block.section) ? [block.section] : [],
   );
-  const hasDetails =
-    (on("contact") && hasContacts(draft)) || hasCustom || (on("message") && hasMessage(draft));
+  const contacts = on("contact") && hasContacts(draft) ? contactsOf(draft) : [];
+  const note = on("message") && hasMessage(draft) ? draft.message.trim() : null;
+  const hasDetails = contacts.length > 0 || custom.length > 0 || note !== null;
 
   return (
     <ScratchRevealProvider
@@ -179,7 +176,7 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
           {on("venue") ? <SheeshVenuePage draft={draft} language={language} fonts={fonts} /> : null}
 
           {hasDetails ? (
-            <SheeshRoomPage heading={own.pages.details} src={ART.farmaan} lay="object" language={language} fonts={fonts} />
+            <SheeshDetailsPage contacts={contacts} custom={custom} note={note} language={language} fonts={fonts} />
           ) : null}
 
           {/* The thanks end the card where nothing follows it; on the guest's page they follow the reply. */}

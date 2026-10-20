@@ -4,11 +4,16 @@ import { useEffect, useRef, type RefObject } from "react";
 import { useCardStill } from "@/hooks/useCardStill";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 
-/* A page this close to where it rests (a share of the screen) is resting, once the snap has had a moment more. */
-const REST_WITHIN = 0.015;
+/*
+  A page this close to where it rests is resting, once the snap has had a
+  moment more: the stylesheet's `.restMark`, 1.5% of the screen either side
+  of the page's top edge, is cut by the line a page rests on.
+*/
 const REST_AFTER_MS = 140;
-/* Fine steps, so the last notice on the way in is within REST_WITHIN of the end. */
+/* Fine steps, so the mark is noticed wherever it is on its way across that line. */
 const THRESHOLDS = Array.from({ length: 101 }, (_, index) => index / 100);
+/* Far enough below the screen that the foot of the root never cuts the mark. */
+const BELOW_PX = 100000;
 
 export interface RestHandlers {
   /** The page has come to rest on the screen: its walk-in has finished. */
@@ -38,7 +43,10 @@ function scrollBoxOf(element: HTMLElement): HTMLElement | null {
  * A page is at rest when its top is where a page rests (under the host's
  * preview strip, if there is one) and has stayed there a moment: the swipe
  * and the walk into the room (the stylesheet's zoom, driven by the same
- * scroll) are over. It is then marked `data-sm-rest`, which is what lets
+ * scroll) are over. Watched by a thin mark across the page's top edge, cut
+ * by that line only while the edge is within 1.5% of the screen of it: right
+ * for a page of any height, a flow page taller than the screen too, which
+ * its share of the screen never showed. It is then marked `data-sm-rest`, which is what lets
  * its loops run, and `onRest` is called; as it starts to move, the mark goes
  * and `onLeave` is called.
  *
@@ -100,15 +108,19 @@ export function usePageRest(inside: RefObject<HTMLElement | null>, handlers: Res
       }
     };
 
+    /* The mark: in the root, which starts at that line and runs on far below, only in part. */
+    const mark = document.createElement("div");
+    mark.setAttribute("aria-hidden", "true");
+    mark.className = styles.restMark;
+    page.prepend(mark);
+
     const place = new IntersectionObserver(
       (entries) => {
-        const entry = entries[entries.length - 1];
-        const top = (entry.rootBounds?.top ?? 0) + strip;
-        const screen = entry.rootBounds?.height ?? window.innerHeight;
+        const ratio = entries[entries.length - 1].intersectionRatio;
 
-        settle(entry.isIntersecting && Math.abs(entry.boundingClientRect.top - top) <= REST_WITHIN * screen);
+        settle(ratio > 0 && ratio < 1);
       },
-      { root: box, threshold: THRESHOLDS },
+      { root: box, rootMargin: `${-strip}px 0px ${BELOW_PX}px 0px`, threshold: THRESHOLDS },
     );
 
     const near = new IntersectionObserver(
@@ -116,12 +128,13 @@ export function usePageRest(inside: RefObject<HTMLElement | null>, handlers: Res
       { root: box, rootMargin: "100% 0px", threshold: 0 },
     );
 
-    place.observe(page);
+    place.observe(mark);
     near.observe(page);
 
     return () => {
       place.disconnect();
       near.disconnect();
+      mark.remove();
 
       if (timer !== null) {
         clearTimeout(timer);

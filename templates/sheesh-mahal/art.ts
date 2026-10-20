@@ -304,5 +304,69 @@ export const VENUE_STARS = [
   { x: 0.9, y: 0.392, period: 4.9, delay: -0.6 },
 ] as const;
 
+/*
+  THE FARMAAN (farmaan.webp, 600x880), pages 7 and 8: a three-slice. Its top
+  19% (the rod and the top ornaments) and its foot from 82% down are kept at
+  their own size and only the plain paper between is stretched, never
+  sideways. Each slice's height as a share of the farmaan's width; the words
+  keep to 20% to 80% across.
+*/
+export const FARMAAN_ASPECT = 600 / 880;
+export const FARMAAN = {
+  top: (0.19 * 880) / 600,
+  foot: (0.18 * 880) / 600,
+  side: 0.2,
+} as const;
+
+/*
+  Page 7's glints, a few, slow: on the wall's mirror-work down either edge,
+  beside the farmaan, never over it, nor the heading at the top.
+*/
+export const DETAILS_GLINTS = constellation(
+  12,
+  8,
+  { x0: 0.01, x1: 0.99, y0: 0.14, y1: 0.96 },
+  (x) => x < 0.055 || x > 0.945,
+  0.5,
+);
+
+/* The kandeel (kandeel.webp, 400x447): a lantern, its glass about 58% down. */
+export const KANDEEL_ASPECT = 400 / 447;
+
+/*
+  PAGE 9, THE LANTERNS rising over the lake palace: a written table, twelve,
+  the last four left off under 400px. Where across each rises (a share of the
+  room's width), how wide (px), how long one rise takes (s) and how far into
+  it the page finds it (a share of the rise), spread so the sky is never
+  empty and never crowded, and no two ever pass over each other on a phone
+  360 to 480 wide (found by a search over two minutes of their rising);
+  each sways at its own pace. A small one is a far
+  one, and dimmer.
+*/
+export const LANTERNS = [
+  { x: 0.81, size: 30, rise: 15, at: 0.98, sway: 5.2 },
+  { x: 0.52, size: 48, rise: 26, at: 0.9, sway: 6.1 },
+  { x: 0.37, size: 44, rise: 26, at: 0.49, sway: 4.6 },
+  { x: 0.85, size: 56, rise: 16, at: 0.92, sway: 6.8 },
+  { x: 0.46, size: 38, rise: 25, at: 0.56, sway: 5.7 },
+  { x: 0.64, size: 70, rise: 26, at: 0.31, sway: 4.9 },
+  { x: 0.31, size: 52, rise: 24, at: 0.7, sway: 6.4 },
+  { x: 0.14, size: 64, rise: 22, at: 0.02, sway: 5.4 },
+  /* The four a narrow phone goes without. */
+  { x: 0.18, size: 32, rise: 23, at: 0.55, sway: 5.0 },
+  { x: 0.09, size: 34, rise: 24, at: 0.72, sway: 6.3 },
+  { x: 0.89, size: 80, rise: 15, at: 0.07, sway: 5.9 },
+  { x: 0.71, size: 28, rise: 26, at: 0.57, sway: 4.4 },
+] as const;
+
+/* Page 9's glints, flashed once together as its words have come in: on the palace's arches and its reflection. */
+export const THANKS_GLINTS = constellation(
+  14,
+  10,
+  { x0: 0.12, x1: 0.88, y0: 0.4, y1: 0.8 },
+  (x, y) => y < 0.56 || (x > 0.3 && x < 0.7),
+  VENUE_ASPECT,
+);
+
 /** Where the ripple of light starts on the wall: the medallion the guest tapped. */
 export const RIPPLE_FROM = { x: MEDALLION.x, y: MEDALLION.y } as const;

@@ -47,7 +47,13 @@
  */
 
 /** Which recording a cover plays. One per cover that has anything to say. */
-export type CoverSoundId = "curtain" | "envelope" | "petal-dust" | "fold" | "sheesh-mahal";
+export type CoverSoundId =
+  | "curtain"
+  | "envelope"
+  | "petal-dust"
+  | "fold"
+  | "sheesh-mahal"
+  | "sheesh-mahal-rsvp";
 
 /** Served from public/, so the path is also the URL. */
 const RECORDINGS: Record<CoverSoundId, string> = {
@@ -57,6 +63,13 @@ const RECORDINGS: Record<CoverSoundId, string> = {
   fold: "/sounds/fold-open.mp3",
   /* Sheesh Mahal's own: the diya lit, the mirrors' chimes, the doors. */
   "sheesh-mahal": "/sounds/sheesh-mahal-open.mp3",
+  /*
+    Not a cover's: Sheesh Mahal's reply as it is sent, the farmaan rolled
+    and the kandeel rising (its RsvpFrame). The same handling: fetched and
+    decoded before, started in the tap on Send, played only when the reply
+    has landed.
+  */
+  "sheesh-mahal-rsvp": "/sounds/sheesh-mahal-rsvp.mp3",
 };
 
 /**
