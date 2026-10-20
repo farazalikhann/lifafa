@@ -3,7 +3,7 @@ import Link from "next/link";
 import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { templatePricePaise } from "@/templates/registry";
+import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
 
 const LINK_CLASS =
@@ -68,6 +68,7 @@ export default function WizardSaved({
           isPaid={event.isPaid}
           eventId={event.id}
           pricePaise={templatePricePaise(event.config.templateId)}
+          templateId={getTemplate(event.config.templateId).id}
           underReview={underReview}
         />
 

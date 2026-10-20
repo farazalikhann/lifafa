@@ -25,8 +25,11 @@ export default function PaymentBanner({
   isPaid,
   eventId,
   pricePaise,
+  templateId,
   underReview = false,
 }: {
+  /** The template the invitation is on, as the registry resolves it: what the ads count it as. */
+  templateId: string;
   /**
    * The host has paid and the payment is being checked by a person
    * (lib/paymentReview.ts). The banner then says so and offers no way to pay:
@@ -84,7 +87,11 @@ export default function PaymentBanner({
 
         <div className="shrink-0">
           {configured ? (
-            <PublishButton eventId={eventId} pricePaise={pricePaise} />
+            <PublishButton
+              eventId={eventId}
+              pricePaise={pricePaise}
+              templateId={templateId}
+            />
           ) : (
             /*
               No key, so no checkout to open. A disabled button that says why

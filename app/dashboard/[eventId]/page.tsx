@@ -4,6 +4,7 @@ import EventNotFound from "@/components/dashboard/EventNotFound";
 import ExportCsvButton from "@/components/dashboard/ExportCsvButton";
 import GuestTable from "@/components/dashboard/GuestTable";
 import HeadcountSummary from "@/components/dashboard/HeadcountSummary";
+import MetaPurchase from "@/components/dashboard/MetaPurchase";
 import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import ReminderPanel from "@/components/dashboard/ReminderPanel";
 import RepliesOffNotice from "@/components/dashboard/RepliesOffNotice";
@@ -14,14 +15,16 @@ import WeatherSummary from "@/components/dashboard/WeatherSummary";
 import { formatWhen } from "@/lib/cardFormat";
 import { CARD_LANGUAGES } from "@/lib/cardLanguage";
 import { wordsWrittenIn } from "@/lib/cardTranslation";
+import { recentRazorpayPayment } from "@/lib/db/confirmedPayment";
 import { getEventById } from "@/lib/db/events";
 import { isUnderReview } from "@/lib/db/paymentReview";
 import { getGuestsForEvent } from "@/lib/db/guests";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { buildShareMessage } from "@/lib/shareMessage";
+import { metaPixelEnabled } from "@/lib/metaPixel";
 import { inviteUrl } from "@/lib/siteUrl";
 import { geocodeVenue, getEventWeather } from "@/lib/weather";
-import { templatePricePaise } from "@/templates/registry";
+import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { CardLanguage } from "@/types/card";
 
 /**
@@ -115,7 +118,7 @@ export default async function DashboardPage({
     Open-Meteo per request — time the headcount a host came here for used to
     spend queued behind a forecast.
   */
-  const [guestsResult, weather, underReview] = await Promise.all([
+  const [guestsResult, weather, underReview, confirmedPayment] = await Promise.all([
     getGuestsForEvent(event.id),
     readWeather(),
     /*
@@ -124,7 +127,13 @@ export default async function DashboardPage({
       host's own session.
     */
     event.isPaid ? false : isUnderReview(event.id),
+    /*
+      The payment that published it, for the ads' Purchase, and only when
+      there are ads to tell: lib/db/confirmedPayment.ts says which count.
+    */
+    event.isPaid && metaPixelEnabled() ? recentRazorpayPayment(event.id) : null,
   ]);
+  const templateId = getTemplate(event.config.templateId).id;
   const guests = guestsResult.ok ? guestsResult.data : [];
 
   return (
@@ -247,8 +256,17 @@ export default async function DashboardPage({
           eventId={event.id}
           /* This invitation's own price: its template's. */
           pricePaise={templatePricePaise(event.config.templateId)}
+          templateId={templateId}
           underReview={underReview}
         />
+
+        {confirmedPayment === null ? null : (
+          <MetaPurchase
+            paymentId={confirmedPayment.paymentId}
+            amountPaise={confirmedPayment.amountPaise}
+            templateId={templateId}
+          />
+        )}
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">

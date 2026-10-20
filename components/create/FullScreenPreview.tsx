@@ -25,6 +25,7 @@ import { cardChrome } from "@/lib/cardChrome";
 import { effectiveTheme } from "@/lib/cardTheme";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getCoverAnimation } from "@/lib/coverAnimations";
+import { holdMetaPixel } from "@/lib/metaPixel";
 import type { Motif } from "@/lib/motifs";
 import { cardPalette } from "@/lib/textColors";
 import type { Theme } from "@/lib/themes";
@@ -374,6 +375,12 @@ export default function FullScreenPreview({
     as well as on close — so an overlay torn down while still open (a route
     change, an error boundary) cannot leave the page behind it frozen.
   */
+  /*
+    The card as a guest sees it, and the ads' pixel has no business with a
+    guest's card: held quiet while this is open, wherever it is opened from.
+  */
+  useEffect(() => holdMetaPixel(), []);
+
   useEffect(() => {
     const root = document.documentElement;
     const previousOverflow = root.style.overflow;

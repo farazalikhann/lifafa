@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { CSSProperties, ReactNode } from "react";
+import { Suspense, type CSSProperties, type ReactNode } from "react";
 import {
   Amiri,
   Amita,
@@ -34,7 +34,9 @@ import {
   Tiro_Devanagari_Hindi,
   Tiro_Gurmukhi,
 } from "next/font/google";
+import MetaPixel from "@/components/analytics/MetaPixel";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
+import { metaPixelEnabled } from "@/lib/metaPixel";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
 import "./globals.css";
 
@@ -493,11 +495,27 @@ const FONT_VARIABLES = [
 */
 const siteOrigin = canonicalSiteOrigin();
 
+/** Meta's proof that the site is ours, when Business Manager has asked for one. */
+const metaDomainVerification = (
+  process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION ?? ""
+).trim();
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: "Lifafa | Digital invitations with an up-to-date guest count",
   description:
     "Create a digital invitation for your celebration, share one link, and know exactly how many guests are coming before the day arrives.",
+  /*
+    Every page tells the next one only which site it came from, never which
+    page. A same-site referrer is otherwise the whole address, and the Meta
+    Pixel reports the referrer with each event: a host or guest arriving on the
+    landing page from /i/<code> or /dashboard/<id> would hand it the invite
+    code or the invitation's id. Other sites were already sent only the origin.
+  */
+  referrer: "strict-origin",
+  ...(metaDomainVerification.length > 0
+    ? { other: { "facebook-domain-verification": metaDomainVerification } }
+    : {}),
   /*
     NO `alternates.canonical` HERE, deliberately. Metadata is inherited: a
     canonical set on the root layout becomes every page's canonical, so /create
@@ -523,6 +541,16 @@ export default function RootLayout({
     >
       <body className="bg-[var(--lifafa-ink)] font-[family-name:var(--font-sans)] text-[var(--lifafa-cream)] antialiased">
         {children}
+        {/*
+          Nothing at all without a pixel id. With one, it renders nothing on the
+          server either: its boundary is what it shows until it runs in the
+          browser, where lib/metaPixel.ts decides whether this page may have it.
+        */}
+        {metaPixelEnabled() ? (
+          <Suspense fallback={null}>
+            <MetaPixel />
+          </Suspense>
+        ) : null}
       </body>
     </html>
   );

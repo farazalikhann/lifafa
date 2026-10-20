@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   isAuthPKCECodeVerifierMissingError,
   type EmailOtpType,
+  type User,
 } from "@supabase/supabase-js";
+import { metaPixelEnabled, NEW_ACCOUNT_COOKIE } from "@/lib/metaPixel";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -60,6 +62,32 @@ function safeDestination(raw: string | null): string {
 
 
 /**
+ * How recently an account must have been confirmed for this sign in to be the
+ * one that made it.
+ *
+ * Supabase confirms an account the first time its email link is opened, or
+ * when Google first signs it in, and never again: confirmed_at on the user
+ * this route has just verified is how the auth flow itself tells a new host
+ * from a returning one. An hour, which is as long as an email link lasts, so
+ * a project set to confirm addresses on sign up (when confirmed_at is the
+ * moment the link was asked for) still counts a link opened late.
+ */
+const NEW_ACCOUNT_WINDOW_MS = 60 * 60 * 1000;
+
+function isNewAccount(user: User | null): boolean {
+  const confirmed = user?.confirmed_at ?? user?.email_confirmed_at;
+
+  if (confirmed === undefined) {
+    return false;
+  }
+
+  const age = Date.now() - Date.parse(confirmed);
+
+  /* A minute's grace for a clock that runs ahead of Supabase's. */
+  return age > -60_000 && age < NEW_ACCOUNT_WINDOW_MS;
+}
+
+/**
  * Why a sign in came back to the login page. Each one is a message in
  * components/auth/SignInForm.tsx.
  */
@@ -88,8 +116,24 @@ function exits(origin: string, destination: string) {
       loginUrl.searchParams.set("redirectTo", destination);
       return NextResponse.redirect(loginUrl);
     },
-    succeed(): NextResponse {
-      return NextResponse.redirect(`${origin}${destination}`);
+    /*
+      A new account's first sign in is marked for the ads' CompleteRegistration,
+      in a cookie holding nothing but "1", which the next host page reads and
+      clears (lib/metaPixel.ts). Not when there is no pixel to tell.
+    */
+    succeed(newAccount: boolean): NextResponse {
+      const response = NextResponse.redirect(`${origin}${destination}`);
+
+      if (newAccount && metaPixelEnabled()) {
+        response.cookies.set(NEW_ACCOUNT_COOKIE, "1", {
+          maxAge: 600,
+          path: "/",
+          sameSite: "lax",
+          secure: origin.startsWith("https:"),
+        });
+      }
+
+      return response;
     },
   };
 }
@@ -138,7 +182,7 @@ export async function GET(request: NextRequest) {
       return fail("link");
     }
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: type as EmailOtpType,
     });
@@ -149,14 +193,14 @@ export async function GET(request: NextRequest) {
       return fail("expired");
     }
 
-    return succeed();
+    return succeed(isNewAccount(data.user));
   }
 
   if (code === null) {
     return fail("link");
   }
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error !== null) {
     /*
@@ -172,5 +216,5 @@ export async function GET(request: NextRequest) {
     return fail("expired");
   }
 
-  return succeed();
+  return succeed(isNewAccount(data.user));
 }

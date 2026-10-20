@@ -6,6 +6,7 @@ import { activateWithFreeCoupon, createPaymentOrder } from "@/lib/db/payments";
 import CouponField, {
   type AppliedCoupon,
 } from "@/components/dashboard/CouponField";
+import { initiateCheckout } from "@/lib/metaPixel";
 import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 
@@ -114,10 +115,13 @@ type Phase =
 export default function PublishButton({
   eventId,
   pricePaise,
+  templateId,
 }: {
   eventId: string;
   /** This invitation's list price, for the label. The charge is the server's to work out. */
   pricePaise: number;
+  /** The invitation's template, for the ads' InitiateCheckout. */
+  templateId: string;
 }): ReactElement {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -198,6 +202,12 @@ export default function PublishButton({
       setPhase({ kind: "failed", message: result.error });
       return;
     }
+
+    /*
+      For the ads, once the order says what the server will charge. Only this
+      path: a code that covers the whole price, above, is not a checkout.
+    */
+    initiateCheckout({ templateId, amountPaise: result.data.amount });
 
     try {
       await loadCheckoutScript();
@@ -295,7 +305,7 @@ export default function PublishButton({
 
     setPhase({ kind: "open" });
     checkout.open();
-  }, [coupon, eventId, router]);
+  }, [coupon, eventId, router, templateId]);
 
   const busy =
     phase.kind === "starting" ||

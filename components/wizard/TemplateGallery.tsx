@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { viewContent } from "@/lib/metaPixel";
 import { getPalette } from "@/lib/palettes";
 import { formatPrice } from "@/lib/pricing";
 import { templateDemoPath } from "@/lib/templateSamples";
@@ -23,6 +24,15 @@ const CARD_BUTTON =
 const SECTION_HEADING =
   "font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--lifafa-cream)]";
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4";
+
+/** A template looked at, for the ads: its live demo opened, or chosen. */
+function looked(template: TemplateConfig): void {
+  viewContent({
+    id: template.id,
+    name: template.name,
+    pricePaise: template.price,
+  });
+}
 
 /** One template: its preview, its name and price, its sample, and Select. */
 function TemplateCard({
@@ -94,6 +104,7 @@ function TemplateCard({
             href={templateDemoPath(template.id)}
             target="_blank"
             rel="noopener"
+            onClick={() => looked(template)}
             className={`${CARD_BUTTON} border border-[var(--lifafa-hairline)] text-[var(--lifafa-cream)] hover:border-[var(--lifafa-marigold)]`}
           >
             Live demo
@@ -111,7 +122,13 @@ function TemplateCard({
             <button
               type="button"
               aria-pressed={selected}
-              onClick={() => onSelect(template)}
+              onClick={() => {
+                if (!selected) {
+                  looked(template);
+                }
+
+                onSelect(template);
+              }}
               className={`${CARD_BUTTON} ${
                 selected
                   ? "border border-[var(--lifafa-marigold)] text-[var(--lifafa-marigold)]"
