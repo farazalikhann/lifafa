@@ -45,9 +45,12 @@ const pc = (share: number): string => `${(share * 100).toFixed(2)}%`;
 /*
   The places in the corridor, front first, each a share of the card's own
   box: the card in front; the next one behind it, smaller, higher (towards
-  the far end) and dimmer, its top showing over the front one's; the one after
-  that, smaller again; and one more, unseen, waiting to come into view. PAST
-  is a card walked by: grown, drifted to the side and gone.
+  the far end) and dimmer; the one after that, smaller again; and one more,
+  unseen, waiting to come into view. Each of the two behind stands high
+  enough that its top quarter, its dome and its lantern (down to 24% of the
+  card, art.ts), shows over the one in front of it: the corridor's depth.
+  The stylesheet keeps that much room above the front card (`--fn-back`).
+  PAST is a card walked by: grown, drifted to the side and gone.
 */
 interface Place {
   x: number;
@@ -58,9 +61,9 @@ interface Place {
 
 const PLACES: readonly Place[] = [
   { x: 0, y: 0, scale: 1, opacity: 1 },
-  { x: 0, y: -21, scale: 0.8, opacity: 0.55 },
-  { x: 0, y: -36, scale: 0.64, opacity: 0.3 },
-  { x: 0, y: -46, scale: 0.52, opacity: 0 },
+  { x: 0, y: -29, scale: 0.8, opacity: 0.55 },
+  { x: 0, y: -53, scale: 0.64, opacity: 0.3 },
+  { x: 0, y: -66, scale: 0.52, opacity: 0 },
 ];
 const PAST: Place = { x: -14, y: 3, scale: 1.15, opacity: 0 };
 /* How many places are drawn. */

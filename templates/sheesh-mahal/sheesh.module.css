@@ -2547,10 +2547,16 @@
   --room-h: calc(var(--sm-screen, var(--sm-screen-px, 100lvh)) - var(--lifafa-preview-h, 0px));
   --fn-top: calc(var(--sm-top-safe) + 2rem);
   --fn-foot: calc(var(--sm-bars, 0px) + 4.25rem);
-  --fc-w: min(78cqw, 24rem, (var(--room-h) - var(--fn-top) - var(--fn-foot)) / 1.2 * var(--fc-aspect));
+  /*
+    The room kept above the front card, as a share of its height, for the
+    tops of the two behind it (their domes and lanterns, FunctionsPage's
+    PLACES): the third card's top is 0.346 of a card above the front one's.
+  */
+  --fn-back: 0.36;
+  --fc-w: min(78cqw, 24rem, (var(--room-h) - var(--fn-top) - var(--fn-foot)) / (1 + var(--fn-back)) * var(--fc-aspect));
   --fc-h: calc(var(--fc-w) / var(--fc-aspect));
   --fc-top: clamp(
-    var(--fn-top) + var(--fc-h) * 0.19,
+    var(--fn-top) + var(--fc-h) * var(--fn-back),
     var(--room-h) * 0.535 - var(--fc-h) * 0.5,
     var(--room-h) - var(--fn-foot) - var(--fc-h)
   );
@@ -2562,6 +2568,7 @@
 
 .functionsAlone {
   --fn-foot: calc(var(--sm-bars, 0px) + 1.5rem);
+  --fn-back: 0.02;
 }
 
 .fnHeading {
@@ -2719,12 +2726,25 @@
 }
 
 /* The words on the ivory, sized from the card's width and stepped down together to fit (fit.ts). */
+/*
+  The words, a quarter larger than they were for the card's size, stepped
+  down to fit for a long name (fit.ts). Only the front card's are seen: a
+  card leaving the front loses its words in the first 200ms of the step, and
+  the one arriving gains them after, so two cards' words are never read one
+  over the other. Opacity alone, which fitting never measures.
+*/
 .fnText {
   position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 5.4cqw;
+  font-size: 6.75cqw;
+  transition: opacity 320ms ease-out 200ms;
+}
+
+.fnCard:not([data-front]) .fnText {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
 }
 
 .fnWords {
