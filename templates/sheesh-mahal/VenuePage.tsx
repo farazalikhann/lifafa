@@ -10,7 +10,6 @@ import {
 import { directionsUrl, readableAddress } from "@/lib/cardFormat";
 import { timelineEntries, type TimelineEntry } from "@/lib/cardSections";
 import {
-  ART,
   VENUE_ASPECT,
   VENUE_DIYAS,
   VENUE_SHIMMER,
@@ -20,6 +19,7 @@ import {
 import { useCoupleFit, type CoupleFit } from "@/templates/sheesh-mahal/fit";
 import Foil from "@/templates/sheesh-mahal/Foil";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import { usePageRest } from "@/templates/sheesh-mahal/rest";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { scriptLeading, sheeshCopy, type SheeshFonts } from "@/templates/sheesh-mahal/shared";
@@ -80,6 +80,7 @@ export default function SheeshVenuePage({
   language: CardLanguage;
   fonts: SheeshFonts;
 }): ReactElement | null {
+  const art = useRoomArt();
   const own = sheeshCopy(language);
   const entries = timelineEntries(draft, language).filter(hasVenue);
   const tabbed = new Set(entries.map(placeOf)).size > 1;
@@ -155,11 +156,11 @@ export default function SheeshVenuePage({
   return (
     <SheeshPage
       label={own.pages.venue}
-      images={[ART.venueNight]}
+      images={art === null ? [] : [art.venueNight]}
       ground={
         <div className={styles.vnScene} style={{ "--vn-aspect": String(VENUE_ASPECT) } as CSSProperties}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.venueNight} alt="" loading="lazy" decoding="async" draggable={false} className={styles.vnArt} />
+          <img src={art?.venueNight} alt="" loading="lazy" decoding="async" draggable={false} className={styles.vnArt} />
           <div aria-hidden="true" className={styles.vnLights}>
             {VENUE_SHIMMER.map((strip) => (
               <span

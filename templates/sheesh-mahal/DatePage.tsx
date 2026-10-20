@@ -22,8 +22,10 @@ import type { CalendarInvite } from "@/lib/calendar";
 import { calendarPageText, eventInstant, hasEventTime } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import type { Theme } from "@/lib/themes";
-import { ART, MOON, MOON_ASPECT } from "@/templates/sheesh-mahal/art";
+import { MOON, MOON_ASPECT } from "@/templates/sheesh-mahal/art";
+import SwipeHint from "@/templates/sheesh-mahal/Hint";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import { usePageRest } from "@/templates/sheesh-mahal/rest";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import {
@@ -400,6 +402,7 @@ export default function SheeshDatePage({
   fonts: SheeshFonts;
   showCountdown: boolean;
 }): ReactElement {
+  const art = useRoomArt();
   const own = sheeshCopy(language);
   const still = useCardStill();
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -451,7 +454,7 @@ export default function SheeshDatePage({
   return (
     <SheeshPage
       label={own.pages.date}
-      images={[ART.jharokhaMoon]}
+      images={art === null ? [] : [art.jharokhaMoon]}
       ground={
         <div
           ref={sceneRef}
@@ -459,7 +462,7 @@ export default function SheeshDatePage({
           style={{ "--moon-aspect": String(MOON_ASPECT) } as CSSProperties}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.jharokhaMoon} alt="" loading="lazy" decoding="async" draggable={false} className={styles.moonArt} />
+          <img src={art?.jharokhaMoon} alt="" loading="lazy" decoding="async" draggable={false} className={styles.moonArt} />
           <span
             aria-hidden="true"
             className={styles.moonGlow}
@@ -496,6 +499,8 @@ export default function SheeshDatePage({
       }
     >
       <div className={styles.moonFoot}>
+        {/* For a guest who tapped their way here: a smaller "Swipe up", above the tiles (Hint.tsx). */}
+        <SwipeHint language={language} small />
         {showCountdown ? (
           <MoonCountdown draft={draft} language={language} fonts={fonts} near={near || still} />
         ) : null}

@@ -149,26 +149,6 @@ export default function SheeshPager({
     };
   }, [pagewide, still, rootRef]);
 
-  /* "Swipe up" goes for good at the guest's first scroll. */
-  useEffect(() => {
-    const root = rootRef.current;
-
-    if (root === null || still) {
-      return;
-    }
-
-    const box = pagewide ? null : scrollBoxOf(root);
-    const source: HTMLElement | Window = box ?? window;
-    const onScroll = (): void => {
-      root.setAttribute("data-sm-scrolled", "");
-      source.removeEventListener("scroll", onScroll);
-    };
-
-    source.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => source.removeEventListener("scroll", onScroll);
-  }, [pagewide, still, rootRef]);
-
   useEffect(() => {
     const root = rootRef.current;
 
@@ -220,11 +200,31 @@ export default function SheeshPager({
 
     /* Which way the guest last went: forward, or back. */
     let heading = 1;
+    /*
+      How many times the guest has gone from one page to another: the first
+      marks the card `data-sm-moved`, which sends page 2's "Swipe up" away,
+      and the second `data-sm-moved2` (Hint.tsx). Not a scroll: a phone
+      scrolls the page a little on its own as the cover goes fullscreen.
+      Counted from the last page read, as a swipe can pass through "past the
+      last" for a moment while one page leaves the middle before the next
+      arrives.
+    */
+    let moves = 0;
+    let lastRead = -1;
 
     /* `index` is a page, or -1 before any has been read, or PAST_LAST. */
     const mark = (index: number, from = index): void => {
       if (index !== from && index >= 0 && from >= 0) {
         heading = index > from ? 1 : -1;
+      }
+
+      if (index >= 0) {
+        if (lastRead >= 0 && index !== lastRead) {
+          moves += 1;
+          rootRef.current?.setAttribute(moves === 1 ? "data-sm-moved" : "data-sm-moved2", "");
+        }
+
+        lastRead = index;
       }
 
       /*

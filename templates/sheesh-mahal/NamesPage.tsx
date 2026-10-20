@@ -7,7 +7,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { preload } from "react-dom";
 import {
   coverNameLine,
   formatWhen,
@@ -15,10 +14,12 @@ import {
   resolveCoverNames,
 } from "@/lib/cardFormat";
 import { dateRevealOf } from "@/lib/royalScroll";
-import { ART, HALL_GLINTS } from "@/templates/sheesh-mahal/art";
+import { HALL_GLINTS } from "@/templates/sheesh-mahal/art";
 import Foil from "@/templates/sheesh-mahal/Foil";
 import Glints from "@/templates/sheesh-mahal/Glints";
+import SwipeHint from "@/templates/sheesh-mahal/Hint";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useCoverArt } from "@/templates/sheesh-mahal/picture";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import {
   scriptLeading,
@@ -125,7 +126,7 @@ function Line({
  * The hall's own glints (Glints.tsx) answer the phone's tilt while this is
  * the room being read, on its arches, walls and floor, never over the words;
  * held over the room, not in it, so the walk to page 3 never scales them.
- * "Swipe up" bobs at the foot until the guest first scrolls.
+ * "Swipe up" at the foot until the guest first moves on (Hint.tsx).
  */
 export default function SheeshNamesPage({
   draft,
@@ -138,7 +139,8 @@ export default function SheeshNamesPage({
   language: CardLanguage;
   fonts: SheeshFonts;
 }): ReactElement {
-  preload(ART.hall, { as: "image", fetchPriority: "high" });
+  /* The cover's hall, the same picture: asked for with the cover's (lighter.ts). */
+  const art = useCoverArt();
 
   const boxRef = useRef<HTMLDivElement>(null);
   const wordsRef = useRef<HTMLDivElement>(null);
@@ -196,10 +198,10 @@ export default function SheeshNamesPage({
   return (
     <SheeshPage
       label={coverNameLine(names)}
-      images={[ART.hall]}
+      images={art === null ? [] : [art.hall]}
       ground={
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={ART.hall} alt="" draggable={false} fetchPriority="high" className={styles.roomArt} />
+        <img src={art?.hall} alt="" draggable={false} fetchPriority="high" className={styles.roomArt} />
       }
       overlay={<Glints glints={HALL_GLINTS} listen followPage />}
     >
@@ -254,42 +256,5 @@ export default function SheeshNamesPage({
 
       <SwipeHint language={language} />
     </SheeshPage>
-  );
-}
-
-/**
- * "Swipe up", bobbing gently at the foot of the page until the guest first
- * scrolls (the pager marks the card `data-sm-scrolled`), and a way on for one
- * who would rather tap: it takes them to the next room.
- */
-function SwipeHint({ language }: { language: CardLanguage }): ReactElement {
-  const label = sheeshCopy(language).swipeUp;
-
-  return (
-    <button
-      type="button"
-      className={styles.hint}
-      onClick={(event) => {
-        const pages = [...document.querySelectorAll("[data-sm-page]")];
-        const here = event.currentTarget.closest("[data-sm-page]");
-        const next = here === null ? undefined : pages[pages.indexOf(here) + 1];
-
-        next?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }}
-    >
-      <span className={styles.hintBob}>
-        <svg viewBox="0 0 20 12" aria-hidden="true" focusable="false" className="h-2.5 w-4">
-          <path
-            d="M2 10 L10 3 L18 10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className={language === "hi" ? "" : "tracking-[0.24em] uppercase"}>{label}</span>
-      </span>
-    </button>
   );
 }

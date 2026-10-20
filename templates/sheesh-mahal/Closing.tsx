@@ -4,7 +4,6 @@ import { useRef, type CSSProperties, type ReactElement } from "react";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { cardCopy, cardLanguage } from "@/lib/cardLanguage";
 import {
-  ART,
   KANDEEL_ASPECT,
   LANTERNS,
   THANKS_GLINTS,
@@ -15,6 +14,7 @@ import { useCoupleFit, type CoupleFit } from "@/templates/sheesh-mahal/fit";
 import Foil from "@/templates/sheesh-mahal/Foil";
 import Glints from "@/templates/sheesh-mahal/Glints";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import { usePageRest } from "@/templates/sheesh-mahal/rest";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { scriptLeading, sheeshCopy, sheeshFonts } from "@/templates/sheesh-mahal/shared";
@@ -59,6 +59,7 @@ export default function SheeshClosing({
   draft: EventDraft;
   config: CardConfig;
 }): ReactElement {
+  const art = useRoomArt();
   const language = cardLanguage(config.language);
   const fonts = sheeshFonts(config.style.fontPairId);
   const names = resolveCoverNames(draft, config.occasionId, language);
@@ -76,12 +77,12 @@ export default function SheeshClosing({
   return (
     <SheeshPage
       label={thanks}
-      images={[ART.venueNight, ART.kandeel]}
+      images={art === null ? [] : [art.venueNight, art.kandeel]}
       className={styles.palette}
       ground={
         <div className={styles.vnScene} style={{ "--vn-aspect": String(VENUE_ASPECT) } as CSSProperties}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.venueNight} alt="" loading="lazy" decoding="async" draggable={false} className={styles.vnArt} />
+          <img src={art?.venueNight} alt="" loading="lazy" decoding="async" draggable={false} className={styles.vnArt} />
           <Glints glints={THANKS_GLINTS} listen={false} flashes className={styles.tyGlints} />
         </div>
       }
@@ -112,7 +113,7 @@ export default function SheeshClosing({
                 <span className={styles.tySway}>
                   <span className={styles.tyGlow} style={{ "--ty-flicker": `${(2.4 + (index % 5) * 0.37).toFixed(2)}s` } as CSSProperties} />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ART.kandeel} alt="" loading="lazy" decoding="async" draggable={false} className={styles.tyArt} />
+                  <img src={art?.kandeel} alt="" loading="lazy" decoding="async" draggable={false} className={styles.tyArt} />
                 </span>
               </span>
             );

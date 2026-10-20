@@ -179,6 +179,24 @@ export interface CoverAnimationOption {
    * it starts at once. Left off, the shell's own wait (enterFullscreenThen).
    */
   settleLimitMs?: number;
+  /**
+   * For a cover that has something to say to a guest kept waiting: once the
+   * loader has waited SLOW_LOAD_MS, `text` is shown under it, in the guest's
+   * language, and `onSlow` is called, once (a cover can then ask for lighter
+   * pictures for what comes after it). The loader still gives way when it
+   * always did. Left off, the loader says nothing more.
+   */
+  slowLoad?: {
+    text: Readonly<Record<CardLanguage, string>>;
+    onSlow?: () => void;
+  };
+  /**
+   * A script the browser runs as the page's HTML arrives, before React: for
+   * a cover that chooses its pictures by the guest's connection, which the
+   * server cannot know, and asks for them at once. Rendered first by the
+   * shell, as markup.
+   */
+  earlyScript?: string;
   /** Whether the effect has a static fallback for reduced motion. */
   supportsReducedMotion: boolean;
   /**

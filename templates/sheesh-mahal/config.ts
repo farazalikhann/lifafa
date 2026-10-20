@@ -1,8 +1,14 @@
 import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
-import { COVER_IMAGES } from "@/templates/sheesh-mahal/art";
 import { DURATION, REVEAL_AT, SETTLE_LIMIT } from "@/templates/sheesh-mahal/coverTiming";
+import {
+  coverImages,
+  COVER_FULL,
+  COVER_LIGHT,
+  COVER_PRELOAD,
+  goLighter,
+} from "@/templates/sheesh-mahal/lighter";
 import {
   GOLD,
   INDIGO,
@@ -33,6 +39,8 @@ import type { CoverAnimationOption } from "@/types/coverAnimation";
  *
  *   It waits for the wall, both doors and the hall, and the fonts, and no
  *   longer than five seconds; nothing of the stock doors' film is fetched.
+ *   On a slow connection those four are the lighter set, and kept waiting
+ *   2.5 seconds the loader says so (lighter.ts, `slowLoad`).
  *
  *   "Tap to open" is lettered by the cover itself, over the doors' foot; the
  *   shell sets only "You are invited" over it.
@@ -42,13 +50,26 @@ import type { CoverAnimationOption } from "@/types/coverAnimation";
  */
 const DOORS = getCoverAnimation("fold-unfold");
 const COVER_ART = {
-  images: COVER_IMAGES,
+  images: COVER_FULL,
   timeoutMs: 5000,
   /* Ivory on the night, over a soft dark shadow. */
   tone: "dark" as const,
   wordsLine: false,
   ink: IVORY,
   inkMuted: IVORY_MUTED,
+};
+
+/*
+  The four pictures in the set this guest's connection was given (see
+  lighter.ts), named on the server as none: the page's own head script asks
+  for them there, as the HTML arrives. One object for each, so the shell's
+  wait is set up once.
+*/
+const COVER_ART_LIGHT = { ...COVER_ART, images: COVER_LIGHT };
+const COVER_ART_NONE = { ...COVER_ART, images: [] as readonly string[] };
+const coverArt = (): typeof COVER_ART => {
+  const images = coverImages();
+  return images === COVER_FULL ? COVER_ART : images === COVER_LIGHT ? COVER_ART_LIGHT : COVER_ART_NONE;
 };
 
 const COVER_OPTION: CoverAnimationOption = {
@@ -63,7 +84,14 @@ const COVER_OPTION: CoverAnimationOption = {
   sound: "sheesh-mahal",
   haptic: 10,
   wordsOn: "visual",
-  art: () => COVER_ART,
+  art: coverArt,
+  /* Asks for the cover's four pictures, in the set for this guest's connection, as the HTML arrives. */
+  earlyScript: COVER_PRELOAD,
+  /* Kept waiting: said under the loader, and every room after the cover in its lighter pictures. */
+  slowLoad: {
+    text: { en: sheeshCopy("en").slowLoad, hi: sheeshCopy("hi").slowLoad },
+    onSlow: goLighter,
+  },
   film: undefined,
   onTap: askTilt,
   /* Starts within a quarter of a second of the tap, fullscreen or not. */

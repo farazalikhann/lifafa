@@ -94,6 +94,8 @@ interface SheeshCopy {
   noteHeading: string;
   /** Page 8, once a reply has gone. */
   onItsWay: string;
+  /** Under the loader, for a guest kept waiting on a slow connection. */
+  slowLoad: string;
   /** What each page is called, for its heading and a screen reader. */
   pages: {
     date: string;
@@ -127,6 +129,7 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
     viewOnMap: "View on map",
     noteHeading: "A Note for You",
     onItsWay: "Your reply is on its way",
+    slowLoad: "Your internet seems slow. Your invitation is loading...",
     pages: {
       date: "Save the Date",
       couple: "The Couple",
@@ -156,6 +159,7 @@ const COPY: Readonly<Record<CardLanguage, SheeshCopy>> = {
     viewOnMap: "नक्शे पर देखें",
     noteHeading: "आपके लिए संदेश",
     onItsWay: "आपका उत्तर रवाना हो गया है",
+    slowLoad: "आपका इंटरनेट धीमा लग रहा है। निमंत्रण लोड हो रहा है...",
     pages: {
       date: "तिथि याद रखें",
       couple: "वर-वधू",

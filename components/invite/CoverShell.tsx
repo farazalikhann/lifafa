@@ -17,12 +17,14 @@ import { CoverOpenContext } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { BurstGateContext, RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
+import { startMusicFromTap } from "@/lib/cardMusic";
 import { whenCardReady, whenPicturesReady, whenVisible } from "@/lib/cardReady";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { fontFamilyOf, getFontPair, namesFaceOf, pairRoleVar } from "@/lib/fontPairs";
 import { coverPalette, type CoverPalette } from "@/lib/coverPalette";
 import type { Palette } from "@/lib/palettes";
 import {
+  coverSoundLengthMs,
   playCoverSound,
   preloadCoverSound,
   primeCoverSound,
@@ -112,6 +114,12 @@ const NO_ART: readonly string[] = [];
 
 /** How long the loader takes to give way to the cover, once the card is ready. */
 const LOADER_FADE_MS = 420;
+
+/* The cover's sound is started after the screen settles from the tap: the music waits that much longer. */
+const MUSIC_AFTER_SOUND_MS = 250;
+
+/** How long the loader waits before a cover that has something to say to a guest kept waiting says it (`slowLoad`). */
+const SLOW_LOAD_MS = 2500;
 
 /**
  * The opening for a guest who asked for less motion: the closed envelope
@@ -244,15 +252,20 @@ function subscribeToNothing(): () => void {
 function PreparingLoader({
   ready,
   text,
+  note,
   ground,
   accent,
   muted,
+  ink,
 }: {
   ready: boolean;
   text: string;
+  /** A line under it, shown after SLOW_LOAD_MS by the stylesheet, for a guest kept waiting (`slowLoad`); null for none. */
+  note: string | null;
   ground: string;
   accent: string;
   muted: string;
+  ink: string;
 }): ReactElement {
   /* False for the server's render and the hydration that matches it; true for a later mount. */
   const mountedLater = useSyncExternalStore(
@@ -295,6 +308,14 @@ function PreparingLoader({
         <p className="text-[0.8125rem] tracking-[0.12em]" style={{ color: muted }}>
           {text}
         </p>
+        {note !== null ? (
+          <p
+            className="max-w-[18rem] animate-[lifafa-cover-loader-note_500ms_ease-out_2500ms_both] px-6 text-center text-[0.875rem] leading-relaxed text-balance"
+            style={{ color: ink }}
+          >
+            {note}
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -434,6 +455,25 @@ export default function CoverShell({
   */
   const [ready, setReady] = useState<boolean>(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  /*
+    Kept waiting past SLOW_LOAD_MS, for a cover with something to say then
+    (`slowLoad`): the line itself is the loader's, in the server's HTML and
+    shown by the stylesheet after that long, as a slow line may not have
+    brought the page's scripts by then; this tells the cover, once they have.
+  */
+  const slowLoad = option.slowLoad;
+
+  useEffect(() => {
+    if (!hasCover || ready || slowLoad === undefined) {
+      return;
+    }
+
+    /* From when the page was opened, not from when its scripts woke: on a slow line that can be long after. */
+    const timer = window.setTimeout(() => slowLoad.onSlow?.(), Math.max(0, SLOW_LOAD_MS - performance.now()));
+
+    return () => window.clearTimeout(timer);
+  }, [hasCover, ready, slowLoad]);
 
   /*
     Up until the cover is gone, whatever the guest's motion setting.
@@ -693,6 +733,18 @@ export default function CoverShell({
       }
     }
 
+    /*
+      The card's music, where the host chose some: started here, inside the
+      gesture, silent, which is the one moment a phone lets it start; brought
+      in when the cover's own sound has ended (or at once where there is
+      none). Not under reduced motion, which opens in silence. See
+      lib/cardMusic.ts.
+    */
+    if (!reducedMotion) {
+      const soundMs = sounds ? coverSoundLengthMs(option.sound) : null;
+      startMusicFromTap(soundMs === null ? (sounds ? durationMs : 0) : soundMs + soundDelayMs + MUSIC_AFTER_SOUND_MS);
+    }
+
     if (sounds) {
       /*
         The audio context is built here, inside the gesture, in silence: the
@@ -736,10 +788,15 @@ export default function CoverShell({
     cancelSettleRef.current?.();
     cancelSettleRef.current = null;
     clearTimer();
-    /* Skipping part way through an open: the sound of it goes with it. */
+    /* Skipping part way through an open: the sound of it goes with it, and the music comes in now. */
     stopCoverSound();
+
+    if (!reducedMotion) {
+      startMusicFromTap(0);
+    }
+
     setPhase("open");
-  }, [clearTimer]);
+  }, [clearTimer, reducedMotion]);
 
   /** A timer outliving the component would call setState on a dead tree. */
   useEffect(() => clearTimer, [clearTimer]);
@@ -920,6 +977,14 @@ export default function CoverShell({
 
   return (
     <>
+      {/*
+        A cover's own script for the page's first moments (`earlyScript`):
+        first in the page's markup, so the browser runs it as the HTML
+        arrives, before the card's pictures are found. Never run by React.
+      */}
+      {hasCover && option.earlyScript !== undefined ? (
+        <div hidden dangerouslySetInnerHTML={{ __html: `<script>${option.earlyScript}</script>` }} />
+      ) : null}
       {/*
         The card stays mounted underneath the whole time, rather than waiting
         for "open". A reveal has to have something to reveal: curtains that
@@ -1277,9 +1342,11 @@ export default function CoverShell({
           <PreparingLoader
             ready={ready}
             text={copy.coverPreparing}
+            note={slowLoad !== undefined ? slowLoad.text[language] : null}
             ground={colors.ground}
             accent={colors.accent}
             muted={colors.textMuted}
+            ink={art?.ink ?? colors.text}
           />
         </div>
       ) : null}

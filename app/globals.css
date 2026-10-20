@@ -1272,6 +1272,16 @@
   }
 }
 
+/* The loader's line for a guest kept waiting (CoverShell's `slowLoad`): unseen for its delay, then faded in. Opacity only. */
+@keyframes lifafa-cover-loader-note {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* A film cover waited for after the tap: a glint running the length of its hairline. */
 @keyframes lifafa-cover-film-wait {
   from {

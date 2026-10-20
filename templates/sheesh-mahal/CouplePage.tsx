@@ -13,11 +13,12 @@ import { useCardStill } from "@/hooks/useCardStill";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cardCopy } from "@/lib/cardLanguage";
 import { coupleOf, familyBlocks, type FamilyBlock } from "@/lib/cardSections";
-import { ART, COUPLE_GLINTS, JHAROKHA, JHAROKHA_ASPECT } from "@/templates/sheesh-mahal/art";
+import { COUPLE_GLINTS, JHAROKHA, JHAROKHA_ASPECT } from "@/templates/sheesh-mahal/art";
 import { useCoupleFit, type CoupleFit } from "@/templates/sheesh-mahal/fit";
 import Foil from "@/templates/sheesh-mahal/Foil";
 import Glints from "@/templates/sheesh-mahal/Glints";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import { usePageRest } from "@/templates/sheesh-mahal/rest";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import {
@@ -136,6 +137,7 @@ function Jharokha({
   open: boolean;
   onTap: () => void;
 }): ReactElement {
+  const art = useRoomArt();
   const copy = cardCopy(language);
   /* "Son of" for the first named, the groom; "Daughter of" for the second, the bride (the card's own rule). */
   const childOf = person.key === "one" ? copy.family.sonOf : copy.family.daughterOf;
@@ -187,8 +189,8 @@ function Jharokha({
       >
         {(
           [
-            ["left", 1, ART.doorLeft],
-            ["right", -1, ART.doorRight],
+            ["left", 1, art?.doorLeft],
+            ["right", -1, art?.doorRight],
           ] as const
         ).map(([side, turn, src]) => (
           <div
@@ -205,7 +207,7 @@ function Jharokha({
         ))}
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={ART.jharokhaFrame} alt="" loading="lazy" decoding="async" draggable={false} className={styles.jhFrame} />
+      <img src={art?.jharokhaFrame} alt="" loading="lazy" decoding="async" draggable={false} className={styles.jhFrame} />
     </div>
   );
 }
@@ -257,6 +259,7 @@ export default function SheeshCouplePage({
   language: CardLanguage;
   fonts: SheeshFonts;
 }): ReactElement | null {
+  const art = useRoomArt();
   const own = sheeshCopy(language);
   const still = useCardStill();
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -612,7 +615,7 @@ export default function SheeshCouplePage({
   return (
     <SheeshPage
       label={own.pages.couple}
-      images={[ART.jharokhaFrame, ART.doorLeft, ART.doorRight]}
+      images={art === null ? [] : [art.jharokhaFrame, art.doorLeft, art.doorRight]}
       overlay={<Glints glints={COUPLE_GLINTS} listen followPage />}
     >
       <div

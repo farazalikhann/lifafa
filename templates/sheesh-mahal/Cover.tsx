@@ -10,7 +10,6 @@ import type { CoverVisualState } from "@/components/invite/CoverShell";
 import GoldFlower from "@/components/invite/covers/GoldFlower";
 import { initialOf, initialsOf } from "@/components/invite/covers/initials";
 import {
-  ART,
   DOOR,
   MEDALLION,
   RIPPLE_FROM,
@@ -19,6 +18,7 @@ import {
 } from "@/templates/sheesh-mahal/art";
 import { DURATION } from "@/templates/sheesh-mahal/coverTiming";
 import Glints from "@/templates/sheesh-mahal/Glints";
+import { useCoverArt } from "@/templates/sheesh-mahal/picture";
 import { isLite } from "@/templates/sheesh-mahal/lite";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { whenIdle } from "@/templates/sheesh-mahal/shared";
@@ -219,6 +219,8 @@ export default function SheeshMahalCover({
   reducedMotion,
 }: CoverVisualState): ReactElement {
   const opening = phase !== "closed";
+  /* The set this guest's connection was given; none until the page wakes (the loader is over it until then). */
+  const art = useCoverArt();
   const groundRef = useRef<HTMLDivElement>(null);
   const hallRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -325,13 +327,17 @@ export default function SheeshMahalCover({
       aria-hidden="true"
       className={`${styles.cover} ${opening ? styles.coverOpening : ""}`}
     >
-      <div ref={groundRef} className={styles.coverGround} />
+      <div
+        ref={groundRef}
+        className={styles.coverGround}
+        style={art === null ? undefined : ({ "--sm-wall": `url("${art.wall}")` } as CSSProperties)}
+      />
 
       {/* The hall, laid exactly as page 2 lays its ground. */}
       <div className={styles.coverHallColumn}>
         <div ref={hallRef} className={styles.coverHall}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.hall} alt="" draggable={false} className={styles.roomArt} />
+          <img src={art?.hall} alt="" draggable={false} className={styles.roomArt} />
         </div>
       </div>
 
@@ -343,7 +349,7 @@ export default function SheeshMahalCover({
             style={{ left: pc(DOOR.left), top: pc(DOOR.top), width: pc(DOOR.width), height: pc(DOOR.height) }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ART.doorLeft} alt="" draggable={false} className={styles.doorArt} />
+            <img src={art?.doorLeft} alt="" draggable={false} className={styles.doorArt} />
             <div ref={halfLeftRef} className={`${styles.medallion} ${styles.medallionLeft}`} style={medallionBox("right")}>
               <div className={styles.medallionFace}>{medallion}</div>
             </div>
@@ -359,7 +365,7 @@ export default function SheeshMahalCover({
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ART.doorRight} alt="" draggable={false} className={styles.doorArt} />
+            <img src={art?.doorRight} alt="" draggable={false} className={styles.doorArt} />
             <div ref={halfRightRef} className={`${styles.medallion} ${styles.medallionRight}`} style={medallionBox("left")}>
               <div className={styles.medallionFace}>{medallion}</div>
             </div>
@@ -376,7 +382,7 @@ export default function SheeshMahalCover({
         </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ART.wall} alt="" draggable={false} fetchPriority="high" className={styles.wallArt} />
+        <img src={art?.wall} alt="" draggable={false} fetchPriority="high" className={styles.wallArt} />
 
         <Glints glints={WALL_GLINTS} listen={ready && !opening} flashes />
       </div>

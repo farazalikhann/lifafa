@@ -13,9 +13,10 @@ import { useCardStill } from "@/hooks/useCardStill";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { calendarPageText, hasEventTime } from "@/lib/cardFormat";
 import { timelineEntries, type TimelineEntry } from "@/lib/cardSections";
-import { ART, FUNCTION_CARD, FUNCTION_CARD_ASPECT, HALL_ASPECT, HALL_FAR } from "@/templates/sheesh-mahal/art";
+import { FUNCTION_CARD, FUNCTION_CARD_ASPECT, HALL_ASPECT, HALL_FAR } from "@/templates/sheesh-mahal/art";
 import { useCoupleFit, type CoupleFit } from "@/templates/sheesh-mahal/fit";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import { usePageRest } from "@/templates/sheesh-mahal/rest";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import {
@@ -82,6 +83,7 @@ function FunctionCard({
   fonts: SheeshFonts;
   register: CoupleFit;
 }): ReactElement {
+  const art = useRoomArt();
   const own = sheeshCopy(language);
   const page = calendarPageText(entry.date, entry.time, language);
   const venue = entry.venueName.trim();
@@ -91,7 +93,7 @@ function FunctionCard({
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={ART.functionCard} alt="" loading="lazy" decoding="async" draggable={false} className={styles.fnArt} />
+      <img src={art?.functionCard} alt="" loading="lazy" decoding="async" draggable={false} className={styles.fnArt} />
       <span
         aria-hidden="true"
         className={styles.fnLantern}
@@ -181,6 +183,7 @@ export default function SheeshFunctionsPage({
   language: CardLanguage;
   fonts: SheeshFonts;
 }): ReactElement | null {
+  const art = useRoomArt();
   const own = sheeshCopy(language);
   const still = useCardStill();
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -392,7 +395,7 @@ export default function SheeshFunctionsPage({
   return (
     <SheeshPage
       label={own.pages.functions}
-      images={[ART.hall, ART.functionCard]}
+      images={art === null ? [] : [art.hall, art.functionCard]}
       ground={
         <>
           <div
@@ -406,7 +409,7 @@ export default function SheeshFunctionsPage({
             }
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ART.hall} alt="" loading="lazy" decoding="async" draggable={false} className={styles.fnHall} />
+            <img src={art?.hall} alt="" loading="lazy" decoding="async" draggable={false} className={styles.fnHall} />
           </div>
           <span aria-hidden="true" className={styles.fnVignette} />
         </>

@@ -11,10 +11,11 @@ import {
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cardCopy } from "@/lib/cardLanguage";
 import { telHref } from "@/lib/contacts";
-import { ART, DETAILS_GLINTS } from "@/templates/sheesh-mahal/art";
+import { DETAILS_GLINTS } from "@/templates/sheesh-mahal/art";
 import Farmaan from "@/templates/sheesh-mahal/Farmaan";
 import Glints from "@/templates/sheesh-mahal/Glints";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import { usePageRest } from "@/templates/sheesh-mahal/rest";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { scriptLeading, sheeshCopy, whenIdle, type SheeshFonts } from "@/templates/sheesh-mahal/shared";
@@ -100,6 +101,7 @@ export default function SheeshDetailsPage({
   language: CardLanguage;
   fonts: SheeshFonts;
 }): ReactElement {
+  const art = useRoomArt();
   const copy = cardCopy(language);
   const own = sheeshCopy(language);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
@@ -230,13 +232,13 @@ export default function SheeshDetailsPage({
   return (
     <SheeshPage
       label={own.pages.details}
-      images={[ART.wall, ART.farmaan]}
+      images={art === null ? [] : [art.wall, art.farmaan]}
       flow={flow}
       className={styles.detailsPage}
       ground={
         <div aria-hidden="true" className={styles.dtGround}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.wall} alt="" loading="lazy" decoding="async" draggable={false} className={styles.dtWall} />
+          <img src={art?.wall} alt="" loading="lazy" decoding="async" draggable={false} className={styles.dtWall} />
         </div>
       }
       overlay={<Glints glints={DETAILS_GLINTS} listen followPage className={styles.glintsSlow} />}

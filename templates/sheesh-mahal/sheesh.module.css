@@ -644,7 +644,7 @@
   inset: 0;
   background:
     linear-gradient(rgb(14 16 48 / 0.78), rgb(14 16 48 / 0.78)),
-    url("/templates/sheesh-mahal/wall.webp") center bottom / cover no-repeat,
+    var(--sm-wall, none) center bottom / cover no-repeat,
     #0e1030;
   will-change: opacity;
 }
@@ -982,7 +982,14 @@
   letter-spacing: 0.06em;
 }
 
-/* "Swipe up", at the foot of the names page, until the guest first scrolls. */
+/*
+  "Swipe up" (Hint.tsx), at the foot of the names page above the browser's
+  bar: a small dark indigo pill with a thin gold edge, ivory spaced capitals
+  and an up chevron that bobs, the pill gently pulsing. It comes in as the
+  names' entrance finishes and goes at the guest's first move to another
+  page (`data-sm-moved`, Pager.tsx). In the room, never the overlay, so it
+  is there whenever the room is.
+*/
 .hint {
   position: absolute;
   /* Above a browser's bottom bar while it shows: the page is the screen with the bars away. */
@@ -990,25 +997,76 @@
   left: 50%;
   z-index: 3;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   min-height: 2.75rem;
-  padding: 0.35rem 1.3rem 0.4rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0 1.25rem 0 1.05rem;
   translate: -50% 0;
+  border: 0;
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--sm-ivory);
-  background: rgb(14 16 48 / 0.55);
+  background: rgb(14 16 48 / 0.9);
   box-shadow:
-    inset 0 0 0 1px rgb(201 164 92 / 0.85),
-    inset 0 0 0 3px rgb(14 16 48 / 0.6),
-    inset 0 0 0 4px rgb(201 164 92 / 0.3);
+    inset 0 0 0 1px rgb(201 164 92 / 0.95),
+    inset 0 0 0 3px rgb(14 16 48 / 0.9),
+    inset 0 0 0 4px rgb(201 164 92 / 0.3),
+    0 0.3rem 0.9rem rgb(2 3 14 / 0.55);
   opacity: 0;
-  transition: opacity 600ms ease-out 1900ms;
+  pointer-events: none;
+  transition: opacity 500ms ease-out 1500ms;
+  -webkit-tap-highlight-color: transparent;
 }
 
+.hintWord {
+  letter-spacing: 0.26em;
+  margin-right: -0.26em;
+  text-transform: uppercase;
+}
+
+.hintWord:lang(hi) {
+  letter-spacing: 0;
+  margin-right: 0;
+  text-transform: none;
+  font-size: 1.05em;
+}
+
+.hintChevron {
+  width: 1rem;
+  height: 0.65rem;
+  flex: none;
+  color: var(--sm-gold);
+  animation: sm-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes sm-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0.1rem, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.3rem, 0);
+  }
+}
+
+@keyframes sm-hint-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.68;
+  }
+}
+
+/* The names have come in (their last line is up by about 1.5s): the hint with them, then pulsing. */
 [data-sm-entered] .hint {
-  opacity: 0.95;
+  opacity: 1;
+  pointer-events: auto;
+  animation: sm-hint-pulse 2.6s ease-in-out 2s infinite;
 }
 
 .hint:focus-visible {
@@ -1016,36 +1074,51 @@
   outline-offset: 3px;
 }
 
-@keyframes sm-bob {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -0.35rem, 0);
-  }
-}
-
-.hintBob {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  animation: sm-bob 2.2s ease-in-out infinite;
-}
-
-[data-sm-scrolled] .hint {
+/* Gone at the guest's first move to another page. */
+[data-sm-moved] .hint:not(.hintSmall) {
   opacity: 0;
   pointer-events: none;
-  transition-delay: 0ms;
+  animation: none;
+  transition: opacity 400ms ease-out;
 }
 
-[data-sm-scrolled] .hintBob {
+[data-sm-moved] .hint:not(.hintSmall) .hintChevron {
+  animation: none;
+}
+
+/*
+  Page 3's, smaller, just above its countdown and calendar: only for a guest
+  who came by tapping rather than swiping, and only until they move again.
+*/
+.hintSmall {
+  bottom: calc(100% + 0.7rem);
+  min-height: 2.25rem;
+  gap: 0.45rem;
+  padding: 0 1rem 0 0.85rem;
+  font-size: 0.66rem;
+}
+
+[data-sm-entered] .hintSmall {
+  opacity: 0;
+  pointer-events: none;
+  animation: none;
+}
+
+[data-sm-by-tap]:not([data-sm-moved2]) [data-sm-current] .hintSmall {
+  opacity: 1;
+  pointer-events: auto;
+  animation: sm-hint-pulse 2.6s ease-in-out 1.6s infinite;
+  transition-delay: 700ms;
+}
+
+[data-sm-moved2] .hintSmall .hintChevron {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hintBob {
+  .hintChevron,
+  [data-sm-entered] .hint,
+  [data-sm-by-tap]:not([data-sm-moved2]) [data-sm-current] .hintSmall {
     animation: none;
   }
 }
@@ -1107,7 +1180,7 @@
   position: relative;
   z-index: 1;
   height: var(--f-top);
-  background: url("/templates/sheesh-mahal/farmaan.webp") 50% 0 / 100% auto no-repeat;
+  background: var(--fm-art, none) 50% 0 / 100% auto no-repeat;
 }
 
 /* A pixel under the rod, so no hairline of the night shows between the two. */
@@ -1128,7 +1201,7 @@
   border-style: solid;
   border-color: transparent;
   border-width: 0 0 var(--f-foot);
-  border-image: url("/templates/sheesh-mahal/farmaan.webp") 19% 0 18% fill stretch;
+  border-image: var(--fm-art, none) 19% 0 18% fill stretch;
   pointer-events: none;
 }
 

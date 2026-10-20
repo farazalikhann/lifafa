@@ -2,17 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { cardCopy } from "@/lib/cardLanguage";
+import { noteGuestChoice, registerMusic } from "@/lib/cardMusic";
 import type { CardLanguage } from "@/types/card";
 
 /**
- * A guest's control over the card's background music, and never anything else.
+ * A guest's control over the card's background music.
  *
- * It starts paused and it stays paused until somebody taps it. That is not
- * caution about autoplay policy — although every mobile browser does block
- * audio until a gesture, and a card that tried would simply fail silently — it
- * is that music starting on its own is the fastest way to get an invitation
- * closed. Somebody opens a link in a quiet room, in an office, next to a
- * sleeping child. The first tap is what makes the sound theirs.
+ * It never starts on its own. The guest's tap on the cover starts it (see
+ * lib/cardMusic.ts): silently, inside that tap, which is the one moment every
+ * mobile browser allows it, and up to its volume when the cover's own sound
+ * has ended; or, where the browser still refuses, at the guest's next touch.
+ * Until it is actually playing this shows it paused. A guest who pauses it
+ * here has it paused for good: nothing but this button starts it again, and
+ * the card's other sounds stay quiet too.
  *
  * The audio element is created here rather than rendered as JSX, so nothing
  * about it survives into the markup: no preload, no fetch, and no <audio> tag
@@ -53,9 +55,11 @@ export default function MusicToggle({
 
     const audio = new Audio(musicUrl);
     audio.loop = true;
-    /* Nothing is fetched until the guest asks for it. */
+    /* Nothing is fetched until it is played: by the cover's tap, or the button. */
     audio.preload = "none";
     audioRef.current = audio;
+    /* For the cover's tap to start (lib/cardMusic.ts). */
+    const release = registerMusic(audio);
 
     /*
       The button follows the element, not the other way round. A track that
@@ -74,6 +78,7 @@ export default function MusicToggle({
     audio.addEventListener("error", handleError);
 
     return () => {
+      release();
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("ended", handleEnded);
@@ -123,9 +128,12 @@ export default function MusicToggle({
     }
 
     if (isPlaying) {
+      noteGuestChoice(false);
       audio.pause();
       return;
     }
+
+    noteGuestChoice(true);
 
     /*
       play() returns a promise that rejects for reasons a guest can do nothing
@@ -162,6 +170,7 @@ export default function MusicToggle({
     >
       <button
         type="button"
+        data-music-toggle=""
         onClick={handleToggle}
         aria-label={label}
         aria-pressed={isPlaying}

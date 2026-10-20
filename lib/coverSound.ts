@@ -184,6 +184,12 @@ export function preloadCoverSound(sound: CoverSoundId | null | undefined): void 
     });
 }
 
+/** How long a cover's recording runs, in ms, once it is ready; null before (or never). */
+export function coverSoundLengthMs(sound: CoverSoundId | null | undefined): number | null {
+  const buffer = sound === null || sound === undefined ? undefined : readyRecordings.get(sound);
+  return buffer === undefined ? null : buffer.duration * 1000;
+}
+
 /** The sound playing now, if one is: its context, its gain, and the timer that closes it. */
 let playing: {
   context: AudioContext;

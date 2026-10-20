@@ -10,16 +10,17 @@ import {
   type ReactNode,
 } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { musicMutedByGuest } from "@/lib/cardMusic";
 import {
   playCoverSound,
   preloadCoverSound,
   primeCoverSound,
   warmCoverSound,
 } from "@/lib/coverSound";
-import { ART } from "@/templates/sheesh-mahal/art";
 import Farmaan from "@/templates/sheesh-mahal/Farmaan";
 import Foil from "@/templates/sheesh-mahal/Foil";
 import SheeshPage from "@/templates/sheesh-mahal/Page";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { sheeshCopy, whenIdle } from "@/templates/sheesh-mahal/shared";
 import type { CardLanguage } from "@/types/card";
@@ -78,7 +79,8 @@ type Phase = "form" | "sending" | "done";
  * as the page arrives, with the kandeel's picture, so the send never waits on
  * either; its audio started inside the guest's tap on Send, as a phone wants;
  * played only once the reply has landed, at the usual volume, through Web
- * Audio, which a phone on silent keeps silent. Never waited for.
+ * Audio, which a phone on silent keeps silent; not at all for a guest who
+ * has paused the card's music (lib/cardMusic.ts). Never waited for.
  */
 export default function SheeshRsvpFrame({
   children,
@@ -89,6 +91,7 @@ export default function SheeshRsvpFrame({
   stage?: "form" | "confirmed";
   language?: CardLanguage;
 }): ReactElement {
+  const art = useRoomArt();
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const [seen, setSeen] = useState(stage);
   const [phase, setPhase] = useState<Phase>(stage === "confirmed" ? "done" : "form");
@@ -112,11 +115,19 @@ export default function SheeshRsvpFrame({
   }
 
   /* The kandeel and the sound, ready before anything is sent. */
-  useEffect(() => {
-    const image = new Image();
-    image.src = ART.kandeel;
-    void image.decode().catch(() => undefined);
+  const kandeel = art?.kandeel ?? null;
 
+  useEffect(() => {
+    if (kandeel === null) {
+      return;
+    }
+
+    const image = new Image();
+    image.src = kandeel;
+    void image.decode().catch(() => undefined);
+  }, [kandeel]);
+
+  useEffect(() => {
     if (reducedMotion) {
       return;
     }
@@ -132,6 +143,7 @@ export default function SheeshRsvpFrame({
     if (
       stage === "form" &&
       !reducedMotion &&
+      !musicMutedByGuest() &&
       button !== null &&
       !button.disabled &&
       button.parentElement?.tagName === "SECTION" &&
@@ -157,7 +169,10 @@ export default function SheeshRsvpFrame({
       return;
     }
 
-    playCoverSound(SOUND);
+    /* Not for a guest who has silenced the card's music. */
+    if (!musicMutedByGuest()) {
+      playCoverSound(SOUND);
+    }
 
     /*
       Read once, as the send starts: where the farmaan is on the screen and
@@ -251,7 +266,7 @@ export default function SheeshRsvpFrame({
   return (
     <SheeshPage
       label={own.pages.rsvp}
-      images={[ART.farmaan, ART.kandeel]}
+      images={art === null ? [] : [art.farmaan, art.kandeel]}
       flow
       className={`${styles.palette} ${styles.replyPage}`}
     >
@@ -278,7 +293,7 @@ export default function SheeshRsvpFrame({
           <span className={styles.sendSway}>
             <span className={styles.sendGlow} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ART.kandeel} alt="" draggable={false} className={styles.sendArt} />
+            <img src={art?.kandeel} alt="" draggable={false} className={styles.sendArt} />
           </span>
         </div>
       ) : null}

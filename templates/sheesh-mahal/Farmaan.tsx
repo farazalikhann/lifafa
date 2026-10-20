@@ -1,4 +1,7 @@
-import type { ReactElement, ReactNode, Ref } from "react";
+"use client";
+
+import type { CSSProperties, ReactElement, ReactNode, Ref } from "react";
+import { useRoomArt } from "@/templates/sheesh-mahal/picture";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 
 /**
@@ -35,8 +38,14 @@ export default function Farmaan({
   wordsRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 }): ReactElement {
+  /* Its picture, for the rod and the paper (the stylesheet's `--fm-art`): none until the cover has gone. */
+  const art = useRoomArt();
+
   return (
-    <div className={`${styles.fm} ${open ? styles.fmOpen : styles.fmShut} ${className}`}>
+    <div
+      className={`${styles.fm} ${open ? styles.fmOpen : styles.fmShut} ${className}`}
+      style={art === null ? undefined : ({ "--fm-art": `url("${art.farmaan}")` } as CSSProperties)}
+    >
       <div aria-hidden="true" className={styles.fmRod} />
       <div className={styles.fmWindow}>
         <div ref={bodyRef} className={styles.fmBody}>
