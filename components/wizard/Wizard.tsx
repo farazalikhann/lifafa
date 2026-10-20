@@ -31,6 +31,7 @@ import PendingCardNotice, {
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TranslationPanel from "@/components/create/TranslationPanel";
 import CustomizeStep from "@/components/wizard/CustomizeStep";
+import LegalFooter from "@/components/legal/LegalFooter";
 import TemplateGallery from "@/components/wizard/TemplateGallery";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import {
@@ -629,11 +630,11 @@ function WizardSteps({
       </header>
 
       {/*
-        `pb-32` clears the bar pinned to the bottom, over the safe area, so the
-        last control of every step can be scrolled above it. Two columns at
-        lg, as in the editor: the step on the left, the card on the right.
+        Two columns at lg, as in the editor: the step on the left, the card on
+        the right. The room the bar pinned to the bottom needs is under the
+        footer below, so the footer can be scrolled clear of it too.
       */}
-      <main className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-32 sm:px-5 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-8 lg:pt-10">
+      <main className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-5 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-8 lg:pt-10">
         {problem !== null ? (
           <PendingCardNotice
             problem={problem}
@@ -837,6 +838,9 @@ function WizardSteps({
           />
         </div>
       </main>
+
+      {/* `pb-32` clears the bar pinned to the bottom, over the safe area. */}
+      <LegalFooter className="pb-32" />
 
       {/*
         Back and Next, pinned to the bottom of the screen where a thumb is.

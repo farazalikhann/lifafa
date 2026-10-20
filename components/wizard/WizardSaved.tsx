@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import PaymentBanner from "@/components/dashboard/PaymentBanner";
+import LegalFooter from "@/components/legal/LegalFooter";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getTemplate, templatePricePaise } from "@/templates/registry";
@@ -92,6 +93,8 @@ export default function WizardSaved({
           </p>
         )}
       </main>
+
+      <LegalFooter />
     </div>
   );
 }

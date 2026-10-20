@@ -1,49 +1,13 @@
 import Link from "next/link";
-import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
+import LegalFooter from "@/components/legal/LegalFooter";
+import { SUPPORT_EMAIL } from "@/lib/legal";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
-/**
- * The support mailbox. Change the local part here and every mention follows.
- *
- * Built on LIFAFA_DOMAIN rather than the resolved origin: this is a mailbox,
- * not a page. It stays hello@getlifafa.co.in when the site is opened on a
- * preview host or a dev server, because that is where the mail actually goes.
- */
-const SUPPORT_EMAIL = `hello@${LIFAFA_DOMAIN}`;
-
-/**
- * Pinned to India rather than read off the runtime's clock. `getFullYear()`
- * resolves in whatever zone the process sits in, so a UTC server and an IST
- * browser disagree for the five and a half hours around New Year. Formatting
- * against a fixed zone makes the value deterministic.
- */
-function currentYearInIndia(): string {
-  return new Intl.DateTimeFormat("en-IN", {
-    year: "numeric",
-    timeZone: "Asia/Kolkata",
-  }).format(new Date());
-}
-
-interface FooterLink {
-  href: string;
-  label: string;
-  /**
-   * False for a page that does not exist yet. Next prefetches every link that
-   * scrolls into view, and prefetching a route that is not there only fills
-   * the network panel with 404s.
-   */
-  prefetch: boolean;
-}
-
-const FOOTER_LINKS: readonly FooterLink[] = [
-  { href: "/login", label: "Sign in", prefetch: true },
-  { href: NEW_CARD_HREF, label: "Create your card", prefetch: true },
-  /*
-    Linked before the pages are written, so the footer does not change shape
-    the day they are. Until then both land on the not-found page.
-  */
-  { href: "/terms", label: "Terms", prefetch: false },
-  { href: "/refunds", label: "Refunds", prefetch: false },
+/** Where a visitor goes next. The five policy pages are in the strip below, shared with every host page. */
+const FOOTER_LINKS: readonly { href: string; label: string }[] = [
+  { href: "/login", label: "Sign in" },
+  { href: NEW_CARD_HREF, label: "Create your card" },
+  { href: "/contact", label: "Contact us" },
 ];
 
 /** Shared by every link in the footer: quiet text, a 44px tap target, an underline on hover. */
@@ -57,61 +21,58 @@ const LINK_CLASS =
  * and one centred column below that. Deliberately the quietest thing on the
  * page: small type, muted colour, no buttons. The closing call to action sits
  * directly above it, and a footer that competed for the tap would be taking it
- * from there.
+ * from there. Under it, the policy links and the copyright line every host
+ * page carries (components/legal/LegalFooter.tsx).
  */
 export default function HelpFooter() {
-  const year = currentYearInIndia();
-
   return (
-    <footer className="border-t border-[var(--lifafa-hairline)] px-6 py-20 sm:py-24">
-      <div className="mx-auto grid max-w-5xl gap-12 text-center sm:grid-cols-3 sm:gap-8 sm:text-left">
-        <div>
-          <p className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)]">
-            Lifafa
-          </p>
-          <p className="mx-auto mt-3 max-w-[30ch] text-sm leading-relaxed text-[var(--lifafa-muted)] sm:mx-0">
-            Beautiful digital invitations that tell you who is coming, for
-            every Indian celebration.
-          </p>
+    <>
+      <footer className="border-t border-[var(--lifafa-hairline)] px-6 pt-20 pb-14 sm:pt-24 sm:pb-16">
+        <div className="mx-auto grid max-w-5xl gap-12 text-center sm:grid-cols-3 sm:gap-8 sm:text-left">
+          <div>
+            <p className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)]">
+              Lifafa
+            </p>
+            <p className="mx-auto mt-3 max-w-[30ch] text-sm leading-relaxed text-[var(--lifafa-muted)] sm:mx-0">
+              Beautiful digital invitations that tell you who is coming, for
+              every Indian celebration.
+            </p>
+          </div>
+
+          <nav aria-label="Footer">
+            {/*
+              Pulled up by the half of a 44px tap target that sits above its
+              text, so the first link lines up with the tops of the other two
+              columns rather than a line below them.
+            */}
+            <ul className="flex flex-col items-center sm:-mt-3 sm:items-start">
+              {FOOTER_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={`${LINK_CLASS} text-[var(--lifafa-cream)]`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="flex flex-col items-center sm:items-start">
+            <p className="text-sm text-[var(--lifafa-cream)]">
+              Questions before your event?
+            </p>
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className={`${LINK_CLASS} text-[var(--lifafa-marigold)]`}
+            >
+              {SUPPORT_EMAIL}
+            </a>
+          </div>
         </div>
-
-        <nav aria-label="Footer">
-          {/*
-            Pulled up by the half of a 44px tap target that sits above its
-            text, so the first link lines up with the tops of the other two
-            columns rather than a line below them.
-          */}
-          <ul className="flex flex-col items-center sm:-mt-3 sm:items-start">
-            {FOOTER_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  prefetch={link.prefetch ? undefined : false}
-                  className={`${LINK_CLASS} text-[var(--lifafa-cream)]`}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="flex flex-col items-center sm:items-start">
-          <p className="text-sm text-[var(--lifafa-cream)]">
-            Questions before your event?
-          </p>
-          <a
-            href={`mailto:${SUPPORT_EMAIL}`}
-            className={`${LINK_CLASS} text-[var(--lifafa-marigold)]`}
-          >
-            {SUPPORT_EMAIL}
-          </a>
-        </div>
-      </div>
-
-      <p className="mt-16 text-center text-xs tracking-[0.14em] text-[var(--lifafa-muted)] uppercase">
-        Lifafa {year}
-      </p>
-    </footer>
+      </footer>
+      <LegalFooter as="div" />
+    </>
   );
 }

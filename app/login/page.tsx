@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import SignInForm from "@/components/auth/SignInForm";
+import LegalFooter from "@/components/legal/LegalFooter";
 
 export const metadata: Metadata = {
   title: "Sign in · Lifafa",
@@ -77,8 +78,30 @@ export default async function LoginPage({
               initialError={params.error ?? null}
             />
           </div>
+
+          <p className="mt-6 text-center text-xs leading-relaxed text-[var(--lifafa-muted)]">
+            By signing in you agree to the{" "}
+            <Link
+              href="/terms"
+              prefetch={false}
+              className="text-[var(--lifafa-cream)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              Terms
+            </Link>{" "}
+            and the{" "}
+            <Link
+              href="/privacy"
+              prefetch={false}
+              className="text-[var(--lifafa-cream)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </div>
       </div>
+
+      <LegalFooter className="relative z-10" />
     </main>
   );
 }

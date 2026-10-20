@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import EventCard from "@/components/dashboard/EventCard";
 import SignOutButton from "@/components/dashboard/SignOutButton";
+import LegalFooter from "@/components/legal/LegalFooter";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
 import { eventsUnderReview } from "@/lib/db/paymentReview";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
@@ -129,6 +130,8 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
           </ul>
         )}
       </main>
+
+      <LegalFooter />
     </div>
   );
 }

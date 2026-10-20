@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
 import { DEMO_NIKAH_PATH } from "@/lib/demoSlides";
+import { POLICY_PATHS } from "@/lib/metaPixel";
 
 /**
  * sitemap.xml: the short list of pages Lifafa actually wants found.
@@ -32,6 +33,13 @@ import { DEMO_NIKAH_PATH } from "@/lib/demoSlides";
  * the bare domain: www.getlifafa.co.in redirects to it, and a sitemap of
  * redirects is a sitemap of wasted crawls.
  *
+ *
+ * The five policy pages are in it too: the payment provider and anyone
+ * deciding whether to trust the site look for them, and a search for
+ * "Lifafa refund policy" should land on the page itself. Taken from the
+ * pixel's own list (lib/metaPixel.ts), the same list the footer is built
+ * from, so a page cannot be linked and left out of here.
+ *
  * No `lastModified`. Both pages are marketing copy that changes when someone
  * edits them, and a date generated at build time would claim a change on every
  * deploy — which teaches a crawler to stop believing the field.
@@ -56,5 +64,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    ...POLICY_PATHS.map((path) => ({
+      url: `${origin}${path}`,
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    })),
   ];
 }

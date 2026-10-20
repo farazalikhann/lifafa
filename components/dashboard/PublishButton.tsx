@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { activateWithFreeCoupon, createPaymentOrder } from "@/lib/db/payments";
 import CouponField, {
@@ -68,6 +69,9 @@ function loadCheckoutScript(): Promise<void> {
 
   return scriptPromise;
 }
+
+const AGREEMENT_LINK =
+  "text-[var(--lifafa-cream)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
 
 /**
  * Everything the button can be showing. One union rather than four booleans,
@@ -330,6 +334,23 @@ export default function PublishButton({
             locked={busy}
           />
         </div>
+      )}
+
+      {/* What paying agrees to, said where the decision is made. Gone with the coupon field once it is made. */}
+      {phase.kind === "confirming" ||
+      phase.kind === "pending" ||
+      phase.kind === "activated" ? null : (
+        <p className="text-xs leading-relaxed text-[var(--lifafa-muted)] sm:text-right">
+          By paying you agree to the{" "}
+          <Link href="/terms" prefetch={false} className={AGREEMENT_LINK}>
+            Terms
+          </Link>{" "}
+          and the{" "}
+          <Link href="/refunds" prefetch={false} className={AGREEMENT_LINK}>
+            Refund Policy
+          </Link>
+          .
+        </p>
       )}
 
       <button
