@@ -23,7 +23,6 @@ import EventForm from "@/components/create/EventForm";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import FullScreenPreview from "@/components/create/FullScreenPreview";
 import LanguagePicker from "@/components/create/LanguagePicker";
-import OccasionGrid from "@/components/create/OccasionGrid";
 import PendingCardNotice, {
   displayHost,
   type PendingCardProblem,
@@ -63,7 +62,7 @@ import {
   wizardStepPath,
   type WizardStepId,
 } from "@/lib/wizardSteps";
-import { CLASSIC_TEMPLATE_ID, getTemplate } from "@/templates/registry";
+import { getTemplate } from "@/templates/registry";
 import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
 import type { EventContact, EventDraft } from "@/types/event";
@@ -269,7 +268,12 @@ export function EditWizard({
   return (
     /* useSearchParams, which the step is read from, wants a boundary. */
     <Suspense fallback={<EditorSkeleton />}>
-      <WizardSteps start={initial} problem={null} stashedStep={null} edit={edit} />
+      <WizardSteps
+        start={initial}
+        problem={null}
+        stashedStep={null}
+        edit={edit}
+      />
     </Suspense>
   );
 }
@@ -577,18 +581,6 @@ function WizardSteps({
     applySnapshot(switchTemplate(snapshot, next));
   };
 
-  /*
-    On Classic an occasion brings its own palette and motion, as it always
-    has. On any other template the look is the template's, so the occasion
-    only says what is being celebrated. So it does on a card made before the
-    wizard, whose palette, accent and motion may have been set by hand in an
-    editor that is gone: nothing here could put them back.
-  */
-  const madeBeforeWizard = editing && start.config.editor !== "wizard";
-  const handleOccasion =
-    template.id === CLASSIC_TEMPLATE_ID && !madeBeforeWizard
-      ? handleOccasionSelect
-      : setOccasionId;
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
   const missing = [
     draft.eventTitle.trim().length === 0 ? "the event's title" : null,
@@ -680,28 +672,9 @@ function WizardSteps({
                 className="flex min-w-0 flex-col gap-9"
                 onFocusCapture={() => setPreviewLanguage(language)}
               >
-                <div className="flex min-w-0 flex-col gap-4">
-                  <LanguagePicker
-                    language={language}
-                    onLanguageChange={handleLanguageSelect}
-                  />
-                  <AutoTranslate
-                    cardLanguage={language}
-                    draft={draft}
-                    blocks={blocks}
-                    occasionId={occasionId}
-                    eventId={edit?.eventId}
-                    onTranslated={handleTranslated}
-                    onCardId={handleCardId}
-                    /* An edit page is behind sign-in already; only a new card can meet a signed-out host. */
-                    onSignInRequired={
-                      editing ? undefined : () => sendToSignIn(snapshot)
-                    }
-                  />
-                </div>
-                <OccasionGrid
-                  occasionId={occasionId}
-                  onOccasionChange={handleOccasion}
+                <LanguagePicker
+                  language={language}
+                  onLanguageChange={handleLanguageSelect}
                 />
                 <EventForm
                   draft={draft}
@@ -720,6 +693,19 @@ function WizardSteps({
                 <ContactEditor
                   contacts={draft.contacts ?? []}
                   onChange={handleContacts}
+                />
+                <AutoTranslate
+                  cardLanguage={language}
+                  draft={draft}
+                  blocks={blocks}
+                  occasionId={occasionId}
+                  eventId={edit?.eventId}
+                  onTranslated={handleTranslated}
+                  onCardId={handleCardId}
+                  /* An edit page is behind sign-in already; only a new card can meet a signed-out host. */
+                  onSignInRequired={
+                    editing ? undefined : () => sendToSignIn(snapshot)
+                  }
                 />
               </div>
 
@@ -815,9 +801,9 @@ function WizardSteps({
               {editing ? null : (
                 <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
                   Saving creates your invitation and its link. Publishing it is
-                  the next step and costs {formatPrice(template.price)}:
-                  guests can open the link once it is published. Each
-                  invitation is a separate payment.
+                  the next step and costs {formatPrice(template.price)}: guests
+                  can open the link once it is published. Each invitation is a
+                  separate payment.
                 </p>
               )}
             </div>

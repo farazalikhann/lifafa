@@ -3,7 +3,6 @@
 import { useState, type ReactElement, type ReactNode } from "react";
 import CheckinPanel from "@/components/create/CheckinPanel";
 import CoverAnimationPicker from "@/components/create/CoverAnimationPicker";
-import MusicPanel from "@/components/create/MusicPanel";
 import PdfPanel from "@/components/create/PdfPanel";
 import WeatherPicker from "@/components/create/WeatherPicker";
 import CollapsibleSection, {
@@ -282,12 +281,6 @@ export default function CustomizeStep({
       </Group>
 
       <div className="flex min-w-0 flex-col gap-3">
-        <MusicPanel
-          musicUrl={musicUrl}
-          onMusicUrlChange={onMusicUrlChange}
-          accordion={accordion}
-        />
-
         <CollapsibleSection
           title="More options"
           summary={
