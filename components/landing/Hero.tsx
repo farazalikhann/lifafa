@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import LinkPending from "@/components/landing/LinkPending";
 import ScrollCue from "@/components/landing/ScrollCue";
 import StepDiagram from "@/components/landing/StepDiagram";
 import { PRIMARY_BUTTON } from "@/components/landing/styles";
@@ -100,7 +101,7 @@ export default function Hero(): ReactElement {
 
         <div className="flex flex-col items-center gap-4">
           <Link href={NEW_CARD_HREF} className={PRIMARY_BUTTON}>
-            Create your card
+            <LinkPending>Create your card</LinkPending>
           </Link>
           <ScrollCue targetId={DEMO_SECTION_ID} />
         </div>

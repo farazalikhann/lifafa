@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import AfterLoad from "@/components/landing/AfterLoad";
+import LinkPending from "@/components/landing/LinkPending";
 import { DEMO_SECTION_ID } from "@/components/landing/Hero";
 import SwipeRow from "@/components/landing/SwipeRow";
 import {
@@ -77,7 +78,7 @@ function DemoCard({
           className={CARD_PRIMARY}
           aria-label={`Create yours with ${template.name}`}
         >
-          Create yours
+          <LinkPending>Create yours</LinkPending>
         </Link>
       </div>
     </li>

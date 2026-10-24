@@ -936,6 +936,45 @@
   }
 }
 
+/*
+  A soft band of light passing over a placeholder block (components/skeleton/
+  Shimmer.tsx). Transform only, on a pseudo-element the block clips, so the
+  block itself never repaints. Still under reduced motion: the block stays,
+  the light does not move.
+*/
+.lifafa-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--lifafa-hairline);
+}
+
+.lifafa-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(247, 241, 232, 0.07) 50%,
+    transparent
+  );
+  transform: translate3d(-100%, 0, 0);
+  animation: lifafa-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes lifafa-shimmer {
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* Sparkles and secondary details. */
 @keyframes lifafa-twinkle {
   0%,

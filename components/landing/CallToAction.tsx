@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import LinkPending from "@/components/landing/LinkPending";
 import { PRIMARY_BUTTON, SECTION_HEADING } from "@/components/landing/styles";
 import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
@@ -26,7 +27,7 @@ export default function CallToAction(): ReactElement {
         about 10 minutes.
       </p>
       <Link href={NEW_CARD_HREF} className={`mt-8 ${PRIMARY_BUTTON}`}>
-        Create your card
+        <LinkPending>Create your card</LinkPending>
       </Link>
       <p className="mt-5 text-sm text-[var(--lifafa-muted)]">
         From {formatPriceRs(LOWEST_PRICE_PAISE)} per event. One-time payment.
