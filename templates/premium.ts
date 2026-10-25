@@ -1,6 +1,7 @@
-import { PREMIUM_PRICE_PAISE } from "@/lib/pricing";
+import { PREMIUM_PRICE_PAISE, SHEESH_MAHAL_PRICE_PAISE } from "@/lib/pricing";
 import emeraldShahiPreview from "@/templates/emerald-shahi/preview.webp";
 import gulabMahalPreview from "@/templates/gulab-mahal/preview.webp";
+import sheeshMahalPreview from "@/templates/sheesh-mahal/preview.webp";
 import type { TemplateConfig } from "@/templates/types";
 
 /**
@@ -40,21 +41,21 @@ export const GULAB_MAHAL_LISTING = {
   preview: gulabMahalPreview,
 } as const satisfies TemplateListing;
 
-/* Unlisted while it is built; seen at /demo/sheesh-mahal. */
+/* At the premium price for now: its own is SHEESH_MAHAL_PRICE_PAISE in lib/pricing.ts. */
 export const SHEESH_MAHAL_LISTING = {
   id: "sheesh-mahal",
   name: "Sheesh Mahal",
-  listed: false,
+  listed: true,
   collection: "premium",
-  price: PREMIUM_PRICE_PAISE,
-  preview: null,
+  price: SHEESH_MAHAL_PRICE_PAISE,
+  preview: sheeshMahalPreview,
 } as const satisfies TemplateListing;
 
 /** The Premium Collection, in the gallery's order. */
 export const PREMIUM_LISTINGS: readonly TemplateListing[] = [
+  SHEESH_MAHAL_LISTING,
   EMERALD_SHAHI_LISTING,
   GULAB_MAHAL_LISTING,
-  SHEESH_MAHAL_LISTING,
 ];
 
 /** The premium templates the gallery offers, with a preview to show: what the landing page lists. */

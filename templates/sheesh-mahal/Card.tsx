@@ -21,6 +21,7 @@ import SheeshFunctionsPage from "@/templates/sheesh-mahal/FunctionsPage";
 import { useLite } from "@/templates/sheesh-mahal/lite";
 import SheeshNamesPage from "@/templates/sheesh-mahal/NamesPage";
 import SheeshPager from "@/templates/sheesh-mahal/Pager";
+import SheeshPrintCopy from "@/templates/sheesh-mahal/PrintCopy";
 import styles from "@/templates/sheesh-mahal/sheesh.module.css";
 import { INDIGO, sheeshFonts } from "@/templates/sheesh-mahal/shared";
 import { SCREEN_VAR, useStableScreen } from "@/templates/sheesh-mahal/stableScreen";
@@ -63,7 +64,7 @@ const NIGHT_BEHIND = `html:fullscreen,:fullscreen::backdrop,html::backdrop{backg
  *
  * Takes exactly what CardCanvas takes (see TemplateCardProps), because the
  * same callers place it: the guest's page, the two previews and the printed
- * copy, which gets every room as it rests.
+ * copy, which is the words alone on ivory paper (PrintCopy.tsx).
  */
 export default function SheeshMahalCard(props: TemplateCardProps): ReactElement {
   const {
@@ -114,6 +115,11 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
   const note = on("message") && hasMessage(draft) ? draft.message.trim() : null;
   const hasDetails = contacts.length > 0 || custom.length > 0 || note !== null;
 
+  /* The printed copy: the words on ivory paper, one sheet's sections at a time (PrintCopy.tsx). */
+  if (still) {
+    return <SheeshPrintCopy draft={draft} config={config} language={language} fonts={fonts} />;
+  }
+
   return (
     <ScratchRevealProvider
       persistKey={invite.url === null ? null : invite.code}
@@ -123,7 +129,7 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
         ref={rootRef}
         lang={language}
         data-sm-root=""
-        className={`${styles.palette} ${styles.root} ${still ? styles.still : ""} ${lite ? styles.lite : ""} ${pagewide ? "" : `isolate ${styles.boxed}`}`}
+        className={`${styles.palette} ${styles.root} ${lite ? styles.lite : ""} ${pagewide ? "" : `isolate ${styles.boxed}`}`}
         style={{ "--sm-screen": screen, "--sm-bars": bars } as CSSProperties}
       >
         {pagewide ? <style>{NIGHT_BEHIND}</style> : null}

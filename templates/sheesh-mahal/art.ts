@@ -13,8 +13,6 @@ export const ART = {
   wall: `${DIR}/wall.webp`,
   doorLeft: `${DIR}/door-left.webp`,
   doorRight: `${DIR}/door-right.webp`,
-  /* Not on the cover since 19 Oct; kept for a room that may want it. */
-  diya: `${DIR}/diya.webp`,
   /* The hall behind the doors, and page 2's ground: its dark oval for the names is painted in. */
   hall: `${DIR}/hall.webp`,
   jharokhaMoon: `${DIR}/jharokha-moon.webp`,
@@ -25,14 +23,6 @@ export const ART = {
   farmaan: `${DIR}/farmaan.webp`,
   kandeel: `${DIR}/kandeel.webp`,
 } as const;
-
-/** What the cover waits for before it shows (the fonts are waited for by the shell). */
-export const COVER_IMAGES: readonly string[] = [
-  ART.wall,
-  ART.doorLeft,
-  ART.doorRight,
-  ART.hall,
-];
 
 /*
   THE WALL, 1024x1536. Its doorway runs from x 280 to 744 (centre 512), its
@@ -60,9 +50,6 @@ export const DOOR = {
   height: HALF_H / WALL_H,
 } as const;
 
-/** The doorway's middle, which the camera moves in through, as shares of the wall. */
-export const DOORWAY_FOCUS = { x: 0.5, y: 0.66 } as const;
-
 /*
   The medallion on the seam, at the height of the two ring handles (their
   rings hang at about 0.53 of the door's height, y 1020 on the wall). Small:
@@ -76,7 +63,6 @@ export const MEDALLION = {
 
 /** The hall (864x1296): its dark oval for words runs 24% to 66% down; the names keep to 30% to 58%. */
 export const HALL_ASPECT = 864 / 1296;
-export const HALL_WORDS = { top: 0.3, bottom: 0.58 } as const;
 
 /*
   THE GLINTS: small stars of light on the mirror-work, made from a written
@@ -311,7 +297,6 @@ export const VENUE_STARS = [
   sideways. Each slice's height as a share of the farmaan's width; the words
   keep to 20% to 80% across.
 */
-export const FARMAAN_ASPECT = 600 / 880;
 export const FARMAAN = {
   top: (0.19 * 880) / 600,
   foot: (0.18 * 880) / 600,

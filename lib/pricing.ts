@@ -3,8 +3,9 @@
  *
  * TWO PRICES, BY TEMPLATE. A card in the Traditions Collection is ₹699 and one
  * in the Premium Collection is ₹999. Each template carries its own price
- * (`price` on TemplateConfig, in paise), and these two constants are the only
- * figures those are ever set from.
+ * (`price` on TemplateConfig, in paise), and the constants here are the only
+ * figures those are ever set from: these two, and Sheesh Mahal's own, which
+ * is the premium price until it is decided.
  *
  * PAISE, ALWAYS, wherever arithmetic is done. Razorpay takes amounts in
  * currency subunits, the payments table stores them, and a price in rupees
@@ -23,11 +24,14 @@
  */
 export const TRADITIONS_PRICE_PAISE = 69900;
 export const PREMIUM_PRICE_PAISE = 99900;
+/** Sheesh Mahal's own, the premium price until it is decided: change this line alone to change it. */
+export const SHEESH_MAHAL_PRICE_PAISE = 99900;
 
 /** The least any invitation costs: what "starting at" means, and what a coupon is free against. */
 export const LOWEST_PRICE_PAISE = Math.min(
   TRADITIONS_PRICE_PAISE,
   PREMIUM_PRICE_PAISE,
+  SHEESH_MAHAL_PRICE_PAISE,
 );
 
 /** Rupees, as a whole number, in India's own grouping: ₹1,499. */

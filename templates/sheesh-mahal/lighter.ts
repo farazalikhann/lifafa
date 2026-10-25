@@ -82,7 +82,6 @@ function setOf(cover: boolean, rooms: boolean): Art {
     wall: pick(ART.wall, cover),
     doorLeft: pick(ART.doorLeft, cover),
     doorRight: pick(ART.doorRight, cover),
-    diya: ART.diya,
     hall: pick(ART.hall, cover),
     jharokhaMoon: pick(ART.jharokhaMoon, rooms),
     jharokhaFrame: pick(ART.jharokhaFrame, rooms),

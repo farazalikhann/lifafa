@@ -108,10 +108,11 @@ const COVER_OPTION: CoverAnimationOption = {
  * The glints on the mirrors answer the phone's tilt. Its Card and its Cover
  * are loaded on demand, so a guest of any other template downloads neither.
  *
- * NOT YET OFFERED: built in five parts, it is seen only at
- * /demo/sheesh-mahal until it is finished. At the premium price for now; its
- * own is decided later. A card for every wedding, with no symbol of any
- * faith; its sample is the Hindu wedding in Jaipur, in English and Hindi.
+ * IN THE PREMIUM COLLECTION, FIRST, with a "New" badge; its gallery preview
+ * is its closed doors waiting for the tap. At the premium price for now
+ * (SHEESH_MAHAL_PRICE_PAISE in lib/pricing.ts); its own is decided later. A card
+ * for every wedding, with no symbol of any faith; its sample is the Hindu
+ * wedding in Jaipur, in English and Hindi.
  *
  * ITS OWN PAGE TOO: the reply is its page 8 and the thanks its page 9
  * (`page`), and it draws its own "Swipe up", so the page's scroll cue is left
@@ -128,6 +129,7 @@ export const SHEESH_MAHAL: TemplateConfig = {
   /* Only for which sample wedding its demo shows. */
   category: "hindu",
   categoryLabel: "For every wedding",
+  badge: "New",
   palettes: [
     { id: "own", label: "Midnight", paletteId: "midnight", accentOverride: GOLD },
   ],
@@ -176,4 +178,13 @@ export const SHEESH_MAHAL: TemplateConfig = {
     scrollCue: false,
   },
   print: { background: "#F8F1E3", textPrimary: INDIGO_INK },
+  /*
+    Its sheets in the card's own order (Gulab Mahal's): the names with the
+    date, the couple, the functions, the venue, and then who to ring, the
+    host's sections and their note together. The countdown is not printed.
+  */
+  printLayout: {
+    sheetOf: { cover: 0, details: 0, family: 1, timeline: 2, venue: 3, contact: 4, message: 4, countdown: null },
+    customSheet: 4,
+  },
 };

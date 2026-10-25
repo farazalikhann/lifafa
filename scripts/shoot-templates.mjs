@@ -9,7 +9,11 @@
  * build time.
  *
  *   1. npm run dev            (or `next start` on a build)
- *   2. node scripts/shoot-templates.mjs [http://localhost:3000] [id ...]
+ *   2. node scripts/shoot-templates.mjs [http://localhost:3000] [--closed] [id ...]
+ *
+ * `--closed` leaves the cover shut, for a template whose preview is its own
+ * cover waiting for the tap (Sheesh Mahal's doors and their "Tap to open"):
+ * the loader is waited out instead, and nothing is tapped.
  *
  * Drives a headless Chrome over its DevTools protocol with nothing but Node:
  * no browser library is a dependency of this project. Set CHROME to the
@@ -28,7 +32,8 @@ const TEMPLATES = join(ROOT, "templates");
 
 const args = process.argv.slice(2);
 const base = args.find((arg) => arg.startsWith("http")) ?? "http://localhost:3000";
-const only = args.filter((arg) => !arg.startsWith("http"));
+const closed = args.includes("--closed");
+const only = args.filter((arg) => !arg.startsWith("http") && !arg.startsWith("--"));
 
 /* A template is a folder with a config.ts; `shared` and the files beside them are not. */
 const ids = readdirSync(TEMPLATES, { withFileTypes: true })
@@ -108,11 +113,22 @@ for (const id of ids) {
   }
   await sleep(2500);
 
-  /* The cover opens to a tap, like a guest's. */
-  for (const type of ["mousePressed", "mouseReleased"]) {
-    await send("Input.dispatchMouseEvent", { type, x: WIDTH / 2, y: HEIGHT * 0.6, button: "left", clickCount: 1 });
+  if (closed) {
+    /* The cover as a guest first sees it: the loader gone, nothing tapped. */
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      if ((await evaluate(`!!document.querySelector('[data-cover-loading][aria-hidden="true"]')`)) === true) break;
+      await sleep(500);
+    }
+    await sleep(1500);
+    /* Nor the cover's Skip: a guest's way past it, not part of how it looks. */
+    await evaluate(`[...document.querySelectorAll("button")].filter((node) => /^(Skip|छोड़ें)$/.test(node.textContent.trim())).forEach((node) => node.remove())`);
+  } else {
+    /* The cover opens to a tap, like a guest's. */
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await send("Input.dispatchMouseEvent", { type, x: WIDTH / 2, y: HEIGHT * 0.6, button: "left", clickCount: 1 });
+    }
+    await sleep(9000);
   }
-  await sleep(9000);
 
   /* The sample banner is the demo page's, not the card's; nor is `next dev`'s own badge. */
   await evaluate(`(() => {

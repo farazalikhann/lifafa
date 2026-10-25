@@ -71,9 +71,8 @@
             up from 0.92 and nothing to 1; one being left grows to 1.25 and
             fades, as if walked through. Scale and opacity only.
 
-  Where the card is in a box of its own (the editor's preview) or laid out
-  still (the printed copy), the frame is the page's own box instead and goes
-  by with it (`.boxed`, `.still`): the box is not the screen.
+  Where the card is in a box of its own (the editor's preview), the frame is the page's own box instead and goes
+  by with it (`.boxed`): the box is not the screen.
 
   A PAGE IS A SCREEN TALL, AND ITS HEIGHT NEVER CHANGES WHILE IT SCROLLS:
   `--sm-screen` on the guest's page is the screen with the browser's bars
@@ -121,8 +120,7 @@
   pointer-events: none;
 }
 
-.boxed .frame,
-.still .frame {
+.boxed .frame {
   position: absolute;
   inset: 0;
   height: auto;
@@ -286,16 +284,6 @@
   }
 }
 
-/* The printed copy, and a card laid out as a picture of itself: every room as it rests. */
-.still .frame,
-.still .zoom,
-.still .overlay {
-  animation: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-  pointer-events: auto !important;
-}
-
 /*
   A room two or more away from the one being read is not drawn until it
   comes near: its frame is set aside below the screen, where it is left
@@ -356,18 +344,6 @@
   user-select: none;
 }
 
-/* Set on the night, whole: a frame, a scroll, a lantern. */
-.roomObject {
-  position: absolute;
-  top: 56%;
-  left: 50%;
-  width: min(74cqw, 22rem);
-  max-height: 64%;
-  translate: -50% -50%;
-  object-fit: contain;
-  user-select: none;
-}
-
 /* ───────────────────────── Entrances ───────────────────────── */
 
 /*
@@ -417,19 +393,6 @@
   text-shadow:
     0 1px 2px rgb(4 5 20 / 0.85),
     0 0 14px rgb(4 5 20 / 0.6);
-}
-
-/* A room's heading, below the page's buttons. */
-.roomHeading {
-  position: absolute;
-  top: var(--sm-top-safe);
-  left: 1.5rem;
-  right: 1.5rem;
-  z-index: 2;
-  margin: 0;
-  font-size: clamp(2rem, 11cqw, 3rem);
-  line-height: 1.3;
-  text-align: center;
 }
 
 /* ───────────────────────── Gold foil, and its light ───────────────────────── */
@@ -1832,16 +1795,6 @@
 
 [data-ty-in] .tyGlints .glintFlash {
   animation: sm-ty-flash 1400ms ease-out 1300ms both;
-}
-
-/* Laid out as it rests: the farmaan open, every line in, the lanterns where they hang. */
-.still .fmBody,
-.still .fmWords,
-.still .tyLine,
-.still .tyLanterns {
-  opacity: 1;
-  transform: none;
-  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3392,19 +3345,6 @@
   }
 }
 
-/* The printed copy, laid out as it rests: every entrance already over. */
-.still .fnHeading,
-.still .fnRise,
-.still .fnControls,
-.still .vnSky,
-.still .vnLine,
-.still .vnLights,
-.still .vnStars {
-  opacity: 1;
-  transform: none;
-  transition: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .fnCard,
   .fnCard[data-off] {
@@ -3432,4 +3372,132 @@
   .vnStar {
     opacity: 0.6;
   }
+}
+
+/* ───────────────────────── The printed copy ───────────────────────── */
+
+/*
+  Ivory paper, kind to ink: deep indigo words, antique gold small capitals,
+  script and rules, and no pictures at all (PrintCopy.tsx). The column is
+  what the print fit measures and zooms to its sheet.
+*/
+.printCopy {
+  min-height: 100%;
+  background: var(--sm-ivory);
+  color: var(--sm-ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.printColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 2.5rem 1.75rem;
+  text-align: center;
+}
+
+.printPart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.printRule {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 40%;
+  margin-block: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--sm-gold-deep);
+}
+
+.printRule::before,
+.printRule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.printSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.printHeading {
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sm-gold-deep);
+}
+
+.printLine {
+  font-size: 1rem;
+  color: #3a3f6e;
+}
+
+.printNames {
+  font-size: 2.6rem;
+  color: var(--sm-gold-deep);
+  overflow-wrap: anywhere;
+}
+
+.printAnd {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--sm-gold-deep);
+}
+
+.printDay {
+  font-size: 3rem;
+  color: var(--sm-gold-deep);
+}
+
+.printPerson {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.printPerson + .printPerson {
+  margin-top: 0.9rem;
+}
+
+.printPersonName {
+  font-size: 1.9rem;
+  color: var(--sm-gold-deep);
+  overflow-wrap: anywhere;
+}
+
+.printNumber {
+  font-size: 0.7rem;
+  color: var(--sm-gold-deep);
+}
+
+.printText {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.printSmall {
+  max-width: 24rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #3a3f6e;
+}
+
+.printPre {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
