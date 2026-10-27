@@ -1,0 +1,636 @@
+/*
+  Dak Ghar. Everything that moves moves by transform or opacity alone, as a
+  CSS animation; nothing is written each frame from script and nothing reads
+  layout while anything moves. `will-change` is only on what is moving.
+*/
+
+/* ───────────────────────── The cover ───────────────────────── */
+
+.cover {
+  /* The post box: its height on the screen, and its width from its shape (400 x 1000). */
+  --bh: min(54dvh, 150vw);
+  --bw: calc(var(--bh) * 0.4);
+  /* Its foot, above "Tap to open". */
+  --base: calc(max(3.5vh, 22px) + 48px);
+  /* The date slip's width. */
+  --slip-w: clamp(180px, 52vw, 230px);
+  --ease-out: cubic-bezier(0.22, 0.7, 0.3, 1);
+  --glide: cubic-bezier(0.45, 0.05, 0.2, 1);
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: 50% 62%;
+  user-select: none;
+}
+
+/* A soft cream light at the head of the screen, under the shell's "You are invited". */
+.headLight {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 40%;
+  background: radial-gradient(ellipse 72% 42% at 50% 50%, rgb(248 234 204 / 0.86), rgb(248 234 204 / 0.5) 55%, rgb(248 234 204 / 0) 100%);
+}
+
+/* The bougainvillea, hanging from the top right, swaying two degrees about its top. */
+.vines {
+  position: absolute;
+  top: -2%;
+  right: -7%;
+  height: 52%;
+  width: auto;
+  max-width: none;
+  transform-origin: 55% 0;
+  animation: dg-sway 7s ease-in-out infinite alternate;
+  will-change: transform;
+  user-select: none;
+}
+
+@keyframes dg-sway {
+  from {
+    transform: rotate(-1deg);
+  }
+  to {
+    transform: rotate(1deg);
+  }
+}
+
+/* The pigeon: across the sky in 3.8s, then away until the next ten seconds come round. */
+.pigeon {
+  position: absolute;
+  top: 15%;
+  left: 0;
+  width: clamp(60px, 18vw, 92px);
+  height: auto;
+  transform: translate3d(-130%, 0, 0);
+  animation: dg-glide 10s linear 1.5s infinite both;
+  will-change: transform;
+  user-select: none;
+}
+
+@keyframes dg-glide {
+  0% {
+    transform: translate3d(-130%, 0, 0);
+    animation-timing-function: cubic-bezier(0.35, 0.1, 0.55, 0.95);
+  }
+  38% {
+    transform: translate3d(calc(100vw + 30%), -6vh, 0);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 30%), -6vh, 0);
+  }
+}
+
+/* Petals off the vines, drawn in code: ten, or six under 400px. */
+.petal {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  animation: dg-fall var(--dur) linear var(--delay) infinite;
+  will-change: transform;
+}
+
+.petalShape {
+  display: block;
+  width: 10px;
+  height: 13px;
+  border-radius: 70% 0 70% 0;
+  background: linear-gradient(135deg, #f07aa8, #b3175a);
+  animation: dg-flutter 2.2s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.petal[data-petal="0"] { --x: 58%; --dur: 11s; --delay: -1s; }
+.petal[data-petal="1"] { --x: 74%; --dur: 13s; --delay: -6s; }
+.petal[data-petal="2"] { --x: 88%; --dur: 10s; --delay: -3s; }
+.petal[data-petal="3"] { --x: 46%; --dur: 12s; --delay: -9s; }
+.petal[data-petal="4"] { --x: 66%; --dur: 14s; --delay: -11s; }
+.petal[data-petal="5"] { --x: 94%; --dur: 12s; --delay: -7s; }
+.petal[data-petal="6"] { --x: 80%; --dur: 11s; --delay: -4s; }
+.petal[data-petal="7"] { --x: 36%; --dur: 15s; --delay: -12s; }
+.petal[data-petal="8"] { --x: 70%; --dur: 13s; --delay: -2s; }
+.petal[data-petal="9"] { --x: 52%; --dur: 12s; --delay: -8s; }
+
+.petal[data-petal="1"] .petalShape,
+.petal[data-petal="4"] .petalShape,
+.petal[data-petal="8"] .petalShape {
+  width: 8px;
+  height: 11px;
+  animation-duration: 1.8s;
+}
+
+@media (max-width: 399px) {
+  .petal[data-petal="6"],
+  .petal[data-petal="7"],
+  .petal[data-petal="8"],
+  .petal[data-petal="9"] {
+    display: none;
+  }
+}
+
+@keyframes dg-fall {
+  from {
+    transform: translate3d(0, -6vh, 0);
+  }
+  to {
+    transform: translate3d(-14vw, 106vh, 0);
+  }
+}
+
+@keyframes dg-flutter {
+  from {
+    transform: rotate(-30deg) scaleX(1);
+  }
+  to {
+    transform: rotate(45deg) scaleX(0.55);
+  }
+}
+
+/* The post box, its foot in the lower middle of the screen. Shared by the stage and the slip's layer. */
+.box {
+  position: absolute;
+  left: 50%;
+  bottom: var(--base);
+  width: var(--bw);
+  height: var(--bh);
+  margin-left: calc(var(--bw) / -2);
+}
+
+/* The brass plate, measured off post-box.webp (see art.ts). */
+.plate {
+  position: absolute;
+  left: 26.5%;
+  right: 26.5%;
+  top: 45.2%;
+  height: 9.9%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.engraved {
+  font-size: calc(var(--bw) * 0.125);
+  line-height: 1;
+  white-space: nowrap;
+  color: #45300e;
+  text-shadow:
+    0 1px 0 rgb(255 232 165 / 0.6),
+    0 -1px 0 rgb(40 25 0 / 0.35);
+}
+
+/* "Tap to open", on a small cream pill under the post box. */
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(3.5vh, 22px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  background: rgb(245 227 191 / 0.9);
+  box-shadow: inset 0 0 0 1px rgb(158 42 36 / 0.35);
+  color: #2a1e14;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  animation: dg-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes dg-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+/*
+  Over the shell's own (disabled) tap button once the cover is opening, so a
+  tap on the slip reaches it; transparent to every other tap.
+*/
+.slipLayer {
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* The slip's layer: a box whose foot is the slot's lower lip (32.1% down the post box), far wider and taller than the slip. */
+.slipClip {
+  position: absolute;
+  left: -100vw;
+  right: -100vw;
+  bottom: 67.9%;
+  height: 200vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* The slip, centred on the slot (49% across the post box), held below the lip until it prints. */
+.slipSlot {
+  position: absolute;
+  bottom: 0;
+  left: calc(100vw + var(--bw) * 0.49 - var(--slip-w) / 2);
+  width: var(--slip-w);
+  transform: translate3d(0, 100%, 0);
+}
+
+.slipLift {
+  transform-origin: 50% 85%;
+}
+
+.slip {
+  position: relative;
+  width: var(--slip-w);
+  container-type: inline-size;
+}
+
+/* Three telegram tickets, one for each panel (until the date slip's own picture is in: DATE_SLIP in art.ts). */
+.ticket {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 440 / 187;
+  user-select: none;
+}
+
+.slipStrip {
+  aspect-ratio: 1 / 1.4;
+}
+
+.slipPanels {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+}
+
+/* Inside a ticket's ruled panel: 15% to 90% of its height, 5% to 95% across. */
+.slipPanel {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqw;
+  padding: 6.5% 7% 4%;
+  text-align: center;
+}
+
+.slipPanelMiddle {
+  grid-row: 2;
+}
+
+.slipDay {
+  font-size: 21cqw;
+  line-height: 1;
+}
+
+.slipSmall {
+  font-size: max(16px, 8cqw);
+}
+
+.slipMid {
+  font-size: 11cqw;
+}
+
+.slipCity {
+  max-width: 100%;
+  font-size: 11.5cqw;
+}
+
+/* The postmark, half over the slip's right edge at the middle panel. */
+.postmark {
+  position: absolute;
+  top: 50%;
+  right: -18cqw;
+  width: 38cqw;
+  margin-top: -19cqw;
+  color: #2e3f66;
+  opacity: 0;
+  transform: rotate(-14deg) scale(1.5);
+}
+
+.postmarkArt {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ─── The opening, started by the tap (coverTiming.ts) ─── */
+
+.opening .hint {
+  opacity: 0;
+  animation: none;
+  transition: opacity 200ms ease-out;
+}
+
+.opening .stage {
+  animation: dg-fade 550ms ease-in-out 1900ms both;
+  will-change: opacity;
+}
+
+.opening .slipSlot {
+  animation: dg-print 1200ms both;
+  will-change: transform;
+}
+
+.opening .postmark {
+  animation: dg-stamp 300ms 1250ms both;
+  will-change: transform, opacity;
+}
+
+.opening .slipLift {
+  animation: dg-lift 600ms var(--glide) 1900ms both;
+  will-change: transform, opacity;
+}
+
+/* A tap on the slip while it holds: the same lift and fade, from now. */
+.liftedNow .stage {
+  animation: dg-fade-now 500ms ease-in-out both;
+}
+
+.liftedNow .slipLift {
+  animation: dg-lift-now 600ms var(--glide) both;
+}
+
+/* Printed out in three steps, each a short push and a small pause, like a booth's printer. */
+@keyframes dg-print {
+  0% {
+    transform: translate3d(0, 100%, 0);
+    animation-timing-function: cubic-bezier(0.3, 0.55, 0.35, 1);
+  }
+  25% {
+    transform: translate3d(0, 66.667%, 0);
+    animation-timing-function: linear;
+  }
+  37.5% {
+    transform: translate3d(0, 66.667%, 0);
+    animation-timing-function: cubic-bezier(0.3, 0.55, 0.35, 1);
+  }
+  62.5% {
+    transform: translate3d(0, 33.333%, 0);
+    animation-timing-function: linear;
+  }
+  75% {
+    transform: translate3d(0, 33.333%, 0);
+    animation-timing-function: cubic-bezier(0.3, 0.55, 0.35, 1);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Pressed down onto the paper, a touch past, and settled. */
+@keyframes dg-stamp {
+  0% {
+    opacity: 0;
+    transform: rotate(-14deg) scale(1.5);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5);
+  }
+  60% {
+    opacity: 0.9;
+    transform: rotate(-14deg) scale(0.94);
+    animation-timing-function: ease-out;
+  }
+  100% {
+    opacity: 0.86;
+    transform: rotate(-14deg) scale(1);
+  }
+}
+
+@keyframes dg-lift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -14%, 0) scale(1.28);
+    opacity: 0;
+  }
+}
+
+@keyframes dg-lift-now {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -14%, 0) scale(1.28);
+    opacity: 0;
+  }
+}
+
+@keyframes dg-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dg-fade-now {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* The tab hidden: every idle loop holds where it is. */
+.paused .loop {
+  animation-play-state: paused;
+}
+
+/* Less motion: the cover stays still and closed; no petals, no pigeon, no sway. */
+.still .loop,
+.still .hint {
+  animation: none;
+  will-change: auto;
+}
+
+.still .petal,
+.still .pigeon {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loop,
+  .hint {
+    animation: none !important;
+  }
+
+  .petal,
+  .pigeon {
+    display: none;
+  }
+}
+
+/* ───────────────────────── The card ───────────────────────── */
+
+.root {
+  --dg-ink: #2a1e14;
+  --dg-ink-muted: #5a4630;
+  --dg-red: #9e2a24;
+  --dg-cream: #f5e3bf;
+  --dg-stamp-ink: #2e3f66;
+  --dg-rule: rgb(158 42 36 / 0.45);
+
+  color: var(--dg-ink);
+  /* Nothing that rises in may ever widen the page. */
+  overflow-x: clip;
+}
+
+.ground {
+  pointer-events: none;
+  background-color: var(--dg-cream);
+  background-image: url("/templates/dak-ghar/paper.webp");
+  background-position: center;
+  background-size: cover;
+}
+
+.groundFixed {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+}
+
+.groundPinned {
+  position: sticky;
+  top: 0;
+  z-index: -10;
+  height: var(--dg-band);
+  margin-bottom: calc(-1 * var(--dg-band));
+}
+
+/* One gentle entrance per page: a fade and a small rise, once. */
+.line,
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity 700ms ease-out var(--dg-delay, 0ms),
+    transform 800ms cubic-bezier(0.22, 0.7, 0.3, 1) var(--dg-delay, 0ms);
+}
+
+.shown .line,
+.shown.reveal {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .reveal {
+    transform: none;
+    transition: opacity 400ms ease-out;
+  }
+}
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3.5rem 1.25rem;
+}
+
+.heading {
+  font-size: 1.875rem;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--dg-ink);
+}
+
+.eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--dg-red);
+}
+
+.rule {
+  display: block;
+  width: 4.5em;
+  height: 1px;
+  background: var(--dg-rule);
+}
+
+/* ─── The names, on letter paper ─── */
+
+.namesPage {
+  justify-content: center;
+  padding-block: 2.5rem 3rem;
+}
+
+.letter {
+  position: relative;
+  width: min(88vw, 25rem);
+  aspect-ratio: 760 / 1127;
+  container-type: inline-size;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 700ms ease-out,
+    transform 900ms cubic-bezier(0.22, 0.7, 0.3, 1);
+}
+
+.letter.shown {
+  opacity: 1;
+  transform: none;
+}
+
+.letterArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+/* The garland over the top right corner and the desk at the foot, both outside the words' box. */
+.letterGarland {
+  position: absolute;
+  top: -5%;
+  right: -7%;
+  width: 34%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.letterDesk {
+  position: absolute;
+  bottom: -5%;
+  left: -9%;
+  width: 52%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Inside the paper's border, clear of the garland and the desk. */
+.letterBox {
+  position: absolute;
+  inset: 17% 13% 14% 13%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: clamp(16px, 4.6cqw, 19px);
+}

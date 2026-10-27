@@ -22,6 +22,18 @@ import type { FontPairId, PaletteId } from "@/types/style";
 export type TemplateCardProps = ComponentProps<typeof CardCanvas>;
 
 /**
+ * What a template's own cover is handed: the shell's state, and the event in
+ * the language it is shown in, for a cover that letters more than the names
+ * into its drawing (Dak Ghar's slip prints the date and the city). A cover
+ * that needs only the names reads the shell's state and nothing else.
+ * Optional, so the covers written before them still fit.
+ */
+export type TemplateCoverProps = CoverVisualState & {
+  draft?: EventDraft;
+  config?: CardConfig;
+};
+
+/**
  * One of the two or three colourways a template offers.
  *
  * Named by the template rather than by the palette, because two templates can
@@ -125,7 +137,7 @@ export interface TemplateConfig {
    */
   cover?: {
     option: CoverAnimationOption;
-    Visual: ComponentType<CoverVisualState>;
+    Visual: ComponentType<TemplateCoverProps>;
   };
   /**
    * What the template changes about the guest's page round its card, where it

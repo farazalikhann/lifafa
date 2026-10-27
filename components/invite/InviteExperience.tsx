@@ -451,7 +451,7 @@ export default function InviteExperience({
         }
         renderVisual={(state) =>
           TemplateCoverVisual !== undefined ? (
-            <TemplateCoverVisual {...state} />
+            <TemplateCoverVisual {...state} draft={draft} config={config} />
           ) : (
             <CoverVisual {...state} />
           )

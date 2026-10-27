@@ -1,3 +1,5 @@
+import { STAMP_AT as DAK_GHAR_STAMP_AT } from "@/templates/dak-ghar/coverTiming";
+
 /**
  * The sound a cover makes when a guest opens it.
  *
@@ -53,10 +55,30 @@ export type CoverSoundId =
   | "petal-dust"
   | "fold"
   | "sheesh-mahal"
-  | "sheesh-mahal-rsvp";
+  | "sheesh-mahal-rsvp"
+  | "dak-ghar";
+
+/**
+ * Part of a sound made of more than one recording, each starting at its own
+ * moment: mixed into one buffer when they are decoded (see mixParts), so
+ * from then on it plays, stops and is timed like any other. A part that will
+ * not load is left out, and the rest still play.
+ */
+interface RecordingPart {
+  url: string;
+  atMs: number;
+}
 
 /** Served from public/, so the path is also the URL. */
-const RECORDINGS: Record<CoverSoundId, string> = {
+const RECORDINGS: Record<CoverSoundId, string | readonly RecordingPart[]> = {
+  /*
+    Dak Ghar's two, to its cover's clock (templates/dak-ghar/coverTiming.ts):
+    the slip printing out of the post box, then the postmark's thud.
+  */
+  "dak-ghar": [
+    { url: "/sounds/dak-ghar/slip-print.mp3", atMs: 0 },
+    { url: "/sounds/dak-ghar/stamp-thud.mp3", atMs: DAK_GHAR_STAMP_AT },
+  ],
   curtain: "/sounds/curtain-open.mp3",
   envelope: "/sounds/envelope-open.mp3",
   "petal-dust": "/sounds/petal-dust-open.mp3",
@@ -132,6 +154,56 @@ function decode(context: BaseAudioContext, bytes: ArrayBuffer): Promise<AudioBuf
   });
 }
 
+/** One recording, fetched and decoded in an offline context, which needs no gesture. */
+function fetchDecoded(url: string, Offline: OfflineContextConstructor): Promise<AudioBuffer> {
+  return fetch(url)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`${url} answered ${response.status}`);
+      }
+
+      return response.arrayBuffer();
+    })
+    .then((bytes) => decode(new Offline(2, 1, 44100), bytes));
+}
+
+/**
+ * Several recordings laid on one track at their own moments and rendered to
+ * a single buffer, offline. Whichever parts load are mixed; none at all is a
+ * failure, as one missing recording is. startRendering is a promise in every
+ * browser now and an event in old Safari, so both are listened to.
+ */
+function mixParts(parts: readonly RecordingPart[], Offline: OfflineContextConstructor): Promise<AudioBuffer> {
+  return Promise.allSettled(parts.map((part) => fetchDecoded(part.url, Offline))).then((results) => {
+    const ready = results.flatMap((result, index) =>
+      result.status === "fulfilled" ? [{ buffer: result.value, atMs: parts[index].atMs }] : [],
+    );
+
+    if (ready.length === 0) {
+      throw new Error("no part of the sound loaded");
+    }
+
+    const rate = ready[0].buffer.sampleRate;
+    const length = Math.max(
+      ...ready.map(({ buffer, atMs }) => Math.ceil((atMs / 1000) * rate) + Math.ceil(buffer.duration * rate)),
+    );
+    const context = new Offline(2, length, rate);
+
+    for (const { buffer, atMs } of ready) {
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      source.start(atMs / 1000);
+    }
+
+    return new Promise<AudioBuffer>((resolve, reject) => {
+      context.oncomplete = (event) => resolve(event.renderedBuffer);
+      const rendering = context.startRendering() as Promise<AudioBuffer> | undefined;
+      rendering?.then(resolve, reject);
+    });
+  });
+}
+
 /**
  * Recordings ready to play. Module level, so a cover that mounts again (a
  * host replaying the preview) neither fetches nor decodes again.
@@ -160,18 +232,15 @@ export function preloadCoverSound(sound: CoverSoundId | null | undefined): void 
     return;
   }
 
-  const url = RECORDINGS[sound];
+  const recording = RECORDINGS[sound];
   requestedRecordings.add(sound);
 
-  void fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`${url} answered ${response.status}`);
-      }
+  const loaded =
+    typeof recording === "string"
+      ? fetchDecoded(recording, Offline)
+      : mixParts(recording, Offline);
 
-      return response.arrayBuffer();
-    })
-    .then((bytes) => decode(new Offline(2, 1, 44100), bytes))
+  void loaded
     .then((buffer) => {
       readyRecordings.set(sound, buffer);
     })

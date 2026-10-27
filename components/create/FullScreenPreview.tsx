@@ -750,7 +750,7 @@ export default function FullScreenPreview({
         option={templateCover?.option}
         renderVisual={(state) =>
           TemplateCoverVisual !== undefined ? (
-            <TemplateCoverVisual {...state} />
+            <TemplateCoverVisual {...state} draft={draft} config={config} />
           ) : (
             <CoverVisual {...state} />
           )

@@ -46,3 +46,6 @@ next-env.d.ts
 /scenery/
 
 /sheesh mahal/
+
+# Dak Ghar source art; scripts/dak-ghar-art.py publishes it to public/templates/dak-ghar/.
+/dak ghar/

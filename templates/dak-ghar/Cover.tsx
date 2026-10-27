@@ -1,0 +1,293 @@
+"use client";
+
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
+import GoldFlower from "@/components/invite/covers/GoldFlower";
+import { initialOf, initialsOf } from "@/components/invite/covers/initials";
+import { calendarPageText } from "@/lib/cardFormat";
+import { cardLanguage } from "@/lib/cardLanguage";
+import { venueCity } from "@/lib/shareMessage";
+import { ART, DATE_SLIP } from "@/templates/dak-ghar/art";
+import { LIFT_MS, TAPPABLE_AT } from "@/templates/dak-ghar/coverTiming";
+import styles from "@/templates/dak-ghar/dak.module.css";
+import { DAK_FONTS, caps, leading } from "@/templates/dak-ghar/shared";
+import { useTabHidden } from "@/templates/dak-ghar/useTabHidden";
+import type { TemplateCoverProps } from "@/templates/types";
+import type { CardLanguage } from "@/types/card";
+
+/* Ten petals in all, the last four left off under 400px (see `.petal` in the stylesheet). */
+const PETALS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+/** "14.12.26", for the postmark's middle, from the ISO date; null without one. */
+function postmarkDate(isoDate: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
+  return match === null ? null : `${match[3]}.${match[2]}.${match[1].slice(2)}`;
+}
+
+/** The slip's three panels, read off the event in the card's language. */
+function slipWords(
+  draft: TemplateCoverProps["draft"],
+  language: CardLanguage,
+): { day: string; month: string; year: string; weekday: string; time: string | null; city: string } | null {
+  if (draft === undefined) {
+    return null;
+  }
+
+  const page = calendarPageText(draft.eventDate, draft.eventTime, language);
+
+  if (page === null) {
+    return null;
+  }
+
+  const city = venueCity(draft.venueAddress) ?? draft.venueName.trim();
+  return { ...page, city };
+}
+
+/**
+ * The postmark, drawn in code: two rings of ink with the city round the top
+ * and the date in the middle. It presses onto the slip (`.postmark`).
+ */
+function Postmark({ city, date, language }: { city: string; date: string | null; language: CardLanguage }): ReactElement {
+  const ring = language === "hi" ? city : city.toUpperCase();
+
+  return (
+    <svg viewBox="0 0 100 100" className={styles.postmarkArt} focusable="false" aria-hidden="true">
+      <defs>
+        <path id="dg-postmark-arc" d="M 18 52 A 32 32 0 0 1 82 52" />
+      </defs>
+      <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="3" />
+      <circle cx="50" cy="50" r="27" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <text
+        fill="currentColor"
+        style={{ ...DAK_FONTS.sans, fontWeight: 700, fontSize: language === "hi" ? 11 : 9.5, letterSpacing: language === "hi" ? 0 : 1.2 }}
+      >
+        <textPath href="#dg-postmark-arc" startOffset="50%" textAnchor="middle">
+          {ring.length > 16 ? `${ring.slice(0, 15)}…` : ring}
+        </textPath>
+      </text>
+      {date !== null ? (
+        <text
+          x="50"
+          y="55"
+          textAnchor="middle"
+          fill="currentColor"
+          style={{ ...DAK_FONTS.sans, fontWeight: 700, fontSize: 11 }}
+        >
+          {date}
+        </text>
+      ) : null}
+      <path d="M 30 70 H 70" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+/**
+ * Dak Ghar's opening: a red pillar post box in a haveli courtyard at golden
+ * hour, which a tap sets printing.
+ *
+ * THE DRAWING ONLY. The tap, the tick, the guard against a second tap, the
+ * wait for the pictures (each decoded before the tap is allowed), the loader,
+ * Skip, the sound and what a guest who asked for less motion gets are all
+ * CoverShell's: this is handed a phase and draws it.
+ *
+ * CLOSED: the courtyard, bougainvillea at the top swaying two degrees, a few
+ * petals falling (drawn in code), a pigeon gliding across every ten seconds,
+ * and the post box in the lower middle with the couple's initials on its
+ * brass plate (Devanagari on a Hindi card; a small flower when nobody is
+ * named). "Tap to open" under it.
+ *
+ * OPENING, 2.5 seconds (coverTiming.ts), transforms and opacity only, every
+ * part a CSS animation started on the tap:
+ *
+ *   0 to 1200     a date slip prints up out of the slot in three short steps
+ *                 with small pauses, inside a box clipped at the slot's lip
+ *   1250 to 1550  a round ink postmark presses onto it and settles
+ *   1550 to 1900  the slip holds: the date, the day and time, the city
+ *   1900 to 2500  the slip lifts toward the guest and fades, the courtyard
+ *                 fades, and the card, let go under it at 1900, shows through
+ *
+ * A tap on the slip while it holds lifts it at once (the shell is retimed to
+ * match). Idle loops stop while the tab is hidden. Under reduced motion the
+ * shell keeps this closed and still (no petals, no pigeon, no sway) and
+ * crossfades it in 300ms.
+ */
+export default function DakGharCover({
+  phase,
+  reducedMotion,
+  colors,
+  pair,
+  title,
+  prompt,
+  retime,
+  draft,
+  config,
+}: TemplateCoverProps): ReactElement {
+  const opening = phase !== "closed";
+  const language = cardLanguage(config?.language ?? (/[ऀ-ॿ]/.test(prompt) ? "hi" : "en"));
+  const words = slipWords(draft, language);
+  const hidden = useTabHidden();
+  const [tappable, setTappable] = useState(false);
+  const [lifted, setLifted] = useState(false);
+  const liftedRef = useRef(false);
+
+  const initials =
+    pair !== undefined ? `${initialOf(pair[0])} & ${initialOf(pair[1])}` : initialsOf(title);
+
+  /* Once the postmark has landed, the slip itself is a way on. */
+  useEffect(() => {
+    if (phase !== "opening") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setTappable(true), TAPPABLE_AT);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  const liftNow = (): void => {
+    if (liftedRef.current || phase !== "opening") {
+      return;
+    }
+
+    liftedRef.current = true;
+    setLifted(true);
+    /* The rest of the open from now: the card let go at once, under the lift. */
+    retime({ durationMs: LIFT_MS, revealAt: 0, sound: "keep" });
+  };
+
+  const stateClass = `${opening ? styles.opening : ""} ${lifted ? styles.liftedNow : ""} ${
+    reducedMotion ? styles.still : ""
+  } ${hidden ? styles.paused : ""}`;
+
+  const slipText: CSSProperties = { color: "#2A1E14" };
+
+  /* No date yet (a card still being written): the slip carries its title alone. */
+  const panels =
+    words === null ? (
+      <div className={`${styles.slipPanel} ${styles.slipPanelMiddle}`}>
+        <span className={`${styles.slipMid} text-balance`} style={{ ...DAK_FONTS.serif, ...slipText }}>
+          {title ?? ""}
+        </span>
+      </div>
+    ) : (
+      <>
+        <div className={styles.slipPanel}>
+          <span
+            className={styles.slipDay}
+            style={{ ...DAK_FONTS.serif, ...slipText }}
+          >
+            {words.day}
+          </span>
+          <span className="flex flex-col items-start" style={{ ...DAK_FONTS.sans, ...slipText }}>
+            <span className={styles.slipSmall} style={{ ...caps(language), fontWeight: 700, lineHeight: leading(language, 1.2) }}>
+              {words.month}
+            </span>
+            <span className={styles.slipSmall} style={{ fontWeight: 600, lineHeight: leading(language, 1.2) }}>
+              {words.year}
+            </span>
+          </span>
+        </div>
+        <div className={`${styles.slipPanel} flex-col`}>
+          <span className={styles.slipMid} style={{ ...DAK_FONTS.serif, ...slipText, lineHeight: leading(language, 1.1) }}>
+            {words.weekday}
+          </span>
+          {words.time !== null ? (
+            <span className={styles.slipSmall} style={{ ...DAK_FONTS.sans, ...slipText, fontWeight: 600, lineHeight: leading(language, 1.25) }}>
+              {words.time}
+            </span>
+          ) : null}
+        </div>
+        <div className={styles.slipPanel}>
+          <span
+            className={`${styles.slipCity} text-balance wrap-anywhere`}
+            style={{ ...DAK_FONTS.serif, ...slipText, lineHeight: leading(language, 1.1) }}
+          >
+            {words.city}
+          </span>
+        </div>
+      </>
+    );
+
+  return (
+    <div
+      aria-hidden="true"
+      lang={language}
+      className={`pointer-events-none absolute inset-0 overflow-hidden ${styles.cover} ${stateClass}`}
+    >
+      {/* Everything but the slip: it fades as the slip lifts. */}
+      <div className={styles.stage} style={{ backgroundColor: colors.ground }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ART.scene} alt="" draggable={false} className={styles.scene} />
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ART.pigeon} alt="" draggable={false} className={`${styles.pigeon} ${styles.loop}`} />
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ART.bougainvillea} alt="" draggable={false} className={`${styles.vines} ${styles.loop}`} />
+
+        {/* A soft cream light at the head, over the flowers, so "You are invited" reads there. */}
+        <div className={styles.headLight} />
+
+        {PETALS.map((index) => (
+          <span key={index} className={`${styles.petal} ${styles.loop}`} data-petal={index}>
+            <span className={`${styles.petalShape} ${styles.loop}`} />
+          </span>
+        ))}
+
+        <div className={styles.box}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ART.postBox} alt="" draggable={false} className="absolute inset-0 h-full w-full select-none" />
+          <div className={styles.plate}>
+            {initials.length > 0 ? (
+              <span className={styles.engraved} style={DAK_FONTS.serif}>
+                {initials}
+              </span>
+            ) : (
+              <GoldFlower hi="#d8b25a" body="#8a6420" lo="#5a3e10" className="w-[22%]" />
+            )}
+          </div>
+        </div>
+
+        <p className={styles.hint} style={{ ...DAK_FONTS.sans, ...caps(language) }}>
+          {prompt}
+        </p>
+      </div>
+
+      {/*
+        The slip, over the post box, in a box whose foot is the slot's lip
+        and which reaches far above and to each side: it shows only what has
+        come out of the slot, and leaves room for the lift.
+      */}
+      {/* Mounted from the start, held below the slot, so the tap only has to start it moving. */}
+      {!reducedMotion ? (
+        <div className={`${styles.box} ${styles.slipLayer}`}>
+          <div className={styles.slipClip}>
+            <div className={styles.slipSlot}>
+              <div className={styles.slipLift}>
+                <div
+                  className={`${styles.slip} ${DATE_SLIP === "strip" ? styles.slipStrip : ""}`}
+                  onClick={tappable ? liftNow : undefined}
+                  style={{ pointerEvents: tappable && !lifted ? "auto" : "none", cursor: tappable ? "pointer" : undefined }}
+                >
+                  {DATE_SLIP === "strip" ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={ART.dateSlip} alt="" draggable={false} className="absolute inset-0 h-full w-full" />
+                  ) : (
+                    [0, 1, 2].map((ticket) => (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img key={ticket} src={ART.telegramSmall} alt="" draggable={false} className={styles.ticket} />
+                    ))
+                  )}
+                  <div className={styles.slipPanels}>{panels}</div>
+                  {words !== null ? (
+                    <div className={styles.postmark}>
+                      <Postmark city={words.city} date={postmarkDate(draft?.eventDate ?? "")} language={language} />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
