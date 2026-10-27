@@ -44,7 +44,7 @@ export default function MetaPixel(): ReactElement | null {
     <Script
       id="meta-pixel"
       src={FBEVENTS_SRC}
-      strategy="lazyOnload"
+      strategy="afterInteractive"
       onLoad={metaPixelSettled}
       onError={metaPixelSettled}
     />

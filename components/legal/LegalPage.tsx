@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
+import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import LegalFooter from "@/components/legal/LegalFooter";
 
 /**
@@ -84,6 +85,7 @@ export default function LegalPage({
       </main>
 
       <LegalFooter />
+      <MetaPixelNoscript />
     </div>
   );
 }

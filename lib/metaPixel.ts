@@ -9,8 +9,9 @@
  * is the one place that decides it.
  *
  * OFF UNLESS CONFIGURED. NEXT_PUBLIC_META_PIXEL_ID is inlined at build time;
- * empty, nothing is loaded and every call here does nothing, so a local or
- * preview build sends Meta nothing unless it is given the id.
+ * next.config.ts gives a Vercel production build Lifafa's own id when it is
+ * not set. Empty, nothing is loaded and every call here does nothing, so a
+ * local or preview build sends Meta nothing unless it is given the id.
  *
  * NOTHING PERSONAL IS SENT. No email, phone or name is ever passed (advanced
  * matching is never given any), and autoConfig is switched off before init so
@@ -26,8 +27,9 @@
  * the query: /dashboard/invitation, /create, /login. The referrer is kept to
  * an origin by the site's referrer policy (app/layout.tsx).
  *
- * NOT SENT DURING LOADING. fbevents.js loads with next/script's lazyOnload,
- * after the page's own load and an idle moment. Events asked for before that
+ * SENT ONCE IT HAS LOADED. fbevents.js loads with next/script's
+ * afterInteractive, once the page has hydrated, so a visitor who leaves an
+ * ad's landing page quickly is still counted. Events asked for before that
  * wait here, each with the address it was asked for on, and go once it has.
  */
 
@@ -46,6 +48,11 @@ export const NEW_ACCOUNT_COOKIE = "lifafa_new_account";
 /** Whether this build was given a pixel id at all. */
 export function metaPixelEnabled(): boolean {
   return PIXEL_ID.length > 0;
+}
+
+/** This build's pixel id, empty when it has none. */
+export function metaPixelId(): string {
+  return PIXEL_ID;
 }
 
 /**

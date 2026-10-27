@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import CallToAction from "@/components/landing/CallToAction";
 import DemoSection from "@/components/landing/DemoSection";
 import Faq from "@/components/landing/Faq";
@@ -51,6 +52,7 @@ export default function Page() {
         <CallToAction />
       </main>
       <HelpFooter />
+      <MetaPixelNoscript />
     </div>
   );
 }

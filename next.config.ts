@@ -58,6 +58,28 @@ function vercelHost(): string {
   }
 }
 
+/**
+ * Lifafa's Meta Pixel. Not a secret: every page that loads the pixel shows it.
+ */
+const PRODUCTION_META_PIXEL_ID = "1827274688456437";
+
+/**
+ * The pixel id this build is given, for lib/metaPixel.ts. NEXT_PUBLIC_META_PIXEL_ID
+ * when it is set; otherwise Lifafa's own on a Vercel production build and
+ * nothing anywhere else, so a local or preview build sends Meta nothing
+ * unless it is given an id. Passed on through `env` below, which Next inlines
+ * over the value it would have read itself.
+ */
+function metaPixelId(): string {
+  const configured = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").trim();
+
+  if (configured.length > 0) {
+    return configured;
+  }
+
+  return process.env.VERCEL_ENV === "production" ? PRODUCTION_META_PIXEL_ID : "";
+}
+
 /** Whether a NEXT_PUBLIC_SITE_URL value names an http(s) address. */
 function isSiteAddress(value: string): boolean {
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(value)
@@ -134,11 +156,16 @@ export default function nextConfig(phase: string): NextConfig {
             : "https://getlifafa.co.in (the fallback in lib/siteUrl.ts — nothing configured)"
       }`,
     );
+
+    console.log(
+      `[lifafa] Meta Pixel: ${metaPixelId().length > 0 ? metaPixelId() : "off (no id for this build)"}`,
+    );
   }
 
   return {
     env: {
       LIFAFA_VERCEL_HOST: vercelHost(),
+      NEXT_PUBLIC_META_PIXEL_ID: metaPixelId(),
     },
     images: {
       /*

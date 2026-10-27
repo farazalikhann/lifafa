@@ -103,6 +103,7 @@ if (base !== undefined) {
     assert.ok(html.includes("</html>"), `${path} did not return a page (${response.status})`);
     assert.ok(!html.includes("connect.facebook.net"), `${path} mentions connect.facebook.net`);
     assert.ok(!html.includes("fbevents"), `${path} mentions fbevents`);
+    assert.ok(!html.includes("facebook.com/tr"), `${path} has the pixel's noscript image`);
     console.log(`${path}: ${response.status}, no pixel in the HTML.`);
   }
 }
