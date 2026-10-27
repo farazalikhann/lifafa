@@ -66,7 +66,7 @@ export default function PremiumCarousel({
   label: string;
 }): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
-  const rowRef = useRef<HTMLUListElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const activeRef = useRef(0);
   const [stopped, setStopped] = useState(false);
@@ -257,7 +257,7 @@ export default function PremiumCarousel({
   /* Mouse dragging. Touch is left to the browser's own swipe. */
   const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
 
-  const onPointerDown = (event: ReactPointerEvent<HTMLUListElement>): void => {
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
     hold.current.press = true;
     schedule(RESUME_MS);
 
@@ -269,7 +269,7 @@ export default function PremiumCarousel({
     drag.current = { x: event.clientX, left: row.scrollLeft, moved: false };
   };
 
-  const onPointerMove = (event: ReactPointerEvent<HTMLUListElement>): void => {
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const state = drag.current;
 
     if (state === null) {
@@ -290,7 +290,7 @@ export default function PremiumCarousel({
     }
   };
 
-  const endPress = (event: ReactPointerEvent<HTMLUListElement>): void => {
+  const endPress = (event: ReactPointerEvent<HTMLDivElement>): void => {
     hold.current.press = false;
     const state = drag.current;
     drag.current = null;
@@ -375,7 +375,7 @@ export default function PremiumCarousel({
         }
       }}
     >
-      <ul
+      <div
         ref={rowRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -383,13 +383,13 @@ export default function PremiumCarousel({
         onPointerCancel={endPress}
         onWheel={touched}
         data-fits-lg={count <= FITS_LG ? "" : undefined}
-        className="lifafa-no-scrollbar lifafa-carousel-row flex snap-x snap-mandatory list-none gap-4 overflow-x-auto overscroll-x-contain pt-4 pb-8 select-none sm:gap-8 lg:gap-12"
+        className="lifafa-no-scrollbar lifafa-carousel-row flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pt-4 pb-8 select-none sm:gap-8 lg:gap-12"
       >
         {slides.map((slide, index) => {
           const isActive = index === active;
 
           return (
-            <li
+            <div
               key={slide.id}
               role="group"
               aria-roledescription="slide"
@@ -413,7 +413,6 @@ export default function PremiumCarousel({
                       slide={slide}
                       play={isActive && onScreen && !reduced}
                       mount={nearView}
-                      priority={index === 0}
                     />
                     <span
                       aria-hidden="true"
@@ -433,15 +432,15 @@ export default function PremiumCarousel({
                   draggable={false}
                   tabIndex={isActive ? 0 : -1}
                   className="mt-1 inline-flex min-h-11 items-center rounded px-1 text-[0.9375rem] font-semibold text-[var(--paper-emerald)] underline decoration-[var(--paper-gold)] underline-offset-[5px] hover:decoration-[var(--paper-emerald)] focus-visible:outline-2 focus-visible:outline-[var(--paper-emerald)]"
-                  aria-label={`Open the ${slide.name} live demo`}
                 >
                   Open live demo
+                  <span className="sr-only"> of {slide.name}</span>
                 </Link>
               </div>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
 
       <div className="flex items-center justify-center gap-2">
         <button
@@ -532,12 +531,10 @@ function PreviewMedia({
   slide,
   play,
   mount,
-  priority,
 }: {
   slide: CarouselSlide;
   play: boolean;
   mount: boolean;
-  priority: boolean;
 }): ReactElement {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
@@ -570,7 +567,7 @@ function PreviewMedia({
         src={slide.poster}
         alt={`The ${slide.name} invitation on a phone`}
         fill
-        priority={priority}
+        loading="lazy"
         sizes="(min-width: 1024px) 18rem, (min-width: 640px) 16rem, 66vw"
         quality={72}
         className="object-cover object-top"

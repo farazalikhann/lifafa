@@ -112,9 +112,11 @@ export default function Pricing(): ReactElement {
               <Link
                 href={NEW_CARD_HREF}
                 className={plan.featured ? PRIMARY_BUTTON : SECONDARY_BUTTON}
-                aria-label={`Choose a ${plan.name} design`}
               >
-                <LinkPending>Choose a design</LinkPending>
+                <LinkPending>
+                  Choose a design
+                  <span className="sr-only"> from the {plan.name} Collection</span>
+                </LinkPending>
               </Link>
             </li>
           ))}
