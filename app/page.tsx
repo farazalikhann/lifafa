@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import CallToAction from "@/components/landing/CallToAction";
+import Comparison from "@/components/landing/Comparison";
 import Faq from "@/components/landing/Faq";
-import GuestManagement from "@/components/landing/GuestManagement";
+import Features from "@/components/landing/Features";
 import HelpFooter from "@/components/landing/HelpFooter";
 import Hero from "@/components/landing/Hero";
+import HowItWorks from "@/components/landing/HowItWorks";
 import LandingHeader from "@/components/landing/LandingHeader";
 import PremiumShowcase, { demoPath } from "@/components/landing/PremiumShowcase";
 import Pricing from "@/components/landing/Pricing";
 import SectionRule from "@/components/landing/SectionRule";
 import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
 import { paperSans } from "@/components/landing/fonts";
-import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
+import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { listedPremium } from "@/templates/premium";
 
 /*
@@ -21,25 +23,12 @@ import { listedPremium } from "@/templates/premium";
   resolves it. The title is absolute: this page is the brand's own.
 */
 export const metadata: Metadata = {
-  title: { absolute: "Lifafa | Wedding invitations that also tell you who is coming" },
-  description:
-    `Digital wedding invitations that also tell you who is coming. Choose a design, add your details, share one link on WhatsApp and see every reply and your headcount in one place. From ${formatPriceRs(LOWEST_PRICE_PAISE)} per event.`,
+  title: { absolute: "Lifafa | Wedding invitations that tell you who is coming" },
+  description: `Digital wedding invitations that tell you who is coming. Choose a design, add your details, share one link on WhatsApp and see every reply and your headcount in one place. From ${formatPrice(LOWEST_PRICE_PAISE)} per event.`,
   alternates: { canonical: "/" },
 };
 
-/**
- * The landing page, for a host arriving on a phone from an ad. The first
- * screen is the name, what it is, how a card is made in four steps and the
- * way in; then the Premium designs as a guest sees them, what the invitation
- * does after it is sent, the price, four questions and a last way in.
- *
- * Built to be light on a slow connection. Every section is a server component
- * except the step diagram, the scroll cue and the demo row's dots, so the page
- * is in the HTML and needs little script; nothing plays a video; the first
- * screen has no picture at all, and every picture below it is a WebP resized
- * for where it is shown and fetched only once the page has loaded.
- */
-/** One section with its pair of side patterns. */
+/** One section with its pair of side patterns, which scroll with it. */
 function Band({
   pattern,
   children,
@@ -55,6 +44,17 @@ function Band({
   );
 }
 
+/**
+ * The landing page, light and editorial (DESIGN.md at the repo root), for a
+ * host arriving on a phone from an ad: what Lifafa is and the two ways on,
+ * the Premium designs opening on a phone, how it works, how it compares, what
+ * it does, the price, six questions and a last way in.
+ *
+ * Built to be light on a slow connection. Every section is a server component
+ * except the carousel, so the page is in the HTML and the first screen is
+ * text alone: it paints without waiting for a picture or a video. Only the
+ * centred slide's video is ever fetched, and only once the carousel is near.
+ */
 export default function Page() {
   /* The hero's live demo: the first premium design the gallery lists. */
   const first = listedPremium()[0];
@@ -64,8 +64,8 @@ export default function Page() {
     /*
       The header is a sibling of <main>: it is site navigation, not part of
       the page's content. The wrapper carries the light theme and the landing
-      page's own Manrope; see `.lifafa-paper` in globals.css and DESIGN.md.
-      overflow-x clip keeps the side patterns from ever widening the page.
+      page's own Manrope; see `.lifafa-paper` in globals.css. overflow-x clip
+      keeps the side patterns from ever widening the page.
     */
     <div className={`lifafa-paper ${paperSans.variable} relative overflow-x-clip`}>
       {/* The page's ivory from the first byte, so an overscroll never shows the product's dark ink. */}
@@ -77,10 +77,26 @@ export default function Page() {
           <PremiumShowcase />
         </Band>
         <SectionRule />
-        <Band pattern="asanoha"><GuestManagement /></Band>
-        <Band pattern="asanoha"><Pricing /></Band>
-        <Band pattern="seigaiha"><Faq /></Band>
-        <Band pattern="asanoha"><CallToAction /></Band>
+        <Band pattern="asanoha">
+          <HowItWorks />
+        </Band>
+        <SectionRule />
+        <Band pattern="seigaiha">
+          <Comparison />
+        </Band>
+        <SectionRule />
+        <Band pattern="asanoha">
+          <Features />
+        </Band>
+        <SectionRule />
+        <Band pattern="seigaiha">
+          <Pricing />
+        </Band>
+        <SectionRule />
+        <Band pattern="asanoha">
+          <Faq />
+        </Band>
+        <CallToAction />
       </main>
       <HelpFooter />
       <MetaPixelNoscript />

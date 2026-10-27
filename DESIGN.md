@@ -113,9 +113,9 @@ Rules
 
 **Template carousel**: one row of phone frames with CSS scroll snap, previous and next buttons and a dot per slide. Auto-advances every 5 seconds; see section 7.
 
-**Comparison table**: a real `<table>` on `paper`, three option columns after a row label column. The Lifafa column has a blush tint, an emerald header with ivory text and 600 weight cells. On a phone the table sits in its own horizontal scroll box with a sticky first column, so the page itself never scrolls sideways.
+**Comparison table**: a real `<table>` on `paper`, three option columns after a row label column. The Lifafa column has a blush tint, an emerald header with ivory text and 600 weight cells. Below 768px the table is replaced by one small card per row, with Lifafa's answer first on a blush band and the other two under it, so the page never scrolls sideways and Lifafa is never out of view.
 
-**Feature tile**: a Fluent 3D icon in a blush well, an h3 and one line of body copy.
+**Feature tile**: a Fluent 3D icon (MIT, see THIRD_PARTY_NOTICES.md) in a blush well, an h3 and one line of body copy.
 
 **Pricing card**: `paper` card with collection name, the price in Fraunces 700, a short list and one button. The Premium card gets a 1.5px emerald border. No "most popular" badges.
 
@@ -127,7 +127,7 @@ Rules
 
 - Content column max 1120px, centred, with 20px gutters on phones and 32px from 640px.
 - Sections are separated by 72px on phones and 112px on desktop, with a gold hairline between most of them.
-- Hero: centred copy on phones; on desktop the copy sits left and the carousel is directly under the hero, full width.
+- Hero: centred copy at every width, the carousel directly under it, full width.
 - Grids collapse by dropping columns, never by shrinking cards: features go 1, 2 then 3 across, how it works 1 then 3, pricing 1 then 2.
 - The side pattern strips are absolutely positioned inside the page wrapper, so they scroll with the page. They are never fixed or sticky.
 
@@ -173,9 +173,9 @@ Motion follows the lifafa-motion rules: low-end Android first.
 
 | Width | Changes |
 |---|---|
-| < 640px | One column. Pattern strips hidden. Hero centred. Carousel shows one phone with the next peeking. Comparison table in its own scroll box with a sticky first column. |
-| 640 to 1023px | Pattern strips 28px wide. Features 2 across. Pricing 2 across. |
-| >= 1024px | Pattern strips 64px wide. How it works 3 across, features 3 across. Carousel shows three phones, the centre one playing. |
+| < 640px | One column. Pattern strips hidden. Hero centred. Carousel shows one phone with the next peeking. Comparison shown as stacked cards. |
+| 640 to 1023px | Pattern strips 28px wide. Features 2 across. Pricing 2 across. Comparison is a table from 768px. |
+| >= 1024px | Pattern strips 64px wide. How it works 3 across, features 3 across. With three phones or fewer the carousel shows them all and moves a spotlight across them instead of scrolling; the lit one plays. |
 | >= 1440px | Same as desktop, more side margin. Content never wider than 1120px. |
 
 - Touch targets are at least 44 by 44px, buttons 48px tall.

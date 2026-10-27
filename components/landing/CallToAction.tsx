@@ -1,37 +1,43 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import LinkPending from "@/components/landing/LinkPending";
-import { PRIMARY_BUTTON, SECTION_HEADING } from "@/components/landing/styles";
-import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
+import { ON_EMERALD_BUTTON } from "@/components/landing/styles";
+import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
-/** The last word before the footer: one button, the same as the first screen's. */
+/**
+ * The last word before the footer: a full-width emerald band, ivory type and
+ * the page's one action again, inverted so it still reads as the button.
+ */
 export default function CallToAction(): ReactElement {
   return (
     <section
       aria-labelledby="closing-heading"
-      className="relative isolate overflow-x-clip px-5 py-20 text-center sm:px-8 sm:py-28"
+      className="bg-[var(--paper-emerald)] px-5 py-20 text-center sm:px-14 lg:py-28"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 left-1/2 -z-10 aspect-square w-[min(140vw,48rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(232,163,61,0.13),rgba(196,86,107,0.05)_60%,transparent)]"
-      />
-      <h2
-        id="closing-heading"
-        className={`mx-auto max-w-[18ch] ${SECTION_HEADING}`}
-      >
-        Your invitation can be ready tonight
-      </h2>
-      <p className="mx-auto mt-4 max-w-[36ch] text-base leading-relaxed text-balance text-[var(--lifafa-muted)] sm:text-lg">
-        Choose a design, add your details and start collecting replies in
-        about 10 minutes.
-      </p>
-      <Link href={NEW_CARD_HREF} className={`mt-8 ${PRIMARY_BUTTON}`}>
-        <LinkPending>Create your card</LinkPending>
-      </Link>
-      <p className="mt-5 text-sm text-[var(--lifafa-muted)]">
-        From {formatPriceRs(LOWEST_PRICE_PAISE)} per event. One-time payment.
-      </p>
+      <div className="mx-auto flex max-w-2xl flex-col items-center">
+        <span aria-hidden="true" className="flex items-center gap-3">
+          <span className="h-px w-10 bg-[var(--paper-gold)]" />
+          <span className="h-2 w-2 rotate-45 border border-[var(--paper-gold)]" />
+          <span className="h-px w-10 bg-[var(--paper-gold)]" />
+        </span>
+        <h2
+          id="closing-heading"
+          className="mt-6 font-[family-name:var(--paper-display)] text-[clamp(2rem,7vw,3.25rem)] leading-[1.1] font-semibold tracking-[-0.02em] text-balance text-[var(--paper-washi)]"
+        >
+          Your invitation can be ready tonight
+        </h2>
+        <p className="mt-4 max-w-[32rem] text-base leading-[1.6] text-pretty text-[var(--paper-gold-soft)] sm:text-lg">
+          Choose a design, add your details and start collecting replies in
+          about 10 minutes.
+        </p>
+        <Link href={NEW_CARD_HREF} className={`mt-9 ${ON_EMERALD_BUTTON}`}>
+          <LinkPending>Choose a design</LinkPending>
+        </Link>
+        <p className="mt-5 text-sm text-[var(--paper-gold-soft)]">
+          From {formatPrice(LOWEST_PRICE_PAISE)} per event. One time payment.
+        </p>
+      </div>
     </section>
   );
 }
