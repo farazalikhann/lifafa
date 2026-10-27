@@ -118,30 +118,116 @@
 }
 
 /*
-  The landing page's own ink, warmer than the product's.
+  The landing page's light theme: washi ivory, emerald, gold hairlines. See
+  DESIGN.md at the repo root for the roles of each colour.
 
-  The landing page is selling a celebration and read as a dark, serious page, so
-  its three surfaces are pulled from a neutral near-black toward brown. Still
-  deep, still ink; just not cold. Redefined on the landing page's wrapper rather
-  than on :root, so the editor, the dashboard and the sign-in pages — which read
-  the same tokens — keep exactly the surfaces they have.
+  Scoped to the landing page's wrapper rather than :root, so the editor, the
+  dashboard and the sign-in pages keep exactly the dark surfaces they have.
 
-  Painted here as well as redefined, because the body underneath is still the
-  product's ink and a wrapper that only changed the variable would leave it
-  showing wherever a section has no background of its own.
+  The product's own tokens are remapped here too, so the shared policy footer
+  (components/legal/LegalFooter.tsx), which reads them, turns light on this
+  page and stays dark everywhere else.
+
+  Gold (#B8893B) is 2.75:1 on washi: hairlines and ornaments only. Text in a
+  gold tone is --paper-gold-ink, 5.5:1.
 */
-.lifafa-landing {
-  --lifafa-ink: #1b1411;
-  --lifafa-ink-raised: #251c17;
-  --lifafa-hairline: #3a2d26;
+.lifafa-paper {
+  --paper-washi: #f6efe0;
+  --paper-card: #faf6ee;
+  --paper-emerald: #0e3b2b;
+  --paper-emerald-press: #0a2c20;
+  --paper-gold: #b8893b;
+  --paper-gold-ink: #7a5a1e;
+  --paper-gold-soft: #e7d3a6;
+  --paper-sindoor: #c8372d;
+  --paper-ink: #1e1b18;
+  --paper-muted: #5c534a;
+  --paper-blush: #e8c9c0;
+  --paper-hairline: rgb(184 137 59 / 0.35);
 
   /*
-    Between cream and muted, for the hero's second line: muted read as faint
-    against the hero, and cream would compete with the line above it.
+    Fraunces is the site's display face, preloaded in app/layout.tsx. Manrope
+    here is the landing page's own instance (components/landing/fonts.ts).
+    Noto Sans Devanagari is the last family in both, before the generic one,
+    so Hindi and the rupee sign always have a face to land on.
   */
-  --lifafa-cream-soft: #d9ccbd;
+  --paper-display: var(--font-display), Georgia, "Times New Roman",
+    var(--font-devanagari), "Noto Sans Devanagari", serif;
+  --paper-sans: var(--font-paper-sans), "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, var(--font-devanagari), "Noto Sans Devanagari", sans-serif;
 
-  background-color: var(--lifafa-ink);
+  /* The product's tokens, light for this page only. */
+  --lifafa-ink: var(--paper-washi);
+  --lifafa-ink-raised: var(--paper-card);
+  --lifafa-hairline: var(--paper-hairline);
+  --lifafa-cream: var(--paper-ink);
+  --lifafa-cream-soft: var(--paper-ink);
+  --lifafa-muted: var(--paper-muted);
+  --lifafa-marigold: var(--paper-emerald);
+  --lifafa-rose: var(--paper-sindoor);
+
+  background-color: var(--paper-washi);
+  color: var(--paper-ink);
+  font-family: var(--paper-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/*
+  The Japanese side patterns: seigaiha and asanoha tiles running down the left
+  and right edges of each section, on screens 640px and wider.
+
+  Absolute inside their section, so they scroll with the page: never fixed or
+  sticky. Faint (the opacity is the tile's whole colour), behind everything,
+  aria-hidden and pointer-events none in the markup. Each strip fades out at
+  its top and bottom with a static mask, so the change from one pattern to the
+  next at a section boundary is soft.
+*/
+.lifafa-strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  display: none;
+  width: 28px;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-size: 28px auto;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+}
+
+.lifafa-strip[data-side="left"] {
+  left: 0;
+}
+
+.lifafa-strip[data-side="right"] {
+  right: 0;
+  /* Mirrored, so the two edges face each other. */
+  transform: scaleX(-1);
+}
+
+.lifafa-strip[data-pattern="seigaiha"] {
+  background-image: url("/landing/patterns/seigaiha.svg");
+  opacity: 0.15;
+}
+
+.lifafa-strip[data-pattern="asanoha"] {
+  background-image: url("/landing/patterns/asanoha.svg");
+  opacity: 0.1;
+}
+
+@media (min-width: 640px) {
+  .lifafa-strip {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lifafa-strip {
+    width: 64px;
+    background-size: 64px auto;
+  }
 }
 
 /*

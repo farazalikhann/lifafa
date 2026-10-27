@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactElement, ReactNode } from "react";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import CallToAction from "@/components/landing/CallToAction";
 import DemoSection from "@/components/landing/DemoSection";
@@ -8,6 +9,8 @@ import HelpFooter from "@/components/landing/HelpFooter";
 import Hero from "@/components/landing/Hero";
 import LandingHeader from "@/components/landing/LandingHeader";
 import Pricing from "@/components/landing/Pricing";
+import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
+import { paperSans } from "@/components/landing/fonts";
 import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
 
 /*
@@ -34,22 +37,41 @@ export const metadata: Metadata = {
  * screen has no picture at all, and every picture below it is a WebP resized
  * for where it is shown and fetched only once the page has loaded.
  */
+/** One section with its pair of side patterns. */
+function Band({
+  pattern,
+  children,
+}: {
+  pattern: StripPattern;
+  children: ReactNode;
+}): ReactElement {
+  return (
+    <div className="relative [&>section]:relative">
+      <SideStrips pattern={pattern} />
+      {children}
+    </div>
+  );
+}
+
 export default function Page() {
   return (
     /*
       The header is a sibling of <main>: it is site navigation, not part of
-      the page's content. The wrapper carries the landing page's warmer ink;
-      see `.lifafa-landing` in globals.css.
+      the page's content. The wrapper carries the light theme and the landing
+      page's own Manrope; see `.lifafa-paper` in globals.css and DESIGN.md.
+      overflow-x clip keeps the side patterns from ever widening the page.
     */
-    <div className="lifafa-landing">
+    <div className={`lifafa-paper ${paperSans.variable} relative overflow-x-clip`}>
+      {/* The page's ivory from the first byte, so an overscroll never shows the product's dark ink. */}
+      <style>{"html,body{background-color:#f6efe0}"}</style>
       <LandingHeader />
       <main>
-        <Hero />
-        <DemoSection />
-        <GuestManagement />
-        <Pricing />
-        <Faq />
-        <CallToAction />
+        <Band pattern="seigaiha"><Hero /></Band>
+        <Band pattern="asanoha"><DemoSection /></Band>
+        <Band pattern="seigaiha"><GuestManagement /></Band>
+        <Band pattern="asanoha"><Pricing /></Band>
+        <Band pattern="seigaiha"><Faq /></Band>
+        <Band pattern="asanoha"><CallToAction /></Band>
       </main>
       <HelpFooter />
       <MetaPixelNoscript />
