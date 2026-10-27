@@ -2,7 +2,7 @@
 version: 1
 name: Lifafa
 description: A light, editorial landing page for Lifafa, digital wedding invitations with RSVP and a live headcount. Washi ivory paper, a deep emerald for the voice of the brand, gold only as a hairline, and one sindoor accent at most per section. Fraunces for headings, Manrope for everything else, Noto Sans Devanagari behind both so Hindi and the rupee sign always render.
-scope: The home route (app/page.tsx) only. Every other page keeps its current dark theme until it is moved over on purpose.
+scope: Every host page (landing, create and editor, dashboard, sign in, check-in, policy pages, 404 and error). The guest's invitation (/i), the samples (/demo), the cards themselves and /admin keep their own designs.
 
 colors:
   washi: "#F6EFE0"        # page background
@@ -85,6 +85,8 @@ Rules
 - Sindoor appears at most once in any section. If a second element wants it, it does not get it.
 - Emerald fills are reserved for the primary button, the closing call to action band and the Lifafa column. A section is never painted emerald just for variety.
 - Tokens live as CSS custom properties on `.lifafa-paper` in `app/globals.css` (`--paper-washi`, `--paper-emerald`, and so on). Components read them through Tailwind arbitrary values. Never inline a hex in a component.
+- Host pages wear the theme through `components/theme/PaperTheme.tsx` (in the create, dashboard, login and check-in layouts, LegalPage, the 404 and the error screen). Inside it the product's `--lifafa-*` tokens are remapped to these colours, so older components turn light without palettes of their own. A card drawn inside a host page sits in `.lifafa-card-scope`, which restores the dark values so it looks as a guest sees it; the check-in camera box uses `.lifafa-camera-scope` for the same reason.
+- Text-safe light values: errors use the darker sindoor #A8312A (5.1:1 even on its own tint), RSVP states come from `lib/rsvpColors.ts`, and form fields get a 3.1:1 edge (#9A8466). Never set muted text at reduced opacity on ivory.
 
 ## 3. Typography
 
@@ -186,7 +188,7 @@ Motion follows the lifafa-motion rules: low-end Android first.
 
 When changing the landing page:
 
-1. Read this file and the lifafa-motion skill first.
+1. Read this file and the lifafa-motion skill first. A new host page goes inside PaperTheme; never wrap /i, /demo or /admin in it.
 2. Use the tokens on `.lifafa-paper` and the shared class strings in `components/landing/styles.ts`. Never inline a hex.
 3. Prices come from `lib/pricing.ts` through `formatPrice`. Templates come from `listedPremium()` in `templates/premium.ts`, which leaves out anything not yet listed.
 4. Keep sections as server components. Only the carousel and anything that truly needs state is a client component.
