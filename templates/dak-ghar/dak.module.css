@@ -496,6 +496,14 @@
   overflow-x: clip;
 }
 
+/*
+  The reading column: what the pages size themselves against (cqw), so a card
+  in the editor's narrow preview is laid out for that width, not the window's.
+*/
+.column {
+  container-type: inline-size;
+}
+
 .ground {
   pointer-events: none;
   background-color: var(--dg-cream);
@@ -580,7 +588,7 @@
 
 .letter {
   position: relative;
-  width: min(88vw, 25rem);
+  width: min(88cqw, 25rem);
   aspect-ratio: 760 / 1127;
   container-type: inline-size;
   opacity: 0;
@@ -754,7 +762,7 @@
 
 .stampArt {
   flex: none;
-  width: clamp(112px, 34vw, 150px);
+  width: clamp(112px, 34cqw, 150px);
   height: auto;
   transform: rotate(-2.5deg);
   user-select: none;
@@ -814,7 +822,7 @@
 
 .clock {
   position: relative;
-  width: min(68vw, 16.5rem);
+  width: min(68cqw, 16.5rem);
 }
 
 /* A hand: a box over the whole clock turned about its middle, which is the pin (50%, 50%). */
@@ -952,4 +960,123 @@
   height: auto;
   transform: scaleX(-1);
   user-select: none;
+}
+
+/* ───────────────────────── The printed copy ───────────────────────── */
+
+/*
+  Cream paper, kind to ink: sepia words, the post box's red for small
+  capitals and rules, and no pictures at all (PrintCopy.tsx). The column is
+  what the print fit measures and zooms to its sheet.
+*/
+.printCopy {
+  min-height: 100%;
+  background: #fbf4e6;
+  color: var(--dg-ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.printColumn {
+  display: flex;
+  width: 100%;
+  max-width: 30rem;
+  flex-direction: column;
+  align-items: center;
+  margin-inline: auto;
+  padding: 2.5rem 1.75rem;
+  text-align: center;
+}
+
+.printPart {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* A short red rule with a small round postmark ring at its middle. */
+.printRule {
+  position: relative;
+  display: block;
+  width: 40%;
+  height: 1px;
+  margin-block: 1.6rem;
+  background: rgb(158 42 36 / 0.55);
+}
+
+.printRule::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 1px solid rgb(158 42 36 / 0.8);
+  border-radius: 9999px;
+  background: #fbf4e6;
+}
+
+.printSection {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.printHeading {
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--dg-red);
+}
+
+.printLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--dg-red);
+}
+
+.printNames,
+.printPersonName {
+  color: var(--dg-ink);
+  overflow-wrap: anywhere;
+}
+
+.printAnd {
+  color: var(--dg-red);
+}
+
+.printDay {
+  color: var(--dg-ink);
+}
+
+.printPerson {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.printPerson + .printPerson {
+  margin-top: 0.9rem;
+}
+
+.printText {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.printSmall {
+  max-width: 24rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--dg-ink-muted);
+}
+
+.printPre {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }

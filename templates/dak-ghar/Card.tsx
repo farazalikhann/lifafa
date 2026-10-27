@@ -4,6 +4,7 @@ import type { CSSProperties, ReactElement } from "react";
 import MusicToggle from "@/components/card/MusicToggle";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import WeatherPanel from "@/components/card/WeatherPanel";
+import { useCardStill } from "@/hooks/useCardStill";
 import { cardLanguage } from "@/lib/cardLanguage";
 import { hasCountdown, hasCustomContent, hasFamily, hasMessage } from "@/lib/cardSections";
 import { effectiveTheme } from "@/lib/cardTheme";
@@ -13,6 +14,7 @@ import DakGharClosing from "@/templates/dak-ghar/Closing";
 import DakGharNames from "@/templates/dak-ghar/Names";
 import { DakGharContacts, DakGharCouple, DakGharCustom, DakGharSaveDate } from "@/templates/dak-ghar/Paper";
 import DakGharPostcard from "@/templates/dak-ghar/Postcard";
+import DakGharPrintCopy from "@/templates/dak-ghar/PrintCopy";
 import DakGharStamps from "@/templates/dak-ghar/Stamps";
 import DakGharTelegram from "@/templates/dak-ghar/Telegram";
 import styles from "@/templates/dak-ghar/dak.module.css";
@@ -43,7 +45,8 @@ const FRAME_HEIGHT = 620;
  *   (a host's own section)                   on paper
  *
  * The reply form follows on the guest's page, on the reply card (RsvpFrame),
- * then the closing words.
+ * then the closing words. The printed copy is the words alone on cream
+ * paper (PrintCopy.tsx).
  */
 export default function DakGharCard(props: TemplateCardProps): ReactElement {
   const {
@@ -59,6 +62,7 @@ export default function DakGharCard(props: TemplateCardProps): ReactElement {
     frameHeight = FRAME_HEIGHT,
   } = props;
 
+  const still = useCardStill();
   const language = cardLanguage(config.language);
   const cardTheme = effectiveTheme(theme, config.style);
   const { occasionId } = config;
@@ -71,6 +75,11 @@ export default function DakGharCard(props: TemplateCardProps): ReactElement {
     paper is pinned to the top of that box instead.
   */
   const pagewide = ground === "page";
+
+  /* The printed copy: the words on paper, one sheet's sections at a time (PrintCopy.tsx). */
+  if (still) {
+    return <DakGharPrintCopy draft={draft} config={config} language={language} />;
+  }
 
   const section = (block: CardBlock): ReactElement | null => {
     if (block.kind === "custom") {
@@ -126,7 +135,7 @@ export default function DakGharCard(props: TemplateCardProps): ReactElement {
         ) : null}
 
         {/* The reading column, under the name the printed copy looks for. */}
-        <div className="lifafa-card-content relative z-10">
+        <div className={`lifafa-card-content relative z-10 ${styles.column}`}>
           {config.blocks.map((block) => {
             const drawn = section(block);
             return drawn === null ? null : (
