@@ -2,15 +2,18 @@ import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import LegalFooter from "@/components/legal/LegalFooter";
+import PaperTheme from "@/components/theme/PaperTheme";
 
 /**
  * One policy page: the wordmark home, the title and its date, a short summary
  * in plain words, then the full text, and the shared footer.
  *
- * The same bloom and type as the sign-in and not-found pages, so reading a
- * policy does not feel like leaving Lifafa. The text column is held to about
- * 68 characters, a comfortable line on a desktop, and fills a 360px phone
- * with the page's 20px gutters.
+ * In the light theme (DESIGN.md), with the same bloom as the sign-in and
+ * not-found pages, so reading a policy does not feel like leaving Lifafa.
+ * Set for reading: a column of about 68 characters (34em, as Manrope runs
+ * about half an em a letter in prose), body text at 16px on a
+ * phone and 17px from 640px, a line height of 1.7, and solid ink rather than
+ * a tint. On a 360px phone the column is the screen less 20px gutters.
  */
 export default function LegalPage({
   title,
@@ -26,7 +29,7 @@ export default function LegalPage({
   children: ReactNode;
 }): ReactElement {
   return (
-    <div className="relative flex min-h-screen flex-col bg-[var(--lifafa-ink)]">
+    <PaperTheme className="flex flex-col">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[50vh]"
@@ -45,22 +48,22 @@ export default function LegalPage({
         </Link>
       </header>
 
-      <main className="relative z-10 flex-1 px-5 pt-4 pb-16 sm:px-8 sm:pt-8">
-        <article className="mx-auto w-full max-w-[68ch] min-w-0">
-          <h1 className="font-[family-name:var(--font-display)] text-[2rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance text-[var(--lifafa-cream)] sm:text-[2.5rem]">
+      <main className="relative z-10 flex-1 px-5 pt-4 pb-20 sm:px-8 sm:pt-10">
+        <article className="mx-auto w-full max-w-[34em] min-w-0 text-base sm:text-[1.0625rem]">
+          <h1 className="font-[family-name:var(--paper-display)] text-[clamp(2.125rem,7vw,3rem)] leading-[1.1] font-semibold tracking-[-0.02em] text-balance text-[var(--paper-ink)]">
             {title}
           </h1>
-          <p className="mt-3 text-sm text-[var(--lifafa-muted)]">
+          <p className="mt-4 text-sm font-medium text-[var(--paper-muted)]">
             Last updated {updated}
           </p>
 
           <section
             aria-labelledby="legal-summary"
-            className="mt-8 rounded-2xl border border-[var(--lifafa-marigold)]/30 bg-[var(--lifafa-marigold)]/[0.06] px-5 py-5"
+            className="mt-8 rounded-3xl border border-[var(--paper-hairline)] bg-[var(--paper-card)] px-5 py-6 sm:px-7"
           >
             <h2
               id="legal-summary"
-              className="text-[0.6875rem] font-semibold tracking-[0.2em] text-[var(--lifafa-marigold)] uppercase"
+              className="text-xs font-bold tracking-[0.22em] text-[var(--paper-gold-ink)] uppercase"
             >
               In short
             </h2>
@@ -68,11 +71,11 @@ export default function LegalPage({
               {summary.map((point, index) => (
                 <li
                   key={index}
-                  className="flex gap-3 text-[0.9375rem] leading-relaxed text-[var(--lifafa-cream)]"
+                  className="flex gap-3 leading-[1.7] text-[var(--paper-ink)]"
                 >
                   <span
                     aria-hidden="true"
-                    className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--lifafa-marigold)]"
+                    className="mt-[0.7em] h-1.5 w-1.5 shrink-0 rotate-45 bg-[var(--paper-emerald)]"
                   />
                   <span className="min-w-0">{point}</span>
                 </li>
@@ -80,13 +83,18 @@ export default function LegalPage({
             </ul>
           </section>
 
-          <div className="mt-10 flex flex-col gap-10">{children}</div>
+          <div aria-hidden="true" className="mt-12 flex items-center">
+            <span className="h-px flex-1 bg-[var(--paper-gold)]/45" />
+            <span className="mx-3 h-2 w-2 rotate-45 border border-[var(--paper-gold)]" />
+            <span className="h-px flex-1 bg-[var(--paper-gold)]/45" />
+          </div>
+          <div className="mt-12 flex flex-col gap-12">{children}</div>
         </article>
       </main>
 
       <LegalFooter />
       <MetaPixelNoscript />
-    </div>
+    </PaperTheme>
   );
 }
 
@@ -100,7 +108,7 @@ export function Section({
 }): ReactElement {
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="font-[family-name:var(--font-display)] text-xl leading-snug font-semibold text-balance text-[var(--lifafa-cream)] sm:text-2xl">
+      <h2 className="font-[family-name:var(--paper-display)] text-[1.5rem] leading-[1.2] font-semibold tracking-[-0.01em] text-balance text-[var(--paper-ink)] sm:text-[1.75rem]">
         {title}
       </h2>
       {children}
@@ -111,7 +119,7 @@ export function Section({
 /** A heading inside a section. */
 export function Subheading({ children }: { children: ReactNode }): ReactElement {
   return (
-    <h3 className="mt-2 text-base font-semibold text-[var(--lifafa-cream)]">
+    <h3 className="mt-2 font-[family-name:var(--paper-display)] text-[1.1875rem] leading-snug font-semibold text-[var(--paper-ink)]">
       {children}
     </h3>
   );
@@ -119,7 +127,7 @@ export function Subheading({ children }: { children: ReactNode }): ReactElement 
 
 export function P({ children }: { children: ReactNode }): ReactElement {
   return (
-    <p className="text-[0.9375rem] leading-[1.75] break-words text-[var(--lifafa-cream)]/90">
+    <p className="leading-[1.7] break-words text-[var(--paper-ink)]">
       {children}
     </p>
   );
@@ -131,11 +139,11 @@ export function List({ items }: { items: readonly ReactNode[] }): ReactElement {
       {items.map((item, index) => (
         <li
           key={index}
-          className="flex gap-3 text-[0.9375rem] leading-[1.75] break-words text-[var(--lifafa-cream)]/90"
+          className="flex gap-3 leading-[1.7] break-words text-[var(--paper-ink)]"
         >
           <span
             aria-hidden="true"
-            className="mt-[0.75em] h-1 w-1 shrink-0 rounded-full bg-[var(--lifafa-muted)]"
+            className="mt-[0.75em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--paper-gold)]"
           />
           <span className="min-w-0">{item}</span>
         </li>
@@ -144,7 +152,7 @@ export function List({ items }: { items: readonly ReactNode[] }): ReactElement {
   );
 }
 
-/** A link inside the text: marigold and underlined, so it reads as one in a paragraph. */
+/** A link inside the text: emerald and underlined in gold, so it reads as one in a paragraph. */
 export function TextLink({
   href,
   children,
@@ -153,7 +161,7 @@ export function TextLink({
   children: ReactNode;
 }): ReactElement {
   const className =
-    "rounded font-medium text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
+    "rounded font-semibold text-[var(--paper-emerald)] underline decoration-[var(--paper-gold)] underline-offset-4 hover:decoration-[var(--paper-emerald)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]";
 
   if (href.startsWith("/")) {
     return (
