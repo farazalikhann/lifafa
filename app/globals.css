@@ -231,31 +231,32 @@
 }
 
 /*
-  The landing page's scroll cue: its arrow bobs a few pixels, a transform and
-  nothing else. Paused while the cue is off screen (ScrollCue sets
-  `data-offscreen`), and still under reduced motion.
+  The premium carousel (components/landing/PremiumCarousel.tsx). Each slide is
+  one phone wide, and the row is padded by half the space left over on each
+  side, so the first and the last slide can both sit in the centre.
 */
-@keyframes lifafa-bob {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
+.lifafa-carousel-row {
+  --slide-w: min(66vw, 16rem);
+  padding-inline: calc(50% - var(--slide-w) / 2);
+}
+
+.lifafa-carousel-slide {
+  width: var(--slide-w);
+}
+
+@media (min-width: 1024px) {
+  .lifafa-carousel-row {
+    --slide-w: 18rem;
   }
-  50% {
-    transform: translate3d(0, 5px, 0);
-  }
-}
 
-.lifafa-bob {
-  animation: lifafa-bob 1.8s ease-in-out infinite;
-}
-
-[data-offscreen] .lifafa-bob {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lifafa-bob {
-    animation: none;
+  /*
+    Three phones or fewer all fit from 1024px: no scrolling, just centred, and
+    the carousel moves its spotlight from one to the next instead. Set by the
+    server from the slide count, so the layout is right before any script.
+  */
+  .lifafa-carousel-row[data-fits-lg] {
+    justify-content: center;
+    padding-inline: 0;
   }
 }
 

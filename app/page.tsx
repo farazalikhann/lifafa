@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import CallToAction from "@/components/landing/CallToAction";
-import DemoSection from "@/components/landing/DemoSection";
 import Faq from "@/components/landing/Faq";
 import GuestManagement from "@/components/landing/GuestManagement";
 import HelpFooter from "@/components/landing/HelpFooter";
 import Hero from "@/components/landing/Hero";
 import LandingHeader from "@/components/landing/LandingHeader";
+import PremiumShowcase, { demoPath } from "@/components/landing/PremiumShowcase";
 import Pricing from "@/components/landing/Pricing";
+import SectionRule from "@/components/landing/SectionRule";
 import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
 import { paperSans } from "@/components/landing/fonts";
 import { LOWEST_PRICE_PAISE, formatPriceRs } from "@/lib/pricing";
+import { listedPremium } from "@/templates/premium";
 
 /*
   The one address this page should be indexed under: the site answers on two
@@ -54,6 +56,10 @@ function Band({
 }
 
 export default function Page() {
+  /* The hero's live demo: the first premium design the gallery lists. */
+  const first = listedPremium()[0];
+  const demoHref = first === undefined ? "/demo/nikah" : demoPath(first.id);
+
   return (
     /*
       The header is a sibling of <main>: it is site navigation, not part of
@@ -66,9 +72,12 @@ export default function Page() {
       <style>{"html,body{background-color:#f6efe0}"}</style>
       <LandingHeader />
       <main>
-        <Band pattern="seigaiha"><Hero /></Band>
-        <Band pattern="asanoha"><DemoSection /></Band>
-        <Band pattern="seigaiha"><GuestManagement /></Band>
+        <Band pattern="seigaiha">
+          <Hero demoHref={demoHref} />
+          <PremiumShowcase />
+        </Band>
+        <SectionRule />
+        <Band pattern="asanoha"><GuestManagement /></Band>
         <Band pattern="asanoha"><Pricing /></Band>
         <Band pattern="seigaiha"><Faq /></Band>
         <Band pattern="asanoha"><CallToAction /></Band>
