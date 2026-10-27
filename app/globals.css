@@ -22,6 +22,9 @@
   /* The warm glow behind the sign-in, error and policy headings. */
   --lifafa-bloom: rgb(232 163 61 / 0.1);
 
+  /* The sweep across a loading skeleton. */
+  --lifafa-sheen: rgb(247 241 232 / 0.07);
+
   /* A guest's reply, as text and badge colour (lib/rsvpColors.ts). */
   --lifafa-yes: #e8a33d;
   --lifafa-no: #c4566b;
@@ -189,6 +192,7 @@
   /* The darker sindoor: errors are often set on their own 10 percent tint, where #c8372d is 3.9:1. */
   --lifafa-rose: var(--paper-no);
   --lifafa-bloom: rgb(184 137 59 / 0.12);
+  --lifafa-sheen: rgb(255 255 255 / 0.6);
   --lifafa-yes: var(--paper-yes);
   --lifafa-no: var(--paper-no);
   --lifafa-maybe: var(--paper-maybe);
@@ -1131,7 +1135,7 @@ html:has(.lifafa-paper) body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(247, 241, 232, 0.07) 50%,
+    var(--lifafa-sheen) 50%,
     transparent
   );
   transform: translate3d(-100%, 0, 0);

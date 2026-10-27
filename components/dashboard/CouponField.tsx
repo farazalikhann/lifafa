@@ -158,7 +158,7 @@ export default function CouponField({
             type="submit"
             disabled={checking || locked || code.trim().length === 0}
             aria-busy={checking}
-            className="min-h-10 rounded-xl border border-[var(--lifafa-hairline)] px-3 text-xs font-semibold text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-10 rounded-full border border-[var(--lifafa-hairline)] px-3 text-xs font-semibold text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {checking ? "Checking…" : "Apply"}
           </button>

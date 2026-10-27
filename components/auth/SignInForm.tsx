@@ -314,7 +314,7 @@ export default function SignInForm({
         onClick={() => void handleGoogleSignIn()}
         disabled={isRedirecting}
         aria-busy={isRedirecting}
-        className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 text-base font-semibold text-[var(--lifafa-cream)] transition-[transform,border-color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px enabled:hover:border-[var(--lifafa-marigold)] disabled:cursor-wait disabled:opacity-70"
+        className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 text-base font-semibold text-[var(--lifafa-cream)] transition-[transform,border-color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px enabled:hover:border-[var(--lifafa-marigold)] disabled:cursor-wait disabled:opacity-70"
       >
         <GoogleMark />
         {isRedirecting ? "Redirecting to Google…" : "Continue with Google"}
@@ -370,7 +370,7 @@ export default function SignInForm({
         <button
           type="submit"
           disabled={!isValid || isSending}
-          className="mt-6 min-h-[52px] w-full rounded-xl px-4 text-base font-semibold transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:cursor-not-allowed"
+          className="mt-6 min-h-[52px] w-full rounded-full px-4 text-base font-semibold transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:cursor-not-allowed"
           style={{
             backgroundColor:
               isValid && !isSending ? "var(--lifafa-marigold)" : "transparent",
