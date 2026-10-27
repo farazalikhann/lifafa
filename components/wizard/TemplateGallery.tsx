@@ -79,7 +79,7 @@ function TemplateCard({
           </span>
         ) : null}
         {template.badge !== undefined ? (
-          <span className="absolute top-2 right-2 rounded-full bg-[var(--lifafa-cream)] px-2.5 py-1 text-[0.6875rem] font-semibold text-[var(--lifafa-ink)]">
+          <span className="absolute top-2 right-2 rounded-full border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)] px-2.5 py-1 text-[0.6875rem] font-bold tracking-[0.04em] text-[var(--lifafa-marigold)]">
             {template.badge}
           </span>
         ) : null}
@@ -87,7 +87,7 @@ function TemplateCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5 p-3">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h3 className="text-[0.9375rem] leading-snug font-semibold break-words text-[var(--lifafa-cream)]">
+          <h3 className="font-[family-name:var(--font-display)] text-base leading-snug font-semibold break-words text-[var(--lifafa-cream)]">
             {template.name}
           </h3>
           <p className="text-xs text-[var(--lifafa-muted)]">

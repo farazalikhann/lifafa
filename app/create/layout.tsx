@@ -23,6 +23,6 @@ export default function CreateLayout({
 }: {
   children: ReactNode;
 }): ReactNode {
-  /* The create flow and the editor, in the light theme (DESIGN.md). */
-  return <PaperTheme>{children}</PaperTheme>;
+  /* The create flow, in the light theme (DESIGN.md), with the faint seigaiha strips down its edges. */
+  return <PaperTheme patterned>{children}</PaperTheme>;
 }

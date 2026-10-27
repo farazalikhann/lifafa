@@ -591,7 +591,7 @@ function WizardSteps({
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 pt-2.5 pb-1 sm:px-5 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 pt-2.5 pb-1 sm:px-12 lg:px-[5.5rem] xl:px-8">
           <WizardProgress
             brand={
               editing ? (
@@ -626,7 +626,7 @@ function WizardSteps({
         the right. The room the bar pinned to the bottom needs is under the
         footer below, so the footer can be scrolled clear of it too.
       */}
-      <main className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-5 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-8 lg:pt-10">
+      <main className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-12 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-[5.5rem] lg:pt-10 xl:px-8">
         {problem !== null ? (
           <PendingCardNotice
             problem={problem}
@@ -853,7 +853,7 @@ function WizardSteps({
             {error}
           </p>
         ) : null}
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 lg:px-8">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
           {index > 0 ? (
             <button
               type="button"
