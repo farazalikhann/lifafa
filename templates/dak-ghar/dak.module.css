@@ -634,3 +634,322 @@
   overflow: hidden;
   font-size: clamp(16px, 4.6cqw, 19px);
 }
+
+/* ─── Paper cards: the couple, the date, the numbers, a host's own section ─── */
+
+.paperCard {
+  display: flex;
+  width: 100%;
+  max-width: 26rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background-color: #fbf1dc;
+  border-radius: 6px;
+  /* A thin postal border, and a second one inset from it. */
+  box-shadow:
+    inset 0 0 0 1px rgb(158 42 36 / 0.32),
+    inset 0 0 0 5px #fbf1dc,
+    inset 0 0 0 6px rgb(158 42 36 / 0.22),
+    0 10px 24px -18px rgb(42 30 20 / 0.45);
+}
+
+/* The day inside a ring of ink, like a postmark's. */
+.dateRing {
+  display: flex;
+  width: 11.5rem;
+  aspect-ratio: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  box-shadow:
+    inset 0 0 0 2px var(--dg-stamp-ink),
+    inset 0 0 0 9px #fbf1dc,
+    inset 0 0 0 10px var(--dg-stamp-ink);
+  color: var(--dg-ink);
+}
+
+.phone {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding-inline: 0.75rem;
+  font-size: 1.5rem;
+  white-space: nowrap;
+  color: var(--dg-red);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+}
+
+.phone:hover {
+  text-decoration-color: currentColor;
+}
+
+.phone:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--dg-red);
+  outline-offset: 3px;
+}
+
+/* The one kind of button the card draws itself: the post box's red, a pill. */
+.button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.75rem;
+  border-radius: 9999px;
+  background-color: var(--dg-red);
+  color: #fbf1dc;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button:active {
+  background-color: #7f201b;
+}
+
+/* ─── The telegram ─── */
+
+/* The slip stretched to the words: its own shape at least, taller for a long note. */
+.telegram {
+  width: min(100%, 27rem);
+  aspect-ratio: 760 / 323;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9% 9% 7%;
+  text-align: center;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* ─── The functions, on postage stamps ─── */
+
+.stampCard {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1rem;
+  background-color: rgb(251 241 220 / 0.82);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgb(158 42 36 / 0.22);
+}
+
+.stampCardFlip {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.stampCardFlip > div {
+  align-items: flex-end;
+}
+
+.stampArt {
+  flex: none;
+  width: clamp(112px, 34vw, 150px);
+  height: auto;
+  transform: rotate(-2.5deg);
+  user-select: none;
+}
+
+.stampCardFlip .stampArt {
+  transform: rotate(2.5deg);
+}
+
+/* ─── The venue, on a postcard ─── */
+
+.postcard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 780 / 504;
+  container-type: inline-size;
+}
+
+.postcardArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+/* A postmark over the stamp box (85% to 96% across, 6% to 30% down). */
+.postcardMark {
+  position: absolute;
+  top: 3%;
+  right: 6%;
+  width: 21%;
+  height: auto;
+  color: var(--dg-stamp-ink);
+  opacity: 0.8;
+  transform: rotate(-10deg);
+}
+
+/* The venue's name, written on the address lines (58% to 96% across, 45% to 82% down). */
+.postcardName {
+  position: absolute;
+  left: 58%;
+  right: 4%;
+  top: 40%;
+  bottom: 16%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: max(15px, 5.2cqw);
+  color: var(--dg-ink);
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* ─── The countdown, on a brass clock ─── */
+
+.clock {
+  position: relative;
+  width: min(68vw, 16.5rem);
+}
+
+/* A hand: a box over the whole clock turned about its middle, which is the pin (50%, 50%). */
+.hand {
+  position: absolute;
+  inset: 0;
+  transform: rotate(calc(var(--dg-angle) - 150deg));
+  transition: transform 1600ms cubic-bezier(0.22, 0.7, 0.3, 1) 300ms;
+}
+
+.clockShown .hand {
+  transform: rotate(var(--dg-angle));
+}
+
+.hand > span {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  display: block;
+  border-radius: 9999px 9999px 2px 2px;
+  background-color: #2a1e14;
+}
+
+.hourHand > span {
+  width: 3.2%;
+  height: 21%;
+  margin-left: -1.6%;
+}
+
+.minuteHand > span {
+  width: 2%;
+  height: 30%;
+  margin-left: -1%;
+}
+
+.pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5.5%;
+  aspect-ratio: 1;
+  margin: -2.75% 0 0 -2.75%;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, #e7c477, #8a6420 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand {
+    transition: none;
+    transform: rotate(var(--dg-angle));
+  }
+}
+
+.tiles {
+  display: grid;
+  width: 100%;
+  max-width: 20rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--dg-ink);
+}
+
+.tile + .tile {
+  border-left: 1px solid var(--dg-rule);
+}
+
+/* ─── The reply card ─── */
+
+.replyCard {
+  position: relative;
+  background-color: #fbf1dc;
+  border: 7px solid transparent;
+  border-radius: 6px;
+  /* An airmail edge: red and blue stripes. */
+  border-image: repeating-linear-gradient(-45deg, #9e2a24 0 12px, #fbf1dc 12px 18px, #2e3f66 18px 30px, #fbf1dc 30px 36px) 7;
+  box-shadow: 0 12px 28px -20px rgb(42 30 20 / 0.5);
+}
+
+.replyGarland {
+  position: absolute;
+  top: -22px;
+  left: -26px;
+  width: 92px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The pigeon that carries the reply off, once. */
+/*
+  Fixed to the screen, not the card: the confirmation replaces the form, and
+  the card's top is then often above the screen. It takes off from the lower
+  middle, wherever the guest has scrolled to.
+*/
+.replyPigeon {
+  position: fixed;
+  z-index: 40;
+  bottom: 24vh;
+  left: calc(50% - 60px);
+  width: 120px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity;
+  animation: dg-fly-away 2400ms cubic-bezier(0.45, 0.05, 0.6, 0.95) both;
+}
+
+@keyframes dg-fly-away {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0) scale(0.8);
+  }
+  12% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(48vw, -70vh, 0) scale(0.55);
+  }
+}
+
+/* ─── The closing ─── */
+
+.closingGarland {
+  width: 96px;
+  height: auto;
+  transform: scaleX(-1);
+  user-select: none;
+}

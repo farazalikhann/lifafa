@@ -8,6 +8,7 @@ import { cardLanguage } from "@/lib/cardLanguage";
 import { venueCity } from "@/lib/shareMessage";
 import { ART, DATE_SLIP } from "@/templates/dak-ghar/art";
 import { LIFT_MS, TAPPABLE_AT } from "@/templates/dak-ghar/coverTiming";
+import Postmark, { postmarkDate } from "@/templates/dak-ghar/Postmark";
 import styles from "@/templates/dak-ghar/dak.module.css";
 import { DAK_FONTS, caps, leading } from "@/templates/dak-ghar/shared";
 import { useTabHidden } from "@/templates/dak-ghar/useTabHidden";
@@ -16,12 +17,6 @@ import type { CardLanguage } from "@/types/card";
 
 /* Ten petals in all, the last four left off under 400px (see `.petal` in the stylesheet). */
 const PETALS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-/** "14.12.26", for the postmark's middle, from the ISO date; null without one. */
-function postmarkDate(isoDate: string): string | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
-  return match === null ? null : `${match[3]}.${match[2]}.${match[1].slice(2)}`;
-}
 
 /** The slip's three panels, read off the event in the card's language. */
 function slipWords(
@@ -40,44 +35,6 @@ function slipWords(
 
   const city = venueCity(draft.venueAddress) ?? draft.venueName.trim();
   return { ...page, city };
-}
-
-/**
- * The postmark, drawn in code: two rings of ink with the city round the top
- * and the date in the middle. It presses onto the slip (`.postmark`).
- */
-function Postmark({ city, date, language }: { city: string; date: string | null; language: CardLanguage }): ReactElement {
-  const ring = language === "hi" ? city : city.toUpperCase();
-
-  return (
-    <svg viewBox="0 0 100 100" className={styles.postmarkArt} focusable="false" aria-hidden="true">
-      <defs>
-        <path id="dg-postmark-arc" d="M 18 52 A 32 32 0 0 1 82 52" />
-      </defs>
-      <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="3" />
-      <circle cx="50" cy="50" r="27" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <text
-        fill="currentColor"
-        style={{ ...DAK_FONTS.sans, fontWeight: 700, fontSize: language === "hi" ? 11 : 9.5, letterSpacing: language === "hi" ? 0 : 1.2 }}
-      >
-        <textPath href="#dg-postmark-arc" startOffset="50%" textAnchor="middle">
-          {ring.length > 16 ? `${ring.slice(0, 15)}…` : ring}
-        </textPath>
-      </text>
-      {date !== null ? (
-        <text
-          x="50"
-          y="55"
-          textAnchor="middle"
-          fill="currentColor"
-          style={{ ...DAK_FONTS.sans, fontWeight: 700, fontSize: 11 }}
-        >
-          {date}
-        </text>
-      ) : null}
-      <path d="M 30 70 H 70" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
 }
 
 /**
@@ -279,7 +236,7 @@ export default function DakGharCover({
                   <div className={styles.slipPanels}>{panels}</div>
                   {words !== null ? (
                     <div className={styles.postmark}>
-                      <Postmark city={words.city} date={postmarkDate(draft?.eventDate ?? "")} language={language} />
+                      <Postmark city={words.city} date={postmarkDate(draft?.eventDate ?? "")} language={language} className={styles.postmarkArt} />
                     </div>
                   ) : null}
                 </div>
