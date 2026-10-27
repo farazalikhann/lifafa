@@ -297,14 +297,14 @@ export default function ShareMessageSheet({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => persist(text)}
-            className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[var(--lifafa-marigold)] px-4 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-sm"
+            className="flex min-h-11 flex-1 items-center justify-center rounded-full bg-[var(--lifafa-marigold)] px-4 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-sm"
           >
             Send on WhatsApp
           </a>
           <button
             type="button"
             onClick={() => void copy()}
-            className="min-h-11 flex-1 rounded-xl border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-sm"
+            className="min-h-11 flex-1 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:text-sm"
           >
             {COPY_LABEL[copyState]}
           </button>
@@ -312,7 +312,7 @@ export default function ShareMessageSheet({
             type="button"
             onClick={reset}
             disabled={isDefault}
-            className="min-h-11 flex-1 rounded-xl px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50 disabled:hover:text-[var(--lifafa-muted)] sm:text-sm"
+            className="min-h-11 flex-1 rounded-full px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50 disabled:hover:text-[var(--lifafa-muted)] sm:text-sm"
           >
             Reset to default
           </button>

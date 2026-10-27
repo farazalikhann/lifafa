@@ -41,7 +41,7 @@ const LABEL_SUGGESTIONS: readonly string[] = [
 const INPUT_CLASS = [
   "w-full min-h-11 rounded-xl px-4 py-2.5",
   "border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]",
-  "text-[0.9375rem] text-[var(--lifafa-cream)] placeholder:text-[var(--lifafa-muted)]/70",
+  "text-[0.9375rem] text-[var(--lifafa-cream)] placeholder:text-[var(--lifafa-muted)]",
   "transition-colors duration-150 [color-scheme:dark]",
   "focus:border-[var(--lifafa-marigold)] focus:ring-2 focus:ring-[var(--lifafa-marigold)]/30 focus:outline-none",
 ].join(" ");

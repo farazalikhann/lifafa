@@ -257,7 +257,8 @@ export default function PublishButton({
         ...(result.data.hostName === null ? {} : { name: result.data.hostName }),
       },
       readonly: { email: result.data.hostEmail !== null },
-      theme: { color: "#E8B54D" },
+      /* The light theme's emerald (DESIGN.md), for Razorpay's header and buttons. */
+      theme: { color: "#0E3B2B" },
       handler: () => {
         /*
           Razorpay says the payment went through. That is a claim by this

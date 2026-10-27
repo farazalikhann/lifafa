@@ -13,7 +13,7 @@ import PremiumShowcase, { demoPath } from "@/components/landing/PremiumShowcase"
 import Pricing from "@/components/landing/Pricing";
 import SectionRule from "@/components/landing/SectionRule";
 import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
-import { paperSans } from "@/components/landing/fonts";
+import { paperSans } from "@/components/theme/fonts";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { listedPremium } from "@/templates/premium";
 

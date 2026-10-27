@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactElement } from "react";
+import { RSVP_BADGE_STYLE } from "@/lib/rsvpColors";
 import type { Guest, RsvpStatus } from "@/types/guest";
 
 type Filter = "all" | RsvpStatus;
@@ -20,25 +21,8 @@ const STATUS_LABEL: Record<RsvpStatus, string> = {
   pending: "Awaiting",
 };
 
-/** Badge colours, kept as inline styles so they can sit outside the tokens. */
-const STATUS_STYLE: Record<RsvpStatus, { color: string; background: string }> = {
-  accepted: {
-    color: "#E8A33D",
-    background: "rgba(232, 163, 61, 0.14)",
-  },
-  declined: {
-    color: "#C4566B",
-    background: "rgba(196, 86, 107, 0.14)",
-  },
-  maybe: {
-    color: "#C99B45",
-    background: "rgba(201, 155, 69, 0.12)",
-  },
-  pending: {
-    color: "#A1968A",
-    background: "rgba(161, 150, 138, 0.12)",
-  },
-};
+/** Badge colours: theme tokens, so they read on the light theme too (lib/rsvpColors.ts). */
+const STATUS_STYLE = RSVP_BADGE_STYLE;
 
 function StatusBadge({ status }: { status: RsvpStatus }): ReactElement {
   const style = STATUS_STYLE[status];

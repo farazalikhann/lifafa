@@ -377,7 +377,8 @@ export default function ScannerFrame({
       <div
         data-camera={state}
         data-engine={engine ?? "none"}
-        className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]"
+        /* lifafa-camera-scope: the viewfinder stays dark on the light theme (globals.css). */
+        className="lifafa-camera-scope relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]"
       >
         <video
           ref={videoRef}
@@ -422,7 +423,7 @@ export default function ScannerFrame({
               <button
                 type="button"
                 onClick={() => setAttempt((count) => count + 1)}
-                className="mt-1 min-h-11 rounded-xl border border-[var(--lifafa-hairline)] px-4 text-sm font-medium text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+                className="mt-1 min-h-11 rounded-full border border-[var(--lifafa-hairline)] px-4 text-sm font-medium text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
               >
                 Try again
               </button>

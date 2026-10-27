@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import PaperTheme from "@/components/theme/PaperTheme";
 
 /**
  * Nothing but metadata. It renders its children untouched and adds nothing to
@@ -33,5 +34,6 @@ export default function DashboardLayout({
 }: {
   children: ReactNode;
 }): ReactNode {
-  return children;
+  /* Every host page under /dashboard: the list, an event, its editor and its check-in, in the light theme (DESIGN.md). */
+  return <PaperTheme>{children}</PaperTheme>;
 }

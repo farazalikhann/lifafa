@@ -355,7 +355,7 @@ export default function SignInForm({
             onBlur={() => setTouched(true)}
             aria-invalid={touched && email.length > 0 && !isValid}
             aria-describedby={error === null ? undefined : "signin-error"}
-            className="min-h-12 w-full rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 text-base text-[var(--lifafa-cream)] transition-colors duration-150 placeholder:text-[var(--lifafa-muted)]/60 focus:border-[var(--lifafa-marigold)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--lifafa-marigold)]"
+            className="min-h-12 w-full rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 text-base text-[var(--lifafa-cream)] transition-colors duration-150 placeholder:text-[var(--lifafa-muted)] focus:border-[var(--lifafa-marigold)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--lifafa-marigold)]"
             placeholder="you@example.com"
           />
 

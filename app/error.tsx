@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { usePathname } from "next/navigation";
+import PaperTheme from "@/components/theme/PaperTheme";
 import ErrorScreen from "@/components/error/ErrorScreen";
 
 /**
@@ -24,7 +26,8 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }): ReactElement {
-  return (
+  const pathname = usePathname() ?? "";
+  const screen = (
     <ErrorScreen
       error={error}
       reset={reset}
@@ -33,4 +36,12 @@ export default function AppError({
       description="This page did not load properly. Nothing you have saved is affected. Try again, and if it keeps happening, come back in a few minutes."
     />
   );
+
+  /*
+    The light theme on host pages. A guest's invitation, a sample and /admin
+    keep their own dark look, here as everywhere else.
+  */
+  const keepsDark = /^\/(admin|i|demo)(\/|$)/.test(pathname);
+
+  return keepsDark ? screen : <PaperTheme>{screen}</PaperTheme>;
 }

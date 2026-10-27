@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactElement } from "react";
 import { formatArrivalTime } from "@/lib/checkinPass";
+import { RSVP_BADGE_STYLE } from "@/lib/rsvpColors";
 import type { Guest, RsvpStatus } from "@/types/guest";
 
 const STATUS_LABEL: Record<RsvpStatus, string> = {
@@ -11,12 +12,8 @@ const STATUS_LABEL: Record<RsvpStatus, string> = {
   pending: "Awaiting",
 };
 
-const STATUS_STYLE: Record<RsvpStatus, { color: string; background: string }> = {
-  accepted: { color: "#E8A33D", background: "rgba(232, 163, 61, 0.14)" },
-  declined: { color: "#C4566B", background: "rgba(196, 86, 107, 0.14)" },
-  maybe: { color: "#C99B45", background: "rgba(201, 155, 69, 0.12)" },
-  pending: { color: "#A1968A", background: "rgba(161, 150, 138, 0.12)" },
-};
+/* Theme tokens, so the badges read on the light theme too (lib/rsvpColors.ts). */
+const STATUS_STYLE = RSVP_BADGE_STYLE;
 
 function StatusBadge({ status }: { status: RsvpStatus }): ReactElement {
   const style = STATUS_STYLE[status];
@@ -105,7 +102,7 @@ export default function ManualLookup({
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Type a name or phone number"
-        className="min-h-12 w-full rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 text-base text-[var(--lifafa-cream)] placeholder:text-[var(--lifafa-muted)]/70 focus:border-[var(--lifafa-marigold)] focus:ring-2 focus:ring-[var(--lifafa-marigold)]/30 focus:outline-none"
+        className="min-h-12 w-full rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 text-base text-[var(--lifafa-cream)] placeholder:text-[var(--lifafa-muted)] focus:border-[var(--lifafa-marigold)] focus:ring-2 focus:ring-[var(--lifafa-marigold)]/30 focus:outline-none"
       />
 
       {guests.length === 0 ? (
@@ -180,7 +177,7 @@ export default function ManualLookup({
                       onClick={() => onCheckIn(guest.id)}
                       disabled={busy}
                       aria-label={`Check in ${guest.name}`}
-                      className="min-h-11 shrink-0 rounded-xl bg-[var(--lifafa-marigold)] px-4 text-sm font-semibold text-[var(--lifafa-ink)] transition-transform duration-150 enabled:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:cursor-wait disabled:opacity-60"
+                      className="min-h-11 shrink-0 rounded-full bg-[var(--lifafa-marigold)] px-4 text-sm font-semibold text-[var(--lifafa-ink)] transition-transform duration-150 enabled:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:cursor-wait disabled:opacity-60"
                     >
                       Check in
                     </button>

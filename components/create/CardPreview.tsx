@@ -110,8 +110,9 @@ export default function CardPreview({
         className="mx-auto"
       />
 
+      {/* lifafa-card-scope: the card is drawn as a guest sees it, not in the page's light theme. */}
       <div
-        className="lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.65)]"
+        className="lifafa-card-scope lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.45)]"
         style={{ backgroundColor: palette.background }}
       >
         {/* Sections size against the 620px frame, which is what scrolls here. */}

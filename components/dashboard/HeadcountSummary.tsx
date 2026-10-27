@@ -1,3 +1,4 @@
+import { RSVP_COLOUR } from "@/lib/rsvpColors";
 import type { ReactElement } from "react";
 import type { Guest, RsvpStatus } from "@/types/guest";
 
@@ -24,7 +25,6 @@ interface Tile {
   color: string;
 }
 
-const AMBER = "#C99B45";
 
 function StatTile({ tile }: { tile: Tile }): ReactElement {
   return (
@@ -52,10 +52,10 @@ export default function HeadcountSummary({
   const pending = countBy(guests, "pending");
 
   const tiles: readonly Tile[] = [
-    { label: "Accepted", count: accepted, color: "var(--lifafa-marigold)" },
-    { label: "Declined", count: declined, color: "var(--lifafa-rose)" },
-    { label: "Maybe", count: maybe, color: AMBER },
-    { label: "Awaiting reply", count: pending, color: "var(--lifafa-muted)" },
+    { label: "Accepted", count: accepted, color: RSVP_COLOUR.accepted },
+    { label: "Declined", count: declined, color: RSVP_COLOUR.declined },
+    { label: "Maybe", count: maybe, color: RSVP_COLOUR.maybe },
+    { label: "Awaiting reply", count: pending, color: RSVP_COLOUR.pending },
   ];
 
   return (

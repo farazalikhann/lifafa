@@ -150,7 +150,7 @@ export default function CouponField({
                 ? `coupon-${eventId}-applied`
                 : undefined
           }
-          className="min-h-10 w-[11rem] rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-3 text-sm tracking-wide text-[var(--lifafa-cream)] uppercase placeholder:text-[var(--lifafa-muted)]/60 placeholder:normal-case focus:border-[var(--lifafa-marigold)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--lifafa-marigold)] disabled:opacity-50"
+          className="min-h-10 w-[11rem] rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-3 text-sm tracking-wide text-[var(--lifafa-cream)] uppercase placeholder:text-[var(--lifafa-muted)] placeholder:normal-case focus:border-[var(--lifafa-marigold)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--lifafa-marigold)] disabled:opacity-50"
         />
 
         {applied === null ? (

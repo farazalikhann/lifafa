@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import PaperTheme from "@/components/theme/PaperTheme";
 
 /**
  * Metadata only, because app/create/page.tsx cannot carry any: it is a Client
@@ -22,5 +23,6 @@ export default function CreateLayout({
 }: {
   children: ReactNode;
 }): ReactNode {
-  return children;
+  /* The create flow and the editor, in the light theme (DESIGN.md). */
+  return <PaperTheme>{children}</PaperTheme>;
 }

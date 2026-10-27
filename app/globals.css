@@ -19,6 +19,15 @@
   --lifafa-cream: #f7f1e8;
   --lifafa-muted: #a1968a;
 
+  /* The warm glow behind the sign-in, error and policy headings. */
+  --lifafa-bloom: rgb(232 163 61 / 0.1);
+
+  /* A guest's reply, as text and badge colour (lib/rsvpColors.ts). */
+  --lifafa-yes: #e8a33d;
+  --lifafa-no: #c4566b;
+  --lifafa-maybe: #c99b45;
+  --lifafa-pending: #a1968a;
+
   /*
     The Arabic stack, used by the greeting and dua and by nothing else.
 
@@ -118,20 +127,26 @@
 }
 
 /*
-  The landing page's light theme: washi ivory, emerald, gold hairlines. See
-  DESIGN.md at the repo root for the roles of each colour.
+  The light theme: washi ivory, emerald, gold hairlines. See DESIGN.md at the
+  repo root for the roles of each colour.
 
-  Scoped to the landing page's wrapper rather than :root, so the editor, the
-  dashboard and the sign-in pages keep exactly the dark surfaces they have.
+  Every host page wears it: the landing page, the create flow and editor, the
+  dashboard, sign in, check-in and the policy pages, each through
+  components/theme/PaperTheme.tsx. The guest's invitation (/i), the samples
+  (/demo) and /admin do not, and keep the dark :root values above.
 
-  The product's own tokens are remapped here too, so the shared policy footer
-  (components/legal/LegalFooter.tsx), which reads them, turns light on this
-  page and stays dark everywhere else.
+  The product's own tokens (--lifafa-*) are remapped here, so every component
+  that reads them turns light inside a host page with no change of its own.
+
+  .lifafa-paper-tokens is the same set of values without the painting, for
+  something portalled to <body> that must still look like the page it came
+  from (the editor's full screen preview bar).
 
   Gold (#B8893B) is 2.75:1 on washi: hairlines and ornaments only. Text in a
   gold tone is --paper-gold-ink, 5.5:1.
 */
-.lifafa-paper {
+.lifafa-paper,
+.lifafa-paper-tokens {
   --paper-washi: #f6efe0;
   --paper-card: #faf6ee;
   --paper-emerald: #0e3b2b;
@@ -144,6 +159,13 @@
   --paper-muted: #5c534a;
   --paper-blush: #e8c9c0;
   --paper-hairline: rgb(184 137 59 / 0.35);
+  /* A form field's edge: 3.1:1 on washi, the 3:1 a control's boundary needs. */
+  --paper-field: #9a8466;
+  /* RSVP states, readable as text on washi and paper (all above 4.5:1). */
+  --paper-yes: #0e5b3f;
+  --paper-no: #a8312a;
+  --paper-maybe: #7a5a1e;
+  --paper-pending: #5c534a;
 
   /*
     Fraunces is the site's display face, preloaded in app/layout.tsx. Manrope
@@ -164,13 +186,80 @@
   --lifafa-cream-soft: var(--paper-ink);
   --lifafa-muted: var(--paper-muted);
   --lifafa-marigold: var(--paper-emerald);
-  --lifafa-rose: var(--paper-sindoor);
+  /* The darker sindoor: errors are often set on their own 10 percent tint, where #c8372d is 3.9:1. */
+  --lifafa-rose: var(--paper-no);
+  --lifafa-bloom: rgb(184 137 59 / 0.12);
+  --lifafa-yes: var(--paper-yes);
+  --lifafa-no: var(--paper-no);
+  --lifafa-maybe: var(--paper-maybe);
+  --lifafa-pending: var(--paper-pending);
+}
 
+.lifafa-paper {
   background-color: var(--paper-washi);
   color: var(--paper-ink);
   font-family: var(--paper-sans);
   font-size: 1rem;
   line-height: 1.6;
+}
+
+/* The page behind a light page is light too, so an overscroll never shows the dark ink. */
+html:has(.lifafa-paper),
+html:has(.lifafa-paper) body {
+  background-color: #f6efe0;
+}
+
+/*
+  Form fields on a light page: a border strong enough to see (3:1), whatever
+  hairline the component asked for. Unlayered, so it wins over the utility.
+*/
+.lifafa-paper :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea) {
+  border-color: var(--paper-field);
+}
+
+.lifafa-paper :is(input, select, textarea)::placeholder {
+  color: var(--paper-muted);
+  opacity: 0.85;
+}
+
+.lifafa-paper :is(input, select, textarea):focus-visible {
+  border-color: var(--paper-emerald);
+}
+
+/*
+  A card rendered inside a light page (the editor's preview, a template's
+  thumbnail): the dark product values and the body's own type back again, so
+  the card is drawn exactly as a guest sees it. The card sets its own colours
+  from its palette; this only restores what it would otherwise inherit.
+
+  .lifafa-camera-scope is the same dark set for the check-in scanner's camera
+  box: a viewfinder reads best dark, and its marigold corners stay visible
+  over a live camera picture, where the light theme's emerald would not.
+*/
+.lifafa-card-scope,
+.lifafa-camera-scope {
+  --lifafa-ink: #12100e;
+  --lifafa-ink-raised: #1a1714;
+  --lifafa-hairline: #2a2521;
+  --lifafa-marigold: #e8a33d;
+  --lifafa-rose: #c4566b;
+  --lifafa-cream: #f7f1e8;
+  --lifafa-muted: #a1968a;
+
+  color: var(--lifafa-cream);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+/* The field rules above stop at the card: its own form keeps its own look. */
+.lifafa-card-scope :is(input, select, textarea),
+.lifafa-card-scope :is(input, select, textarea):focus-visible {
+  border-color: revert-layer;
+}
+
+.lifafa-card-scope :is(input, select, textarea)::placeholder {
+  color: revert-layer;
+  opacity: revert-layer;
 }
 
 /*

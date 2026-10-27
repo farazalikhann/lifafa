@@ -12,6 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import TemplateCard from "@/templates/TemplateCard";
+import { paperSans } from "@/components/theme/fonts";
 import { getTemplate } from "@/templates/registry";
 import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import Watermark, { WATERMARK_PILL_SELECTOR } from "@/components/card/Watermark";
@@ -587,7 +588,12 @@ export default function FullScreenPreview({
         The side insets are 0 except on a phone held sideways in fullscreen,
         where they keep the card out from under the camera cutout.
       */
-      className="fixed inset-0 z-50 flex flex-col bg-[var(--lifafa-ink)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
+      /*
+        Portalled to <body>, outside the page's light theme, so it carries the
+        theme's values itself (lifafa-paper-tokens); the card inside is in
+        lifafa-card-scope and drawn as a guest sees it.
+      */
+      className={`lifafa-paper-tokens ${paperSans.variable} fixed inset-0 z-50 flex flex-col bg-[var(--lifafa-ink)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] font-[family-name:var(--paper-sans)] text-[var(--lifafa-cream)]`}
       style={chromeVariables}
     >
       <h2 id={titleId} className="sr-only">
@@ -790,7 +796,7 @@ export default function FullScreenPreview({
               card takes the whole of it — a 390px column on a 430px phone was
               a dark bar down each side of the card.
             */
-            className="relative mx-auto w-full lg:max-w-[var(--device-width)]"
+            className="lifafa-card-scope relative mx-auto w-full lg:max-w-[var(--device-width)]"
             style={
               {
                 "--device-width": `${device.width}px`,

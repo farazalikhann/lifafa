@@ -165,7 +165,7 @@ export default function ShareBar({
             type="button"
             onClick={() => void handleCopy()}
             aria-live="polite"
-            className="min-h-11 flex-1 rounded-xl bg-[var(--lifafa-marigold)] px-4 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:flex-none sm:text-sm"
+            className="min-h-11 flex-1 rounded-full bg-[var(--lifafa-marigold)] px-4 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:flex-none sm:text-sm"
           >
             {COPY_LABEL[copyState]}
           </button>
@@ -175,7 +175,7 @@ export default function ShareBar({
             type="button"
             aria-haspopup="dialog"
             onClick={() => setSheetOpen(true)}
-            className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:flex-none sm:text-sm"
+            className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] sm:flex-none sm:text-sm"
           >
             Share on WhatsApp
           </button>

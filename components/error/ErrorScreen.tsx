@@ -54,7 +54,7 @@ export default function ErrorScreen({
         className="pointer-events-none absolute inset-x-0 top-0 h-[60vh]"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(232,163,61,0.10), transparent 70%)",
+            "radial-gradient(ellipse 70% 50% at 50% 0%, var(--lifafa-bloom), transparent 70%)",
         }}
       />
 

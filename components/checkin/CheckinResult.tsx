@@ -6,7 +6,8 @@ import type { PassCheckIn } from "@/lib/db/guests";
 
 /** Long enough to read a name aloud; short enough that the next guest is not kept waiting. */
 const AUTO_DISMISS_MS = 6000;
-const AMBER = "#C99B45";
+/* A token: amber on the dark theme, a darker gold that reads on the light one. */
+const AMBER = "var(--lifafa-maybe)";
 
 type Tone = "success" | "warning" | "refused";
 

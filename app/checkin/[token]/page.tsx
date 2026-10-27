@@ -49,7 +49,7 @@ export default async function CheckinPassPage({
         </p>
         <Link
           href={`/login?redirectTo=${encodeURIComponent(`/checkin/${token}`)}`}
-          className="flex min-h-12 items-center justify-center rounded-xl bg-[var(--lifafa-marigold)] px-6 text-base font-semibold text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          className="flex min-h-12 items-center justify-center rounded-full bg-[var(--lifafa-marigold)] px-6 text-base font-semibold text-[var(--lifafa-ink)] transition-transform duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
         >
           Sign in as the host
         </Link>
