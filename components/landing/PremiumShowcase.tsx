@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import PremiumCarousel, { type CarouselSlide } from "@/components/landing/PremiumCarousel";
+import { OPENING_PREVIEWS } from "@/components/landing/previews";
 import { EYEBROW, SECTION_HEADING, TEXT_LINK } from "@/components/landing/styles";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
@@ -20,17 +21,27 @@ export const SHOWCASE_ID = "designs";
 /**
  * The slides, from the gallery's own listing of the Premium Collection:
  * only listed templates with a preview, in the gallery's order. A template
- * that is not listed yet never appears here.
+ * that is not listed yet never appears here. Each shows its recorded opening
+ * (components/landing/previews.ts) when it has one, and its gallery preview
+ * when it does not.
  */
 export function premiumSlides(): CarouselSlide[] {
-  return listedPremium().map((template) => ({
-    id: template.id,
-    name: template.name,
-    priceLabel: `Premium, ${formatPrice(template.price)} per event`,
-    href: templateStartHref(template.id),
-    demoHref: demoPath(template.id),
-    poster: template.preview.src,
-  }));
+  return listedPremium().map((template) => {
+    const recorded = OPENING_PREVIEWS[template.id];
+
+    return {
+      id: template.id,
+      name: template.name,
+      priceLabel: `Premium, ${formatPrice(template.price)} per event`,
+      href: templateStartHref(template.id),
+      demoHref: demoPath(template.id),
+      poster: recorded?.poster ?? template.preview.src,
+      video:
+        recorded === undefined
+          ? undefined
+          : { mp4: recorded.mp4, webm: recorded.webm },
+    };
+  });
 }
 
 /** The Premium Collection, straight under the hero, as a carousel of phones. */

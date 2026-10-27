@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "check:pixel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-meta-pixel.mjs",
-    "hash-admin-password": "node scripts/hash-admin-password.mjs"
+    "hash-admin-password": "node scripts/hash-admin-password.mjs",
+    "previews:record": "npm i --prefix .arch-tmp/tools --no-save --no-audit --no-fund playwright@1.64.1 && node scripts/record-previews.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
