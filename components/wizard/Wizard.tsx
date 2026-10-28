@@ -66,6 +66,7 @@ import { getTemplate } from "@/templates/registry";
 import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
 import type { EventContact, EventDraft } from "@/types/event";
+import Logo from "@/components/brand/Logo";
 
 /**
  * A new invitation, made in four steps: a template, the details, the few
@@ -609,9 +610,9 @@ function WizardSteps({
               ) : (
                 <Link
                   href="/"
-                  className="-my-2 inline-block rounded py-2 font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+                  className="-my-2 inline-block rounded py-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
                 >
-                  Lifafa
+                  <Logo compact />
                 </Link>
               )
             }

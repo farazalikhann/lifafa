@@ -3,6 +3,7 @@ import Link from "next/link";
 import Shimmer from "@/components/skeleton/Shimmer";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import { WIZARD_STEPS } from "@/lib/wizardSteps";
+import Logo from "@/components/brand/Logo";
 
 /**
  * What a visitor sees between tapping "Create your card" and the gallery
@@ -67,9 +68,9 @@ export default function CreateLoading(): ReactElement {
             brand={
               <Link
                 href="/"
-                className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+                className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
               >
-                Lifafa
+                <Logo compact />
               </Link>
             }
             current="template"

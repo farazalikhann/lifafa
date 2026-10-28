@@ -6,6 +6,7 @@ import LegalFooter from "@/components/legal/LegalFooter";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
 import { eventsUnderReview } from "@/lib/db/paymentReview";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
+import Logo from "@/components/brand/Logo";
 
 /**
  * The host's invitations, and the home a signed-in host comes back to.
@@ -55,9 +56,9 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
         <div className="mx-auto flex max-w-[900px] items-center justify-between gap-4 px-5 py-3 sm:px-6">
           <Link
             href="/"
-            className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+            className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
           >
-            Lifafa
+            <Logo />
           </Link>
           <SignOutButton />
         </div>

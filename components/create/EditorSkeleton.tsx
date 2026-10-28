@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import Logo from "@/components/brand/Logo";
 
 /**
  * What /create shows before the browser has said whether a card is waiting.
@@ -50,9 +51,9 @@ export default function EditorSkeleton(): ReactElement {
           {/* A real link from the first frame: the way out should never wait. */}
           <Link
             href="/"
-            className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+            className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
           >
-            Lifafa
+            <Logo compact />
           </Link>
           <Bar className="h-11 w-44" />
         </div>

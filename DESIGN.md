@@ -99,6 +99,8 @@ Rules
 
 ## 4. Components
 
+**Logo** (`components/brand/Logo.tsx`, artwork in `public/brand/`, never edited): the one component every host page draws the logo with. `variant` is `emerald` on ivory and `white` on the emerald band or anything dark; `shape` is `full` (the V mark and the word) or `mark` (the V and its red dot). About 32px tall on a phone and 40px from 1024px, alt "Lifafa", with width and height set. In a header it is the link home. `compact` shows the mark alone below 640px, for headers that share one line with a progress bar or other links (the editor and an invitation's dashboard). Never inside an invitation: not on /i, /demo, previews or print.
+
 **Primary button** (`PAPER_PRIMARY`): emerald pill, ivory text, Manrope 600 16px, min height 48px, padding 0 28px. Hover lifts 2px with a transform. Pressed darkens to `emerald-press`. Focus ring 2px `emerald` offset 3px (on emerald grounds, the ring is `gold`).
 
 **Secondary button** (`PAPER_SECONDARY`): transparent pill, 1.5px `emerald` border, emerald text, same size. Hover fills with emerald at 6 percent.
@@ -125,7 +127,7 @@ Rules
 
 **FAQ**: native `<details>` and `<summary>` rows on paper, separated by gold hairlines, with a plus that turns into a cross.
 
-**Closing band**: full-width emerald, ivory heading, `gold-soft` small line, the inverted button.
+**Closing band**: full-width emerald, the white logo between two gold hairlines, ivory heading, `gold-soft` small line, the inverted button.
 
 ## 5. Layout
 

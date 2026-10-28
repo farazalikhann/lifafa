@@ -27,6 +27,8 @@ interface RazorpayCheckoutOptions {
   currency: string;
   name: string;
   description?: string;
+  /** An absolute URL of a square logo, shown at the top of the checkout. */
+  image?: string;
   /** The order created server-side by createPaymentOrder. */
   order_id: string;
   /**

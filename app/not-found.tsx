@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import PaperTheme from "@/components/theme/PaperTheme";
+import Logo from "@/components/brand/Logo";
 
 export const metadata: Metadata = {
   title: "Page not found · Lifafa",
@@ -35,9 +36,9 @@ export default function NotFound(): ReactElement {
         <header className="relative z-10 px-5 py-6 sm:px-8">
           <Link
             href="/"
-            className="rounded font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+            className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
           >
-            Lifafa
+            <Logo />
           </Link>
         </header>
 

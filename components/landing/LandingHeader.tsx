@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import Logo from "@/components/brand/Logo";
 
 /**
  * The landing page's way back in.
@@ -64,9 +65,9 @@ export default async function LandingHeader(): Promise<ReactElement> {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-1.5 sm:px-8">
         <Link
           href="/"
-          className="flex min-h-11 items-center rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+          className="flex min-h-11 items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
         >
-          Lifafa
+          <Logo />
         </Link>
 
         {/*

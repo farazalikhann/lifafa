@@ -245,6 +245,8 @@ export default function PublishButton({
       currency: result.data.currency,
       name: "Lifafa",
       description: "Publish your invitation",
+      /* The app icon (public/brand/), square as Razorpay wants it. */
+      image: `${window.location.origin}/brand/icon-512.png`,
       order_id: result.data.orderId,
       /*
         The signed-in host's own details, so the receipt goes to them. Without

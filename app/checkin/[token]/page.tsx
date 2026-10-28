@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import Logo from "@/components/brand/Logo";
 import PassCheckin from "@/components/checkin/PassCheckin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,6 +41,7 @@ export default async function CheckinPassPage({
   if (user === null) {
     return (
       <main className="mx-auto flex min-h-screen max-w-[520px] flex-col items-center justify-center gap-5 px-6 text-center">
+        <Logo />
         <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--lifafa-cream)]">
           Sign in to check this guest in
         </p>

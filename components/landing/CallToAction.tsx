@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { BrushField, BrushWash } from "@/components/landing/Brush";
+import Logo from "@/components/brand/Logo";
 import LinkPending from "@/components/landing/LinkPending";
 import { ON_EMERALD_BUTTON } from "@/components/landing/styles";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
@@ -25,10 +26,11 @@ export default function CallToAction(): ReactElement {
         />
       </BrushField>
       <div className="mx-auto flex max-w-2xl flex-col items-center">
-        <span aria-hidden="true" className="flex items-center gap-3">
-          <span className="h-px w-10 bg-[var(--paper-gold)]" />
-          <span className="h-2 w-2 rotate-45 border border-[var(--paper-gold)]" />
-          <span className="h-px w-10 bg-[var(--paper-gold)]" />
+        {/* The white logo between two gold hairlines: the page signs off. */}
+        <span className="flex items-center gap-4">
+          <span aria-hidden="true" className="h-px w-10 bg-[var(--paper-gold)]" />
+          <Logo variant="white" />
+          <span aria-hidden="true" className="h-px w-10 bg-[var(--paper-gold)]" />
         </span>
         <h2
           id="closing-heading"

@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Shimmer from "@/components/skeleton/Shimmer";
+import Logo from "@/components/brand/Logo";
 
 /**
  * What a host sees between tapping "Sign in" and the form arriving: the sign-in
@@ -19,9 +20,7 @@ export default function LoginLoading(): ReactElement {
       />
 
       <header className="relative z-10 px-5 py-6 sm:px-8">
-        <span className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)]">
-          Lifafa
-        </span>
+        <Logo />
       </header>
 
       <div

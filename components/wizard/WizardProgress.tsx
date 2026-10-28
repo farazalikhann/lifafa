@@ -9,7 +9,7 @@ import {
 
 /**
  * Where the host is in the four steps: the step's name, "Step 2 of 4", and a
- * bar with a segment for each, on one line with the wordmark so the whole
+ * bar with a segment for each, on one line with the logo so the whole
  * header stays about 64px tall on a phone.
  *
  * The segments are the way to jump between steps as well as the picture of
@@ -26,7 +26,7 @@ export default function WizardProgress({
   done = false,
   onSelect,
 }: {
-  /** The wordmark, at the start of the line. */
+  /** The logo (a link home), at the start of the line. */
   brand: ReactNode;
   current: WizardStepId;
   /** Every step is behind the host: the card is saved. */
@@ -38,7 +38,7 @@ export default function WizardProgress({
 
   return (
     <nav aria-label="Steps" className="flex flex-col">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         {brand}
         <p className="min-w-0 truncate text-[0.8125rem] text-[var(--lifafa-muted)]">
           <span className="font-medium text-[var(--lifafa-cream)]">

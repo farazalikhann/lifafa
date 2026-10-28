@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import Link from "next/link";
+import Logo from "@/components/brand/Logo";
 import CheckinResult from "@/components/checkin/CheckinResult";
 import { checkInPass, type PassCheckIn } from "@/lib/db/guests";
 
@@ -60,6 +61,8 @@ export default function PassCheckin({ token }: { token: string }): ReactElement 
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[520px] flex-col justify-center gap-6 px-5 py-10">
+      {/* Not a link: at the door, a stray tap should never leave the scan. */}
+      <Logo />
       <p className="text-[0.6875rem] tracking-[0.2em] text-[var(--lifafa-muted)] uppercase">
         Guest check-in
       </p>

@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import Logo from "@/components/brand/Logo";
 
 /**
  * What a host sees between tapping "My invitations" and the list arriving.
@@ -63,13 +64,11 @@ export default function DashboardLoading(): ReactElement {
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/85 backdrop-blur">
         <div className="mx-auto flex max-w-[900px] items-center justify-between gap-4 px-5 py-3 sm:px-6">
           {/*
-            The wordmark is real text, not a bar. It is the one thing on this
-            screen that is already known while the rest is on its way, and
-            drawing it as a placeholder would be pretending otherwise.
+            The logo is real, not a bar. It is the one thing on this screen
+            that is already known while the rest is on its way, and drawing it
+            as a placeholder would be pretending otherwise.
           */}
-          <span className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)]">
-            Lifafa
-          </span>
+          <Logo />
           <Bar className="h-4 w-20" />
         </div>
       </header>

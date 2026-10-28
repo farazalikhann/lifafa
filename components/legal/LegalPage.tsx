@@ -3,6 +3,7 @@ import Link from "next/link";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import LegalFooter from "@/components/legal/LegalFooter";
 import PaperTheme from "@/components/theme/PaperTheme";
+import Logo from "@/components/brand/Logo";
 
 /**
  * One policy page: the wordmark home, the title and its date, a short summary
@@ -42,9 +43,9 @@ export default function LegalPage({
       <header className="relative z-10 px-5 py-6 sm:px-8">
         <Link
           href="/"
-          className="rounded font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+          className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
         >
-          Lifafa
+          <Logo />
         </Link>
       </header>
 

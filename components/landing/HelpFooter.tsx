@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "@/components/brand/Logo";
 import LegalFooter from "@/components/legal/LegalFooter";
 import { SUPPORT_EMAIL } from "@/lib/legal";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
@@ -30,9 +31,7 @@ export default function HelpFooter() {
       <footer className="border-t border-[var(--lifafa-hairline)] px-6 pt-20 pb-14 sm:pt-24 sm:pb-16">
         <div className="mx-auto grid max-w-5xl gap-12 text-center sm:grid-cols-3 sm:gap-8 sm:text-left">
           <div>
-            <p className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)]">
-              Lifafa
-            </p>
+            <Logo className="mx-auto h-8 sm:mx-0 lg:h-10" />
             <p className="mx-auto mt-3 max-w-[30ch] text-sm leading-relaxed text-[var(--lifafa-muted)] sm:mx-0">
               Beautiful digital invitations that tell you who is coming, for
               every Indian celebration.

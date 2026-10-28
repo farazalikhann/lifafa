@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
+import Logo from "@/components/brand/Logo";
 
 /**
  * What a host sees between tapping a row and that invitation's page arriving.
@@ -56,9 +57,9 @@ export default function EventLoading(): ReactElement {
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
-              className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+              className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
             >
-              Lifafa
+              <Logo compact />
             </Link>
 
             <Link

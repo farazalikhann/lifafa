@@ -27,6 +27,7 @@ import { inviteUrl } from "@/lib/siteUrl";
 import { geocodeVenue, getEventWeather } from "@/lib/weather";
 import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { CardLanguage } from "@/types/card";
+import Logo from "@/components/brand/Logo";
 
 /**
  * One event's dashboard.
@@ -160,9 +161,9 @@ export default async function DashboardPage({
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
-              className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-[-0.02em] text-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+              className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
             >
-              Lifafa
+              <Logo compact />
             </Link>
 
             <Link
