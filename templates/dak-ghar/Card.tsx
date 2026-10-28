@@ -5,12 +5,14 @@ import MusicToggle from "@/components/card/MusicToggle";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import WeatherPanel from "@/components/card/WeatherPanel";
 import { useCardStill } from "@/hooks/useCardStill";
+import { useRevealGate } from "@/hooks/useRevealGate";
 import { cardLanguage } from "@/lib/cardLanguage";
 import { hasCountdown, hasCustomContent, hasFamily, hasMessage } from "@/lib/cardSections";
 import { effectiveTheme } from "@/lib/cardTheme";
 import { hasContacts } from "@/lib/contacts";
 import DakGharClock from "@/templates/dak-ghar/Clock";
 import DakGharClosing from "@/templates/dak-ghar/Closing";
+import Drift from "@/templates/dak-ghar/Drift";
 import DakGharNames from "@/templates/dak-ghar/Names";
 import { DakGharContacts, DakGharCouple, DakGharCustom, DakGharSaveDate } from "@/templates/dak-ghar/Paper";
 import DakGharPostcard from "@/templates/dak-ghar/Postcard";
@@ -63,6 +65,8 @@ export default function DakGharCard(props: TemplateCardProps): ReactElement {
   } = props;
 
   const still = useCardStill();
+  /* The cover has let the card go: the envelopes start drifting. */
+  const letGo = useRevealGate();
   const language = cardLanguage(config.language);
   const cardTheme = effectiveTheme(theme, config.style);
   const { occasionId } = config;
@@ -121,7 +125,10 @@ export default function DakGharCard(props: TemplateCardProps): ReactElement {
           aria-hidden="true"
           className={`${styles.ground} ${pagewide ? styles.groundFixed : styles.groundPinned}`}
           style={pagewide ? undefined : ({ "--dg-band": band } as CSSProperties)}
-        />
+        >
+          {/* Airmail envelopes drifting across the paper, behind every section. */}
+          <Drift active={letGo} />
+        </div>
 
         {/*
           The music button, top right, for the whole length of the card: a row

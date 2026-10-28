@@ -8,7 +8,6 @@ import { coverNameLine, formatWhen, placeholderOpacity, resolveCoverNames } from
 import { playEffectSound } from "@/lib/effectSound";
 import { dateRevealOf } from "@/lib/royalScroll";
 import { ART } from "@/templates/dak-ghar/art";
-import Drift from "@/templates/dak-ghar/Drift";
 import styles from "@/templates/dak-ghar/dak.module.css";
 import { DAK_FONTS, caps, dakCopy, leading } from "@/templates/dak-ghar/shared";
 import { SOUND } from "@/templates/dak-ghar/sounds";
@@ -21,7 +20,6 @@ import type { EventDraft } from "@/types/event";
  * its top centre with the couple's initials pressed into it (Devanagari on a
  * Hindi card, a small flower when nobody is named), the writing desk
  * (inkwell, pen and a bundle of letters) at its foot, both clear of the words.
- * Behind it a few airmail envelopes drift slowly across the paper (Drift).
  *
  * The words stay inside the paper's border, 12% to 88% each way (art.ts), and
  * are sized to fit there by useFitInside, so a long pair of names, or Hindi,
@@ -82,7 +80,6 @@ export default function DakGharNames({
 
   return (
     <section ref={ref} className={`${styles.page} ${styles.namesPage}`} style={{ minHeight }}>
-      <Drift active={shown} />
       <div className={`${styles.letter} ${shown ? styles.shown : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={ART.letter} alt="" draggable={false} className={styles.letterArt} />

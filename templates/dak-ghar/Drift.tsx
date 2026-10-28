@@ -9,15 +9,16 @@ import { useTabHidden } from "@/templates/dak-ghar/useTabHidden";
 const ENVELOPES = [0, 1, 2, 3];
 
 /**
- * Airmail envelopes drifting slowly across the paper behind the first page's
- * letter: four at different sizes, speeds and small turns, two under 400px,
- * faint, and never in the way of a tap.
+ * Airmail envelopes drifting slowly across the paper behind the whole card,
+ * inside its ground (Card.tsx), so they are seen between every section all
+ * the way down: four at different sizes, speeds and small turns, two under
+ * 400px, faint, and never in the way of a tap.
  *
  * CSS animations only (transform and opacity, `.drift` in the stylesheet),
  * each planned from the start with a negative delay so they are already
- * spread across the page. They fade in once `active` (the letter has been
- * thrown in), and hold still while the page is off screen or the tab is
- * hidden. Hidden altogether under reduced motion.
+ * spread across the page. They fade in once `active` (the cover has let the
+ * card go), and hold still while they are off screen (the editor's preview
+ * scrolled away) or the tab is hidden. Hidden altogether under reduced motion.
  */
 export default function Drift({ active }: { active: boolean }): ReactElement {
   const ref = useRef<HTMLDivElement>(null);

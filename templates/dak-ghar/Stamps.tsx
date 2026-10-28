@@ -4,18 +4,20 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, typ
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { calendarPageText, hasEventTime } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
+import { playEffectSound } from "@/lib/effectSound";
 import { timelineEntries, type TimelineEntry } from "@/lib/cardSections";
 import { STAMP_ART, STAMP_ASPECT, stampFor } from "@/templates/dak-ghar/art";
 import { PageHeading } from "@/templates/dak-ghar/Paper";
 import styles from "@/templates/dak-ghar/dak.module.css";
 import { DAK_FONTS, dakCopy, leading } from "@/templates/dak-ghar/shared";
+import { SOUND } from "@/templates/dak-ghar/sounds";
 import { useReveal } from "@/templates/dak-ghar/useReveal";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 /* One step through the pile (the stylesheet's transition takes as long). */
-const STEP_MS = 560;
+const STEP_MS = 600;
 /* A drag that has gone this far sideways before it has gone as far down is the pile's; past this share of the width, or this fast (px per ms), it steps. */
 const SIDEWAYS_PX = 8;
 const STEP_PAST = 0.22;
@@ -43,7 +45,10 @@ const PLACES: readonly Place[] = [
   { x: -2, y: -3.6, scale: 0.88, turn: -2, opacity: 0.9 },
   { x: 0, y: -4.6, scale: 0.82, turn: 0, opacity: 0 },
 ];
-const PAST: Place = { x: -118, y: 1, scale: 1, turn: -9, opacity: 0 };
+/* Thrown off the pile to the left: lifted a little, turned, gone. */
+const PAST: Place = { x: -128, y: -1.2, scale: 1.04, turn: -14, opacity: 0 };
+/* The paper's whoosh for a step, at the card's own level. */
+const STEP_VOLUME = 0.8;
 /* How many are drawn. */
 const DRAWN = 3;
 
@@ -109,7 +114,11 @@ function StampFace({ entry, index, language }: { entry: TimelineEntry; index: nu
  * over its top edge. Going on (a swipe to the left, or Next) slides the front
  * card off the pile to the left while each card behind comes forward one
  * place; going back (a swipe to the right, or Previous) brings it back. The
- * front card follows the finger while it is dragged. Only a sideways drag is
+ * front card follows the finger while it is dragged. Each step is heard (the
+ * paper whoosh) and seen: the card thrown off lifts and turns as it
+ * goes, the one that comes to the front drops onto the pile with a small
+ * settle, and its stamp presses down a beat after (`[data-stepped]` in the
+ * stylesheet, so nothing plays before the guest's first step). Only a sideways drag is
  * the pile's (`touch-action: pan-y`), so the page still scrolls. Previous and
  * Next under it, with a dot per function between them. It never moves on its
  * own; under reduced motion the cards change places with a short fade. One
@@ -127,6 +136,8 @@ export default function DakGharStamps({ draft, language }: { draft: EventDraft; 
 
   /* The card in front. */
   const [at, setAt] = useState(0);
+  /* Whether the guest has stepped yet: the arrival only plays for a step. */
+  const [stepped, setStepped] = useState(false);
   const atRef = useRef(0);
   const busy = useRef(false);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -148,8 +159,10 @@ export default function DakGharStamps({ draft, language }: { draft: EventDraft; 
     }
 
     busy.current = true;
+    playEffectSound(SOUND.whoosh, 0, STEP_VOLUME);
     atRef.current = to;
     setAt(to);
+    setStepped(true);
     window.setTimeout(() => {
       busy.current = false;
     }, reducedMotion ? 260 : STEP_MS);
@@ -272,6 +285,7 @@ export default function DakGharStamps({ draft, language }: { draft: EventDraft; 
 
         <div
           className={`${styles.stampPile} ${count > 1 ? "" : styles.stampPileOne}`}
+          data-stepped={stepped ? "" : undefined}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -301,7 +315,9 @@ export default function DakGharStamps({ draft, language }: { draft: EventDraft; 
                   } as CSSProperties
                 }
               >
-                <StampFace entry={entry} index={index} language={language} />
+                <div className={styles.stampFace}>
+                  <StampFace entry={entry} index={index} language={language} />
+                </div>
               </div>
             );
           })}
