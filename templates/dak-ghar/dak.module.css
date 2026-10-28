@@ -875,10 +875,10 @@
   user-select: none;
 }
 
-.drift[data-drift="0"] { --y: 9%; --w: 62px; --dur: 46s; --delay: -8s; --r: -12deg; --o: 0.5; --dy: -4vh; --bob: 5s; }
-.drift[data-drift="1"] { --y: 72%; --w: 82px; --dur: 60s; --delay: -38s; --r: 10deg; --o: 0.42; --dy: 3vh; --bob: 6.5s; }
-.drift[data-drift="2"] { --y: 34%; --w: 46px; --dur: 52s; --delay: -21s; --r: 18deg; --o: 0.38; --dy: -2vh; --bob: 4.5s; }
-.drift[data-drift="3"] { --y: 88%; --w: 56px; --dur: 40s; --delay: -29s; --r: -6deg; --o: 0.45; --dy: -3vh; --bob: 5.5s; }
+.drift[data-drift="0"] { --y: 9%; --w: 62px; --dur: 46s; --delay: -8s; --r: -12deg; --o: 0.34; --dy: -4vh; --bob: 5s; }
+.drift[data-drift="1"] { --y: 72%; --w: 82px; --dur: 60s; --delay: -38s; --r: 10deg; --o: 0.3; --dy: 3vh; --bob: 6.5s; }
+.drift[data-drift="2"] { --y: 34%; --w: 46px; --dur: 52s; --delay: -21s; --r: 18deg; --o: 0.26; --dy: -2vh; --bob: 4.5s; }
+.drift[data-drift="3"] { --y: 88%; --w: 56px; --dur: 40s; --delay: -29s; --r: -6deg; --o: 0.3; --dy: -3vh; --bob: 5.5s; }
 
 @media (max-width: 399px) {
   .drift[data-drift="2"],
@@ -1494,6 +1494,70 @@
   width: 100%;
   height: auto;
   filter: drop-shadow(7px 11px 10px rgb(82 50 18 / 0.34)) drop-shadow(2px 3px 2px rgb(82 50 18 / 0.22));
+}
+
+/*
+  The dust over the clock (Dust.tsx): a canvas the clock's size, taking its
+  touches while it is there, fading when brushed clean.
+*/
+.dust {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  opacity: 1;
+  transition: opacity 700ms ease-out;
+}
+
+.dustGoing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* "Brush away the dust", on a small cream pill on the lower face, breathing gently. */
+.dustHint {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 68%;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 1rem;
+  border-radius: 9999px;
+  background: rgb(251 241 220 / 0.88);
+  box-shadow: inset 0 0 0 1px rgb(158 42 36 / 0.35);
+  color: var(--dg-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translate3d(-50%, 0, 0);
+  animation: dg-breathe 2.6s ease-in-out infinite;
+  transition: opacity 300ms ease-out;
+}
+
+.dustHintGoing {
+  opacity: 0;
+  animation: none;
+  pointer-events: none;
+}
+
+.dustHint:focus-visible {
+  outline: 2px solid var(--dg-red);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dust {
+    transition: opacity 300ms ease-out;
+  }
+
+  .dustHint {
+    animation: none;
+  }
 }
 
 /* A hand: a box over the whole clock turned about its middle, which is the pin (50%, 50%). */

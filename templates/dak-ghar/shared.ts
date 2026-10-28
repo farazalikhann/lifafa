@@ -68,6 +68,8 @@ interface DakCopy {
   next: string;
   previousShort: string;
   nextShort: string;
+  /** On the dust over the clock: brushing it, or pressing this, clears it. */
+  brushDust: string;
 }
 
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
@@ -94,6 +96,7 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     next: "Next celebration",
     previousShort: "Previous",
     nextShort: "Next",
+    brushDust: "Brush away the dust",
   },
   hi: {
     tapToOpen: "खोलने के लिए टैप करें",
@@ -117,6 +120,7 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     next: "अगला कार्यक्रम",
     previousShort: "पिछला",
     nextShort: "अगला",
+    brushDust: "धूल हटाइए",
   },
 };
 

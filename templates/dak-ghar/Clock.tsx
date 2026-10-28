@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
+import { useCardStill } from "@/hooks/useCardStill";
 import { measure, spokenCountdown, unitsOf, type Countdown } from "@/components/card/sections/CountdownSection";
 import { eventInstant } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
 import { ART } from "@/templates/dak-ghar/art";
+import Dust from "@/templates/dak-ghar/Dust";
 import { PageHeading } from "@/templates/dak-ghar/Paper";
 import styles from "@/templates/dak-ghar/dak.module.css";
-import { DAK_FONTS, caps, leading } from "@/templates/dak-ghar/shared";
+import { DAK_FONTS, caps, dakCopy, leading } from "@/templates/dak-ghar/shared";
 import { useReveal } from "@/templates/dak-ghar/useReveal";
 import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -23,8 +25,12 @@ function handAngles(eventTime: string): { hour: number; minute: number } {
 
 /**
  * The countdown, on a brass clock: its hands drawn in code and set to the
- * hour the celebration starts (they sweep round to it once, as the clock
- * comes on screen), and under it the days, hours and minutes still to go.
+ * hour the celebration starts, and under it the days, hours and minutes
+ * still to go.
+ *
+ * Dust has settled on the clock (Dust.tsx), unevenly, some of its edge
+ * clean; the guest brushes it away, and the hands sweep round to the hour.
+ * The numbers under it are never dusted.
  *
  * THE COUNTING IS THE CARD'S OWN (`measure` and `unitsOf` from the shared
  * countdown): the same instant, the same "it has begun". Measured every
@@ -33,6 +39,8 @@ function handAngles(eventTime: string): { hour: number; minute: number } {
  */
 export default function DakGharClock({ draft, language }: { draft: EventDraft; language: CardLanguage }): ReactElement | null {
   const { ref, shown } = useReveal<HTMLElement>();
+  const still = useCardStill();
+  const [dusted, setDusted] = useState(!still);
   const copy = cardCopy(language);
   const [countdown, setCountdown] = useState<Countdown | null>(null);
   const target = eventInstant(draft.eventDate, draft.eventTime);
@@ -87,7 +95,7 @@ export default function DakGharClock({ draft, language }: { draft: EventDraft; l
       <div className={`${styles.reveal} ${shown ? styles.shown : ""} flex w-full max-w-[26rem] flex-col items-center gap-7`}>
         <PageHeading>{copy.countdown.heading}</PageHeading>
 
-        <div className={`${styles.clock} ${shown ? styles.clockShown : ""}`}>
+        <div className={`${styles.clock} ${shown && !dusted ? styles.clockShown : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ART.clock} alt="" width={460} height={495} loading="lazy" decoding="async" draggable={false} className={styles.clockFace} />
           <span aria-hidden="true" className={`${styles.hand} ${styles.hourHand}`} style={{ "--dg-angle": `${angles.hour}deg` } as CSSProperties}>
@@ -97,6 +105,7 @@ export default function DakGharClock({ draft, language }: { draft: EventDraft; l
             <span />
           </span>
           <span aria-hidden="true" className={styles.pin} />
+          {!still ? <Dust onClear={() => setDusted(false)} label={dakCopy(language).brushDust} /> : null}
         </div>
 
         {closing !== null ? (
