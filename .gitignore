@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Dak Ghar source art; scripts/dak-ghar-art.py publishes it to public/templates/dak-ghar/.
 /dak ghar/
+
+# Home page step illustrations as supplied; the cut WebPs are in public/landing/steps/.
+/home art/

@@ -10,24 +10,25 @@ import {
 interface Step {
   title: string;
   copy: string;
-  icon: string;
+  /** A painted still life, 300px wide: about 2x the size it is shown at. */
+  art: { src: string; width: number; height: number };
 }
 
 const STEPS: readonly Step[] = [
   {
     title: "Choose a design",
     copy: "Pick from the Premium and Traditions designs. Open any of them as a live demo first.",
-    icon: "/landing/icons/love-letter.webp",
+    art: { src: "/landing/steps/step-1-choose.webp", width: 300, height: 299 },
   },
   {
     title: "Add your details",
     copy: "Names, date, venue and every function, in English or Hindi. The card fills in as you type.",
-    icon: "/landing/icons/memo.webp",
+    art: { src: "/landing/steps/step-2-details.webp", width: 300, height: 288 },
   },
   {
     title: "Share one link and track replies",
     copy: "Send it on WhatsApp. Every reply comes to your dashboard, and guests install nothing.",
-    icon: "/landing/icons/mobile-phone-with-arrow.webp",
+    art: { src: "/landing/steps/step-3-share.webp", width: 300, height: 299 },
   },
 ];
 
@@ -45,22 +46,20 @@ export default function HowItWorks(): ReactElement {
 
         <ol role="list" className="mt-10 grid list-none gap-4 sm:gap-5 lg:mt-14 lg:grid-cols-3">
           {STEPS.map((step, index) => (
-            <li key={step.title} className={`${CARD} flex gap-5 p-6 lg:flex-col lg:p-8`}>
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--paper-blush)]/55">
-                <img
-                  src={step.icon}
-                  alt=""
-                  width={44}
-                  height={44}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </span>
-              <div className="min-w-0">
-                <p className="font-[family-name:var(--paper-display)] text-sm font-semibold text-[var(--paper-gold-ink)]">
-                  Step {index + 1}
-                </p>
-                <h3 className="mt-1 font-[family-name:var(--paper-display)] text-xl leading-snug font-semibold text-[var(--paper-ink)] lg:text-2xl">
+            <li key={step.title} className={`${CARD} flex flex-col p-6 lg:p-8`}>
+              {/* Sized by its own width and height, so the card never jumps when it loads. */}
+              <img
+                src={step.art.src}
+                alt=""
+                width={step.art.width}
+                height={step.art.height}
+                loading="lazy"
+                decoding="async"
+                className="h-32 w-auto self-start lg:h-[8.75rem]"
+              />
+              <div className="mt-5 min-w-0">
+                <p className={EYEBROW}>Step {index + 1}</p>
+                <h3 className="mt-2 font-[family-name:var(--paper-display)] text-xl leading-snug font-semibold text-[var(--paper-ink)] lg:text-2xl">
                   {step.title}
                 </h3>
                 <p className="mt-2 text-base leading-[1.6] text-[var(--paper-muted)]">
