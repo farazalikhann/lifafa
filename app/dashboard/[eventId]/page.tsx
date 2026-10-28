@@ -12,6 +12,7 @@ import SavedNotice from "@/components/dashboard/SavedNotice";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import WeatherSummary from "@/components/dashboard/WeatherSummary";
+import HelpLine from "@/components/legal/HelpLine";
 import LegalFooter from "@/components/legal/LegalFooter";
 import { formatWhen } from "@/lib/cardFormat";
 import { CARD_LANGUAGES } from "@/lib/cardLanguage";
@@ -353,6 +354,8 @@ export default async function DashboardPage({
           when={when}
           inviteUrl={url}
         />
+
+        <HelpLine className="text-center sm:text-left" />
       </main>
 
       <LegalFooter />

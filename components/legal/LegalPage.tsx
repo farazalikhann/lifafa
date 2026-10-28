@@ -157,9 +157,15 @@ export function List({ items }: { items: readonly ReactNode[] }): ReactElement {
 export function TextLink({
   href,
   children,
+  newTab = false,
+  label,
 }: {
   href: string;
   children: ReactNode;
+  /** Opens in a new tab, for a page off the site (Instagram). */
+  newTab?: boolean;
+  /** The link's accessible name, where the text alone does not say enough. */
+  label?: string;
 }): ReactElement {
   const className =
     "rounded font-semibold text-[var(--paper-emerald)] underline decoration-[var(--paper-gold)] underline-offset-4 hover:decoration-[var(--paper-emerald)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]";
@@ -173,7 +179,13 @@ export function TextLink({
   }
 
   return (
-    <a href={href} className={className} rel="noopener noreferrer">
+    <a
+      href={href}
+      className={className}
+      rel="noopener noreferrer"
+      target={newTab ? "_blank" : undefined}
+      aria-label={label}
+    >
       {children}
     </a>
   );

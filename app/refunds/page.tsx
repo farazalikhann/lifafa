@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { List, P, Section, TextLink } from "@/components/legal/LegalPage";
-import { SUPPORT_EMAIL } from "@/lib/legal";
+import { HELP_EMAIL, HELP_MAILTO } from "@/lib/site";
 import {
   PREMIUM_PRICE_PAISE,
   TRADITIONS_PRICE_PAISE,
@@ -20,19 +20,19 @@ export const metadata: Metadata = {
   ...marketingShare(TITLE, DESCRIPTION, "/refunds"),
 };
 
-const MAIL = `mailto:${SUPPORT_EMAIL}`;
+const MAIL = HELP_MAILTO;
 
 export default function RefundsPage(): ReactElement {
   return (
     <LegalPage
       title="Cancellation and Refund Policy"
-      updated="20 October 2026"
+      updated="28 October 2026"
       summary={[
         "Changed your mind? You get a full refund if you ask within 48 hours of paying and no guest has opened the invitation link yet.",
         "After that, we refund only if something on our side fails and we cannot fix it, such as a double charge.",
         "Refunds are always in full, and go back to the way you paid, usually within 5 to 7 working days.",
         "A refunded invitation is switched off for guests. You can pay again to switch it back on.",
-        `To ask, email ${SUPPORT_EMAIL} with the invitation link and the payment ID.`,
+        `To ask, email ${HELP_EMAIL} with the invitation link and the payment ID.`,
       ]}
     >
       <Section title="What you pay for">
@@ -90,7 +90,7 @@ export default function RefundsPage(): ReactElement {
 
       <Section title="How to ask for a refund">
         <P>
-          Email <TextLink href={MAIL}>{SUPPORT_EMAIL}</TextLink> with:
+          Email <TextLink href={MAIL}>{HELP_EMAIL}</TextLink> with:
         </P>
         <List
           items={[

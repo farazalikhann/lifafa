@@ -1,9 +1,11 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import FooterContact from "@/components/legal/FooterContact";
 import { POLICY_LINKS, currentYearInIndia } from "@/lib/legal";
 
 /**
- * The five policy pages and the copyright line, the same on every host page:
+ * Lifafa on Instagram and the help address, then the five policy pages and the
+ * copyright line, the same on every host page:
  * the landing page (inside its own footer), /create, /login, the dashboard
  * and the policy pages themselves.
  *
@@ -13,6 +15,7 @@ import { POLICY_LINKS, currentYearInIndia } from "@/lib/legal";
 export default function LegalFooter({
   className = "",
   as: Element = "footer",
+  contact = true,
 }: {
   /** Extra classes, such as bottom padding to clear a bar pinned over the page. */
   className?: string;
@@ -21,11 +24,21 @@ export default function LegalFooter({
    * so it does not carry two contentinfo landmarks.
    */
   as?: "footer" | "div";
+  /**
+   * The Instagram link and the help line. Off on the landing page, whose own
+   * footer already has them in a column of their own.
+   */
+  contact?: boolean;
 }): ReactElement {
   return (
     <Element
       className={`border-t border-[var(--lifafa-hairline)] px-5 pt-6 pb-8 sm:px-8 ${className}`}
     >
+      {contact ? (
+        <div className="mx-auto mb-2 max-w-5xl">
+          <FooterContact />
+        </div>
+      ) : null}
       <nav aria-label="Policies" className="mx-auto max-w-5xl">
         <ul className="flex flex-wrap justify-center gap-x-5 sm:justify-start">
           {POLICY_LINKS.map((link) => (

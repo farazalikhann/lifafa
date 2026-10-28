@@ -1,15 +1,10 @@
 import { POLICY_PATHS } from "@/lib/metaPixel";
-import { LIFAFA_DOMAIN } from "@/lib/siteUrl";
 
 /**
- * Who runs Lifafa and how to reach them, and the five policy pages, written
- * once for the pages, the footer and the sitemap.
- *
- * The mailbox is built on LIFAFA_DOMAIN rather than the resolved origin: it
- * stays support@getlifafa.co.in on a preview host or a dev server, because
- * that is where the mail actually goes.
+ * Who runs Lifafa and the five policy pages, written once for the pages, the
+ * footer and the sitemap. How to reach Lifafa (the help address, Instagram)
+ * is in lib/site.ts.
  */
-export const SUPPORT_EMAIL = `support@${LIFAFA_DOMAIN}`;
 
 export const OPERATOR = {
   name: "Faraz Ali Khan",

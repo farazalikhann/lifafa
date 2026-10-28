@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import EventCard from "@/components/dashboard/EventCard";
 import SignOutButton from "@/components/dashboard/SignOutButton";
+import HelpLine from "@/components/legal/HelpLine";
 import LegalFooter from "@/components/legal/LegalFooter";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
 import { eventsUnderReview } from "@/lib/db/paymentReview";
@@ -130,6 +131,8 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
             ))}
           </ul>
         )}
+
+        <HelpLine className="text-center sm:text-left" />
       </main>
 
       <LegalFooter />

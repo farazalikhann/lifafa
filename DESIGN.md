@@ -127,6 +127,10 @@ Rules
 
 **FAQ**: native `<details>` and `<summary>` rows on paper, separated by gold hairlines, with a plus that turns into a cross.
 
+**Follow on Instagram**: a short section after the FAQ and before the closing band: eyebrow, heading, one line, the outline button with the Instagram line icon, and the handle under it. Outline, so the closing band stays the page's one main action. Opens in a new tab.
+
+**Footer contact**: every host page's footer starts with the Instagram icon link (emerald line icon, gold on hover, with the handle) and "Need help? Write to us at" the help address (`components/legal/FooterContact.tsx`). The handle, the URL and the address live in `lib/site.ts` and are never typed into a component.
+
 **Closing band**: full-width emerald, the white logo between two gold hairlines, ivory heading, `gold-soft` small line, the inverted button.
 
 ## 5. Layout

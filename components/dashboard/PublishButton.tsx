@@ -10,6 +10,7 @@ import CouponField, {
 import { initiateCheckout } from "@/lib/metaPixel";
 import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
+import HelpLine from "@/components/legal/HelpLine";
 
 /**
  * Razorpay's checkout, loaded from Razorpay's own domain.
@@ -368,6 +369,9 @@ export default function PublishButton({
       </button>
 
       <StatusLine phase={phase} onCheckAgain={() => router.refresh()} />
+
+      {/* Where a host stuck on a payment looks first. */}
+      <HelpLine className="sm:text-right" />
     </div>
   );
 }

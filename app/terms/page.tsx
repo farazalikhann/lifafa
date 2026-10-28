@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { List, P, Section, TextLink } from "@/components/legal/LegalPage";
-import { OPERATOR, SUPPORT_EMAIL } from "@/lib/legal";
+import { OPERATOR } from "@/lib/legal";
+import { HELP_EMAIL, HELP_MAILTO } from "@/lib/site";
 import {
   PREMIUM_PRICE_PAISE,
   TRADITIONS_PRICE_PAISE,
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   ...marketingShare(TITLE, DESCRIPTION, "/terms"),
 };
 
-const MAIL = `mailto:${SUPPORT_EMAIL}`;
+const MAIL = HELP_MAILTO;
 const TRADITIONS = formatPriceRs(TRADITIONS_PRICE_PAISE);
 const PREMIUM = formatPriceRs(PREMIUM_PRICE_PAISE);
 
@@ -28,7 +29,7 @@ export default function TermsPage(): ReactElement {
   return (
     <LegalPage
       title="Terms and Conditions"
-      updated="20 October 2026"
+      updated="28 October 2026"
       summary={[
         `An invitation costs ${TRADITIONS} in the Traditions Collection or ${PREMIUM} in the Premium Collection. One payment covers one event.`,
         "Until it is paid for, an invitation's link does not open for guests. Once paid, it opens for them straight away.",
@@ -201,7 +202,7 @@ export default function TermsPage(): ReactElement {
           These terms are governed by the law of India. Any dispute is subject
           to the courts at Lucknow, Uttar Pradesh. Before going to court,
           please write to us at{" "}
-          <TextLink href={MAIL}>{SUPPORT_EMAIL}</TextLink>, and we will try
+          <TextLink href={MAIL}>{HELP_EMAIL}</TextLink>, and we will try
           to settle it with you.
         </P>
       </Section>

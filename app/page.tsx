@@ -6,6 +6,7 @@ import CallToAction from "@/components/landing/CallToAction";
 import Comparison from "@/components/landing/Comparison";
 import Faq from "@/components/landing/Faq";
 import Features from "@/components/landing/Features";
+import FollowInstagram from "@/components/landing/FollowInstagram";
 import HelpFooter from "@/components/landing/HelpFooter";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -55,7 +56,7 @@ function Band({
  * The landing page, light and editorial (DESIGN.md at the repo root), for a
  * host arriving on a phone from an ad: what Lifafa is and the two ways on,
  * the Premium designs opening on a phone, how it works, how it compares, what
- * it does, the price, six questions and a last way in.
+ * it does, the price, six questions, Instagram and a last way in.
  *
  * Built to be light on a slow connection. Every section is a server component
  * except the carousel, so the page is in the HTML and the first screen is
@@ -102,6 +103,10 @@ export default function Page() {
         <SectionRule />
         <Band pattern="asanoha">
           <Faq />
+        </Band>
+        <SectionRule />
+        <Band pattern="seigaiha">
+          <FollowInstagram />
         </Band>
         <CallToAction />
       </main>

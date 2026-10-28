@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { P, Section, TextLink } from "@/components/legal/LegalPage";
-import { SUPPORT_EMAIL } from "@/lib/legal";
+import { HELP_EMAIL, HELP_MAILTO } from "@/lib/site";
 import { marketingShare } from "@/lib/shareImage";
 
 const TITLE = "Shipping and Delivery Policy · Lifafa";
@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   ...marketingShare(TITLE, DESCRIPTION, "/shipping"),
 };
 
-const MAIL = `mailto:${SUPPORT_EMAIL}`;
+const MAIL = HELP_MAILTO;
 
 export default function ShippingPage(): ReactElement {
   return (
     <LegalPage
       title="Shipping and Delivery Policy"
-      updated="20 October 2026"
+      updated="28 October 2026"
       summary={[
         "Lifafa invitations are digital. Nothing is printed or shipped.",
         "Your invitation link works for guests as soon as your payment is confirmed, usually within a minute.",
@@ -48,7 +48,7 @@ export default function ShippingPage(): ReactElement {
       <Section title="If something goes wrong">
         <P>
           If you have paid and the link still does not open for guests after a
-          few minutes, email <TextLink href={MAIL}>{SUPPORT_EMAIL}</TextLink>{" "}
+          few minutes, email <TextLink href={MAIL}>{HELP_EMAIL}</TextLink>{" "}
           with the invitation link and the payment ID. If we cannot make it
           work, our{" "}
           <TextLink href="/refunds">Cancellation and Refund Policy</TextLink>{" "}

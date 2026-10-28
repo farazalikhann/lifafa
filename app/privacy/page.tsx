@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { List, P, Section, Subheading, TextLink } from "@/components/legal/LegalPage";
-import { OPERATOR, SUPPORT_EMAIL } from "@/lib/legal";
+import { OPERATOR } from "@/lib/legal";
+import { HELP_EMAIL, HELP_MAILTO } from "@/lib/site";
 import { marketingShare } from "@/lib/shareImage";
 
 const TITLE = "Privacy Policy · Lifafa";
@@ -15,13 +16,13 @@ export const metadata: Metadata = {
   ...marketingShare(TITLE, DESCRIPTION, "/privacy"),
 };
 
-const MAIL = `mailto:${SUPPORT_EMAIL}`;
+const MAIL = HELP_MAILTO;
 
 export default function PrivacyPage(): ReactElement {
   return (
     <LegalPage
       title="Privacy Policy"
-      updated="20 October 2026"
+      updated="28 October 2026"
       summary={[
         "We collect what it takes to make an invitation and count replies: the host's email, what the host types into the card, and each guest's reply.",
         "Guests do not need an account. A guest gives a name, a phone number when they are coming, how many people, and an optional message.",
@@ -42,7 +43,7 @@ export default function PrivacyPage(): ReactElement {
         <P>
           This policy follows India&apos;s Digital Personal Data Protection
           Act, 2023. For any question about it, write to{" "}
-          <TextLink href={MAIL}>{SUPPORT_EMAIL}</TextLink>.
+          <TextLink href={MAIL}>{HELP_EMAIL}</TextLink>.
         </P>
       </Section>
 
@@ -175,7 +176,7 @@ export default function PrivacyPage(): ReactElement {
         />
         <P>
           You can ask us to delete your data earlier, or to send you a copy of
-          it, by writing to <TextLink href={MAIL}>{SUPPORT_EMAIL}</TextLink>.
+          it, by writing to <TextLink href={MAIL}>{HELP_EMAIL}</TextLink>.
         </P>
       </Section>
 
@@ -196,7 +197,7 @@ export default function PrivacyPage(): ReactElement {
         <Subheading>Grievance officer</Subheading>
         <P>
           {OPERATOR.name}, {OPERATOR.city}.{" "}
-          <TextLink href={MAIL}>{SUPPORT_EMAIL}</TextLink>
+          <TextLink href={MAIL}>{HELP_EMAIL}</TextLink>
         </P>
       </Section>
 

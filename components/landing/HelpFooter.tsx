@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/brand/Logo";
+import FooterContact from "@/components/legal/FooterContact";
 import LegalFooter from "@/components/legal/LegalFooter";
-import { SUPPORT_EMAIL } from "@/lib/legal";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /** Where a visitor goes next. The five policy pages are in the strip below, shared with every host page. */
@@ -58,20 +58,13 @@ export default function HelpFooter() {
             </ul>
           </nav>
 
-          <div className="flex flex-col items-center sm:items-start">
-            <p className="text-sm text-[var(--lifafa-cream)]">
-              Questions before your event?
-            </p>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}`}
-              className={`${LINK_CLASS} text-[var(--lifafa-marigold)]`}
-            >
-              {SUPPORT_EMAIL}
-            </a>
+          {/* Instagram and the help address; pulled up like the links beside it. */}
+          <div className="sm:-mt-3">
+            <FooterContact layout="column" />
           </div>
         </div>
       </footer>
-      <LegalFooter as="div" />
+      <LegalFooter as="div" contact={false} />
     </>
   );
 }
