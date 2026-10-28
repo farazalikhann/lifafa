@@ -177,6 +177,14 @@ export interface TemplateConfig {
      * "Swipe up" on the first of them.
      */
     scrollCue?: boolean;
+    /**
+     * Where the language switch sits: "fixed", every card's, pinned to the
+     * top of the screen and tucked away while the guest scrolls down; or
+     * "top", compact and at the top of the page only, scrolled away with it,
+     * for a card whose headings and pictures run close to the screen's edge
+     * all the way down, where a pinned switch would come back over them.
+     */
+    languageSwitch?: "fixed" | "top";
   };
   /**
    * The colours of the printed copy's page, where they are not the card's: a

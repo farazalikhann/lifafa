@@ -148,6 +148,8 @@ export const DAK_GHAR: TemplateConfig = {
     rsvpTheme: replyCardTheme,
     Closing: dynamic(() => import("@/templates/dak-ghar/Closing")),
     keepsakeArt: false,
+    /* Compact, at the top of the page only: pinned, it came back over the headings and stamps. */
+    languageSwitch: "top",
   },
   print: { background: "#FBF4E6", textPrimary: INK },
 };

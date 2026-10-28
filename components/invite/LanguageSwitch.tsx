@@ -53,19 +53,29 @@ function withAlpha(hex: string, alpha: string): string {
  * are near the top, or tab to it. A pill parked over the text for the whole
  * scroll would be covering the invitation it is there to translate. While the
  * cover is up the page cannot scroll (CoverShell locks it), so it stays put.
+ *
+ * "top" (a template's choice, `page.languageSwitch`): compact, and at the top
+ * of the page rather than of the screen, so it scrolls away with the page and
+ * never comes back over a heading or a picture further down. A guest who
+ * wants it scrolls back to the top. Its buttons are 32px to look at, with a
+ * 44px tap target each.
  */
 export default function LanguageSwitch({
   value,
   onChange,
   palette,
   accent,
+  placement = "fixed",
 }: {
   value: CardLanguage;
   onChange: (language: CardLanguage) => void;
   palette: Palette;
   /** The card's accent: the host's own, or the palette's. */
   accent: string;
+  /** Pinned to the screen ("fixed"), or at the top of the page only ("top"). See above. */
+  placement?: "fixed" | "top";
 }): ReactElement {
+  const atTop = placement === "top";
   const [isTucked, setIsTucked] = useState(false);
   const groupRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +101,11 @@ export default function LanguageSwitch({
   }, [isTucked, value]);
 
   useEffect(() => {
+    /* At the top of the page it scrolls away by itself. */
+    if (atTop) {
+      return;
+    }
+
     let last = window.scrollY;
 
     const handleScroll = (): void => {
@@ -107,7 +122,7 @@ export default function LanguageSwitch({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [atTop]);
 
   /*
     The selected side is filled with the accent, and its text is whichever of
@@ -127,13 +142,17 @@ export default function LanguageSwitch({
       role="group"
       aria-label="Language / भाषा"
       onFocusCapture={() => setIsTucked(false)}
-      className="fixed z-[60] flex rounded-full border p-1 shadow-[0_4px_18px_rgba(0,0,0,0.25)] backdrop-blur-md transition-transform duration-300 ease-out motion-reduce:transition-none"
+      className={
+        atTop
+          ? "absolute z-[60] flex rounded-full border p-0.5 shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
+          : "fixed z-[60] flex rounded-full border p-1 shadow-[0_4px_18px_rgba(0,0,0,0.25)] backdrop-blur-md transition-transform duration-300 ease-out motion-reduce:transition-none"
+      }
       style={{
         /* Below the host's preview banner when there is one; see HostPreviewBanner. */
         top: "calc(max(12px, env(safe-area-inset-top)) + var(--lifafa-preview-h, 0px))",
         right: "max(12px, env(safe-area-inset-right))",
-        transform: isTucked ? "translateY(calc(-100% - 24px))" : "none",
-        backgroundColor: withAlpha(palette.surface, "E6"),
+        transform: isTucked && !atTop ? "translateY(calc(-100% - 24px))" : "none",
+        backgroundColor: withAlpha(palette.surface, atTop ? "F2" : "E6"),
         borderColor: withAlpha(accent, "59"),
         fontFamily: SWITCH_FACE,
       }}
@@ -157,7 +176,11 @@ export default function LanguageSwitch({
               still clears the crest the curtain cover hangs at the middle of
               the top. The 44px tap target holds at every width.
             */
-            className="min-h-11 min-w-11 rounded-full px-2.5 text-xs leading-none font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 min-[400px]:px-4 min-[400px]:text-[0.8125rem]"
+            className={
+              atTop
+                ? "relative h-8 min-w-11 rounded-full px-2.5 text-xs leading-none font-medium transition-colors duration-150 after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2"
+                : "min-h-11 min-w-11 rounded-full px-2.5 text-xs leading-none font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 min-[400px]:px-4 min-[400px]:text-[0.8125rem]"
+            }
             style={{
               backgroundColor: isSelected ? accent : "transparent",
               color: isSelected ? selectedText : palette.textPrimary,

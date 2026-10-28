@@ -751,6 +751,7 @@ export default function InviteExperience({
           onChange={handleLanguageChange}
           palette={palette}
           accent={config.style.accentOverride ?? palette.accent}
+          placement={templatePage?.languageSwitch ?? "fixed"}
         />
       ) : null}
     </>
