@@ -34,6 +34,7 @@ import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
+import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
 
 type DeviceId = "phone" | "desktop";
 
@@ -830,6 +831,9 @@ export default function FullScreenPreview({
                 closingNote="card"
               />
             </div>
+
+            {/* The credit at the very end, as the guest's page has it; clear of the pill on an unpaid card. */}
+            <MadeWithLifafa theme={theme} config={config} clearPill={!isPaid} />
 
             <Watermark
               show={!isPaid}

@@ -18,6 +18,8 @@ export const CLASSIC_TEMPLATE_ID = "classic";
  * and it is the design a new card has always started with.
  */
 export const CLASSIC_TEMPLATE: TemplateConfig = {
+  /* The "Made with Lifafa" credit in the card's text colour. */
+  creditInk: "text",
   id: CLASSIC_TEMPLATE_ID,
   name: "Classic",
   description: "A simple card in ink and gold, for any occasion.",

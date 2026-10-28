@@ -51,6 +51,7 @@ import type { CardLanguage } from "@/types/card";
 import type { StoredEvent } from "@/types/database";
 import type { RsvpSubmission } from "@/types/guest";
 import type { EventWeather } from "@/types/weather";
+import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
 
 /*
   What sits below the card, each in a chunk of its own rather than in the one
@@ -728,6 +729,14 @@ export default function InviteExperience({
             </div>
           </div>
           </div>
+
+          {/*
+            The maker's credit, after everything: under the border's foot, on
+            the card's ground, where only a guest who has read to the end
+            meets it. The cover is over the whole page until it opens. On an
+            unpaid card it stands clear of the "not yet active" pill.
+          */}
+          <MadeWithLifafa theme={theme} config={config} clearPill={!event.isPaid} />
         </main>
       </CoverShell>
 

@@ -78,6 +78,8 @@ const COVER_OPTION: CoverAnimationOption = {
  * script over an elegant serif, each with its own Devanagari faces.
  */
 export const GULAB_MAHAL: TemplateConfig = {
+  /* The "Made with Lifafa" credit in the card's text colour. */
+  creditInk: "text",
   ...GULAB_MAHAL_LISTING,
   description:
     "A blush envelope under a rose-gold seal, and a card of full-screen pages in blush velvet.",

@@ -81,6 +81,8 @@ const COVER_OPTION: CoverAnimationOption = {
  * invited" in.
  */
 export const DAK_GHAR: TemplateConfig = {
+  /* The "Made with Lifafa" credit in the card's text colour. */
+  creditInk: "text",
   ...DAK_GHAR_LISTING,
   description:
     "A post box in a haveli courtyard prints your date, then letters, stamps and a postcard.",

@@ -13,6 +13,7 @@ import type { CardConfig, CardLanguage } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
+import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
 
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
 const FRAME_QUERY = "(min-width: 64rem)";
@@ -136,6 +137,8 @@ export default function CardPreview({
           /* The closing words at the card's end: there is no reply form here for them to follow. */
           closingNote="card"
         />
+        {/* The credit a guest meets at the very end, under the card, as on the invitation. */}
+        <MadeWithLifafa theme={theme} config={config} />
       </div>
 
       {/* Directly under the frame, because it is an action on that card. */}

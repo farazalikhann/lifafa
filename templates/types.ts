@@ -5,6 +5,7 @@ import type { CoverVisualState } from "@/components/invite/CoverShell";
 import type { DesignState } from "@/lib/designDefaults";
 import type { PrintLayout } from "@/lib/printCard";
 import type { Theme } from "@/lib/themes";
+import type { CreditInk } from "@/components/invite/MadeWithLifafa";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 import type { CardBorderStyle, CardLanguage, CardSectionId, Scene } from "@/types/card";
@@ -127,6 +128,13 @@ export interface TemplateConfig {
   scene?: Scene;
   /** What draws the card. */
   Card: ComponentType<TemplateCardProps>;
+  /**
+   * Which of the card's own colours the "Made with Lifafa" credit at the end
+   * of the invitation is set in: its text colour or its accent. Only the
+   * choice is made here; the colour is the card's, whatever colourway the
+   * host picked. See components/invite/MadeWithLifafa.tsx.
+   */
+  creditInk: CreditInk;
   /**
    * The template's own opening cover, where its artwork has one. Then it is
    * the cover on every card in this template, and the host is not offered the

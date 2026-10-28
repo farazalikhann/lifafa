@@ -20,6 +20,7 @@ import { inviteUrl } from "@/lib/siteUrl";
 import { cardPalette } from "@/lib/textColors";
 import { getTemplate } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
+import { MADE_WITH_LIFAFA } from "@/components/invite/MadeWithLifafa";
 
 /**
  * The invitation as a printable copy: sheets of A5, for the browser's own
@@ -191,6 +192,10 @@ export default async function PrintPage({
               style={{ color: palette.textPrimary }}
             >
               {copy.keepsake.scan}
+              {/* The credit, as words only: paper has nothing to tap. */}
+              <span className="lifafa-print-credit" lang="en-IN">
+                {MADE_WITH_LIFAFA}
+              </span>
             </span>
           </>
         }

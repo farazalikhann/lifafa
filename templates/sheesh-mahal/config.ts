@@ -123,6 +123,8 @@ const COVER_OPTION: CoverAnimationOption = {
  * Cormorant first.
  */
 export const SHEESH_MAHAL: TemplateConfig = {
+  /* The "Made with Lifafa" credit in the card's gold accent. */
+  creditInk: "accent",
   ...SHEESH_MAHAL_LISTING,
   description:
     "Open doors of mirror-work and walk on through a night palace, room by room.",

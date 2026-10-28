@@ -78,6 +78,8 @@ const COVER_OPTION: CoverAnimationOption = {
  * Devanagari faces for a Hindi card.
  */
 export const EMERALD_SHAHI: TemplateConfig = {
+  /* The "Made with Lifafa" credit in the card's gold accent. */
+  creditInk: "accent",
   ...EMERALD_SHAHI_LISTING,
   description:
     "A velvet envelope and a gold seal, on emerald with ivory roses and gold line art.",

@@ -81,6 +81,8 @@ export function presetTemplate({
     category: preset.tradition,
     listed: true,
     collection: "traditions",
+    /* The credit in the card's text colour, on every template made from a preset. */
+    creditInk: "text",
     price: TRADITIONS_PRICE_PAISE,
     preview,
     palettes: [
