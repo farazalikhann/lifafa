@@ -13,6 +13,8 @@
  *                   50% across and 50% down.
  *   letter-paper    760 x 1127. Keep words inside 12% to 88% each way,
  *                   clear of the paisley corners and the border.
+ *   wax-seal        260 x 264. Its flat disc, where the initials go, is
+ *                   29% to 72% across and 26% to 65% down, centre 50%, 45%.
  *   telegram-slip   760 x 323. The ruled panel inside the blue border runs
  *                   5% to 95% across and 15% to 90% down.
  *   date-slip       420 x 1375. Three framed panels, 9.5% to 90.5% across:
@@ -38,6 +40,14 @@ export const ART = {
   clock: `${DIR}/clock.webp`,
   garland: `${DIR}/garland-corner.webp`,
   dateSlip: `${DIR}/date-slip.webp`,
+  waxSeal: `${DIR}/wax-seal.webp`,
+  airmail: `${DIR}/airmail-envelope.webp`,
+  groom: `${DIR}/groom.webp`,
+  bride: `${DIR}/bride.webp`,
+  calendar: `${DIR}/desk-calendar.webp`,
+  plane: `${DIR}/paper-plane.webp`,
+  note: `${DIR}/thank-you-note.webp`,
+  letters: `${DIR}/letters-bundle.webp`,
 } as const;
 
 /*
@@ -60,8 +70,9 @@ export const COVER_IMAGES: readonly string[] = [
   DATE_SLIP === "strip" ? ART.dateSlip : ART.telegramSmall,
   ART.paper,
   ART.letter,
-  ART.garland,
+  ART.waxSeal,
   ART.desk,
+  ART.airmail,
 ];
 
 /** The post box: its picture's shape, its slot and its brass plate (see above). */

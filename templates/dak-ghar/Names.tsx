@@ -1,25 +1,37 @@
 "use client";
 
-import { useRef, type CSSProperties, type ReactElement } from "react";
+import { useLayoutEffect, useRef, type CSSProperties, type ReactElement } from "react";
 import { preload } from "react-dom";
+import GoldFlower from "@/components/invite/covers/GoldFlower";
+import { initialOf } from "@/components/invite/covers/initials";
 import { coverNameLine, formatWhen, placeholderOpacity, resolveCoverNames } from "@/lib/cardFormat";
+import { playEffectSound } from "@/lib/effectSound";
 import { dateRevealOf } from "@/lib/royalScroll";
 import { ART } from "@/templates/dak-ghar/art";
+import Drift from "@/templates/dak-ghar/Drift";
 import styles from "@/templates/dak-ghar/dak.module.css";
 import { DAK_FONTS, caps, dakCopy, leading } from "@/templates/dak-ghar/shared";
+import { SOUND } from "@/templates/dak-ghar/sounds";
 import { useFitInside, useReveal } from "@/templates/dak-ghar/useReveal";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 /**
- * The first page: the names on a sheet of letter paper, with the writing desk
- * (inkwell, pen and a bundle of letters) at its foot and a garland on its top
- * corner, both clear of the words.
+ * The first page: the names on a sheet of letter paper, a crimson wax seal at
+ * its top centre with the couple's initials pressed into it (Devanagari on a
+ * Hindi card, a small flower when nobody is named), the writing desk
+ * (inkwell, pen and a bundle of letters) at its foot, both clear of the words.
+ * Behind it a few airmail envelopes drift slowly across the paper (Drift).
  *
  * The words stay inside the paper's border, 12% to 88% each way (art.ts), and
  * are sized to fit there by useFitInside, so a long pair of names, or Hindi,
- * shrinks and never reaches the paisleys. One entrance as the cover lets the
- * card go: the paper rises and the lines fade up in turn.
+ * shrinks and never reaches the paisleys.
+ *
+ * ONE ENTRANCE, as the cover lets the card go: the whole letter, seal and desk
+ * with it, is thrown onto the table in one piece, up from below, turned -8
+ * degrees and at 0.85, to rest at -1.5 degrees with a soft settle, to
+ * dg-paper-whoosh; then its lines fade up in turn. One CSS animation, its
+ * sound started 60ms ahead of it. Under reduced motion it simply fades in.
  *
  * The date is left off a card whose host hides it behind a scratch panel.
  */
@@ -50,7 +62,17 @@ export default function DakGharNames({
 
   useFitInside(boxRef, wordsRef, `${title}|${coverNameLine(names)}|${when}|${language}`);
 
-  const line = (order: number): CSSProperties => ({ "--dg-delay": `${250 + order * 130}ms` }) as CSSProperties;
+  /* The letter's landing, heard as it is thrown (its animation waits SOUND_LEAD_MS for this). */
+  useLayoutEffect(() => {
+    if (shown) {
+      playEffectSound(SOUND.whoosh);
+    }
+  }, [shown]);
+
+  const initials = names.kind === "pair" ? `${initialOf(names.first)} & ${initialOf(names.second)}` : "";
+
+  /* After the letter has landed (about 1s), the lines in turn. */
+  const line = (order: number): CSSProperties => ({ "--dg-delay": `${900 + order * 120}ms` }) as CSSProperties;
   const nameStyle: CSSProperties = {
     ...DAK_FONTS.serif,
     fontSize: "2.5em",
@@ -60,13 +82,25 @@ export default function DakGharNames({
 
   return (
     <section ref={ref} className={`${styles.page} ${styles.namesPage}`} style={{ minHeight }}>
+      <Drift active={shown} />
       <div className={`${styles.letter} ${shown ? styles.shown : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={ART.letter} alt="" draggable={false} className={styles.letterArt} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ART.garland} alt="" draggable={false} className={styles.letterGarland} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={ART.desk} alt="" draggable={false} className={styles.letterDesk} />
+        <div aria-hidden="true" className={styles.letterSeal}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ART.waxSeal} alt="" width={260} height={264} draggable={false} className="block h-auto w-full select-none" />
+          <span className={styles.sealMark}>
+            {initials.length > 0 ? (
+              <span className={styles.sealInitials} style={DAK_FONTS.serif}>
+                {initials}
+              </span>
+            ) : (
+              <GoldFlower hi="#c9584d" body="#7a1a14" lo="#4e0d09" className="w-[46%]" />
+            )}
+          </span>
+        </div>
 
         <div ref={boxRef} className={styles.letterBox}>
           <div ref={wordsRef} className="flex w-full flex-col items-center text-center" style={{ gap: "0.7em" }}>

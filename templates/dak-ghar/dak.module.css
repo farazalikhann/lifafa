@@ -710,21 +710,63 @@
   padding-block: 2.5rem 3rem;
 }
 
+/*
+  The letter, thrown onto the table in one piece: up from below, turned and
+  small, landing a touch past its rest and settling at -1.5 degrees. Its
+  sound is started SOUND_LEAD_MS (60ms) before it moves.
+*/
 .letter {
   position: relative;
+  z-index: 1;
   width: min(88cqw, 25rem);
   aspect-ratio: 760 / 1127;
   container-type: inline-size;
   opacity: 0;
-  transform: translate3d(0, 18px, 0);
-  transition:
-    opacity 700ms ease-out,
-    transform 900ms cubic-bezier(0.22, 0.7, 0.3, 1);
+  transform: translate3d(0, 42vh, 0) rotate(-8deg) scale(0.85);
 }
 
 .letter.shown {
-  opacity: 1;
-  transform: none;
+  animation: dg-throw 1000ms 60ms both;
+  will-change: transform, opacity;
+}
+
+@keyframes dg-throw {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 42vh, 0) rotate(-8deg) scale(0.85);
+    animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1);
+  }
+  12% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 1;
+    transform: translate3d(0, -6px, 0) rotate(-0.6deg) scale(1.012);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-1.5deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter {
+    transform: rotate(-1.5deg);
+  }
+
+  .letter.shown {
+    animation: dg-fade-in 400ms ease-out both;
+  }
+}
+
+@keyframes dg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .letterArt {
@@ -735,17 +777,41 @@
   user-select: none;
 }
 
-/* The garland over the top right corner and the desk at the foot, both outside the words' box. */
-.letterGarland {
+/* The wax seal at the top centre, over the paper's top border, clear of the words' box (17% down). */
+.letterSeal {
   position: absolute;
-  top: -5%;
-  right: -7%;
-  width: 34%;
-  height: auto;
+  top: -6%;
+  left: 50%;
+  width: 32%;
+  margin-left: -16%;
   pointer-events: none;
-  user-select: none;
+  container-type: inline-size;
 }
 
+/* The flat disc in the wax (art.ts): centre 50%, 45%, about 43% across. */
+.sealMark {
+  position: absolute;
+  left: 28%;
+  right: 28%;
+  top: 27%;
+  height: 37%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pressed into the wax: the light catching the raised letters, a dark edge under them. */
+.sealInitials {
+  font-size: 15cqw;
+  line-height: 1;
+  white-space: nowrap;
+  color: #f1c3b0;
+  text-shadow:
+    0 1px 0 rgb(60 4 2 / 0.75),
+    0 -1px 0 rgb(255 220 205 / 0.25);
+}
+
+/* The desk at the foot, outside the words' box. */
 .letterDesk {
   position: absolute;
   bottom: -5%;
@@ -765,6 +831,86 @@
   justify-content: center;
   overflow: hidden;
   font-size: clamp(16px, 4.6cqw, 19px);
+}
+
+/*
+  Airmail envelopes drifting across the first page, behind the letter
+  (Drift.tsx): four, two under 400px, faint, slow, each crossing at its own
+  speed with a small bob and turn. Spread from the start by negative delays.
+*/
+.driftLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1200ms ease-out 700ms;
+}
+
+.driftOn {
+  opacity: 1;
+}
+
+.drift {
+  position: absolute;
+  top: var(--y);
+  left: 0;
+  width: var(--w);
+  animation: dg-drift var(--dur) linear var(--delay) infinite;
+  will-change: transform;
+}
+
+.driftArt {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: var(--o);
+  transform: rotate(var(--r));
+  animation: dg-bob var(--bob) ease-in-out var(--delay) infinite alternate;
+  will-change: transform;
+  user-select: none;
+}
+
+.drift[data-drift="0"] { --y: 9%; --w: 62px; --dur: 46s; --delay: -8s; --r: -12deg; --o: 0.5; --dy: -4vh; --bob: 5s; }
+.drift[data-drift="1"] { --y: 72%; --w: 82px; --dur: 60s; --delay: -38s; --r: 10deg; --o: 0.42; --dy: 3vh; --bob: 6.5s; }
+.drift[data-drift="2"] { --y: 34%; --w: 46px; --dur: 52s; --delay: -21s; --r: 18deg; --o: 0.38; --dy: -2vh; --bob: 4.5s; }
+.drift[data-drift="3"] { --y: 88%; --w: 56px; --dur: 40s; --delay: -29s; --r: -6deg; --o: 0.45; --dy: -3vh; --bob: 5.5s; }
+
+@media (max-width: 399px) {
+  .drift[data-drift="2"],
+  .drift[data-drift="3"] {
+    display: none;
+  }
+}
+
+.driftPaused .drift,
+.driftPaused .driftArt {
+  animation-play-state: paused;
+}
+
+@keyframes dg-drift {
+  from {
+    transform: translate3d(calc(-1 * var(--w) - 16px), 0, 0);
+  }
+  to {
+    transform: translate3d(calc(100cqw + 16px), var(--dy), 0);
+  }
+}
+
+@keyframes dg-bob {
+  from {
+    transform: translate3d(0, -6px, 0) rotate(calc(var(--r) - 3deg));
+  }
+  to {
+    transform: translate3d(0, 6px, 0) rotate(calc(var(--r) + 3deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driftLayer {
+    display: none;
+  }
 }
 
 /* ─── Paper cards: the couple, the date, the numbers, a host's own section ─── */
