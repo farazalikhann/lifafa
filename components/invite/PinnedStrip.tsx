@@ -1,6 +1,13 @@
 "use client";
 
-import { useLayoutEffect, useRef, type ReactElement, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import type { StripTone } from "@/lib/stripTone";
 
 /**
  * A strip pinned across the top of an invitation, above everything on it.
@@ -18,6 +25,7 @@ export default function PinnedStrip({
   children,
   action,
   slim = false,
+  tone,
 }: {
   /** What the strip is, for a screen reader moving by landmark. */
   label: string;
@@ -31,6 +39,12 @@ export default function PinnedStrip({
    * a card somebody is reading, where every row it takes is a row of card.
    */
   slim?: boolean;
+  /**
+   * The card's own colours, in place of the strip's ink and marigold: the
+   * sample banner, drawn in the colours of the card under it. The button
+   * takes them from `--strip-*`, set here.
+   */
+  tone?: StripTone;
 }): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -66,7 +80,18 @@ export default function PinnedStrip({
       role="region"
       aria-label={label}
       className="fixed inset-x-0 top-0 z-[70] border-b border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-ink)]/95 backdrop-blur"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        ...(tone === undefined
+          ? {}
+          : {
+              backgroundColor: tone.bar,
+              borderColor: `color-mix(in srgb, ${tone.button} 40%, transparent)`,
+              "--strip-highlight": tone.highlight,
+              "--strip-button": tone.button,
+              "--strip-button-text": tone.buttonText,
+            }),
+      } as CSSProperties}
     >
       <div
         className={`mx-auto flex max-w-3xl items-center justify-between gap-x-4 gap-y-2 px-4 ${
@@ -77,6 +102,7 @@ export default function PinnedStrip({
           className={`min-w-0 flex-1 text-[0.8125rem] leading-snug text-[var(--lifafa-cream)] ${
             slim ? "text-balance" : "basis-[16rem]"
           }`}
+          style={tone === undefined ? undefined : { color: tone.text }}
         >
           {children}
         </p>
@@ -86,6 +112,13 @@ export default function PinnedStrip({
   );
 }
 
-/** The strip's button: the marigold pill both strips end in. */
+/**
+ * The strip's button: the marigold pill both strips end in, or the card's
+ * accent on a strip given a `tone`.
+ */
 export const PINNED_STRIP_ACTION =
-  "inline-flex min-h-11 shrink-0 items-center rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
+  "inline-flex min-h-11 shrink-0 items-center rounded-full bg-[var(--strip-button,var(--lifafa-marigold))] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--strip-button-text,var(--lifafa-ink))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--strip-button,var(--lifafa-marigold))]";
+
+/** The first words of the strip's line, set apart: marigold, or the card's own. */
+export const PINNED_STRIP_HIGHLIGHT =
+  "font-semibold text-[var(--strip-highlight,var(--lifafa-marigold))]";

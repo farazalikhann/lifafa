@@ -17,15 +17,29 @@ const FIT_STEP = 0.04;
  * again when the box changes size or the fonts arrive; never while anything
  * moves.
  */
-/** The step-down itself, once: for a caller that sizes something else first (the couple's tags). */
-export function fitInside(outer: HTMLElement, inner: HTMLElement): void {
+/**
+ * The step-down itself, once: for a caller that sizes something else first (the couple's tags).
+ *
+ * `layoutHeight`: measure the words by their own height, not by what they
+ * reach. For words that fade up into place: while they are still moving, a
+ * line drawn lower than where it will settle counts as overflow, and the
+ * words would be set a size or two smaller than the box needs. Only for words
+ * whose box is as tall as its lines (not a box of a fixed height).
+ */
+export function fitInside(
+  outer: HTMLElement,
+  inner: HTMLElement,
+  layoutHeight = false,
+): void {
   let scale = 1;
   inner.style.fontSize = "1em";
 
+  const tall = (): number =>
+    layoutHeight ? inner.offsetHeight : inner.scrollHeight;
+
   while (
     scale > FIT_FLOOR &&
-    (inner.scrollHeight > outer.clientHeight ||
-      inner.scrollWidth > outer.clientWidth)
+    (tall() > outer.clientHeight || inner.scrollWidth > outer.clientWidth)
   ) {
     scale = Math.max(FIT_FLOOR, scale - FIT_STEP);
     inner.style.fontSize = `${scale}em`;
@@ -36,6 +50,8 @@ export function useFitInside(
   box: RefObject<HTMLElement | null>,
   words: RefObject<HTMLElement | null>,
   key: string,
+  /** See fitInside. */
+  layoutHeight = false,
 ): void {
   useLayoutEffect(() => {
     const outer = box.current;
@@ -49,7 +65,7 @@ export function useFitInside(
 
     const fit = (): void => {
       if (live) {
-        fitInside(outer, inner);
+        fitInside(outer, inner, layoutHeight);
       }
     };
 
@@ -64,5 +80,5 @@ export function useFitInside(
       live = false;
       observer?.disconnect();
     };
-  }, [box, words, key]);
+  }, [box, words, key, layoutHeight]);
 }

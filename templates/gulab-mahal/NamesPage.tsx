@@ -110,6 +110,8 @@ export default function GulabNamesPage({
     boxRef,
     wordsRef,
     `${title}|${coverNameLine(names)}|${when}|${language}`,
+    /* The lines fade up into place: measured where they settle. */
+    true,
   );
 
   const script: CSSProperties = {
@@ -148,7 +150,7 @@ export default function GulabNamesPage({
           <div
             ref={wordsRef}
             className="flex w-full flex-col items-center text-center"
-            style={{ gap: "0.5em" }}
+            style={{ gap: "0.34em" }}
           >
             {title.length > 0 ? (
               <Line
@@ -157,8 +159,8 @@ export default function GulabNamesPage({
                 className={`${styles.caps} wrap-anywhere text-balance`}
                 style={{
                   ...fonts.heading,
-                  fontSize: language === "hi" ? "1em" : "0.76em",
-                  lineHeight: 1.5,
+                  fontSize: language === "hi" ? "1.22em" : "0.94em",
+                  lineHeight: 1.3,
                 }}
               >
                 {title}
@@ -171,8 +173,8 @@ export default function GulabNamesPage({
               className="text-balance"
               style={{
                 ...fonts.italic(language),
-                fontSize: "0.9em",
-                lineHeight: 1.4,
+                fontSize: "1.12em",
+                lineHeight: 1.3,
                 color: "var(--gm-wine-soft)",
               }}
             >
@@ -239,8 +241,8 @@ export default function GulabNamesPage({
                 className="text-balance"
                 style={{
                   ...fonts.heading,
-                  fontSize: "0.98em",
-                  lineHeight: 1.35,
+                  fontSize: "1.2em",
+                  lineHeight: 1.25,
                   color: "var(--gm-wine)",
                 }}
               >

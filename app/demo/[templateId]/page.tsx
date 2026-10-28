@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import InviteExperience from "@/components/invite/InviteExperience";
 import SampleBanner from "@/components/invite/SampleBanner";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
+import { sampleStripTone } from "@/lib/stripTone";
 import {
   DEMO_CHECKIN_TOKEN,
   templateDemoEvent,
@@ -74,6 +75,7 @@ export default async function TemplateDemoPage({
       <style>{`html,body{background-color:${ground}}`}</style>
       {/* A template the gallery does not offer yet cannot be started on: its button opens the gallery. */}
       <SampleBanner
+        tone={sampleStripTone(event.config)}
         start={{
           href: template.listed ? templateStartHref(template.id) : NEW_CARD_HREF,
           pricePaise: template.price,

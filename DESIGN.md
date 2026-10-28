@@ -175,7 +175,7 @@ Motion follows the lifafa-motion rules: low-end Android first.
 - Keep the page on `washi`, with `paper` for anything that holds content.
 - Use one emerald pill per screen for the main action and an outline pill for the second.
 - Read every price from `lib/pricing.ts`.
-- Write plain, short English: "Choose a design", "Share one link".
+- Write plain, short English: "Create yours", "Share one link".
 - Keep gold to hairlines, ornaments and patterns.
 - Keep side patterns at 10 to 15 percent opacity, `aria-hidden` and `pointer-events: none`.
 - Show the product: an invitation on a phone.

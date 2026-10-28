@@ -43,7 +43,7 @@ export default function CallToAction(): ReactElement {
           about 10 minutes.
         </p>
         <Link href={NEW_CARD_HREF} className={`mt-9 ${ON_EMERALD_BUTTON}`}>
-          <LinkPending>Choose a design</LinkPending>
+          <LinkPending>Create yours</LinkPending>
         </Link>
         <p className="mt-5 text-sm text-[var(--paper-gold-soft)]">
           From {formatPrice(LOWEST_PRICE_PAISE)} per event. One time payment.

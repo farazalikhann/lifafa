@@ -235,15 +235,17 @@ export const CAMEO_ASPECT = 800 / 1200;
  * Measured off the file, row by row, where the ivory satin runs: it is an
  * oval centred at 50% across and 48.6% down, 74% of the picture across at its
  * widest (y 50%), from about 17% down to 80%, with the roses of the foot
- * cutting into it from 70.8% down on the left. The box is the band from 22.5%
- * to 69% down and 17% in from each side, which is inside the satin at its
+ * cutting into it from 70.8% down on the left. The box is the band from 21.5%
+ * to 69.5% down and 17% in from each side, which is inside the satin at its
  * middle with 4% to spare; near its top and its foot the oval is narrower than
- * the box (46% of the picture across at 22.5%, 60% at 69%), so the first and
- * the last lines are held narrower too (`CAMEO_LINES`).
+ * the box (about 44% of the picture across at 21.5%, 52% at 69.5%), so the first
+ * lines and the last are held narrower too (`CAMEO_LINES`). Checked with the
+ * words filling the box, in English and Hindi, long names too: every line
+ * keeps at least 12px of satin either side on a 360px phone.
  */
 export const CAMEO_BOX = {
-  top: 0.225,
-  bottom: 1 - 0.69,
+  top: 0.215,
+  bottom: 1 - 0.695,
   side: 0.17,
 } as const;
 
@@ -251,8 +253,8 @@ export const CAMEO_BOX = {
 export const CAMEO_LINES = {
   /* The title, the first line, where the oval is 46% of the picture across. */
   top: 0.58,
-  /* The invitation line, a little below it. */
-  upper: 0.84,
+  /* The invitation line, a little below it: its first line can sit as high as 26% down. */
+  upper: 0.74,
   /* The date, the last line, where the oval is about 60% across. */
   foot: 0.74,
 } as const;

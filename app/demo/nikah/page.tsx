@@ -9,6 +9,7 @@ import {
   DEMO_NIKAH_PATH,
 } from "@/lib/demoCards";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
+import { sampleStripTone } from "@/lib/stripTone";
 
 /**
  * The sample invitation, opened whole.
@@ -49,7 +50,7 @@ export default function DemoNikahPage(): ReactElement {
     <>
       {/* The card's colour from the first byte, as on a guest's link; see app/i/[inviteCode]/page.tsx. */}
       <style>{`html,body{background-color:${DEMO_NIKAH_GROUND}}`}</style>
-      <SampleBanner />
+      <SampleBanner tone={sampleStripTone(DEMO_NIKAH.config)} />
       <InviteExperience
         event={DEMO_NIKAH}
         initialLanguage={language}

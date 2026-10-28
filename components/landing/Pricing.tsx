@@ -114,7 +114,7 @@ export default function Pricing(): ReactElement {
                 className={plan.featured ? PRIMARY_BUTTON : SECONDARY_BUTTON}
               >
                 <LinkPending>
-                  Choose a design
+                  Create yours
                   <span className="sr-only"> from the {plan.name} Collection</span>
                 </LinkPending>
               </Link>
