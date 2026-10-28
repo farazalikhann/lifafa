@@ -7,12 +7,17 @@ import {
   TRADITIONS_PRICE_PAISE,
   formatPriceRs,
 } from "@/lib/pricing";
+import { marketingShare } from "@/lib/shareImage";
+
+const TITLE = "Terms and Conditions · Lifafa";
+const DESCRIPTION =
+  "The terms for using Lifafa: accounts, prices, what one payment covers, editing after payment, AI translate, and your responsibilities as a host.";
 
 export const metadata: Metadata = {
-  title: "Terms and Conditions · Lifafa",
-  description:
-    "The terms for using Lifafa: accounts, prices, what one payment covers, editing after payment, AI translate, and your responsibilities as a host.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/terms" },
+  ...marketingShare(TITLE, DESCRIPTION, "/terms"),
 };
 
 const MAIL = `mailto:${SUPPORT_EMAIL}`;

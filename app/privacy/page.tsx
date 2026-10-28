@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { List, P, Section, Subheading, TextLink } from "@/components/legal/LegalPage";
 import { OPERATOR, SUPPORT_EMAIL } from "@/lib/legal";
+import { marketingShare } from "@/lib/shareImage";
+
+const TITLE = "Privacy Policy · Lifafa";
+const DESCRIPTION =
+  "What Lifafa collects from hosts and guests, why, who processes it, how long it is kept, and how to see, correct or delete it.";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Lifafa",
-  description:
-    "What Lifafa collects from hosts and guests, why, who processes it, how long it is kept, and how to see, correct or delete it.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/privacy" },
+  ...marketingShare(TITLE, DESCRIPTION, "/privacy"),
 };
 
 const MAIL = `mailto:${SUPPORT_EMAIL}`;

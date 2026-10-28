@@ -513,6 +513,19 @@ export const metadata: Metadata = {
     code or the invitation's id. Other sites were already sent only the origin.
   */
   referrer: "strict-origin",
+  /*
+    The brand icons (public/brand/). The SVG first for browsers that take one,
+    the 32px PNG for those that do not, and the larger PNGs for home screens.
+  */
+  icons: {
+    icon: [
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   ...(metaDomainVerification.length > 0
     ? { other: { "facebook-domain-verification": metaDomainVerification } }
     : {}),

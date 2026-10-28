@@ -9,6 +9,7 @@ import { getEventById } from "@/lib/db/events";
 import { isUnderReview } from "@/lib/db/paymentReview";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 import { findTemplate } from "@/templates/registry";
+import { marketingShare } from "@/lib/shareImage";
 
 /**
  * A new invitation, made in the wizard: a template, the details, the few
@@ -38,6 +39,11 @@ import { findTemplate } from "@/templates/registry";
  */
 export const metadata: Metadata = {
   title: "Create your invitation",
+  ...marketingShare(
+    "Create your invitation | Lifafa",
+    "Choose a wedding invitation design, add your details and share one link. Guests reply in a tap and you see the headcount live.",
+    "/create",
+  ),
 };
 
 export default async function CreatePage({

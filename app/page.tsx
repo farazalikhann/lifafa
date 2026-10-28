@@ -17,16 +17,22 @@ import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
 import { paperSans } from "@/components/theme/fonts";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { listedPremium } from "@/templates/premium";
+import { marketingShare } from "@/lib/shareImage";
 
 /*
   The one address this page should be indexed under: the site answers on two
   hosts, and this names which. Relative, so the metadataBase in app/layout.tsx
   resolves it. The title is absolute: this page is the brand's own.
 */
+const TITLE = "Lifafa | Wedding invitations that tell you who is coming";
+const DESCRIPTION = `Digital wedding invitations that tell you who is coming. Choose a design, add your details, share one link on WhatsApp and see every reply and your headcount in one place. From ${formatPrice(LOWEST_PRICE_PAISE)} per event.`;
+
 export const metadata: Metadata = {
-  title: { absolute: "Lifafa | Wedding invitations that tell you who is coming" },
-  description: `Digital wedding invitations that tell you who is coming. Choose a design, add your details, share one link on WhatsApp and see every reply and your headcount in one place. From ${formatPrice(LOWEST_PRICE_PAISE)} per event.`,
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
   alternates: { canonical: "/" },
+  /* The brand's link preview; see lib/shareImage.ts for why it is set per page. */
+  ...marketingShare(TITLE, DESCRIPTION, "/"),
 };
 
 /** One section with its pair of side patterns, which scroll with it. */

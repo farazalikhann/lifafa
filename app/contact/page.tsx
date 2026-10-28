@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { List, P, Section, TextLink } from "@/components/legal/LegalPage";
 import { OPERATOR, POLICY_LINKS, SUPPORT_EMAIL } from "@/lib/legal";
+import { marketingShare } from "@/lib/shareImage";
+
+const TITLE = "Contact Us · Lifafa";
+const DESCRIPTION =
+  "How to reach Lifafa for help with an invitation, a payment, a refund or your data. We reply within 2 working days.";
 
 export const metadata: Metadata = {
-  title: "Contact Us · Lifafa",
-  description:
-    "How to reach Lifafa for help with an invitation, a payment, a refund or your data. We reply within 2 working days.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/contact" },
+  ...marketingShare(TITLE, DESCRIPTION, "/contact"),
 };
 
 const MAIL = `mailto:${SUPPORT_EMAIL}`;

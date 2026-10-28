@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import LegalPage, { P, Section, TextLink } from "@/components/legal/LegalPage";
 import { SUPPORT_EMAIL } from "@/lib/legal";
+import { marketingShare } from "@/lib/shareImage";
+
+const TITLE = "Shipping and Delivery Policy · Lifafa";
+const DESCRIPTION =
+  "Lifafa invitations are digital: nothing is shipped, and your invitation link works as soon as your payment is confirmed.";
 
 export const metadata: Metadata = {
-  title: "Shipping and Delivery Policy · Lifafa",
-  description:
-    "Lifafa invitations are digital: nothing is shipped, and your invitation link works as soon as your payment is confirmed.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/shipping" },
+  ...marketingShare(TITLE, DESCRIPTION, "/shipping"),
 };
 
 const MAIL = `mailto:${SUPPORT_EMAIL}`;

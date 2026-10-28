@@ -7,12 +7,17 @@ import {
   TRADITIONS_PRICE_PAISE,
   formatPriceRs,
 } from "@/lib/pricing";
+import { marketingShare } from "@/lib/shareImage";
+
+const TITLE = "Cancellation and Refund Policy · Lifafa";
+const DESCRIPTION =
+  "When Lifafa refunds a payment, what happens to a refunded invitation, how long a refund takes, and how to ask for one.";
 
 export const metadata: Metadata = {
-  title: "Cancellation and Refund Policy · Lifafa",
-  description:
-    "When Lifafa refunds a payment, what happens to a refunded invitation, how long a refund takes, and how to ask for one.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/refunds" },
+  ...marketingShare(TITLE, DESCRIPTION, "/refunds"),
 };
 
 const MAIL = `mailto:${SUPPORT_EMAIL}`;
