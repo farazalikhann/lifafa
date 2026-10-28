@@ -86,10 +86,11 @@ export const TELEGRAM_ASPECT = 760 / 323;
 
 /**
  * Which postage stamp a function is drawn on, by what it is called, in
- * English or Hindi: haldi, mehendi, sangeet and the wedding itself have their
- * own; a reception, and anything else, the palace by the lake.
+ * English or Hindi: haldi, mehendi, sangeet, the wedding itself and the
+ * reception (a banquet hall) have their own; anything else, the palace by
+ * the lake.
  */
-export type StampKind = "haldi" | "mehendi" | "sangeet" | "wedding" | "lake";
+export type StampKind = "haldi" | "mehendi" | "sangeet" | "wedding" | "reception" | "lake";
 
 export function stampFor(label: string): StampKind {
   const name = label.toLowerCase();
@@ -97,6 +98,7 @@ export function stampFor(label: string): StampKind {
   if (/haldi|हल्दी/.test(name)) return "haldi";
   if (/mehndi|mehendi|mehandi|henna|मेहंदी|मेंहदी/.test(name)) return "mehendi";
   if (/sangeet|sangit|संगीत/.test(name)) return "sangeet";
+  if (/reception|रिसेप्शन|स्वागत समारोह|प्रीतिभोज/.test(name)) return "reception";
   if (/wedding|shaadi|shadi|vivah|vivaah|phere|pheras|marriage|nikah|anand karaj|विवाह|शादी|फेरे|परिणय/.test(name)) {
     return "wedding";
   }
@@ -109,6 +111,7 @@ export const STAMP_ART: Readonly<Record<StampKind, string>> = {
   mehendi: `${DIR}/stamp-mehendi.webp`,
   sangeet: `${DIR}/stamp-sangeet.webp`,
   wedding: `${DIR}/stamp-wedding.webp`,
+  reception: `${DIR}/stamp-reception.webp`,
   lake: `${DIR}/stamp-palace-lake.webp`,
 };
 
@@ -118,5 +121,6 @@ export const STAMP_ASPECT: Readonly<Record<StampKind, number>> = {
   mehendi: 480 / 713,
   sangeet: 480 / 720,
   wedding: 480 / 723,
+  reception: 480 / 711,
   lake: 480 / 707,
 };

@@ -1,10 +1,12 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useLayoutEffect, type ReactElement } from "react";
+import { playEffectSound } from "@/lib/effectSound";
 import { ART } from "@/templates/dak-ghar/art";
 import { PageHeading } from "@/templates/dak-ghar/Paper";
 import styles from "@/templates/dak-ghar/dak.module.css";
 import { DAK_FONTS, dakCopy, leading } from "@/templates/dak-ghar/shared";
+import { SOUND } from "@/templates/dak-ghar/sounds";
 import { useReveal } from "@/templates/dak-ghar/useReveal";
 import type { CardLanguage } from "@/types/card";
 
@@ -12,21 +14,41 @@ import type { CardLanguage } from "@/types/card";
  * The host's note, typed on a telegram slip. The slip is its picture
  * stretched to the words: a short note sits in its own shape, a long one
  * makes it taller, and the words stay inside its ruled panel.
+ *
+ * The heading fades up as the page comes on screen; the slip waits until it
+ * is well up the screen, then is thrown onto the table in one piece as the
+ * letter is (`.thrown`, to dg-paper-whoosh started 60ms ahead), and its words
+ * fade in after it has landed.
  */
 export default function DakGharTelegram({ message, language }: { message: string; language: CardLanguage }): ReactElement {
   const { ref, shown } = useReveal<HTMLElement>();
+  const slip = useReveal<HTMLDivElement>("-30%");
+
+  useLayoutEffect(() => {
+    if (slip.shown) {
+      playEffectSound(SOUND.whoosh);
+    }
+  }, [slip.shown]);
 
   return (
     <section ref={ref} className={styles.page}>
-      <div className={`${styles.reveal} ${shown ? styles.shown : ""} flex w-full flex-col items-center gap-6`}>
-        <PageHeading>{dakCopy(language).telegram}</PageHeading>
-        <div className={styles.telegram} style={{ backgroundImage: `url(${ART.telegram})` }}>
-          <p
-            className="max-w-full text-base whitespace-pre-line wrap-anywhere text-pretty"
-            style={{ ...DAK_FONTS.sans, fontWeight: 500, color: "var(--dg-ink)", lineHeight: leading(language, 1.65) }}
+      <div className="flex w-full flex-col items-center gap-6">
+        <div className={`${styles.reveal} ${shown ? styles.shown : ""}`}>
+          <PageHeading>{dakCopy(language).telegram}</PageHeading>
+        </div>
+        {/* Observed unmoved, so the slip's own starting place below does not delay it. */}
+        <div ref={slip.ref} className="flex w-full justify-center">
+          <div
+            className={`${styles.telegram} ${styles.thrown} ${slip.shown ? styles.shown : ""}`}
+            style={{ backgroundImage: `url(${ART.telegram})` }}
           >
-            {message}
-          </p>
+            <p
+              className={`${styles.thrownWords} max-w-full text-base whitespace-pre-line wrap-anywhere text-pretty`}
+              style={{ ...DAK_FONTS.sans, fontWeight: 500, color: "var(--dg-ink)", lineHeight: leading(language, 1.65) }}
+            >
+              {message}
+            </p>
+          </div>
         </div>
       </div>
     </section>

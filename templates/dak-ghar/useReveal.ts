@@ -14,7 +14,10 @@ import { useRevealGate } from "@/hooks/useRevealGate";
  * plays as the slip lifts away and not behind it. A card drawn as a still
  * (the printed copy) has everything arrived already.
  */
-export function useReveal<T extends HTMLElement>(): { ref: RefObject<T | null>; shown: boolean } {
+export function useReveal<T extends HTMLElement>(
+  /* How far up the screen it must come first, for an entrance that should be seen whole. */
+  bottomMargin = "-10%",
+): { ref: RefObject<T | null>; shown: boolean } {
   const ref = useRef<T | null>(null);
   const still = useCardStill();
   const gateOpen = useRevealGate();
@@ -43,12 +46,12 @@ export function useReveal<T extends HTMLElement>(): { ref: RefObject<T | null>; 
           observer.disconnect();
         }
       },
-      { threshold: 0, rootMargin: "0px 0px -10% 0px" },
+      { threshold: 0, rootMargin: `0px 0px ${bottomMargin} 0px` },
     );
 
     observer.observe(element);
     return () => observer.disconnect();
-  }, [shown, gateOpen, still]);
+  }, [shown, gateOpen, still, bottomMargin]);
 
   return { ref, shown };
 }

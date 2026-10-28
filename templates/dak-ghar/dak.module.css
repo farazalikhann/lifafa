@@ -1152,38 +1152,181 @@
   background-repeat: no-repeat;
 }
 
-/* ─── The functions, on postage stamps ─── */
+/*
+  Thrown onto the table in one piece, as the letter is (dg-throw), to rest
+  at -1 degree; its words fade in once it has landed.
+*/
+.thrown {
+  opacity: 0;
+  transform: translate3d(0, 30vh, 0) rotate(-8deg) scale(0.85);
+}
 
-.stampCard {
+.thrown.shown {
+  animation: dg-throw-slip 950ms 60ms both;
+  will-change: transform, opacity;
+}
+
+@keyframes dg-throw-slip {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 30vh, 0) rotate(-8deg) scale(0.85);
+    animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1);
+  }
+  12% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 1;
+    transform: translate3d(0, -5px, 0) rotate(-0.2deg) scale(1.012);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-1deg) scale(1);
+  }
+}
+
+.thrownWords {
+  opacity: 0;
+  transition: opacity 600ms ease-out 950ms;
+}
+
+.shown .thrownWords {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thrown {
+    transform: rotate(-1deg);
+  }
+
+  .thrown.shown {
+    animation: dg-fade-in 400ms ease-out both;
+  }
+
+  .thrownWords {
+    transition: opacity 400ms ease-out;
+  }
+}
+
+/* ─── The functions, on postage stamps, in a carousel ─── */
+
+/*
+  The browser's own scroller, snapping each card to the middle with the next
+  one peeking in; out to the page's edges so the peek reaches them.
+*/
+.stampScroller {
+  --slide-w: min(76cqw, 19rem);
   display: flex;
-  width: 100%;
+  width: calc(100% + 2.5rem);
+  margin-inline: -1.25rem;
+  gap: 0.875rem;
+  padding: 0.75rem calc((100% + 2.5rem - var(--slide-w)) / 2) 1rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: calc((100% + 2.5rem - var(--slide-w)) / 2);
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-x pan-y;
+}
+
+.stampScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.stampScroller:focus-visible {
+  outline: 2px solid var(--dg-red);
+  outline-offset: -2px;
+}
+
+/* A mouse dragging it: no snapping under the hand, no text selected. */
+.stampDragging {
+  scroll-snap-type: none;
+  cursor: grabbing;
+  user-select: none;
+}
+
+.stampScrollerOne {
+  justify-content: center;
+  cursor: auto;
+}
+
+.stampSlide {
+  display: flex;
+  flex: none;
+  width: var(--slide-w);
+  flex-direction: column;
   align-items: center;
-  gap: 1.1rem;
-  padding: 1rem;
-  background-color: rgb(251 241 220 / 0.82);
+  gap: 1rem;
+  padding: 1.25rem 1rem 1.5rem;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  background-color: rgb(251 241 220 / 0.9);
   border-radius: 6px;
-  box-shadow: inset 0 0 0 1px rgb(158 42 36 / 0.22);
-}
-
-.stampCardFlip {
-  flex-direction: row-reverse;
-  text-align: right;
-}
-
-.stampCardFlip > div {
-  align-items: flex-end;
+  box-shadow:
+    inset 0 0 0 1px rgb(158 42 36 / 0.22),
+    0 10px 22px -18px rgb(42 30 20 / 0.5);
 }
 
 .stampArt {
   flex: none;
-  width: clamp(112px, 34cqw, 150px);
+  width: min(58%, 168px);
   height: auto;
   transform: rotate(-2.5deg);
   user-select: none;
+  pointer-events: none;
 }
 
-.stampCardFlip .stampArt {
+.stampArtFlip {
   transform: rotate(2.5deg);
+}
+
+/* Previous and Next: the card's button, round. */
+.stampNav {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(158 42 36 / 0.55);
+  border-radius: 9999px;
+  background-color: #f9ecd6;
+  color: var(--dg-red);
+}
+
+.stampNav:disabled {
+  opacity: 0.35;
+}
+
+.stampNav:focus-visible,
+.stampDot:focus-visible {
+  outline: 2px solid var(--dg-red);
+  outline-offset: 2px;
+}
+
+/* A dot per card: a 44px tall target round a small mark. */
+.stampDot {
+  display: inline-flex;
+  width: 32px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+}
+
+.stampDot > span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: rgb(158 42 36 / 0.3);
+  transition: transform 200ms ease-out;
+}
+
+.stampDot[aria-current="true"] > span {
+  background-color: var(--dg-red);
+  transform: scale(1.3);
 }
 
 /* ─── The venue, on a postcard ─── */

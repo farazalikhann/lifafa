@@ -61,6 +61,9 @@ interface DakCopy {
   /** Under the loader's dot, for a guest kept waiting, and the reload after it. */
   slowLoad: string;
   tryAgain: string;
+  /** The celebrations carousel's buttons, for a screen reader. */
+  previous: string;
+  next: string;
 }
 
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
@@ -82,6 +85,8 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     at: "at",
     slowLoad: "Your connection seems slow. The invitation is on its way.",
     tryAgain: "Try again",
+    previous: "Previous celebration",
+    next: "Next celebration",
   },
   hi: {
     tapToOpen: "खोलने के लिए टैप करें",
@@ -100,6 +105,8 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     at: "",
     slowLoad: "आपका इंटरनेट धीमा लग रहा है। निमंत्रण आ रहा है।",
     tryAgain: "फिर से कोशिश करें",
+    previous: "पिछला कार्यक्रम",
+    next: "अगला कार्यक्रम",
   },
 };
 
