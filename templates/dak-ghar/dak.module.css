@@ -12,10 +12,27 @@
   --bw: calc(var(--bh) * 0.4);
   /* Its foot, above "Tap to open". */
   --base: calc(max(3.5vh, 22px) + 48px);
-  /* The date slip's width. */
+  /* The date slip at its reading size: its width, and its height from its shape. */
   --slip-w: clamp(180px, 52vw, 230px);
+  --slip-ratio: 1.275;
+  --slip-h: calc(var(--slip-w) * var(--slip-ratio));
+  /*
+    How far it rises, from printed out of the slot to the middle of the space
+    under the language switch (--cover-top-h, from the shell): its foot from
+    the slot's lip (32.1% down the post box) to the middle plus half itself.
+  */
+  --grow-y: calc(var(--cover-top-h, 0px) / 2 - 50dvh + var(--slip-h) / 2 + var(--base) + var(--bh) * 0.679);
   --ease-out: cubic-bezier(0.22, 0.7, 0.3, 1);
   --glide: cubic-bezier(0.45, 0.05, 0.2, 1);
+}
+
+/*
+  The drawn strip (DATE_SLIP "strip"), 420 x 1375: as wide as the screen's
+  height lets it be read whole in the middle, at most 200px.
+*/
+.coverStrip {
+  --slip-ratio: 3.274;
+  --slip-w: min(200px, 52vw, calc((100dvh - var(--cover-top-h, 0px) - 40px) / 3.274));
 }
 
 .stage {
@@ -225,28 +242,43 @@
   pointer-events: none;
 }
 
-/* The slip's layer: a box whose foot is the slot's lower lip (32.1% down the post box), far wider and taller than the slip. */
+/*
+  The slip's layer: a box whose foot is the slot's lower lip (32.1% down the
+  post box), far wider and taller than the slip, clipped to itself so the
+  slip shows only what has come out of the slot. Let go of once it has all
+  come out (`dg-unclip`), so it can rise past the lip.
+*/
 .slipClip {
   position: absolute;
   left: -100vw;
   right: -100vw;
   bottom: 67.9%;
   height: 200vh;
-  overflow: hidden;
+  clip-path: inset(0);
   pointer-events: none;
 }
 
-/* The slip, centred on the slot (49% across the post box), held below the lip until it prints. */
+/*
+  The slip, centred on the slot (49% across the post box), held below the lip
+  until it prints. It prints at SLIP_SMALL (0.45) of its reading size, so it
+  travels 45% of its own height.
+*/
 .slipSlot {
   position: absolute;
   bottom: 0;
   left: calc(100vw + var(--bw) * 0.49 - var(--slip-w) / 2);
   width: var(--slip-w);
-  transform: translate3d(0, 100%, 0);
+  transform: translate3d(0, 45%, 0);
+}
+
+/* Laid out at reading size, shown at the slot's width until it rises. */
+.slipGrow {
+  transform-origin: 50% 100%;
+  transform: scale(0.45);
 }
 
 .slipLift {
-  transform-origin: 50% 85%;
+  transform-origin: 50% 55%;
 }
 
 .slip {
@@ -265,7 +297,64 @@
 }
 
 .slipStrip {
-  aspect-ratio: 1 / 1.4;
+  aspect-ratio: 420 / 1375;
+}
+
+/* The strip's three framed panels, measured off date-slip.webp (art.ts). */
+.stripPanel {
+  position: absolute;
+  left: 11%;
+  right: 11%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.stripTop {
+  top: 6.5%;
+  bottom: 49.5%;
+  gap: 3cqw;
+}
+
+.stripMiddle {
+  top: 57.5%;
+  bottom: 27%;
+  gap: 1.5cqw;
+}
+
+.stripBottom {
+  top: 79%;
+  bottom: 5.5%;
+}
+
+.stripDay {
+  font-size: 46cqw;
+  line-height: 0.95;
+}
+
+.stripMonth {
+  max-width: 100%;
+  font-size: max(14px, 9cqw);
+}
+
+.stripYear {
+  font-size: max(14px, 9cqw);
+}
+
+.stripWeekday {
+  max-width: 100%;
+  font-size: max(15px, 12cqw);
+}
+
+.stripTime {
+  font-size: max(14px, 9cqw);
+}
+
+.stripCity {
+  max-width: 100%;
+  font-size: max(15px, 12cqw);
 }
 
 .slipPanels {
@@ -320,6 +409,14 @@
   transform: rotate(-14deg) scale(1.5);
 }
 
+/* On the strip: over the foot of the date panel, its right edge, clear of the day. */
+.slipStrip .postmark {
+  top: 43%;
+  right: -16cqw;
+  width: 52cqw;
+  margin-top: -26cqw;
+}
+
 .postmarkArt {
   display: block;
   width: 100%;
@@ -335,23 +432,33 @@
   transition: opacity 200ms ease-out;
 }
 
+/* The times are coverTiming.ts's. */
 .opening .stage {
-  animation: dg-fade 550ms ease-in-out 1900ms both;
+  animation: dg-fade 550ms ease-in-out 2350ms both;
   will-change: opacity;
 }
 
+.opening .slipClip {
+  animation: dg-unclip 1ms linear 1130ms both;
+}
+
 .opening .slipSlot {
-  animation: dg-print 1200ms both;
+  animation: dg-print 980ms 120ms both;
+  will-change: transform;
+}
+
+.opening .slipGrow {
+  animation: dg-grow 420ms var(--glide) 1150ms both;
   will-change: transform;
 }
 
 .opening .postmark {
-  animation: dg-stamp 300ms 1250ms both;
+  animation: dg-stamp 300ms 1600ms both;
   will-change: transform, opacity;
 }
 
 .opening .slipLift {
-  animation: dg-lift 600ms var(--glide) 1900ms both;
+  animation: dg-lift 600ms var(--glide) 2350ms both;
   will-change: transform, opacity;
 }
 
@@ -367,27 +474,44 @@
 /* Printed out in three steps, each a short push and a small pause, like a booth's printer. */
 @keyframes dg-print {
   0% {
-    transform: translate3d(0, 100%, 0);
+    transform: translate3d(0, 45%, 0);
     animation-timing-function: cubic-bezier(0.3, 0.55, 0.35, 1);
   }
   25% {
-    transform: translate3d(0, 66.667%, 0);
+    transform: translate3d(0, 30%, 0);
     animation-timing-function: linear;
   }
   37.5% {
-    transform: translate3d(0, 66.667%, 0);
+    transform: translate3d(0, 30%, 0);
     animation-timing-function: cubic-bezier(0.3, 0.55, 0.35, 1);
   }
   62.5% {
-    transform: translate3d(0, 33.333%, 0);
+    transform: translate3d(0, 15%, 0);
     animation-timing-function: linear;
   }
   75% {
-    transform: translate3d(0, 33.333%, 0);
+    transform: translate3d(0, 15%, 0);
     animation-timing-function: cubic-bezier(0.3, 0.55, 0.35, 1);
   }
   100% {
     transform: translate3d(0, 0, 0);
+  }
+}
+
+/* All of it out of the slot: nothing below the lip to hide any more. One step, once. */
+@keyframes dg-unclip {
+  to {
+    clip-path: none;
+  }
+}
+
+/* Up to the middle of the screen, at reading size. */
+@keyframes dg-grow {
+  from {
+    transform: translate3d(0, 0, 0) scale(0.45);
+  }
+  to {
+    transform: translate3d(0, var(--grow-y), 0) scale(1);
   }
 }
 
@@ -418,7 +542,7 @@
     opacity: 1;
   }
   100% {
-    transform: translate3d(0, -14%, 0) scale(1.28);
+    transform: translate3d(0, -6%, 0) scale(1.14);
     opacity: 0;
   }
 }
@@ -432,7 +556,7 @@
     opacity: 1;
   }
   100% {
-    transform: translate3d(0, -14%, 0) scale(1.28);
+    transform: translate3d(0, -6%, 0) scale(1.14);
     opacity: 0;
   }
 }

@@ -15,6 +15,8 @@
  *                   clear of the paisley corners and the border.
  *   telegram-slip   760 x 323. The ruled panel inside the blue border runs
  *                   5% to 95% across and 15% to 90% down.
+ *   date-slip       420 x 1375. Three framed panels, 9.5% to 90.5% across:
+ *                   4.6% to 52.4% down, 56.3% to 74.2%, 77.8% to 95.6%.
  *   venue-postcard  780 x 504. The painting is the left 55%; the address
  *                   lines are 58% to 96% across, 45% to 82% down, under the
  *                   stamp box (85% to 96% across, 6% to 30% down).
@@ -39,12 +41,12 @@ export const ART = {
 } as const;
 
 /*
-  THE DATE SLIP ON THE COVER: three telegram tickets in a strip, one for each
-  panel, until the slip drawn for it (22-date-slip) is in. To use it, publish
-  it with scripts/dak-ghar-art.py and set this to "strip": the slip becomes
-  that one picture, its three panels set in thirds down it.
+  THE DATE SLIP ON THE COVER: the slip drawn for it (22-date-slip, a tall
+  strip of three framed panels, 420 x 1375), its panels measured in the
+  stylesheet (`.stripTop` and on). "telegram" is the stand-in it replaced:
+  three telegram tickets in a strip, one for each panel.
 */
-export const DATE_SLIP = "telegram" as "telegram" | "strip";
+export const DATE_SLIP = "strip" as "telegram" | "strip";
 
 /**
  * What the cover waits for, decoded, before the guest may tap: every picture
