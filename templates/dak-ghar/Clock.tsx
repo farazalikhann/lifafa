@@ -89,7 +89,7 @@ export default function DakGharClock({ draft, language }: { draft: EventDraft; l
 
         <div className={`${styles.clock} ${shown ? styles.clockShown : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ART.clock} alt="" width={460} height={495} loading="lazy" decoding="async" draggable={false} className="block h-auto w-full" />
+          <img src={ART.clock} alt="" width={460} height={495} loading="lazy" decoding="async" draggable={false} className={styles.clockFace} />
           <span aria-hidden="true" className={`${styles.hand} ${styles.hourHand}`} style={{ "--dg-angle": `${angles.hour}deg` } as CSSProperties}>
             <span />
           </span>

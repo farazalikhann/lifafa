@@ -1006,21 +1006,71 @@
   }
 }
 
-/* The day inside a ring of ink, like a postmark's. */
-.dateRing {
+/*
+  The desk calendar (desk-calendar.webp, 560 x 519). Its blank page runs
+  about 30% to 77% across and 13% to 64% down, its sides leaning right about
+  10 degrees as they go down: the words are set in that box and skewed to it.
+*/
+.calendar {
+  position: relative;
+  width: min(80cqw, 18.5rem);
+  container-type: inline-size;
+  opacity: 0;
+  transform: scale(0.9);
+  transform-origin: 50% 70%;
+  transition:
+    opacity 700ms ease-out 150ms,
+    transform 1000ms cubic-bezier(0.22, 0.7, 0.3, 1) 150ms;
+}
+
+.calendarShown {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar {
+    transform: none;
+    transition: opacity 400ms ease-out;
+  }
+}
+
+.calendarPage {
+  position: absolute;
+  left: 31%;
+  width: 45%;
+  top: 19%;
+  height: 42%;
   display: flex;
-  width: 11.5rem;
-  aspect-ratio: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  border-radius: 9999px;
-  box-shadow:
-    inset 0 0 0 2px var(--dg-stamp-ink),
-    inset 0 0 0 9px #fbf1dc,
-    inset 0 0 0 10px var(--dg-stamp-ink);
+  gap: 1.5cqw;
+  text-align: center;
   color: var(--dg-ink);
+  transform: skewX(10deg);
+}
+
+.calendarMonth {
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: max(12px, 4.6cqw);
+  color: var(--dg-red);
+}
+
+.calendarDay {
+  font-size: 19cqw;
+  line-height: 0.95;
+}
+
+.calendarYear {
+  font-size: max(12px, 4.2cqw);
+  color: var(--dg-ink-muted);
+}
+
+.calendarWeekday {
+  max-width: 100%;
+  font-size: max(14px, 6.2cqw);
 }
 
 .phone {
@@ -1046,23 +1096,45 @@
   outline-offset: 3px;
 }
 
-/* The one kind of button the card draws itself: the post box's red, a pill. */
+/*
+  The one kind of button the card draws itself ("See the route"), drawn as
+  the card's other buttons are (Add to my calendar, the reply's choices): the
+  post box's red as a hairline and the words, on the paper leaned a touch
+  toward it, 12px corners, the same face and size.
+*/
 .button {
   display: inline-flex;
   min-height: 48px;
   align-items: center;
   justify-content: center;
-  padding: 0 1.75rem;
-  border-radius: 9999px;
-  background-color: var(--dg-red);
-  color: #fbf1dc;
-  font-size: 1rem;
+  gap: 0.625rem;
+  padding: 0 1.5rem;
+  border: 1px solid rgb(158 42 36 / 0.55);
+  border-radius: 12px;
+  background-color: #f9ecd6;
+  color: var(--dg-red);
+  font-size: 0.95rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
   text-decoration: none;
+  transition: transform 150ms ease-out;
+}
+
+.button:hover {
+  transform: translate3d(0, -1px, 0);
 }
 
 .button:active {
-  background-color: #7f201b;
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .button:hover,
+  .button:active {
+    transition: none;
+    transform: none;
+  }
 }
 
 /* ─── The telegram ─── */
@@ -1165,6 +1237,32 @@
 .clock {
   position: relative;
   width: min(68cqw, 16.5rem);
+}
+
+/*
+  Its shadow on the paper, still: warm brown, soft, under it and a little to
+  the right, as from a lamp above and to the left. A blurred ellipse on the
+  paper for where it rests, and the case's own outline cast by drop-shadow.
+*/
+.clock::before {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 4%;
+  bottom: -4%;
+  height: 16%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(74 44 16 / 0.32), rgb(74 44 16 / 0));
+  transform: translate3d(5%, 0, 0);
+  pointer-events: none;
+}
+
+.clockFace {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(7px 11px 10px rgb(82 50 18 / 0.34)) drop-shadow(2px 3px 2px rgb(82 50 18 / 0.22));
 }
 
 /* A hand: a box over the whole clock turned about its middle, which is the pin (50%, 50%). */

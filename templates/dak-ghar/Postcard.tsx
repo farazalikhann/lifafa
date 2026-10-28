@@ -49,8 +49,12 @@ function PostcardOf({ place, showLabels, language }: { place: Place; showLabels:
         </p>
       ) : null}
       {place.map !== null ? (
-        <a href={place.map} target="_blank" rel="noopener noreferrer" className={styles.button} style={DAK_FONTS.sans}>
-          {dakCopy(language).seeRoute}
+        <a href={place.map} target="_blank" rel="noopener noreferrer" className={styles.button}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-[18px] w-[18px]">
+            <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+            <circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
+          <span>{dakCopy(language).seeRoute}</span>
         </a>
       ) : null}
     </div>

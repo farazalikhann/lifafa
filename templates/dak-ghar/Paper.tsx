@@ -127,8 +127,10 @@ export function DakGharCouple({
 }
 
 /**
- * Save the Date: the day large inside a ring of ink like a postmark's, the
- * weekday, month and time round it, and the card's own Add to Calendar.
+ * Save the Date: a brass desk calendar (25) with the month, the day, the
+ * weekday and the year written on its blank page in code, leaning with the page's own
+ * perspective; then the time and the card's own Add to Calendar. The
+ * calendar scales in gently, once.
  */
 export function DakGharSaveDate({
   draft,
@@ -152,22 +154,33 @@ export function DakGharSaveDate({
   const copy = cardCopy(language).calendar;
 
   return (
-    <PaperCard heading={copy.heading}>
-      <div
-        role="img"
-        aria-label={copy.pageLabel(page.weekday, page.day, page.month, page.year)}
-        className={styles.dateRing}
-      >
-        <span className="text-base" style={{ ...DAK_FONTS.sans, ...caps(language), fontWeight: 700, color: "var(--dg-red)" }}>
-          {page.weekday}
-        </span>
-        <span className="text-[4rem] leading-none" style={DAK_FONTS.serif}>
-          {page.day}
-        </span>
-        <span className="text-base" style={{ ...DAK_FONTS.sans, fontWeight: 600, lineHeight: leading(language, 1.3) }}>
-          {page.month} {page.year}
-        </span>
-      </div>
+    <PaperCard
+      heading={copy.heading}
+      before={(shown) => (
+        <div
+          role="img"
+          aria-label={copy.pageLabel(page.weekday, page.day, page.month, page.year)}
+          className={`${styles.calendar} ${shown ? styles.calendarShown : ""}`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ART.calendar} alt="" width={560} height={519} loading="lazy" decoding="async" draggable={false} className="block h-auto w-full select-none" />
+          <div className={styles.calendarPage}>
+            <span className={styles.calendarMonth} style={{ ...DAK_FONTS.sans, ...caps(language), letterSpacing: language === "hi" ? undefined : "0.12em", fontWeight: 700, lineHeight: leading(language, 1.2) }}>
+              {page.month}
+            </span>
+            <span className={styles.calendarDay} style={DAK_FONTS.serif}>
+              {page.day}
+            </span>
+            <span className={styles.calendarWeekday} style={{ ...DAK_FONTS.serif, lineHeight: leading(language, 1.2) }}>
+              {page.weekday}
+            </span>
+            <span className={styles.calendarYear} style={{ ...DAK_FONTS.sans, fontWeight: 600, lineHeight: 1.2 }}>
+              {page.year}
+            </span>
+          </div>
+        </div>
+      )}
+    >
       {page.time !== null && hasEventTime(draft.eventTime) ? (
         <p className="text-[1.375rem]" style={{ ...DAK_FONTS.serif, lineHeight: leading(language, 1.3) }}>
           {page.time}
