@@ -37,8 +37,29 @@ export interface CoverArt {
    * How long the cover waits for these pictures before it shows anyway, in
    * milliseconds. Absent means the shell's own, longer wait, which is for a
    * film's still; a cover made of a few small pictures says a shorter one.
+   *
+   * Null: no time limit at all, for this wait or the card's. The cover is
+   * never shown half loaded; the loader stays, says the connection is slow
+   * and offers a reload instead (`loader`). A picture that fails is still let
+   * through at once, so only a slow line keeps a guest here.
    */
-  timeoutMs?: number;
+  timeoutMs?: number | null;
+  /**
+   * Anything else the cover waits for before it shows: its sounds, its own
+   * faces. A rejection is let through, as a failed picture is.
+   */
+  waitFor?: () => Promise<unknown>;
+  /**
+   * The loader drawn while the cover waits. Absent, the shell's own: a small
+   * envelope over "Preparing your invitation". "dot": the Lifafa red dot
+   * alone, pulsing, then `slow` under it after 4 seconds and a `retry` link
+   * that reloads the page after 12.
+   */
+  loader?: {
+    kind: "dot";
+    slow: Readonly<Record<CardLanguage, string>>;
+    retry: Readonly<Record<CardLanguage, string>>;
+  };
   /**
    * Every picture the closed cover shows. They are on the first screen a guest
    * sees, so the shell asks for them as the page loads and keeps its loader up

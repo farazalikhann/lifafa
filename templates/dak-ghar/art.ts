@@ -46,13 +46,20 @@ export const ART = {
 */
 export const DATE_SLIP = "telegram" as "telegram" | "strip";
 
-/** What the cover waits for, decoded, before the guest may tap: every picture in its opening. */
+/**
+ * What the cover waits for, decoded, before the guest may tap: every picture
+ * in the cover, its opening, and the first page the opening lands on.
+ */
 export const COVER_IMAGES: readonly string[] = [
   ART.scene,
   ART.postBox,
   ART.bougainvillea,
   ART.pigeon,
   DATE_SLIP === "strip" ? ART.dateSlip : ART.telegramSmall,
+  ART.paper,
+  ART.letter,
+  ART.garland,
+  ART.desk,
 ];
 
 /** The post box: its picture's shape, its slot and its brass plate (see above). */

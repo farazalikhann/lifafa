@@ -58,6 +58,9 @@ interface DakCopy {
   thanks: string;
   /** The slip's middle panel joins the weekday and the time with this. */
   at: string;
+  /** Under the loader's dot, for a guest kept waiting, and the reload after it. */
+  slowLoad: string;
+  tryAgain: string;
 }
 
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
@@ -77,6 +80,8 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     replySent: "Your reply is on its way",
     thanks: "With love",
     at: "at",
+    slowLoad: "Your connection seems slow. The invitation is on its way.",
+    tryAgain: "Try again",
   },
   hi: {
     tapToOpen: "खोलने के लिए टैप करें",
@@ -93,6 +98,8 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     replySent: "आपका उत्तर रवाना हो गया है",
     thanks: "सप्रेम",
     at: "",
+    slowLoad: "आपका इंटरनेट धीमा लग रहा है। निमंत्रण आ रहा है।",
+    tryAgain: "फिर से कोशिश करें",
   },
 };
 

@@ -123,6 +123,7 @@ export default function LanguageSwitch({
   return (
     <div
       ref={groupRef}
+      data-language-switch=""
       role="group"
       aria-label="Language / भाषा"
       onFocusCapture={() => setIsTucked(false)}

@@ -26,6 +26,11 @@
  * a browser without `decode` — each is let through rather than waited on, and
  * the whole wait gives up at `timeoutMs` and opens anyway. A guest held on a
  * loader by one broken image would be worse off than one who saw it missing.
+ *
+ * The one exception is a cover that would rather never be seen half drawn
+ * (a `timeoutMs` of null): it waits for everything, however long, and its
+ * loader says so and offers a reload instead (CoverShell's dot loader). A
+ * picture that fails is still let through at once.
  */
 
 import { FIRST_SCREEN_ATTRIBUTE } from "@/components/invite/InvitedCue";
@@ -38,6 +43,15 @@ import { FIRST_SCREEN_ATTRIBUTE } from "@/components/invite/InvitedCue";
  */
 export const FIRST_SCREEN_IMAGES = "data-first-screen-images";
 export const FIRST_SCREEN_MASKS = "data-first-screen-masks";
+
+/** A wait that ends after `timeoutMs`, or never when it is null. */
+function giveUpAfter(timeoutMs: number | null): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (timeoutMs !== null) {
+      window.setTimeout(resolve, timeoutMs);
+    }
+  });
+}
 
 /** The browser's own decode, or a wait for the load where there is none. */
 function decoded(image: HTMLImageElement): Promise<void> {
@@ -134,19 +148,17 @@ function pictures(root: ParentNode | null): Promise<void>[] {
 
 /**
  * Resolves once the fonts are in and the first screen's pictures are loaded
- * and decoded — or once `timeoutMs` has passed, whichever is first. Never
- * rejects.
+ * and decoded — or once `timeoutMs` has passed, whichever is first (never,
+ * when it is null). Never rejects.
  *
  * `root` is the card's own subtree. Read on the next task rather than at once,
  * so pictures a first effect has only just put on the page are counted too.
  */
 export function whenCardReady(
   root: ParentNode | null,
-  timeoutMs: number,
+  timeoutMs: number | null,
 ): Promise<void> {
-  const giveUp = new Promise<void>((resolve) => {
-    window.setTimeout(resolve, timeoutMs);
-  });
+  const giveUp = giveUpAfter(timeoutMs);
 
   const everything = new Promise<void>((resolve) => {
     window.setTimeout(resolve, 0);
@@ -164,7 +176,7 @@ export function whenCardReady(
 
 /**
  * Resolves once every picture in `sources` is loaded and decoded, or has
- * failed, or `timeoutMs` has passed. Never rejects.
+ * failed, or `timeoutMs` has passed (never, when it is null). Never rejects.
  *
  * For pictures that are not the card's: the cover's own artwork, which sits
  * outside the card's subtree and so is not found by the search above. Each is
@@ -173,15 +185,13 @@ export function whenCardReady(
  */
 export function whenPicturesReady(
   sources: readonly string[],
-  timeoutMs: number,
+  timeoutMs: number | null,
 ): Promise<void> {
   if (sources.length === 0) {
     return Promise.resolve();
   }
 
-  const giveUp = new Promise<void>((resolve) => {
-    window.setTimeout(resolve, timeoutMs);
-  });
+  const giveUp = giveUpAfter(timeoutMs);
 
   const everything = Promise.all(
     sources.map((src) => decoded(copyOf({ src }))),

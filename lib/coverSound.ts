@@ -1,5 +1,3 @@
-import { STAMP_AT as DAK_GHAR_STAMP_AT } from "@/templates/dak-ghar/coverTiming";
-
 /**
  * The sound a cover makes when a guest opens it.
  *
@@ -55,8 +53,7 @@ export type CoverSoundId =
   | "petal-dust"
   | "fold"
   | "sheesh-mahal"
-  | "sheesh-mahal-rsvp"
-  | "dak-ghar";
+  | "sheesh-mahal-rsvp";
 
 /**
  * Part of a sound made of more than one recording, each starting at its own
@@ -71,14 +68,6 @@ interface RecordingPart {
 
 /** Served from public/, so the path is also the URL. */
 const RECORDINGS: Record<CoverSoundId, string | readonly RecordingPart[]> = {
-  /*
-    Dak Ghar's two, to its cover's clock (templates/dak-ghar/coverTiming.ts):
-    the slip printing out of the post box, then the postmark's thud.
-  */
-  "dak-ghar": [
-    { url: "/sounds/dak-ghar/slip-print.mp3", atMs: 0 },
-    { url: "/sounds/dak-ghar/stamp-thud.mp3", atMs: DAK_GHAR_STAMP_AT },
-  ],
   curtain: "/sounds/curtain-open.mp3",
   envelope: "/sounds/envelope-open.mp3",
   "petal-dust": "/sounds/petal-dust-open.mp3",
@@ -165,6 +154,20 @@ function fetchDecoded(url: string, Offline: OfflineContextConstructor): Promise<
       return response.arrayBuffer();
     })
     .then((bytes) => decode(new Offline(2, 1, 44100), bytes));
+}
+
+/**
+ * One recording, fetched and decoded with no gesture and no audio device, for
+ * a player of its own (lib/effectSound.ts). Rejects when it cannot.
+ */
+export function loadRecording(url: string): Promise<AudioBuffer> {
+  const Offline = offlineContextConstructor();
+
+  if (Offline === null || typeof fetch !== "function") {
+    return Promise.reject(new Error("no Web Audio"));
+  }
+
+  return fetchDecoded(url, Offline);
 }
 
 /**

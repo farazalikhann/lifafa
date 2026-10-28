@@ -1,8 +1,10 @@
 import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
+import { playEffectSound, unlockEffectSounds } from "@/lib/effectSound";
 import { COVER_IMAGES } from "@/templates/dak-ghar/art";
 import { DURATION, LIFT_AT } from "@/templates/dak-ghar/coverTiming";
+import { SOUND, coverExtrasReady } from "@/templates/dak-ghar/sounds";
 import { CREAM, INK, INK_MUTED, POST_RED, dakCopy, replyCardTheme } from "@/templates/dak-ghar/shared";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
 import { DAK_GHAR_LISTING } from "@/templates/premium";
@@ -20,20 +22,31 @@ import type { CoverAnimationOption } from "@/types/coverAnimation";
  *   as the courtyard fades; the card is let go under it at 1.9s
  *   (`revealAt`). See Cover.tsx and coverTiming.ts.
  *
- *   It waits for its five pictures, each decoded, and the fonts, and no
- *   longer than five seconds, on the loader in the paper's own cream.
+ *   It is never shown half loaded. It waits, with no time limit, for every
+ *   picture in the cover and the first page (each decoded), its own faces
+ *   and every sound on the card, on the Lifafa red dot in the paper's own
+ *   cream. After 4 seconds the dot says the connection is slow, after 12 it
+ *   offers "Try again". A file that fails is let through at once, and a
+ *   sound that fails is simply not played.
  *
  *   "Tap to open" is lettered by the cover itself, under the post box; the
  *   shell sets only "You are invited" over it.
  *
- *   The sound is two recordings in public/sounds/dak-ghar/ (the slip
- *   printing, the postmark's thud), mixed to the cover's clock; either one
- *   missing is left out without a word (lib/coverSound.ts).
+ *   The sounds are Dak Ghar's own (sounds.ts, lib/effectSound.ts): the tap
+ *   on the post box is played inside the tap (`onTap`, which also starts the
+ *   audio for the rest of the card), the slip printing and the postmark by
+ *   the cover on its own clock. So the shell has no recording to play.
  */
 const ENVELOPE = getCoverAnimation("envelope-seal");
 const COVER_ART = {
   images: COVER_IMAGES,
-  timeoutMs: 5000,
+  timeoutMs: null,
+  waitFor: coverExtrasReady,
+  loader: {
+    kind: "dot" as const,
+    slow: { en: dakCopy("en").slowLoad, hi: dakCopy("hi").slowLoad },
+    retry: { en: dakCopy("en").tryAgain, hi: dakCopy("hi").tryAgain },
+  },
   /* Sepia ink over a cream light at the head; Skip on a cream plaque over the cobbles. */
   tone: "light" as const,
   wordsLine: false,
@@ -52,7 +65,12 @@ const COVER_OPTION: CoverAnimationOption = {
   durationMs: DURATION,
   revealAt: LIFT_AT / DURATION,
   burstAt: undefined,
-  sound: "dak-ghar",
+  sound: null,
+  /* Inside the tap: the audio started for the whole card, and the post box's own sound. */
+  onTap: () => {
+    unlockEffectSounds();
+    playEffectSound(SOUND.tap);
+  },
   haptic: 10,
   wordsOn: "visual",
   art: () => COVER_ART,

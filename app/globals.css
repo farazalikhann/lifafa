@@ -1633,6 +1633,34 @@ html:has(.lifafa-paper) body {
   }
 }
 
+/* While a dot loader is up it is the only thing on the screen: the language switch waits for the cover. */
+body:has([data-cover-loading="dot"][aria-hidden="false"]) [data-language-switch] {
+  visibility: hidden;
+}
+
+/* The dot loader's "Try again": out of sight and out of reach for its delay, then faded in. */
+@keyframes lifafa-cover-loader-reveal {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* The dot loader's Lifafa red dot (CoverShell's DotLoader). */
+@keyframes lifafa-cover-dot {
+  0%,
+  100% {
+    transform: scale(0.85);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
 /* A film cover waited for after the tap: a glint running the length of its hairline. */
 @keyframes lifafa-cover-film-wait {
   from {

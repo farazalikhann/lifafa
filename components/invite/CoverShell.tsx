@@ -253,6 +253,7 @@ function PreparingLoader({
   ready,
   text,
   note,
+  dot,
   ground,
   accent,
   muted,
@@ -262,6 +263,8 @@ function PreparingLoader({
   text: string;
   /** A line under it, shown after SLOW_LOAD_MS by the stylesheet, for a guest kept waiting (`slowLoad`); null for none. */
   note: string | null;
+  /** The dot loader's two lines, in the guest's language, for a cover that asks for it (CoverArt `loader`); null for the envelope. */
+  dot: { slow: string; retry: string } | null;
   ground: string;
   accent: string;
   muted: string;
@@ -273,6 +276,10 @@ function PreparingLoader({
     () => true,
     () => false,
   );
+
+  if (dot !== null) {
+    return <DotLoader ready={ready} text={text} slow={dot.slow} retry={dot.retry} ground={ground} ink={ink} />;
+  }
 
   return (
     <div
@@ -316,6 +323,85 @@ function PreparingLoader({
             {note}
           </p>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** The Lifafa red, the dot of the logo (public/brand). */
+const LIFAFA_RED = "#E0392E";
+
+/**
+ * The dot loader, for a cover that is never shown half loaded (CoverArt
+ * `loader` with a `timeoutMs` of null): the Lifafa red dot alone in the middle
+ * of the card's ground, pulsing, and nothing else.
+ *
+ * Kept waiting, it says so: after DOT_SLOW_MS a line under the dot, after
+ * DOT_RETRY_MS a "Try again" that reloads. Both are timed by the stylesheet
+ * from the server's HTML, so they appear on a line too slow to have brought
+ * the page's scripts yet, and the link is a real link for the same reason.
+ * Under reduced motion the dot is still.
+ */
+const DOT_SLOW_MS = 4000;
+const DOT_RETRY_MS = 12000;
+
+function DotLoader({
+  ready,
+  text,
+  slow,
+  retry,
+  ground,
+  ink,
+}: {
+  ready: boolean;
+  text: string;
+  slow: string;
+  retry: string;
+  ground: string;
+  ink: string;
+}): ReactElement {
+  return (
+    <div
+      data-cover-loading="dot"
+      role="status"
+      aria-hidden={ready}
+      className="absolute inset-0 z-30 flex items-center justify-center"
+      style={{
+        backgroundColor: ground,
+        opacity: ready ? 0 : 1,
+        transition: `opacity ${LOADER_FADE_MS}ms ease-out`,
+        pointerEvents: ready ? "none" : "auto",
+      }}
+    >
+      <span className="sr-only">{text}</span>
+      <span
+        aria-hidden="true"
+        className="block h-4 w-4 animate-[lifafa-cover-dot_1.2s_ease-in-out_infinite] rounded-full motion-reduce:animate-none"
+        style={{ backgroundColor: LIFAFA_RED, display: ready ? "none" : undefined }}
+      />
+      {/* Under the dot, out of the way of its middle: the line, then the link. */}
+      <div className="absolute inset-x-0 top-[calc(50%+2rem)] flex flex-col items-center gap-3 px-8 text-center">
+        <p
+          className="max-w-[18rem] text-[0.9375rem] leading-relaxed text-balance"
+          style={{ color: ink, animation: `lifafa-cover-loader-note 500ms ease-out ${DOT_SLOW_MS}ms both` }}
+        >
+          {slow}
+        </p>
+        <a
+          href=""
+          onClick={(event) => {
+            event.preventDefault();
+            window.location.reload();
+          }}
+          className="inline-flex min-h-11 items-center px-3 text-[0.9375rem] font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{
+            color: ink,
+            outlineColor: ink,
+            animation: `lifafa-cover-loader-reveal 500ms ease-out ${DOT_RETRY_MS}ms both`,
+          }}
+        >
+          {retry}
+        </a>
       </div>
     </div>
   );
@@ -424,7 +510,10 @@ export default function CoverShell({
   const burstAt = film !== undefined ? undefined : option.burstAt;
   const soundDelayMs = film?.soundDelayMs ?? 0;
   const artImages = art?.images ?? NO_ART;
-  const artTimeoutMs = art?.timeoutMs ?? COVER_ART_TIMEOUT_MS;
+  /* Null is no limit at all, for the card's wait too (see CoverArt). */
+  const artTimeoutMs = art?.timeoutMs === undefined ? COVER_ART_TIMEOUT_MS : art.timeoutMs;
+  const readyTimeoutMs = art?.timeoutMs === null ? null : READY_TIMEOUT_MS;
+  const artWaitFor = art?.waitFor;
   /* Artwork whose middle and head are its subject: the words go to its foot. See CoverArt. */
   const wordsAtFoot = art?.wordsAt === "foot";
 
@@ -861,9 +950,19 @@ export default function CoverShell({
 
     let live = true;
 
+    /* The cover's own extra wait (its sounds, its faces), let through if it fails. */
+    let extra: Promise<unknown> = Promise.resolve();
+
+    try {
+      extra = artWaitFor?.().catch(() => undefined) ?? Promise.resolve();
+    } catch {
+      /* Nothing more to wait for. */
+    }
+
     void Promise.all([
-      whenCardReady(cardRef.current, READY_TIMEOUT_MS),
+      whenCardReady(cardRef.current, readyTimeoutMs),
       whenPicturesReady(artImages, artTimeoutMs),
+      extra,
     ])
       .then(whenVisible)
       .then(() => {
@@ -875,7 +974,7 @@ export default function CoverShell({
     return () => {
       live = false;
     };
-  }, [hasCover, artImages, artTimeoutMs]);
+  }, [hasCover, artImages, artTimeoutMs, readyTimeoutMs, artWaitFor]);
 
   /*
     The cover's sound is fetched and decoded while the cover is closed, so it
@@ -1343,6 +1442,7 @@ export default function CoverShell({
             ready={ready}
             text={copy.coverPreparing}
             note={slowLoad !== undefined ? slowLoad.text[language] : null}
+            dot={art?.loader?.kind === "dot" ? { slow: art.loader.slow[language], retry: art.loader.retry[language] } : null}
             ground={colors.ground}
             accent={colors.accent}
             muted={colors.textMuted}
