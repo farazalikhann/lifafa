@@ -55,6 +55,8 @@ interface DakCopy {
   minutes: string;
   reply: string;
   replySent: string;
+  /** Written on the note the paper plane drops when a reply is sent. */
+  thankYou: string;
   thanks: string;
   /** The slip's middle panel joins the weekday and the time with this. */
   at: string;
@@ -81,6 +83,7 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     minutes: "Minutes",
     reply: "Reply by Post",
     replySent: "Your reply is on its way",
+    thankYou: "Thank you",
     thanks: "With love",
     at: "at",
     slowLoad: "Your connection seems slow. The invitation is on its way.",
@@ -101,6 +104,7 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     minutes: "मिनट",
     reply: "उत्तर भेजें",
     replySent: "आपका उत्तर रवाना हो गया है",
+    thankYou: "धन्यवाद",
     thanks: "सप्रेम",
     at: "",
     slowLoad: "आपका इंटरनेट धीमा लग रहा है। निमंत्रण आ रहा है।",

@@ -3,8 +3,8 @@ Publishes Dak Ghar's artwork: the PNGs in "dak ghar/" (git-ignored) to
 WebP in public/templates/dak-ghar/.
 
 Each picture is cut to its own art (the transparent margin dropped), sized
-to about twice what a 430px phone shows of it, and saved as WebP. The two
-pigeons are cleaned first with "sheesh mahal/clean-fringe.py" (islands
+to about twice what a 430px phone shows of it, and saved as WebP. The
+pigeon is cleaned first with "sheesh mahal/clean-fringe.py" (islands
 removed, the edge eroded, a red fringe neutralised).
 
 The newer cutouts (22 onwards) are cleaned here instead, by clean_rim: a
@@ -38,7 +38,6 @@ JOBS = [
     ("03-bougainvillea.png", "bougainvillea", 560, 66, False),
     ("07-letter-paper.png", "letter-paper", 760, 74, False),
     ("09-pigeon-flying.png", "pigeon", 240, 80, True),
-    ("10-pigeon-reply-card.png", "pigeon-reply", 360, 80, True),
     ("11-writing-desk.png", "writing-desk", 380, 78, False),
     ("12-background-paper.png", "paper", 640, 62, False),
     ("13-telegram-slip.png", "telegram-slip", 760, 76, False),

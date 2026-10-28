@@ -31,7 +31,6 @@ export const ART = {
   bougainvillea: `${DIR}/bougainvillea.webp`,
   letter: `${DIR}/letter-paper.webp`,
   pigeon: `${DIR}/pigeon.webp`,
-  pigeonReply: `${DIR}/pigeon-reply.webp`,
   desk: `${DIR}/writing-desk.webp`,
   paper: `${DIR}/paper.webp`,
   telegram: `${DIR}/telegram-slip.webp`,
