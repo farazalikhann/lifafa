@@ -117,7 +117,7 @@ Rules
 
 **Comparison table**: a real `<table>` on `paper`, three option columns after a row label column. The Lifafa column has a blush tint, an emerald header with ivory text and 600 weight cells. Below 768px the table is replaced by one small card per row, with Lifafa's answer first on a blush band and the other two under it, so the page never scrolls sideways and Lifafa is never out of view.
 
-**Feature tile**: a Fluent 3D icon (MIT, see THIRD_PARTY_NOTICES.md) in a blush well, an h3 and one line of body copy.
+**Feature tile**: a line icon drawn in code (`components/landing/FeatureIcons.tsx`: 24px grid, 1.5px emerald stroke with round ends, one small gold detail, no fills) at 28px in a 56px `paper` circle with a 1px gold hairline, then an h3 and one line of body copy. On hover the rim turns full gold and the icon lifts 2px.
 
 **Pricing card**: `paper` card with collection name, the price in Fraunces 700, a short list and one button. The Premium card gets a 1.5px emerald border. No "most popular" badges.
 

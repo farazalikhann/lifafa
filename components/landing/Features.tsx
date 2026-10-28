@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import FeatureIcon, { type FeatureIconName } from "@/components/landing/FeatureIcons";
 import {
   EYEBROW,
   SECTION_HEADING,
@@ -9,7 +10,7 @@ import {
 interface Feature {
   title: string;
   copy: string;
-  icon: string;
+  icon: FeatureIconName;
 }
 
 /* Each of these is in the product today; see the terms page for the limits. */
@@ -17,32 +18,32 @@ const FEATURES: readonly Feature[] = [
   {
     title: "RSVP in a tap",
     copy: "Guests reply coming, not coming or maybe, with how many people are in their party.",
-    icon: "/landing/icons/envelope-with-arrow.webp",
+    icon: "rsvp",
   },
   {
     title: "Live headcount",
     copy: "Your dashboard adds up every reply into one number for the caterer.",
-    icon: "/landing/icons/bar-chart.webp",
+    icon: "headcount",
   },
   {
     title: "Guest pass and QR check-in",
     copy: "Guests who are coming get a pass, and you scan it at the entrance.",
-    icon: "/landing/icons/admission-tickets.webp",
+    icon: "pass",
   },
   {
     title: "Hindi and English",
     copy: "Write in one language, add the other with built in translate, and guests switch with a tap.",
-    icon: "/landing/icons/speech-balloon.webp",
+    icon: "languages",
   },
   {
     title: "Every tradition and event",
     copy: "Hindu, Muslim, Sikh, Christian, Jain and Buddhist designs, for weddings and every function.",
-    icon: "/landing/icons/party-popper.webp",
+    icon: "traditions",
   },
   {
     title: "Edit after sharing",
     copy: "Fix a time or a venue and every guest sees it on the same link.",
-    icon: "/landing/icons/pencil.webp",
+    icon: "edit",
   },
 ];
 
@@ -63,15 +64,12 @@ export default function Features(): ReactElement {
           className="mt-10 grid list-none gap-x-8 gap-y-10 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-y-12"
         >
           {FEATURES.map((feature) => (
-            <li key={feature.title} className="flex gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--paper-blush)]/55">
-                <img
-                  src={feature.icon}
-                  alt=""
-                  width={36}
-                  height={36}
-                  loading="lazy"
-                  decoding="async"
+            <li key={feature.title} className="group flex gap-4">
+              {/* A paper coin with a gold rim; on hover the rim warms and the icon lifts. */}
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[var(--paper-hairline)] bg-[var(--paper-card)] transition-colors duration-200 group-hover:border-[var(--paper-gold)]">
+                <FeatureIcon
+                  name={feature.icon}
+                  className="transition-transform duration-200 ease-out group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
                 />
               </span>
               <div className="min-w-0">
