@@ -29,7 +29,7 @@ export default function CallToAction(): ReactElement {
         {/* The white logo between two gold hairlines: the page signs off. */}
         <span className="flex items-center gap-4">
           <span aria-hidden="true" className="h-px w-10 bg-[var(--paper-gold)]" />
-          <Logo variant="white" />
+          <Logo variant="white" lazy />
           <span aria-hidden="true" className="h-px w-10 bg-[var(--paper-gold)]" />
         </span>
         <h2

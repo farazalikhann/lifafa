@@ -13,8 +13,12 @@ import type { ReactElement } from "react";
  *   fetched, whichever the screen needs.
  *
  * About 32px tall on a phone and 40px from 1024px. `className` replaces that
- * height when a place needs another. The caller wraps it in a link home where
- * it is one. Never used inside an invitation (/i, /demo, previews, print).
+ * height when a place needs another. `lazy` is for a logo far down a page
+ * (the closing band, the footer): fetched early, even a small file pushes the
+ * page's fonts back, and the landing page's largest paint waits on them.
+ *
+ * The caller wraps it in a link home where it is one. Never used inside an
+ * invitation (/i, /demo, previews, print).
  */
 
 export type LogoVariant = "emerald" | "white";
@@ -37,12 +41,15 @@ export default function Logo({
   shape = "full",
   compact = false,
   className = DEFAULT_HEIGHT,
+  lazy = false,
 }: {
   variant?: LogoVariant;
   shape?: LogoShape;
   compact?: boolean;
   className?: string;
+  lazy?: boolean;
 }): ReactElement {
+  const loading = lazy ? "lazy" : undefined;
   if (compact) {
     return (
       <picture className="contents">
@@ -57,6 +64,7 @@ export default function Logo({
           alt="Lifafa"
           width={MARK.width}
           height={MARK.height}
+          loading={loading}
           decoding="async"
           className={`block w-auto ${className}`}
         />
@@ -71,6 +79,7 @@ export default function Logo({
       alt="Lifafa"
       width={size.width}
       height={size.height}
+      loading={loading}
       decoding="async"
       className={`block w-auto ${className}`}
     />
