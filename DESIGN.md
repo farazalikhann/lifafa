@@ -111,7 +111,7 @@ Rules
 
 **Card**: `paper` fill, 1px `gold` border at 35 percent, radius 24px, padding 24px to 32px, no shadow at rest. The how it works cards cast a soft warm shadow on hover only (`.lifafa-hover-shadow`: the shadow is a layer that fades in, so box-shadow never animates).
 
-**Step illustration**: a painted still life (`public/landing/steps/`, 300px WebP) at 128px, 140px from 1024px, at the top of each step card with no tile behind it. The step label above the heading is an eyebrow: small `gold-ink` caps.
+**Step illustration**: a painted still life (`public/landing/steps/`, 300px WebP) at 128px, 140px from 1024px, at the top of each step card with no tile behind it. Its file is fetched only when the section is half a screen away (`img[data-defer]`, loaded by BrushReveal, with a noscript copy): as a plain lazy image it was fetched at once on a phone and slowed the hero. The step label above the heading is an eyebrow: small `gold-ink` caps.
 
 **Phone frame**: radius 40px, 8px border in `ink`, a soft warm shadow in three layers (`.lifafa-phone-shadow`, brown from `--paper-shadow-warm`, never grey), a small speaker slot drawn in CSS. Holds a template's poster or video at 9:19.5.
 
@@ -150,7 +150,7 @@ The page is almost flat. Depth comes from paper on paper (`paper` cards on `wash
 - Premium carousel: an emerald wash pooling under the phones (16 percent).
 - How it works: a blush wash in the top right corner (15 percent). Features: a gold wash in the bottom left corner (15 percent).
 - Comparison table: a blush wash under the Lifafa column (45 percent, from 768px). Closing band: a gold wash for texture (14 percent).
-- Each wash is its token colour seen through the brush's alpha (a CSS mask), so it is never an image the page waits on and never its largest paint. The file loads when the wash is a screen away.
+- Each wash is its token colour seen through the brush's alpha (a CSS mask), so it is never an image the page waits on and never its largest paint. No brush file is fetched until the page has loaded and the hero heading has painted in Fraunces; after that a wash's file loads when it is a screen away. Fetching them earlier cost about 300ms of mobile LCP.
 - Never more than two washes on one screen at 360, 390 or 1440 wide. Every wash is `aria-hidden`, takes no taps, sits absolute inside its section behind the content, and is never fixed. Text over a wash still meets AA at the wash's strongest point.
 
 ## 7. Motion

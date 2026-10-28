@@ -52,12 +52,23 @@ export default function HowItWorks(): ReactElement {
           </h2>
         </div>
 
+        {/* Without script the deferred copies stay empty; the noscript ones show instead. */}
+        <noscript>
+          <style>{"img[data-defer]{display:none}"}</style>
+        </noscript>
+
         <ol role="list" className="mt-10 grid list-none gap-4 sm:gap-5 lg:mt-14 lg:grid-cols-3">
           {STEPS.map((step, index) => (
             <li key={step.title} className={`${CARD} lifafa-hover-shadow flex flex-col p-6 lg:p-8`}>
-              {/* Sized by its own width and height, so the card never jumps when it loads. */}
+              {/*
+                Sized by its own width and height, so the card never jumps when
+                it loads. The file is asked for only when the section is near
+                (BrushReveal moves data-src to src): even a lazy image this far
+                down is fetched at once on a phone, before the hero has painted.
+              */}
               <img
-                src={step.art.src}
+                data-src={step.art.src}
+                data-defer=""
                 alt=""
                 width={step.art.width}
                 height={step.art.height}
@@ -65,6 +76,16 @@ export default function HowItWorks(): ReactElement {
                 decoding="async"
                 className="h-32 w-auto self-start lg:h-[8.75rem]"
               />
+              <noscript>
+                <img
+                  src={step.art.src}
+                  alt=""
+                  width={step.art.width}
+                  height={step.art.height}
+                  loading="lazy"
+                  className="h-32 w-auto self-start lg:h-[8.75rem]"
+                />
+              </noscript>
               <div className="mt-5 min-w-0">
                 <p className={EYEBROW}>Step {index + 1}</p>
                 <h3 className="mt-2 font-[family-name:var(--paper-display)] text-xl leading-snug font-semibold text-[var(--paper-ink)] lg:text-2xl">

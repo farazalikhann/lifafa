@@ -55,16 +55,20 @@ export function BrushField({ children }: { children: ReactNode }): ReactElement 
 /**
  * A gold brush stroke under a few words, wiped on left to right once it has
  * loaded. Goes inside a `relative` inline span around the words.
+ *
+ * Its file is only asked for once the heading has painted in its web font
+ * (BrushReveal moves data-src to src), so it never competes with that paint.
  */
 export function BrushUnderline(): ReactElement {
   return (
     <img
       aria-hidden="true"
       alt=""
-      src="/landing/brush/underline-gold.webp"
+      data-src="/landing/brush/underline-gold.webp"
       width={840}
       height={64}
       decoding="async"
+      fetchPriority="low"
       data-brush-wipe=""
       className="lifafa-underline"
     />
