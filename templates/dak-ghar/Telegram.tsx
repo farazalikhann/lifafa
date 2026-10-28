@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, type ReactElement } from "react";
+import type { AnimationEvent, ReactElement } from "react";
 import { playEffectSound } from "@/lib/effectSound";
 import { ART } from "@/templates/dak-ghar/art";
 import { PageHeading } from "@/templates/dak-ghar/Paper";
@@ -17,18 +17,23 @@ import type { CardLanguage } from "@/types/card";
  *
  * The heading fades up as the page comes on screen; the slip waits until it
  * is well up the screen, then is thrown onto the table in one piece as the
- * letter is (`.thrown`, to dg-paper-whoosh started 60ms ahead), and its words
- * fade in after it has landed.
+ * letter is (`.thrown`), and its words fade in after it has landed.
+ *
+ * Its whoosh is started by the animation itself (animationstart), whose
+ * first 60ms are still, so the sound leads the movement by that much however
+ * long the frame that starts it takes: this page comes into view among many
+ * pictures, and a sound started from React's commit ran a quarter second
+ * ahead.
  */
 export default function DakGharTelegram({ message, language }: { message: string; language: CardLanguage }): ReactElement {
   const { ref, shown } = useReveal<HTMLElement>();
   const slip = useReveal<HTMLDivElement>("-30%");
 
-  useLayoutEffect(() => {
-    if (slip.shown) {
+  const onThrown = (event: AnimationEvent<HTMLDivElement>): void => {
+    if (event.target === event.currentTarget && event.animationName.includes("throw-slip")) {
       playEffectSound(SOUND.whoosh);
     }
-  }, [slip.shown]);
+  };
 
   return (
     <section ref={ref} className={styles.page}>
@@ -41,6 +46,7 @@ export default function DakGharTelegram({ message, language }: { message: string
           <div
             className={`${styles.telegram} ${styles.thrown} ${slip.shown ? styles.shown : ""}`}
             style={{ backgroundImage: `url(${ART.telegram})` }}
+            onAnimationStart={onThrown}
           >
             <p
               className={`${styles.thrownWords} max-w-full text-base whitespace-pre-line wrap-anywhere text-pretty`}

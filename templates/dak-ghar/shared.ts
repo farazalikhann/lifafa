@@ -63,9 +63,11 @@ interface DakCopy {
   /** Under the loader's dot, for a guest kept waiting, and the reload after it. */
   slowLoad: string;
   tryAgain: string;
-  /** The celebrations carousel's buttons, for a screen reader. */
+  /** The celebrations' buttons: their names for a screen reader, and what they show. */
   previous: string;
   next: string;
+  previousShort: string;
+  nextShort: string;
 }
 
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
@@ -90,6 +92,8 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     tryAgain: "Try again",
     previous: "Previous celebration",
     next: "Next celebration",
+    previousShort: "Previous",
+    nextShort: "Next",
   },
   hi: {
     tapToOpen: "खोलने के लिए टैप करें",
@@ -111,6 +115,8 @@ const COPY: Readonly<Record<CardLanguage, DakCopy>> = {
     tryAgain: "फिर से कोशिश करें",
     previous: "पिछला कार्यक्रम",
     next: "अगला कार्यक्रम",
+    previousShort: "पिछला",
+    nextShort: "अगला",
   },
 };
 

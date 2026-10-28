@@ -1,4 +1,4 @@
-import { loadEffectSounds } from "@/lib/effectSound";
+import { loadEffectSounds, warmEffectSounds } from "@/lib/effectSound";
 
 /**
  * Dak Ghar's sounds, in public/sounds/dak-ghar/ (trimmed and levelled, played
@@ -77,5 +77,7 @@ function reducedMotion(): boolean {
  * fails is let through; the card plays without it.
  */
 export function coverExtrasReady(): Promise<void> {
+  /* The audio context too, built while the cover waits, so the tap only has to start it. */
+  warmEffectSounds();
   return Promise.all([facesReady(), reducedMotion() ? undefined : loadEffectSounds(ALL_SOUNDS)]).then(() => undefined);
 }

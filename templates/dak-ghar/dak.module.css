@@ -1161,21 +1161,23 @@
   transform: translate3d(0, 30vh, 0) rotate(-8deg) scale(0.85);
 }
 
+/* The first 60ms (6%) still: its sound starts with the animation, a beat ahead of the movement. */
 .thrown.shown {
-  animation: dg-throw-slip 950ms 60ms both;
+  animation: dg-throw-slip 1010ms both;
   will-change: transform, opacity;
 }
 
 @keyframes dg-throw-slip {
-  0% {
+  0%,
+  6% {
     opacity: 0;
     transform: translate3d(0, 30vh, 0) rotate(-8deg) scale(0.85);
     animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1);
   }
-  12% {
+  17% {
     opacity: 1;
   }
-  62% {
+  64% {
     opacity: 1;
     transform: translate3d(0, -5px, 0) rotate(-0.2deg) scale(1.012);
     animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
@@ -1188,7 +1190,7 @@
 
 .thrownWords {
   opacity: 0;
-  transition: opacity 600ms ease-out 950ms;
+  transition: opacity 600ms ease-out 1000ms;
 }
 
 .shown .thrownWords {
@@ -1209,64 +1211,77 @@
   }
 }
 
-/* ─── The functions, on postage stamps, in a carousel ─── */
+/* ─── The functions, on postage stamps, in a pile ─── */
 
 /*
-  The browser's own scroller, snapping each card to the middle with the next
-  one peeking in; out to the page's edges so the peek reaches them.
+  The pile (Stamps.tsx): every card in one grid cell, so it is as tall as the
+  tallest; room above for the two behind to show over the front one. Only a
+  sideways drag is the pile's.
 */
-.stampScroller {
-  --slide-w: min(76cqw, 19rem);
-  display: flex;
-  width: calc(100% + 2.5rem);
-  margin-inline: -1.25rem;
-  gap: 0.875rem;
-  padding: 0.75rem calc((100% + 2.5rem - var(--slide-w)) / 2) 1rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: calc((100% + 2.5rem - var(--slide-w)) / 2);
-  scrollbar-width: none;
-  cursor: grab;
-  touch-action: pan-x pan-y;
-}
-
-.stampScroller::-webkit-scrollbar {
-  display: none;
-}
-
-.stampScroller:focus-visible {
-  outline: 2px solid var(--dg-red);
-  outline-offset: -2px;
-}
-
-/* A mouse dragging it: no snapping under the hand, no text selected. */
-.stampDragging {
-  scroll-snap-type: none;
-  cursor: grabbing;
+.stampPile {
+  display: grid;
+  width: min(80cqw, 20rem);
+  padding-top: 3.6rem;
+  touch-action: pan-y;
   user-select: none;
+  -webkit-user-select: none;
 }
 
-.stampScrollerOne {
-  justify-content: center;
-  cursor: auto;
+.stampPileOne {
+  padding-top: 0;
 }
 
-.stampSlide {
+/*
+  A card in its place in the pile (Stamps.tsx's PLACES): a transform and an
+  opacity, and a step between places a transition of both. One out of the
+  pile is hidden once it has got there.
+*/
+.stampCard {
+  --pile-ease: cubic-bezier(0.45, 0, 0.2, 1);
+
+  grid-area: 1 / 1;
   display: flex;
-  flex: none;
-  width: var(--slide-w);
   flex-direction: column;
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1rem 1.5rem;
-  scroll-snap-align: center;
-  scroll-snap-stop: always;
-  background-color: rgb(251 241 220 / 0.9);
+  background-color: #fbf1dc;
   border-radius: 6px;
   box-shadow:
     inset 0 0 0 1px rgb(158 42 36 / 0.22),
-    0 10px 22px -18px rgb(42 30 20 / 0.5);
+    0 10px 22px -16px rgb(42 30 20 / 0.55);
+  transform-origin: 50% 0;
+  transition:
+    transform 560ms var(--pile-ease),
+    opacity 480ms var(--pile-ease),
+    visibility 0s linear 0s;
+  will-change: transform;
+  cursor: grab;
+}
+
+.stampCard[data-off] {
+  visibility: hidden;
+  transition:
+    transform 560ms var(--pile-ease),
+    opacity 480ms var(--pile-ease),
+    visibility 0s linear 560ms;
+}
+
+/* Only the front card's words are read: one leaving loses them at once, one arriving gains them as it lands. */
+.stampWords {
+  transition: opacity 260ms ease-out 260ms;
+}
+
+.stampCard:not([data-front]) .stampWords {
+  opacity: 0;
+  transition: opacity 160ms ease-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stampCard,
+  .stampCard[data-off] {
+    transition: opacity 260ms ease-out;
+  }
 }
 
 .stampArt {
@@ -1282,21 +1297,29 @@
   transform: rotate(2.5deg);
 }
 
-/* Previous and Next: the card's button, round. */
+/* Previous and Next: the card's button, as "See the route" is, with its arrow. */
 .stampNav {
   display: inline-flex;
-  width: 44px;
-  height: 44px;
+  min-height: 44px;
   align-items: center;
-  justify-content: center;
+  gap: 0.4rem;
+  padding: 0 0.9rem;
   border: 1px solid rgb(158 42 36 / 0.55);
-  border-radius: 9999px;
+  border-radius: 12px;
   background-color: #f9ecd6;
   color: var(--dg-red);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.stampNav svg {
+  width: 0.45rem;
+  height: 0.75rem;
 }
 
 .stampNav:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
 }
 
 .stampNav:focus-visible,
@@ -1308,7 +1331,7 @@
 /* A dot per card: a 44px tall target round a small mark. */
 .stampDot {
   display: inline-flex;
-  width: 32px;
+  width: 22px;
   height: 44px;
   align-items: center;
   justify-content: center;
@@ -1317,8 +1340,8 @@
 
 .stampDot > span {
   display: block;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 9999px;
   background-color: rgb(158 42 36 / 0.3);
   transition: transform 200ms ease-out;
@@ -1326,7 +1349,7 @@
 
 .stampDot[aria-current="true"] > span {
   background-color: var(--dg-red);
-  transform: scale(1.3);
+  transform: scale(1.35);
 }
 
 /* ─── The venue, on a postcard ─── */

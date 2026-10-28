@@ -131,6 +131,41 @@ function scheduleIdle(): void {
 }
 
 /**
+ * Builds the context ahead of the tap, suspended, in an idle moment. Never
+ * throws, and makes no sound.
+ *
+ * Building one is the slow part: `new AudioContext()` starts the browser's
+ * audio thread, and inside the tap it held the cover's first frame on a slow
+ * phone. Built here while the guest reads the cover, the tap only resumes it
+ * (as lib/coverSound.ts's warmCoverSound does for the shared covers).
+ */
+export function warmEffectSounds(): void {
+  if (typeof window === "undefined" || reducedMotion() || context !== null) {
+    return;
+  }
+
+  const build = (): void => {
+    const Constructor = contextConstructor();
+
+    if (Constructor === null || context !== null) {
+      return;
+    }
+
+    try {
+      context = new Constructor();
+    } catch {
+      /* The tap builds its own. */
+    }
+  };
+
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(build, { timeout: 2000 });
+  } else {
+    window.setTimeout(build, 200);
+  }
+}
+
+/**
  * Starts the sounds' context inside a guest's tap, in silence. Never throws.
  * Call it from the handler of the tap itself, not after an await.
  */

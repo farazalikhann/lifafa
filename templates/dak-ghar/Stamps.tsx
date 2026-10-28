@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactElement } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { calendarPageText, hasEventTime } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
@@ -14,31 +14,52 @@ import type { CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+/* One step through the pile (the stylesheet's transition takes as long). */
+const STEP_MS = 560;
+/* A drag that has gone this far sideways before it has gone as far down is the pile's; past this share of the width, or this fast (px per ms), it steps. */
+const SIDEWAYS_PX = 8;
+const STEP_PAST = 0.22;
+const STEP_SPEED = 0.5;
+
+/*
+  The places in the pile, front first: the card being read; the next one
+  behind it, a little smaller, higher and turned, its top showing over the
+  front card; the one after that, smaller again and turned the other way;
+  one more, unseen, waiting. PAST is a card read and slid off the pile to the
+  left. Each is a transform and an opacity, the step between them a
+  transition of both (`.stampCard`).
+*/
+interface Place {
+  x: number;
+  y: number;
+  scale: number;
+  turn: number;
+  opacity: number;
+}
+
+const PLACES: readonly Place[] = [
+  { x: 0, y: 0, scale: 1, turn: 0, opacity: 1 },
+  { x: 2, y: -1.9, scale: 0.94, turn: 2.5, opacity: 1 },
+  { x: -2, y: -3.6, scale: 0.88, turn: -2, opacity: 0.9 },
+  { x: 0, y: -4.6, scale: 0.82, turn: 0, opacity: 0 },
+];
+const PAST: Place = { x: -118, y: 1, scale: 1, turn: -9, opacity: 0 };
+/* How many are drawn. */
+const DRAWN = 3;
+
+const placeOf = (offset: number): Place => (offset < 0 ? PAST : PLACES[Math.min(offset, PLACES.length - 1)]);
+/* x as a share of the card's width, y in rem (the cards' heights differ, the peek should not). */
+const transformOf = ({ x, y, scale, turn }: Place): string =>
+  `translate3d(${x}%, ${y}rem, 0) rotate(${turn}deg) scale(${scale})`;
 
 /** One function: its postage stamp, and under it what, when and where. */
-function StampCard({
-  entry,
-  index,
-  count,
-  language,
-}: {
-  entry: TimelineEntry;
-  index: number;
-  count: number;
-  language: CardLanguage;
-}): ReactElement {
+function StampFace({ entry, index, language }: { entry: TimelineEntry; index: number; language: CardLanguage }): ReactElement {
   const kind = stampFor(entry.label);
   const page = calendarPageText(entry.date, entry.time, language);
   const venue = entry.venueName.trim();
 
   return (
-    <article
-      className={styles.stampSlide}
-      data-slide={index}
-      role="group"
-      aria-roledescription={language === "hi" ? "स्लाइड" : "slide"}
-      aria-label={`${index + 1} / ${count}`}
-    >
+    <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={STAMP_ART[kind]}
@@ -50,7 +71,7 @@ function StampCard({
         draggable={false}
         className={`${styles.stampArt} ${index % 2 === 1 ? styles.stampArtFlip : ""}`}
       />
-      <div className="flex w-full min-w-0 flex-col items-center gap-1 text-center">
+      <div className={`${styles.stampWords} flex w-full min-w-0 flex-col items-center gap-1 text-center`}>
         <h3 className="max-w-full text-[1.625rem] wrap-anywhere text-balance" style={{ ...DAK_FONTS.serif, lineHeight: leading(language, 1.1) }}>
           {entry.label.trim()}
         </h3>
@@ -72,15 +93,7 @@ function StampCard({
           </p>
         ) : null}
       </div>
-    </article>
-  );
-}
-
-function Arrow({ flip }: { flip: boolean }): ReactElement {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-5 w-5" style={flip ? { transform: "scaleX(-1)" } : undefined}>
-      <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    </>
   );
 }
 
@@ -90,111 +103,164 @@ function Arrow({ flip }: { flip: boolean }): ReactElement {
  * by the lake for anything else). The list is the card's own
  * `timelineEntries`.
  *
- * A HORIZONTAL CAROUSEL: the browser's own scrolling with CSS scroll snap, so
- * a swipe is native and smooth on any phone; the next stamp peeks in at the
- * edge. A mouse can drag it. Dots and Previous and Next buttons under it, for
- * a keyboard, a screen reader, or a guest who does not know to swipe; which
- * slide is in view is read by an IntersectionObserver, never by measuring as
- * it scrolls. It never moves on its own. One function: just its card.
+ * A PILE OF CARDS ON THE TABLE, read one at a time, as Sheesh Mahal's
+ * celebrations stand down its hall: the card being read in front, the next
+ * two behind it, a little smaller, higher and turned, their stamps showing
+ * over its top edge. Going on (a swipe to the left, or Next) slides the front
+ * card off the pile to the left while each card behind comes forward one
+ * place; going back (a swipe to the right, or Previous) brings it back. The
+ * front card follows the finger while it is dragged. Only a sideways drag is
+ * the pile's (`touch-action: pan-y`), so the page still scrolls. Previous and
+ * Next under it, with a dot per function between them. It never moves on its
+ * own; under reduced motion the cards change places with a short fade. One
+ * function: its card alone.
+ *
+ * The cards share one grid cell, so the pile is as tall as its tallest card
+ * and nothing is measured to lay it out.
  */
 export default function DakGharStamps({ draft, language }: { draft: EventDraft; language: CardLanguage }): ReactElement | null {
   const entries = timelineEntries(draft, language);
   const { ref, shown } = useReveal<HTMLElement>();
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const [current, setCurrent] = useState(0);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const drag = useRef<{ id: number; x: number; left: number; moved: boolean } | null>(null);
   const count = entries.length;
   const own = dakCopy(language);
 
+  /* The card in front. */
+  const [at, setAt] = useState(0);
+  const atRef = useRef(0);
+  const busy = useRef(false);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const drag = useRef({ pointer: -1, startX: 0, startY: 0, lastX: 0, lastT: 0, speed: 0, sideways: false, width: 0, frame: 0 });
+
+  /* A new list of functions (the host editing the preview): from the first again. */
   useEffect(() => {
-    const scroller = scrollerRef.current;
-
-    if (scroller === null || count < 2 || typeof IntersectionObserver === "undefined") {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (seen) => {
-        for (const entry of seen) {
-          if (entry.isIntersecting) {
-            setCurrent(Number((entry.target as HTMLElement).dataset.slide ?? 0));
-          }
-        }
-      },
-      { root: scroller, threshold: 0.6 },
-    );
-
-    for (const slide of scroller.querySelectorAll("[data-slide]")) {
-      observer.observe(slide);
-    }
-
-    return () => observer.disconnect();
+    atRef.current = 0;
+    setAt(0);
   }, [count]);
 
   if (count === 0) {
     return null;
   }
 
-  const go = (index: number): void => {
-    const scroller = scrollerRef.current;
-    const slide = scroller?.querySelector<HTMLElement>(`[data-slide="${index}"]`);
-
-    if (scroller === null || slide === null || slide === undefined) {
+  const go = (to: number): void => {
+    if (to < 0 || to >= count || to === atRef.current || busy.current) {
       return;
     }
 
-    /* Read once, on the tap: the slide's centre to the scroller's. */
-    const left = slide.offsetLeft - (scroller.clientWidth - slide.offsetWidth) / 2;
-    scroller.scrollTo({ left, behavior: reducedMotion ? "auto" : "smooth" });
+    busy.current = true;
+    atRef.current = to;
+    setAt(to);
+    window.setTimeout(() => {
+      busy.current = false;
+    }, reducedMotion ? 260 : STEP_MS);
   };
 
-  /* A mouse drags it; touch and pens scroll it natively. */
   const onPointerDown = (event: PointerEvent<HTMLDivElement>): void => {
-    const scroller = scrollerRef.current;
+    const front = cardRefs.current[atRef.current];
 
-    if (event.pointerType !== "mouse" || event.button !== 0 || scroller === null) {
+    if (count < 2 || busy.current || front === null || front === undefined || (event.pointerType === "mouse" && event.button !== 0)) {
       return;
     }
 
-    drag.current = { id: event.pointerId, x: event.clientX, left: scroller.scrollLeft, moved: false };
+    const state = drag.current;
+    state.pointer = event.pointerId;
+    state.startX = event.clientX;
+    state.startY = event.clientY;
+    state.lastX = event.clientX;
+    state.lastT = event.timeStamp;
+    state.speed = 0;
+    state.sideways = false;
+    /* Read once, here. */
+    state.width = front.offsetWidth;
   };
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>): void => {
-    const scroller = scrollerRef.current;
-    const held = drag.current;
+    const state = drag.current;
 
-    if (held === null || scroller === null || held.id !== event.pointerId) {
+    if (event.pointerId !== state.pointer) {
       return;
     }
 
-    const dx = event.clientX - held.x;
+    const dx = event.clientX - state.startX;
+    const dy = event.clientY - state.startY;
 
-    if (!held.moved && Math.abs(dx) > 4) {
-      held.moved = true;
-      scroller.setPointerCapture(event.pointerId);
-      scroller.classList.add(styles.stampDragging);
+    if (!state.sideways) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > SIDEWAYS_PX) {
+        /* Up or down first: the page's, not the pile's. */
+        state.pointer = -1;
+        return;
+      }
+
+      if (Math.abs(dx) < SIDEWAYS_PX) {
+        return;
+      }
+
+      state.sideways = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      const front = cardRefs.current[atRef.current];
+
+      if (front !== null && front !== undefined) {
+        front.style.transition = "none";
+      }
     }
 
-    if (held.moved) {
-      scroller.scrollLeft = held.left - dx;
+    const elapsed = Math.max(1, event.timeStamp - state.lastT);
+    state.speed = (event.clientX - state.lastX) / elapsed;
+    state.lastX = event.clientX;
+    state.lastT = event.timeStamp;
+
+    /* At most once a frame, and only a transform and an opacity. */
+    if (state.frame === 0) {
+      state.frame = window.requestAnimationFrame(() => {
+        state.frame = 0;
+        const front = cardRefs.current[atRef.current];
+
+        if (front === null || front === undefined) {
+          return;
+        }
+
+        const moved = state.lastX - state.startX;
+        /* Towards a card there is none past: held back. */
+        const towards = atRef.current - Math.sign(moved);
+        const held = towards < 0 || towards >= count ? moved * 0.25 : moved * 0.7;
+        const share = Math.min(1, Math.abs(held) / Math.max(1, state.width));
+        front.style.transform = `translate3d(${held.toFixed(1)}px, 0, 0) rotate(${(held / Math.max(1, state.width)) * 8}deg)`;
+        front.style.opacity = (1 - share * 0.4).toFixed(3);
+      });
     }
   };
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>): void => {
-    const scroller = scrollerRef.current;
-    const held = drag.current;
-    drag.current = null;
+    const state = drag.current;
 
-    if (held === null || scroller === null || !held.moved) {
+    if (event.pointerId !== state.pointer) {
       return;
     }
 
-    scroller.classList.remove(styles.stampDragging);
-    scroller.releasePointerCapture(event.pointerId);
-    /* To the nearest slide, in the direction it was pulled. */
-    const pulled = event.clientX - held.x;
-    go(Math.max(0, Math.min(count - 1, pulled < -30 ? current + 1 : pulled > 30 ? current - 1 : current)));
+    state.pointer = -1;
+    window.cancelAnimationFrame(state.frame);
+    state.frame = 0;
+
+    if (!state.sideways) {
+      return;
+    }
+
+    const front = cardRefs.current[atRef.current];
+
+    /* From where the finger left it, by the stylesheet's transition. */
+    if (front !== null && front !== undefined) {
+      front.style.transition = "";
+      front.style.transform = "";
+      front.style.opacity = "";
+    }
+
+    const moved = state.lastX - state.startX;
+    const to = atRef.current + (moved < 0 ? 1 : -1);
+    const far = Math.abs(moved) > state.width * STEP_PAST || Math.abs(state.speed) > STEP_SPEED;
+
+    if (far) {
+      go(to);
+    }
   };
 
   const heading = cardCopy(language).timeline.heading;
@@ -205,71 +271,75 @@ export default function DakGharStamps({ draft, language }: { draft: EventDraft; 
         <PageHeading>{heading}</PageHeading>
 
         <div
-          role="region"
-          aria-roledescription={language === "hi" ? "कैरोसेल" : "carousel"}
-          aria-label={heading}
-          className="flex w-full flex-col items-center gap-4"
+          className={`${styles.stampPile} ${count > 1 ? "" : styles.stampPileOne}`}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
         >
-          <div
-            ref={scrollerRef}
-            tabIndex={count > 1 ? 0 : undefined}
-            className={`${styles.stampScroller} ${count === 1 ? styles.stampScrollerOne : ""}`}
-            onPointerDown={count > 1 ? onPointerDown : undefined}
-            onPointerMove={count > 1 ? onPointerMove : undefined}
-            onPointerUp={count > 1 ? onPointerUp : undefined}
-            onPointerCancel={count > 1 ? onPointerUp : undefined}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowRight") {
-                event.preventDefault();
-                go(Math.min(count - 1, current + 1));
-              } else if (event.key === "ArrowLeft") {
-                event.preventDefault();
-                go(Math.max(0, current - 1));
-              }
-            }}
-          >
-            {entries.map((entry, index) => (
-              <StampCard key={entry.id} entry={entry} index={index} count={count} language={language} />
-            ))}
-          </div>
+          {entries.map((entry, index) => {
+            const offset = index - at;
+            const place = placeOf(offset);
+            const front = offset === 0;
 
-          {count > 1 ? (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className={styles.stampNav}
-                aria-label={own.previous}
-                disabled={current === 0}
-                onClick={() => go(current - 1)}
+            return (
+              <div
+                key={entry.id}
+                ref={(element) => {
+                  cardRefs.current[index] = element;
+                }}
+                className={styles.stampCard}
+                data-front={front ? "" : undefined}
+                data-off={offset < 0 || offset >= DRAWN ? "" : undefined}
+                aria-hidden={front ? undefined : true}
+                inert={!front}
+                style={
+                  {
+                    zIndex: offset < 0 ? 20 : 10 - Math.min(offset, 9),
+                    transform: transformOf(place),
+                    opacity: place.opacity,
+                  } as CSSProperties
+                }
               >
-                <Arrow flip />
-              </button>
-              <div className="flex items-center">
-                {entries.map((entry, index) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    className={styles.stampDot}
-                    aria-label={`${entry.label.trim()} (${index + 1} / ${count})`}
-                    aria-current={index === current ? "true" : undefined}
-                    onClick={() => go(index)}
-                  >
-                    <span />
-                  </button>
-                ))}
+                <StampFace entry={entry} index={index} language={language} />
               </div>
-              <button
-                type="button"
-                className={styles.stampNav}
-                aria-label={own.next}
-                disabled={current === count - 1}
-                onClick={() => go(current + 1)}
-              >
-                <Arrow flip={false} />
-              </button>
-            </div>
-          ) : null}
+            );
+          })}
         </div>
+
+        {count > 1 ? (
+          <div className="flex items-center gap-2">
+            <button type="button" className={styles.stampNav} disabled={at === 0} onClick={() => go(atRef.current - 1)} aria-label={own.previous}>
+              <svg viewBox="0 0 12 20" aria-hidden="true" focusable="false">
+                <path d="M10 2 L3 10 L10 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span aria-hidden="true">{own.previousShort}</span>
+            </button>
+            <div className="flex items-center">
+              {entries.map((entry, index) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={styles.stampDot}
+                  aria-label={`${entry.label.trim()} (${index + 1} / ${count})`}
+                  aria-current={index === at ? "true" : undefined}
+                  onClick={() => go(index)}
+                >
+                  <span />
+                </button>
+              ))}
+            </div>
+            <button type="button" className={styles.stampNav} disabled={at === count - 1} onClick={() => go(atRef.current + 1)} aria-label={own.next}>
+              <span aria-hidden="true">{own.nextShort}</span>
+              <svg viewBox="0 0 12 20" aria-hidden="true" focusable="false">
+                <path d="M2 2 L9 10 L2 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <p className="sr-only" aria-live="polite">
+              {`${entries[at]?.label.trim() ?? ""}, ${at + 1} / ${count}`}
+            </p>
+          </div>
+        ) : null}
       </div>
     </section>
   );
