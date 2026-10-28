@@ -88,7 +88,7 @@ const COVER_OPTION: CoverAnimationOption = {
  * and its Cover are loaded on demand, so a guest of any other template
  * downloads neither.
  *
- * UNLISTED while it is being finished: seen at /demo/dak-ghar only. A card
+ * LISTED in the Premium Collection, second after Emerald Shahi. A card
  * for every wedding, with no symbol of any faith; its sample is the Hindu
  * wedding in Jaipur, in English and Hindi.
  *

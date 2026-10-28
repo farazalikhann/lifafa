@@ -30,10 +30,10 @@ export { CLASSIC_TEMPLATE_ID };
  * removed.
  */
 export const TEMPLATES: readonly TemplateConfig[] = [
-  SHEESH_MAHAL,
   EMERALD_SHAHI,
-  GULAB_MAHAL,
   DAK_GHAR,
+  GULAB_MAHAL,
+  SHEESH_MAHAL,
   SHUBH_VIVAH_IVORY,
   MAROON_ROYAL,
   NIKAH_BLUSH,

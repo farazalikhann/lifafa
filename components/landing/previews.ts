@@ -11,19 +11,24 @@ export interface OpeningPreview {
 }
 
 export const OPENING_PREVIEWS: Readonly<Record<string, OpeningPreview>> = {
-  "sheesh-mahal": {
-    poster: "/landing/previews/sheesh-mahal/poster.webp",
-    mp4: "/landing/previews/sheesh-mahal/opening.mp4",
-    webm: "/landing/previews/sheesh-mahal/opening.webm",
-  },
   "emerald-shahi": {
     poster: "/landing/previews/emerald-shahi/poster.webp",
     mp4: "/landing/previews/emerald-shahi/opening.mp4",
     webm: "/landing/previews/emerald-shahi/opening.webm",
   },
+  "dak-ghar": {
+    poster: "/landing/previews/dak-ghar/poster.webp",
+    mp4: "/landing/previews/dak-ghar/opening.mp4",
+    webm: "/landing/previews/dak-ghar/opening.webm",
+  },
   "gulab-mahal": {
     poster: "/landing/previews/gulab-mahal/poster.webp",
     mp4: "/landing/previews/gulab-mahal/opening.mp4",
     webm: "/landing/previews/gulab-mahal/opening.webm",
+  },
+  "sheesh-mahal": {
+    poster: "/landing/previews/sheesh-mahal/poster.webp",
+    mp4: "/landing/previews/sheesh-mahal/opening.mp4",
+    webm: "/landing/previews/sheesh-mahal/opening.webm",
   },
 };

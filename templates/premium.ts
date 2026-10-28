@@ -1,4 +1,5 @@
 import { PREMIUM_PRICE_PAISE, SHEESH_MAHAL_PRICE_PAISE } from "@/lib/pricing";
+import dakGharPreview from "@/templates/dak-ghar/preview.webp";
 import emeraldShahiPreview from "@/templates/emerald-shahi/preview.webp";
 import gulabMahalPreview from "@/templates/gulab-mahal/preview.webp";
 import sheeshMahalPreview from "@/templates/sheesh-mahal/preview.webp";
@@ -51,22 +52,21 @@ export const SHEESH_MAHAL_LISTING = {
   preview: sheeshMahalPreview,
 } as const satisfies TemplateListing;
 
-/* Unlisted while it is being finished: seen at /demo/dak-ghar only. */
 export const DAK_GHAR_LISTING = {
   id: "dak-ghar",
   name: "Dak Ghar",
-  listed: false,
+  listed: true,
   collection: "premium",
   price: PREMIUM_PRICE_PAISE,
-  preview: null,
+  preview: dakGharPreview,
 } as const satisfies TemplateListing;
 
-/** The Premium Collection, in the gallery's order. */
+/** The Premium Collection, in the gallery's order (and the landing page's carousel). */
 export const PREMIUM_LISTINGS: readonly TemplateListing[] = [
-  SHEESH_MAHAL_LISTING,
   EMERALD_SHAHI_LISTING,
-  GULAB_MAHAL_LISTING,
   DAK_GHAR_LISTING,
+  GULAB_MAHAL_LISTING,
+  SHEESH_MAHAL_LISTING,
 ];
 
 /** The premium templates the gallery offers, with a preview to show: what the landing page lists. */
