@@ -109,9 +109,11 @@ Rules
 
 **Gold hairline divider** (`SectionRule`): a 1px `gold` line at 45 percent opacity, the width of the content column, with a small gold lozenge at its centre. Sits between sections.
 
-**Card**: `paper` fill, 1px `gold` border at 35 percent, radius 24px, padding 24px to 32px, no shadow at rest.
+**Card**: `paper` fill, 1px `gold` border at 35 percent, radius 24px, padding 24px to 32px, no shadow at rest. The how it works cards cast a soft warm shadow on hover only (`.lifafa-hover-shadow`: the shadow is a layer that fades in, so box-shadow never animates).
 
-**Phone frame**: radius 40px, 8px border in `ink`, a soft long shadow (`0 30px 60px -30px rgba(30,27,24,0.45)`), a small speaker slot drawn in CSS. Holds a template's poster or video at 9:19.5.
+**Step illustration**: a painted still life (`public/landing/steps/`, 300px WebP) at 128px, 140px from 1024px, at the top of each step card with no tile behind it. The step label above the heading is an eyebrow: small `gold-ink` caps.
+
+**Phone frame**: radius 40px, 8px border in `ink`, a soft warm shadow in three layers (`.lifafa-phone-shadow`, brown from `--paper-shadow-warm`, never grey), a small speaker slot drawn in CSS. Holds a template's poster or video at 9:19.5.
 
 **Template carousel**: one row of phone frames with CSS scroll snap, previous and next buttons and a dot per slide. Auto-advances every 5 seconds; see section 7.
 
@@ -135,18 +137,28 @@ Rules
 
 ## 6. Depth
 
-The page is almost flat. Depth comes from paper on paper (`paper` cards on `washi`) and gold hairlines, not shadows.
+The page is almost flat. Depth comes from paper on paper (`paper` cards on `washi`), gold hairlines and very light brush shading, not shadows. Where there is a shadow it is warm brown, never grey.
 
 - Level 0: `washi` canvas.
 - Level 1: `paper` card with a gold hairline border. No shadow.
-- Level 2: the phone frame, the only element with a real shadow, because it is the only object on the page.
+- Level 2: the phone frame, the only element with a shadow at rest, because it is the only object on the page. Step cards get a soft warm shadow on hover only.
 - Focus: a 2px outline, never a glow.
+
+**Brush shading.** Watercolour washes and one gold underline from the Lifafa motion kit (p5.brush, `public/landing/brush/`), as soft shading only (`components/landing/Brush.tsx`):
+
+- Hero: a blush wash behind the headline (upper left, 28 percent), a small gold wash low on the right (30 percent), and a gold brush underline under "who is coming", wiped on left to right in about 500ms once it loads.
+- Premium carousel: an emerald wash pooling under the phones (16 percent).
+- How it works: a blush wash in the top right corner (15 percent). Features: a gold wash in the bottom left corner (15 percent).
+- Comparison table: a blush wash under the Lifafa column (45 percent, from 768px). Closing band: a gold wash for texture (14 percent).
+- Each wash is its token colour seen through the brush's alpha (a CSS mask), so it is never an image the page waits on and never its largest paint. The file loads when the wash is a screen away.
+- Never more than two washes on one screen at 360, 390 or 1440 wide. Every wash is `aria-hidden`, takes no taps, sits absolute inside its section behind the content, and is never fixed. Text over a wash still meets AA at the wash's strongest point.
 
 ## 7. Motion
 
 Motion follows the lifafa-motion rules: low-end Android first.
 
-- Animate transform and opacity only. Nothing animates layout, box-shadow, filter or clip-path.
+- Animate transform and opacity only (and mask-position for the hero underline's wipe). Nothing animates layout, box-shadow, filter or clip-path.
+- Brush washes fade and settle in once as they come into view (IntersectionObserver, `components/landing/BrushReveal.tsx`). With reduced motion they are simply there, in their final state.
 - The carousel auto-advances every 5 seconds. It pauses on touch, hover, focus or drag and resumes after 8 seconds without interaction. It also pauses while it is off screen (IntersectionObserver) or the tab is hidden. With `prefers-reduced-motion: reduce` it never auto-advances and no video autoplays.
 - Only the centred slide plays its preview video (muted, inline, looped). Others show the poster. A video that fails falls back to the poster.
 - Hover lifts are 2px transforms over 200ms, removed under reduced motion.

@@ -6,6 +6,7 @@ import {
   SECTION_X,
   SECTION_Y,
 } from "@/components/landing/styles";
+import { BrushWash } from "@/components/landing/Brush";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 
 interface Row {
@@ -95,7 +96,9 @@ export default function Comparison(): ReactElement {
           ))}
         </ul>
 
-        <div className="mt-12 hidden overflow-hidden rounded-3xl border border-[var(--paper-hairline)] bg-[var(--paper-card)] md:block">
+        <div className="relative isolate mt-12 hidden overflow-hidden rounded-3xl border border-[var(--paper-hairline)] bg-[var(--paper-card)] md:block">
+          {/* A faint blush wash under the Lifafa column. */}
+          <BrushWash tone="blush" opacity={0.45} className="top-[8%] right-[-3%] bottom-[-4%] w-[30%]" />
           <table className="w-full border-collapse text-left">
             <caption className="sr-only">
               Lifafa compared with a printed card and a WhatsApp image or PDF

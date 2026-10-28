@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { BrushField, BrushUnderline, BrushWash } from "@/components/landing/Brush";
 import LinkPending from "@/components/landing/LinkPending";
 import {
   PRIMARY_BUTTON,
@@ -24,8 +25,22 @@ export default function Hero({ demoHref }: { demoHref: string }): ReactElement {
   return (
     <section
       aria-labelledby="hero-heading"
-      className={`${SECTION_X} pt-28 pb-14 text-center sm:pt-32 lg:pt-36 lg:pb-16`}
+      className={`${SECTION_X} isolate pt-28 pb-14 text-center sm:pt-32 lg:pt-36 lg:pb-16`}
     >
+      {/* Soft shading: blush behind the headline, a little gold low on the right. */}
+      <BrushField>
+        <BrushWash
+          tone="blush"
+          opacity={0.28}
+          className="top-16 left-[-14%] aspect-square w-[80vw] max-w-[30rem] sm:left-[4%] lg:top-16 lg:left-[14%] lg:max-w-[24rem]"
+        />
+        <BrushWash
+          tone="gold"
+          opacity={0.3}
+          className="right-[-10%] bottom-4 aspect-square w-[46vw] max-w-[17rem] sm:right-[6%] lg:right-[16%]"
+        />
+      </BrushField>
+
       <div className="mx-auto flex max-w-3xl flex-col items-center">
         <p className="flex items-center gap-3 text-xs font-bold tracking-[0.22em] text-[var(--paper-gold-ink)] uppercase">
           <span aria-hidden="true" className="h-px w-8 bg-[var(--paper-gold)]" />
@@ -37,7 +52,11 @@ export default function Hero({ demoHref }: { demoHref: string }): ReactElement {
           id="hero-heading"
           className="mt-6 font-[family-name:var(--paper-display)] text-[clamp(2.375rem,9vw,4.25rem)] leading-[1.06] font-semibold tracking-[-0.025em] text-balance text-[var(--paper-ink)]"
         >
-          Wedding invitations that tell you who is coming
+          Wedding invitations that tell you{" "}
+          <span className="relative whitespace-nowrap">
+            who is coming
+            <BrushUnderline />
+          </span>
           {/* The section's one sindoor accent: the full stop, drawn as a bindi. */}
           <span className="text-[var(--paper-sindoor)]">.</span>
         </h1>

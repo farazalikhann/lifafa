@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { BrushField, BrushWash } from "@/components/landing/Brush";
 import FeatureIcon, { type FeatureIconName } from "@/components/landing/FeatureIcons";
 import {
   EYEBROW,
@@ -50,7 +51,14 @@ const FEATURES: readonly Feature[] = [
 /** What an invitation does after it is sent, in a grid of six. A server component. */
 export default function Features(): ReactElement {
   return (
-    <section aria-labelledby="features-heading" className={`${SECTION_X} ${SECTION_Y}`}>
+    <section aria-labelledby="features-heading" className={`${SECTION_X} ${SECTION_Y} isolate`}>
+      <BrushField>
+        <BrushWash
+          tone="gold"
+          opacity={0.15}
+          className="bottom-[-4rem] left-[-20%] aspect-square w-[75vw] max-w-[28rem] lg:left-[-4%]"
+        />
+      </BrushField>
       <div className="mx-auto max-w-[70rem]">
         <div className="text-center">
           <p className={EYEBROW}>Features</p>

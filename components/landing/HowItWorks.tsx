@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { BrushField, BrushWash } from "@/components/landing/Brush";
 import {
   CARD,
   EYEBROW,
@@ -35,7 +36,14 @@ const STEPS: readonly Step[] = [
 /** Three steps from a design to a headcount. A server component. */
 export default function HowItWorks(): ReactElement {
   return (
-    <section aria-labelledby="how-heading" className={`${SECTION_X} ${SECTION_Y}`}>
+    <section aria-labelledby="how-heading" className={`${SECTION_X} ${SECTION_Y} isolate`}>
+      <BrushField>
+        <BrushWash
+          tone="blush"
+          opacity={0.15}
+          className="top-[-4rem] right-[-18%] aspect-square w-[75vw] max-w-[28rem] lg:right-[-4%]"
+        />
+      </BrushField>
       <div className="mx-auto max-w-[70rem]">
         <div className="text-center">
           <p className={EYEBROW}>How it works</p>
@@ -46,7 +54,7 @@ export default function HowItWorks(): ReactElement {
 
         <ol role="list" className="mt-10 grid list-none gap-4 sm:gap-5 lg:mt-14 lg:grid-cols-3">
           {STEPS.map((step, index) => (
-            <li key={step.title} className={`${CARD} flex flex-col p-6 lg:p-8`}>
+            <li key={step.title} className={`${CARD} lifafa-hover-shadow flex flex-col p-6 lg:p-8`}>
               {/* Sized by its own width and height, so the card never jumps when it loads. */}
               <img
                 src={step.art.src}

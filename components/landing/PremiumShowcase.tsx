@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { BrushField, BrushWash } from "@/components/landing/Brush";
 import PremiumCarousel, { type CarouselSlide } from "@/components/landing/PremiumCarousel";
 import { OPENING_PREVIEWS } from "@/components/landing/previews";
 import { EYEBROW, SECTION_HEADING, TEXT_LINK } from "@/components/landing/styles";
@@ -52,7 +53,7 @@ export default function PremiumShowcase(): ReactElement {
     <section
       id={SHOWCASE_ID}
       aria-labelledby="showcase-heading"
-      className="scroll-mt-16 pb-16 lg:pb-24"
+      className="isolate scroll-mt-16 pb-16 lg:pb-24"
     >
       <div className="px-5 text-center sm:px-14 lg:px-24">
         <p className={EYEBROW}>Premium Collection</p>
@@ -61,7 +62,15 @@ export default function PremiumShowcase(): ReactElement {
         </h2>
       </div>
 
-      <div className="mt-6 lg:mt-8">
+      <div className="relative mt-6 lg:mt-8">
+        {/* A soft emerald pool under the lower half of the phones. */}
+        <BrushField>
+          <BrushWash
+            tone="emerald"
+            opacity={0.16}
+            className="bottom-[-30%] left-1/2 aspect-square w-[130vw] max-w-[52rem] -translate-x-1/2 lg:top-[66%] lg:bottom-auto"
+          />
+        </BrushField>
         <PremiumCarousel slides={slides} label="Premium Collection designs" />
       </div>
 

@@ -197,6 +197,11 @@
   --lifafa-no: var(--paper-no);
   --lifafa-maybe: var(--paper-maybe);
   --lifafa-pending: var(--paper-pending);
+
+  /* The brush kit's gold: lighter than --paper-gold, for washes only, never text. */
+  --paper-gold-wash: #d8b26a;
+  /* Shadows on this page are a warm brown, never grey. */
+  --paper-shadow-warm: 92 60 30;
 }
 
 .lifafa-paper {
@@ -320,6 +325,133 @@ html:has(.lifafa-paper) body {
   .lifafa-strip {
     width: 64px;
     background-size: 64px auto;
+  }
+}
+
+/*
+  Hand-painted washes (components/landing/Brush.tsx): p5.brush watercolour from
+  the Lifafa motion kit, as soft shading behind a section. Each wash is a flat
+  token colour seen through the brush's alpha, so it is a mask and never a
+  picture: it cannot become the page's largest paint, and the file is only
+  fetched once BrushReveal marks the wash as near (data-near). It fades and
+  settles in once when it comes into view (data-on). Absolute inside its
+  section, behind the content, and never takes a tap.
+*/
+.lifafa-brush {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--brush-tone);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  opacity: 0;
+  transform: scale(0.88);
+  transition:
+    opacity 1400ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lifafa-brush[data-tone="blush"] { --brush-tone: var(--paper-blush); }
+.lifafa-brush[data-tone="gold"] { --brush-tone: var(--paper-gold-wash); }
+.lifafa-brush[data-tone="emerald"] { --brush-tone: var(--paper-emerald); }
+
+.lifafa-brush[data-near][data-shape="blush"] {
+  -webkit-mask-image: url("/landing/brush/wash-blush.webp");
+  mask-image: url("/landing/brush/wash-blush.webp");
+}
+.lifafa-brush[data-near][data-shape="gold"] {
+  -webkit-mask-image: url("/landing/brush/wash-gold.webp");
+  mask-image: url("/landing/brush/wash-gold.webp");
+}
+.lifafa-brush[data-near][data-shape="emerald"] {
+  -webkit-mask-image: url("/landing/brush/wash-emerald.webp");
+  mask-image: url("/landing/brush/wash-emerald.webp");
+}
+
+.lifafa-brush[data-on] {
+  opacity: var(--brush-opacity);
+  transform: none;
+}
+
+/*
+  The hero's gold underline: a brush stroke under "who is coming", wiped on
+  from left to right once it has loaded. The wipe is a gradient mask, wider
+  than the stroke, slid across it; only mask-position moves.
+*/
+.lifafa-underline {
+  position: absolute;
+  z-index: -1;
+  left: -0.04em;
+  bottom: -0.1em;
+  width: calc(100% + 0.08em);
+  height: 0.2em;
+  pointer-events: none;
+  object-fit: fill;
+  opacity: 0.9;
+  -webkit-mask-image: linear-gradient(to right, #000 44%, transparent 56%);
+  mask-image: linear-gradient(to right, #000 44%, transparent 56%);
+  -webkit-mask-size: 250% 100%;
+  mask-size: 250% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  transition:
+    -webkit-mask-position 520ms cubic-bezier(0.65, 0, 0.35, 1),
+    mask-position 520ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.lifafa-underline[data-on] {
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
+}
+
+/*
+  A card that casts a soft warm shadow on hover only. The shadow lives on a
+  layer of its own that fades in, so nothing animates box-shadow.
+*/
+.lifafa-hover-shadow {
+  position: relative;
+}
+
+.lifafa-hover-shadow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 2px 6px rgb(var(--paper-shadow-warm) / 0.06),
+    0 18px 36px -18px rgb(var(--paper-shadow-warm) / 0.28);
+  opacity: 0;
+  transition: opacity 240ms ease-out;
+}
+
+@media (hover: hover) {
+  .lifafa-hover-shadow:hover::after {
+    opacity: 1;
+  }
+}
+
+/* The phone frames: a soft, warm shadow in layers, deeper as it falls. */
+.lifafa-phone-shadow {
+  box-shadow:
+    0 2px 4px rgb(var(--paper-shadow-warm) / 0.08),
+    0 14px 28px -10px rgb(var(--paper-shadow-warm) / 0.22),
+    0 36px 64px -28px rgb(var(--paper-shadow-warm) / 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-brush,
+  .lifafa-underline,
+  .lifafa-hover-shadow::after {
+    transition: none;
+  }
+
+  .lifafa-brush {
+    transform: none;
   }
 }
 

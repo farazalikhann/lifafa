@@ -405,7 +405,7 @@ export default function PremiumCarousel({
                 >
                   {/* Only the phone recedes when it is not the active slide: its caption keeps full contrast. */}
                   <span
-                    className={`relative block aspect-[390/844] w-full overflow-hidden rounded-[2.5rem] border-[7px] border-[var(--paper-ink)] bg-[var(--paper-ink)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.55)] transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none ${
+                    className={`relative block aspect-[390/844] w-full overflow-hidden rounded-[2.5rem] border-[7px] border-[var(--paper-ink)] bg-[var(--paper-ink)] lifafa-phone-shadow transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none ${
                       isActive ? "scale-100 opacity-100" : "scale-[0.92] opacity-70"
                     }`}
                   >

@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { BrushField, BrushWash } from "@/components/landing/Brush";
 import LinkPending from "@/components/landing/LinkPending";
 import { ON_EMERALD_BUTTON } from "@/components/landing/styles";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
@@ -13,8 +14,16 @@ export default function CallToAction(): ReactElement {
   return (
     <section
       aria-labelledby="closing-heading"
-      className="bg-[var(--paper-emerald)] px-5 py-20 text-center sm:px-14 lg:py-28"
+      className="relative isolate bg-[var(--paper-emerald)] px-5 py-20 text-center sm:px-14 lg:py-28"
     >
+      {/* A faint gold wash for texture; the type stays well clear of AA. */}
+      <BrushField>
+        <BrushWash
+          tone="gold"
+          opacity={0.14}
+          className="top-[-20%] left-[-16%] aspect-square w-[90vw] max-w-[36rem] lg:left-[8%]"
+        />
+      </BrushField>
       <div className="mx-auto flex max-w-2xl flex-col items-center">
         <span aria-hidden="true" className="flex items-center gap-3">
           <span className="h-px w-10 bg-[var(--paper-gold)]" />

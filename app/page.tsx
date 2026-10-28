@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
+import BrushReveal from "@/components/landing/BrushReveal";
 import CallToAction from "@/components/landing/CallToAction";
 import Comparison from "@/components/landing/Comparison";
 import Faq from "@/components/landing/Faq";
@@ -99,6 +100,8 @@ export default function Page() {
         <CallToAction />
       </main>
       <HelpFooter />
+      {/* Shows the brush washes once each as they come into view. Renders nothing. */}
+      <BrushReveal />
       <MetaPixelNoscript />
     </div>
   );
