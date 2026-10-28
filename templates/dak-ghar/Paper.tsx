@@ -8,6 +8,7 @@ import { cardCopy } from "@/lib/cardLanguage";
 import { coupleOf, familyBlocks } from "@/lib/cardSections";
 import { contactsOf, telHref } from "@/lib/contacts";
 import type { Theme } from "@/lib/themes";
+import { ART } from "@/templates/dak-ghar/art";
 import styles from "@/templates/dak-ghar/dak.module.css";
 import { DAK_FONTS, caps, leading, replyCardTheme } from "@/templates/dak-ghar/shared";
 import { useReveal } from "@/templates/dak-ghar/useReveal";
@@ -33,16 +34,49 @@ export function PageHeading({ children }: { children: ReactNode }): ReactElement
  * when it comes on screen: what the couple, the date, the numbers and the
  * host's own sections are written on.
  */
-export function PaperCard({ heading, children }: { heading: string | null; children: ReactNode }): ReactElement {
+export function PaperCard({
+  heading,
+  children,
+  before,
+  after,
+}: {
+  heading: string | null;
+  children: ReactNode;
+  /** Drawn between the heading and the words, told whether the card has come on screen. */
+  before?: (shown: boolean) => ReactNode;
+  /** Drawn after the card, outside it, told the same. */
+  after?: (shown: boolean) => ReactNode;
+}): ReactElement {
   const { ref, shown } = useReveal<HTMLElement>();
 
   return (
     <section ref={ref} className={styles.page}>
       <div className={`${styles.reveal} ${styles.paperCard} ${shown ? styles.shown : ""}`}>
         {heading !== null ? <PageHeading>{heading}</PageHeading> : null}
+        {before?.(shown)}
         {children}
       </div>
+      {after?.(shown)}
     </section>
+  );
+}
+
+/**
+ * The groom and the bride above the couple's names, painted (23, 24): as the
+ * section comes into view he walks in from the left and she from the right,
+ * and they stop close together, facing each other. Tied to the scroll where
+ * the browser runs scroll timelines (a CSS view timeline, on the compositor),
+ * a one-time reveal where it does not, still under reduced motion. Only for a
+ * card that names a couple.
+ */
+function CoupleFigures({ shown }: { shown: boolean }): ReactElement {
+  return (
+    <div aria-hidden="true" className={`${styles.coupleFigures} ${shown ? styles.shown : ""}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={ART.groom} alt="" width={142} height={520} loading="lazy" decoding="async" draggable={false} className={`${styles.figure} ${styles.groom}`} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={ART.bride} alt="" width={334} height={520} loading="lazy" decoding="async" draggable={false} className={`${styles.figure} ${styles.bride}`} />
+    </div>
   );
 }
 
@@ -57,10 +91,11 @@ export function DakGharCouple({
   language: CardLanguage;
 }): ReactElement {
   const copy = cardCopy(language).family;
-  const people = coupleOf(draft, occasionId) ?? familyBlocks(draft);
+  const couple = coupleOf(draft, occasionId);
+  const people = couple ?? familyBlocks(draft);
 
   return (
-    <PaperCard heading={copy.heading}>
+    <PaperCard heading={copy.heading} before={couple !== null ? (shown) => <CoupleFigures shown={shown} /> : undefined}>
       <div className="flex w-full flex-col items-center gap-6">
         {people.map((person, index) => (
           <div key={person.key} className="flex max-w-full flex-col items-center gap-1 text-center">

@@ -934,6 +934,78 @@
     0 10px 24px -18px rgb(42 30 20 / 0.45);
 }
 
+/*
+  The groom and the bride above the names (Paper.tsx). Their row is a view
+  timeline: from the row entering the screen to it being 40% of the way up,
+  he comes in from the left and she from the right, and they stop close,
+  facing each other. Where the browser has no scroll timelines, the same
+  movement plays once as the card is revealed.
+*/
+.coupleFigures {
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  height: clamp(180px, 56cqw, 236px);
+  view-timeline: --dg-couple block;
+}
+
+.figure {
+  display: block;
+  height: 100%;
+  width: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Close together: his shoulder by the edge of her dupatta. */
+.groom {
+  margin-right: -2%;
+  transform: translate3d(-52cqw, 0, 0);
+  opacity: 0;
+}
+
+.bride {
+  margin-left: -2%;
+  transform: translate3d(52cqw, 0, 0);
+  opacity: 0;
+}
+
+@keyframes dg-walk-in {
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .groom,
+  .bride {
+    animation: dg-walk-in linear both;
+    animation-timeline: --dg-couple;
+    animation-range: entry 10% cover 42%;
+  }
+}
+
+@supports not (animation-timeline: view()) {
+  .shown .groom,
+  .shown .bride {
+    animation: dg-walk-in 1200ms cubic-bezier(0.22, 0.7, 0.3, 1) 150ms both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .groom,
+  .bride,
+  .shown .groom,
+  .shown .bride {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}
+
 /* The day inside a ring of ink, like a postmark's. */
 .dateRing {
   display: flex;
