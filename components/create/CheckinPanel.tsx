@@ -53,8 +53,9 @@ export default function CheckinPanel({
     >
       <div className="flex items-start justify-between gap-4">
         <p id={hintId} className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-          Turn this on to scan guests in at the entrance on the event day. Leave
-          it off for smaller gatherings.
+          Off by default. Turn this on to scan guests in with a QR pass at the
+          entrance. Best for formal events with a fixed guest list, like
+          receptions or corporate events. Most weddings do not need this.
           {enabled && !repliesOpen
             ? " Guests get their pass when they reply, and the reply form is off, so only guests who have already replied will have one."
             : null}
