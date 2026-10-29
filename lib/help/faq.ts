@@ -48,7 +48,7 @@ export const HELP_FAQ: readonly HelpFaq[] = [
   {
     question: "How do RSVP and guest check-in work?",
     answer:
-      "Both are optional. With RSVP on, guests reply Accept, Reject or Doubtful and tell you how many people are coming, and you see the live headcount on your dashboard. With check-in on, each guest gets a QR pass that you scan at the venue.",
+      "Both are optional. With RSVP on, guests reply Accept, Reject or Doubtful and tell you how many people are coming, and you see the live headcount on your dashboard. QR check-in is off by default. Turn it on if you want to scan guests in at the entrance, which suits formal events with a fixed guest list.",
   },
   {
     question: "How do I contact Lifafa?",
