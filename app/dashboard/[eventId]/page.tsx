@@ -29,6 +29,7 @@ import { geocodeVenue, getEventWeather } from "@/lib/weather";
 import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { CardLanguage } from "@/types/card";
 import Logo from "@/components/brand/Logo";
+import HelpWidget from "@/components/help/HelpWidget";
 
 /**
  * One event's dashboard.
@@ -359,6 +360,7 @@ export default async function DashboardPage({
       </main>
 
       <LegalFooter />
+      <HelpWidget page="dashboard" eventId={event.id} />
     </div>
   );
 }

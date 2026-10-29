@@ -8,6 +8,7 @@ import Faq from "@/components/landing/Faq";
 import Features from "@/components/landing/Features";
 import FollowInstagram from "@/components/landing/FollowInstagram";
 import HelpFooter from "@/components/landing/HelpFooter";
+import HelpWidget from "@/components/help/HelpWidget";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import LandingHeader from "@/components/landing/LandingHeader";
@@ -111,6 +112,7 @@ export default function Page() {
         <CallToAction />
       </main>
       <HelpFooter />
+      <HelpWidget page="home" />
       {/* Shows the brush washes once each as they come into view. Renders nothing. */}
       <BrushReveal />
       <MetaPixelNoscript />

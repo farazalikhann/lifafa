@@ -3215,3 +3215,18 @@ body:has([data-cover-loading="dot"][aria-hidden="false"]) [data-language-switch]
     box-shadow: none;
   }
 }
+
+/*
+  The Help panel's rise (components/help/HelpPanel.tsx). Transform and opacity
+  only; applied through motion-safe:, so reduced motion gets no animation.
+*/
+@keyframes lifafa-help-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

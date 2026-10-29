@@ -12,6 +12,8 @@ import type { HelpMessagePage } from "@/types/database";
 export const HELP_NAME_MAX = 80;
 export const HELP_CONTACT_MAX = 120;
 export const HELP_MESSAGE_MAX = 2000;
+/** Shorter than this is not a question we can answer. */
+export const HELP_MESSAGE_MIN = 10;
 
 /** What the form sends. Every field is unknown until readHelpForm says otherwise. */
 export interface HelpFormInput {
@@ -108,6 +110,14 @@ export function readHelpForm(
 
   if (message.length === 0) {
     return { ok: false, field: "message", error: "Please write your message." };
+  }
+
+  if (message.length < HELP_MESSAGE_MIN) {
+    return {
+      ok: false,
+      field: "message",
+      error: `Please write at least ${HELP_MESSAGE_MIN} characters.`,
+    };
   }
 
   if (message.length > HELP_MESSAGE_MAX) {

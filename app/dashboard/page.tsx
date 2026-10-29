@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import EventCard from "@/components/dashboard/EventCard";
+import HelpWidget from "@/components/help/HelpWidget";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import HelpLine from "@/components/legal/HelpLine";
 import LegalFooter from "@/components/legal/LegalFooter";
@@ -136,6 +137,7 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
       </main>
 
       <LegalFooter />
+      <HelpWidget page="dashboard" />
     </div>
   );
 }
