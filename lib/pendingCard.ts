@@ -14,9 +14,9 @@ import type { WeatherThemeId } from "@/types/weather";
  * Where an unsaved card waits while the host signs in.
  *
  * LOCALSTORAGE, FOR A DAY. It used to be sessionStorage, which belongs to one
- * tab, and the detour this exists for very often ends in another: a magic link
- * opens in whatever tab the mail client picks. The card was in the tab the host
- * left and the editor they came back to was empty. localStorage is shared by
+ * tab, and the detour this exists for could end in another, leaving the card
+ * in the tab the host left and the editor they came back to empty. localStorage
+ * is shared by
  * every tab on the address, and the day limit is what keeps a card from still
  * being here next week on a shared machine.
  *

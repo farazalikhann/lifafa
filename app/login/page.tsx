@@ -22,8 +22,8 @@ export const metadata: Metadata = {
  * Only same-origin paths are carried through to the callback.
  *
  * Mirrors the check in app/auth/callback/route.ts. Both ends validate rather
- * than one trusting the other: this value reaches the callback through the
- * email link, so by then it has been outside the app entirely.
+ * than one trusting the other: this value reaches the callback by way of
+ * Google, so by then it has been outside the app entirely.
  */
 function safeRedirect(raw: string | undefined): string {
   if (raw === undefined || !raw.startsWith("/") || raw.startsWith("//")) {

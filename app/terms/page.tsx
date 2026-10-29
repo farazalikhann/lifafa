@@ -59,8 +59,8 @@ export default function TermsPage(): ReactElement {
 
       <Section title="Your account">
         <P>
-          You sign in with a link sent to your email, or with your Google
-          account. Keep access to that email or Google account safe: anyone
+          You sign in with your Google account. Keep access to that Google
+          account safe: anyone
           who can sign in as you can see and change your invitations and
           guest lists.
         </P>

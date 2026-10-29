@@ -38,17 +38,8 @@ export default function LoginLoading(): ReactElement {
           </p>
 
           <div className="mt-8">
-            {/* Continue with Google, the divider, the email field, and Send. */}
-            <Shimmer className="h-[52px] w-full rounded-xl" />
-            <div className="my-7 flex items-center gap-4">
-              <span aria-hidden="true" className="h-px flex-1 bg-[var(--lifafa-hairline)]" />
-              <span aria-hidden="true" className="h-px flex-1 bg-[var(--lifafa-hairline)]" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Shimmer className="h-3.5 w-24 rounded-full" />
-              <Shimmer className="h-12 w-full rounded-xl" />
-            </div>
-            <Shimmer className="mt-6 h-[52px] w-full rounded-xl" />
+            {/* Continue with Google. */}
+            <Shimmer className="h-14 w-full rounded-full" />
           </div>
         </div>
       </div>

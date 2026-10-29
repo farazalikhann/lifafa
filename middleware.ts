@@ -111,7 +111,7 @@ async function adminGate(request: NextRequest): Promise<NextResponse | null> {
   if (session === null) {
     /*
       No `redirectTo`, unlike the host gate below. The host gate carries the
-      destination so a magic link can come back to it; here the only thing on
+      destination so a Google sign in can come back to it; here the only thing on
       the other side is a dashboard with a handful of pages, and a query
       parameter that is fed straight back into a redirect is a category of bug
       worth simply not having.

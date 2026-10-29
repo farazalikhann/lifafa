@@ -50,7 +50,7 @@ export default function PrivacyPage(): ReactElement {
       <Section title="What we collect from hosts">
         <List
           items={[
-            "Your email address, to sign you in. You sign in with a link sent to your email, or with your Google account, in which case Google tells us your email address and name.",
+            "Your email address and name, to sign you in. You sign in with your Google account, and Google tells us your email address and name.",
             "What you put on your invitations: the names of the couple and their families, dates, times, venues and addresses, contact names and phone numbers, your own wording, and your choices of design and music.",
             "Your payments: the amount, the date, any coupon code, and the payment reference from Razorpay. We never see your card, UPI or bank details.",
           ]}

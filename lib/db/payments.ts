@@ -278,8 +278,9 @@ async function requireUnpaidOwnedEvent(
   }
 
   /*
-    Google sign-in puts the display name in user_metadata; an email OTP sign-in
-    has none, and the checkout simply leaves the name field for the host.
+    Google sign-in puts the display name in user_metadata; an account made
+    before sign in was Google-only may have none, and the checkout simply
+    leaves the name field for the host.
   */
   const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
   const rawName = metadata.full_name ?? metadata.name;

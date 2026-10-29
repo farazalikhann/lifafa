@@ -1,46 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   isAuthPKCECodeVerifierMissingError,
-  type EmailOtpType,
   type User,
 } from "@supabase/supabase-js";
 import { metaPixelEnabled, NEW_ACCOUNT_COOKIE } from "@/lib/metaPixel";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Where a magic link, or a return from Google, lands.
+ * Where a return from Google lands.
  *
- * Google sign in comes back as a PKCE `code`, exchanged below exactly as the
- * default magic link was. It needs no browser hop to go wrong: the verifier
- * cookie is written by the tab that pressed the button, and Google sends that
- * same tab straight back here.
- *
- * Two shapes of link arrive here, and both end with the session cookies set.
- * This is a route handler rather than a page because it can write cookies,
- * which is exactly what both need to do.
- *
- * `token_hash` is the one the email template sends, and the one that works on a
- * phone. Verifying it needs nothing from the browser that asked for the link,
- * which matters because the Gmail app opens links in its own built-in browser —
- * a different cookie jar from the Safari or Chrome tab the host signed in from.
- *
- * `code` is Supabase's default PKCE link. Exchanging it needs a verifier cookie
- * written when the link was requested, so it only succeeds in that same
- * browser. It is still accepted for links already sitting in inboxes, and in
- * case the template is ever reset to the default.
- *
- * Nothing here assumes email. The same exchange completes a phone OTP flow when
- * that arrives — this file does not need to change for it.
+ * Google sign in comes back as a PKCE `code`, exchanged below for a session.
+ * The verifier cookie is written by the tab that pressed the button, and
+ * Google sends that same tab straight back here. This is a route handler
+ * rather than a page because it has to write the session cookies.
  */
 
 const DEFAULT_DESTINATION = "/dashboard";
-
-/** The verification types a sign in email can carry. */
-const EMAIL_OTP_TYPES: ReadonlySet<string> = new Set<EmailOtpType>([
-  "email",
-  "magiclink",
-  "signup",
-]);
 
 /**
  * Only same-origin paths are honoured as a destination.
@@ -65,12 +40,11 @@ function safeDestination(raw: string | null): string {
  * How recently an account must have been confirmed for this sign in to be the
  * one that made it.
  *
- * Supabase confirms an account the first time its email link is opened, or
- * when Google first signs it in, and never again: confirmed_at on the user
- * this route has just verified is how the auth flow itself tells a new host
- * from a returning one. An hour, which is as long as an email link lasts, so
- * a project set to confirm addresses on sign up (when confirmed_at is the
- * moment the link was asked for) still counts a link opened late.
+ * Supabase confirms an account when Google first signs it in, and never
+ * again: confirmed_at on the user this route has just signed in is how the
+ * auth flow itself tells a new host from a returning one. An hour is generous
+ * for a round trip through Google, and harmless for a returning host, whose
+ * account was confirmed long before.
  */
 const NEW_ACCOUNT_WINDOW_MS = 60 * 60 * 1000;
 
@@ -142,15 +116,13 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
 
   const code = searchParams.get("code");
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type");
   const { fail, succeed } = exits(
     origin,
     safeDestination(searchParams.get("redirectTo")),
   );
 
   /*
-    Supabase reports a refused or expired link with its own error parameters
+    Supabase reports a refused sign in with its own error parameters
     rather than a code. Carried through as our own readable reason instead of
     echoing theirs, which is written for developers.
   */
@@ -177,25 +149,6 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  if (tokenHash !== null && type !== null) {
-    if (!EMAIL_OTP_TYPES.has(type)) {
-      return fail("link");
-    }
-
-    const { data, error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: type as EmailOtpType,
-    });
-
-    if (error !== null) {
-      /* Server side only: the message names tokens and internals. */
-      console.error("[auth] token verification failed:", error);
-      return fail("expired");
-    }
-
-    return succeed(isNewAccount(data.user));
-  }
-
   if (code === null) {
     return fail("link");
   }
@@ -204,8 +157,8 @@ export async function GET(request: NextRequest) {
 
   if (error !== null) {
     /*
-      Told apart from an expired link because the fix is different: the link
-      itself was fine, it was opened somewhere that never asked for it.
+      Told apart from an expired code because the fix is different: the code
+      was fine, it arrived in a browser that never started this sign in.
     */
     if (isAuthPKCECodeVerifierMissingError(error)) {
       console.error("[auth] code opened in a different browser:", error);
