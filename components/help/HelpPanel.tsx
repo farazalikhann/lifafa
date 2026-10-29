@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from "react";
 import { sendHelpMessage } from "@/lib/help/actions";
-import { HELP_FAQ, HELP_SUPPORT_EMAIL } from "@/lib/help/faq";
+import { HELP_FAQ } from "@/lib/help/faq";
 import {
   HELP_CONTACT_MAX,
   HELP_MESSAGE_MAX,
@@ -20,6 +20,7 @@ import {
   isHelpContact,
   type HelpField,
 } from "@/lib/help/form";
+import { HELP_EMAIL } from "@/lib/site";
 import type { HelpMessagePage } from "@/types/database";
 
 /**
@@ -39,7 +40,7 @@ const DESKTOP = "(min-width: 640px)";
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const SEND_FAILED = `Could not send your message. Please try again, or write to ${HELP_SUPPORT_EMAIL}.`;
+const SEND_FAILED = `Could not send your message. Please try again, or write to ${HELP_EMAIL}.`;
 
 const FOCUS_ON_EMERALD =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-gold)]";

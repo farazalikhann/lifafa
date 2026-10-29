@@ -1,4 +1,5 @@
 import { PREMIUM_PRICE_PAISE, TRADITIONS_PRICE_PAISE, formatPrice } from "@/lib/pricing";
+import { HELP_EMAIL } from "@/lib/site";
 
 /**
  * The Help bot's questions and answers, in the order they are shown.
@@ -8,6 +9,7 @@ import { PREMIUM_PRICE_PAISE, TRADITIONS_PRICE_PAISE, formatPrice } from "@/lib/
  *
  * Prices come from lib/pricing.ts (DESIGN.md: never type a price into copy),
  * so they stay right if the price changes. Today they read ₹699 and ₹999.
+ * The email is HELP_EMAIL from lib/site.ts, the same address as the footer.
  */
 
 export interface HelpFaq {
@@ -37,8 +39,7 @@ export const HELP_FAQ: readonly HelpFaq[] = [
   },
   {
     question: "I want to cancel. What is the refund policy?",
-    answer:
-      'You get a full refund if you ask within 48 hours of payment and no guest has opened your invitation yet. After that, refunds are given only for a technical problem on our side that we cannot fix. A refunded invitation stops working for guests. Refunds reach your original payment method in about 5 to 7 working days. To ask for a refund, tap "Message Lifafa" or write to support@getlifafa.co.in.',
+    answer: `You get a full refund if you ask within 48 hours of payment and no guest has opened your invitation yet. After that, refunds are given only for a technical problem on our side that we cannot fix. A refunded invitation stops working for guests. Refunds reach your original payment method in about 5 to 7 working days. To ask for a refund, tap "Message Lifafa" or write to ${HELP_EMAIL}.`,
   },
   {
     question: "My payment failed or money was deducted. What should I do?",
@@ -52,10 +53,6 @@ export const HELP_FAQ: readonly HelpFaq[] = [
   },
   {
     question: "How do I contact Lifafa?",
-    answer:
-      'Write to support@getlifafa.co.in, or tap "Message Lifafa" below and we will reply on email or WhatsApp.',
+    answer: `Write to ${HELP_EMAIL}, or tap "Message Lifafa" below and we will reply on email or WhatsApp.`,
   },
 ];
-
-/** The address the widget names when sending fails. */
-export const HELP_SUPPORT_EMAIL = "support@getlifafa.co.in";
