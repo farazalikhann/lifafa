@@ -412,6 +412,50 @@ type TranslationUsageInsert = {
 /** Nothing about a usage row is ever changed after it is written. */
 type TranslationUsageUpdate = Record<string, never>;
 
+/* ──────────────────────────── help_messages ──────────────────────────── */
+
+export type HelpMessageStatus = "new" | "replied" | "closed";
+export type HelpMessagePage = "home" | "dashboard";
+
+/**
+ * One message sent through the Help bot (0017). Service role only: RLS has no
+ * policies, so no browser reads or writes it. See lib/help/actions.ts.
+ */
+type HelpMessageRow = {
+  id: string;
+  created_at: string;
+  name: string;
+  /** An email address or a phone number. */
+  contact: string;
+  message: string;
+  page: HelpMessagePage | null;
+  /** The signed-in host, from the session; never from the form. */
+  user_id: string | null;
+  user_email: string | null;
+  event_id: string | null;
+  status: HelpMessageStatus;
+  admin_note: string | null;
+};
+
+type HelpMessageInsert = {
+  id?: string;
+  name: string;
+  contact: string;
+  message: string;
+  page?: HelpMessagePage | null;
+  user_id?: string | null;
+  user_email?: string | null;
+  event_id?: string | null;
+  status?: HelpMessageStatus;
+  admin_note?: string | null;
+};
+
+/** What the admin may change about a message. */
+type HelpMessageUpdate = {
+  status?: HelpMessageStatus;
+  admin_note?: string | null;
+};
+
 /* ────────────────────── The Database generic ────────────────────── */
 
 /**
@@ -463,6 +507,12 @@ export type Database = {
         Row: TranslationUsageRow;
         Insert: TranslationUsageInsert;
         Update: TranslationUsageUpdate;
+        Relationships: [];
+      };
+      help_messages: {
+        Row: HelpMessageRow;
+        Insert: HelpMessageInsert;
+        Update: HelpMessageUpdate;
         Relationships: [];
       };
     };
