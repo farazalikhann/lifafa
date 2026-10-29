@@ -81,7 +81,7 @@ const OCCASION_IDS = new Set<string>(OCCASIONS.map((occasion) => occasion.id));
  * carrying a proper escaper for.
  * ────────────────────────────────────────────────────────────────────────────
  */
-function scrubSearch(raw: string): string {
+export function scrubSearch(raw: string): string {
   return raw
     .slice(0, MAX_SEARCH_LENGTH)
     .replace(/[,()"\\%_*]/g, " ")

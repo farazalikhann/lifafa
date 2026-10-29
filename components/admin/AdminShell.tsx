@@ -28,9 +28,12 @@ import { signOut } from "@/app/admin/actions";
  */
 export default function AdminShell({
   username,
+  newHelpCount = null,
   children,
 }: {
   username: string;
+  /** Help messages still "new", for the nav badge; null when it could not be counted. */
+  newHelpCount?: number | null;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -76,14 +79,14 @@ export default function AdminShell({
 
       {/* ── Nav bar, narrow screens only ── */}
       <div className="border-b border-zinc-200 bg-white px-4 py-2 sm:px-6 lg:hidden">
-        <AdminNav />
+        <AdminNav newHelpCount={newHelpCount} />
       </div>
 
       <div className="mx-auto flex max-w-7xl gap-6 px-4 sm:px-6">
         {/* ── Sidebar, wide screens only ── */}
         <aside className="hidden w-44 shrink-0 py-6 lg:block">
           <div className="sticky top-6">
-            <AdminNav />
+            <AdminNav newHelpCount={newHelpCount} />
           </div>
         </aside>
 

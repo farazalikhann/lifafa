@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactElement } from "react";
 
 /**
- * Overview, Events, Coupons, Free activation, Payments to review — as a sidebar on a laptop and a
+ * Overview, Help, Events, Coupons, Free activation, Payments to review — as a sidebar on a laptop and a
  * top bar on a phone.
  *
  * ────────────────────────────────────────────────────────────────────────────
@@ -40,6 +40,11 @@ interface NavItem {
 
 const ITEMS: readonly NavItem[] = [
   { href: "/admin", label: "Overview", exact: true },
+  /*
+    Second, so its red "new" badge is on screen on a phone, where this bar
+    scrolls sideways and the later items start out of view.
+  */
+  { href: "/admin/help", label: "Help", exact: false },
   { href: "/admin/events", label: "Events", exact: false },
   { href: "/admin/coupons", label: "Coupons", exact: false },
   { href: "/admin/complimentary", label: "Free activation", exact: false },
@@ -52,7 +57,12 @@ function isCurrent(pathname: string, item: NavItem): boolean {
     : pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-export default function AdminNav(): ReactElement {
+export default function AdminNav({
+  newHelpCount = null,
+}: {
+  /** Help messages still "new". The badge shows only when this is above zero. */
+  newHelpCount?: number | null;
+}): ReactElement {
   const pathname = usePathname();
 
   return (
@@ -80,13 +90,19 @@ export default function AdminNav(): ReactElement {
               distinguish the greys.
             */
             aria-current={current ? "page" : undefined}
-            className={`min-h-9 shrink-0 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 ${
+            className={`inline-flex min-h-9 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 ${
               current
                 ? "bg-zinc-200 font-semibold text-zinc-900"
                 : "font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
             }`}
           >
             {item.label}
+            {item.href === "/admin/help" && newHelpCount !== null && newHelpCount > 0 ? (
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs leading-5 font-semibold text-white tabular-nums">
+                {newHelpCount > 99 ? "99+" : newHelpCount}
+                <span className="sr-only"> new</span>
+              </span>
+            ) : null}
           </Link>
         );
       })}

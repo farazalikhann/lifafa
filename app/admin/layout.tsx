@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { adminSession } from "@/lib/admin/auth";
+import { countNewHelpMessages } from "@/lib/admin/helpMessages";
 
 /**
  * The shell every /admin page sits in.
@@ -55,6 +56,11 @@ export default async function AdminLayout({
   children,
 }: Readonly<{ children: ReactNode }>): Promise<ReactElement> {
   const session = await adminSession();
+  /*
+    For the nav's red "new" badge on Help. Only with a session: the login page
+    reads nothing. Recounted whenever a help action revalidates this layout.
+  */
+  const newHelpCount = session === null ? null : await countNewHelpMessages();
 
   return (
     <div className="min-h-screen bg-zinc-50 font-[family-name:var(--font-sans)] text-zinc-900">
@@ -68,7 +74,9 @@ export default async function AdminLayout({
       {session === null ? (
         children
       ) : (
-        <AdminShell username={session.username}>{children}</AdminShell>
+        <AdminShell username={session.username} newHelpCount={newHelpCount}>
+          {children}
+        </AdminShell>
       )}
     </div>
   );

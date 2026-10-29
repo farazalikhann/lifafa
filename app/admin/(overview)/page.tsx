@@ -6,7 +6,8 @@ import EventsTable from "@/components/admin/EventsTable";
 import { ErrorNotice } from "@/components/admin/Feedback";
 import { Stat, StatSection } from "@/components/admin/StatGrid";
 import { requireAdminSession } from "@/lib/admin/auth";
-import { formatInr } from "@/lib/admin/format";
+import { formatCount, formatInr } from "@/lib/admin/format";
+import { countNewHelpMessages } from "@/lib/admin/helpMessages";
 import { getAdminOverview } from "@/lib/admin/stats";
 
 /**
@@ -31,7 +32,10 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
     correct — see the note in lib/admin/auth.ts.
   */
   await requireAdminSession();
-  const result = await getAdminOverview();
+  const [result, newHelpCount] = await Promise.all([
+    getAdminOverview(),
+    countNewHelpMessages(),
+  ]);
 
   if (!result.ok) {
     return (
@@ -52,6 +56,8 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
         title="Overview"
         description="Across every host. Counted live, in Indian Standard Time."
       />
+
+      <HelpCard count={newHelpCount} />
 
       <StatSection title="Events">
         <Stat label="Total events" value={events.total} emphasis="primary" />
@@ -162,5 +168,27 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
         </div>
       </section>
     </>
+  );
+}
+
+/** "Help messages: X new", linking to the inbox. Red only when something is waiting. */
+function HelpCard({ count }: { count: number | null }): ReactElement {
+  const waiting = count !== null && count > 0;
+
+  return (
+    <Link
+      href="/admin/help"
+      className={`mt-6 flex min-h-12 items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-sm transition-colors hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 sm:max-w-sm ${
+        waiting ? "border-red-200" : "border-zinc-200"
+      }`}
+    >
+      <span className="flex items-center gap-2 font-medium">
+        {waiting ? <span aria-hidden="true" className="h-2 w-2 rounded-full bg-red-600" /> : null}
+        Help messages: {count === null ? "could not count" : `${formatCount(count)} new`}
+      </span>
+      <span aria-hidden="true" className="text-zinc-400">
+        →
+      </span>
+    </Link>
   );
 }
