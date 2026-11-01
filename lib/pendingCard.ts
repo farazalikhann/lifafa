@@ -130,7 +130,7 @@ function toPendingCard(card: PendingCard): PendingCard {
  * it. A card with the right outline and a wrong field inside is caught where it
  * fails, by the boundary around the restored editor on /create.
  */
-function hasCardOutline(value: unknown): value is PendingCard {
+export function hasCardOutline(value: unknown): value is PendingCard {
   return (
     typeof value === "object" &&
     value !== null &&

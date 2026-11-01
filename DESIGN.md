@@ -131,6 +131,8 @@ Rules
 
 **Footer contact**: every host page's footer starts with the Instagram icon link (emerald line icon, gold on hover, with the handle) and "Need help? Write to us at" the help address (`components/legal/FooterContact.tsx`). The handle, the URL and the address live in `lib/site.ts` and are never typed into a component.
 
+**Open in Chrome popup** (`components/browser/OpenInChromePrompt.tsx`): only inside Instagram's in-app browser (user agent contains "Instagram"; `lib/inAppBrowser.ts`), where Google sign-in does not work. A `paper` card with a gold hairline and 24px radius, sitting at the bottom of the screen on a phone and centred from 640px. On the landing page and the wizard it shows on the first visit, and on /login it shows again. On Android the one emerald button is an intent link that opens the same address, query and fbclid included, in Chrome. On iPhone it says "your browser" instead of Chrome and shows written steps, a small sketch of Instagram's menu and a "Copy link" button. At sign in, either button first saves the unsaved card on the server (`lib/handoff/actions.ts`, a private Storage bucket, one use, one day) and puts its id on the link, and /login in the other browser brings it back. "Stay here" is a small text link and hides it for the session. Either button sends the Meta Pixel custom event `OpenInBrowserClick`.
+
 **Closing band**: full-width emerald, the white logo between two gold hairlines, ivory heading, `gold-soft` small line, the inverted button.
 
 ## 5. Layout

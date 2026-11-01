@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
+import OpenInChromePrompt from "@/components/browser/OpenInChromePrompt";
 import BrushReveal from "@/components/landing/BrushReveal";
 import CallToAction from "@/components/landing/CallToAction";
 import Comparison from "@/components/landing/Comparison";
@@ -113,6 +114,8 @@ export default function Page() {
       </main>
       <HelpFooter />
       <HelpWidget page="home" />
+      {/* Only inside Instagram's in-app browser; renders nothing anywhere else. */}
+      <OpenInChromePrompt moment="start" />
       {/* Shows the brush washes once each as they come into view. Renders nothing. */}
       <BrushReveal />
       <MetaPixelNoscript />

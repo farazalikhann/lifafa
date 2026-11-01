@@ -156,6 +156,8 @@ declare global {
 
 interface Pending {
   name: string;
+  /** One of Meta's own events (fbq "track"), or one of ours ("trackCustom"). */
+  custom: boolean;
   params: EventParams;
   eventID?: string;
   page: { href: string; asIs: boolean };
@@ -187,8 +189,10 @@ function mayRun(): boolean {
  * allowed page whose address can be reported as it is. Revoked, it holds
  * every command in its queue, its own included; the one it makes by itself,
  * a PageView when the browser restores a page from its back/forward cache,
- * is a trackCustom and is dropped before consent is given back, since this
- * file never calls trackCustom and the page it was made for is gone.
+ * is a trackCustom and is dropped before consent is given back, since the
+ * page it was made for is gone. Our own custom events never wait in that
+ * queue: deliver hands one to fbevents.js only once it has loaded and while
+ * consent is granted, so it runs at once, and otherwise sends it as an image.
  */
 function syncConsent(): void {
   const fbq = window.fbq;
@@ -287,7 +291,7 @@ function deliver(event: Pending): void {
     event.page.href === current.href
   ) {
     fbq(
-      "track",
+      event.custom ? "trackCustom" : "track",
       event.name,
       event.params,
       event.eventID === undefined ? undefined : { eventID: event.eventID },
@@ -314,7 +318,7 @@ function flush(): void {
 function track(
   name: string,
   params: EventParams,
-  options: { eventID?: string; onSent?: () => void } = {},
+  options: { eventID?: string; onSent?: () => void; custom?: boolean } = {},
 ): boolean {
   if (!metaPixelEnabled() || typeof window === "undefined" || !mayRun()) {
     return false;
@@ -322,6 +326,7 @@ function track(
 
   const event: Pending = {
     name,
+    custom: options.custom ?? false,
     params,
     eventID: options.eventID,
     onSent: options.onSent,
@@ -574,5 +579,22 @@ export function purchase(payment: {
         );
       },
     },
+  );
+}
+
+/**
+ * "Continue in Chrome" (or, on an iPhone, "Copy link") tapped in the popup
+ * that asks a visitor in Instagram's in-app browser to leave it
+ * (components/browser/OpenInChromePrompt.tsx). A custom event: `platform` is
+ * android or ios, `step` is start (first visit) or signin (the sign in page).
+ */
+export function openInBrowserClick(click: {
+  platform: "android" | "ios";
+  step: "start" | "signin";
+}): boolean {
+  return track(
+    "OpenInBrowserClick",
+    { platform: click.platform, step: click.step },
+    { custom: true },
   );
 }

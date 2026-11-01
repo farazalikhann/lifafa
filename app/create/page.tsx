@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { redirect } from "next/navigation";
+import OpenInChromePrompt from "@/components/browser/OpenInChromePrompt";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import EventNotFound from "@/components/dashboard/EventNotFound";
 import Wizard from "@/components/wizard/Wizard";
@@ -71,10 +72,14 @@ export default async function CreatePage({
     }
 
     return (
-      /* useSearchParams, which the wizard reads its step from, wants a boundary. */
-      <Suspense fallback={<EditorSkeleton />}>
-        <Wizard templateId={templateId} />
-      </Suspense>
+      <>
+        {/* useSearchParams, which the wizard reads its step from, wants a boundary. */}
+        <Suspense fallback={<EditorSkeleton />}>
+          <Wizard templateId={templateId} />
+        </Suspense>
+        {/* Before a draft is made in storage Chrome cannot read. Instagram only. */}
+        <OpenInChromePrompt moment="start" />
+      </>
     );
   }
 

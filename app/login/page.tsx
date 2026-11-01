@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import SignInForm from "@/components/auth/SignInForm";
+import DraftHandoffRestore from "@/components/browser/DraftHandoffRestore";
+import OpenInChromePrompt from "@/components/browser/OpenInChromePrompt";
 import LegalFooter from "@/components/legal/LegalFooter";
 import Logo from "@/components/brand/Logo";
 
@@ -74,6 +76,8 @@ export default async function LoginPage({
           </p>
 
           <div className="mt-8">
+            {/* A card carried over from Instagram's browser; nothing otherwise. */}
+            <DraftHandoffRestore />
             <SignInForm
               redirectTo={safeRedirect(params.redirectTo)}
               initialError={params.error ?? null}
@@ -103,6 +107,9 @@ export default async function LoginPage({
       </div>
 
       <LegalFooter className="relative z-10" />
+
+      {/* Google will not sign anyone in from Instagram's browser. Instagram only. */}
+      <OpenInChromePrompt moment="signin" />
     </main>
   );
 }
