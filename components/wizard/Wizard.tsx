@@ -663,7 +663,8 @@ function WizardSteps({
           ) : null}
 
           {step === "details" ? (
-            <>
+            /* Everything the host types: masked from Clarity (lib/clarity.ts). `contents` keeps the layout as it was. */
+            <div className="contents" data-clarity-mask="true">
               {/*
                 Typing in the card's own words turns the preview back to the
                 card's own language, after the host has been writing the other
@@ -721,7 +722,7 @@ function WizardSteps({
                 onFocusLanguage={setPreviewLanguage}
                 revealSignal={translatedSignal}
               />
-            </>
+            </div>
           ) : null}
 
           {step === "customize" ? (
@@ -761,7 +762,10 @@ function WizardSteps({
             <div className="flex min-w-0 flex-col gap-6">
               <div className="flex flex-col gap-4 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] p-5">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <p className="font-[family-name:var(--font-display)] text-xl font-semibold break-words text-[var(--lifafa-cream)]">
+                  <p
+                    data-clarity-mask="true"
+                    className="font-[family-name:var(--font-display)] text-xl font-semibold break-words text-[var(--lifafa-cream)]"
+                  >
                     {coverNameLine(names)}
                   </p>
                   <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
@@ -812,7 +816,10 @@ function WizardSteps({
         </div>
 
         {/* The card, beside every step at lg. Draws nothing below it. */}
-        <div className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24">
+        <div
+          data-clarity-mask="true"
+          className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24"
+        >
           <CardPreview
             draft={preview.draft}
             config={preview.config}

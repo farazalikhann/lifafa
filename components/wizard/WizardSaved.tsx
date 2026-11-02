@@ -61,7 +61,10 @@ export default function WizardSaved({
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)]">
             Your invitation is saved
           </h1>
-          <p className="text-[0.9375rem] leading-relaxed break-words text-[var(--lifafa-muted)]">
+          <p
+            data-clarity-mask="true"
+            className="text-[0.9375rem] leading-relaxed break-words text-[var(--lifafa-muted)]"
+          >
             {coverNameLine(names)}
           </p>
         </div>

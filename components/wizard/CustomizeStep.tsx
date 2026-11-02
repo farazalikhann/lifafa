@@ -220,6 +220,7 @@ export default function CustomizeStep({
               >
                 {/* The names in the pair's own face; `truncate` keeps a long pair of names on one line. */}
                 <span
+                  data-clarity-mask="true"
                   className="min-w-0 truncate text-xl text-[var(--lifafa-cream)]"
                   style={{ fontFamily: `var(${pairRoleVar(pair, "names")})` }}
                 >

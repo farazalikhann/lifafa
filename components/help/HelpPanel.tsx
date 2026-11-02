@@ -398,7 +398,7 @@ export default function HelpPanel({
           ) : null}
 
           {view === "form" ? (
-            <form noValidate onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
+            <form noValidate data-clarity-mask="true" onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
               <p className="text-[15px] leading-relaxed text-[var(--paper-muted)]">
                 Write to us and we will reply on email or WhatsApp.
               </p>

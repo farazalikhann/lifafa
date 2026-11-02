@@ -34,7 +34,9 @@ import {
   Tiro_Devanagari_Hindi,
   Tiro_Gurmukhi,
 } from "next/font/google";
+import Clarity from "@/components/analytics/Clarity";
 import MetaPixel from "@/components/analytics/MetaPixel";
+import { clarityEnabled } from "@/lib/clarity";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
 import { metaPixelEnabled } from "@/lib/metaPixel";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
@@ -564,6 +566,8 @@ export default function RootLayout({
             <MetaPixel />
           </Suspense>
         ) : null}
+        {/* Hosts' pages on the production domain only; see lib/clarity.ts. */}
+        {clarityEnabled() ? <Clarity /> : null}
       </body>
     </html>
   );

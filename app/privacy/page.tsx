@@ -117,6 +117,14 @@ export default function PrivacyPage(): ReactElement {
             "Open-Meteo: when the host turns on the weather, the venue's name and address are sent to Open-Meteo to find the place and its forecast.",
             "Google: only if you choose to sign in with Google.",
             "Meta: measures our ads (see the next section).",
+            <>
+              We use Microsoft Clarity to understand how visitors use the site
+              (clicks, scrolling and page visits). See the{" "}
+              <TextLink href="https://www.microsoft.com/privacy/privacystatement" newTab>
+                Microsoft Privacy Statement
+              </TextLink>
+              .
+            </>,
           ]}
         />
         <P>

@@ -582,6 +582,7 @@ export default function FullScreenPreview({
   return createPortal(
     <div
       ref={overlayRef}
+      data-clarity-mask="true"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
