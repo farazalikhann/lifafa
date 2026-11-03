@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import AccountLink from "@/components/landing/AccountLink";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * The landing page's way back in.

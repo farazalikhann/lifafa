@@ -3,7 +3,7 @@ import Link from "next/link";
 import MetaPixelNoscript from "@/components/analytics/MetaPixelNoscript";
 import LegalFooter from "@/components/legal/LegalFooter";
 import PaperTheme from "@/components/theme/PaperTheme";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * One policy page: the wordmark home, the title and its date, a short summary

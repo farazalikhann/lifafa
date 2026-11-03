@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * What /create shows before the browser has said whether a card is waiting.

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import Link from "next/link";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 import CheckinResult from "@/components/checkin/CheckinResult";
 import { checkInPass, type PassCheckIn } from "@/lib/db/guests";
 

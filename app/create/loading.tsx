@@ -3,7 +3,7 @@ import Link from "next/link";
 import Shimmer from "@/components/skeleton/Shimmer";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import { WIZARD_STEPS } from "@/lib/wizardSteps";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * What a visitor sees between tapping "Create your card" and the gallery

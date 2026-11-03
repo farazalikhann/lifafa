@@ -5,7 +5,7 @@ import SignInForm from "@/components/auth/SignInForm";
 import DraftHandoffRestore from "@/components/browser/DraftHandoffRestore";
 import InAppLoginPrompt from "@/components/browser/InAppLoginPrompt";
 import LegalFooter from "@/components/legal/LegalFooter";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 export const metadata: Metadata = {
   title: "Sign in · Lifafa",

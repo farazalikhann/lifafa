@@ -8,7 +8,7 @@ import LegalFooter from "@/components/legal/LegalFooter";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
 import { eventsUnderReview } from "@/lib/db/paymentReview";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * The host's invitations, and the home a signed-in host comes back to.

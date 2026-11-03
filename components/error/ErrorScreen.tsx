@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactElement } from "react";
 import Link from "next/link";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * What a host sees when a route's error boundary catches something.

@@ -28,7 +28,7 @@ import { inviteUrl } from "@/lib/siteUrl";
 import { geocodeVenue, getEventWeather } from "@/lib/weather";
 import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { CardLanguage } from "@/types/card";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 import HelpWidget from "@/components/help/HelpWidget";
 
 /**

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import PaperTheme from "@/components/theme/PaperTheme";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 export const metadata: Metadata = {
   title: "Page not found · Lifafa",

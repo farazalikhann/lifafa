@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 import PassCheckin from "@/components/checkin/PassCheckin";
 import { createClient } from "@/lib/supabase/server";
 

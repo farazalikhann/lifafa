@@ -6,7 +6,7 @@ import WizardProgress from "@/components/wizard/WizardProgress";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 const LINK_CLASS =
   "flex min-h-12 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] px-5 text-[0.9375rem] font-medium text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";

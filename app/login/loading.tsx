@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import Shimmer from "@/components/skeleton/Shimmer";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * What a host sees between tapping "Sign in" and the form arriving: the sign-in

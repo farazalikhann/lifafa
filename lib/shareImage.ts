@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
+import { DEFAULT_SITE_ORIGIN } from "@/lib/siteUrl";
 
 /**
- * The brand's link preview (public/brand/og-image-1200x630.png): the logo and
- * the line under it, for the landing page, the design gallery and the policy
- * and contact pages.
+ * The brand's link preview (public/og-image.png): the logo and the line under
+ * it, for the landing page, the design gallery and the policy and contact
+ * pages. An absolute address on the canonical domain, so every scraper
+ * fetches the one image whichever deployment it found the link on.
  *
- * NEVER in the root layout. Metadata is inherited, and an invitation link
- * (/i) decides its own preview: the card's image once it is paid and only a
- * plain wordmark before, so no event detail shows for an unpaid invitation.
- * A default set higher up would leak into every /i page that sets none.
+ * NOT in the root layout's metadata. Metadata is inherited, and an invitation
+ * link (/i) decides its own preview: the card's image once it is paid and only
+ * a plain wordmark before, so no event detail shows for an unpaid invitation.
+ *
+ * The same picture is app/opengraph-image.png, the Open Graph image for pages
+ * that name none (the dashboard, sign-in). Every /i page names its own, which
+ * replaces it, and a new /i branch must too. There is deliberately no
+ * app/twitter-image.png: /i sets no Twitter tags, so it would inherit that one
+ * and X would show the brand instead of the card.
  */
 export const BRAND_SHARE_IMAGE = {
-  url: "/brand/og-image-1200x630.png",
+  url: `${DEFAULT_SITE_ORIGIN}/og-image.png`,
   width: 1200,
   height: 630,
   alt: "Lifafa, wedding invitations that tell you who is coming",

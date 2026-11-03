@@ -215,7 +215,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   /*
-    Everything except Next's own assets, image files and sounds. The session
+    Everything except Next's own assets, image files, sounds and the web app
+    manifest. The session
     refresh has to run broadly — a host can land anywhere — but running it on
     every static chunk would add a token check to each one.
 
@@ -234,6 +235,6 @@ export const config = {
     refreshed on the next page they open.
   */
   matcher: [
-    "/((?!api/razorpay/webhook|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3)$).+)",
+    "/((?!api/razorpay/webhook|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|webmanifest)$).+)",
   ],
 };

@@ -69,7 +69,7 @@ import { getTemplate } from "@/templates/registry";
 import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
 import type { EventContact, EventDraft } from "@/types/event";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /* The full-screen preview: its cover player and every cover drawn in code. Fetched when it is opened. */
 const FullScreenPreview = dynamic(() => import("@/components/create/FullScreenPreview"), { ssr: false });

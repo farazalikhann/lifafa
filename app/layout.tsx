@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
 import Clarity from "@/components/analytics/Clarity";
 import MetaPixel from "@/components/analytics/MetaPixel";
@@ -57,18 +57,11 @@ export const metadata: Metadata = {
   */
   referrer: "strict-origin",
   /*
-    The brand icons (public/brand/). The SVG first for browsers that take one,
-    the 32px PNG for those that do not, and the larger PNGs for home screens.
+    The brand icons are files Next links by itself: app/favicon.ico, app/icon.png
+    and app/apple-icon.png. The manifest and the home screen icons it names are
+    in public/.
   */
-  icons: {
-    icon: [
-      { url: "/brand/favicon.svg", type: "image/svg+xml" },
-      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-  },
+  manifest: "/site.webmanifest",
   ...(metaDomainVerification.length > 0
     ? { other: { "facebook-domain-verification": metaDomainVerification } }
     : {}),
@@ -80,6 +73,11 @@ export const metadata: Metadata = {
     app/create/layout.tsx — and they all resolve against the metadataBase above,
     so there is still only one host in play.
   */
+};
+
+/* The browser's own bar, in the logo's black, as the manifest says. */
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({

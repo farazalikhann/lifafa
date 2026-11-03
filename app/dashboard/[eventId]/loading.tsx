@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
-import Logo from "@/components/brand/Logo";
+import Logo from "@/components/Logo";
 
 /**
  * What a host sees between tapping a row and that invitation's page arriving.
