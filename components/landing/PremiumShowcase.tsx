@@ -4,7 +4,7 @@ import PremiumCarousel, { type CarouselSlide } from "@/components/landing/Premiu
 import { OPENING_PREVIEWS } from "@/components/landing/previews";
 import { EYEBROW, SECTION_HEADING, TEXT_LINK } from "@/components/landing/styles";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
-import { NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
+import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 import { listedPremium } from "@/templates/premium";
 
 /**
@@ -34,7 +34,14 @@ export function premiumSlides(): CarouselSlide[] {
       id: template.id,
       name: template.name,
       priceLabel: `Premium, ${formatPrice(template.price)} per event`,
-      href: templateStartHref(template.id),
+      /*
+        A tap on the phone opens the design's live demo: visitors tap the
+        opening film expecting to see the invitation. Every listed design has
+        one, since /demo/[templateId] is built for every template in the
+        registry and registry.ts stops the build if a premium listing has no
+        template; the demo's own "Create this card" leads on to /create.
+      */
+      href: demoPath(template.id),
       demoHref: demoPath(template.id),
       poster: recorded?.poster ?? template.preview.src,
       video:

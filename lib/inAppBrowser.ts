@@ -160,3 +160,14 @@ export function withAdParams(href: string): string {
 
   return url.href;
 }
+
+/**
+ * A path on this site with the ad's tags on it: withAdParams for a link that
+ * stays on the site ("/demo/emerald-shahi", "/create?template=..."), so the
+ * visit can still be told apart from one that came without an ad.
+ */
+export function withAdParamsPath(path: string): string {
+  const url = new URL(withAdParams(new URL(path, window.location.origin).href));
+
+  return `${url.pathname}${url.search}${url.hash}`;
+}

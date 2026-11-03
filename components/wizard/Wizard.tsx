@@ -63,6 +63,7 @@ import {
   wizardStepPath,
   type WizardStepId,
 } from "@/lib/wizardSteps";
+import { deepEqual } from "@/lib/deepEqual";
 import { getTemplate } from "@/templates/registry";
 import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
@@ -708,6 +709,7 @@ function WizardSteps({
               selectedId={template.id}
               onSelect={handleTemplate}
               paidPricePaise={paidPricePaise}
+              demoInNewTab={editing || !deepEqual(draft, start.draft)}
             />
           ) : null}
 

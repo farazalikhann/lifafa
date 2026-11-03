@@ -11,6 +11,7 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAdParamsHref } from "@/hooks/useAdParamsHref";
 
 /** One premium template in the carousel. Plain data, built on the server. */
 export interface CarouselSlide {
@@ -18,7 +19,7 @@ export interface CarouselSlide {
   name: string;
   /** "Premium, ₹999 per event", from lib/pricing.ts. */
   priceLabel: string;
-  /** Where the slide leads: the wizard with this template chosen. */
+  /** Where a tap on the phone leads: the template's live demo. */
   href: string;
   /** The template's live demo. */
   demoHref: string;
@@ -114,6 +115,8 @@ export default function PremiumCarousel({
   const reducedRef = useRef(false);
 
   const count = slides.length;
+  /* The ad's tags, carried on to the demo; see hooks/useAdParamsHref.ts. */
+  const adHref = useAdParamsHref();
   /* Whether every slide is in view at once (decided by CSS, read here). */
   const fitsRef = useRef(false);
 
@@ -429,7 +432,7 @@ export default function PremiumCarousel({
             >
               <div className="flex w-full flex-col items-center">
                 <Link
-                  href={slide.href}
+                  href={adHref(slide.href)}
                   prefetch={false}
                   draggable={false}
                   className="group flex w-full flex-col items-center rounded-[2.75rem] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--paper-emerald)]"
@@ -454,13 +457,14 @@ export default function PremiumCarousel({
                   </span>
                   <span className="mt-5 font-[family-name:var(--paper-display)] text-2xl leading-tight font-semibold text-[var(--paper-ink)]">
                     {slide.name}
+                    <span className="sr-only">, live demo</span>
                   </span>
                 </Link>
                 <p className="mt-1 text-[0.9375rem] text-[var(--paper-muted)]">
                   {slide.priceLabel}
                 </p>
                 <Link
-                  href={slide.demoHref}
+                  href={adHref(slide.demoHref)}
                   prefetch={false}
                   draggable={false}
                   tabIndex={isActive ? 0 : -1}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactElement } from "react";
+import { useAdParamsHref } from "@/hooks/useAdParamsHref";
 import PinnedStrip, {
   PINNED_STRIP_ACTION,
   PINNED_STRIP_HIGHLIGHT,
@@ -19,9 +20,10 @@ import { NEW_CARD_HREF } from "@/lib/wizardSteps";
  * offers the one thing a visitor who likes it would do next.
  *
  * On a template's live demo that is a card on that template: `start` is
- * where its "Create yours" leads (the wizard's details step, the template
+ * where its "Create this card" leads (the wizard's details step, the template
  * already chosen) and what it costs. Without it, as on the Nikah sample, the
- * button opens the gallery and the price is the lowest there is.
+ * button reads "Create yours", opens the gallery, and the price is the lowest
+ * there is. Either way the ad's tags go with it (hooks/useAdParamsHref.ts).
  *
  * Drawn in the card's own colours (`tone`, from sampleStripTone), so it
  * belongs to the invitation under it; in the strip's ink and marigold where
@@ -36,6 +38,8 @@ export default function SampleBanner({
   start?: { href: string; pricePaise: number };
   tone?: StripTone | null;
 }): ReactElement {
+  const adHref = useAdParamsHref();
+
   return (
     <PinnedStrip
       label="Sample invitation"
@@ -43,10 +47,10 @@ export default function SampleBanner({
       tone={tone ?? undefined}
       action={
         <Link
-          href={start?.href ?? NEW_CARD_HREF}
+          href={adHref(start?.href ?? NEW_CARD_HREF)}
           className={PINNED_STRIP_ACTION}
         >
-          Create yours
+          {start !== undefined ? "Create this card" : "Create yours"}
         </Link>
       }
     >
