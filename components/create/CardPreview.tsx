@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, type ReactElement } from "react";
 import TemplateCard from "@/templates/TemplateCard";
-import FullScreenPreview from "@/components/create/FullScreenPreview";
+import dynamic from "next/dynamic";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { PREVIEW_INVITE } from "@/lib/calendar";
@@ -14,6 +14,9 @@ import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
 import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
+
+/* The full-screen preview: its cover player and every cover drawn in code. Fetched when it is opened. */
+const FullScreenPreview = dynamic(() => import("@/components/create/FullScreenPreview"), { ssr: false });
 
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
 const FRAME_QUERY = "(min-width: 64rem)";

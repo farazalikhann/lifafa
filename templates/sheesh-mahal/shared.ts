@@ -21,11 +21,9 @@ export const INDIGO_INK = "#181C4A";
 export const GOLD = "#C9A45C";
 /* Antique gold dark enough for small type on parchment. */
 export const GOLD_DEEP = "#7E5F24";
-export const SILVER = "#D9DEE8";
 export const IVORY = "#F8F1E3";
 /* Ivory a step quieter, for the lesser lines set on the night. */
 export const IVORY_MUTED = "#D8CDB8";
-export const DIYA = "#FFB347";
 
 export interface SheeshFonts {
   /** The couple's names and the initials: the pair's script. */

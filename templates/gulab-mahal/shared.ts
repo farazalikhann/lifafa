@@ -15,7 +15,6 @@ import type { FontPairId } from "@/types/style";
  */
 
 /* The one palette: blush velvet, wine ink, rose gold and ivory. */
-export const BLUSH = "#E9BDBB";
 export const WINE = "#5A1E2B";
 export const WINE_SOFT = "#7B3A48";
 export const ROSE_GOLD = "#B76E79";

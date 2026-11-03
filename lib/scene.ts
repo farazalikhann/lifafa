@@ -58,9 +58,6 @@ export interface SceneArt {
   sky?: { hue: number; clearBy: number; lights?: readonly [number, number] };
 }
 
-/** Every scene's shape: width over height. */
-export const SCENE_ASPECT = 2 / 3;
-
 /** A scene's two paintings: by day for a light card, by night for a dark one. */
 const ART: Record<Exclude<Scene, "off">, { light: SceneArt; dark: SceneArt }> = {
   lakePalace: {

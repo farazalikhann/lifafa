@@ -111,6 +111,7 @@ export default function Pricing(): ReactElement {
               <div className="mt-8 flex-1" />
               <Link
                 href={NEW_CARD_HREF}
+                prefetch={false}
                 className={plan.featured ? PRIMARY_BUTTON : SECONDARY_BUTTON}
               >
                 <LinkPending>

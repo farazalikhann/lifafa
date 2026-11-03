@@ -126,8 +126,6 @@ export interface TemplateConfig {
    * when the template is chosen.
    */
   scene?: Scene;
-  /** What draws the card. */
-  Card: ComponentType<TemplateCardProps>;
   /**
    * Which of the card's own colours the "Made with Lifafa" credit at the end
    * of the invitation is set in: its text colour or its accent. Only the
@@ -140,35 +138,23 @@ export interface TemplateConfig {
    * the cover on every card in this template, and the host is not offered the
    * choice of animation: the envelope is part of the design. `option` is what
    * the shell reads (how long, when the card is let go, which pictures to wait
-   * for, the sound); `Visual` is what is drawn. Absent, the card opens with
-   * the animation its host chose.
+   * for, the sound); what is drawn is `CoverVisual` in templates/parts.ts.
+   * Absent, the card opens with the animation its host chose.
    */
   cover?: {
     option: CoverAnimationOption;
-    Visual: ComponentType<TemplateCoverProps>;
   };
   /**
    * What the template changes about the guest's page round its card, where it
    * changes anything: the page places the card's own reply form and closing
    * note under every card, and a template with a look of its own for them
    * says so here. Presentation only. The form, its checks and what a reply
-   * does are the page's and are not replaceable.
+   * does are the page's and are not replaceable. The frame they are put on
+   * and the closing note are `RsvpFrame` and `Closing` in templates/parts.ts.
    */
   page?: {
-    /**
-     * What the reply form, the confirmation and the pass are put on, told
-     * which of them it is showing, for a frame that draws the change from one
-     * to the other.
-     */
-    RsvpFrame: ComponentType<{
-      children: ReactNode;
-      stage?: "form" | "confirmed";
-      language?: CardLanguage;
-    }>;
-    /** The theme those three are drawn in, on that. */
+    /** The theme the reply form, the confirmation and the pass are drawn in, on the template's frame. */
     rsvpTheme: (theme: Theme) => Theme;
-    /** In place of the card's closing note, after the reply form. */
-    Closing: ComponentType<{ draft: EventDraft; config: CardConfig }>;
     /** False to leave the ribboned-card picture off "Keep this invitation". */
     keepsakeArt?: boolean;
     /**
@@ -204,4 +190,29 @@ export interface TemplateConfig {
    * them off there; see switchTemplate.
    */
   countdownScratch?: boolean;
+}
+
+/**
+ * What draws a template: its card and, for a template with them, its own
+ * cover, the frame the reply form is put on and its closing note. Kept apart
+ * from TemplateConfig, in templates/parts.ts, so that a page that only reads
+ * templates (the gallery, the editor's first steps, the server's prices) does
+ * not bring every card with it. See there.
+ */
+export interface TemplateParts {
+  Card: ComponentType<TemplateCardProps>;
+  /** Drawn in place of the chosen animation, for a template with `cover`. */
+  CoverVisual?: ComponentType<TemplateCoverProps>;
+  /**
+   * What the reply form, the confirmation and the pass are put on, told
+   * which of them it is showing, for a frame that draws the change from one
+   * to the other. For a template with `page`.
+   */
+  RsvpFrame?: ComponentType<{
+    children: ReactNode;
+    stage?: "form" | "confirmed";
+    language?: CardLanguage;
+  }>;
+  /** In place of the card's closing note, after the reply form. For a template with `page`. */
+  Closing?: ComponentType<{ draft: EventDraft; config: CardConfig }>;
 }

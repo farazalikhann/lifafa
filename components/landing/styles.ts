@@ -41,7 +41,3 @@ export const SECTION_LEAD =
 /** A card: paper on washi with a gold hairline, no shadow. */
 export const CARD =
   "rounded-3xl border border-[var(--paper-hairline)] bg-[var(--paper-card)]";
-
-/** A small outlined link inside a card. */
-export const CARD_LINK =
-  "inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--paper-hairline)] px-4 text-sm font-semibold whitespace-nowrap text-[var(--paper-ink)] transition-colors duration-150 hover:border-[var(--paper-emerald)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]";

@@ -10,6 +10,24 @@
  * What is here is what the films share: the shape of one, and how long one
  * is waited for. Each film's own numbers, and how it was cut, are in its own
  * file. LightFilmCover plays any of them.
+ *
+ * THE RECIPE they were all cut on, for the next person to replace one. Every
+ * source is 1080x1920 at 24fps. Each is trimmed to a moment of stillness, the
+ * action and where it ends; the sound is dropped; nothing is cropped.
+ *
+ *   -vf "trim=start_frame=A:end_frame=B,setpts=N/24/TB" -an
+ *   mp4:  -c:v libx264 -profile:v high -preset slow -crf 20+ -pix_fmt yuv420p
+ *         -movflags +faststart      (crf raised a step at a time to fit 2 MB)
+ *   webm: -c:v libvpx-vp9 -b:v 0 -crf 30+ two-pass
+ *   poster: the first frame, WebP
+ *
+ * The generator's mark, a pale four-pointed star in the lower right, is taken
+ * out in place rather than blurred over where it sits on ornament. It is
+ * white laid over the picture at an opacity that can be measured per pixel
+ * where it sits on black, so what was under it is worked back out exactly,
+ * (seen - 255a) / (1 - a), and only the hairline of its outline is filled in
+ * from either side. Blurring over it (ffmpeg's delogo) leaves a smudge; it
+ * does only where the corner is plain backdrop.
  */
 
 import type { CoverArt, CoverFilmTiming } from "@/types/coverAnimation";

@@ -21,8 +21,8 @@ const LABEL_FACE = fontFamilyOf("--font-sans", "system-ui, sans-serif");
  * who meets it after filling in the names in English has already made the card
  * in the wrong language.
  *
- * The same tiles as OccasionGrid, because it is the same kind of decision and
- * sits directly above it. Each language is named in its own script first, since
+ * Tiles, because it is a decision made once and at a glance, and it
+ * comes before any other. Each language is named in its own script first, since
  * that is what somebody who reads it is scanning for, with the English name
  * under any that are not English.
  */

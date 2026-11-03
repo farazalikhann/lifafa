@@ -12,7 +12,7 @@ import type { TemplateConfig } from "@/templates/types";
  * copy of them.
  *
  * KEPT APART FROM THE CONFIGS for a page that only lists the collection, the
- * landing page above all: a config brings its whole card with it, which a
+ * landing page above all: a config brings its whole design with it, which a
  * visitor on a slow phone would download for a name, a price and a picture.
  * Nothing here imports more than an image.
  *

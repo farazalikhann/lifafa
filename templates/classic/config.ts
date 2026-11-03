@@ -1,6 +1,5 @@
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { TRADITIONS_PRICE_PAISE } from "@/lib/pricing";
-import ClassicCard from "@/templates/classic/Card";
 import { SWITCHABLE_SECTIONS, plain } from "@/templates/shared/fromPreset";
 import preview from "@/templates/classic/preview.webp";
 import type { TemplateConfig } from "@/templates/types";
@@ -42,5 +41,4 @@ export const CLASSIC_TEMPLATE: TemplateConfig = {
   sections: SWITCHABLE_SECTIONS,
   /* With the royal texture, as a new card has it. */
   baseDesign: { ...DEFAULT_DESIGN, royalTexture: true },
-  Card: ClassicCard,
 };

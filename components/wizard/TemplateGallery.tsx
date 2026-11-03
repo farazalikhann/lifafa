@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import Image from "next/image";
 import { viewContent } from "@/lib/metaPixel";
 import { getPalette } from "@/lib/palettes";
 import { formatPrice } from "@/lib/pricing";
@@ -25,6 +26,17 @@ const SECTION_HEADING =
   "font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--lifafa-cream)]";
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4";
 
+/*
+  How wide a card's picture is drawn, for the image service to pick a file:
+  two columns in the page's 16px gutters on a phone; three from 640px; three
+  in the left column of the two at lg; and at most 192px once the page stops
+  growing. The phone is the one that matters: about 173px across on a 390px
+  screen, so 519 pixels at 3x, and the 640px file is the one sent. Sharp, at
+  a fraction of the 720x1280 original.
+*/
+const PREVIEW_SIZES =
+  "(min-width: 1280px) 192px, (min-width: 1024px) calc(19vw - 50px), (min-width: 640px) calc(33vw - 43px), calc(50vw - 22px)";
+
 /** A template looked at, for the ads: its live demo opened, or chosen. */
 function looked(template: TemplateConfig): void {
   viewContent({
@@ -40,9 +52,12 @@ function TemplateCard({
   selected,
   locked,
   onSelect,
+  first = false,
 }: {
   template: TemplateConfig;
   selected: boolean;
+  /** One of the first cards on the screen: its picture is asked for at once, ahead of the rest. */
+  first?: boolean;
   /** Costs more than a paid invitation was paid for: shown, and not selectable. */
   locked: boolean;
   onSelect: (template: TemplateConfig) => void;
@@ -62,15 +77,13 @@ function TemplateCard({
         style={{ backgroundColor: ground.background }}
       >
         {template.preview !== null ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={template.preview.src}
-            width={template.preview.width}
-            height={template.preview.height}
+          <Image
+            src={template.preview}
             alt={`The ${template.name} template`}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover object-top"
+            fill
+            sizes={PREVIEW_SIZES}
+            priority={first}
+            className="object-cover object-top"
           />
         ) : null}
         {selected ? (
@@ -186,10 +199,11 @@ export default function TemplateGallery({
     (template) => filter === "all" || categoriesOf(template).includes(filter),
   );
 
-  const card = (template: TemplateConfig): ReactElement => (
+  const card = (template: TemplateConfig, index: number, first = false): ReactElement => (
     <TemplateCard
       key={template.id}
       template={template}
+      first={first && index < 2}
       selected={template.id === selectedId}
       locked={
         paidPricePaise !== null &&
@@ -212,7 +226,7 @@ export default function TemplateGallery({
               Designed from the envelope to the last page, for every wedding.
             </p>
           </div>
-          <ul className={GRID}>{premium.map(card)}</ul>
+          <ul className={GRID}>{premium.map((template, index) => card(template, index, true))}</ul>
         </section>
       ) : null}
 
@@ -256,7 +270,7 @@ export default function TemplateGallery({
           })}
         </div>
 
-        <ul className={GRID}>{shown.map(card)}</ul>
+        <ul className={GRID}>{shown.map((template, index) => card(template, index))}</ul>
       </section>
     </div>
   );

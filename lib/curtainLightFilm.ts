@@ -6,7 +6,7 @@
  * One of the films that end in light; see lib/lightFilm.ts for what they
  * share, and LightFilmCover for how one is played.
  *
- * HOW IT WAS CUT, as lib/coverVideos.ts records for the others. The source is
+ * HOW IT WAS CUT, on the recipe in lib/lightFilm.ts. The source is
  * 1080x1920 at 24fps, six seconds. Frames 15-123: a quarter of a second of
  * stillness, the curtains start at 0.25s, the light floods from about 2.9s
  * and the frame is all light by 4.2s. The source's last frames are ivory with

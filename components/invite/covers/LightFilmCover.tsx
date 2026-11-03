@@ -12,7 +12,7 @@ import {
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import GoldFlower from "@/components/invite/covers/GoldFlower";
 import { initialOf, initialsOf } from "@/components/invite/covers/initials";
-import type { DrawnCover } from "@/components/invite/covers/VideoCover";
+import type { DrawnCover } from "@/components/invite/covers/drawnCover";
 import { coverDebug, watchFilmEvents } from "@/lib/coverDebug";
 import {
   LIGHT_FILM_CUT_MS,
@@ -742,7 +742,7 @@ export default function LightFilmCover({
     The film's place on the screen, as one width everything is laid out from.
     It covers a phone, centred. On a screen wider than it is tall the whole of
     it is shown instead, with its surround either side, rather than a strip of
-    its middle blown up. The same arithmetic as VideoCover.
+    its middle blown up.
   */
   const rootStyle = {
     "--fl": "calc(50cqw - var(--fw) / 2)",

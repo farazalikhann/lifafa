@@ -67,7 +67,7 @@ export default function Hero({ demoHref }: { demoHref: string }): ReactElement {
         </p>
 
         <div className="mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
-          <Link href={NEW_CARD_HREF} className={`w-full sm:w-auto ${PRIMARY_BUTTON}`}>
+          <Link href={NEW_CARD_HREF} prefetch={false} className={`w-full sm:w-auto ${PRIMARY_BUTTON}`}>
             <LinkPending>Create yours</LinkPending>
           </Link>
           <Link

@@ -74,15 +74,6 @@ export const COVER_IMAGES: readonly string[] = [
   ART.airmail,
 ];
 
-/** The post box: its picture's shape, its slot and its brass plate (see above). */
-export const POST_BOX = {
-  aspect: 400 / 1000,
-  slot: { left: 0.25, right: 0.73, top: 0.299, bottom: 0.321 },
-  plate: { left: 0.265, right: 0.735, top: 0.452, bottom: 0.551 },
-} as const;
-
-export const TELEGRAM_ASPECT = 760 / 323;
-
 /**
  * Which postage stamp a function is drawn on, by what it is called, in
  * English or Hindi: haldi, mehendi, sangeet, the wedding itself and the

@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { COVER_IMAGES } from "@/templates/emerald-shahi/art";
@@ -119,15 +118,11 @@ export const EMERALD_SHAHI: TemplateConfig = {
     traditionId: "none",
     dateReveal: "simple",
   },
-  Card: dynamic(() => import("@/templates/emerald-shahi/Card")),
   cover: {
     option: COVER_OPTION,
-    Visual: dynamic(() => import("@/templates/emerald-shahi/Cover")),
   },
   page: {
-    RsvpFrame: dynamic(() => import("@/templates/emerald-shahi/RsvpFrame")),
     rsvpTheme: paperTheme,
-    Closing: dynamic(() => import("@/templates/emerald-shahi/Closing")),
     /* Its ribbon and petals are red roses, which are no part of this card. */
     keepsakeArt: false,
   },

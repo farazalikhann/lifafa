@@ -1,4 +1,3 @@
-import ClassicCard from "@/templates/classic/Card";
 import type { TemplateConfig, TemplatePalette } from "@/templates/types";
 import { defaultDesign } from "@/lib/designDefaults";
 import { getPalette } from "@/lib/palettes";
@@ -101,7 +100,6 @@ export function presetTemplate({
     sections: SWITCHABLE_SECTIONS,
     baseDesign,
     ...(scene !== undefined ? { scene } : null),
-    Card: ClassicCard,
   };
 }
 

@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { DURATION, REVEAL_AT, SETTLE_LIMIT } from "@/templates/sheesh-mahal/coverTiming";
@@ -167,15 +166,11 @@ export const SHEESH_MAHAL: TemplateConfig = {
     traditionId: "none",
     dateReveal: "simple",
   },
-  Card: dynamic(() => import("@/templates/sheesh-mahal/Card")),
   cover: {
     option: COVER_OPTION,
-    Visual: dynamic(() => import("@/templates/sheesh-mahal/Cover")),
   },
   page: {
-    RsvpFrame: dynamic(() => import("@/templates/sheesh-mahal/RsvpFrame")),
     rsvpTheme: farmaanTheme,
-    Closing: dynamic(() => import("@/templates/sheesh-mahal/Closing")),
     keepsakeArt: true,
     scrollCue: false,
   },

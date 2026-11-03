@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import TemplateCard from "@/templates/TemplateCard";
 import { paperSans } from "@/components/theme/fonts";
 import { getTemplate } from "@/templates/registry";
+import { templateParts } from "@/templates/parts";
 import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import Watermark, { WATERMARK_PILL_SELECTOR } from "@/components/card/Watermark";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
@@ -313,7 +314,8 @@ export default function FullScreenPreview({
 
   /* A template's own cover, where it has one; see `cover` on TemplateConfig. */
   const templateCover = getTemplate(config.templateId).cover;
-  const TemplateCoverVisual = templateCover?.Visual;
+  const TemplateCoverVisual =
+    templateCover !== undefined ? templateParts(config.templateId).CoverVisual : undefined;
   const coverOption = templateCover?.option ?? getCoverAnimation(coverAnimation);
   const hasCover = coverOption.id !== "none";
   /*

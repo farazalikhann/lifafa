@@ -19,7 +19,7 @@
  * THE GENERATOR'S MARK lies across the gold paisley in the lower right
  * corner, where blurring over it (ffmpeg's delogo, which did for the curtain
  * and the envelope) smears the ornament. So it is taken out in place, as
- * lib/coverVideos.ts describes: the mark is one colour laid over the picture
+ * lib/lightFilm.ts describes: the mark is one colour laid over the picture
  * at an opacity that differs from pixel to pixel, seen = bg (1 - a) + W a.
  * Both were measured from the same mark over a dark ground and a light one,
  * and what was under it is worked back out, (seen - W a) / (1 - a), on a

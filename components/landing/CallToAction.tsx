@@ -42,7 +42,7 @@ export default function CallToAction(): ReactElement {
           Choose a design, add your details and start collecting replies in
           about 10 minutes.
         </p>
-        <Link href={NEW_CARD_HREF} className={`mt-9 ${ON_EMERALD_BUTTON}`}>
+        <Link href={NEW_CARD_HREF} prefetch={false} className={`mt-9 ${ON_EMERALD_BUTTON}`}>
           <LinkPending>Create yours</LinkPending>
         </Link>
         <p className="mt-5 text-sm text-[var(--paper-gold-soft)]">

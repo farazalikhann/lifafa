@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { playEffectSound, unlockEffectSounds } from "@/lib/effectSound";
@@ -138,15 +137,11 @@ export const DAK_GHAR: TemplateConfig = {
     traditionId: "none",
     dateReveal: "simple",
   },
-  Card: dynamic(() => import("@/templates/dak-ghar/Card")),
   cover: {
     option: COVER_OPTION,
-    Visual: dynamic(() => import("@/templates/dak-ghar/Cover")),
   },
   page: {
-    RsvpFrame: dynamic(() => import("@/templates/dak-ghar/RsvpFrame")),
     rsvpTheme: replyCardTheme,
-    Closing: dynamic(() => import("@/templates/dak-ghar/Closing")),
     keepsakeArt: false,
     /* Compact, at the top of the page only: pinned, it came back over the headings and stamps. */
     languageSwitch: "top",

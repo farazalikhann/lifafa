@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { getTemplate } from "@/templates/registry";
+import { templateParts } from "@/templates/parts";
 import type { TemplateCardProps } from "@/templates/types";
 
 /**
@@ -11,7 +11,7 @@ import type { TemplateCardProps } from "@/templates/types";
  * templates) goes to Classic, which is CardCanvas.
  */
 export default function TemplateCard(props: TemplateCardProps): ReactElement {
-  const { Card } = getTemplate(props.config.templateId);
+  const { Card } = templateParts(props.config.templateId);
 
   return <Card {...props} />;
 }

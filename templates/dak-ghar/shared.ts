@@ -9,13 +9,10 @@ import type { CardLanguage } from "@/types/card";
 
 /* The paper's own cream (sampled off paper.webp), and the inks that read on it. */
 export const CREAM = "#F5E3BF";
-export const LETTER = "#EFD4AC";
 export const INK = "#2A1E14";
 export const INK_MUTED = "#5A4630";
 /* The post box's red: buttons, small capitals and the one accent on each page. */
 export const POST_RED = "#9E2A24";
-/* The postmark's blue-black. */
-export const STAMP_INK = "#2E3F66";
 
 export interface DakFonts {
   /** Headings, the names and the date: Cormorant Garamond 600. */

@@ -571,6 +571,7 @@ const NAMES_FRAMES = NAMES_FRAME_ART.flatMap(({ name, file, fit, thumb }) => [
   floodBelow: LOW,
   softRim: true,
   pocketMin: 40,
+  /* "general photos" is kept out of the repo, in D:\lifafa-ad\raw-photos\; copy it back to re-cut. */
   source: "general photos",
 }));
 

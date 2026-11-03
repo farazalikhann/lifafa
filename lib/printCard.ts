@@ -37,8 +37,7 @@ import type { CardConfig, CardSectionId } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
 
-/** A5 at the 96 CSS px to the inch a browser lays a page out in. */
-export const PRINT_PAGE_WIDTH = 559;
+/** A5's height at the 96 CSS px to the inch a browser lays a page out in (its width is 559). */
 export const PRINT_PAGE_HEIGHT = 794;
 
 /** Which sheet each of the card's own sections goes on. The countdown goes on none. */

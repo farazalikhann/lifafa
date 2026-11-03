@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { getCoverAnimation } from "@/lib/coverAnimations";
 import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { COVER_IMAGES } from "@/templates/gulab-mahal/art";
@@ -125,15 +124,11 @@ export const GULAB_MAHAL: TemplateConfig = {
     traditionId: "none",
     dateReveal: "simple",
   },
-  Card: dynamic(() => import("@/templates/gulab-mahal/Card")),
   cover: {
     option: COVER_OPTION,
-    Visual: dynamic(() => import("@/templates/gulab-mahal/Cover")),
   },
   page: {
-    RsvpFrame: dynamic(() => import("@/templates/gulab-mahal/RsvpFrame")),
     rsvpTheme: letterTheme,
-    Closing: dynamic(() => import("@/templates/gulab-mahal/Closing")),
     keepsakeArt: true,
     scrollCue: false,
   },

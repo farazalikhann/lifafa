@@ -74,6 +74,37 @@ export default function PremiumCarousel({
   const [onScreen, setOnScreen] = useState(false);
   /* Within a screen of the viewport: only then do the video elements exist. */
   const [nearView, setNearView] = useState(false);
+  /*
+    The page has loaded and the browser has had a quiet moment. Until then
+    the carousel asks for nothing but its first poster: the hero's headline,
+    its stylesheet and its font are what the visitor is waiting on, and on a
+    phone's connection the other posters and a film compete with them.
+  */
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    let idle: number | undefined;
+    let timeout: number | undefined;
+    const settle = (): void => {
+      if (typeof window.requestIdleCallback === "function") {
+        idle = window.requestIdleCallback(() => setSettled(true), { timeout: 2000 });
+      } else {
+        timeout = window.setTimeout(() => setSettled(true), 200);
+      }
+    };
+
+    if (document.readyState === "complete") {
+      settle();
+    } else {
+      window.addEventListener("load", settle, { once: true });
+    }
+
+    return () => {
+      window.removeEventListener("load", settle);
+      if (idle !== undefined) window.cancelIdleCallback(idle);
+      window.clearTimeout(timeout);
+    };
+  }, []);
   const [announcement, setAnnouncement] = useState("");
 
   /* What holds the carousel still right now. Refs: read by timers, never rendered. */
@@ -399,6 +430,7 @@ export default function PremiumCarousel({
               <div className="flex w-full flex-col items-center">
                 <Link
                   href={slide.href}
+                  prefetch={false}
                   draggable={false}
                   className="group flex w-full flex-col items-center rounded-[2.75rem] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--paper-emerald)]"
                   tabIndex={isActive ? 0 : -1}
@@ -412,7 +444,8 @@ export default function PremiumCarousel({
                     <PreviewMedia
                       slide={slide}
                       play={isActive && onScreen && !reduced}
-                      mount={nearView}
+                      mount={nearView && settled}
+                      poster={index === 0 || settled}
                     />
                     <span
                       aria-hidden="true"
@@ -518,6 +551,12 @@ export default function PremiumCarousel({
  * A slide's screen: the poster, and over it the opening animation while the
  * slide is the active one.
  *
+ * Neither the film nor any poster but the first slide's is asked for before
+ * the page has loaded (`settled` in the carousel). The first stays as it was,
+ * lazy and in the browser's hands: on a tall phone it is the largest thing
+ * on the first screen, and holding it back would hold back the paint that is
+ * measured.
+ *
  * The video element exists only once the carousel is within a screen of the
  * viewport, and fetches nothing until it is asked to play (preload none). So
  * only the active slide's video is ever downloaded; the others show their
@@ -531,10 +570,13 @@ function PreviewMedia({
   slide,
   play,
   mount,
+  poster,
 }: {
   slide: CarouselSlide;
   play: boolean;
   mount: boolean;
+  /** Whether the poster may be asked for yet. */
+  poster: boolean;
 }): ReactElement {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
@@ -563,16 +605,18 @@ function PreviewMedia({
 
   return (
     <>
-      <Image
-        src={slide.poster}
-        alt={`The ${slide.name} invitation on a phone`}
-        fill
-        loading="lazy"
-        sizes="(min-width: 1024px) 18rem, (min-width: 640px) 16rem, 66vw"
-        quality={72}
-        className="object-cover object-top"
-        draggable={false}
-      />
+      {poster ? (
+        <Image
+          src={slide.poster}
+          alt={`The ${slide.name} invitation on a phone`}
+          fill
+          loading="lazy"
+          sizes="(min-width: 1024px) 18rem, (min-width: 640px) 16rem, 66vw"
+          quality={72}
+          className="object-cover object-top"
+          draggable={false}
+        />
+      ) : null}
       {hasVideo ? (
         <video
           ref={videoRef}

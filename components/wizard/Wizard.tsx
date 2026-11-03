@@ -15,13 +15,12 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import AutoTranslate from "@/components/create/AutoTranslate";
-import CardPreview from "@/components/create/CardPreview";
 import ContactEditor from "@/components/create/ContactEditor";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import EventForm from "@/components/create/EventForm";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
-import FullScreenPreview from "@/components/create/FullScreenPreview";
+import dynamic from "next/dynamic";
 import LanguagePicker from "@/components/create/LanguagePicker";
 import PendingCardNotice, {
   displayHost,
@@ -69,6 +68,15 @@ import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
 import type { EventContact, EventDraft } from "@/types/event";
 import Logo from "@/components/brand/Logo";
+
+/* The full-screen preview: its cover player and every cover drawn in code. Fetched when it is opened. */
+const FullScreenPreview = dynamic(() => import("@/components/create/FullScreenPreview"), { ssr: false });
+/*
+  The card beside the steps, at lg. Client-only and fetched when drawn: it is
+  what brings the card renderers (templates/parts.ts), and below lg it draws
+  nothing, so a phone choosing a design never downloads them.
+*/
+const CardPreview = dynamic(() => import("@/components/create/CardPreview"), { ssr: false });
 
 /**
  * A new invitation, made in four steps: a template, the details, the few

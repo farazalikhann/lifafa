@@ -7,7 +7,7 @@ import CurtainRevealCover from "@/components/invite/covers/CurtainRevealCover";
 import EnvelopeSealCover from "@/components/invite/covers/EnvelopeSealCover";
 import FoldUnfoldCover from "@/components/invite/covers/FoldUnfoldCover";
 import LightFilmCover from "@/components/invite/covers/LightFilmCover";
-import type { DrawnCover } from "@/components/invite/covers/VideoCover";
+import type { DrawnCover } from "@/components/invite/covers/drawnCover";
 import { curtainArt } from "@/lib/curtainArt";
 import { CURTAIN_LIGHT_FILM } from "@/lib/curtainLightFilm";
 import { ENVELOPE_LIGHT_FILM } from "@/lib/envelopeLightFilm";

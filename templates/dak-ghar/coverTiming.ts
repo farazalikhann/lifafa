@@ -17,10 +17,6 @@
   plays in the tap.
 */
 export const PRINT_AT = 120;
-export const PRINT_MS = 980;
-export const UNCLIP_AT = 1130;
-export const GROW_AT = 1150;
-export const GROW_MS = 420;
 export const STAMP_AT = 1600;
 export const STAMP_MS = 300;
 export const LIFT_AT = 2350;

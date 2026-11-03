@@ -92,24 +92,16 @@ interface CalligraphyArt {
 }
 
 /**
- * An Arabic piece, published as a black and a white ink and drawn as a shape.
+ * An Arabic piece, published as one black alpha mask and drawn as a shape.
  *
- * Both files are one alpha mask, filled once with black and once with white,
- * so the black file's alpha is the lettering and nothing else. The card uses
- * it as a CSS mask filled with the calligraphy's ink (CALLIGRAPHY_INK), the
- * way every other pack's calligraphy is drawn. The two inks stay
- * published as the `src` pair for anything that still wants a picture.
+ * The file's alpha is the lettering and nothing else. The card uses it as a
+ * CSS mask filled with the calligraphy's ink (CALLIGRAPHY_INK), the way every
+ * other pack's calligraphy is drawn. A white copy of each was published once
+ * too, for a dark card drawn as a picture; nothing drew one, and it is gone.
  */
 function arabic(slug: string, aspect: number, alt: string): CalligraphyArt {
-  return {
-    src: {
-      light: `/decor/${slug}-black.webp`,
-      dark: `/decor/${slug}-white.webp`,
-    },
-    mask: `/decor/${slug}-black.webp`,
-    aspect,
-    alt,
-  };
+  const mask = `/decor/${slug}-black.webp`;
+  return { src: { light: mask, dark: mask }, aspect, alt, mask };
 }
 
 /**

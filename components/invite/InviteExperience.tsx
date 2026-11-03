@@ -10,6 +10,7 @@ import {
 } from "react";
 import TemplateCard from "@/templates/TemplateCard";
 import { getTemplate } from "@/templates/registry";
+import { templateParts } from "@/templates/parts";
 import Watermark, {
   WATERMARK_CLEARANCE,
   WATERMARK_PILL_SELECTOR,
@@ -255,8 +256,9 @@ export default function InviteExperience({
   const motifs = getMotifs(config.occasionId, config.traditionId);
   /* A template with a cover of its own opens with that, whatever the host's choice of animation. */
   const template = getTemplate(config.templateId);
+  const parts = templateParts(config.templateId);
   const templateCover = template.cover;
-  const TemplateCoverVisual = templateCover?.Visual;
+  const TemplateCoverVisual = templateCover !== undefined ? parts.CoverVisual : undefined;
   /*
     And one with a look of its own for what follows the card: the reply form,
     the confirmation and the pass are the same components either way, put on
@@ -272,11 +274,11 @@ export default function InviteExperience({
     decided here and nowhere else.
   */
   const onPaper = (panel: ReactElement, shows: "form" | "confirmed"): ReactElement => {
-    const Frame = templatePage?.RsvpFrame;
+    const Frame = templatePage !== undefined ? parts.RsvpFrame : undefined;
 
     return Frame === undefined ? panel : <Frame stage={shows} language={language}>{panel}</Frame>;
   };
-  const TemplateClosing = templatePage?.Closing;
+  const TemplateClosing = templatePage !== undefined ? parts.Closing : undefined;
 
   /*
     Everything laid out around the card — the cover, the form, the pass — is

@@ -38,20 +38,6 @@ export const OCCASIONS: readonly Occasion[] = [
   { id: "other", label: "Other", defaultThemeId: "marigold", defaultMotion: "none", defaultPaletteId: "ink", pairsNames: false },
 ];
 
-export interface Tradition {
-  id: TraditionId;
-  label: string;
-}
-
-export const TRADITIONS: readonly Tradition[] = [
-  { id: "none", label: "No religious motifs" },
-  { id: "hindu", label: "Hindu" },
-  { id: "muslim", label: "Muslim" },
-  { id: "sikh", label: "Sikh" },
-  { id: "christian", label: "Christian" },
-  { id: "jain", label: "Jain" },
-  { id: "buddhist", label: "Buddhist" },
-];
 
 export const DEFAULT_OCCASION_ID: OccasionId = "wedding";
 export const DEFAULT_TRADITION_ID: TraditionId = "none";

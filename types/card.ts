@@ -167,7 +167,7 @@ export type DateReveal = "scroll" | "scratch" | "tear" | "simple";
 export type Scene = "lakePalace" | "palaceGarden" | "valleyTree" | "off";
 
 /** The painting of the place above the venue's name, or none. See lib/venueIllustration.ts. */
-export type VenueIllustration = "none" | "garden" | "banquet" | "palace" | "poolside";
+export type VenueIllustration = "none" | "garden" | "banquet";
 
 /**
  * Which cloth the royal texture is woven as: the damask every card with the

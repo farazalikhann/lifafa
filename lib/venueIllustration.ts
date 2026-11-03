@@ -1,8 +1,8 @@
 import type { VenueIllustration } from "@/types/card";
 
 /**
- * The painting of the place above the venue's name: a garden, a banquet hall,
- * a palace courtyard or a poolside, or none. Drawn by
+ * The painting of the place above the venue's name: a garden or a banquet
+ * hall, or none. Drawn by
  * components/card/sections/VenueSection.tsx.
  */
 
@@ -12,8 +12,6 @@ export const VENUE_ILLUSTRATIONS: readonly { id: VenueIllustration; label: strin
   { id: "none", label: "None" },
   { id: "garden", label: "Garden" },
   { id: "banquet", label: "Banquet Hall" },
-  { id: "palace", label: "Palace" },
-  { id: "poolside", label: "Poolside" },
 ];
 
 export interface VenueArt {
@@ -28,8 +26,6 @@ export interface VenueArt {
 const ART: Record<Exclude<VenueIllustration, "none">, VenueArt> = {
   garden: art("garden", 960, 463),
   banquet: art("banquet", 1080, 643),
-  palace: art("palace", 960, 559),
-  poolside: art("poolside", 960, 622),
 };
 
 function art(name: string, width: number, height: number): VenueArt {
@@ -42,10 +38,18 @@ function art(name: string, width: number, height: number): VenueArt {
 }
 
 /**
+ * The palace courtyard and the poolside, offered until the editor's venue
+ * picker went. No card was saved with either, and their paintings are gone;
+ * one that turns up (a draft kept in a browser) is drawn with none.
+ */
+const RETIRED_VENUES: Readonly<Record<string, VenueIllustration>> = { palace: "none", poolside: "none" };
+
+/**
  * Absent from every card saved before there was a choice, and those cards had
  * no illustration: a missing or unknown value is "none".
  */
 export function venueIllustrationOf(value: unknown): VenueIllustration {
+  if (typeof value === "string" && value in RETIRED_VENUES) return RETIRED_VENUES[value];
   return VENUE_ILLUSTRATIONS.find((option) => option.id === value)?.id ?? DEFAULT_VENUE_ILLUSTRATION;
 }
 
