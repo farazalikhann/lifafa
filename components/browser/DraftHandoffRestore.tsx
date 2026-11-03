@@ -8,7 +8,7 @@ import { writePendingCard } from "@/lib/pendingCard";
 export const HANDOFF_PARAM = "handoff";
 
 /**
- * On /login, opened from Instagram with `?handoff=<id>`: takes the card saved
+ * On /login, opened from Instagram or Facebook with `?handoff=<id>`: takes the card saved
  * there (lib/handoff/actions.ts) and puts it in this browser's storage, where
  * /create looks for a card after sign in. Then takes the id off the address,
  * so a reload does not try again.
@@ -53,10 +53,10 @@ export default function DraftHandoffRestore(): ReactElement | null {
       className="mb-4 rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 text-sm leading-relaxed text-[var(--lifafa-muted)]"
     >
       {state === "loading"
-        ? "Bringing your card over from Instagram…"
+        ? "Bringing your card over…"
         : state === "done"
           ? "Your card is here. Sign in to save it."
-          : "We could not bring your card over from Instagram. It may have expired, so you may need to start it again."}
+          : "We could not bring your card over. It may have expired, so you may need to start it again."}
     </p>
   );
 }

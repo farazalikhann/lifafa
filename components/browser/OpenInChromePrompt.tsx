@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -9,103 +8,27 @@ import {
   type MouseEvent,
   type ReactElement,
 } from "react";
-import {
-  chromeIntentUrl,
-  instagramPlatform,
-  type InstagramPlatform,
-} from "@/lib/inAppBrowser";
-import { saveDraftHandoff } from "@/lib/handoff/actions";
-import { openInBrowserClick } from "@/lib/metaPixel";
-import { readPendingCard, type PendingCard } from "@/lib/pendingCard";
-import { HANDOFF_PARAM } from "@/components/browser/DraftHandoffRestore";
+import { chromeIntentUrl, inAppName, type InAppBrowser } from "@/lib/inAppBrowser";
 import { PRIMARY_BUTTON } from "@/components/landing/styles";
 
 /**
- * "Open in Chrome for the best experience", for a visitor in Instagram's
- * in-app browser and nobody else (lib/inAppBrowser.ts).
+ * "Open in Chrome", the small prompt for a visitor in Instagram's or
+ * Facebook's in-app browser (lib/inAppBrowser.ts). It never opens by itself:
  *
- * TWO MOMENTS. `start`, on the landing page and the wizard: the first page
- * they see, before a draft is made in storage Chrome cannot read. `signin`,
- * on /login: Google refuses to sign anyone in from here, so they are asked
- * again even if they stayed the first time.
+ * - the wizard shows it when "Save and continue" could not open the real
+ *   browser on its own (components/browser/useInAppHandoff.tsx), with a link
+ *   to /login that carries the card;
+ * - /login shows it on arrival (InAppLoginPrompt.tsx), since Google will not
+ *   sign anyone in from here.
  *
- * "STAY HERE" LASTS THE SESSION. It is kept in sessionStorage (and in this
- * module, for when storage is blocked), one flag per moment. Staying at sign
- * in also covers `start`, so a visitor who began on /login is not asked a
- * third time on the way to /create.
+ * ANDROID gets one button, an intent link that opens the link in Chrome.
+ * IPHONE gets "Copy link". Without a card to carry, the ⋯ menu steps are drawn
+ * as well, since "Open in external browser" opens this very page; with one,
+ * they are not, because that page is not the link that carries the card.
  *
- * ANDROID gets one button: an intent link that opens this very address in
- * Chrome, query and all, so fbclid still ties the visit to the ad. IPHONE
- * cannot be sent anywhere by a button, so it gets the two taps written out,
- * a small picture of where they are, and a "Copy link" button. The iPhone
- * copy says "your browser", since its menu opens whichever one is the default.
- *
- * THE CARD COMES TOO. At sign in the card waits in this browser's storage
- * (lib/pendingCard.ts). Tapping the button there saves it on the server
- * (lib/handoff/actions.ts) and puts its id on the link, and /login in the
- * other browser restores it (DraftHandoffRestore). If the save fails or takes
- * more than a few seconds, the link goes without it.
- *
- * Renders nothing on the server and nothing until mounted: the user agent is
- * read in the browser, so the static landing page stays static.
+ * THE LINK MAY NOT BE READY. `getLink` is asked on the tap, and may still be
+ * saving the card; Android waits for it, iPhone copies it as it arrives.
  */
-
-export type PromptMoment = "start" | "signin";
-
-const STORE_KEY = "lifafa.openInChrome.stayed";
-
-/** How long the link waits for the card to be saved before going without it. */
-const SAVE_TIMEOUT_MS = 4000;
-
-/** This address with the saved card's id on it, or as it is when the save fails. */
-async function linkWithCard(card: PendingCard): Promise<string> {
-  const plain = window.location.href;
-  const timeout = new Promise<null>((resolve) => {
-    window.setTimeout(() => resolve(null), SAVE_TIMEOUT_MS);
-  });
-
-  try {
-    const saved = await Promise.race([saveDraftHandoff(card), timeout]);
-
-    if (saved === null || !saved.ok) {
-      return plain;
-    }
-
-    const url = new URL(plain);
-    url.searchParams.set(HANDOFF_PARAM, saved.id);
-    return url.href;
-  } catch {
-    return plain;
-  }
-}
-
-/** For when sessionStorage throws: good for this page's life at least. */
-const stayedInMemory = new Set<PromptMoment>();
-
-function hasStayed(moment: PromptMoment): boolean {
-  if (stayedInMemory.has(moment)) {
-    return true;
-  }
-
-  try {
-    const stored = window.sessionStorage.getItem(STORE_KEY) ?? "";
-    return stored.split(",").includes(moment);
-  } catch {
-    return false;
-  }
-}
-
-function rememberStayed(moments: readonly PromptMoment[]): void {
-  for (const moment of moments) {
-    stayedInMemory.add(moment);
-  }
-
-  try {
-    window.sessionStorage.setItem(STORE_KEY, [...stayedInMemory].join(","));
-  } catch {
-    /* Private mode or blocked storage: the in-memory flag still holds. */
-  }
-}
 
 /** Clipboard API first, then the old textarea route some web views still need. */
 async function copyText(text: string): Promise<boolean> {
@@ -134,7 +57,7 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** Instagram's "⋯", drawn, so it looks the same in every font. */
+/** The app's "⋯", drawn, so it looks the same in every font. */
 function MenuDots({ className = "" }: { className?: string }): ReactElement {
   return (
     <svg
@@ -175,7 +98,7 @@ function LeaveIcon(): ReactElement {
 }
 
 /**
- * The top of Instagram's browser as a small sketch: the close cross, the
+ * The top of the app's browser as a small sketch: the close cross, the
  * address, the ⋯ ringed in gold, and the menu it opens with the right row
  * picked out. Decorative; the sentence beside it says the same thing.
  */
@@ -207,44 +130,32 @@ function IosIllustration({ host }: { host: string }): ReactElement {
 }
 
 export default function OpenInChromePrompt({
-  moment,
+  browser,
+  getLink,
+  withCard,
+  onTap,
+  onStay,
 }: {
-  moment: PromptMoment;
-}): ReactElement | null {
-  const [platform, setPlatform] = useState<InstagramPlatform | null>(null);
-  const [open, setOpen] = useState(false);
-  const [href, setHref] = useState("");
+  browser: InAppBrowser;
+  /** The address to open in the real browser. Asked on the tap; may still be saving the card. */
+  getLink: () => Promise<string>;
+  /** Whether the link is meant to carry the card, which changes the iPhone steps. */
+  withCard: boolean;
+  /** Called on the main button's tap, before anything else. */
+  onTap?: () => void;
+  onStay: () => void;
+}): ReactElement {
+  const { platform, app } = browser;
+  const appName = inAppName(app);
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const [busy, setBusy] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  /** One save per popup, however many times the button is tapped. */
-  const linkRef = useRef<Promise<string> | null>(null);
-
-  /** The link to send them on with: carrying the card at sign in, when there is one. */
-  const carryLink = useCallback((): Promise<string> => {
-    if (linkRef.current === null) {
-      const stash = moment === "signin" ? readPendingCard() : null;
-
-      linkRef.current =
-        stash?.kind === "card"
-          ? linkWithCard(stash.card)
-          : Promise.resolve(window.location.href);
-    }
-
-    return linkRef.current;
-  }, [moment]);
+  /** What the intent link opens until the tap asks for the real one. */
+  const [here, setHere] = useState("");
 
   useEffect(() => {
-    const detected = instagramPlatform(navigator.userAgent);
-
-    if (detected === null || hasStayed(moment)) {
-      return;
-    }
-
-    setPlatform(detected);
-    setHref(window.location.href);
-    setOpen(true);
-  }, [moment]);
+    setHere(window.location.href);
+  }, []);
 
   /*
     The panel takes the focus on open, so a screen reader starts in it and Tab
@@ -252,21 +163,14 @@ export default function OpenInChromePrompt({
     ring before anything has been touched.
   */
   useEffect(() => {
-    if (open) {
-      panelRef.current?.focus({ preventScroll: true });
-    }
-  }, [open]);
-
-  const stay = useCallback((): void => {
-    rememberStayed(moment === "signin" ? ["start", "signin"] : ["start"]);
-    setOpen(false);
-  }, [moment]);
+    panelRef.current?.focus({ preventScroll: true });
+  }, []);
 
   /* Escape is "Stay here"; Tab wraps inside the panel. */
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key === "Escape") {
       event.preventDefault();
-      stay();
+      onStay();
       return;
     }
 
@@ -291,39 +195,31 @@ export default function OpenInChromePrompt({
     }
   };
 
-  /*
-    Android: at sign in the link is held back until the card is saved, then
-    followed. Anywhere else the intent link in the href is followed as it is.
-  */
+  /* Android: waits for the link (usually ready already), then opens it in Chrome. */
   const handleContinue = async (event: MouseEvent<HTMLAnchorElement>): Promise<void> => {
-    openInBrowserClick({ platform: "android", step: moment });
-
-    if (moment !== "signin") {
-      return;
-    }
-
     event.preventDefault();
 
     if (busy) {
       return;
     }
 
+    onTap?.();
     setBusy(true);
-    const link = await carryLink();
+    const link = await getLink();
     setBusy(false);
     window.location.href = chromeIntentUrl(link);
   };
 
   const handleCopy = async (): Promise<void> => {
-    openInBrowserClick({ platform: "ios", step: moment });
+    onTap?.();
     setBusy(true);
 
-    const link = carryLink();
+    const link = getLink();
     let ok = false;
 
     /*
       Safari only lets a page write to the clipboard during the tap, and the
-      save takes longer than that. A ClipboardItem holding a promise is
+      save may take longer than that. A ClipboardItem holding a promise is
       written during the tap and filled when the link is ready.
     */
     try {
@@ -346,10 +242,6 @@ export default function OpenInChromePrompt({
     setBusy(false);
     setCopied(ok ? "done" : "failed");
   };
-
-  if (!open || platform === null) {
-    return null;
-  }
 
   return (
     <div
@@ -375,42 +267,47 @@ export default function OpenInChromePrompt({
           id="open-in-chrome-title"
           className="text-center font-[family-name:var(--paper-display)] text-[1.375rem] leading-[1.2] font-semibold tracking-[-0.015em] text-balance"
         >
-          {platform === "android"
-            ? "Open in Chrome for the best experience"
-            : "Open in your browser for the best experience"}
+          {platform === "android" ? "Open in Chrome to sign in" : "Open in Safari to sign in"}
         </h2>
         <p
           id="open-in-chrome-body"
           className="mt-3 text-center text-base leading-[1.6] text-pretty text-[var(--paper-muted)]"
         >
+          {`${appName}’s browser does not support Google sign-in. `}
           {platform === "android"
-            ? "Instagram’s browser does not support Google sign-in. Continue in Chrome to design your card and sign in with one tap."
-            : "Instagram’s browser does not support Google sign-in. Open this page in your browser to design your card and sign in with one tap."}
+            ? withCard
+              ? "Continue in Chrome to sign in, and your card comes with you."
+              : "Continue in Chrome to sign in with one tap."
+            : withCard
+              ? "Copy the link and open it in Safari to sign in, and your card comes with you."
+              : "Open this page in Safari to sign in with one tap."}
         </p>
 
         {platform === "android" ? (
           <a
-            href={chromeIntentUrl(href)}
+            href={here === "" ? undefined : chromeIntentUrl(here)}
             onClick={(event) => void handleContinue(event)}
             aria-busy={busy}
             className={`${PRIMARY_BUTTON} mt-6 w-full`}
           >
-            {busy ? "Opening Chrome…" : "Continue in Chrome"}
+            {busy ? "Opening Chrome…" : "Open in Chrome"}
           </a>
         ) : (
           <>
-            <div className="mt-5">
-              <IosIllustration host={href === "" ? "" : new URL(href).host} />
-              <p className="mt-3 text-center text-[0.9375rem] leading-[1.55] text-[var(--paper-ink)]">
-                Tap the{" "}
-                <span className="inline-flex translate-y-[3px] items-center rounded-full border border-[var(--paper-hairline)] bg-[var(--paper-washi)] px-1.5 py-0.5">
-                  <MenuDots className="h-3.5 w-3.5" />
-                  <span className="sr-only">⋯</span>
-                </span>{" "}
-                menu at the top right, then choose{" "}
-                <strong className="font-semibold">Open in external browser</strong>
-              </p>
-            </div>
+            {withCard ? null : (
+              <div className="mt-5">
+                <IosIllustration host={here === "" ? "" : new URL(here).host} />
+                <p className="mt-3 text-center text-[0.9375rem] leading-[1.55] text-[var(--paper-ink)]">
+                  Tap the{" "}
+                  <span className="inline-flex translate-y-[3px] items-center rounded-full border border-[var(--paper-hairline)] bg-[var(--paper-washi)] px-1.5 py-0.5">
+                    <MenuDots className="h-3.5 w-3.5" />
+                    <span className="sr-only">⋯</span>
+                  </span>{" "}
+                  menu at the top right, then choose{" "}
+                  <strong className="font-semibold">Open in external browser</strong>
+                </p>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => void handleCopy()}
@@ -425,9 +322,11 @@ export default function OpenInChromePrompt({
               className="mt-2 min-h-5 text-center text-sm text-[var(--paper-muted)]"
             >
               {copied === "done"
-                ? "Paste it into Safari or Chrome."
+                ? "Paste it into Safari’s address bar."
                 : copied === "failed"
-                  ? "Could not copy. Use the menu above instead."
+                  ? withCard
+                    ? "Could not copy. Please try again."
+                    : "Could not copy. Use the menu above instead."
                   : ""}
             </p>
           </>
@@ -436,7 +335,7 @@ export default function OpenInChromePrompt({
         <div className={`${platform === "android" ? "mt-2" : ""} flex justify-center`}>
           <button
             type="button"
-            onClick={stay}
+            onClick={onStay}
             className="inline-flex min-h-11 items-center rounded px-3 text-sm font-medium text-[var(--paper-muted)] underline decoration-[var(--paper-gold)] underline-offset-4 transition-colors duration-150 hover:text-[var(--paper-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]"
           >
             Stay here

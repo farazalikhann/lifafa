@@ -8,13 +8,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasCardOutline, type PendingCard } from "@/lib/pendingCard";
 
 /**
- * Carries an unsaved card from Instagram's in-app browser to Chrome.
+ * Carries an unsaved card from Instagram's or Facebook's in-app browser to
+ * Chrome or Safari.
  *
- * At the sign in step the card is stashed in the in-app browser's storage
- * (lib/pendingCard.ts), which Chrome cannot read. When the visitor taps
- * "Continue in Chrome" (or "Copy link" on an iPhone) the card is saved here
- * under a short random id, the id rides on the link, and /login in the other
- * browser claims it (components/browser/DraftHandoffRestore.tsx).
+ * The in-app browser's storage (lib/pendingCard.ts) cannot be read from the
+ * real one. When the visitor taps "Save and continue" there, the card is
+ * saved here under a short random id, the id rides on the link to /login in
+ * the real browser (components/browser/useInAppHandoff.tsx), and /login
+ * claims it (components/browser/DraftHandoffRestore.tsx).
  *
  * SUPABASE STORAGE, PRIVATE. One JSON file per card in the `draft-handoffs`
  * bucket, which is never public and is only touched here, with the service

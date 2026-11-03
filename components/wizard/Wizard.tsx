@@ -30,6 +30,8 @@ import PendingCardNotice, {
 import SubEventEditor from "@/components/create/SubEventEditor";
 import TranslationPanel from "@/components/create/TranslationPanel";
 import CustomizeStep from "@/components/wizard/CustomizeStep";
+import { useInAppHandoff } from "@/components/browser/useInAppHandoff";
+import { inAppBrowser } from "@/lib/inAppBrowser";
 import LegalFooter from "@/components/legal/LegalFooter";
 import TemplateGallery from "@/components/wizard/TemplateGallery";
 import WizardProgress from "@/components/wizard/WizardProgress";
@@ -352,6 +354,12 @@ function WizardSteps({
    * Stashes the card and the step, and sends the host to sign in. Returns the
    * error to show when the card could not be kept, and null once on the way.
    */
+  const {
+    leave: leaveInAppBrowser,
+    prompt: inAppPrompt,
+    opening: openingBrowser,
+  } = useInAppHandoff();
+
   const sendToSignIn = useCallback(
     (snapshot: EditorSnapshot): string | null => {
       const stashed = writePendingCard({
@@ -376,6 +384,41 @@ function WizardSteps({
       return null;
     },
     [router],
+  );
+
+  /**
+   * "Save and continue" while signed out. In Instagram's or Facebook's
+   * browser, where Google will not sign anyone in, the card goes on to Chrome
+   * or Safari and this page stays (components/browser/useInAppHandoff.tsx);
+   * the stash is still written, so a reload here keeps the card. Anywhere
+   * else, sendToSignIn as always.
+   */
+  const continueSignedOut = useCallback(
+    async (snapshot: EditorSnapshot): Promise<SaveOutcome> => {
+      if (inAppBrowser(navigator.userAgent) === null) {
+        const failure = sendToSignIn(snapshot);
+        return failure === null ? { ok: true } : { ok: false, error: failure };
+      }
+
+      const card = {
+        draft: snapshot.draft,
+        config: snapshot.config,
+        coverAnimation: snapshot.coverAnimation,
+        showWeather: snapshot.showWeather,
+        weatherTheme: snapshot.weatherTheme,
+        qrCheckinEnabled: snapshot.qrCheckinEnabled,
+        step: stepRef.current,
+      };
+
+      writePendingCard(card);
+      await leaveInAppBrowser(
+        card,
+        pendingCardReturnPath(wizardStepPath(stepRef.current)),
+      );
+
+      return { ok: true, stay: true };
+    },
+    [sendToSignIn, leaveInAppBrowser],
   );
 
   /**
@@ -427,9 +470,7 @@ function WizardSteps({
       const user = authError === null ? data.user : null;
 
       if (user === null) {
-        const failure = sendToSignIn(snapshot);
-
-        return failure === null ? { ok: true } : { ok: false, error: failure };
+        return continueSignedOut(snapshot);
       }
 
       const result = await createEvent(
@@ -452,7 +493,7 @@ function WizardSteps({
 
       return { ok: true };
     },
-    [router, sendToSignIn, edit, start, dashboardHref],
+    [router, continueSignedOut, edit, start, dashboardHref],
   );
 
   const {
@@ -908,10 +949,16 @@ function WizardSteps({
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={isSaving || openingBrowser !== null}
                 className={PRIMARY_BUTTON}
               >
-                {isSaving ? "Saving…" : "Save and continue"}
+                {openingBrowser === "android"
+                  ? "Opening Chrome…"
+                  : openingBrowser === "ios"
+                    ? "Opening Safari…"
+                    : isSaving
+                      ? "Saving…"
+                      : "Save and continue"}
               </button>
             ) : (
               <button
@@ -936,6 +983,9 @@ function WizardSteps({
           }}
         />
       ) : null}
+
+      {/* "Open in Chrome" by hand, when "Save and continue" could not open it. In-app browsers only. */}
+      {inAppPrompt}
 
       {isPreviewOpen ? (
         <FullScreenPreview

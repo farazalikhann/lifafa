@@ -583,18 +583,20 @@ export function purchase(payment: {
 }
 
 /**
- * "Continue in Chrome" (or, on an iPhone, "Copy link") tapped in the popup
- * that asks a visitor in Instagram's in-app browser to leave it
- * (components/browser/OpenInChromePrompt.tsx). A custom event: `platform` is
- * android or ios, `step` is start (first visit) or signin (the sign in page).
+ * A visitor in Instagram's or Facebook's in-app browser being sent to the real
+ * one (lib/inAppBrowser.ts). A custom event: `platform` is android or ios,
+ * `app` is instagram or facebook, and `step` is save ("Save and continue" in
+ * the wizard, components/browser/useInAppHandoff.tsx) or signin (the button
+ * in the prompt on /login, components/browser/InAppLoginPrompt.tsx).
  */
 export function openInBrowserClick(click: {
   platform: "android" | "ios";
-  step: "start" | "signin";
+  app: "instagram" | "facebook";
+  step: "save" | "signin";
 }): boolean {
   return track(
     "OpenInBrowserClick",
-    { platform: click.platform, step: click.step },
+    { platform: click.platform, app: click.app, step: click.step },
     { custom: true },
   );
 }

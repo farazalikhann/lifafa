@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { redirect } from "next/navigation";
-import OpenInChromePrompt from "@/components/browser/OpenInChromePrompt";
+import RememberAdParams from "@/components/browser/RememberAdParams";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import EventNotFound from "@/components/dashboard/EventNotFound";
 import Wizard from "@/components/wizard/Wizard";
@@ -77,8 +77,8 @@ export default async function CreatePage({
         <Suspense fallback={<EditorSkeleton />}>
           <Wizard templateId={templateId} />
         </Suspense>
-        {/* Before a draft is made in storage Chrome cannot read. Instagram only. */}
-        <OpenInChromePrompt moment="start" />
+        {/* Keeps the ad's tags in Instagram's and Facebook's browsers; renders nothing. */}
+        <RememberAdParams />
       </>
     );
   }

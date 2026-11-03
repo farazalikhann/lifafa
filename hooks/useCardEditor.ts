@@ -102,7 +102,14 @@ export interface EditorSnapshot {
  * failure carries a sentence written for a host; the editor shows it and does
  * nothing else with it.
  */
-export type SaveOutcome = { ok: true } | { ok: false; error: string };
+/**
+ * `stay` is a save that ended on this page with nothing saved: the card went
+ * on to another browser to be signed in for (components/browser/useInAppHandoff.tsx).
+ * The button comes back, and the card is left as unsaved as it was.
+ */
+export type SaveOutcome =
+  | { ok: true; stay?: boolean }
+  | { ok: false; error: string };
 
 /**
  * The parts of a card's look the wizard has no control for.
@@ -761,6 +768,11 @@ export function useCardEditor({
         if (!outcome.ok) {
           setIsSaving(false);
           setError(outcome.error);
+          return;
+        }
+
+        if (outcome.stay === true) {
+          setIsSaving(false);
           return;
         }
 
