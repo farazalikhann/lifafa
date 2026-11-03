@@ -17,6 +17,17 @@ export const HELP_EMAIL = `help@${LIFAFA_DOMAIN}`;
 export const HELP_MAILTO = `mailto:${HELP_EMAIL}`;
 
 /**
+ * Lifafa's WhatsApp Business number, +91 63941 75512, in the form wa.me
+ * takes: the country code and the number, digits only. Written here and
+ * nowhere else; WHATSAPP_HELP_URL is the link every "Chat on WhatsApp" uses,
+ * opening a chat with the first message already typed.
+ */
+export const WHATSAPP_NUMBER = "916394175512";
+export const WHATSAPP_HELP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  "Hi, I need help with my Lifafa card",
+)}`;
+
+/**
  * Where the "Made with Lifafa" credit at the end of an invitation leads: the
  * home page, tagged so a visit from a card can be told apart. UTM parameters
  * only; nothing on the invitation tracks the guest.

@@ -20,6 +20,7 @@ import {
   isHelpContact,
   type HelpField,
 } from "@/lib/help/form";
+import WhatsAppLink from "@/components/legal/WhatsAppLink";
 import { HELP_EMAIL } from "@/lib/site";
 import type { HelpMessagePage } from "@/types/database";
 
@@ -503,12 +504,13 @@ export default function HelpPanel({
           ) : null}
         </div>
 
-        {/* The last pill, pinned under the questions so it never scrolls out of view. */}
+        {/* The two ways to reach a person, pinned under the questions so they never scroll out of view. */}
         {view === "chat" ? (
-          <div className="shrink-0 border-t border-[var(--paper-hairline)] bg-[var(--paper-card)] px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--paper-hairline)] bg-[var(--paper-card)] px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
             <button type="button" className={PILL_PRIMARY} onClick={openForm}>
               Message Lifafa
             </button>
+            <WhatsAppLink className={PILL} />
           </div>
         ) : null}
       </div>
