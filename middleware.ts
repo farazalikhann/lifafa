@@ -226,8 +226,14 @@ export const config = {
     getUser() round trip to Supabase before the route even started — latency
     added to a request whose whole job is to answer 200 quickly, and which
     Razorpay retries if it does not.
+
+    The home page, "/" exactly, is excluded too: `.+` and not `.*`, so the bare
+    slash does not match. It is static and served from the edge's cache, and
+    nothing on it needs a session (the header's link is decided in the browser;
+    see components/landing/AccountLink.tsx). A signed-in host's token is
+    refreshed on the next page they open.
   */
   matcher: [
-    "/((?!api/razorpay/webhook|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3)$).*)",
+    "/((?!api/razorpay/webhook|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3)$).+)",
   ],
 };

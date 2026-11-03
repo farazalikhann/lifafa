@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import AccountLink from "@/components/landing/AccountLink";
 import Logo from "@/components/brand/Logo";
 
 /**
@@ -11,46 +11,15 @@ import Logo from "@/components/brand/Logo";
  * which bounces to /login, which they had to know to type. One control in the
  * corner is the whole fix.
  *
- * A SERVER COMPONENT, and that is the point of it. The signed-in state could
- * be read in the browser with useUser, but that hook starts every page as
- * "loading" and resolves a frame or two later, so a signed-in host would watch
- * "Sign in" turn into "My invitations" on every visit to the home page. Reading
- * the session here means the correct control is in the HTML.
- *
- * The cost is that `/` stops being statically rendered — cookies() makes the
- * route dynamic. That is the price of the state being right on first paint, and
- * the hero below is CSS-only either way.
+ * Which control it is, "Sign in" or "My invitations", is decided in the
+ * browser (AccountLink). It was decided here once, from the session cookie,
+ * and reading a cookie made the home page render on every visit: no cache, a
+ * server round trip before the first byte, and two Supabase auth checks for a
+ * signed-in host. Now the page is static and served from the edge; a
+ * signed-in host sees "Sign in" for the moment before AccountLink runs.
  */
 
-/**
- * Whether anyone is signed in, and never a throw.
- *
- * getUser() rather than getSession(), for the reason middleware.ts gives: a
- * session read believes the cookie, a user read revalidates it. Nothing here is
- * a gate — the worst a wrong answer does is show the wrong link — but two
- * places reading auth two different ways is how they drift apart.
- *
- * The try is for the one environment that legitimately has no keys:
- * next.config.ts deliberately lets `next dev` run without .env.local so a fresh
- * clone can open the editor, and createClient() throws there. The home page
- * greeting a new contributor with a stack trace would be a poor first
- * impression of the product. No configuration means no session, which is
- * exactly what signed out means.
- */
-async function isSignedIn(): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
-
-    return error === null && data.user !== null;
-  } catch {
-    return false;
-  }
-}
-
-export default async function LandingHeader(): Promise<ReactElement> {
-  const signedIn = await isSignedIn();
-
+export default function LandingHeader(): ReactElement {
   return (
     /*
       Fixed rather than sticky, and translucent rather than solid: the hero is a
@@ -71,7 +40,7 @@ export default async function LandingHeader(): Promise<ReactElement> {
         </Link>
 
         {/*
-          One control, and which one is settled on the server above. A text
+          One control, and which one is settled in the browser (above). A text
           link rather than a button in both states: this is a way back to
           something the visitor already has, not the page's call to action —
           that lives in the hero and in the pricing section, and a second
@@ -80,12 +49,7 @@ export default async function LandingHeader(): Promise<ReactElement> {
           min-h-11 on a link that is only ~20px of text is what makes the tap
           target 44px without drawing a 44px box.
         */}
-        <Link
-          href={signedIn ? "/dashboard" : "/login"}
-          className="flex min-h-11 items-center rounded px-1 text-sm font-medium whitespace-nowrap text-[var(--lifafa-cream)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-        >
-          {signedIn ? "My invitations" : "Sign in"}
-        </Link>
+        <AccountLink className="flex min-h-11 items-center rounded px-1 text-sm font-medium whitespace-nowrap text-[var(--lifafa-cream)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]" />
       </div>
     </header>
   );

@@ -1,0 +1,2584 @@
+/*
+  THE CARD'S OWN STYLES: the guest's invitation, its covers, decor, sections
+  and printed copy. Out of app/globals.css so that a page that draws no card
+  (the home page, above all, measured on a first visit on a phone) does not
+  download and parse them before it can paint. Imported by the layouts of the
+  routes that draw one: /i, /demo, /create and /dashboard.
+
+  Plain CSS, no Tailwind: the utilities and the tokens these read are in
+  globals.css, which every page has. Unlayered, as they were there, so they
+  still win over the utilities.
+*/
+
+/* -------------------------------------------------------------------------
+   The guest's card on a tablet or a laptop.
+   ------------------------------------------------------------------------- */
+
+/*
+  From 768px up, the card a guest opens grows with the screen instead of
+  staying a 420px column. lib/cardScale.ts explains the mechanism; this is the
+  half of it that has to be CSS.
+
+  THE WIDTH IS SET BY THE SCREEN'S HEIGHT, NOT ITS WIDTH. A laptop is wide and
+  short, and a card as wide as it could be would need a screen far taller than
+  the laptop has for its opening screen to fit. `svh` rather than `dvh`, so the
+  whole card does not reflow each time a toolbar slides away.
+
+  TWO WIDTHS, AND THE SECOND ONE IS WHAT LETS THE TYPE GROW. The opening screen
+  is the tightest thing on the card: a calligraphy panel, a greeting and a dua,
+  with the string of lights hanging over them. Measured at the 420px design
+  width, its content is 400px tall and the room it has to leave for those
+  lights — the band they hang in, plus the dissolve below it — is another 380.
+  Scale both by the same number and the type can grow about three percent
+  before the dua is pushed off the bottom of a laptop screen, which is no
+  growth at all.
+
+  So the ornaments and the clearance they demand scale on their own, slower
+  number. The type, the spacing and the column scale on 60svh; the lights,
+  the lanterns, the scatter and every inset measured off them scale on 46svh.
+  Text ends up around a sixth larger on a laptop than it was, the ornaments a
+  little smaller, and the opening screen still fits — 1053px of it on a 1066px
+  screen. `400 * text + 380 * decor <= 420` is the whole constraint; check it
+  against this file's numbers before raising either.
+
+  The floors are the narrowest phone the card is checked at, so a short
+  landscape tablet gets a phone's card rather than one squeezed below it. The
+  ceilings stop a tall monitor turning the names into a poster. The `100vw`
+  guard keeps the column off the border on a portrait tablet. All in rem, so a
+  guest who has raised their browser's text size gets a proportionally wider
+  card rather than smaller type.
+
+  THE CARD FILLS THE SCREEN; ITS READING COLUMN DOES NOT. `--card-width` is
+  the column the text is set in. The card around it — its background, its
+  border, the butterflies and the corner ornaments — runs to the edges of the
+  screen, the way it does on a phone. It used to stop at the column, which put
+  the border down the middle of a laptop screen with bare page either side:
+  a phone held up in front of a monitor rather than an invitation.
+
+  What stays over the column is what was composed for it: the text, the
+  hanging ornaments, which are one arrangement across the top of the names,
+  and the card's own scatter. The margins either side get a fainter scatter
+  of their own; see MarginDecorLayer.
+
+  Unlayered, like the Hindi rule above, so it outranks the `max-w-[420px]`
+  and `inset-0` utilities it overrides without an !important.
+*/
+@media (min-width: 48rem) {
+  .lifafa-card-fluid {
+    /* The reading column: the type, the spacing and everything set in them. */
+    --card-width: clamp(22.5rem, min(60svh, 100vw - 10rem), 44rem);
+    /* The ornaments, and every inset that exists to clear one. */
+    --card-decor-width: clamp(22.5rem, min(46svh, 100vw - 10rem), 32rem);
+
+    /* 420px is 26.25rem, so this is 1rem at the design width. */
+    --card-rem: calc(var(--card-width) / 26.25);
+    --card-px: calc(var(--card-decor-width) / 420);
+
+    /*
+      Tailwind's own scale, redefined for everything inside the card. Every
+      named spacing utility compiles to calc(var(--spacing) * n) and text-xs to
+      var(--text-xs), so these two lines scale all of them at once.
+    */
+    --spacing: calc(var(--card-rem) * 0.25);
+    --text-xs: calc(var(--card-rem) * 0.75);
+
+    /*
+      The border stands at the screen's edges now, well clear of the column,
+      so the column no longer steps in from it. Read by CardCanvas.
+    */
+    --card-side-inset: 0;
+
+    max-width: none;
+  }
+
+  .lifafa-card-fluid .lifafa-card-content {
+    max-width: var(--card-width);
+    margin-inline: auto;
+  }
+
+  /* A layer composed for the column, held over the column. */
+  .lifafa-card-fluid .lifafa-card-column {
+    left: calc(50% - var(--card-width) / 2);
+    right: calc(50% - var(--card-width) / 2);
+  }
+
+  /*
+    The garland is one drawing scaled to its width, not a run that repeats,
+    so across a whole laptop screen it would be half a screen deep. It stays
+    the width it was over the column — less the frame's 8px inset each side —
+    and hangs centred above it.
+  */
+  .lifafa-card-fluid .lifafa-card-garland {
+    width: calc(var(--card-width) - 16px);
+    margin-inline: auto;
+  }
+
+  /*
+    Ornaments, motifs and butterflies are sized by width and height attributes.
+    This sizes them in card pixels instead, and lets the height follow the
+    artwork's own aspect ratio. See artWidth in lib/cardScale.ts.
+  */
+  .lifafa-card-fluid .lifafa-card-art > :is(img, svg) {
+    width: calc(var(--art-width) * var(--card-px));
+    height: auto;
+  }
+}
+
+/*
+  THE SAME GROWTH ON A PHONE WIDER THAN THE CARD, held upright.
+
+  The card is drawn at 420px, and on a phone wider than that — a large
+  Android, a curved-edge phone, a foldable's inner screen — it used to stop at
+  420px with bare page either side and phone-sized type in it. From 421px to
+  767px, portrait only, a card marked `.lifafa-card-phone` fills the screen
+  and grows with it, through the same two lengths as the tablet rule above.
+
+  THE SAME FIT RULE. `400 * text + 380 * decor <= screen height`, in the
+  design's own pixels. The decor grows only on 46svh, which on most phones is
+  under 420px, so it usually stays at 1 — and then the type may grow only as
+  far as `(height - 380) / 400`, which is the `105svh - 25rem` term. Where the
+  screen is too short for any growth at all, both floors hold it at 420px,
+  exactly as before.
+
+  THE FLOORS ARE THE DESIGN WIDTH, not the tablet rule's 360px: this only ever
+  makes a card larger than a 420px phone draws it, never smaller. The side
+  inset is left alone, because on a phone the border is still close to the
+  text. Landscape is left alone too; a short, wide phone gets the card it
+  always had.
+*/
+@media (min-width: 26.3125rem) and (max-width: 47.99rem) and (orientation: portrait) {
+  .lifafa-card-phone {
+    --card-width: clamp(26.25rem, min(100vw, 60svh, 105svh - 25rem), 100vw);
+    --card-decor-width: clamp(26.25rem, min(100vw, 46svh), 100vw);
+
+    --card-rem: calc(var(--card-width) / 26.25);
+    --card-px: calc(var(--card-decor-width) / 420);
+
+    --spacing: calc(var(--card-rem) * 0.25);
+    --text-xs: calc(var(--card-rem) * 0.75);
+
+    max-width: none;
+  }
+
+  .lifafa-card-phone .lifafa-card-content {
+    max-width: var(--card-width);
+    margin-inline: auto;
+  }
+
+  .lifafa-card-phone .lifafa-card-column {
+    left: calc(50% - var(--card-width) / 2);
+    right: calc(50% - var(--card-width) / 2);
+  }
+
+  .lifafa-card-phone .lifafa-card-garland {
+    width: calc(var(--card-width) - 16px);
+    margin-inline: auto;
+  }
+
+  .lifafa-card-phone .lifafa-card-art > :is(img, svg) {
+    width: calc(var(--art-width) * var(--card-px));
+    height: auto;
+  }
+}
+
+/*
+  A short screen: under 700px tall, which is a phone with its browser's bars
+  showing (390x664, 360x640).
+
+  The full opening — lanterns, string lights, a Bismillah, a greeting and a dua —
+  runs past the foot of such a screen, and the cue pinned there sat over the
+  dua. So the opening comes down a size:
+  what hangs and the calligraphy by 15%, the lines of the greeting and dua by
+  10%, and the insets that clear them with them. Only a card sized to the
+  screen (`lifafa-card-viewport`); the editor's frame is its own height.
+
+  --lifafa-cue-h is how far up the screen the cue reaches; the card's first
+  screen stops short of it. It is not set here: the default lives beside the
+  cue as INVITED_CUE_HEIGHT, and the cue sets the variable itself where
+  something else is pinned at the foot of the screen with it (InvitedCue).
+*/
+@media (max-height: 699px) {
+  .lifafa-card-viewport {
+    --card-opening: 0.85;
+    --card-opening-text: 0.9;
+  }
+}
+
+/*
+  The names' screen of a card that sets them in a frame
+  (components/card/NamesFrameScreen.tsx).
+
+  The frame's row is the frame's full height, and the screen at least a
+  section tall.
+
+  FITTED TO ITS SCREEN where the browser has container units: the block is
+  exactly a section tall, and two things in it are let move, the gaps either
+  side of the frame and the frame. Each starts at its least and is grown into
+  whatever room the screen has, the frame first and a thousand times as
+  readily, up to the height its picture has at the width the card allows, so
+  on a shorter screen the gaps close first and then the frame comes down.
+  `fit-content`
+  as the least the block may be is what happens when even that does not fit:
+  it is as tall as both at their least, and nothing is laid over anything.
+
+  Container units, because the frame is drawn as large as fits its cell both
+  ways. A browser without them draws the frame at full size and lets the
+  screen be as tall as that takes.
+*/
+.lifafa-names-screen {
+  min-height: var(--names-screen-height);
+}
+
+.lifafa-names-frame-row {
+  flex: none;
+  height: var(--names-frame-height);
+}
+
+/* Under the heading: a gap that does not move. */
+.lifafa-names-fixed-gap {
+  margin-bottom: var(--names-gap);
+}
+
+/* Either side of the frame: a gap that closes before the frame gives anything up. */
+.lifafa-names-gap {
+  flex: none;
+  height: var(--names-gap);
+}
+
+/*
+  The frame is never nearer the card's edge than 16px, nor nearer a border's
+  flowers than 2px: the cell is the content column, which a border has already
+  brought in from the edge by --card-content-inset.
+*/
+.lifafa-names-frame-row {
+  --names-frame-air: max(2px, calc(16px - var(--card-content-inset, 0px)));
+}
+
+.lifafa-names-frame-cell {
+  --names-frame-width: min(
+    calc(100% - 2 * var(--names-frame-air)),
+    calc(var(--names-frame-height) * var(--names-frame-aspect))
+  );
+}
+
+@supports (width: 1cqw) {
+  .lifafa-names-screen {
+    container-type: inline-size;
+    height: var(--names-screen-height);
+    min-height: fit-content;
+  }
+
+  .lifafa-names-frame-cell {
+    container-type: size;
+    --names-frame-width: min(
+      calc(100cqw - 2 * var(--names-frame-air)),
+      calc(100cqh * var(--names-frame-aspect))
+    );
+  }
+
+  .lifafa-names-screen > .lifafa-names-gap {
+    flex: 1000 0 var(--names-gap-min);
+    height: auto;
+    max-height: var(--names-gap);
+  }
+
+  /*
+    At most as tall as the frame is at the row's own width (the screen's
+    width and the side padding the row is let out through, less the air), so
+    what is above and below the frame stands next to it and not across a gap.
+  */
+  .lifafa-names-screen > .lifafa-names-frame-row {
+    flex: 1000000 0 var(--names-frame-min);
+    height: auto;
+    max-height: min(
+      var(--names-frame-height),
+      calc(
+        (100cqw + 14 * var(--spacing) - 2 * var(--names-frame-air)) /
+          var(--names-frame-aspect)
+      )
+    );
+  }
+}
+
+/*
+  The ornament above the names is left off a screen under 700px tall (a phone
+  with its browser's bars showing), where its height is the frame's and the
+  names would be set smaller to pay for it.
+*/
+@media (max-height: 699px) {
+  .lifafa-card-viewport .lifafa-names-above {
+    display: none;
+  }
+}
+
+/*
+  Under a scene the names' screen is not a screen: it starts where the
+  painting ends, with its first thing a set distance under that, and is as
+  tall as what is in it. Nothing is fitted to a height, so nothing gives way:
+  the gaps are their full size and the frame is the height its picture has at
+  the width the card allows, which is the most the fitted screen ever let it
+  be.
+*/
+.lifafa-names-screen.lifafa-names-flow {
+  height: auto;
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+.lifafa-names-screen.lifafa-names-flow > .lifafa-names-gap {
+  flex: none;
+  height: var(--names-gap);
+  max-height: none;
+}
+
+@supports (width: 1cqw) {
+  .lifafa-names-screen.lifafa-names-flow > .lifafa-names-frame-row {
+    flex: none;
+    height: min(
+      var(--names-frame-height),
+      calc(
+        (100cqw + 14 * var(--spacing) - 2 * var(--names-frame-air)) /
+          var(--names-frame-aspect)
+      )
+    );
+    max-height: none;
+  }
+}
+
+/* On a sheet of paper the screen is as tall as what is in it, like every section. */
+.lifafa-print-sheet .lifafa-names-screen {
+  height: auto;
+}
+
+.lifafa-print-sheet .lifafa-names-screen > .lifafa-names-frame-row {
+  flex: none;
+  height: calc(240 * var(--card-px, 1px));
+}
+
+/*
+  The painted scene on a card's opening screen, under its sacred line and
+  running on into the names' screen (components/card/SceneScreen.tsx).
+
+  THE SLOT is the painting's room, in the flow of the opening screen, and
+  empty: the painting is drawn over it from a layer of the card that is under
+  what flies, which the column is not (SceneScreen says why).
+
+  FULL BLEED, from inside the reading column: the slot is wider than what it
+  is laid out in by --scene-inset each side, which CardCanvas sets to how far
+  that stands in from the card's edge, and steps back out by the same. So it
+  is the card's width, and the border, a layer above, is drawn over it.
+
+  The card's width by one and a half of it, the painting's own shape, and
+  never taller than --scene-cap, 78% of the screen. Pulled up by 12% of that
+  height, under the foot of the words above it: the lesser of 18% of its width
+  and 12% of the cap, since a percentage here is of the width.
+*/
+.lifafa-scene-slot {
+  --scene-w: calc(100% + 2 * var(--scene-inset, 0px));
+  flex: none;
+  align-self: center;
+  width: var(--scene-w);
+  max-width: none;
+  aspect-ratio: 2 / 3;
+  max-height: var(--scene-cap, 78svh);
+  margin-inline: calc(-1 * var(--scene-inset, 0px));
+  margin-top: max(calc(var(--scene-w) * -0.18), calc(var(--scene-cap, 78svh) * -0.12));
+}
+
+/*
+  IN AN OPENING the slot is sized from the painting and not from the screen.
+  The opening is a size container, so the card's width is a length that can
+  be multiplied into a height (a percentage could not: of a height, it is the
+  box's height).
+
+  The painting is drawn at the card's width, so it is --scene-full tall, and
+  stands on the foot of its slot. From its hill line (--scene-hill, a share
+  of its height, set per painting) down it is shown whole: that much of the
+  slot is under the hill line. Over the hill line is plain sky, and the slot
+  reaches up into it behind the words above: by 30% of the painting at most,
+  and never by so much that the sky left over above the slot is less than the
+  painting travels (--scene-room), so its top edge stays out of the slot as
+  it moves. --scene-gap is how far under the last line of the words the hill
+  line is.
+
+  The spare is what is left of a screen when the words and the painting do
+  not fill it: it is between the two, so the words keep their place at the
+  top, the painting ends at the foot of the screen, and the room is sky.
+*/
+.lifafa-scene-spare {
+  display: none;
+}
+
+/* At least a screen; exactly one, below, where the browser can fit it. */
+.lifafa-opening-scene {
+  min-height: var(--opening-screen, 100svh);
+}
+
+@supports (width: 1cqw) {
+  /*
+    A screen exactly, and as tall as what is in it only when that is more
+    than a screen even with the slot at its least. The slot is the one thing
+    that gives: its hill line may come up to --scene-give nearer the words,
+    which is what fits an opening that is a few px too tall for its screen.
+  */
+  .lifafa-opening-scene {
+    container-type: inline-size;
+    height: var(--opening-screen, 100svh);
+    min-height: fit-content;
+  }
+
+  .lifafa-opening-scene > * {
+    flex-shrink: 0;
+  }
+
+  .lifafa-opening-scene > .lifafa-scene-slot {
+    --scene-w: calc(100cqw + 2 * var(--scene-inset, 0px));
+    --scene-full: calc(var(--scene-w) * 1.5);
+    --scene-over: min(
+      calc(var(--scene-full) * 0.3),
+      calc(
+        var(--scene-full) * (var(--scene-hill, 0.36) - var(--scene-room, 0.06)) -
+          var(--scene-gap, 52px)
+      )
+    );
+    --scene-tall: calc(
+      var(--scene-over) + var(--scene-gap, 52px) + var(--scene-full) *
+        (1 - var(--scene-hill, 0.36))
+    );
+    aspect-ratio: auto;
+    height: auto;
+    max-height: var(--scene-tall);
+    /* Grown to its full height before the spare gets anything. */
+    flex: 1000 0 calc(var(--scene-tall) - var(--scene-give, 14px));
+    margin-top: calc(-1 * var(--scene-over));
+  }
+
+  /* No height of its own, and none taken by the gaps either side of it. */
+  .lifafa-opening-scene > .lifafa-scene-spare {
+    display: block;
+    flex: 1 0 0px;
+    margin-block: calc(var(--spacing, 0.25rem) * -3);
+  }
+}
+
+/*
+  THE PAINTING, over its slot. Its top 22% and its bottom quarter fade into
+  the card through a mask on the box, which holds still; what shows through
+  is the card's own ground. Eased, because a straight ramp shows where it
+  starts.
+*/
+.lifafa-scene {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.1) 5%,
+    rgb(0 0 0 / 0.45) 11%,
+    rgb(0 0 0 / 0.85) 17%,
+    #000 22%,
+    #000 75%,
+    rgb(0 0 0 / 0.85) 81%,
+    rgb(0 0 0 / 0.45) 88%,
+    rgb(0 0 0 / 0.1) 95%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.1) 5%,
+    rgb(0 0 0 / 0.45) 11%,
+    rgb(0 0 0 / 0.85) 17%,
+    #000 22%,
+    #000 75%,
+    rgb(0 0 0 / 0.85) 81%,
+    rgb(0 0 0 / 0.45) 88%,
+    rgb(0 0 0 / 0.1) 95%,
+    transparent 100%
+  );
+}
+
+/*
+  A wide phone held upright sets its text in a column that may be narrower
+  than the screen, and the card around it still fills the screen. The scene
+  is the card's width there too: the screen's, centred on the column.
+*/
+@media (min-width: 26.3125rem) and (max-width: 47.99rem) and (orientation: portrait) {
+  .lifafa-card-phone .lifafa-scene-slot {
+    --scene-w: 100vw;
+    margin-inline: calc(50% - 50vw);
+  }
+}
+
+/*
+  On a dark card the scene's ends are laid in by SceneScreen, ground then
+  glow, and the mask is only the first and last of it: enough for the card's
+  real ground, texture and all, to come through at the very edge.
+*/
+.lifafa-scene-dusk {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.35) 3%,
+    rgb(0 0 0 / 0.8) 6%,
+    #000 9%,
+    #000 91%,
+    rgb(0 0 0 / 0.8) 94%,
+    rgb(0 0 0 / 0.35) 97%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.35) 3%,
+    rgb(0 0 0 / 0.8) 6%,
+    #000 9%,
+    #000 91%,
+    rgb(0 0 0 / 0.8) 94%,
+    rgb(0 0 0 / 0.35) 97%,
+    transparent 100%
+  );
+}
+
+/*
+  The strip of paper over the date (components/card/TearReveal.tsx).
+
+  The arrow under its words drifts from left to right, the way the finger
+  should go: transform and opacity only, held while the strip is off screen or
+  the tab is hidden (useFloatingPause), and still under reduced motion.
+*/
+@keyframes lifafa-tear-hint {
+  0% {
+    transform: translate3d(-9px, 0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(11px, 0, 0);
+    opacity: 0;
+  }
+}
+
+/*
+  The strip's shadow on the card: of its own shape, so it follows the rough
+  edges. On the canvas that has the whole strip and then its lower piece; the
+  upper piece's shadow, in the gap, is drawn (TearReveal).
+*/
+.lifafa-tear-piece {
+  filter: drop-shadow(0 5px 7px rgb(0 0 0 / 0.3));
+}
+
+/* The date as the paper leaves it: up to size, and a glow behind it that comes and goes. */
+@keyframes lifafa-tear-date-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes lifafa-tear-glow {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
+.lifafa-tear-glow {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lifafa-tear-arrow {
+    animation: lifafa-tear-hint 1.9s ease-in-out infinite;
+  }
+
+  .lifafa-tear-label[data-floating-paused] .lifafa-tear-arrow {
+    animation-play-state: paused;
+  }
+
+  .lifafa-tear-date-in {
+    animation: lifafa-tear-date-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .lifafa-tear-glow {
+    animation: lifafa-tear-glow 1300ms ease-out both;
+  }
+}
+
+/* The scroll cue's arrow: a small, slow drop. See InvitedCue. */
+@keyframes lifafa-cue-bounce {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 4px, 0);
+  }
+}
+
+/* --- Idle motion for the story illustrations. Small amplitudes, slow loops. --- */
+
+/* Whole drawing breathing in place. */
+@keyframes lifafa-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+/* Card easing out of the envelope. */
+@keyframes lifafa-slip {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -7px, 0);
+  }
+}
+
+/* Sparkles and secondary details. */
+@keyframes lifafa-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* --- Invitation card decor. Driven by DecorLayer's hardcoded shape table. --- */
+
+/* Balloons: slow rise, fading out near the top. */
+@keyframes lifafa-decor-float {
+  0% {
+    transform: translate3d(0, 20px, 0) scale(0.9);
+    opacity: 0;
+  }
+  18%,
+  72% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -130px, 0) scale(1.06);
+    opacity: 0;
+  }
+}
+
+/* Petals: drift down with a slight sideways sway and rotation. */
+@keyframes lifafa-decor-fall {
+  0% {
+    transform: translate3d(-10px, -30px, 0) rotate(-10deg);
+    opacity: 0;
+  }
+  18%,
+  72% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(10px, 140px, 0) rotate(14deg);
+    opacity: 0;
+  }
+}
+
+/* Gentle sideways travel and back — no fade, so opacity stays on the shape. */
+@keyframes lifafa-decor-drift {
+  0%,
+  100% {
+    transform: translate3d(-16px, 0, 0);
+  }
+  50% {
+    transform: translate3d(16px, 0, 0);
+  }
+}
+
+/* --- Muslim ornament pack. Driven by HangingLayer's hardcoded position table. --- */
+
+/*
+  Pendulum for anything hanging off the top edge of the card.
+
+  transform-origin is the top centre, so the ornament pivots from the point its
+  chain is drawn at rather than about its own middle — swinging about the centre
+  would slide the lantern sideways instead of rocking it.
+
+  Duration and delay are set inline per ornament, so no two swing in unison.
+*/
+@keyframes lifafa-ornament-swing {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+.lifafa-hang-swing {
+  display: block;
+  transform-origin: top center;
+  animation-name: lifafa-ornament-swing;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+/*
+  Lantern flame.
+
+  Deliberately uneven — the dip at 68% is what keeps it from reading as a
+  regular pulse. Opacity only, so it composites on its own layer and never
+  costs a relayout.
+*/
+@keyframes lifafa-flame-flicker {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  34% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.62;
+  }
+}
+
+.lifafa-flame-flicker {
+  animation: lifafa-flame-flicker 3.4s ease-in-out infinite;
+}
+
+/*
+  The glow over the diya picture's flame. A photograph has no flame element to
+  flicker, so a warm glow laid over it breathes instead — opacity only, uneven
+  so it never settles into a pulse. Held at its middle value when motion is off.
+*/
+@keyframes lifafa-diya-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  23% {
+    opacity: 0.9;
+  }
+  41% {
+    opacity: 0.62;
+  }
+  67% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 0.7;
+  }
+}
+
+.lifafa-diya-glow {
+  opacity: 0.75;
+  animation: lifafa-diya-glow 2.8s ease-in-out infinite;
+}
+
+/*
+  Reduced motion switches both off outright rather than slowing them down. The
+  ornaments themselves stay — a guest who has asked for less movement still
+  wants the card to look like a card.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-hang-swing,
+  .lifafa-flame-flicker,
+  .lifafa-diya-glow {
+    animation: none;
+  }
+}
+
+/*
+  The wax seal on the closed envelope cover, breathing so it reads as the thing
+  to tap. Small and slow: the guest has not been told to do anything yet, and a
+  cover that flashes at them is a cover that looks broken.
+*/
+@keyframes lifafa-seal-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+/*
+  THE DRESSED COVERS' OWN MOTION. Transform and opacity only, every one, so the
+  compositor runs them without repainting the drawings under them.
+*/
+
+/*
+  Light running across metal leaf and satin: a band that crosses once, then
+  rests, so it reads as the cover catching the light rather than as a loader.
+*/
+@keyframes lifafa-cover-sheen {
+  0% {
+    transform: translate3d(-130%, 0, 0) skewX(-18deg);
+  }
+  45%,
+  100% {
+    transform: translate3d(130%, 0, 0) skewX(-18deg);
+  }
+}
+
+/*
+  A fleck of gold leaf thrown off as the cover breaks: out along its own line,
+  set per fleck in --dx and --dy, turning as it goes and gone by the end.
+*/
+@keyframes lifafa-cover-spark {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.2) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), var(--dy), 0) scale(1) rotate(160deg);
+  }
+}
+
+/* The light let out as the cover opens: up from nothing, and away. */
+@keyframes lifafa-cover-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+/*
+  A curtain being drawn: the rod leads and the hem trails behind it, swings
+  through once as the cloth slows, and hangs still. Very slight — it is what
+  makes the panel read as heavy cloth rather than as a sliding door.
+*/
+@keyframes lifafa-cover-curtain-sway {
+  0%,
+  100% {
+    transform: skewX(0deg);
+  }
+  28% {
+    transform: skewX(1.5deg);
+  }
+  62% {
+    transform: skewX(-0.7deg);
+  }
+  84% {
+    transform: skewX(0.25deg);
+  }
+}
+
+/* The plaque on a cover drawn from artwork, swelling a little so it reads as the way in. */
+@keyframes lifafa-cover-pulse {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.045);
+  }
+}
+
+/* The royal scroll's rollers, gathering themselves before they roll apart. */
+@keyframes lifafa-scroll-settle {
+  from {
+    transform: scale(0.98);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
+  The closed scroll asking to be tapped: still for most of five seconds, then
+  one small shake of the rollers, and its hint breathing under it. Transform
+  and opacity only. A guest who asked for less motion gets the hint and no
+  shake.
+*/
+@keyframes lifafa-scroll-invite {
+  0%,
+  78%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  82% {
+    transform: rotate(-1.4deg) scale(1.025);
+  }
+  87% {
+    transform: rotate(1.2deg) scale(1.025);
+  }
+  92% {
+    transform: rotate(-0.7deg) scale(1.01);
+  }
+  96% {
+    transform: rotate(0.3deg) scale(1);
+  }
+}
+
+@keyframes lifafa-scroll-hint {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The scroll opening for a guest who asked for less motion: it is simply there, a moment later. */
+@keyframes lifafa-scroll-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lifafa-scroll-invite {
+  animation: lifafa-scroll-invite 5s ease-in-out 1.2s infinite;
+}
+
+.lifafa-scroll-hint {
+  animation: lifafa-scroll-hint 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-scroll-invite,
+  .lifafa-scroll-hint {
+    animation: none;
+  }
+}
+
+/* The loader before the cover: its mark and words arriving, then breathing. */
+@keyframes lifafa-cover-loader-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The loader's line for a guest kept waiting (CoverShell's `slowLoad`): unseen for its delay, then faded in. Opacity only. */
+@keyframes lifafa-cover-loader-note {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* While a dot loader is up it is the only thing on the screen: the language switch waits for the cover. */
+body:has([data-cover-loading="dot"][aria-hidden="false"]) [data-language-switch] {
+  visibility: hidden;
+}
+
+/* The dot loader's "Try again": out of sight and out of reach for its delay, then faded in. */
+@keyframes lifafa-cover-loader-reveal {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* The dot loader's Lifafa red dot (CoverShell's DotLoader). */
+@keyframes lifafa-cover-dot {
+  0%,
+  100% {
+    transform: scale(0.85);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* A film cover waited for after the tap: a glint running the length of its hairline. */
+@keyframes lifafa-cover-film-wait {
+  from {
+    transform: translate3d(-110%, 0, 0);
+  }
+  to {
+    transform: translate3d(260%, 0, 0);
+  }
+}
+
+@keyframes lifafa-cover-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The prompt on a closed cover, breathing so it reads as the way in. */
+@keyframes lifafa-cover-breathe {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+  The breeze cover. A piece rocking while the cover waits: still for most of
+  its beat, then a small tilt and back, as if the air had stirred. And a
+  piece fluttering as it is carried off: a small rise and dip with a tilt,
+  run back and forth. Transform only. Neither runs for a guest who asked for
+  less motion.
+*/
+@keyframes lifafa-breeze-rock {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg) translate3d(0, 0, 0);
+  }
+  78% {
+    transform: rotate(4deg) translate3d(2%, -2%, 0);
+  }
+  86% {
+    transform: rotate(-3deg) translate3d(-1%, 1%, 0);
+  }
+  93% {
+    transform: rotate(1.5deg) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lifafa-breeze-flutter {
+  from {
+    transform: translate3d(0, 9%, 0) rotate(-9deg);
+  }
+  to {
+    transform: translate3d(0, -9%, 0) rotate(9deg);
+  }
+}
+
+.lifafa-breeze-rock {
+  animation: lifafa-breeze-rock 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-breeze-rock {
+    animation: none;
+  }
+}
+
+/*
+  Roaming: a long wandering path through six offsets, with a little rotation.
+
+  Every step is transform only, so the whole thing stays on the compositor. No
+  opacity here either, deliberately — the shape's own alpha lives on the inner
+  span in DecorLayer, and a keyframe touching opacity would override it and
+  make the scatter far louder than the contrast ceiling allows.
+
+  The offsets are asymmetric and do not retrace: a path that goes out and comes
+  straight back reads as a pendulum, and the point of this motion is that no
+  shape appears to be following a route.
+*/
+@keyframes lifafa-decor-roam {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  18% {
+    transform: translate3d(34px, -22px, 0) rotate(4deg);
+  }
+  36% {
+    transform: translate3d(12px, -46px, 0) rotate(-3deg);
+  }
+  54% {
+    transform: translate3d(-28px, -30px, 0) rotate(5deg);
+  }
+  72% {
+    transform: translate3d(-40px, 14px, 0) rotate(-4deg);
+  }
+  86% {
+    transform: translate3d(-14px, 32px, 0) rotate(2deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+/*
+  The mandala in a card's top corners: one full turn every 90 seconds, at one
+  speed, by `transform: rotate` alone, so the compositor turns a picture it
+  has already drawn and nothing is laid out or painted again. The left one
+  turns clockwise and the right one back the other way. Held by
+  [data-floating-paused] below while the tab is hidden or the first screen is
+  off the screen, and not turned at all under reduced motion.
+*/
+@keyframes lifafa-mandala-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lifafa-mandala-turn {
+  animation: lifafa-mandala-turn 90s linear infinite;
+  will-change: transform;
+}
+
+.lifafa-mandala-turn-back {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-mandala-turn {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+/*
+  A floating layer nobody can see: every CSS loop under it is held where it
+  is. Set by hooks/useFloatingPause.ts while the tab is hidden or the card is
+  scrolled off the screen, and taken off again when it is not.
+*/
+[data-floating-paused] * {
+  animation-play-state: paused !important;
+}
+
+/*
+  A floating piece over the words of the opening screen is not drawn: it
+  fades out while it is over them and back when it is clear. Opacity alone.
+  See lib/openingKeepOut.ts, which says when.
+*/
+.lifafa-veil {
+  transition: opacity 200ms linear;
+}
+
+/* --- Butterflies. Flown by ButterflyLayer's script; only the wingbeat is here. --- */
+
+/*
+  Drawn 40% larger than ButterflyLayer's table, and only 25% larger on a
+  screen under 400px, where the card has less room for them. ButterflyLayer
+  writes the 40% into the image's width attribute and the table width into
+  --butterfly-width; this takes the narrow screen back down. A rule beats an
+  attribute without an !important, and it never meets the fluid rules above,
+  which start at 421px.
+*/
+@media (max-width: 24.99rem) {
+  .lifafa-butterfly-art > img {
+    width: calc(var(--butterfly-width) * 1.25px);
+    height: auto;
+  }
+}
+
+/*
+  The wingbeat.
+
+  A flat photograph of a butterfly seen from above has no folded pose in it, so
+  there is no second frame to cut to. What there is, is the thing the eye
+  actually reads as a wingbeat from that angle: the span narrowing and opening
+  as the wings tilt out of the plane. `scaleX` about the body is exactly that
+  foreshortening, which is why the artwork is straightened to a vertical axis
+  before it is published — on the 26-degree tilt it was drawn at, this would
+  shear the butterfly rather than beat its wings.
+
+  Not symmetric in time. The wings snap shut and open slower than they linger
+  open, so the keyframe spends most of its cycle near full span and passes
+  quickly through the closed end. Held at 0.58 rather than driven to nothing:
+  a butterfly whose wings vanish entirely reads as a glitch.
+
+  Duration is set inline per butterfly, so no two beat in unison, and the
+  flight speeds it up or slows it down through the animation's playback rate.
+*/
+@keyframes lifafa-butterfly-wing {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  38% {
+    transform: scaleX(0.58);
+  }
+  62% {
+    transform: scaleX(0.86);
+  }
+}
+
+/*
+  The dragonfly's wings: the butterfly's beat, far smaller and far quicker. Four
+  wings held out flat do not close; they blur. So the span only narrows by a
+  tenth, evenly, a few times a second: a shimmer, not a stroke. Duration is
+  set inline, and the flight changes its rate as it does the butterfly's.
+*/
+@keyframes lifafa-dragonfly-wing {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.9);
+  }
+}
+
+/*
+  Fireflies: three slow wandering loops and one pulse.
+
+  A firefly is not flown by the script. Nothing shoos it and it has nowhere to
+  be, so its whole path is a closed loop of a few dozen px, a different one
+  for its neighbours, over the better part of half a minute. The pulse is
+  opacity on the element inside, from nearly out to full and back, and each
+  firefly is given its own length of it inline, so no two are lit together
+  for long. Transform on one element and opacity on the other, nothing else.
+*/
+@keyframes lifafa-firefly-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    transform: translate3d(20px, -16px, 0);
+  }
+  47% {
+    transform: translate3d(38px, 8px, 0);
+  }
+  74% {
+    transform: translate3d(12px, 26px, 0);
+  }
+}
+
+@keyframes lifafa-firefly-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  26% {
+    transform: translate3d(-18px, -22px, 0);
+  }
+  52% {
+    transform: translate3d(-36px, -46px, 0);
+  }
+  78% {
+    transform: translate3d(-10px, -30px, 0);
+  }
+}
+
+@keyframes lifafa-firefly-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(16px, 22px, 0);
+  }
+  45% {
+    transform: translate3d(-12px, 38px, 0);
+  }
+  70% {
+    transform: translate3d(-26px, 12px, 0);
+  }
+}
+
+@keyframes lifafa-firefly-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* --- The leaves that drift with the butterflies. Driven by ButterflyLayer. --- */
+
+/*
+  Two drift paths. A butterfly beats its way somewhere; a leaf is carried. So
+  these are slow, they wander mostly on the vertical, and their rotation is a
+  tumble rather than a heading correction — a leaf turning over as it sinks
+  rather than an insect banking.
+
+  One sinks and one rises, because a card with three leaves all falling reads as
+  autumn, which is not what a wedding invitation is for. Together they read as
+  air moving.
+
+  HELD TO ABOUT 8px ON THE HORIZONTAL: this layer sits above the text, and the
+  margin the table places them in is the only thing keeping them off it.
+*/
+@keyframes lifafa-leaf-a {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translate3d(8px, 26px, 0) rotate(16deg);
+  }
+  45% {
+    transform: translate3d(-6px, 54px, 0) rotate(-12deg);
+  }
+  70% {
+    transform: translate3d(7px, 30px, 0) rotate(10deg);
+  }
+  88% {
+    transform: translate3d(-3px, 12px, 0) rotate(-5deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes lifafa-leaf-b {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  24% {
+    transform: translate3d(-7px, -22px, 0) rotate(-14deg);
+  }
+  52% {
+    transform: translate3d(5px, -46px, 0) rotate(11deg);
+  }
+  76% {
+    transform: translate3d(-6px, -20px, 0) rotate(-8deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+/*
+  The leaf's turn — the same trick as the wingbeat and the same reason for it.
+
+  A flat photograph of a leaf has no edge-on pose in it, and `scaleX` about its
+  own middle is the foreshortening the eye reads as one turning in the air. Far
+  gentler than the wing: a leaf catches the breeze and comes back, so this only
+  narrows to 0.66 and does it symmetrically, where the wing snaps to 0.58 and
+  lingers open. Duration is set inline per leaf.
+*/
+@keyframes lifafa-leaf-turn {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.66);
+  }
+}
+
+/*
+  A dandelion seed: carried, slowly, a little upward, and hardly turning.
+
+  A LOOP THAT DOES NOT COME BACK. A leaf's path returns to where it began; a
+  seed that rose and then sank again to rise again would be on a string. So it
+  travels one way and is faded out at the end of it and in at the start,
+  which is where the loop restarts unseen. Opacity and transform, both the
+  compositor's. Held to about 10px on the horizontal, as the leaves are.
+*/
+@keyframes lifafa-seed-a {
+  0% {
+    transform: translate3d(-4px, 30px, 0) rotate(-2deg);
+    opacity: 0;
+  }
+  12%,
+  86% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(9px, -8px, 0) rotate(3deg);
+  }
+  100% {
+    transform: translate3d(3px, -50px, 0) rotate(-1deg);
+    opacity: 0;
+  }
+}
+
+@keyframes lifafa-seed-b {
+  0% {
+    transform: translate3d(5px, 26px, 0) rotate(2deg);
+    opacity: 0;
+  }
+  12%,
+  86% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate3d(-8px, 2px, 0) rotate(-3deg);
+  }
+  100% {
+    transform: translate3d(-2px, -44px, 0) rotate(1deg);
+    opacity: 0;
+  }
+}
+
+/*
+  A feather: down, slowly, on a wide swing from side to side, leaning into
+  each swing as a real one does. It falls one way and is faded at both ends,
+  like the seed. Wider on the horizontal than a leaf, because the swing is the
+  whole of what makes it a feather, and it is the palest thing on the layer.
+*/
+@keyframes lifafa-feather-a {
+  0% {
+    transform: translate3d(-6px, -24px, 0) rotate(-10deg);
+    opacity: 0;
+  }
+  10%,
+  88% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate3d(15px, 14px, 0) rotate(12deg);
+  }
+  50% {
+    transform: translate3d(-15px, 52px, 0) rotate(-12deg);
+  }
+  75% {
+    transform: translate3d(13px, 90px, 0) rotate(10deg);
+  }
+  100% {
+    transform: translate3d(-8px, 124px, 0) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
+@keyframes lifafa-feather-b {
+  0% {
+    transform: translate3d(6px, -20px, 0) rotate(9deg);
+    opacity: 0;
+  }
+  10%,
+  88% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate3d(-14px, 16px, 0) rotate(-12deg);
+  }
+  50% {
+    transform: translate3d(14px, 50px, 0) rotate(11deg);
+  }
+  75% {
+    transform: translate3d(-13px, 84px, 0) rotate(-10deg);
+  }
+  100% {
+    transform: translate3d(7px, 116px, 0) rotate(5deg);
+    opacity: 0;
+  }
+}
+
+/* --- The rose petals. Driven by PetalLayer. --- */
+
+/*
+  The steady fall, down one margin, top to bottom of the pinned band.
+
+  In `cqh` — shares of the band, which PetalLayer makes a size container — so a
+  petal crosses a phone and a laptop-tall card in the same number of seconds.
+  Starts and ends just outside it, where the band's clip hides the wrap-around.
+  Linear on purpose: the sway beneath it is what gives the fall its give.
+*/
+@keyframes lifafa-petal-fall {
+  from {
+    transform: translate3d(0, -12cqh, 0);
+  }
+  to {
+    transform: translate3d(0, 108cqh, 0);
+  }
+}
+
+/*
+  The drift from side to side as it falls, run alternate so it rocks back.
+  Held to 8px either way — the petal is in the margin, and the text is the far
+  side of it.
+*/
+@keyframes lifafa-petal-sway {
+  from {
+    transform: translate3d(-8px, 0, 0) rotate(-18deg);
+  }
+  to {
+    transform: translate3d(8px, 0, 0) rotate(18deg);
+  }
+}
+
+/*
+  A slow turn for a falling marigold, mogra or lotus piece, on a span of its
+  own between the heading and the flutter. Not on the rose petals, which fall
+  exactly as they always did. Duration and direction are set per piece.
+*/
+@keyframes lifafa-petal-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+  The shower as a card opens: thrown up and out from the middle, then let fall.
+
+  The two halves have different curves, set per keyframe — out fast and slowing
+  toward the top of the throw, then gathering speed as it drops, which is what
+  the eye reads as weight. It fades through the last quarter, so the shower is
+  gone before it has fallen far past the names. The distances come in as
+  unitless custom properties on each petal and are scaled into band units here.
+*/
+@keyframes lifafa-petal-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  8% {
+    opacity: 1;
+  }
+  32% {
+    transform: translate3d(
+        calc(var(--dx) * 0.75cqw),
+        calc(var(--up) * 1cqh),
+        0
+      )
+      scale(1) rotate(calc(var(--spin) * 0.3deg));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6);
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--dx) * 1cqw), calc(var(--down) * 1cqh), 0)
+      scale(0.9) rotate(calc(var(--spin) * 1deg));
+  }
+}
+
+/*
+  Confetti: paper, so it tumbles end over end as well as turning flat.
+
+  `rotateX` on a flat piece is the foreshortening the leaf's turn fakes with
+  scaleX, and here it is the real thing: a strip of paper goes edge on and
+  comes round again. One and a half turns about its own face for every one
+  end over end, so it never shows the same pose twice running.
+*/
+@keyframes lifafa-confetti-tumble {
+  from {
+    transform: rotateX(0deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(360deg) rotateZ(540deg);
+  }
+}
+
+/*
+  The confetti's burst as a card opens: let go from above the top edge, across
+  the whole width, and falling. Not thrown up from the middle as petals are;
+  paper is dropped. The same custom properties as the petals' burst, read
+  differently: --dx is where across the card a piece comes down, and --down
+  how far it has fallen by the time it has faded.
+*/
+@keyframes lifafa-confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(calc(var(--dx) * 0.8cqw), -6cqh, 0)
+      rotate(0deg);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.7, 0.8);
+  }
+  8% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(
+        calc(var(--dx) * 1cqw),
+        calc(var(--down) * 0.85cqh),
+        0
+      )
+      rotate(calc(var(--spin) * 0.5deg));
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Save the date: the tear-off calendar page under the countdown, the sparkle
+   on its button, and the sheet of calendars. See components/card/SaveTheDate
+   and CalendarSheet.
+   ------------------------------------------------------------------------- */
+
+/*
+  The page at rest: tilted a touch, lifted off the card by a shadow that
+  follows the torn edge (a drop-shadow, not a box-shadow, which the mask
+  below would cut off square).
+*/
+.lifafa-cal {
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 8px 12px rgb(0 0 0 / 0.16))
+    drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.14));
+}
+
+.lifafa-cal[data-shown="false"] {
+  opacity: 0;
+}
+
+.lifafa-cal[data-shown="true"] {
+  animation: lifafa-cal-drop 900ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/*
+  The torn lower edge: the page is solid down to 4px from the bottom, and the
+  last 4px is a row of half-circle bites where the page came off its pad.
+*/
+.lifafa-cal-sheet {
+  --tear: 4px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear)) no-repeat,
+    radial-gradient(circle var(--tear) at 50% 100%, #0000 96%, #000)
+      bottom / calc(var(--tear) * 2.5) calc(var(--tear) * 2) repeat-x;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear)) no-repeat,
+    radial-gradient(circle var(--tear) at 50% 100%, #0000 96%, #000)
+      bottom / calc(var(--tear) * 2.5) calc(var(--tear) * 2) repeat-x;
+}
+
+/*
+  Yesterday's page, covering the date until the drop has landed, then turning
+  up over the strip and away. Transparent once it has gone, and never in the
+  way of a tap.
+*/
+.lifafa-cal-flip {
+  pointer-events: none;
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+}
+
+.lifafa-cal[data-shown="true"] .lifafa-cal-flip {
+  animation: lifafa-cal-flip 650ms 620ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+
+@keyframes lifafa-cal-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -40px, 0) rotate(-9deg);
+  }
+  45% {
+    opacity: 1;
+  }
+  62% {
+    transform: translate3d(0, 5px, 0) rotate(1deg);
+  }
+  82% {
+    transform: translate3d(0, -2px, 0) rotate(-2.8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-2deg);
+  }
+}
+
+@keyframes lifafa-cal-flip {
+  0% {
+    opacity: 1;
+    transform: perspective(420px) rotateX(0deg);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(420px) rotateX(-108deg);
+  }
+}
+
+/* One particle of the burst on "Add to my calendar". */
+.lifafa-sparkle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  opacity: 0;
+  animation: lifafa-sparkle 700ms cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+
+@keyframes lifafa-sparkle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(-50%, -50%)
+      translate3d(calc(var(--sx) * 0.8), calc(var(--sy) * 0.8), 0) scale(1.1)
+      rotate(calc(var(--sr) * 0.6));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(var(--sx), var(--sy), 0)
+      scale(0.4) rotate(var(--sr));
+  }
+}
+
+/* The calendar sheet: the card dims, the sheet rises. */
+.lifafa-sheet-backdrop {
+  animation: lifafa-sheet-fade 200ms ease-out both;
+}
+
+.lifafa-sheet {
+  animation: lifafa-sheet-rise 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes lifafa-sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lifafa-sheet-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/*
+  Reduced motion gets the static design: the page is simply there, tilted and
+  shadowed, the flip never covers it, nothing sparkles and the sheet appears
+  in place. The same selectors as above, later in the file, so they win.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-cal[data-shown="false"],
+  .lifafa-cal[data-shown="true"] {
+    opacity: 1;
+    animation: none;
+  }
+
+  .lifafa-cal-flip,
+  .lifafa-sparkle {
+    display: none;
+  }
+
+  .lifafa-sheet-backdrop,
+  .lifafa-sheet {
+    animation: none;
+  }
+}
+
+/*
+  A part of the Save the date line that arrives with a scratch reveal, the time
+  or the venue, fades in on the same 400ms the panel fades out on. On first
+  paint it is part of a line still hidden by the section's own reveal, so the
+  fade there is never seen.
+*/
+.lifafa-reveal-in {
+  animation: lifafa-sheet-fade 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-reveal-in {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   The location card's folded map. See components/card/FoldedMap.tsx.
+
+   On arrival, in about 1.3 seconds: the outer panels swing open off the
+   middle one (0 to 650ms), the pin drops onto the centre with one small
+   bounce (500 to 950ms), and the dotted path draws itself in from the corner
+   (650 to 1250ms). Then the ring under the pin breathes, slowly, for as long
+   as the card is open. Reduced motion gets the map open, the pin down, the
+   path drawn and the ring still.
+   ------------------------------------------------------------------------- */
+
+.lifafa-map {
+  perspective: 900px;
+}
+
+.lifafa-map-paper {
+  filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.14))
+    drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.12));
+}
+
+.lifafa-map-panel {
+  backface-visibility: hidden;
+}
+
+.lifafa-map-panel-0 {
+  transform-origin: 100% 50%;
+}
+
+.lifafa-map-panel-2 {
+  transform-origin: 0% 50%;
+}
+
+/*
+  The light on the folds. The first panel falls away into the crease on its
+  right, the middle one lifts off it and falls into the next, the last lifts
+  off that. Black and white at low alpha, so it works on a cream paper and a
+  midnight one alike.
+*/
+.lifafa-map-panel-0 .lifafa-map-shade {
+  background: linear-gradient(90deg, rgb(0 0 0 / 0) 55%, rgb(0 0 0 / 0.09));
+}
+
+.lifafa-map-panel-1 .lifafa-map-shade {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.12),
+    rgb(255 255 255 / 0) 30%,
+    rgb(0 0 0 / 0) 60%,
+    rgb(0 0 0 / 0.07)
+  );
+}
+
+.lifafa-map-panel-2 .lifafa-map-shade {
+  background: linear-gradient(90deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0) 40%);
+}
+
+.lifafa-map-pin {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.lifafa-map-ring {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.lifafa-map-path-draw {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+}
+
+/* Before the section is in view: folded, no pin, no path. */
+.lifafa-map[data-shown="false"] .lifafa-map-panel-0 {
+  transform: rotateY(-78deg);
+}
+
+.lifafa-map[data-shown="false"] .lifafa-map-panel-2 {
+  transform: rotateY(78deg);
+}
+
+.lifafa-map[data-shown="false"] :is(.lifafa-map-pin, .lifafa-map-ring, .lifafa-map-start) {
+  opacity: 0;
+}
+
+.lifafa-map[data-shown="false"] .lifafa-map-path-draw {
+  stroke-dashoffset: 1;
+}
+
+.lifafa-map[data-shown="true"] .lifafa-map-panel-0 {
+  animation: lifafa-map-unfold-left 650ms cubic-bezier(0.25, 0.8, 0.3, 1) both;
+}
+
+.lifafa-map[data-shown="true"] .lifafa-map-panel-2 {
+  animation: lifafa-map-unfold-right 650ms cubic-bezier(0.25, 0.8, 0.3, 1) both;
+}
+
+.lifafa-map[data-shown="true"] .lifafa-map-pin {
+  animation: lifafa-map-pin-drop 450ms 500ms cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+
+.lifafa-map[data-shown="true"] .lifafa-map-start {
+  animation: lifafa-sheet-fade 200ms 650ms ease-out both;
+}
+
+.lifafa-map[data-shown="true"] .lifafa-map-path-draw {
+  animation: lifafa-map-path 600ms 650ms ease-in-out both;
+}
+
+.lifafa-map[data-shown="true"] .lifafa-map-ring {
+  animation:
+    lifafa-sheet-fade 250ms 900ms ease-out both,
+    lifafa-map-ring 2.6s 1.15s ease-in-out infinite;
+}
+
+@keyframes lifafa-map-unfold-left {
+  from {
+    transform: rotateY(-78deg);
+  }
+  to {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes lifafa-map-unfold-right {
+  from {
+    transform: rotateY(78deg);
+  }
+  to {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes lifafa-map-pin-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-26px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lifafa-map-path {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes lifafa-map-ring {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-map[data-shown] :is(.lifafa-map-panel-0, .lifafa-map-panel-2) {
+    transform: none;
+    animation: none;
+  }
+
+  .lifafa-map[data-shown] :is(.lifafa-map-pin, .lifafa-map-ring, .lifafa-map-start) {
+    opacity: 1;
+    animation: none;
+  }
+
+  .lifafa-map[data-shown] .lifafa-map-path-draw {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   The countdown's digits. See components/card/CountdownTiles.tsx.
+
+   Each digit sits in a slot of fixed width and height, so a changing second
+   never moves a neighbour or resizes a tile: the new digit slides up into the
+   slot as the old one slides out above it, transform and opacity only.
+   ------------------------------------------------------------------------- */
+
+.lifafa-tick {
+  position: relative;
+  display: inline-block;
+  width: 0.64em;
+  height: 1.12em;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.lifafa-tick > span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  text-align: center;
+  line-height: 1.12em;
+}
+
+/*
+  A digit turning over, as a flip clock's does: the old one tips back and
+  away, then the new one tips down into its place. Transform and opacity
+  only, the perspective inside the transform itself, so each is one
+  compositor animation and nothing is laid out.
+*/
+.lifafa-tick-in {
+  animation: lifafa-flip-in 460ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  backface-visibility: hidden;
+}
+
+.lifafa-tick-out {
+  animation: lifafa-flip-out 460ms cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  backface-visibility: hidden;
+}
+
+@keyframes lifafa-flip-in {
+  0%,
+  42% {
+    transform: perspective(6em) rotateX(88deg);
+    opacity: 0;
+  }
+  100% {
+    transform: perspective(6em) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes lifafa-flip-out {
+  0% {
+    transform: perspective(6em) rotateX(0deg);
+    opacity: 1;
+  }
+  50%,
+  100% {
+    transform: perspective(6em) rotateX(-88deg);
+    opacity: 0;
+  }
+}
+
+/*
+  What a tap on the countdown's frame lets go: a few rose petals and gold
+  sparkles from under the finger, thrown a little way up and out, then
+  falling and fading. See CountdownSection.
+*/
+.lifafa-cd-piece {
+  position: absolute;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: lifafa-cd-piece 1500ms linear both;
+}
+
+@keyframes lifafa-cd-piece {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(0, 0, 0) scale(0.4) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  10% {
+    opacity: 1;
+  }
+  32% {
+    transform: translate(-50%, -50%)
+      translate3d(calc(var(--bx) * 0.7), var(--bup), 0) scale(1)
+      rotate(calc(var(--bspin) * 0.35));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(var(--bx), var(--bdown), 0)
+      scale(0.9) rotate(var(--bspin));
+  }
+}
+
+/*
+  A screen wider than a phone: the countdown is as tall as what is in it. A
+  section is otherwise floored at a screen's height, which on a laptop left
+  the clock adrift in the middle of an empty one. The inline floor is the
+  card's, for every section, hence the !important.
+*/
+@media (min-width: 48rem) {
+  .lifafa-card-fluid .lifafa-cd-section {
+    min-height: 0 !important;
+  }
+}
+
+/* One piece of the confetti on the day. */
+.lifafa-confetti {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  animation-name: lifafa-confetti;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@keyframes lifafa-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  8% {
+    opacity: 1;
+  }
+  35% {
+    transform: translate3d(calc(var(--cx) * 0.7), var(--cup), 0)
+      rotate(calc(var(--cspin) * 0.35));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cx), var(--cdown), 0) rotate(var(--cspin));
+  }
+}
+
+/* -------------------------------------------------------------------------
+   The Celebrations timeline. See components/card/sections/TimelineSection.
+
+   A phone, and the editor's phone frame: one column, the thread down the
+   left through the medallions. A laptop, 1024px and wider, with a timeline
+   at least 440px wide: the thread down the middle and the cards alternating
+   either side of it.
+   ------------------------------------------------------------------------- */
+
+.lifafa-tl {
+  container-type: inline-size;
+  container-name: timeline;
+}
+
+.lifafa-tl-line {
+  position: absolute;
+  top: calc(var(--tl-medal) / 2);
+  bottom: calc(var(--tl-medal) / 2);
+  left: calc(var(--tl-medal) / 2 - 1px);
+  width: 2px;
+  border-radius: 1px;
+}
+
+/* Drawn by the scroll; transformed only, so nothing is laid out again. */
+.lifafa-tl-thread {
+  transform-origin: 50% 0%;
+  will-change: transform;
+}
+
+.lifafa-tl-row {
+  display: grid;
+  grid-template-columns: var(--tl-medal) minmax(0, 1fr);
+  column-gap: calc(0.85 * var(--card-rem, 1rem));
+  align-items: start;
+}
+
+.lifafa-tl-medal {
+  grid-column: 1;
+  grid-row: 1;
+  transition:
+    opacity 480ms ease-out var(--tl-delay, 0ms),
+    transform 480ms cubic-bezier(0.2, 0.8, 0.3, 1.2) var(--tl-delay, 0ms);
+}
+
+.lifafa-tl-card {
+  grid-column: 2;
+  grid-row: 1;
+  transition:
+    opacity 520ms ease-out var(--tl-delay, 0ms),
+    transform 520ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--tl-delay, 0ms);
+}
+
+/* Waiting to be scrolled to: the card a step off to the side, the medallion small. */
+.lifafa-tl-row[data-shown="false"] .lifafa-tl-card {
+  opacity: 0;
+  transform: translate3d(18px, 6px, 0);
+}
+
+.lifafa-tl-row[data-shown="false"] .lifafa-tl-medal {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* Over: the medallion steps back. The words keep their full contrast. */
+.lifafa-tl-row[data-phase="past"][data-shown="true"] .lifafa-tl-medal {
+  opacity: 0.55;
+}
+
+/* Up next: a ring breathes out from the medallion. */
+.lifafa-tl-medal[data-next="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--tl-accent);
+  animation: lifafa-tl-pulse 2.4s ease-out infinite;
+}
+
+@keyframes lifafa-tl-pulse {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@media (min-width: 1024px) {
+  /*
+    On the guest's card on a laptop, the timeline steps out of the reading
+    column, which is sized for a line of text, not for two cards side by side:
+    up to 48rem, centred on the column. The editor's phone frame is not a
+    fluid card and never gets this.
+  */
+  .lifafa-card-fluid .lifafa-tl {
+    --tl-wide: min(calc(100vw - 8rem), 48rem);
+    width: var(--tl-wide);
+    margin-inline: calc((100% - var(--tl-wide)) / 2);
+  }
+
+  @container timeline (min-width: 440px) {
+    .lifafa-tl-line {
+      left: calc(50% - 1px);
+    }
+
+    .lifafa-tl-row {
+      grid-template-columns: minmax(0, 1fr) var(--tl-medal) minmax(0, 1fr);
+    }
+
+    .lifafa-tl-medal {
+      grid-column: 2;
+    }
+
+    .lifafa-tl-row[data-side="left"] .lifafa-tl-card {
+      grid-column: 1;
+    }
+
+    .lifafa-tl-row[data-side="right"] .lifafa-tl-card {
+      grid-column: 3;
+    }
+
+    .lifafa-tl-row[data-side="left"][data-shown="false"] .lifafa-tl-card {
+      transform: translate3d(-18px, 6px, 0);
+    }
+  }
+}
+
+/*
+  Reduced motion: the countdown's digits change in place with nothing
+  turning; no confetti and no petals from a tap; the thread drawn; the cards simply there; the ring
+  still.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .lifafa-tick-in {
+    animation: none;
+  }
+
+  .lifafa-tick-out {
+    display: none;
+  }
+
+  .lifafa-confetti,
+  .lifafa-cd-piece {
+    display: none;
+  }
+
+  .lifafa-tl-thread {
+    transform: none !important;
+  }
+
+  .lifafa-tl-row[data-shown] .lifafa-tl-card,
+  .lifafa-tl-row[data-shown] .lifafa-tl-medal {
+    transition: none;
+  }
+
+  .lifafa-tl-row[data-shown="false"] .lifafa-tl-card,
+  .lifafa-tl-row[data-shown="false"] .lifafa-tl-medal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lifafa-tl-medal[data-next="true"]::after {
+    animation: none;
+    opacity: 0.6;
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   THE PRINTABLE COPY: the invitation as sheets of A5.
+
+   app/i/[inviteCode]/print draws the card once per sheet (lib/printCard.ts)
+   and the guest's browser saves the page as a PDF. Everything here is what
+   makes a card written for a phone's screen sit on a sheet of paper.
+
+   The @page rule itself is written by the route, so it is on that page and
+   no other: a rule here would make every page of the site print on A5.
+   ------------------------------------------------------------------------- */
+
+/* On the screen: a dark desk, with the sheets laid down it. */
+.lifafa-print-doc {
+  min-height: 100vh;
+  background-color: #1b1614;
+}
+
+.lifafa-print-sheets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0 32px;
+  /* Brought down to a phone's width once the sheets are fitted; see PrintDocument. */
+  zoom: var(--print-screen-zoom, 1);
+}
+
+/*
+  One sheet. A5 exactly, and never broken: what does not fit is the fit's to
+  bring down (PrintDocument), not the printer's to carry over.
+
+  The colours are forced on. A browser prints backgrounds only if asked, and a
+  card with its ground, its texture and its border left off is a page of
+  loose text.
+*/
+.lifafa-print-sheet {
+  position: relative;
+  width: 148mm;
+  height: 210mm;
+  overflow: hidden;
+  flex: none;
+  break-inside: avoid;
+  break-after: page;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.lifafa-print-sheet:last-child {
+  break-after: auto;
+}
+
+.lifafa-print-sheet * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/*
+  The card fills its sheet, with its words in a column of the width it was
+  designed at. The same two lengths a wide phone's card publishes (see
+  `.lifafa-card-phone` above), fixed at the design's own size here, so the
+  sheet is laid out the same on a screen of any width and on paper: the rule
+  above reads the viewport, and a printed page's viewport is the sheet.
+*/
+.lifafa-print-sheet .lifafa-card-phone {
+  --card-width: 26.25rem;
+  --card-decor-width: 26.25rem;
+  --card-rem: 1rem;
+  --card-px: 1px;
+  --spacing: 0.25rem;
+  --text-xs: 0.75rem;
+
+  max-width: none;
+  min-height: 100%;
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-content {
+  max-width: var(--card-width);
+  margin-inline: auto;
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-column {
+  left: calc(50% - var(--card-width) / 2);
+  right: calc(50% - var(--card-width) / 2);
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-garland {
+  width: calc(var(--card-width) - 16px);
+  margin-inline: auto;
+}
+
+.lifafa-print-sheet .lifafa-card-phone .lifafa-card-art > :is(img, svg) {
+  width: calc(var(--art-width) * var(--card-px));
+  height: auto;
+}
+
+/*
+  A section is as tall as what is in it. On the card each is a screen tall,
+  so a swipe lands on one thing; a sheet carries two, and is fitted to them.
+*/
+.lifafa-print-sheet section,
+.lifafa-print-sheet [data-first-screen] {
+  min-height: 0 !important;
+}
+
+/*
+  And keeps only a little air above and below. A section's own padding is
+  what centres a few lines on a tall screen, as much as a third of a phone
+  each way; on a sheet it is that much paper left blank and that much the
+  words have to be brought down to make room for it.
+*/
+.lifafa-print-sheet .lifafa-card-content > section {
+  padding-block: 1.75rem !important;
+}
+
+/*
+  The first sheet's names keep room under them: what a pack stands in the two
+  bottom corners of the names' screen, a lotus or a kalash, stands in the
+  corners of this section, and with only a little air they stood on the names.
+*/
+.lifafa-print-sheet[data-first] .lifafa-card-content > section {
+  padding-bottom: 5.5rem !important;
+}
+
+/* "Up next" and "Celebrated" are true on the day they are read, and paper is read later. */
+.lifafa-print-sheet [data-timeline-status] {
+  display: none !important;
+}
+
+/* Nothing on paper can be pressed: no directions, no calendar, no copy. */
+.lifafa-print-sheet :is(button, a) {
+  display: none !important;
+}
+
+/*
+  Nothing arrives and nothing loops. Whatever would have come in over a
+  moment is where it ends up, at once: a duration of nothing, not no
+  animation at all, which would leave a line that fades in standing at the
+  nothing it fades in from.
+*/
+.lifafa-print-sheet *,
+.lifafa-print-sheet *::before,
+.lifafa-print-sheet *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* The strip at the foot of the last sheet: a QR code back to the live card. */
+.lifafa-print-strip {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(var(--print-strip-foot, 0px) + 10px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.lifafa-print-qr {
+  display: block;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  padding: 3px;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.lifafa-print-qr > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lifafa-print-scan {
+  max-width: 11rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+/* "Made with Lifafa" under the scan line: smaller and quieter, in the same ink. */
+.lifafa-print-credit {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+}
+
+/* The bar over the sheets, for somebody looking at the copy as a page. */
+.lifafa-print-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 8px 16px 10px;
+  background-color: rgba(27, 22, 20, 0.94);
+  border-bottom: 1px solid var(--lifafa-hairline);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.lifafa-print-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lifafa-print-bar-hint {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--lifafa-muted);
+}
+
+.lifafa-print-bar-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--lifafa-cream);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.lifafa-print-bar-button {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  background-color: var(--lifafa-marigold);
+  color: var(--lifafa-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media print {
+  .lifafa-print-doc {
+    min-height: 0;
+    background: none;
+  }
+
+  .lifafa-print-bar {
+    display: none !important;
+  }
+
+  .lifafa-print-sheets {
+    display: block;
+    gap: 0;
+    padding: 0;
+    zoom: 1;
+  }
+
+  .lifafa-print-sheet {
+    box-shadow: none;
+  }
+}

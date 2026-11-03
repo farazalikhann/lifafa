@@ -79,7 +79,7 @@ export default function Pricing(): ReactElement {
                 {plan.name}
               </h3>
               <p className="mt-3 flex items-baseline gap-2">
-                <span className="font-[family-name:var(--paper-display)] text-5xl font-bold tracking-[-0.02em] text-[var(--paper-ink)]">
+                <span className="font-[family-name:var(--paper-display)] text-5xl font-semibold tracking-[-0.02em] text-[var(--paper-ink)]">
                   {formatPrice(plan.price)}
                 </span>
                 <span className="text-base text-[var(--paper-muted)]">per event</span>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+/* The card's own styles: see the head of app/card.css. */
+import "@/app/card.css";
 import PaperTheme from "@/components/theme/PaperTheme";
 
 /**

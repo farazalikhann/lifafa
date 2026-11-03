@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+/* The card's own styles: see the head of app/card.css. */
+import "@/app/card.css";
 import { cardCopy, DEFAULT_CARD_LANGUAGE } from "@/lib/cardLanguage";
 import { getGuestEvent } from "@/lib/db/inviteEvent";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";

@@ -17,7 +17,7 @@ import PremiumShowcase, { demoPath } from "@/components/landing/PremiumShowcase"
 import Pricing from "@/components/landing/Pricing";
 import SectionRule from "@/components/landing/SectionRule";
 import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
-import { paperSans } from "@/components/theme/fonts";
+import { paperDisplay, paperSans } from "@/components/theme/fonts";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { listedPremium } from "@/templates/premium";
 import { marketingShare } from "@/lib/shareImage";
@@ -77,7 +77,7 @@ export default function Page() {
       page's own Manrope; see `.lifafa-paper` in globals.css. overflow-x clip
       keeps the side patterns from ever widening the page.
     */
-    <div className={`lifafa-paper ${paperSans.variable} relative overflow-x-clip`}>
+    <div className={`lifafa-paper ${paperSans.variable} ${paperDisplay.variable} relative overflow-x-clip`}>
       {/* The page's ivory from the first byte, so an overscroll never shows the product's dark ink. */}
       <style>{"html,body{background-color:#f6efe0}"}</style>
       <LandingHeader />
