@@ -43,7 +43,9 @@ import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { withContactBlock } from "@/lib/contacts";
 import { createEvent, updateEvent } from "@/lib/db/events";
 import type { ChangeAllowance } from "@/lib/eventLock";
-import { EMPTY_SNAPSHOT, arrivalFor, type Arrival } from "@/lib/newCard";
+import { EMPTY_SNAPSHOT, arrivalFor, restoredSnapshot, type Arrival } from "@/lib/newCard";
+import { clearCardAutosave, readCardAutosave } from "@/lib/cardAutosave";
+import { useCardAutosave } from "@/hooks/useCardAutosave";
 import {
   clearPendingCard,
   pendingCardReturnPath,
@@ -63,7 +65,6 @@ import {
   wizardStepPath,
   type WizardStepId,
 } from "@/lib/wizardSteps";
-import { deepEqual } from "@/lib/deepEqual";
 import { getTemplate } from "@/templates/registry";
 import { switchTemplate } from "@/templates/switch";
 import type { TemplateConfig } from "@/templates/types";
@@ -182,16 +183,24 @@ function onChosenTemplate(
  * A template chosen before the wizard opened is laid onto whichever card it
  * starts from. It needs no stash of its own across a sign-in: the card's
  * config carries its templateId, and the card is stashed whole.
+ *
+ * THREE PLACES A CARD CAN COME FROM, in this order. The sign-in stash first,
+ * which is also where a card handed over from Instagram's or Facebook's
+ * browser arrives (lib/pendingCard.ts): when it holds a card, that is the
+ * card. Then the card kept as the visitor typed (lib/cardAutosave.ts), with
+ * a note saying so and a way to start fresh. Then an empty card.
  */
 function WizardArrival({
   templateId,
 }: {
   templateId: string | null;
 }): ReactElement {
-  const [{ arrival, start, fallback }] = useState<{
+  const [{ arrival, start, fallback, autosaved }, setArrival] = useState<{
     arrival: Arrival;
     start: EditorSnapshot;
     fallback: EditorSnapshot;
+    /** The card was the one kept as the visitor typed. */
+    autosaved: boolean;
   }>(() => {
     const read = arrivalFor(
       readPendingCard(),
@@ -200,15 +209,35 @@ function WizardArrival({
     );
     const empty = onChosenTemplate(EMPTY_SNAPSHOT, templateId);
 
+    if (read.kind === "restored") {
+      /* The handed-over card wins, and for good: an older kept one is not offered back later. */
+      clearCardAutosave();
+
+      return {
+        arrival: read,
+        start: onChosenTemplate(read.snapshot, templateId),
+        fallback: empty,
+        autosaved: false,
+      };
+    }
+
+    const kept = read.kind === "fresh" ? readCardAutosave() : null;
+
     return {
       arrival: read,
-      start:
-        read.kind === "restored"
-          ? onChosenTemplate(read.snapshot, templateId)
-          : empty,
+      start: kept === null ? empty : onChosenTemplate(restoredSnapshot(kept), templateId),
       fallback: empty,
+      autosaved: kept !== null,
     };
   });
+
+  /* Bumped by "Start fresh", so the steps start again from the empty card. */
+  const [generation, setGeneration] = useState(0);
+  const startFresh = useCallback((): void => {
+    clearCardAutosave();
+    setArrival((current) => ({ ...current, start: current.fallback, autosaved: false }));
+    setGeneration((value) => value + 1);
+  }, []);
 
   if (arrival.kind === "restored") {
     return (
@@ -230,12 +259,27 @@ function WizardArrival({
     );
   }
 
-  return (
+  const steps = (
     <WizardSteps
+      key={generation}
       start={start}
       problem={arrival.kind === "lost" ? arrival.problem : null}
       stashedStep={null}
+      onStartFresh={autosaved ? startFresh : undefined}
     />
+  );
+
+  /* A kept card could be one an older build wrote; one that will not open is dropped, not fatal. */
+  return autosaved ? (
+    <RestoredCardBoundary
+      fallback={
+        <WizardSteps start={fallback} problem={null} stashedStep={null} />
+      }
+    >
+      {steps}
+    </RestoredCardBoundary>
+  ) : (
+    steps
   );
 }
 
@@ -295,6 +339,7 @@ function WizardSteps({
   problem,
   stashedStep,
   edit,
+  onStartFresh,
 }: {
   start: EditorSnapshot;
   /** Why a card the host came back for is not here, if it is not. */
@@ -303,6 +348,11 @@ function WizardSteps({
   stashedStep: WizardStepId | null;
   /** Given when this is a saved invitation being changed; absent for a new card. */
   edit?: EditContext;
+  /**
+   * The card was the one kept in this browser as the visitor typed: say so,
+   * and offer to clear it (lib/cardAutosave.ts).
+   */
+  onStartFresh?: () => void;
 }): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -436,6 +486,9 @@ function WizardSteps({
    * at the click, as on /create, so one that has not loaded yet or has
    * expired is not mistaken for signed out or signed in.
    */
+  /* Set once the card is saved to an account: nothing is kept in this browser after that. */
+  const autosaveStopped = useRef(false);
+
   const save = useCallback(
     async (snapshot: EditorSnapshot): Promise<SaveOutcome> => {
       /*
@@ -496,6 +549,8 @@ function WizardSteps({
       }
 
       clearPendingCard();
+      autosaveStopped.current = true;
+      clearCardAutosave();
       router.push(
         `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${result.data.id}`,
       );
@@ -567,6 +622,9 @@ function WizardSteps({
     onSave: save,
     paidLimits: edit?.paidLimits,
   });
+
+  /* A new card is kept in this browser as it is made; see hooks/useCardAutosave.ts. */
+  useCardAutosave({ snapshot, start, enabled: !editing, stopped: autosaveStopped });
 
   /*
     Where a guarded control was trying to go, held while the host answers the
@@ -684,6 +742,21 @@ function WizardSteps({
             here={displayHost(window.location.origin)}
           />
         ) : null}
+        {onStartFresh !== undefined ? (
+          <p
+            role="status"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-2 text-sm text-[var(--lifafa-cream)] sm:px-5 lg:col-span-2"
+          >
+            Your card details were restored.
+            <button
+              type="button"
+              onClick={onStartFresh}
+              className="inline-flex min-h-11 items-center rounded font-medium text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+            >
+              Start fresh
+            </button>
+          </p>
+        ) : null}
         {/* A new card is told of the ones the host already has; a saved one, what its edit page has to say. */}
         {editing ? edit.notice : <ExistingInvitationsNotice />}
 
@@ -709,7 +782,6 @@ function WizardSteps({
               selectedId={template.id}
               onSelect={handleTemplate}
               paidPricePaise={paidPricePaise}
-              demoInNewTab={editing || !deepEqual(draft, start.draft)}
             />
           ) : null}
 

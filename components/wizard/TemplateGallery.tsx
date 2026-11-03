@@ -55,7 +55,6 @@ function TemplateCard({
   onSelect,
   first = false,
   demoHref,
-  demoInNewTab,
 }: {
   template: TemplateConfig;
   selected: boolean;
@@ -63,8 +62,6 @@ function TemplateCard({
   first?: boolean;
   /** The template's live demo, with the ad's tags on it. */
   demoHref: string;
-  /** Open it in a new tab, so nothing typed here is lost; see `demoInNewTab` on the gallery. */
-  demoInNewTab: boolean;
   /** Costs more than a paid invitation was paid for: shown, and not selectable. */
   locked: boolean;
   onSelect: (template: TemplateConfig) => void;
@@ -122,11 +119,11 @@ function TemplateCard({
         <div className="flex flex-col gap-2">
           {/*
             The demo in this tab: its "Create this card" comes back to /create
-            with this design chosen, and Back returns to the gallery.
+            with this design chosen, and Back returns to the gallery with the
+            card as it was (it is kept as it is typed; lib/cardAutosave.ts).
           */}
           <a
             href={demoHref}
-            {...(demoInNewTab ? { target: "_blank", rel: "noopener" } : {})}
             onClick={() => looked(template)}
             className={`${CARD_BUTTON} border border-[var(--lifafa-hairline)] text-[var(--lifafa-cream)] hover:border-[var(--lifafa-marigold)]`}
           >
@@ -134,7 +131,6 @@ function TemplateCard({
             <span className="sr-only">
               {" "}
               of {template.name}
-              {demoInNewTab ? " (opens in a new tab)" : ""}
             </span>
           </a>
           {locked ? (
@@ -190,20 +186,11 @@ export default function TemplateGallery({
   selectedId,
   onSelect,
   paidPricePaise = null,
-  demoInNewTab = false,
 }: {
   selectedId: string;
   onSelect: (template: TemplateConfig) => void;
   /** On a paid invitation, the price of the template it was paid on; null before payment. */
   paidPricePaise?: number | null;
-  /**
-   * Open the live demos in a new tab. A demo opens in this tab while there is
-   * nothing to lose here, the usual case on the first step of a new card. Once
-   * the host has typed something, or is changing a saved invitation, leaving
-   * the page would lose it (nothing on /create keeps a card the host has not
-   * saved), so the demo opens beside it instead.
-   */
-  demoInNewTab?: boolean;
 }): ReactElement {
   const templates = listedTemplates();
   const adHref = useAdParamsHref();
@@ -226,7 +213,6 @@ export default function TemplateGallery({
       template={template}
       first={first && index < 2}
       demoHref={adHref(templateDemoPath(template.id))}
-      demoInNewTab={demoInNewTab}
       selected={template.id === selectedId}
       locked={
         paidPricePaise !== null &&

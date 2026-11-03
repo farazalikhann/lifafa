@@ -104,7 +104,7 @@ export type PendingCardRead =
  * fails is dropped rather than repaired, and the editor falls back to its own
  * default.
  */
-function toPendingCard(card: PendingCard): PendingCard {
+export function toPendingCard(card: PendingCard): PendingCard {
   return {
     draft: card.draft,
     config: card.config,

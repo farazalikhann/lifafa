@@ -79,7 +79,7 @@ export type Arrival =
  * A stashed card, as the editor takes one. The fields kept beside the config
  * fall back to a new card's, and `isPaid` is never the stash's to say.
  */
-function restoredSnapshot(card: PendingCard): EditorSnapshot {
+export function restoredSnapshot(card: PendingCard): EditorSnapshot {
   return {
     draft: card.draft,
     /*
