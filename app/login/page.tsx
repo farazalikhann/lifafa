@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import SignInForm from "@/components/auth/SignInForm";
-import DraftHandoffRestore from "@/components/browser/DraftHandoffRestore";
 import InAppLoginPrompt from "@/components/browser/InAppLoginPrompt";
 import LegalFooter from "@/components/legal/LegalFooter";
 import Logo from "@/components/Logo";
+import { handoffFromSearch, isHandoffId, pathWithHandoff } from "@/lib/handoff/link";
 
 export const metadata: Metadata = {
   title: "Sign in · Lifafa",
@@ -35,12 +35,35 @@ function safeRedirect(raw: string | undefined): string {
   return raw;
 }
 
+/**
+ * The return path with the card's id inside it, when this page was opened
+ * with one from Instagram's or Facebook's browser (lib/handoff/link.ts).
+ *
+ * The id is already there on a link this build made. This also mends one made
+ * before, which put the id on /login only, and one with no return path at
+ * all: the card is brought back on /create, so that is where it goes.
+ */
+function withCarriedCard(redirectTo: string, handoff: string | null): string {
+  if (handoff === null) {
+    return redirectTo;
+  }
+
+  const onCreate = redirectTo === "/create" || redirectTo.startsWith("/create?");
+
+  return pathWithHandoff(onCreate ? redirectTo : "/create", handoff);
+}
+
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirectTo?: string; error?: string }>;
+  searchParams: Promise<{ redirectTo?: string; error?: string; handoff?: string | string[] }>;
 }): Promise<ReactElement> {
   const params = await searchParams;
+  const redirectTo = safeRedirect(params.redirectTo);
+  /* On /login itself, or only inside the return path: a failed sign in comes back with that alone. */
+  const handoff = isHandoffId(params.handoff)
+    ? params.handoff
+    : handoffFromSearch(redirectTo.split("?")[1] ?? "");
 
   return (
     <main className="relative flex min-h-screen flex-col bg-[var(--lifafa-ink)]">
@@ -76,10 +99,21 @@ export default async function LoginPage({
           </p>
 
           <div className="mt-8">
-            {/* A card carried over from Instagram's or Facebook's browser; nothing otherwise. */}
-            <DraftHandoffRestore />
+            {/*
+              A card carried over from Instagram's or Facebook's browser. It is
+              safe on the server and is not touched here; /create saves it to
+              the account once sign in brings the visitor back.
+            */}
+            {handoff !== null ? (
+              <p
+                role="status"
+                className="mb-4 rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 text-sm leading-relaxed text-[var(--lifafa-muted)]"
+              >
+                Your card is saved. Sign in to finish it.
+              </p>
+            ) : null}
             <SignInForm
-              redirectTo={safeRedirect(params.redirectTo)}
+              redirectTo={withCarriedCard(redirectTo, handoff)}
               initialError={params.error ?? null}
             />
           </div>

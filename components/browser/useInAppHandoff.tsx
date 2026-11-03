@@ -2,8 +2,8 @@
 
 import { useCallback, useRef, useState, type ReactElement } from "react";
 import OpenInChromePrompt from "@/components/browser/OpenInChromePrompt";
-import { HANDOFF_PARAM } from "@/components/browser/DraftHandoffRestore";
 import { saveDraftHandoff } from "@/lib/handoff/actions";
+import { HANDOFF_PARAM, pathWithHandoff } from "@/lib/handoff/link";
 import {
   chromeIntentUrl,
   inAppBrowser,
@@ -21,8 +21,10 @@ import type { PendingCard } from "@/lib/pendingCard";
  *
  * On the tap the card is saved on the server (lib/handoff/actions.ts), and
  * the real browser is opened at /login with its id, the return path and the
- * ad's tags. There DraftHandoffRestore claims the card, and sign in comes back
- * to the wizard with it, as it does for anyone.
+ * ad's tags. The id is on the return path too, so it comes back through
+ * Google and the auth callback to /create, which saves the card from the
+ * server into the new account (lib/handoff/link.ts). No browser's storage
+ * has to hold the card on the way.
  *
  * - ANDROID: Chrome, through an intent link.
  * - IPHONE: Safari, through x-safari-https://.
@@ -55,12 +57,18 @@ function saveCard(card: PendingCard): Promise<string | null> {
   return Promise.race([save, wait(SLOW_SAVE_MS).then(() => null)]);
 }
 
-/** /login on this address, with the return path, the card's id when there is one, and the ad's tags. */
+/**
+ * /login on this address, with the return path, the card's id when there is
+ * one, and the ad's tags. The id goes on /login and inside the return path,
+ * which is what sign in hands back to /create.
+ */
 export function loginLink(redirectTo: string, handoffId: string | null): string {
   const url = new URL("/login", window.location.origin);
-  url.searchParams.set("redirectTo", redirectTo);
 
-  if (handoffId !== null) {
+  if (handoffId === null) {
+    url.searchParams.set("redirectTo", redirectTo);
+  } else {
+    url.searchParams.set("redirectTo", pathWithHandoff(redirectTo, handoffId));
     url.searchParams.set(HANDOFF_PARAM, handoffId);
   }
 

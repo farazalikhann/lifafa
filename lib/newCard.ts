@@ -71,7 +71,12 @@ export const EMPTY_SNAPSHOT: EditorSnapshot = {
 };
 
 export type Arrival =
-  | { kind: "fresh" }
+  /**
+   * `restart`: the visitor came back from signing in expecting a card and
+   * this browser has none. Nothing is said; the wizard opens on its first
+   * step, or on the card kept as they typed if there is one.
+   */
+  | { kind: "fresh"; restart?: boolean }
   | { kind: "restored"; snapshot: EditorSnapshot; step: string | null }
   | { kind: "lost"; problem: PendingCardProblem };
 
@@ -100,8 +105,11 @@ export function restoredSnapshot(card: PendingCard): EditorSnapshot {
  * `stashOrigin` is only in the URL when the host is coming back from signing
  * in with a card stashed, so it is what tells "expected a card and it is not
  * here" apart from an ordinary visit. Only the first of those is told
- * anything. A card stashed on another of the site's addresses is in that
- * address's storage, which this page cannot read, so that is checked first.
+ * anything, and not when the card is simply not in this browser: that is
+ * a quiet fresh start (a card from Instagram's or Facebook's browser comes
+ * back from the server instead, never from here; see lib/handoff/link.ts).
+ * A card stashed on another of the site's addresses is in that address's
+ * storage, which this page cannot read, so that is checked first.
  */
 export function arrivalFor(
   read: PendingCardRead,
@@ -135,8 +143,6 @@ export function arrivalFor(
         ? { kind: "lost", problem: { kind: "expired" } }
         : { kind: "fresh" };
     case "none":
-      return expected
-        ? { kind: "lost", problem: { kind: "missing" } }
-        : { kind: "fresh" };
+      return expected ? { kind: "fresh", restart: true } : { kind: "fresh" };
   }
 }

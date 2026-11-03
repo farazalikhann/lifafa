@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import OpenInChromePrompt from "@/components/browser/OpenInChromePrompt";
-import { HANDOFF_PARAM } from "@/components/browser/DraftHandoffRestore";
 import { saveDraftHandoff } from "@/lib/handoff/actions";
+import { HANDOFF_PARAM, handoffFromSearch, pathWithHandoff } from "@/lib/handoff/link";
 import {
   inAppBrowser,
   rememberAdParams,
@@ -56,9 +56,26 @@ function rememberStayed(): void {
   }
 }
 
-/** This page's address, with a waiting card's id on it when one can be saved. */
+/**
+ * This page's address, with a waiting card's id on it when one can be saved.
+ * An id this page already carries is kept as it is: that card is on the
+ * server already. A new id goes on the page and inside its return path, so
+ * it comes back to /create after sign in (lib/handoff/link.ts).
+ */
 async function linkFromHere(): Promise<string> {
   const url = new URL(window.location.href);
+  const carried = handoffFromSearch(url.search);
+
+  if (carried !== null) {
+    const redirectTo = url.searchParams.get("redirectTo");
+
+    if (redirectTo !== null) {
+      url.searchParams.set("redirectTo", pathWithHandoff(redirectTo, carried));
+    }
+
+    return withAdParams(url.href);
+  }
+
   url.searchParams.delete(HANDOFF_PARAM);
 
   const stash = readPendingCard();
@@ -73,6 +90,10 @@ async function linkFromHere(): Promise<string> {
 
       if (saved !== null && saved.ok) {
         url.searchParams.set(HANDOFF_PARAM, saved.id);
+        url.searchParams.set(
+          "redirectTo",
+          pathWithHandoff(url.searchParams.get("redirectTo") ?? "/create", saved.id),
+        );
       }
     } catch {
       /* The link goes without the card. */

@@ -31,6 +31,8 @@ import TranslationPanel from "@/components/create/TranslationPanel";
 import CustomizeStep from "@/components/wizard/CustomizeStep";
 import { useInAppHandoff } from "@/components/browser/useInAppHandoff";
 import { inAppBrowser } from "@/lib/inAppBrowser";
+import { adoptDraftHandoff, type AdoptResult } from "@/lib/handoff/actions";
+import { HANDOFF_PARAM, handoffFromSearch } from "@/lib/handoff/link";
 import LegalFooter from "@/components/legal/LegalFooter";
 import TemplateGallery from "@/components/wizard/TemplateGallery";
 import WizardProgress from "@/components/wizard/WizardProgress";
@@ -57,6 +59,7 @@ import { formatPrice } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/client";
 import { getTheme } from "@/lib/themes";
 import {
+  NEW_CARD_HREF,
   WIZARD_PATH,
   WIZARD_STEPS,
   WIZARD_STEP_PARAM,
@@ -177,67 +180,246 @@ function onChosenTemplate(
   return switchTemplate(snapshot, getTemplate(templateId));
 }
 
+/** What the wizard starts from, decided once as the page opens. */
+interface ArrivalStart {
+  arrival: Arrival;
+  start: EditorSnapshot;
+  fallback: EditorSnapshot;
+  /** The card was the one kept as the visitor typed. */
+  autosaved: boolean;
+  /**
+   * Where the address is moved before the steps are drawn, or null to leave
+   * it. A return from sign in with no card to show goes to the first step;
+   * a handed-over card that could not be brought back loses its id.
+   */
+  address: string | null;
+}
+
 /**
- * Reads the stash once, as the page mounts, and starts the wizard from it.
+ * The start from what this browser holds: the sign-in stash, then the card
+ * kept as the visitor typed, then an empty card. `search` is the query the
+ * address will have once the steps are drawn.
+ */
+function localStart(templateId: string | null, search: string): ArrivalStart {
+  const read = arrivalFor(
+    readPendingCard(),
+    stashOriginFromUrl(search),
+    window.location.origin,
+  );
+  const empty = onChosenTemplate(EMPTY_SNAPSHOT, templateId);
+
+  if (read.kind === "restored") {
+    /* The handed-over card wins, and for good: an older kept one is not offered back later. */
+    clearCardAutosave();
+
+    return {
+      arrival: read,
+      start: onChosenTemplate(read.snapshot, templateId),
+      fallback: empty,
+      autosaved: false,
+      address: null,
+    };
+  }
+
+  const kept = read.kind === "fresh" ? readCardAutosave() : null;
+  /* Back from sign in with nothing here at all: the first step, and not a word about it. */
+  const restart = read.kind === "fresh" && read.restart === true && kept === null;
+
+  return {
+    arrival: read,
+    start: kept === null ? empty : onChosenTemplate(restoredSnapshot(kept), templateId),
+    fallback: empty,
+    autosaved: kept !== null,
+    address: restart ? NEW_CARD_HREF : null,
+  };
+}
+
+/** How long to wait before asking about a card again. */
+const ADOPT_RETRY_MS = 1500;
+/** How many times to ask about a card another request is still saving (about 18 seconds). */
+const ADOPT_BUSY_TRIES = 12;
+/** How many times a save that broke is tried before this browser's own copy is used. */
+const ADOPT_FAILED_TRIES = 3;
+
+/**
+ * One adoption per id for the life of the page, however many times the
+ * effect runs (React's strict mode runs it twice).
+ */
+const adoptions = new Map<string, Promise<AdoptResult>>();
+
+function adoptOnce(id: string): Promise<AdoptResult> {
+  let adoption = adoptions.get(id);
+
+  if (adoption === undefined) {
+    adoption = (async (): Promise<AdoptResult> => {
+      let busy = 0;
+      let failed = 0;
+
+      for (;;) {
+        let result: AdoptResult;
+
+        try {
+          result = await adoptDraftHandoff(id);
+        } catch {
+          result = { ok: false, reason: "failed" };
+        }
+
+        if (result.ok || result.reason === "missing" || result.reason === "signed-out") {
+          return result;
+        }
+
+        const spent =
+          result.reason === "busy" ? ++busy >= ADOPT_BUSY_TRIES : ++failed >= ADOPT_FAILED_TRIES;
+
+        if (spent) {
+          return result;
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, ADOPT_RETRY_MS));
+      }
+    })();
+    adoptions.set(id, adoption);
+  }
+
+  return adoption;
+}
+
+/**
+ * Where a card saved to the account from a handoff continues: the step it
+ * was left on. From the last step that is the saved screen, exactly where
+ * "Save and continue" leads a signed-in host. From an earlier one it is the
+ * same step of the wizard over the saved invitation.
+ */
+function adoptedHref(eventId: string, step: string | null): string {
+  const stepId = wizardStepId(step);
+
+  if (stepId === null || stepId === "preview") {
+    return `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${encodeURIComponent(eventId)}`;
+  }
+
+  return wizardStepPath(stepId, `/dashboard/${encodeURIComponent(eventId)}/edit`);
+}
+
+/**
+ * Decides where the card comes from, once, as the page mounts, and starts
+ * the wizard from it.
  *
  * A template chosen before the wizard opened is laid onto whichever card it
  * starts from. It needs no stash of its own across a sign-in: the card's
  * config carries its templateId, and the card is stashed whole.
  *
- * THREE PLACES A CARD CAN COME FROM, in this order. The sign-in stash first,
- * which is also where a card handed over from Instagram's or Facebook's
- * browser arrives (lib/pendingCard.ts): when it holds a card, that is the
- * card. Then the card kept as the visitor typed (lib/cardAutosave.ts), with
- * a note saying so and a way to start fresh. Then an empty card.
+ * A HANDOFF ID IN THE URL COMES FIRST (lib/handoff/link.ts): a card carried
+ * from Instagram's or Facebook's browser. The server copy is the card, so it
+ * is saved straight into the signed-in account (adoptDraftHandoff) and the
+ * host continues on the step they left it on, with every detail there,
+ * whatever browser or tab the sign in came back to. Not signed in yet: off
+ * to sign in, the id still on the way back. Past its day or not found: the
+ * copies in this browser below, and failing those the first step, quietly.
+ *
+ * THEN THREE PLACES A CARD CAN COME FROM, in this order. The sign-in stash
+ * (lib/pendingCard.ts): when it holds a card, that is the card. Then the card
+ * kept as the visitor typed (lib/cardAutosave.ts), with a note saying so and
+ * a way to start fresh. Then an empty card.
  */
 function WizardArrival({
   templateId,
 }: {
   templateId: string | null;
 }): ReactElement {
-  const [{ arrival, start, fallback, autosaved }, setArrival] = useState<{
-    arrival: Arrival;
-    start: EditorSnapshot;
-    fallback: EditorSnapshot;
-    /** The card was the one kept as the visitor typed. */
-    autosaved: boolean;
-  }>(() => {
-    const read = arrivalFor(
-      readPendingCard(),
-      stashOriginFromUrl(window.location.search),
-      window.location.origin,
-    );
-    const empty = onChosenTemplate(EMPTY_SNAPSHOT, templateId);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [handoff] = useState(() => handoffFromSearch(window.location.search));
+  const [arrived, setArrived] = useState<ArrivalStart | null>(() =>
+    handoff === null ? localStart(templateId, window.location.search) : null,
+  );
 
-    if (read.kind === "restored") {
-      /* The handed-over card wins, and for good: an older kept one is not offered back later. */
-      clearCardAutosave();
-
-      return {
-        arrival: read,
-        start: onChosenTemplate(read.snapshot, templateId),
-        fallback: empty,
-        autosaved: false,
-      };
+  useEffect(() => {
+    if (handoff === null) {
+      return;
     }
 
-    const kept = read.kind === "fresh" ? readCardAutosave() : null;
+    let live = true;
 
-    return {
-      arrival: read,
-      start: kept === null ? empty : onChosenTemplate(restoredSnapshot(kept), templateId),
-      fallback: empty,
-      autosaved: kept !== null,
+    void adoptOnce(handoff).then((result) => {
+      if (!live) {
+        return;
+      }
+
+      if (result.ok) {
+        /* In the account now: nothing of it is kept in this browser. */
+        clearPendingCard();
+        clearCardAutosave();
+        router.replace(adoptedHref(result.eventId, result.step));
+        return;
+      }
+
+      const here = new URL(window.location.href);
+
+      if (result.reason === "signed-out") {
+        /* Untouched on the server; sign in brings the id back here. */
+        adoptions.delete(handoff);
+        const login = new URL("/login", here.origin);
+        login.searchParams.set("redirectTo", `${here.pathname}${here.search}`);
+        login.searchParams.set(HANDOFF_PARAM, handoff);
+        router.replace(`${login.pathname}${login.search}`);
+        return;
+      }
+
+      /* Not found, past its day, or the server would not answer: this browser's own copies. */
+      adoptions.delete(handoff);
+      here.searchParams.delete(HANDOFF_PARAM);
+      const local = localStart(templateId, here.search);
+      setArrived({ ...local, address: local.address ?? `${here.pathname}${here.search}` });
+    });
+
+    return () => {
+      live = false;
     };
-  });
+  }, [handoff, router, templateId]);
+
+  /* The address is moved first, so the steps open on the right one from their first frame. */
+  const address = arrived?.address ?? null;
+
+  useEffect(() => {
+    if (address !== null) {
+      window.history.replaceState(null, "", address);
+    }
+  }, [address]);
+
+  const settled =
+    arrived !== null &&
+    (address === null ||
+      (searchParams.get(HANDOFF_PARAM) === null &&
+        searchParams.get(WIZARD_STEP_PARAM) ===
+          new URL(address, window.location.origin).searchParams.get(WIZARD_STEP_PARAM)));
 
   /* Bumped by "Start fresh", so the steps start again from the empty card. */
   const [generation, setGeneration] = useState(0);
   const startFresh = useCallback((): void => {
     clearCardAutosave();
-    setArrival((current) => ({ ...current, start: current.fallback, autosaved: false }));
+    setArrived((current) =>
+      current === null ? current : { ...current, start: current.fallback, autosaved: false },
+    );
     setGeneration((value) => value + 1);
   }, []);
+
+  if (!settled) {
+    return handoff === null ? (
+      <EditorSkeleton />
+    ) : (
+      <>
+        <p
+          role="status"
+          className="fixed inset-x-4 top-20 z-20 mx-auto max-w-sm rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 text-center text-sm text-[var(--lifafa-cream)] shadow-sm"
+        >
+          Welcome back. Let&apos;s finish your card.
+        </p>
+        <EditorSkeleton />
+      </>
+    );
+  }
+
+  const { arrival, start, fallback, autosaved } = arrived;
 
   if (arrival.kind === "restored") {
     return (

@@ -5,17 +5,24 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { requestIp } from "@/lib/admin/rateLimit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hasCardOutline, type PendingCard } from "@/lib/pendingCard";
+import { createEvent } from "@/lib/db/events";
+import { isHandoffId } from "@/lib/handoff/link";
+import { hasCardOutline, toPendingCard, type PendingCard } from "@/lib/pendingCard";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Carries an unsaved card from Instagram's or Facebook's in-app browser to
- * Chrome or Safari.
+ * Chrome or Safari, and into the visitor's account.
  *
  * The in-app browser's storage (lib/pendingCard.ts) cannot be read from the
- * real one. When the visitor taps "Save and continue" there, the card is
- * saved here under a short random id, the id rides on the link to /login in
- * the real browser (components/browser/useInAppHandoff.tsx), and /login
- * claims it (components/browser/DraftHandoffRestore.tsx).
+ * real one, and the real one may not be the browser the trip ends in either:
+ * Google can hand the return to a Custom Tab, a new tab or another browser.
+ * So the server copy is the card, and no browser's storage is trusted to hold
+ * it. When the visitor taps "Save and continue" there, the card is saved here
+ * under a short random id, and the id rides on every URL of the trip
+ * (lib/handoff/link.ts): the Chrome or Safari link, /login, the sign-in's
+ * return path, and /create after it. There, signed in, the card is adopted:
+ * saved as an invitation in the account (adoptDraftHandoff).
  *
  * SUPABASE STORAGE, PRIVATE. One JSON file per card in the `draft-handoffs`
  * bucket, which is never public and is only touched here, with the service
@@ -23,21 +30,31 @@ import { hasCardOutline, type PendingCard } from "@/lib/pendingCard";
  * migration to run. A card holds text and ids only: the editor has no photo
  * upload, and a photo border is a built-in picture named by id.
  *
- * ONE DAY, ONE USE. A claim deletes the file, and one older than a day is
- * refused and deleted. Every save also sweeps away the oldest expired files.
+ * ONE DAY, ONE USE. Nothing reads a card without saving it to an account:
+ * opening /login does not touch it. The file is deleted only once the
+ * invitation is written, and a short receipt (`adopted/<id>.json`) is left
+ * that names the account and the invitation, so the same visitor reloading
+ * the page is sent to the same invitation instead of a second copy, and
+ * anyone else gets nothing. A card older than a day is refused and deleted.
+ * Every save also sweeps away the oldest expired files.
  *
- * Both exports are public endpoints, as every export of a "use server" module
+ * Every export is a public endpoint, as every export of a "use server" module
  * is, so nothing they receive is trusted: the id must have the exact shape
  * this file makes, the card must have a card's outline and stay under a size
- * limit, and each address may save a few cards in ten minutes.
+ * limit, each address may save a few cards in ten minutes, and adopting needs
+ * a signed-in account.
  */
 
 const BUCKET = "draft-handoffs";
 const TTL_MS = 24 * 60 * 60 * 1000;
 /** A card is a few kilobytes; this leaves room for long translated text. */
 const MAX_BYTES = 200_000;
-/** 12 random bytes: 16 characters of base64url. */
-const ID_SHAPE = /^[A-Za-z0-9_-]{16}$/;
+/** Where a card adopted into an account leaves its receipt. */
+const ADOPTED_DIR = "adopted";
+/** Where an adoption in progress holds its lock. */
+const LOCK_DIR = "locks";
+/** A lock older than this was left by a request that died; it is taken over. */
+const LOCK_STALE_MS = 60 * 1000;
 
 const SAVES_PER_WINDOW = 10;
 const WINDOW_MS = 10 * 60 * 1000;
@@ -79,21 +96,28 @@ function fileName(id: string): string {
   return `${id}.json`;
 }
 
-/** Deletes the oldest files that have passed their day. Never throws. */
+/**
+ * Deletes the oldest files that have passed their day: cards, receipts and
+ * locks left behind. Never throws.
+ */
 async function sweepExpired(): Promise<void> {
   try {
     const storage = createAdminClient().storage.from(BUCKET);
-    const { data } = await storage.list("", {
-      limit: 100,
-      sortBy: { column: "created_at", order: "asc" },
-    });
     const cutoff = Date.now() - TTL_MS;
-    const expired = (data ?? [])
-      .filter((file) => file.created_at && Date.parse(file.created_at) < cutoff)
-      .map((file) => file.name);
 
-    if (expired.length > 0) {
-      await storage.remove(expired);
+    for (const folder of ["", ADOPTED_DIR, LOCK_DIR]) {
+      const { data } = await storage.list(folder, {
+        limit: 100,
+        sortBy: { column: "created_at", order: "asc" },
+      });
+      /* A folder is listed with no created_at, so it is never picked. */
+      const expired = (data ?? [])
+        .filter((file) => file.created_at && Date.parse(file.created_at) < cutoff)
+        .map((file) => (folder === "" ? file.name : `${folder}/${file.name}`));
+
+      if (expired.length > 0) {
+        await storage.remove(expired);
+      }
     }
   } catch (cause: unknown) {
     console.error("[handoff] sweep failed:", cause);
@@ -165,43 +189,218 @@ export async function saveDraftHandoff(
   return { ok: true, id };
 }
 
-/**
- * Takes the card saved under `id`, deleting it: it can be claimed once.
- * `missing` covers a wrong id, one already claimed and one past its day.
- */
-export async function claimDraftHandoff(
-  id: unknown,
-): Promise<{ ok: true; card: PendingCard } | { ok: false; reason: "missing" | "failed" }> {
-  if (typeof id !== "string" || !ID_SHAPE.test(id)) {
-    return { ok: false, reason: "missing" };
+type Storage = ReturnType<ReturnType<typeof createAdminClient>["storage"]["from"]>;
+
+/** What adopting a card leaves behind: whose it now is, and where. */
+interface Receipt {
+  userId: string;
+  eventId: string;
+  step: string | null;
+  adoptedAt: number;
+}
+
+/** A JSON file from the bucket, parsed; null when it is not there or will not parse. */
+async function readJson(storage: Storage, path: string): Promise<unknown> {
+  const { data, error } = await storage.download(path);
+
+  if (error !== null || data === null) {
+    return null;
   }
 
   try {
-    const storage = createAdminClient().storage.from(BUCKET);
-    const { data, error } = await storage.download(fileName(id));
+    return JSON.parse(await data.text()) as unknown;
+  } catch {
+    return null;
+  }
+}
 
-    if (error !== null || data === null) {
-      return { ok: false, reason: "missing" };
+async function readReceipt(storage: Storage, id: string): Promise<Receipt | null> {
+  const parsed = await readJson(storage, `${ADOPTED_DIR}/${fileName(id)}`);
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    typeof (parsed as Partial<Receipt>).userId !== "string" ||
+    typeof (parsed as Partial<Receipt>).eventId !== "string"
+  ) {
+    return null;
+  }
+
+  const receipt = parsed as Receipt;
+
+  return {
+    userId: receipt.userId,
+    eventId: receipt.eventId,
+    step: typeof receipt.step === "string" ? receipt.step : null,
+    adoptedAt: typeof receipt.adoptedAt === "number" ? receipt.adoptedAt : 0,
+  };
+}
+
+/**
+ * Takes the lock on one card, so two requests for it (a reload while the
+ * first is still saving, two tabs) cannot save it twice. Creating a file
+ * that must not exist yet is the lock; one left by a request that died is
+ * taken over.
+ */
+async function takeLock(storage: Storage, id: string): Promise<boolean> {
+  const path = `${LOCK_DIR}/${fileName(id)}`;
+  const lock = () =>
+    storage.upload(path, JSON.stringify({ at: Date.now() }), {
+      contentType: "application/json",
+      upsert: false,
+    });
+
+  if ((await lock()).error === null) {
+    return true;
+  }
+
+  const held = await readJson(storage, path);
+  const at =
+    typeof held === "object" && held !== null && "at" in held && typeof held.at === "number"
+      ? held.at
+      : 0;
+
+  if (Date.now() - at < LOCK_STALE_MS) {
+    return false;
+  }
+
+  await storage.remove([path]);
+  return (await lock()).error === null;
+}
+
+async function dropLock(storage: Storage, id: string): Promise<void> {
+  await storage.remove([`${LOCK_DIR}/${fileName(id)}`]);
+}
+
+export type AdoptResult =
+  /** The card is an invitation in this account. `step` is where it was left. */
+  | { ok: true; eventId: string; step: string | null }
+  | {
+      ok: false;
+      /**
+       * signed-out: nobody is signed in, and the card is left as it was.
+       * missing: no such card, past its day, or adopted by another account.
+       * busy: another request is saving it right now; ask again shortly.
+       * failed: something broke; the card is left as it was.
+       */
+      reason: "signed-out" | "missing" | "busy" | "failed";
+    };
+
+/**
+ * Saves the card under `id` as an invitation in the signed-in account, and
+ * only then deletes it: the one way a card leaves the bucket, apart from its
+ * day running out.
+ *
+ * Asked again for a card this same account has already adopted, it answers
+ * with that invitation rather than making a second one. Any other account
+ * gets `missing`, so a card is never shown to anyone but the one who adopts
+ * it first.
+ */
+export async function adoptDraftHandoff(id: unknown): Promise<AdoptResult> {
+  if (!isHandoffId(id)) {
+    return { ok: false, reason: "missing" };
+  }
+
+  let userId: string;
+
+  try {
+    const { data, error } = await (await createClient()).auth.getUser();
+
+    if (error !== null || data.user === null) {
+      return { ok: false, reason: "signed-out" };
     }
 
-    const parsed: unknown = JSON.parse(await data.text());
-    await storage.remove([fileName(id)]);
+    userId = data.user.id;
+  } catch (cause: unknown) {
+    console.error("[handoff] could not read the session:", cause);
+    return { ok: false, reason: "failed" };
+  }
+
+  const fromReceipt = (receipt: Receipt | null): AdoptResult =>
+    receipt !== null && receipt.userId === userId
+      ? { ok: true, eventId: receipt.eventId, step: receipt.step }
+      : { ok: false, reason: "missing" };
+
+  let storage: Storage;
+
+  try {
+    storage = createAdminClient().storage.from(BUCKET);
+
+    /* Already adopted: the same visitor back again, or someone else. */
+    const earlier = await readReceipt(storage, id);
+
+    if (earlier !== null) {
+      return fromReceipt(earlier);
+    }
+
+    if (!(await takeLock(storage, id))) {
+      return { ok: false, reason: "busy" };
+    }
+  } catch (cause: unknown) {
+    console.error("[handoff] adopt failed before the lock:", cause);
+    return { ok: false, reason: "failed" };
+  }
+
+  try {
+    const stored = await readJson(storage, fileName(id));
+
+    if (stored === null) {
+      /* Adopted between the first look and the lock, or never there at all. */
+      return fromReceipt(await readReceipt(storage, id));
+    }
 
     if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !("savedAt" in parsed) ||
-      typeof parsed.savedAt !== "number" ||
-      Date.now() - parsed.savedAt > TTL_MS ||
-      !("card" in parsed) ||
-      !hasCardOutline(parsed.card)
+      typeof stored !== "object" ||
+      !("savedAt" in stored) ||
+      typeof stored.savedAt !== "number" ||
+      Date.now() - stored.savedAt > TTL_MS ||
+      !("card" in stored) ||
+      !hasCardOutline(stored.card)
     ) {
+      await storage.remove([fileName(id)]);
       return { ok: false, reason: "missing" };
     }
 
-    return { ok: true, card: parsed.card };
+    const card = toPendingCard(stored.card);
+    const saved = await createEvent(
+      card.draft,
+      /* The wizard's, as a card restored in the browser is (restoredSnapshot in lib/newCard.ts). */
+      { ...card.config, editor: "wizard" },
+      card.coverAnimation ?? "",
+      { showWeather: card.showWeather === true, themeId: card.weatherTheme ?? "" },
+      card.qrCheckinEnabled === true,
+    );
+
+    if (!saved.ok) {
+      /* The card stays where it is, to be tried again. */
+      console.error("[handoff] could not save the card to the account:", saved.error);
+      return { ok: false, reason: "failed" };
+    }
+
+    const receipt: Receipt = {
+      userId,
+      eventId: saved.data.id,
+      step: card.step ?? null,
+      adoptedAt: Date.now(),
+    };
+    const written = await storage.upload(
+      `${ADOPTED_DIR}/${fileName(id)}`,
+      JSON.stringify(receipt),
+      { contentType: "application/json", upsert: true },
+    );
+
+    if (written.error !== null) {
+      console.error("[handoff] could not write the receipt:", written.error);
+    }
+
+    /* Saved to the account: only now is the card itself deleted. */
+    await storage.remove([fileName(id)]);
+
+    return { ok: true, eventId: receipt.eventId, step: receipt.step };
   } catch (cause: unknown) {
-    console.error("[handoff] claim failed:", cause);
+    console.error("[handoff] adopt failed:", cause);
     return { ok: false, reason: "failed" };
+  } finally {
+    await dropLock(storage, id).catch(() => undefined);
   }
 }

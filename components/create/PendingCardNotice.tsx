@@ -12,8 +12,6 @@ import { useState, type ReactElement } from "react";
 export type PendingCardProblem =
   /** Stashed on another of Lifafa's addresses. `origin` is where. */
   | { kind: "elsewhere"; origin: string }
-  /** Stashed on this address, but not in this browser. */
-  | { kind: "missing" }
   /** Older than the day a card is kept for. */
   | { kind: "expired" }
   /** There, but it would not open. */
@@ -52,11 +50,6 @@ function messageFor(problem: PendingCardProblem, here: string): Message {
         body: `You started it on ${there}, and this page is ${here}. Each address keeps its own copy, so this one cannot see your card. Open ${there}/create in this browser to carry on where you left off.`,
       };
     }
-    case "missing":
-      return {
-        title: "Your card is not in this browser.",
-        body: `A card you are working on is kept in the browser you were using when you pressed Save. If you signed in from a different app or browser (email apps often open links in their own), go back to the one you started in and open ${here}/create there. Or start again below.`,
-      };
     case "expired":
       return {
         title: "Your card was too old to bring back.",

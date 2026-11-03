@@ -8,10 +8,10 @@ import { hasCardOutline, toPendingCard, type PendingCard } from "@/lib/pendingCa
  * everything typed; a card holds no photos.
  *
  * APART FROM THE SIGN-IN STASH (lib/pendingCard.ts), and below it. The stash
- * is the card a host sent off to sign in, or the one handed over from
- * Instagram's or Facebook's browser to Chrome or Safari; when one is there, it
- * is the card /create opens, and this one is not read. This is only what
- * /create opens with when there is nothing else.
+ * is the card a host sent off to sign in; when one is there, it is the card
+ * /create opens, and this one is not read. This is only what /create opens
+ * with when there is nothing else. (A card handed over from Instagram's or
+ * Facebook's browser comes from the server first; see lib/handoff/link.ts.)
  *
  * KEPT FOR 7 DAYS from the last change, and cleared the moment the card is
  * saved to an account (it is then the invitation's to keep) or the visitor
