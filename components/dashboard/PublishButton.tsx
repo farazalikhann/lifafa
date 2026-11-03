@@ -11,6 +11,7 @@ import { initiateCheckout } from "@/lib/metaPixel";
 import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 import HelpLine from "@/components/legal/HelpLine";
+import SecurePayment from "@/components/dashboard/SecurePayment";
 
 /**
  * Razorpay's checkout, loaded from Razorpay's own domain.
@@ -320,6 +321,13 @@ export default function PublishButton({
     phase.kind === "open" ||
     phase.kind === "activating";
 
+  /* Paid or activated, and waiting on the server: nothing left to decide, so nothing to weigh it by. */
+  const decided =
+    phase.kind === "confirming" ||
+    phase.kind === "pending" ||
+    phase.kind === "activated";
+  const free = coupon !== null && coupon.finalPaise === 0;
+
   return (
     <div className="flex flex-col items-stretch gap-3 sm:items-end">
       {/*
@@ -327,9 +335,7 @@ export default function PublishButton({
         coupon field beside a checkout that has already been paid is a field
         offering to change a price that is settled.
       */}
-      {phase.kind === "confirming" ||
-      phase.kind === "pending" ||
-      phase.kind === "activated" ? null : (
+      {decided ? null : (
         <div className="w-full sm:max-w-[18rem]">
           <CouponField
             eventId={eventId}
@@ -340,10 +346,39 @@ export default function PublishButton({
         </div>
       )}
 
+      {/*
+        The whole price, and what it buys. The total is the figure the order is
+        made for: the template's price, less an applied coupon, with nothing
+        added at checkout (createPaymentOrder). What follows a payment is what
+        the code does with is_paid: the guest's page opens (an unpaid link
+        shows "not ready", components/invite/NotPublished.tsx), the watermark
+        comes off, and replies land on the dashboard.
+      */}
+      {decided ? null : (
+        <div className="flex flex-col gap-1 sm:items-end sm:text-right">
+          <p className="text-sm text-[var(--lifafa-cream)]">
+            {free ? (
+              <span className="font-semibold">Free with your coupon</span>
+            ) : (
+              <>
+                <span className="font-semibold">
+                  {formatPrice(coupon === null ? pricePaise : coupon.finalPaise)} total
+                </span>
+                {coupon === null ? null : (
+                  <s className="ml-1.5 text-xs text-[var(--lifafa-muted)]">{formatPrice(pricePaise)}</s>
+                )}
+                <span className="text-xs text-[var(--lifafa-muted)]"> · one-time, nothing added at checkout</span>
+              </>
+            )}
+          </p>
+          <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
+            Then guests can open your link, with no watermark, and every reply shows on your dashboard.
+          </p>
+        </div>
+      )}
+
       {/* What paying agrees to, said where the decision is made. Gone with the coupon field once it is made. */}
-      {phase.kind === "confirming" ||
-      phase.kind === "pending" ||
-      phase.kind === "activated" ? null : (
+      {decided ? null : (
         <p className="text-xs leading-relaxed text-[var(--lifafa-muted)] sm:text-right">
           By paying you agree to the{" "}
           <Link href="/terms" prefetch={false} className={AGREEMENT_LINK}>
@@ -351,7 +386,7 @@ export default function PublishButton({
           </Link>{" "}
           and the{" "}
           <Link href="/refunds" prefetch={false} className={AGREEMENT_LINK}>
-            Refund Policy
+            Cancellation and Refund Policy
           </Link>
           .
         </p>
@@ -367,6 +402,9 @@ export default function PublishButton({
       >
         {buttonLabel(phase, coupon, pricePaise)}
       </button>
+
+      {/* How the money is taken, right under the button. Not said for a code that makes it free: then nothing is. */}
+      {decided || free ? null : <SecurePayment className="sm:justify-end" />}
 
       <StatusLine phase={phase} onCheckAgain={() => router.refresh()} />
 
