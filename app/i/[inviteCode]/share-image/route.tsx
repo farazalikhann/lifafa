@@ -36,9 +36,9 @@ export const dynamic = "force-dynamic";
 /**
  * A system stack, resolved by Satori's bundled default face.
  *
- * The card's real fonts are Google faces loaded through next/font. Getting one
- * of those in here means fetching the .ttf at request time and handing Satori
- * the buffer — worth doing, but not before the image itself is right.
+ * The card's real fonts are the faces in app/fonts/ (woff2, which Satori does
+ * not read). Getting one of those in here means handing Satori a .ttf or .otf
+ * buffer — worth doing, but not before the image itself is right.
  */
 const FONT_STACK =
   'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';

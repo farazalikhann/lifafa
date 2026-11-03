@@ -3,11 +3,11 @@ import type { FontPairId } from "@/types/style";
 /**
  * Font pairings the host can choose between.
  *
- * Only the CSS variable names live here — every face is declared once through
- * next/font/google in app/layout.tsx and exposed on the html element. Declaring
- * a face is not downloading it: a browser fetches a webfont only when some text
- * on the page is set in it, so a guest's invite pulls the files for its own
- * pair and nothing else. See the note on preloading in app/layout.tsx.
+ * Only the CSS variable names live here — every face is declared once in
+ * app/fonts/fonts.css, from the font files committed beside it, and named on
+ * the html element. Declaring a face is not downloading it: a browser fetches
+ * a webfont only when some text on the page is set in it, so a guest's invite
+ * pulls the files for its own pair and nothing else.
  */
 export interface FontPair {
   id: FontPairId;
@@ -33,8 +33,8 @@ export interface FontPair {
    */
   names?: NamesFace;
   /**
-   * The pair's own Devanagari faces, one per role, as next/font variables
-   * declared in app/layout.tsx. Each sits straight after the Latin face of the
+   * The pair's own Devanagari faces, one per role, as the font variables
+   * declared in app/fonts/fonts.css. Each sits straight after the Latin face of the
    * same role (see pairRoleVar), so a browser sets Latin letters in the Latin
    * face and Devanagari letters in these, even inside one line.
    *
@@ -306,7 +306,7 @@ function roleFaces(pair: FontPair, role: FontRole): [string, string] {
  *
  * Latin first and Devanagari second is the whole mechanism. A browser picks a
  * face per character: a Latin letter is drawn by the Latin face, and a
- * Devanagari one falls past it — each next/font face carries a unicode-range —
+ * Devanagari one falls past it — each face carries a unicode-range —
  * to the pair's Devanagari face, so "Taj Palace, लखनऊ" is two faces in one
  * line. It also decides the downloads. A face's file is fetched only when a
  * character is drawn in it, so an English card never fetches a Devanagari file,

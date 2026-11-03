@@ -3,8 +3,8 @@ import type { ThemeId } from "@/types/event";
 /**
  * Card themes. Colours are raw hex rather than Tailwind classes so CardPreview
  * can drop them straight into inline styles and switch with no reflow of
- * class names. Font families point at the next/font variables already loaded
- * in app/layout.tsx.
+ * class names. Font families point at the font variables declared in
+ * app/fonts/fonts.css.
  */
 export interface Theme {
   id: ThemeId;

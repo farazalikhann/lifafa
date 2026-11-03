@@ -90,8 +90,8 @@ Rules
 
 ## 3. Typography
 
-- **Fraunces** (variable, already self-hosted by next/font as `--font-display`) for h1, h2, h3, template names and prices. Weight 600 by default, 700 for the hero heading if it needs more presence. Slight negative tracking at display sizes.
-- **Manrope** (self-hosted by next/font as `--font-paper-sans`, landing page only) for body, buttons, table and FAQ. 400 for running text, 600 for buttons and labels, 700 for eyebrows.
+- **Fraunces** (variable, self-hosted from app/fonts/ as `--font-display`) for h1, h2, h3, template names and prices. Weight 600 by default, 700 for the hero heading if it needs more presence. Slight negative tracking at display sizes.
+- **Manrope** (self-hosted from app/fonts/ as `--font-paper-sans`, light pages only) for body, buttons, table and FAQ. 400 for running text, 600 for buttons and labels, 700 for eyebrows.
 - **Noto Sans Devanagari** (`--font-devanagari`) is the last family in both stacks. It carries Hindi and the rupee sign, so `₹699` renders in every browser even where the Latin face has no glyph for it.
 - Body text is at least 16px on mobile with a line height of 1.6. Nothing a visitor needs to read is smaller than 14px.
 - Headings use `text-wrap: balance`. Paragraphs are capped at about 60 characters.

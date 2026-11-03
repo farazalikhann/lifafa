@@ -4,7 +4,7 @@ import { GURMUKHI_LANG } from "@/lib/gurmukhiContent";
 /**
  * What Gurmukhi script is set in.
  *
- * Noto Sans Gurmukhi, loaded by next/font in app/layout.tsx and resolved
+ * Noto Sans Gurmukhi, declared in app/fonts/fonts.css and resolved
  * through one variable declared in globals.css, with the system faces behind
  * it. The same arrangement the Arabic and Devanagari stacks use.
  */

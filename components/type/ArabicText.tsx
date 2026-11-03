@@ -3,7 +3,7 @@ import type { CSSProperties, ReactElement } from "react";
 /**
  * What Arabic script is set in.
  *
- * Amiri, loaded by next/font in app/layout.tsx and resolved through
+ * Amiri, declared in app/fonts/fonts.css and resolved through
  * one variable declared in globals.css, with the system faces behind it.
  */
 const ARABIC_FONT_STACK = "var(--lifafa-arabic)";
