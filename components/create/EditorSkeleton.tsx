@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import WizardProgress from "@/components/wizard/WizardProgress";
+import type { WizardStepId } from "@/lib/wizardSteps";
 
 /**
  * What /create shows before the browser has said whether a card is waiting.
@@ -43,26 +45,39 @@ function FieldSkeleton({ delay }: { delay: number }): ReactElement {
   );
 }
 
-export default function EditorSkeleton(): ReactElement {
+export default function EditorSkeleton({
+  step = "details",
+}: {
+  /** The step the address names, for the header: the wizard's own header, drawn as itself. */
+  step?: WizardStepId;
+}): ReactElement {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 lg:px-8">
-          {/* A real link from the first frame: the way out should never wait. */}
-          <Link
-            href="/"
-            className="inline-flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-          >
-            <Logo compact />
-          </Link>
-          <Bar className="h-11 w-44" />
+      {/*
+        The wizard's own header and the wizard's own padding (Wizard.tsx), so
+        the steps land under a header that does not change height or move.
+      */}
+      <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 pt-2.5 pb-1 sm:px-12 lg:px-[5.5rem] xl:px-8">
+          <WizardProgress
+            brand={
+              /* A real link from the first frame: the way out should never wait. */
+              <Link
+                href="/"
+                className="-my-2 inline-block rounded py-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+              >
+                <Logo compact />
+              </Link>
+            }
+            current={step}
+          />
         </div>
       </header>
 
       <main
         role="status"
         aria-live="polite"
-        className="mx-auto grid max-w-6xl gap-10 px-5 pt-8 pb-52 lg:grid-cols-[58fr_42fr] lg:items-start lg:px-8 lg:py-12"
+        className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-52 sm:px-12 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-[5.5rem] lg:pt-10 xl:px-8"
       >
         <span className="sr-only">Opening the editor…</span>
 

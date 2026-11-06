@@ -28,9 +28,24 @@
 @font-face{font-family:Fraunces Fallback;src:local("Times New Roman");ascent-override:84.71%;descent-override:22.09%;line-gap-override:0.00%;size-adjust:115.45%}
 
 .lifafa-font-paper-sans {
-  --font-paper-sans:"Manrope","Manrope Fallback";
+  --font-paper-sans:"Manrope","Manrope Fallback","Manrope Fallback Android";
 }
 
 .lifafa-font-paper-display {
-  --font-paper-display:"Fraunces","Fraunces Fallback";
+  --font-paper-display:"Fraunces","Fraunces Fallback","Fraunces Fallback Android";
 }
+
+/*
+  ADDED BY HAND, NOT GENERATED: the fallbacks for Android.
+
+  next/font measured its fallbacks against Arial and Times New Roman, which
+  Android does not have, so there "Manrope Fallback" and "Fraunces Fallback"
+  match nothing and text is first drawn in Roboto, or in Noto Sans Devanagari
+  for headings, at its own size, then moves when the real face arrives. These
+  are the same idea against the faces Android does have, measured on the
+  gallery's own words (Roboto and Noto Serif against Manrope 400 to 500 and
+  Fraunces 600). Each comes after the generated one in its stack, so a phone
+  or computer with Arial and Times New Roman is drawn exactly as before.
+*/
+@font-face{font-family:Manrope Fallback Android;src:local("Roboto"),local("Roboto-Regular");ascent-override:103.12%;descent-override:28.91%;line-gap-override:0.00%;size-adjust:103.77%}
+@font-face{font-family:Fraunces Fallback Android;src:local("Noto Serif"),local("NotoSerif-Regular");ascent-override:96.31%;descent-override:25.55%;line-gap-override:0.00%;size-adjust:101.76%}

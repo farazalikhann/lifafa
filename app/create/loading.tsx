@@ -63,7 +63,7 @@ export default function CreateLoading(): ReactElement {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 pt-2.5 pb-1 sm:px-5 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 pt-2.5 pb-1 sm:px-12 lg:px-[5.5rem] xl:px-8">
           <WizardProgress
             brand={
               <Link
@@ -81,7 +81,7 @@ export default function CreateLoading(): ReactElement {
       <main
         role="status"
         aria-live="polite"
-        className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-5 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-8 lg:pt-10"
+        className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-12 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-[5.5rem] lg:pt-10 xl:px-8"
       >
         <span className="sr-only">Opening the templates…</span>
 
@@ -138,7 +138,7 @@ export default function CreateLoading(): ReactElement {
 
       {/* The bar pinned to the bottom: Preview (below lg) and Next. */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 lg:px-8">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
           <Shimmer className="h-12 w-24 rounded-full lg:hidden" />
           <Shimmer className="ml-auto h-12 w-24 rounded-full" />
         </div>

@@ -169,7 +169,7 @@
 @font-face{font-family:Eczar Fallback;src:local("Times New Roman");ascent-override:106.01%;descent-override:58.80%;line-gap-override:0.00%;size-adjust:107.82%}
 
 :root {
-  --font-display:"Fraunces","Fraunces Fallback";
+  --font-display:"Fraunces","Fraunces Fallback","Fraunces Fallback Android";
   --font-sans:"Inter","Inter Fallback";
   --font-cormorant:"Cormorant Garamond","Cormorant Garamond Fallback";
   --font-lora:"Lora","Lora Fallback";
@@ -182,7 +182,7 @@
   --font-marcellus:"Marcellus","Marcellus Fallback";
   --font-bodoni:"Bodoni Moda","Bodoni Moda Fallback";
   --font-josefin:"Josefin Sans","Josefin Sans Fallback";
-  --font-manrope:"Manrope","Manrope Fallback";
+  --font-manrope:"Manrope","Manrope Fallback","Manrope Fallback Android";
   --font-raleway:"Raleway","Raleway Fallback";
   --font-nunito:"Nunito","Nunito Fallback";
   --font-montserrat:"Montserrat","Montserrat Fallback";
@@ -202,3 +202,18 @@
   --font-hi-tillana:"Tillana","Tillana Fallback";
   --font-hi-eczar:"Eczar","Eczar Fallback";
 }
+
+/*
+  ADDED BY HAND, NOT GENERATED: the fallbacks for Android.
+
+  next/font measured its fallbacks against Arial and Times New Roman, which
+  Android does not have, so there "Manrope Fallback" and "Fraunces Fallback"
+  match nothing and text is first drawn in Roboto, or in Noto Sans Devanagari
+  for headings, at its own size, then moves when the real face arrives. These
+  are the same idea against the faces Android does have, measured on the
+  gallery's own words (Roboto and Noto Serif against Manrope 400 to 500 and
+  Fraunces 600). Each comes after the generated one in its stack, so a phone
+  or computer with Arial and Times New Roman is drawn exactly as before.
+*/
+@font-face{font-family:Manrope Fallback Android;src:local("Roboto"),local("Roboto-Regular");ascent-override:103.12%;descent-override:28.91%;line-gap-override:0.00%;size-adjust:103.77%}
+@font-face{font-family:Fraunces Fallback Android;src:local("Noto Serif"),local("NotoSerif-Regular");ascent-override:96.31%;descent-override:25.55%;line-gap-override:0.00%;size-adjust:101.76%}

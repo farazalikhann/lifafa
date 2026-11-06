@@ -150,6 +150,9 @@ export default function Wizard({
    */
   templateId?: string | null;
 }): ReactElement {
+  /* The step the address names, for the skeleton's header. */
+  const step = wizardStepId(useSearchParams().get(WIZARD_STEP_PARAM)) ?? WIZARD_STEPS[0].id;
+
   /*
     A stashed card is in the browser's storage, which the server cannot see, so
     the server draws the skeleton rather than guess at an empty wizard.
@@ -157,7 +160,7 @@ export default function Wizard({
   return useIsClient() ? (
     <WizardArrival templateId={templateId} />
   ) : (
-    <EditorSkeleton />
+    <EditorSkeleton step={step} />
   );
 }
 
@@ -404,8 +407,11 @@ function WizardArrival({
   }, []);
 
   if (!settled) {
+    const skeletonStep =
+      wizardStepId(searchParams.get(WIZARD_STEP_PARAM)) ?? WIZARD_STEPS[0].id;
+
     return handoff === null ? (
-      <EditorSkeleton />
+      <EditorSkeleton step={skeletonStep} />
     ) : (
       <>
         <p
@@ -414,7 +420,7 @@ function WizardArrival({
         >
           Welcome back. Let&apos;s finish your card.
         </p>
-        <EditorSkeleton />
+        <EditorSkeleton step={skeletonStep} />
       </>
     );
   }
