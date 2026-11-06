@@ -38,11 +38,15 @@ const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4";
 const PREVIEW_SIZES =
   "(min-width: 1280px) 192px, (min-width: 1024px) calc(19vw - 50px), (min-width: 640px) calc(33vw - 43px), calc(50vw - 22px)";
 
-/** A template looked at, for the ads: its live demo opened, or chosen. */
+/**
+ * A template looked at, for the ads: its live demo opened, or chosen. Sent on
+ * the tap itself, before the demo link leaves the page; lib/metaPixel.ts
+ * sends it once per template per tab.
+ */
 function looked(template: TemplateConfig): void {
   viewContent({
     id: template.id,
-    name: template.name,
+    tier: template.collection,
     pricePaise: template.price,
   });
 }

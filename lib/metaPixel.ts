@@ -31,6 +31,15 @@
  * afterInteractive, once the page has hydrated, so a visitor who leaves an
  * ad's landing page quickly is still counted. Events asked for before that
  * wait here, each with the address it was asked for on, and go once it has.
+ *
+ * EXCEPT VIEWCONTENT, WHICH GOES AT ONCE. It is asked for on a tap that often
+ * leaves the page straight away ("See live demo" opens /demo, where the pixel
+ * may not run), and an event waiting here, or an image fbevents.js has just
+ * started, is lost with the page. So it never waits for fbevents.js and never
+ * goes through it: it is one request to the image endpoint, made as a
+ * keepalive fetch that the browser finishes after the page has gone (an image
+ * where fetch cannot be used), and never both. Held, it waits for the release
+ * instead of being dropped. Once per template per tab (sessionStorage).
  */
 
 const PIXEL_ID = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").trim();
@@ -158,6 +167,8 @@ interface Pending {
   name: string;
   /** One of Meta's own events (fbq "track"), or one of ours ("trackCustom"). */
   custom: boolean;
+  /** Sent at once as a keepalive request, never through fbevents.js; waits only for a hold's release. */
+  keepalive: boolean;
   params: EventParams;
   eventID?: string;
   page: { href: string; asIs: boolean };
@@ -228,12 +239,12 @@ function readCookie(name: string): string | null {
 }
 
 /**
- * One event to Meta's image endpoint, with the address written out. The same
- * parameters fbevents.js sends, and its browser id (_fbp) and click id (_fbc)
- * cookies when it has set them, so the event is still tied to the visit the
- * ad began. No referrer header, and the reported referrer is an origin.
+ * One event's address at Meta's image endpoint, with the page written out. The
+ * same parameters fbevents.js sends, and its browser id (_fbp) and click id
+ * (_fbc) cookies when it has set them, so the event is still tied to the visit
+ * the ad began. The reported referrer is an origin.
  */
-function sendImage(event: Pending): void {
+function trackUrl(event: Pending): string {
   const query = new URLSearchParams({
     id: PIXEL_ID,
     ev: event.name,
@@ -267,15 +278,44 @@ function sendImage(event: Pending): void {
     }
   }
 
+  return `${TRACK_ENDPOINT}?${query.toString()}`;
+}
+
+/** One event as an image, the way the pixel's own <noscript> sends one. No referrer header. */
+function sendImage(event: Pending): void {
   const image = new Image();
   image.referrerPolicy = "no-referrer";
-  image.src = `${TRACK_ENDPOINT}?${query.toString()}`;
+  image.src = trackUrl(event);
 }
 
 /**
- * Sends one event: through fbevents.js when it is loaded and the event was
- * asked for on this very page, which it may report as it is; otherwise to the
- * image endpoint with the address it was asked for on.
+ * One event as a keepalive fetch: the same GET the image makes, cookies and
+ * all, which the browser finishes even when the page is left a moment later.
+ * An image where fetch cannot be used. A fetch that fails later is not tried
+ * again, so the event can never reach Meta twice.
+ */
+function sendKeepalive(event: Pending): void {
+  const url = trackUrl(event);
+
+  try {
+    void fetch(url, {
+      method: "GET",
+      mode: "no-cors",
+      credentials: "include",
+      cache: "no-store",
+      keepalive: true,
+      referrerPolicy: "no-referrer",
+    }).catch(() => undefined);
+  } catch {
+    sendImage(event);
+  }
+}
+
+/**
+ * Sends one event: a keepalive one as a keepalive request; any other through
+ * fbevents.js when it is loaded and the event was asked for on this very
+ * page, which it may report as it is; otherwise to the image endpoint with
+ * the address it was asked for on.
  */
 function deliver(event: Pending): void {
   syncConsent();
@@ -283,7 +323,9 @@ function deliver(event: Pending): void {
   const fbq = window.fbq;
   const current = reportedPage(here());
 
-  if (
+  if (event.keepalive) {
+    sendKeepalive(event);
+  } else if (
     fbq?.callMethod !== undefined &&
     consentGranted &&
     event.page.asIs &&
@@ -303,30 +345,56 @@ function deliver(event: Pending): void {
   event.onSent?.();
 }
 
-/** Sends what has waited, once fbevents.js has settled and while this page may. */
+/** Whether a taken event may go now: this page may send, and fbevents.js has settled unless it is a keepalive one. */
+function ready(event: Pending): boolean {
+  return mayRun() && (event.keepalive || state === "settled");
+}
+
+/** Sends what has waited and may go now; the rest waits on. */
 function flush(): void {
-  if (state !== "settled" || !mayRun()) {
+  if (!mayRun()) {
     return;
   }
 
   for (const event of pending.splice(0)) {
-    deliver(event);
+    if (ready(event)) {
+      deliver(event);
+    } else {
+      pending.push(event);
+    }
   }
 }
 
-/** Whether the event was taken: queued or sent. */
+/**
+ * Whether the event was taken: queued or sent. Never on a page the pixel may
+ * not run on. While held, a keepalive event is queued for the release and any
+ * other is dropped.
+ */
 function track(
   name: string,
   params: EventParams,
-  options: { eventID?: string; onSent?: () => void; custom?: boolean } = {},
+  options: {
+    eventID?: string;
+    onSent?: () => void;
+    custom?: boolean;
+    keepalive?: boolean;
+  } = {},
 ): boolean {
-  if (!metaPixelEnabled() || typeof window === "undefined" || !mayRun()) {
+  const keepalive = options.keepalive ?? false;
+
+  if (
+    !metaPixelEnabled() ||
+    typeof window === "undefined" ||
+    !pixelAllowedOn(window.location.pathname) ||
+    (holds > 0 && !keepalive)
+  ) {
     return false;
   }
 
   const event: Pending = {
     name,
     custom: options.custom ?? false,
+    keepalive,
     params,
     eventID: options.eventID,
     onSent: options.onSent,
@@ -334,7 +402,7 @@ function track(
     time: Date.now(),
   };
 
-  if (state === "settled") {
+  if (ready(event)) {
     deliver(event);
   } else {
     pending.push(event);
@@ -453,20 +521,24 @@ function rupees(paise: number): number {
 
 const REGISTERED_KEY = "lifafa.meta.registered";
 const PURCHASES_KEY = "lifafa.meta.purchases";
+/** In sessionStorage: the templates this tab has sent ViewContent for. */
+const VIEWED_KEY = "lifafa.meta.viewed";
 
-function readStore(key: string): string | null {
+type StoreArea = "local" | "session";
+
+function readStore(key: string, area: StoreArea = "local"): string | null {
   try {
-    return window.localStorage.getItem(key);
+    return (area === "session" ? window.sessionStorage : window.localStorage).getItem(key);
   } catch {
     return null;
   }
 }
 
-function writeStore(key: string, value: string): void {
+function writeStore(key: string, value: string, area: StoreArea = "local"): void {
   try {
-    window.localStorage.setItem(key, value);
+    (area === "session" ? window.sessionStorage : window.localStorage).setItem(key, value);
   } catch {
-    /* Private mode or blocked storage: Meta's own eventID dedupe still holds. */
+    /* Private mode or blocked storage: the page's own record, or Meta's eventID dedupe, still holds. */
   }
 }
 
@@ -474,19 +546,63 @@ export function pageView(): boolean {
   return track("PageView", {});
 }
 
-/** A template looked at in the gallery: chosen, or its live demo opened. */
+/** Taken in this page's life and perhaps not sent yet. */
+const viewedTemplates = new Set<string>();
+
+function viewedThisSession(): string[] {
+  try {
+    const parsed: unknown = JSON.parse(readStore(VIEWED_KEY, "session") ?? "[]");
+
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * A template looked at in the gallery: chosen, or its live demo opened. Once
+ * per template per tab, and sent at once so a tap that leaves the page is
+ * still counted (see the top of this file). `content_name` is the template's
+ * id and `content_category` its tier, the collection it is sold in.
+ */
 export function viewContent(template: {
   id: string;
-  name: string;
+  tier: "premium" | "traditions";
   pricePaise: number;
 }): boolean {
-  return track("ViewContent", {
-    content_name: template.name,
-    content_ids: [template.id],
-    content_type: "product",
-    value: rupees(template.pricePaise),
-    currency: "INR",
-  });
+  if (viewedTemplates.has(template.id) || viewedThisSession().includes(template.id)) {
+    return false;
+  }
+
+  const taken = track(
+    "ViewContent",
+    {
+      content_name: template.id,
+      content_category: template.tier,
+      content_ids: [template.id],
+      content_type: "product",
+      value: rupees(template.pricePaise),
+      currency: "INR",
+    },
+    {
+      keepalive: true,
+      onSent: () => {
+        writeStore(
+          VIEWED_KEY,
+          JSON.stringify([...viewedThisSession(), template.id]),
+          "session",
+        );
+      },
+    },
+  );
+
+  if (taken) {
+    viewedTemplates.add(template.id);
+  }
+
+  return taken;
 }
 
 /**

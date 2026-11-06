@@ -91,6 +91,94 @@ for (const [path, href] of [
 console.log(`Routes: ${allowed.length} allowed and ${refused.length} refused, as expected.`);
 console.log("Addresses: ids, queries and fragments are written out where they must be.");
 
+/*
+  ViewContent, in a stand-in browser with a pixel id: sent at once as one
+  keepalive request and never through fbevents.js, once per template per tab,
+  kept for a hold's release, and never sent from a page the pixel may not run
+  on. A second copy of the module is a second page load in the same tab.
+*/
+{
+  const realFetch = globalThis.fetch;
+  const realPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const requests = [];
+  const session = new Map();
+  const storage = (map) => ({
+    getItem: (key) => (map.has(key) ? map.get(key) : null),
+    setItem: (key, value) => map.set(key, String(value)),
+  });
+  const at = (path) => ({ href: `${origin}${path}`, pathname: new URL(path, origin).pathname });
+
+  globalThis.window = {
+    location: at("/create?utm_source=meta&utm_content=test"),
+    screen: { width: 390, height: 844 },
+    sessionStorage: storage(session),
+    localStorage: storage(new Map()),
+  };
+  window.top = window;
+  globalThis.document = { referrer: "", cookie: "" };
+  globalThis.fetch = (url, init) => {
+    requests.push({ url: new URL(url), init });
+    return Promise.resolve();
+  };
+  process.env.NEXT_PUBLIC_META_PIXEL_ID = "1000000000000001";
+
+  try {
+    const pixel = await import("../lib/metaPixel.ts?first-page");
+    const template = (id, tier = "premium") => ({ id, tier, pricePaise: 99900 });
+    const viewed = () => requests.filter(({ url }) => url.searchParams.get("ev") === "ViewContent");
+
+    assert.equal(pixel.installMetaPixel(), true);
+
+    /* Before fbevents.js has loaded: sent at once, as a keepalive GET. */
+    assert.equal(pixel.viewContent(template("emerald-shahi")), true);
+    assert.equal(viewed().length, 1, "ViewContent waits for fbevents.js");
+    const [first] = viewed();
+    assert.equal(first.init.keepalive, true, "ViewContent is not a keepalive request");
+    assert.equal(first.url.searchParams.get("cd[content_name]"), "emerald-shahi");
+    assert.equal(first.url.searchParams.get("cd[content_category]"), "premium");
+    assert.equal(first.url.searchParams.get("dl"), `${origin}/create?utm_source=meta&utm_content=test`);
+    assert.ok(
+      !window.fbq.queue.some((command) => command[1] === "ViewContent"),
+      "ViewContent was also handed to fbevents.js",
+    );
+
+    /* The same template again: not sent. */
+    assert.equal(pixel.viewContent(template("emerald-shahi")), false);
+    assert.equal(viewed().length, 1, "ViewContent sent twice for one template");
+
+    /* Held: kept, and sent on the release with the address it was asked on. */
+    const release = pixel.holdMetaPixel();
+    assert.equal(pixel.viewContent(template("classic", "traditions")), true);
+    assert.equal(viewed().length, 1, "ViewContent sent while held");
+    release();
+    assert.equal(viewed().length, 2, "ViewContent held was not sent on the release");
+    assert.equal(viewed()[1].url.searchParams.get("cd[content_category]"), "traditions");
+
+    /* A page the pixel may not run on: nothing. */
+    window.location = at("/demo/gulab-mahal");
+    assert.equal(pixel.viewContent(template("gulab-mahal")), false);
+    assert.equal(viewed().length, 2, "ViewContent sent from /demo");
+
+    /* The next page in the same tab: still once per template. */
+    window.location = at("/create?step=details&template=emerald-shahi");
+    const next = await import("../lib/metaPixel.ts?next-page");
+    assert.equal(next.viewContent(template("emerald-shahi")), false, "ViewContent sent again on a new page");
+    assert.equal(next.viewContent(template("dak-ghar")), true);
+    assert.equal(viewed().length, 3);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete globalThis.window;
+    delete globalThis.document;
+    if (realPixelId === undefined) {
+      delete process.env.NEXT_PUBLIC_META_PIXEL_ID;
+    } else {
+      process.env.NEXT_PUBLIC_META_PIXEL_ID = realPixelId;
+    }
+  }
+
+  console.log("ViewContent: sent at once and kept alive, once per template, held until released.");
+}
+
 const base = process.argv[2];
 
 if (base !== undefined) {
