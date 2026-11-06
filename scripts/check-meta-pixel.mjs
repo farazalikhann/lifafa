@@ -92,10 +92,12 @@ console.log(`Routes: ${allowed.length} allowed and ${refused.length} refused, as
 console.log("Addresses: ids, queries and fragments are written out where they must be.");
 
 /*
-  ViewContent, in a stand-in browser with a pixel id: sent at once as one
-  keepalive request and never through fbevents.js, once per template per tab,
-  kept for a hold's release, and never sent from a page the pixel may not run
-  on. A second copy of the module is a second page load in the same tab.
+  PageView and ViewContent, in a stand-in browser with a pixel id: each sent at
+  once as one keepalive request and never through fbevents.js, with the click
+  id and browser id fbevents.js would send; PageView once per path,
+  ViewContent once per template per tab, kept for a hold's release, and never
+  sent from a page the pixel may not run on. A second copy of the module is a
+  second page load in the same tab.
 */
 {
   const realFetch = globalThis.fetch;
@@ -106,16 +108,46 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
     getItem: (key) => (map.has(key) ? map.get(key) : null),
     setItem: (key, value) => map.set(key, String(value)),
   });
-  const at = (path) => ({ href: `${origin}${path}`, pathname: new URL(path, origin).pathname });
+  const site = "https://www.getlifafa.co.in";
+  const at = (path) => {
+    const url = new URL(path, site);
+    return { href: url.href, pathname: url.pathname, hostname: url.hostname };
+  };
+
+  /* A cookie jar that, like a browser, refuses a cookie for a public suffix. */
+  const jar = new Map();
+  const PUBLIC_SUFFIXES = new Set(["in", "co.in"]);
 
   globalThis.window = {
-    location: at("/create?utm_source=meta&utm_content=test"),
+    location: at("/create?fbclid=TEST123&utm_source=meta"),
     screen: { width: 390, height: 844 },
     sessionStorage: storage(session),
     localStorage: storage(new Map()),
   };
   window.top = window;
-  globalThis.document = { referrer: "", cookie: "" };
+  globalThis.document = {
+    referrer: "",
+    get cookie() {
+      return [...jar].map(([name, { value }]) => `${name}=${value}`).join("; ");
+    },
+    set cookie(line) {
+      const [pair, ...attributes] = line.split("; ");
+      const name = pair.slice(0, pair.indexOf("="));
+      const value = pair.slice(pair.indexOf("=") + 1);
+      const domain = attributes.find((entry) => entry.startsWith("Domain="))?.slice(7) ?? null;
+      const host = window.location.hostname;
+
+      if (domain !== null && (PUBLIC_SUFFIXES.has(domain) || !`.${host}`.endsWith(`.${domain}`))) {
+        return;
+      }
+
+      if (attributes.includes("Max-Age=0")) {
+        jar.delete(name);
+      } else {
+        jar.set(name, { value, domain });
+      }
+    },
+  };
   globalThis.fetch = (url, init) => {
     requests.push({ url: new URL(url), init });
     return Promise.resolve();
@@ -123,48 +155,89 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
   process.env.NEXT_PUBLIC_META_PIXEL_ID = "1000000000000001";
 
   try {
+    const { AD_PARAMS_KEY } = await import("../lib/inAppBrowser.ts");
     const pixel = await import("../lib/metaPixel.ts?first-page");
     const template = (id, tier = "premium") => ({ id, tier, pricePaise: 99900 });
-    const viewed = () => requests.filter(({ url }) => url.searchParams.get("ev") === "ViewContent");
+    const sent = (name) => requests.filter(({ url }) => url.searchParams.get("ev") === name);
+    const param = (request, key) => request.url.searchParams.get(key);
+    const askedOfFbq = (name) =>
+      window.fbq.queue.some((command) => command[0] === "track" && command[1] === name);
 
     assert.equal(pixel.installMetaPixel(), true);
 
-    /* Before fbevents.js has loaded: sent at once, as a keepalive GET. */
+    /* Landing from the ad, before fbevents.js has loaded: PageView at once, with the click id. */
+    pixel.metaPixelNavigated();
+    assert.equal(sent("PageView").length, 1, "PageView waits for fbevents.js");
+    const [view] = sent("PageView");
+    assert.equal(view.init.keepalive, true, "PageView is not a keepalive request");
+    assert.equal(view.init.mode, "no-cors");
+    assert.equal(view.init.credentials, "include", "facebook.com's cookies do not go with it");
+    assert.match(param(view, "fbc"), /^fb\.2\.\d{13}\.TEST123$/, "fbc is not built from the fbclid");
+    assert.match(param(view, "fbp"), /^fb\.2\.\d{13}\.\d{16}$/, "fbp is not in fbevents.js's format");
+    assert.equal(jar.get("_fbc")?.value, param(view, "fbc"));
+    assert.equal(jar.get("_fbc")?.domain, "getlifafa.co.in", "_fbc is not on the site's own domain");
+    assert.equal(jar.get("_fbp")?.value, param(view, "fbp"));
+    for (const key of ["id", "ev", "dl", "rl", "ts", "v", "sw", "sh", "it"]) {
+      assert.ok(view.url.searchParams.has(key), `PageView has no ${key}`);
+    }
+    assert.equal(param(view, "v"), "2.9.437");
+    assert.ok(!askedOfFbq("PageView"), "PageView was also handed to fbevents.js");
+
+    /* The same path again (a step change): no second PageView. */
+    pixel.metaPixelNavigated();
+    assert.equal(sent("PageView").length, 1, "PageView sent twice for one page");
+
+    /* Select: ViewContent at once, with the same ids. */
     assert.equal(pixel.viewContent(template("emerald-shahi")), true);
-    assert.equal(viewed().length, 1, "ViewContent waits for fbevents.js");
-    const [first] = viewed();
+    assert.equal(sent("ViewContent").length, 1, "ViewContent waits for fbevents.js");
+    const [first] = sent("ViewContent");
     assert.equal(first.init.keepalive, true, "ViewContent is not a keepalive request");
-    assert.equal(first.url.searchParams.get("cd[content_name]"), "emerald-shahi");
-    assert.equal(first.url.searchParams.get("cd[content_category]"), "premium");
-    assert.equal(first.url.searchParams.get("dl"), `${origin}/create?utm_source=meta&utm_content=test`);
-    assert.ok(
-      !window.fbq.queue.some((command) => command[1] === "ViewContent"),
-      "ViewContent was also handed to fbevents.js",
-    );
+    assert.equal(param(first, "cd[content_name]"), "emerald-shahi");
+    assert.equal(param(first, "cd[content_category]"), "premium");
+    assert.equal(param(first, "dl"), `${site}/create?fbclid=TEST123&utm_source=meta`);
+    assert.equal(param(first, "fbc"), param(view, "fbc"), "ViewContent has another click id");
+    assert.equal(param(first, "fbp"), param(view, "fbp"), "ViewContent has another browser id");
+    assert.ok(!askedOfFbq("ViewContent"), "ViewContent was also handed to fbevents.js");
 
     /* The same template again: not sent. */
     assert.equal(pixel.viewContent(template("emerald-shahi")), false);
-    assert.equal(viewed().length, 1, "ViewContent sent twice for one template");
+    assert.equal(sent("ViewContent").length, 1, "ViewContent sent twice for one template");
 
     /* Held: kept, and sent on the release with the address it was asked on. */
     const release = pixel.holdMetaPixel();
     assert.equal(pixel.viewContent(template("classic", "traditions")), true);
-    assert.equal(viewed().length, 1, "ViewContent sent while held");
+    assert.equal(sent("ViewContent").length, 1, "ViewContent sent while held");
     release();
-    assert.equal(viewed().length, 2, "ViewContent held was not sent on the release");
-    assert.equal(viewed()[1].url.searchParams.get("cd[content_category]"), "traditions");
+    assert.equal(sent("ViewContent").length, 2, "ViewContent held was not sent on the release");
+    assert.equal(param(sent("ViewContent")[1], "cd[content_category]"), "traditions");
 
     /* A page the pixel may not run on: nothing. */
     window.location = at("/demo/gulab-mahal");
     assert.equal(pixel.viewContent(template("gulab-mahal")), false);
-    assert.equal(viewed().length, 2, "ViewContent sent from /demo");
+    pixel.metaPixelNavigated();
+    assert.equal(sent("ViewContent").length, 2, "ViewContent sent from /demo");
+    assert.equal(sent("PageView").length, 1, "PageView sent from /demo");
 
-    /* The next page in the same tab: still once per template. */
+    /* The next page in the same tab, with no fbclid in it: one PageView, the same ids, still once per template. */
     window.location = at("/create?step=details&template=emerald-shahi");
     const next = await import("../lib/metaPixel.ts?next-page");
+    next.installMetaPixel();
+    next.metaPixelNavigated();
+    assert.equal(sent("PageView").length, 2);
+    assert.equal(param(sent("PageView")[1], "fbc"), param(view, "fbc"), "the click id did not carry over");
+    assert.equal(param(sent("PageView")[1], "fbp"), param(view, "fbp"), "the browser id did not carry over");
     assert.equal(next.viewContent(template("emerald-shahi")), false, "ViewContent sent again on a new page");
     assert.equal(next.viewContent(template("dak-ghar")), true);
-    assert.equal(viewed().length, 3);
+    assert.equal(sent("ViewContent").length, 3);
+
+    /* No cookie yet and no fbclid in the address: the one kept for the session. */
+    jar.clear();
+    session.set(AD_PARAMS_KEY, JSON.stringify({ fbclid: "STORED9", utm_source: "meta" }));
+    window.location = at("/create?step=details");
+    const third = await import("../lib/metaPixel.ts?third-page");
+    third.installMetaPixel();
+    third.metaPixelNavigated();
+    assert.match(param(sent("PageView")[2], "fbc"), /^fb\.2\.\d{13}\.STORED9$/, "the stored fbclid was not used");
   } finally {
     globalThis.fetch = realFetch;
     delete globalThis.window;
@@ -176,7 +249,7 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
     }
   }
 
-  console.log("ViewContent: sent at once and kept alive, once per template, held until released.");
+  console.log("PageView and ViewContent: sent at once and kept alive, with fbc and fbp, once each, held until released.");
 }
 
 const base = process.argv[2];

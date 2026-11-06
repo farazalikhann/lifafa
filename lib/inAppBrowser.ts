@@ -85,7 +85,8 @@ const AD_PARAMS = [
   "utm_id",
 ] as const;
 
-const AD_PARAMS_KEY = "lifafa.inApp.adParams";
+/** Also read by lib/metaPixel.ts, for the fbclid; scripts/check-meta-pixel.mjs checks the two agree. */
+export const AD_PARAMS_KEY = "lifafa.inApp.adParams";
 
 let adParamsInMemory: Record<string, string> | null = null;
 

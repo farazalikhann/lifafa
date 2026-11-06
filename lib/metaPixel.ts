@@ -32,20 +32,39 @@
  * ad's landing page quickly is still counted. Events asked for before that
  * wait here, each with the address it was asked for on, and go once it has.
  *
- * EXCEPT VIEWCONTENT, WHICH GOES AT ONCE. It is asked for on a tap that often
- * leaves the page straight away ("See live demo" opens /demo, where the pixel
- * may not run), and an event waiting here, or an image fbevents.js has just
- * started, is lost with the page. So it never waits for fbevents.js and never
- * goes through it: it is one request to the image endpoint, made as a
- * keepalive fetch that the browser finishes after the page has gone (an image
- * where fetch cannot be used), and never both. Held, it waits for the release
- * instead of being dropped. Once per template per tab (sessionStorage).
+ * EXCEPT PAGEVIEW AND VIEWCONTENT, WHICH GO AT ONCE. On a slow phone
+ * fbevents.js can take seconds, and a visitor who leaves before it has loaded
+ * (or taps "See live demo", which opens /demo, where the pixel may not run)
+ * takes every event waiting here with them. So these two never wait for
+ * fbevents.js and never go through it: each is one request to the image
+ * endpoint, made as a keepalive fetch that the browser finishes after the
+ * page has gone (an image where fetch cannot be used), and never both. fbq is
+ * never asked for a PageView, so it cannot send a second one. Held, they wait
+ * for the release instead of being dropped. PageView once per path, as
+ * before; ViewContent once per template per tab (sessionStorage).
+ *
+ * THE CLICK ID GOES WITH EVERY EVENT WE SEND OURSELVES. An event sent before
+ * fbevents.js has loaded finds none of its cookies yet, so they are made
+ * here the way it makes them, on the same domain and in the same format, and
+ * it takes them over when it loads: _fbp, the browser id, when there is none,
+ * and _fbc, the click id, from the fbclid in the address (or the one kept for
+ * the session, lib/inAppBrowser.ts) when it has none for that click. Both are
+ * a random number or the ad's own id, nothing about the person.
  */
 
 const PIXEL_ID = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").trim();
 
 export const FBEVENTS_SRC = "https://connect.facebook.net/en_US/fbevents.js";
 const TRACK_ENDPOINT = "https://www.facebook.com/tr/";
+/**
+ * The `v` fbevents.js reports, for an event sent before it has loaded; once it
+ * has, its own (window.fbq.version) is used. Last seen November 2026.
+ */
+const FBEVENTS_VERSION = "2.9.437";
+/** How long fbevents.js keeps _fbp and _fbc: ninety days. */
+const META_COOKIE_SECONDS = 90 * 24 * 60 * 60;
+/** Where lib/inAppBrowser.ts keeps the ad's tags for the session (its AD_PARAMS_KEY). */
+const AD_PARAMS_KEY = "lifafa.inApp.adParams";
 
 /**
  * Set by app/auth/callback/route.ts on the redirect that ends a new account's
@@ -185,6 +204,8 @@ let holds = 0;
 let consentGranted = true;
 let lastPageViewPath: string | null = null;
 let registrationQueued = false;
+/** When the pixel was installed on this page: fbevents.js reports it as `it`. */
+let initTime: number | null = null;
 
 function here(): URL {
   return new URL(window.location.href);
@@ -239,12 +260,104 @@ function readCookie(name: string): string | null {
 }
 
 /**
+ * Writes one of fbevents.js's cookies as it does: `fb.<index>.<time>.<tail>`
+ * on the widest domain this site may set a cookie on (getlifafa.co.in, so
+ * www and the bare domain share it), where `index` is that domain's number of
+ * dots, for ninety days. Returns the value, which is still the one to send
+ * when cookies are blocked: then with index 1, as Meta asks of a value no
+ * cookie holds.
+ */
+function writeMetaCookie(name: string, time: number, tail: string): string {
+  const host = window.location.hostname;
+  const labels = host.split(".");
+  const isAddress = /^[\d.]+$/.test(host) || host.includes(":");
+  const attributes = `Path=/; Max-Age=${META_COOKIE_SECONDS}; SameSite=Lax`;
+
+  /* From the shortest: a browser refuses a public suffix (in, co.in), so the first that holds is the site's own. */
+  if (!isAddress && labels.length > 1) {
+    for (let count = 2; count <= labels.length; count += 1) {
+      const value = `fb.${count - 1}.${time}.${tail}`;
+      document.cookie = `${name}=${value}; Domain=${labels.slice(-count).join(".")}; ${attributes}`;
+
+      if (readCookie(name) === value) {
+        return value;
+      }
+    }
+  }
+
+  const value = `fb.${labels.length - 1}.${time}.${tail}`;
+  document.cookie = `${name}=${value}; ${attributes}`;
+
+  return readCookie(name) === value ? value : `fb.1.${time}.${tail}`;
+}
+
+/** Sixteen random digits, as fbevents.js's own browser ids have. */
+function randomDigits(): string {
+  const bytes = new Uint8Array(16);
+
+  try {
+    crypto.getRandomValues(bytes);
+  } catch {
+    bytes.forEach((_, index) => {
+      bytes[index] = Math.floor(Math.random() * 256);
+    });
+  }
+
+  return Array.from(bytes, (byte, index) => String(index === 0 ? 1 + (byte % 9) : byte % 10)).join("");
+}
+
+/** The browser id: fbevents.js's _fbp, made here first when it has not made one. */
+function browserId(time: number): string {
+  return readCookie("_fbp") ?? writeMetaCookie("_fbp", time, randomDigits());
+}
+
+/** The ad's fbclid kept for the session by lib/inAppBrowser.ts, if any. */
+function storedFbclid(): string | null {
+  try {
+    const parsed: unknown = JSON.parse(readStore(AD_PARAMS_KEY, "session") ?? "null");
+    const value: unknown =
+      typeof parsed === "object" && parsed !== null
+        ? (parsed as Record<string, unknown>).fbclid
+        : undefined;
+
+    return typeof value === "string" && value.length > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The click id: _fbc as fbevents.js keeps it. A new click (an fbclid in the
+ * address the cookie is not for) makes a new one, as it does; with no cookie,
+ * the fbclid kept for the session makes one; with neither, there is none.
+ */
+function clickId(time: number): string | null {
+  const cookie = readCookie("_fbc");
+  const forClick = (fbclid: string): boolean =>
+    cookie !== null && cookie.split(".").slice(3).join(".") === fbclid;
+  const inAddress = here().searchParams.get("fbclid");
+
+  if (inAddress !== null && inAddress.length > 0) {
+    return forClick(inAddress) ? cookie : writeMetaCookie("_fbc", time, inAddress);
+  }
+
+  if (cookie !== null) {
+    return cookie;
+  }
+
+  const stored = storedFbclid();
+
+  return stored === null ? null : writeMetaCookie("_fbc", time, stored);
+}
+
+/**
  * One event's address at Meta's image endpoint, with the page written out. The
- * same parameters fbevents.js sends, and its browser id (_fbp) and click id
- * (_fbc) cookies when it has set them, so the event is still tied to the visit
- * the ad began. The reported referrer is an origin.
+ * parameters fbevents.js sends that tie an event to the ad's click and to this
+ * browser (fbc, fbp; see the top of this file), its version, and the event's
+ * own. The reported referrer is an origin.
  */
 function trackUrl(event: Pending): string {
+  const version = window.fbq?.version;
   const query = new URLSearchParams({
     id: PIXEL_ID,
     ev: event.name,
@@ -254,7 +367,19 @@ function trackUrl(event: Pending): string {
     ts: String(event.time),
     sw: String(window.screen.width),
     sh: String(window.screen.height),
+    v: version !== undefined && version !== "2.0" ? version : FBEVENTS_VERSION,
+    r: "stable",
+    it: String(initTime ?? event.time),
+    tz: String(-new Date().getTimezoneOffset()),
+    coo: "false",
+    fbp: browserId(event.time),
   });
+
+  const fbc = clickId(event.time);
+
+  if (fbc !== null) {
+    query.set("fbc", fbc);
+  }
 
   if (event.eventID !== undefined) {
     query.set("eid", event.eventID);
@@ -265,17 +390,6 @@ function trackUrl(event: Pending): string {
       `cd[${key}]`,
       typeof value === "object" ? JSON.stringify(value) : String(value),
     );
-  }
-
-  for (const [cookie, param] of [
-    ["_fbp", "fbp"],
-    ["_fbc", "fbc"],
-  ] as const) {
-    const value = readCookie(cookie);
-
-    if (value !== null) {
-      query.set(param, value);
-    }
   }
 
   return `${TRACK_ENDPOINT}?${query.toString()}`;
@@ -451,6 +565,7 @@ export function installMetaPixel(): boolean {
   fbq.allowDuplicatePageViews = true;
   fbq("set", "autoConfig", false, PIXEL_ID);
   fbq("init", PIXEL_ID);
+  initTime = Date.now();
   state = "waiting";
   syncConsent();
 
@@ -542,8 +657,9 @@ function writeStore(key: string, value: string, area: StoreArea = "local"): void
   }
 }
 
+/** A page view: sent at once, never through fbq, so it is sent once (see the top of this file). */
 export function pageView(): boolean {
-  return track("PageView", {});
+  return track("PageView", {}, { keepalive: true });
 }
 
 /** Taken in this page's life and perhaps not sent yet. */
