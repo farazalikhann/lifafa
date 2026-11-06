@@ -18,7 +18,7 @@ import {
 import { CARD_LANGUAGES } from "@/lib/cardLanguage";
 import { isWritten } from "@/lib/cardTranslation";
 import { pairsNames } from "@/lib/occasions";
-import { createClient } from "@/lib/supabase/client";
+import { loadClient } from "@/lib/supabase/loadClient";
 import type { CardLanguage } from "@/types/card";
 import type { CardBlock } from "@/types/customSection";
 import type { EventDraft } from "@/types/event";
@@ -235,7 +235,7 @@ export default function AutoTranslate({
     setIsCheckingSession(true);
 
     try {
-      const { data, error: authError } = await createClient().auth.getUser();
+      const { data, error: authError } = await (await loadClient()).auth.getUser();
 
       if (authError !== null || data.user === null) {
         signIn();

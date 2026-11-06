@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { ADMIN_COOKIE_NAME, verifyAdminToken } from "@/lib/admin/session";
+import { CREATE_QUERY_HEADER } from "@/lib/opensOnGallery";
 
 /**
  * Session refresh, and the two gates.
@@ -140,6 +141,15 @@ export async function middleware(request: NextRequest) {
     the refreshed token has to be set on the object that is actually returned.
     Building a fresh NextResponse at the end would drop whatever Supabase wrote.
   */
+  /*
+    /create's first screen is chosen by its query before the page has read it
+    (app/create/loading.tsx), so the query is passed on with the request. Set
+    on every request for /create, so a value sent by the browser is never kept.
+  */
+  if (request.nextUrl.pathname === "/create") {
+    request.headers.set(CREATE_QUERY_HEADER, request.nextUrl.search);
+  }
+
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

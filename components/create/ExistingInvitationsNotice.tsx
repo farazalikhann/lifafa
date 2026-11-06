@@ -28,6 +28,27 @@ import { countEventsForHost } from "@/lib/db/events";
  * host who has no invitations at all.
  */
 export default function ExistingInvitationsNotice(): ReactElement | null {
+  /*
+    No session cookie, nobody signed in: nothing to count, so the auth client
+    (the largest download on /create, lib/supabase/loadClient.ts) is never
+    fetched for the visitor who came from an ad. Read once, on the first
+    render, which is in the browser: the wizard draws nothing of its own on
+    the server. A sign in is a new page, so it is never missed.
+  */
+  const [mayBeSignedIn] = useState(hasSessionCookie);
+
+  return mayBeSignedIn ? <SignedInNotice /> : null;
+}
+
+/** Supabase keeps the session in sb-<project>-auth-token, split as .0, .1 when long. */
+function hasSessionCookie(): boolean {
+  return (
+    typeof document !== "undefined" &&
+    /(?:^|;\s*)sb-[^=;]+-auth-token(?:\.\d+)?=/.test(document.cookie)
+  );
+}
+
+function SignedInNotice(): ReactElement | null {
   const { user, isLoading } = useUser();
   const [count, setCount] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState(false);

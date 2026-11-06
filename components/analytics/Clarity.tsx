@@ -21,12 +21,14 @@ import {
  */
 export default function Clarity(): ReactElement | null {
   const pathname = usePathname();
-  const [installed, setInstalled] = useState(false);
+  /* The path Clarity was put on, or null before it is. */
+  const [installedOn, setInstalledOn] = useState<string | null>(null);
+  const installed = installedOn !== null;
 
   useEffect(() => {
     if (!installed && clarityAllowedOn(pathname) && clarityHostAllowed()) {
       guardClarityNavigation();
-      setInstalled(true);
+      setInstalledOn(pathname);
     }
   }, [pathname, installed]);
 
@@ -35,7 +37,19 @@ export default function Clarity(): ReactElement | null {
   }
 
   return (
-    <Script id="ms-clarity" strategy="afterInteractive">
+    /*
+      On /create, the ad's landing page, once the page has loaded, so its
+      scripts are not fetched beside the gallery's pictures. Elsewhere as
+      soon as the page has run, as before.
+    */
+    <Script
+      id="ms-clarity"
+      strategy={
+        installedOn === "/create" || installedOn?.startsWith("/create/") === true
+          ? "lazyOnload"
+          : "afterInteractive"
+      }
+    >
       {claritySnippet()}
     </Script>
   );

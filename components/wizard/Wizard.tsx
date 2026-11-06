@@ -14,21 +14,14 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import AutoTranslate from "@/components/create/AutoTranslate";
-import ContactEditor from "@/components/create/ContactEditor";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
-import EventForm from "@/components/create/EventForm";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import dynamic from "next/dynamic";
-import LanguagePicker from "@/components/create/LanguagePicker";
 import PendingCardNotice, {
   displayHost,
   type PendingCardProblem,
 } from "@/components/create/PendingCardNotice";
-import SubEventEditor from "@/components/create/SubEventEditor";
-import TranslationPanel from "@/components/create/TranslationPanel";
-import CustomizeStep from "@/components/wizard/CustomizeStep";
 import { useInAppHandoff } from "@/components/browser/useInAppHandoff";
 import { inAppBrowser } from "@/lib/inAppBrowser";
 import { adoptDraftHandoff, type AdoptResult } from "@/lib/handoff/actions";
@@ -36,6 +29,7 @@ import { HANDOFF_PARAM, handoffFromSearch } from "@/lib/handoff/link";
 import LegalFooter from "@/components/legal/LegalFooter";
 import TemplateGallery from "@/components/wizard/TemplateGallery";
 import WizardProgress from "@/components/wizard/WizardProgress";
+import { PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/wizard/wizardStyles";
 import {
   useCardEditor,
   type EditorSnapshot,
@@ -56,7 +50,7 @@ import {
   writePendingCard,
 } from "@/lib/pendingCard";
 import { formatPrice } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/client";
+import { loadClient, preloadClient } from "@/lib/supabase/loadClient";
 import { getTheme } from "@/lib/themes";
 import {
   NEW_CARD_HREF,
@@ -82,6 +76,42 @@ const FullScreenPreview = dynamic(() => import("@/components/create/FullScreenPr
   nothing, so a phone choosing a design never downloads them.
 */
 const CardPreview = dynamic(() => import("@/components/create/CardPreview"), { ssr: false });
+
+/*
+  THE EDITOR (the details and customize steps, components/wizard/editorSteps.ts)
+  is one chunk, not part of the gallery's download. It is fetched when a design
+  opens: a template chosen, Next pressed, or an address that already names a
+  later step, which starts it as this file loads, beside hydration. Until it
+  is here a step holds a screen's height, so nothing below it moves into view.
+*/
+const loadEditorSteps = () => import("@/components/wizard/editorSteps");
+
+function preloadEditorSteps(): void {
+  /* A failed fetch is tried again when a step is drawn. */
+  loadEditorSteps().catch(() => undefined);
+  /* The auth client too: Save asks who is signed in first, and must not wait for a download. */
+  preloadClient();
+}
+
+if (typeof window !== "undefined") {
+  const named = new URLSearchParams(window.location.search).get(WIZARD_STEP_PARAM);
+
+  if (named !== null && named !== "template") {
+    preloadEditorSteps();
+  }
+}
+
+function StepLoading(): ReactElement {
+  return <div aria-hidden="true" className="min-h-[100svh]" />;
+}
+
+const LanguagePicker = dynamic(() => loadEditorSteps().then((steps) => steps.LanguagePicker), { loading: StepLoading });
+const EventForm = dynamic(() => loadEditorSteps().then((steps) => steps.EventForm), { loading: () => null });
+const SubEventEditor = dynamic(() => loadEditorSteps().then((steps) => steps.SubEventEditor), { loading: () => null });
+const ContactEditor = dynamic(() => loadEditorSteps().then((steps) => steps.ContactEditor), { loading: () => null });
+const AutoTranslate = dynamic(() => loadEditorSteps().then((steps) => steps.AutoTranslate), { loading: () => null });
+const TranslationPanel = dynamic(() => loadEditorSteps().then((steps) => steps.TranslationPanel), { loading: () => null });
+const CustomizeStep = dynamic(() => loadEditorSteps().then((steps) => steps.CustomizeStep), { loading: StepLoading });
 
 /**
  * A new invitation, made in four steps: a template, the details, the few
@@ -143,24 +173,33 @@ class RestoredCardBoundary extends Component<
 
 export default function Wizard({
   templateId = null,
+  firstScreen,
 }: {
   /**
    * A template chosen before the wizard opened ("Create yours"), already
    * checked by the page to be one the gallery offers.
    */
   templateId?: string | null;
+  /**
+   * What the server draws in the wizard's place, where it knows what that is:
+   * the gallery (GalleryFirstScreen) for an address that opens on it. Without
+   * one, the skeleton.
+   */
+  firstScreen?: ReactNode;
 }): ReactElement {
   /* The step the address names, for the skeleton's header. */
   const step = wizardStepId(useSearchParams().get(WIZARD_STEP_PARAM)) ?? WIZARD_STEPS[0].id;
 
   /*
     A stashed card is in the browser's storage, which the server cannot see, so
-    the server draws the skeleton rather than guess at an empty wizard.
+    the server draws the skeleton rather than guess at an empty wizard, or the
+    gallery as a new visitor's first render has it, where the address opens
+    on the gallery and nothing kept can change what that screen is.
   */
   return useIsClient() ? (
     <WizardArrival templateId={templateId} />
   ) : (
-    <EditorSkeleton step={step} />
+    <>{firstScreen ?? <EditorSkeleton step={step} />}</>
   );
 }
 
@@ -471,11 +510,6 @@ function WizardArrival({
   );
 }
 
-const PRIMARY_BUTTON =
-  "min-h-12 rounded-full bg-[var(--lifafa-marigold)] px-6 text-[0.9375rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:opacity-60";
-const QUIET_BUTTON =
-  "min-h-12 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.9375rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
-
 /**
  * What makes the wizard an editor of a saved invitation and not the maker of
  * a new one. Everything about the steps is the same; this is the whole of
@@ -571,6 +605,10 @@ function WizardSteps({
     (next: WizardStepId): void => {
       if (next === stepRef.current) {
         return;
+      }
+
+      if (next !== "template") {
+        preloadEditorSteps();
       }
 
       window.history.pushState(null, "", wizardStepPath(next, path));
@@ -715,7 +753,7 @@ function WizardSteps({
         return { ok: true };
       }
 
-      const supabase = createClient();
+      const supabase = await loadClient();
       const { data, error: authError } = await supabase.auth.getUser();
       const user = authError === null ? data.user : null;
 
@@ -866,6 +904,9 @@ function WizardSteps({
    * changed in step 3 is not put back by a stray tap.
    */
   const handleTemplate = (next: TemplateConfig): void => {
+    /* A design chosen: the editor's steps are what comes next. */
+    preloadEditorSteps();
+
     if (next.id === template.id) {
       return;
     }

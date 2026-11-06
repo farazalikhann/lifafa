@@ -26,11 +26,13 @@ import {
 export default function MetaPixel(): ReactElement | null {
   const pathname = usePathname();
   const search = useSearchParams().toString();
-  const [installed, setInstalled] = useState(false);
+  /* The path the pixel was put on, or null before it is. */
+  const [installedOn, setInstalledOn] = useState<string | null>(null);
+  const installed = installedOn !== null;
 
   useEffect(() => {
     if (!installed && pixelAllowedOn(pathname) && installMetaPixel()) {
-      setInstalled(true);
+      setInstalledOn(pathname);
     }
 
     metaPixelNavigated();
@@ -40,11 +42,23 @@ export default function MetaPixel(): ReactElement | null {
     return null;
   }
 
+  /*
+    On /create, the ad's landing page, fbevents.js waits for the page to have
+    loaded: its PageView and ViewContent do not wait for it (lib/metaPixel.ts),
+    and its 100 kB would otherwise be fetched beside the gallery's pictures.
+    Everywhere else, as soon as the page has run, so an event that does wait
+    for it, a Purchase among them, waits no longer than it did.
+  */
+  const strategy =
+    installedOn === "/create" || installedOn?.startsWith("/create/") === true
+      ? "lazyOnload"
+      : "afterInteractive";
+
   return (
     <Script
       id="meta-pixel"
       src={FBEVENTS_SRC}
-      strategy="afterInteractive"
+      strategy={strategy}
       onLoad={metaPixelSettled}
       onError={metaPixelSettled}
     />

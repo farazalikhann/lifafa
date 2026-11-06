@@ -29,7 +29,9 @@
  *
  * SENT ONCE IT HAS LOADED. fbevents.js loads with next/script's
  * afterInteractive, once the page has hydrated, so a visitor who leaves an
- * ad's landing page quickly is still counted. Events asked for before that
+ * ad's landing page quickly is still counted; on /create it waits for the
+ * page to have loaded (lazyOnload, components/analytics/MetaPixel.tsx), as
+ * nothing sent there waits for it. Events asked for before that
  * wait here, each with the address it was asked for on, and go once it has.
  *
  * EXCEPT PAGEVIEW AND VIEWCONTENT, WHICH GO AT ONCE. On a slow phone

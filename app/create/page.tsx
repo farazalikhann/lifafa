@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import RememberAdParams from "@/components/browser/RememberAdParams";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import EventNotFound from "@/components/dashboard/EventNotFound";
+import GalleryFirstScreen from "@/components/wizard/GalleryFirstScreen";
 import Wizard from "@/components/wizard/Wizard";
-import WizardSaved from "@/components/wizard/WizardSaved";
 import { getEventById } from "@/lib/db/events";
 import { isUnderReview } from "@/lib/db/paymentReview";
+import { opensOnGallery } from "@/lib/opensOnGallery";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 import { findTemplate } from "@/templates/registry";
 import { marketingShare } from "@/lib/shareImage";
@@ -47,15 +49,31 @@ export const metadata: Metadata = {
   ),
 };
 
+/*
+  The screen for a card just saved, behind `event`: split from the wizard's
+  download, so a visitor choosing a design never fetches the payment code.
+*/
+const WizardSaved = dynamic(() => import("@/components/wizard/WizardSaved"));
+
+type Query = Record<string, string | string[] | undefined>;
+
+/** The query's own value, or null: a key given twice counts as given. */
+function queryGetter(query: Query): { get: (key: string) => string | null } {
+  return {
+    get: (key) => {
+      const value = query[key];
+      return value === undefined ? null : Array.isArray(value) ? (value[0] ?? "") : value;
+    },
+  };
+}
+
 export default async function CreatePage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    event?: string | string[];
-    template?: string | string[];
-  }>;
+  searchParams: Promise<Query>;
 }): Promise<ReactElement> {
-  const { event: eventId, template: templateParam } = await searchParams;
+  const query = await searchParams;
+  const { event: eventId, template: templateParam } = query;
 
   if (typeof eventId !== "string") {
     let templateId: string | null = null;
@@ -75,7 +93,14 @@ export default async function CreatePage({
       <>
         {/* useSearchParams, which the wizard reads its step from, wants a boundary. */}
         <Suspense fallback={<EditorSkeleton />}>
-          <Wizard templateId={templateId} />
+          <Wizard
+            templateId={templateId}
+            /*
+              The gallery itself on the server, where the address opens on it
+              and nothing this browser holds can change that (lib/opensOnGallery.ts).
+            */
+            firstScreen={opensOnGallery(queryGetter(query)) ? <GalleryFirstScreen /> : undefined}
+          />
         </Suspense>
         {/* Keeps the ad's tags in Instagram's and Facebook's browsers; renders nothing. */}
         <RememberAdParams />

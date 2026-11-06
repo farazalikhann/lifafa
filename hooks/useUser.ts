@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { loadClient } from "@/lib/supabase/loadClient";
 import type { User } from "@supabase/supabase-js";
 
 export interface UseUser {
@@ -29,7 +29,6 @@ export function useUser(): UseUser {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
     /*
       The subscription can outlive the component — a token refresh fires
       whenever it fires — so every setState is gated on this flag and the
@@ -37,37 +36,52 @@ export function useUser(): UseUser {
       already unmounted warns about updating an unmounted component.
     */
     let active = true;
+    let unsubscribe = (): void => {};
 
-    void supabase.auth
-      .getUser()
-      .then(({ data }) => {
+    /* The client is fetched after the page is up (lib/supabase/loadClient.ts); until then isLoading stays true. */
+    void loadClient()
+      .then((supabase) => {
         if (!active) return;
-        setUser(data.user);
-        setIsLoading(false);
+
+        void supabase.auth
+          .getUser()
+          .then(({ data }) => {
+            if (!active) return;
+            setUser(data.user);
+            setIsLoading(false);
+          })
+          .catch(() => {
+            /* Treated as signed out: an unreachable auth server is not a session. */
+            if (!active) return;
+            setUser(null);
+            setIsLoading(false);
+          });
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (!active) return;
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        });
+
+        unsubscribe = () => subscription.unsubscribe();
       })
       .catch(() => {
-        /* Treated as signed out: an unreachable auth server is not a session. */
+        /* The client could not be fetched: treated as signed out, as an unreachable auth server is. */
         if (!active) return;
         setUser(null);
         setIsLoading(false);
       });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
     return () => {
       active = false;
-      subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
   const signOut = useCallback(async (): Promise<void> => {
-    const supabase = createClient();
+    const supabase = await loadClient();
     await supabase.auth.signOut();
 
     /*
