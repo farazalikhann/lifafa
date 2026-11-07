@@ -85,7 +85,11 @@ export default function RsvpConfirmed({
   const copy = cardCopy(language).confirmed;
 
   return (
-    <section className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 px-6 py-14 text-center">
+    /* Masked from Clarity on a sample (lib/clarity.ts): it repeats the name typed. */
+    <section
+      data-clarity-mask="true"
+      className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 px-6 py-14 text-center"
+    >
       <ConfirmMark status={status} accent={theme.accent} />
 
       <h2

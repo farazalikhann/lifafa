@@ -3,10 +3,13 @@
  * the site.
  *
  * HOSTS ONLY, NEVER GUESTS. Clarity runs on the home page (and its pricing
- * section), /create (the editor, and the saved card's checkout) and /login,
- * the list in clarityAllowedOn below. It never runs on a guest's invitation
- * (/i), its RSVP form, a sample, check-in, the host's dashboard or /admin.
- * Guests have not agreed to be recorded.
+ * section), /create (the editor, and the saved card's checkout), /login and
+ * the sample invitations under /demo (a template's live demo, and the home
+ * page's sample), the list in clarityAllowedOn below: a visitor there is
+ * choosing a design, and the card is a made-up wedding. It never runs on a
+ * guest's invitation (/i), check-in, the host's dashboard or /admin. Guests
+ * have not agreed to be recorded. The Meta pixel stays off /demo all the same
+ * (lib/metaPixel.ts).
  *
  * PRODUCTION DOMAIN ONLY. Off unless NEXT_PUBLIC_CLARITY_ID is set, the build
  * is a production one, and the page is served from getlifafa.co.in. So
@@ -22,7 +25,8 @@
  * schedules one while it is running.
  *
  * Host-typed text on the allowed pages is masked with data-clarity-mask: the
- * editor's fields, the card preview and the help form.
+ * editor's fields, the card preview and the help form, and on a sample the
+ * reply form and its answer, where a visitor may type their own name.
  */
 
 const CLARITY_ID = (process.env.NEXT_PUBLIC_CLARITY_ID ?? "").trim();
@@ -34,6 +38,9 @@ const PRODUCTION_HOSTS: ReadonlySet<string> = new Set([
 
 /** Each with everything under it. "/" is the home page alone. */
 const ALLOWED_PREFIXES = ["/create", "/login"];
+
+/** A sample invitation: /demo/<template>, or /demo/nikah. One segment, nothing under it. */
+const SAMPLE_PATH = /^\/demo\/[a-z0-9-]+$/;
 
 type ClarityFn = ((...args: unknown[]) => void) & {
   q?: unknown[];
@@ -58,6 +65,7 @@ export function clarityEnabled(): boolean {
 export function clarityAllowedOn(pathname: string): boolean {
   return (
     pathname === "/" ||
+    SAMPLE_PATH.test(pathname) ||
     ALLOWED_PREFIXES.some(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
     )

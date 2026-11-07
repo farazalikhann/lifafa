@@ -91,7 +91,11 @@ export default function SheeshMahalCard(props: TemplateCardProps): ReactElement 
     scrolls. `--sm-bars` is what the bars take while they show, for what sits
     at a page's foot.
   */
-  const screen = sizing === "viewport" ? `var(${SCREEN_VAR}, 100lvh)` : `${frameHeight}px`;
+  /* Less a live demo's bar on a phone (components/invite/DemoCreateBar.tsx); 0 everywhere else. */
+  const screen =
+    sizing === "viewport"
+      ? `calc(var(${SCREEN_VAR}, 100lvh) - var(--lifafa-foot-h, 0px))`
+      : `${frameHeight}px`;
   const bars = sizing === "viewport" ? "calc(100lvh - 100svh)" : "0px";
   const lite = useLite();
   const band = sizing === "viewport" ? "100dvh" : `${frameHeight}px`;

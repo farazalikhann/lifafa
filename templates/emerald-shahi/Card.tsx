@@ -87,7 +87,8 @@ export default function EmeraldShahiCard(
   const fonts = emeraldFonts(config.style.fontPairId);
   const { occasionId } = config;
 
-  const screen = sizing === "viewport" ? "100svh" : `${frameHeight}px`;
+  /* Less a live demo's bar on a phone (components/invite/DemoCreateBar.tsx); 0 everywhere else. */
+  const screen = sizing === "viewport" ? "calc(100svh - var(--lifafa-foot-h, 0px))" : `${frameHeight}px`;
   const band = sizing === "viewport" ? "100dvh" : `${frameHeight}px`;
   const musicUrl = config.musicUrl ?? null;
   /* Only the countdown is hidden on this card; the coins are its scratch panels. */

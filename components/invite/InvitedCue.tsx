@@ -123,9 +123,10 @@ export default function InvitedCue({
   theme: Theme;
   /**
    * A selector for something fixed at the foot of the screen the cue must not
-   * touch: the watermark pill on an unpaid card. Measured rather than assumed,
-   * because the pill wraps to two lines on a narrow phone and its height
-   * changes with the language.
+   * touch: the watermark pill on an unpaid card, or the bar a sample draws on
+   * a phone (DemoCreateBar). Measured rather than assumed, because the pill
+   * wraps to two lines on a narrow phone and its height changes with the
+   * language. One that is not drawn at this width is not there.
    */
   clearOf?: string;
   /**
@@ -180,9 +181,10 @@ export default function InvitedCue({
       /* The highest point the two reach: the card's first screen ends above it. */
       let reach = foot - own;
 
-      if (target !== null) {
-        const pill = target.getBoundingClientRect();
+      const pill = target?.getBoundingClientRect() ?? null;
 
+      /* Not drawn at this width (the sample's bar is a phone's alone): nothing to stand clear of. */
+      if (pill !== null && pill.height > 0) {
         if (foot - pill.bottom >= own + BOUNCE_PX) {
           /* Room under the pill: the cue takes it, and the pill is the top of the pair. */
           reach = pill.top - CLEAR_GAP_PX;

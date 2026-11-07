@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
+import DemoCreateBar, { DEMO_CREATE_BAR_SELECTOR } from "@/components/invite/DemoCreateBar";
 import InviteExperience from "@/components/invite/InviteExperience";
 import SampleBanner from "@/components/invite/SampleBanner";
 import { canonicalSiteOrigin } from "@/lib/siteUrl";
@@ -24,6 +25,10 @@ import { TEMPLATES, findTemplate } from "@/templates/registry";
  *
  * Kept out of search results: they are one sample wedding in every look, not
  * pages of their own: the gallery is where a host meets them.
+ *
+ * On a phone a bar at the foot of the screen gives the price and "Create this
+ * card" (DemoCreateBar). Clarity records it (lib/clarity.ts); the Meta pixel
+ * never runs here (lib/metaPixel.ts).
  */
 
 type DemoParams = { params: Promise<{ templateId: string }> };
@@ -68,18 +73,18 @@ export default async function TemplateDemoPage({
 
   const event = templateDemoEvent(template);
   const ground = cardPalette(event.config.style).background;
+  /* A template the gallery does not offer yet cannot be started on: its buttons open the gallery. */
+  const startHref = template.listed ? templateStartHref(template.id) : NEW_CARD_HREF;
+  /* The strip and the bar in the card's own colours. */
+  const tone = sampleStripTone(event.config);
 
   return (
     <>
       {/* The card's colour from the first byte, as on a guest's link. */}
       <style>{`html,body{background-color:${ground}}`}</style>
-      {/* A template the gallery does not offer yet cannot be started on: its button opens the gallery. */}
       <SampleBanner
-        tone={sampleStripTone(event.config)}
-        start={{
-          href: template.listed ? templateStartHref(template.id) : NEW_CARD_HREF,
-          pricePaise: template.price,
-        }}
+        tone={tone}
+        start={{ href: startHref, pricePaise: template.price }}
       />
       <InviteExperience
         event={event}
@@ -88,7 +93,16 @@ export default async function TemplateDemoPage({
         ended={false}
         weather={null}
         inviteUrl={`${canonicalSiteOrigin()}${templateDemoPath(template.id)}`}
-        sample={{ checkinToken: DEMO_CHECKIN_TOKEN }}
+        sample={{ checkinToken: DEMO_CHECKIN_TOKEN, clearOf: DEMO_CREATE_BAR_SELECTOR }}
+      />
+      {/* The page ends the bar's height lower on a phone, so the last of the card scrolls clear of it. */}
+      <div aria-hidden="true" style={{ height: "var(--lifafa-foot-h, 0px)" }} />
+      <DemoCreateBar
+        href={startHref}
+        label={template.listed ? "Create this card" : "Create yours"}
+        name={template.name}
+        pricePaise={template.price}
+        tone={tone}
       />
     </>
   );

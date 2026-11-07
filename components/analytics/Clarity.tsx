@@ -40,7 +40,8 @@ export default function Clarity(): ReactElement | null {
     /*
       On /create, the ad's landing page, once the page has loaded, so its
       scripts are not fetched beside the gallery's pictures. Elsewhere as
-      soon as the page has run, as before.
+      soon as the page has run, as before: on a sample (/demo) that is in
+      time to see the cover opened.
     */
     <Script
       id="ms-clarity"

@@ -166,8 +166,11 @@ export default function InviteExperience({
    * is and sent nowhere: nothing is written, and a yes is handed this token
    * for its pass in place of one the database would have issued. Absent on
    * every real invitation.
+   *
+   * `clearOf`: a selector for the bar a template's live demo pins to the foot
+   * of a phone's screen (DemoCreateBar), which the scroll cue stands clear of.
    */
-  sample?: { checkinToken: string };
+  sample?: { checkinToken: string; clearOf?: string };
 }): ReactElement {
   const [stage, setStage] = useState<InviteStage>("form");
   /** Kept whole, so "Change my reply" returns a filled form. */
@@ -588,7 +591,7 @@ export default function InviteExperience({
             <InvitedCue
               language={language}
               theme={cardTheme}
-              clearOf={event.isPaid ? undefined : WATERMARK_PILL_SELECTOR}
+              clearOf={event.isPaid ? sample?.clearOf : WATERMARK_PILL_SELECTOR}
               footDepth={borderFootDepth(config.borderStyle)}
             />
           )}

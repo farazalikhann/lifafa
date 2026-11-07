@@ -175,7 +175,11 @@ export default function RsvpPanel({
   */
   return (
     <BorderInset borderStyle={borderStyle}>
-    <section className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-12 sm:px-6 sm:pt-12 sm:pb-14">
+    {/* Masked from Clarity, which records the samples (lib/clarity.ts): a visitor may type their own name. */}
+    <section
+      data-clarity-mask="true"
+      className="mx-auto w-full max-w-[480px] px-5 pt-10 pb-12 sm:px-6 sm:pt-12 sm:pb-14"
+    >
       <h2
         className="text-center text-2xl font-semibold"
         style={{

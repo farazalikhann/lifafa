@@ -89,6 +89,38 @@ for (const [path, href] of [
 }
 
 console.log(`Routes: ${allowed.length} allowed and ${refused.length} refused, as expected.`);
+
+/*
+  Clarity's own list (lib/clarity.ts): the samples under /demo are recorded,
+  where the pixel stays off (above), and a guest's pages never are.
+*/
+{
+  const { clarityAllowedOn } = await import("../lib/clarity.ts");
+
+  for (const path of ["/", "/create", "/login", "/demo/emerald-shahi", "/demo/sheesh-mahal", "/demo/nikah"]) {
+    assert.equal(clarityAllowedOn(path), true, `Clarity should run on ${path}`);
+  }
+
+  for (const path of [
+    "/i/AB12CD",
+    "/i/AB12CD/print",
+    "/checkin/some-token",
+    "/dashboard",
+    "/dashboard/3f6c1d2e-0000-4000-8000-000000000000",
+    "/admin",
+    "/demo",
+    "/demo/emerald-shahi/extra",
+    "/api/translate",
+  ]) {
+    assert.equal(clarityAllowedOn(path), false, `Clarity must not run on ${path}`);
+  }
+
+  for (const path of ["/demo/emerald-shahi", "/demo/nikah"]) {
+    assert.equal(pixelAllowedOn(path), false, `the pixel must stay off ${path}`);
+  }
+
+  console.log("Clarity: on the samples under /demo, never on a guest's pages; the pixel still off /demo.");
+}
 console.log("Addresses: ids, queries and fragments are written out where they must be.");
 
 /*
