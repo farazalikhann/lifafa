@@ -16,6 +16,8 @@ import {
   quoteWithCoupon,
   type CouponQuote,
 } from "@/lib/coupons/quote";
+import { isTestPrice } from "@/lib/checkoutPrice";
+import { accountMayPayTestPrice } from "@/lib/testPriceAccess";
 import { eventEndDate } from "@/lib/eventLock";
 import { reviewState } from "@/lib/db/paymentReview";
 import { PAYMENT_UNDER_REVIEW_MESSAGE } from "@/lib/paymentReview";
@@ -169,6 +171,17 @@ export async function previewCoupon(
 
   const quote = quoteWithCoupon(lookup.coupon, owned.pricePaise);
 
+  /*
+    A code that leaves a test price is the owner's, for trying a payment, and
+    is refused to everyone else as if it were switched off (lib/checkoutPrice.ts).
+  */
+  if (isTestPrice(quote.finalPaise) && !owned.mayPayTestPrice) {
+    console.warn(
+      `[payments] test-price code ${quote.code} refused for event ${eventId}: the account is not on TEST_PRICE_EMAILS.`,
+    );
+    return { ok: false, error: couponRefusalMessage("inactive") };
+  }
+
   return {
     ok: true,
     code: quote.code,
@@ -202,6 +215,12 @@ async function requireUnpaidOwnedEvent(
        * caller passes one in, and nothing from the browser reaches it.
        */
       pricePaise: number;
+      /**
+       * Whether this account may pay a test price (lib/checkoutPrice.ts): its
+       * confirmed email is on TEST_PRICE_EMAILS. Read off the session's own
+       * user, never off anything the browser sent.
+       */
+      mayPayTestPrice: boolean;
     }
   | { ok: false; error: string }
 > {
@@ -295,6 +314,7 @@ async function requireUnpaidOwnedEvent(
     hostEmail: user.email ?? null,
     hostName,
     pricePaise: templatePricePaise(event.card_config?.templateId),
+    mayPayTestPrice: accountMayPayTestPrice(user),
   };
 }
 
@@ -415,6 +435,22 @@ export async function createPaymentOrder(
       "createPaymentOrder/free",
       new Error(`Coupon ${couponCode ?? "(none)"} makes event ${eventId} free`),
       "This code makes the invitation free. Apply it again to activate it.",
+    );
+  }
+
+  /*
+    A TEST PRICE IS FOR AN ALLOWLISTED ACCOUNT ONLY (lib/checkoutPrice.ts).
+    Asked here as well as in previewCoupon, because this is the request that
+    tells Razorpay what to charge: a page holding a code applied before, or a
+    forged call naming the code, still ends here and is refused.
+  */
+  if (isTestPrice(amount) && !owned.mayPayTestPrice) {
+    return dbFailure(
+      "createPaymentOrder/test-price",
+      new Error(
+        `Coupon ${couponCode ?? "(none)"} leaves a test price of ${amount} paise on event ${eventId}, for an account not on TEST_PRICE_EMAILS`,
+      ),
+      couponRefusalMessage("inactive"),
     );
   }
 

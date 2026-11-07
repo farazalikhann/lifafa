@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isTestPrice } from "@/lib/checkoutPrice";
 
 /**
  * The Razorpay payment that has just published an invitation, for the ads'
@@ -15,7 +16,8 @@ import { createClient } from "@/lib/supabase/server";
  * a reviewed one, settled it) with method 'razorpay': a free code or a
  * complimentary activation is a row of its own method and is never counted,
  * and a payment still under review is a row that is not paid yet. `amount` is
- * what the order charged, after any coupon.
+ * what the order charged, after any coupon. A test price (under ₹99, the
+ * owner's own; lib/checkoutPrice.ts) is never counted either.
  *
  * ONLY FOR TWO DAYS after it settled. The browser remembers which payments it
  * has reported, but a host who opens the dashboard on another phone has a
@@ -56,7 +58,16 @@ export async function recentRazorpayPayment(
     return null;
   }
 
-  if (data === null || data.razorpay_payment_id === null || data.amount <= 0) {
+  /*
+    A test price (lib/checkoutPrice.ts) is the owner trying a payment, not a
+    sale, and is never reported.
+  */
+  if (
+    data === null ||
+    data.razorpay_payment_id === null ||
+    data.amount <= 0 ||
+    isTestPrice(data.amount)
+  ) {
     return null;
   }
 

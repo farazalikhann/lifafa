@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { captureRefusal, isTestPrice } from "@/lib/checkoutPrice";
+import { hostMayPayTestPrice } from "@/lib/testPriceAccess";
 import { templatePricePaise } from "@/templates/registry";
 
 /**
@@ -115,7 +117,10 @@ export async function applyCapturedPayment(
        to a cheaper template after ordering is the host's own loss and is let
        through.
 
-    An order that fails either is NOT settled and its invitation is not
+    And a third, below: a test price (lib/checkoutPrice.ts) must have been
+    paid by an account allowed one.
+
+    An order that fails any is NOT settled and its invitation is not
     published. It is marked as under review instead, by markUnderReview below,
     so the host is told their money arrived and is never asked for it again,
     and the admin lists it under Payments to review to be put right by hand.
@@ -143,15 +148,32 @@ export async function applyCapturedPayment(
       return { kind: "error", message: "events read failed" };
     }
 
-    const listPaise = order.amount + (order.discount_amount ?? 0);
     const pricePaise = templatePricePaise(event?.card_config?.templateId);
 
-    const reason =
-      capturedPaise !== order.amount
-        ? `captured ${capturedPaise} paise against an order for ${order.amount}`
-        : event !== null && listPaise < pricePaise
-          ? `the order was priced at ${listPaise} paise and the invitation's template now costs ${pricePaise}`
-          : null;
+    /*
+      3. Was a test price paid by an account allowed one? createPaymentOrder
+         refuses anyone else, so this catches an order made before that rule,
+         or a rule bypassed. The host's account is read only for a test price.
+    */
+    let hostAllowed = true;
+
+    if (isTestPrice(order.amount)) {
+      const allowed = event === null ? false : await hostMayPayTestPrice(event.host_id);
+
+      if (allowed === null) {
+        return { kind: "error", message: "host read failed" };
+      }
+
+      hostAllowed = allowed;
+    }
+
+    const reason = captureRefusal({
+      capturedPaise,
+      orderPaise: order.amount,
+      discountPaise: order.discount_amount ?? 0,
+      pricePaise: event === null ? null : pricePaise,
+      hostMayPayTestPrice: hostAllowed,
+    });
 
     if (reason !== null) {
       const marked = await markUnderReview(orderId, paymentId);

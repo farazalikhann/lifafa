@@ -238,6 +238,39 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
     third.installMetaPixel();
     third.metaPixelNavigated();
     assert.match(param(sent("PageView")[2], "fbc"), /^fb\.2\.\d{13}\.STORED9$/, "the stored fbclid was not used");
+
+    /*
+      A test price (lib/checkoutPrice.ts) is never a sale: no InitiateCheckout
+      and no Purchase for one, nor for a free one, and both for a real price.
+    */
+    const { TEST_PRICE_BELOW_PAISE } = await import("../lib/checkoutPrice.ts");
+    window.location = at("/dashboard/3f6c1d2e-0000-4000-8000-000000000000");
+    const checkout = await import("../lib/metaPixel.ts?checkout");
+    checkout.installMetaPixel();
+
+    for (const amountPaise of [0, 100, 5000, TEST_PRICE_BELOW_PAISE - 1]) {
+      assert.equal(
+        checkout.initiateCheckout({ templateId: "emerald-shahi", amountPaise }),
+        false,
+        `InitiateCheckout taken for a test price of ${amountPaise} paise`,
+      );
+      assert.equal(
+        checkout.purchase({ paymentId: `pay_TEST${amountPaise}`, templateId: "emerald-shahi", amountPaise }),
+        false,
+        `Purchase taken for a test price of ${amountPaise} paise`,
+      );
+    }
+
+    assert.equal(
+      checkout.initiateCheckout({ templateId: "emerald-shahi", amountPaise: TEST_PRICE_BELOW_PAISE }),
+      true,
+      "InitiateCheckout refused for the lowest real price",
+    );
+    assert.equal(
+      checkout.purchase({ paymentId: "pay_REAL1", templateId: "emerald-shahi", amountPaise: 99900 }),
+      true,
+      "Purchase refused for a real payment",
+    );
   } finally {
     globalThis.fetch = realFetch;
     delete globalThis.window;
@@ -250,6 +283,7 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
   }
 
   console.log("PageView and ViewContent: sent at once and kept alive, with fbc and fbp, once each, held until released.");
+  console.log("InitiateCheckout and Purchase: never for a test price or a free one.");
 }
 
 const base = process.argv[2];

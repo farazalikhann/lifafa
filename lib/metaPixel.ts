@@ -749,11 +749,29 @@ export function completeRegistration(): boolean {
   );
 }
 
+/**
+ * A checkout under ₹99 is a test price: the owner trying a payment, never a
+ * sale, so neither InitiateCheckout nor Purchase is sent for one, nor for a
+ * free one. The line is lib/checkoutPrice.ts's, mirrored because this file
+ * imports nothing (Node runs it as it is); scripts/check-meta-pixel.mjs holds
+ * the two together. The server already never hands a test-price payment to
+ * purchase() (lib/db/confirmedPayment.ts); this is the second lock.
+ */
+const TEST_PRICE_BELOW_PAISE = 9900;
+
+function reportableSale(paise: number): boolean {
+  return paise >= TEST_PRICE_BELOW_PAISE;
+}
+
 /** Pay pressed, for the amount the server's order charges. */
 export function initiateCheckout(checkout: {
   templateId: string;
   amountPaise: number;
 }): boolean {
+  if (!reportableSale(checkout.amountPaise)) {
+    return false;
+  }
+
   return track("InitiateCheckout", {
     value: rupees(checkout.amountPaise),
     currency: "INR",
@@ -788,6 +806,7 @@ export function purchase(payment: {
   amountPaise: number;
 }): boolean {
   if (
+    !reportableSale(payment.amountPaise) ||
     queuedPurchases.has(payment.paymentId) ||
     firedPurchases().includes(payment.paymentId)
   ) {
