@@ -14,7 +14,7 @@ import {
  * the tap itself, before the demo link leaves the page; lib/metaPixel.ts
  * sends it once per template per tab.
  */
-function looked(template: TemplateConfig): void {
+export function looked(template: TemplateConfig): void {
   viewContent({
     id: template.id,
     tier: template.collection,

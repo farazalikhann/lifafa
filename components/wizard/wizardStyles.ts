@@ -11,6 +11,8 @@ export const PRIMARY_BUTTON =
  */
 export const CHOOSE_DESIGN_HINT = "Choose a design to continue";
 export const CHOOSE_DESIGN_HINT_ID = "wizard-choose-design";
+/** The line under the gallery's heading saying what is free and when payment comes (CreateIntro's TRUST_LINE). */
+export const TRUST_TEXT = "text-sm leading-relaxed font-medium text-[var(--lifafa-cream)]";
 export const HINT_TEXT =
   "min-w-0 text-[0.8125rem] leading-snug text-[var(--lifafa-muted)]";
 export const QUIET_BUTTON =

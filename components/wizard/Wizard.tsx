@@ -27,7 +27,10 @@ import { inAppBrowser } from "@/lib/inAppBrowser";
 import { adoptDraftHandoff, type AdoptResult } from "@/lib/handoff/actions";
 import { HANDOFF_PARAM, handoffFromSearch } from "@/lib/handoff/link";
 import LegalFooter from "@/components/legal/LegalFooter";
-import TemplateGallery from "@/components/wizard/TemplateGallery";
+import CreateIntro, { INTRO_TEMPLATE_ID, TRUST_LINE } from "@/components/wizard/CreateIntro";
+import TemplateGallery, { looked } from "@/components/wizard/TemplateGallery";
+import { useAdParamsHref } from "@/hooks/useAdParamsHref";
+import { templateDemoPath } from "@/lib/templateSamples";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import {
   CHOOSE_DESIGN_HINT,
@@ -35,6 +38,7 @@ import {
   HINT_TEXT,
   PRIMARY_BUTTON,
   QUIET_BUTTON,
+  TRUST_TEXT,
 } from "@/components/wizard/wizardStyles";
 import {
   useCardEditor,
@@ -975,6 +979,9 @@ function WizardSteps({
   };
 
   const template = getTemplate(templateId);
+  /* The intro and the trust line: a new card's gallery, never a saved one's. */
+  const showIntro = step === "template" && !editing;
+  const adHref = useAdParamsHref();
   /*
     On a paid invitation, what it was paid on: the price of the template the
     stored card is on. A template that costs more cannot be moved to after
@@ -1084,16 +1091,31 @@ function WizardSteps({
           and the preview still there to look through.
         */}
         <div className="flex min-w-0 flex-col gap-8" inert={readOnly}>
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
-          >
-            {/* The last step publishes a new card; for a saved one it is only a last look. */}
-            {editing && step === "preview"
-              ? "Preview your changes"
-              : WIZARD_STEPS[index].title}
-          </h1>
+          {/*
+            What Lifafa is, for a visitor from an ad, over a new card's gallery
+            only. As GalleryFirstScreen draws it, so nothing moves.
+          */}
+          {showIntro ? (
+            <CreateIntro
+              demoHref={adHref(templateDemoPath(INTRO_TEMPLATE_ID))}
+              onOpen={() => looked(getTemplate(INTRO_TEMPLATE_ID))}
+              live
+            />
+          ) : null}
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <h1
+              ref={headingRef}
+              tabIndex={-1}
+              className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
+            >
+              {/* The last step publishes a new card; for a saved one it is only a last look. */}
+              {editing && step === "preview"
+                ? "Preview your changes"
+                : WIZARD_STEPS[index].title}
+            </h1>
+            {showIntro ? <p className={TRUST_TEXT}>{TRUST_LINE}</p> : null}
+          </div>
 
           {step === "template" ? (
             <TemplateGallery

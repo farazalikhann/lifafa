@@ -6,12 +6,15 @@ import Logo from "@/components/Logo";
 import LegalFooter from "@/components/legal/LegalFooter";
 import { TemplateGalleryView } from "@/components/wizard/TemplateGalleryView";
 import WizardProgress from "@/components/wizard/WizardProgress";
+import CreateIntro, { INTRO_TEMPLATE_ID, TRUST_LINE } from "@/components/wizard/CreateIntro";
 import {
   CHOOSE_DESIGN_HINT,
   CHOOSE_DESIGN_HINT_ID,
   HINT_TEXT,
   PRIMARY_BUTTON,
+  TRUST_TEXT,
 } from "@/components/wizard/wizardStyles";
+import { templateDemoPath } from "@/lib/templateSamples";
 import { WIZARD_STEPS } from "@/lib/wizardSteps";
 
 /**
@@ -41,8 +44,9 @@ import { WIZARD_STEPS } from "@/lib/wizardSteps";
  *
  * Shown only where the address opens on the gallery (app/create/page.tsx):
  * no step or step=template, no template chosen, no card being handed over.
- * Inert until the wizard takes over; "See live demo" and each picture are
- * links, so they work from the first moment.
+ * Inert until the wizard takes over; "See live demo", each picture and the
+ * intro's card (CreateIntro) are links, so they work from the first moment.
+ * The intro asks for nothing here: its poster and clip are the wizard's.
  */
 export default function GalleryFirstScreen(): ReactElement {
   return (
@@ -65,12 +69,18 @@ export default function GalleryFirstScreen(): ReactElement {
 
       <main className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-12 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-[5.5rem] lg:pt-10 xl:px-8">
         <div className="flex min-w-0 flex-col gap-8">
-          <h1
-            tabIndex={-1}
-            className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
-          >
-            {WIZARD_STEPS[0].title}
-          </h1>
+          {/* Not `live`: the words and the tile's place, and nothing fetched before the gallery's pictures. */}
+          <CreateIntro demoHref={templateDemoPath(INTRO_TEMPLATE_ID)} />
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <h1
+              tabIndex={-1}
+              className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
+            >
+              {WIZARD_STEPS[0].title}
+            </h1>
+            <p className={TRUST_TEXT}>{TRUST_LINE}</p>
+          </div>
 
           <TemplateGalleryView
             selectedId={null}
