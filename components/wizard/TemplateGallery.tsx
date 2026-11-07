@@ -45,7 +45,8 @@ export default function TemplateGallery({
   onSelect,
   paidPricePaise = null,
 }: {
-  selectedId: string;
+  /** The design chosen, or null while none is. */
+  selectedId: string | null;
   onSelect: (template: TemplateConfig) => void;
   /** On a paid invitation, the price of the template it was paid on; null before payment. */
   paidPricePaise?: number | null;

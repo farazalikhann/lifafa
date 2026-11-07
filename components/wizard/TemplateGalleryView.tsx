@@ -199,7 +199,8 @@ export function TemplateGalleryView({
   onLooked,
   demoHref,
 }: {
-  selectedId: string;
+  /** The design chosen, or null while none is: nothing is chosen for a new card. */
+  selectedId: string | null;
   /** On a paid invitation, the price of the template it was paid on; null before payment. */
   paidPricePaise?: number | null;
   filter: GalleryFilter;

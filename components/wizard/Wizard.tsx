@@ -29,7 +29,13 @@ import { HANDOFF_PARAM, handoffFromSearch } from "@/lib/handoff/link";
 import LegalFooter from "@/components/legal/LegalFooter";
 import TemplateGallery from "@/components/wizard/TemplateGallery";
 import WizardProgress from "@/components/wizard/WizardProgress";
-import { PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/wizard/wizardStyles";
+import {
+  CHOOSE_DESIGN_HINT,
+  CHOOSE_DESIGN_HINT_ID,
+  HINT_TEXT,
+  PRIMARY_BUTTON,
+  QUIET_BUTTON,
+} from "@/components/wizard/wizardStyles";
 import {
   useCardEditor,
   type EditorSnapshot,
@@ -230,6 +236,13 @@ interface ArrivalStart {
   /** The card was the one kept as the visitor typed. */
   autosaved: boolean;
   /**
+   * The card's design was chosen: a card brought back (the sign-in stash or
+   * the one kept as the visitor typed) keeps the one it was made on, and a
+   * template named in the address is a choice. An empty card has none: no
+   * design is chosen for the visitor, and Next waits for one.
+   */
+  chosen: boolean;
+  /**
    * Where the address is moved before the steps are drawn, or null to leave
    * it. A return from sign in with no card to show goes to the first step;
    * a handed-over card that could not be brought back loses its id.
@@ -259,6 +272,7 @@ function localStart(templateId: string | null, search: string): ArrivalStart {
       start: onChosenTemplate(read.snapshot, templateId),
       fallback: empty,
       autosaved: false,
+      chosen: true,
       address: null,
     };
   }
@@ -272,6 +286,7 @@ function localStart(templateId: string | null, search: string): ArrivalStart {
     start: kept === null ? empty : onChosenTemplate(restoredSnapshot(kept), templateId),
     fallback: empty,
     autosaved: kept !== null,
+    chosen: kept !== null || templateId !== null,
     address: restart ? NEW_CARD_HREF : null,
   };
 }
@@ -428,24 +443,43 @@ function WizardArrival({
     }
   }, [address]);
 
-  const settled =
+  /*
+    Settled once the address is where the arrival put it, and settled for
+    good: the steps move the address themselves from then on (Next, Back, the
+    bar's segments), and a later step is not the arrival undone.
+  */
+  const settledOnce = useRef(false);
+
+  if (
     arrived !== null &&
     (address === null ||
       (searchParams.get(HANDOFF_PARAM) === null &&
         searchParams.get(WIZARD_STEP_PARAM) ===
-          new URL(address, window.location.origin).searchParams.get(WIZARD_STEP_PARAM)));
+          new URL(address, window.location.origin).searchParams.get(WIZARD_STEP_PARAM)))
+  ) {
+    settledOnce.current = true;
+  }
+
+  const settled = settledOnce.current;
 
   /* Bumped by "Start fresh", so the steps start again from the empty card. */
   const [generation, setGeneration] = useState(0);
   const startFresh = useCallback((): void => {
     clearCardAutosave();
     setArrived((current) =>
-      current === null ? current : { ...current, start: current.fallback, autosaved: false },
+      current === null
+        ? current
+        : {
+            ...current,
+            start: current.fallback,
+            autosaved: false,
+            chosen: templateId !== null,
+          },
     );
     setGeneration((value) => value + 1);
-  }, []);
+  }, [templateId]);
 
-  if (!settled) {
+  if (!settled || arrived === null) {
     const skeletonStep =
       wizardStepId(searchParams.get(WIZARD_STEP_PARAM)) ?? WIZARD_STEPS[0].id;
 
@@ -464,7 +498,9 @@ function WizardArrival({
     );
   }
 
-  const { arrival, start, fallback, autosaved } = arrived;
+  const { arrival, start, fallback, autosaved, chosen } = arrived;
+  /* The empty card the fallbacks start from: chosen only when the address named its template. */
+  const fallbackChosen = templateId !== null;
 
   if (arrival.kind === "restored") {
     return (
@@ -472,6 +508,7 @@ function WizardArrival({
         fallback={
           <WizardSteps
             start={fallback}
+            templateChosen={fallbackChosen}
             problem={{ kind: "damaged" }}
             stashedStep={null}
           />
@@ -479,6 +516,7 @@ function WizardArrival({
       >
         <WizardSteps
           start={start}
+          templateChosen={chosen}
           problem={null}
           stashedStep={wizardStepId(arrival.step)}
         />
@@ -490,6 +528,13 @@ function WizardArrival({
     <WizardSteps
       key={generation}
       start={start}
+      /*
+        A new card is kept once it differs from the empty card, so one opened
+        on a template the address named ("Create this card") keeps that design
+        from the start. A kept card is kept once it changes, as before.
+      */
+      untouched={autosaved ? start : EMPTY_SNAPSHOT}
+      templateChosen={chosen}
       problem={arrival.kind === "lost" ? arrival.problem : null}
       stashedStep={null}
       onStartFresh={autosaved ? startFresh : undefined}
@@ -500,7 +545,13 @@ function WizardArrival({
   return autosaved ? (
     <RestoredCardBoundary
       fallback={
-        <WizardSteps start={fallback} problem={null} stashedStep={null} />
+        <WizardSteps
+          start={fallback}
+          untouched={EMPTY_SNAPSHOT}
+          templateChosen={fallbackChosen}
+          problem={null}
+          stashedStep={null}
+        />
       }
     >
       {steps}
@@ -558,12 +609,26 @@ export function EditWizard({
 
 function WizardSteps({
   start,
+  untouched = start,
+  templateChosen: chosenAtStart = true,
   problem,
   stashedStep,
   edit,
   onStartFresh,
 }: {
   start: EditorSnapshot;
+  /**
+   * The card as it is with nothing done to it: until the card differs from
+   * this, there is nothing to keep in this browser (hooks/useCardAutosave.ts).
+   * The start, unless the start already holds a choice worth keeping.
+   */
+  untouched?: EditorSnapshot;
+  /**
+   * Whether the card's design has been chosen (see `chosen` on ArrivalStart).
+   * Until it is, the gallery has nothing selected, Next is off with a hint
+   * beside it, and no later step can be reached. A saved card's always has.
+   */
+  templateChosen?: boolean;
   /** Why a card the host came back for is not here, if it is not. */
   problem: PendingCardProblem | null;
   /** The step a restored card was stashed on. */
@@ -590,22 +655,44 @@ function WizardSteps({
     and after that every move writes it there. A saved card opens on its
     details, the second step: its template was chosen long ago.
   */
-  const step: WizardStepId =
+  const requestedStep: WizardStepId =
     wizardStepId(searchParams.get(WIZARD_STEP_PARAM)) ??
     stashedStep ??
     (editing ? "details" : WIZARD_STEPS[0].id);
+  /* Whether a design has been chosen: until then, the gallery is the only step. */
+  const startedChosen = chosenAtStart || editing;
+  const [templateChosen, setTemplateChosen] = useState(startedChosen);
+  /*
+    An address naming a later step before any design was chosen (an old link,
+    a step typed in) opens on the gallery, and stays on it once one is chosen,
+    until Next moves on: choosing does not jump the visitor to that step. The
+    address is left as it is, so nothing here waits on the router to catch up.
+  */
+  const [heldOnGallery, setHeldOnGallery] = useState(
+    !startedChosen && requestedStep !== "template",
+  );
+  const step: WizardStepId = templateChosen && !heldOnGallery ? requestedStep : "template";
   const index = wizardStepIndex(step);
   const isLast = index === WIZARD_STEPS.length - 1;
 
   /* Read by the sign-in detour, which is built before the step can change. */
   const stepRef = useRef<WizardStepId>(step);
   stepRef.current = step;
+  const chosenRef = useRef(templateChosen);
+  chosenRef.current = templateChosen;
 
   const goTo = useCallback(
     (next: WizardStepId): void => {
       if (next === stepRef.current) {
         return;
       }
+
+      /* Nothing past the gallery before a design is chosen: Next is off, and so are the bar's segments. */
+      if (!chosenRef.current && next !== "template") {
+        return;
+      }
+
+      setHeldOnGallery(false);
 
       if (next !== "template") {
         preloadEditorSteps();
@@ -850,7 +937,7 @@ function WizardSteps({
   });
 
   /* A new card is kept in this browser as it is made; see hooks/useCardAutosave.ts. */
-  useCardAutosave({ snapshot, start, enabled: !editing, stopped: autosaveStopped });
+  useCardAutosave({ snapshot, start: untouched, enabled: !editing, stopped: autosaveStopped });
 
   /*
     Where a guarded control was trying to go, held while the host answers the
@@ -904,15 +991,17 @@ function WizardSteps({
    * changed in step 3 is not put back by a stray tap.
    */
   const handleTemplate = (next: TemplateConfig): void => {
-    /* A design chosen: the editor's steps are what comes next. */
-    preloadEditorSteps();
-
-    if (next.id === template.id) {
+    /* The gallery does not offer it and the server would refuse the save; this is the third lock, not the only one. */
+    if (paidPricePaise !== null && next.price > paidPricePaise) {
       return;
     }
 
-    /* The gallery does not offer it and the server would refuse the save; this is the third lock, not the only one. */
-    if (paidPricePaise !== null && next.price > paidPricePaise) {
+    /* A design chosen: the editor's steps are what comes next. */
+    preloadEditorSteps();
+    /* Chosen even when it is the one the card is drawn on: an empty card is drawn on Classic. */
+    setTemplateChosen(true);
+
+    if (next.id === template.id) {
       return;
     }
 
@@ -1008,7 +1097,7 @@ function WizardSteps({
 
           {step === "template" ? (
             <TemplateGallery
-              selectedId={template.id}
+              selectedId={templateChosen ? template.id : null}
               onSelect={handleTemplate}
               paidPricePaise={paidPricePaise}
             />
@@ -1234,7 +1323,7 @@ function WizardSteps({
                 Next
               </button>
             )
-          ) : isLast ? null : (
+          ) : isLast ? null : templateChosen ? (
             <button
               type="button"
               onClick={(event) => openPreview(event.currentTarget)}
@@ -1242,6 +1331,11 @@ function WizardSteps({
             >
               Preview
             </button>
+          ) : (
+            /* As GalleryFirstScreen draws it, so nothing moves when the wizard takes over. */
+            <p id={CHOOSE_DESIGN_HINT_ID} className={HINT_TEXT}>
+              {CHOOSE_DESIGN_HINT}
+            </p>
           )}
 
           <div className="ml-auto">
@@ -1275,6 +1369,8 @@ function WizardSteps({
               <button
                 type="button"
                 onClick={() => goTo(WIZARD_STEPS[index + 1].id)}
+                disabled={!templateChosen}
+                aria-describedby={templateChosen ? undefined : CHOOSE_DESIGN_HINT_ID}
                 className={PRIMARY_BUTTON}
               >
                 Next

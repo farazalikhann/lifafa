@@ -6,10 +6,13 @@ import Logo from "@/components/Logo";
 import LegalFooter from "@/components/legal/LegalFooter";
 import { TemplateGalleryView } from "@/components/wizard/TemplateGalleryView";
 import WizardProgress from "@/components/wizard/WizardProgress";
-import { PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/wizard/wizardStyles";
-import { EMPTY_SNAPSHOT } from "@/lib/newCard";
+import {
+  CHOOSE_DESIGN_HINT,
+  CHOOSE_DESIGN_HINT_ID,
+  HINT_TEXT,
+  PRIMARY_BUTTON,
+} from "@/components/wizard/wizardStyles";
 import { WIZARD_STEPS } from "@/lib/wizardSteps";
-import { getTemplate } from "@/templates/registry";
 
 /**
  * The gallery, drawn by the server, for /create's first screen.
@@ -26,11 +29,11 @@ import { getTemplate } from "@/templates/registry";
  *
  * THE SAME PAGE, NOT A DRAWING OF IT. Built from the gallery's own view
  * (TemplateGalleryView) inside the wizard's own frame, with what a new
- * visitor's first render has: the default template selected, All pressed,
- * nothing restored. So when the wizard takes over, a moment after the page
- * has run, nothing on screen moves; the pictures below the first row arrive.
- * What differs is only what the browser alone knows: a card kept from before
- * brings its note and its template.
+ * visitor's first render has: no design chosen, so Next off with the hint
+ * beside it, All pressed, nothing restored. So when the wizard takes over, a
+ * moment after the page has run, nothing on screen moves; the pictures below
+ * the first row arrive. What differs is only what the browser alone knows: a
+ * card kept from before brings its note and its template.
  *
  * A Client Component only so that the page's own data carries a reference
  * to it rather than every card twice over; it has no state and no effects,
@@ -38,12 +41,10 @@ import { getTemplate } from "@/templates/registry";
  *
  * Shown only where the address opens on the gallery (app/create/page.tsx):
  * no step or step=template, no template chosen, no card being handed over.
- * Inert until the wizard takes over; "See live demo" is a link, so it works
- * from the first moment.
+ * Inert until the wizard takes over; "See live demo" and each picture are
+ * links, so they work from the first moment.
  */
 export default function GalleryFirstScreen(): ReactElement {
-  const selectedId = getTemplate(EMPTY_SNAPSHOT.config.templateId).id;
-
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
@@ -72,7 +73,7 @@ export default function GalleryFirstScreen(): ReactElement {
           </h1>
 
           <TemplateGalleryView
-            selectedId={selectedId}
+            selectedId={null}
             firstRow="shell"
             filter="all"
             demoHref={(path) => path}
@@ -90,12 +91,17 @@ export default function GalleryFirstScreen(): ReactElement {
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
-          <button type="button" className={`${QUIET_BUTTON} lg:hidden`}>
-            Preview
-          </button>
+          <p id={CHOOSE_DESIGN_HINT_ID} className={HINT_TEXT}>
+            {CHOOSE_DESIGN_HINT}
+          </p>
 
           <div className="ml-auto">
-            <button type="button" className={PRIMARY_BUTTON}>
+            <button
+              type="button"
+              disabled
+              aria-describedby={CHOOSE_DESIGN_HINT_ID}
+              className={PRIMARY_BUTTON}
+            >
               Next
             </button>
           </div>
