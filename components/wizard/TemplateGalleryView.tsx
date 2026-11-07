@@ -41,7 +41,7 @@ const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4";
 const PREVIEW_SIZES =
   "(min-width: 1280px) 192px, (min-width: 1024px) calc(19vw - 50px), (min-width: 640px) calc(33vw - 43px), calc(50vw - 22px)";
 
-/** One template: its preview, its name and price, its sample, and Select. */
+/** One template: its preview (a link to its sample), its name and price, its sample, and Select. */
 function TemplateCard({
   template,
   selected,
@@ -68,6 +68,8 @@ function TemplateCard({
   onLooked?: (template: TemplateConfig) => void;
 }): ReactElement {
   const ground = getPalette(template.baseDesign.style.paletteId);
+  /* The tap on the picture or on "See live demo": the same link, and the same ViewContent. */
+  const openDemo = onLooked === undefined ? undefined : () => onLooked(template);
 
   return (
     <li
@@ -77,8 +79,17 @@ function TemplateCard({
           : "border-[var(--lifafa-hairline)]"
       }`}
     >
-      <div
-        className="relative aspect-[9/14] w-full overflow-hidden"
+      {/*
+        The picture opens the live demo too: it is what visitors tap. Out of
+        the tab order and hidden from screen readers, because "See live demo"
+        below is the same link, named.
+      */}
+      <a
+        href={demoHref}
+        onClick={openDemo}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="relative block aspect-[9/14] w-full overflow-hidden"
         style={{ backgroundColor: ground.background }}
       >
         {template.preview !== null && (first || firstRow !== "shell") ? (
@@ -103,7 +114,7 @@ function TemplateCard({
             {template.badge}
           </span>
         ) : null}
-      </div>
+      </a>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5 p-3">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -127,7 +138,7 @@ function TemplateCard({
           */}
           <a
             href={demoHref}
-            onClick={onLooked === undefined ? undefined : () => onLooked(template)}
+            onClick={openDemo}
             className={`${CARD_BUTTON} border border-[var(--lifafa-hairline)] text-[var(--lifafa-cream)] hover:border-[var(--lifafa-marigold)]`}
           >
             See live demo

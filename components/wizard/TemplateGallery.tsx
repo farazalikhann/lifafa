@@ -31,8 +31,9 @@ function looked(template: TemplateConfig): void {
  *
  * Each card is the template's preview (the first screen of its sample
  * invitation, at 360px), its name, its price, a link that opens the sample
- * itself in a new tab, and Select. Two to a row on a phone, where each is
- * still wide enough for both buttons at 44px.
+ * itself, and Select. Tapping the preview opens the sample as that link does,
+ * with the same ViewContent: the picture is what visitors tap. Two to a row
+ * on a phone, where each is still wide enough for both buttons at 44px.
  *
  * Choosing here only says which template; what that does to the card is the
  * wizard's business (switchTemplate), which keeps every detail the host has
