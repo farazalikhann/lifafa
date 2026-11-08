@@ -520,7 +520,7 @@ const PRESETS: readonly Preset[] = [
   {
     id: "gurdwara-ivory",
     name: "Gurdwara Ivory",
-    description: "Calm ivory and gold, the names under a gurdwara arch.",
+    description: "Ivory and gold, the valley at first light, the names under a gurdwara arch.",
     tradition: "sikh",
     settings: {
       paletteId: "cream",
@@ -529,16 +529,20 @@ const PRESETS: readonly Preset[] = [
       accentOverride: PALETTE_CHAMPAGNE,
       fontPairId: "elegant",
       density: "airy",
-      borderStyle: "none",
+      /* A slim gold double rule with small roses at its corners. */
+      borderStyle: "flowerRosegold",
       decorMotion: "drift",
       decorIntensity: "subtle",
       butterflies: "none",
-      leaves: false,
-      /* A few white petals as the card opens, and then nothing moving over the arch. */
+      /* Golden ivory feathers drifting, slow and calm. */
+      leaves: true,
+      nature: "feathers",
+      /* Rose petals as the card opens, as at an Anand Karaj. */
       petals: "open",
-      petalFlower: "mogra",
-      coverAnimation: "fold-unfold",
-      ornaments: ["gurudwaraArch"],
+      petalFlower: "rose",
+      coverAnimation: "envelope-seal",
+      /* Ik Onkar above, the names under the arch, the Nishan Sahib at the sides. */
+      ornaments: ["ikOnkar", "gurudwaraArch", "nishanSahibPennant"],
       calligraphy: "satnamWaheguru",
       greetingIfNone: "ikOnkar",
       blessingIfNone: "anandBlessing",
