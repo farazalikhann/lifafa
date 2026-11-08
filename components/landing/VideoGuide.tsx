@@ -20,12 +20,13 @@ function isoDuration(clock: string): string {
 
 /**
  * The video guide, under the Premium carousel: the full guide on YouTube, in
- * Hindi and in English, as a carousel of two cards (VideoGuideCarousel). A
+ * English and in Hindi, as a carousel of two cards (VideoGuideCarousel). A
  * server component; only the carousel, the thumbnail link and "Show all" run
  * in the browser.
  *
  * Every word, link and chapter time comes from guide-videos.json, which is
- * written alongside the videos. Replace a video there, not here.
+ * written alongside the videos. Replace a video there, not here. The cards
+ * follow the order of its `videos` array.
  */
 export default function VideoGuide(): ReactElement {
   const { section, videos } = guide;

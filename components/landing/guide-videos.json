@@ -7,122 +7,6 @@
   },
   "videos": [
     {
-      "id": "hi",
-      "lang": "hi",
-      "badge": "हिंदी",
-      "title": "पूरी गाइड, हिंदी में",
-      "duration": "5:46",
-      "summary": "छह मिनट में जानिए कि अपना कार्ड कैसे बनाएँ, मेहमानों को कैसे भेजें, और कैसे पता करें कि कौन आ रहा है।",
-      "learnHeading": "इस वीडियो में आप सीखेंगे",
-      "learn": [
-        "अपनी परंपरा का design चुनना और live demo देखना",
-        "नाम, तारीख़, venue और हर function जोड़ना",
-        "एक tap में हिंदी translate, font और sections",
-        "Payment करके link WhatsApp पर भेजना",
-        "Dashboard पर जवाब और headcount देखना"
-      ],
-      "timelineHeading": "टाइमलाइन",
-      "showAllLabel": "सभी देखें",
-      "showFewerLabel": "कम दिखाएँ",
-      "playLabel": "YouTube पर देखें",
-      "chapters": [
-        {
-          "t": "0:00",
-          "s": 0,
-          "label": "शुरुआत",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=0s"
-        },
-        {
-          "t": "0:14",
-          "s": 14,
-          "label": "लिफ़ाफ़ा क्या है",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=14s"
-        },
-        {
-          "t": "0:42",
-          "s": 42,
-          "label": "डिज़ाइन चुनिए",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=42s"
-        },
-        {
-          "t": "1:21",
-          "s": 81,
-          "label": "अपनी details भरिए",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=81s"
-        },
-        {
-          "t": "2:01",
-          "s": 121,
-          "label": "हर function एक ही कार्ड पर",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=121s"
-        },
-        {
-          "t": "2:15",
-          "s": 135,
-          "label": "English और हिंदी",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=135s"
-        },
-        {
-          "t": "2:38",
-          "s": 158,
-          "label": "कार्ड को अपना बनाइए",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=158s"
-        },
-        {
-          "t": "2:59",
-          "s": 179,
-          "label": "Preview और save",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=179s"
-        },
-        {
-          "t": "3:25",
-          "s": 205,
-          "label": "Publish कीजिए",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=205s"
-        },
-        {
-          "t": "3:41",
-          "s": 221,
-          "label": "मेहमानों को भेजिए",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=221s"
-        },
-        {
-          "t": "3:53",
-          "s": 233,
-          "label": "मेहमानों को क्या दिखता है",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=233s"
-        },
-        {
-          "t": "4:25",
-          "s": 265,
-          "label": "आपका dashboard",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=265s"
-        },
-        {
-          "t": "4:49",
-          "s": 289,
-          "label": "Event के दिन check-in",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=289s"
-        },
-        {
-          "t": "5:05",
-          "s": 305,
-          "label": "ज़रूरी बातें",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=305s"
-        },
-        {
-          "t": "5:33",
-          "s": 333,
-          "label": "आख़िर में",
-          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=333s"
-        }
-      ],
-      "youtubeId": "nczdyn8btXY",
-      "url": "https://www.youtube.com/watch?v=nczdyn8btXY",
-      "thumbnail": "/guide/lifafa-guide-thumbnail-hi.jpg",
-      "thumbnailAlt": "लिफ़ाफ़ा की पूरी गाइड, हिंदी में"
-    },
-    {
       "id": "en",
       "lang": "en",
       "badge": "English",
@@ -237,6 +121,122 @@
       "url": "https://www.youtube.com/watch?v=D783OFwmeA0",
       "thumbnail": "/guide/lifafa-guide-thumbnail-en.jpg",
       "thumbnailAlt": "Lifafa full guide, in English"
+    },
+    {
+      "id": "hi",
+      "lang": "hi",
+      "badge": "हिंदी",
+      "title": "पूरी गाइड, हिंदी में",
+      "duration": "5:46",
+      "summary": "छह मिनट में जानिए कि अपना कार्ड कैसे बनाएँ, मेहमानों को कैसे भेजें, और कैसे पता करें कि कौन आ रहा है।",
+      "learnHeading": "इस वीडियो में आप सीखेंगे",
+      "learn": [
+        "अपनी परंपरा का design चुनना और live demo देखना",
+        "नाम, तारीख़, venue और हर function जोड़ना",
+        "एक tap में हिंदी translate, font और sections",
+        "Payment करके link WhatsApp पर भेजना",
+        "Dashboard पर जवाब और headcount देखना"
+      ],
+      "timelineHeading": "टाइमलाइन",
+      "showAllLabel": "सभी देखें",
+      "showFewerLabel": "कम दिखाएँ",
+      "playLabel": "YouTube पर देखें",
+      "chapters": [
+        {
+          "t": "0:00",
+          "s": 0,
+          "label": "शुरुआत",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=0s"
+        },
+        {
+          "t": "0:14",
+          "s": 14,
+          "label": "लिफ़ाफ़ा क्या है",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=14s"
+        },
+        {
+          "t": "0:42",
+          "s": 42,
+          "label": "डिज़ाइन चुनिए",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=42s"
+        },
+        {
+          "t": "1:21",
+          "s": 81,
+          "label": "अपनी details भरिए",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=81s"
+        },
+        {
+          "t": "2:01",
+          "s": 121,
+          "label": "हर function एक ही कार्ड पर",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=121s"
+        },
+        {
+          "t": "2:15",
+          "s": 135,
+          "label": "English और हिंदी",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=135s"
+        },
+        {
+          "t": "2:38",
+          "s": 158,
+          "label": "कार्ड को अपना बनाइए",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=158s"
+        },
+        {
+          "t": "2:59",
+          "s": 179,
+          "label": "Preview और save",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=179s"
+        },
+        {
+          "t": "3:25",
+          "s": 205,
+          "label": "Publish कीजिए",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=205s"
+        },
+        {
+          "t": "3:41",
+          "s": 221,
+          "label": "मेहमानों को भेजिए",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=221s"
+        },
+        {
+          "t": "3:53",
+          "s": 233,
+          "label": "मेहमानों को क्या दिखता है",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=233s"
+        },
+        {
+          "t": "4:25",
+          "s": 265,
+          "label": "आपका dashboard",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=265s"
+        },
+        {
+          "t": "4:49",
+          "s": 289,
+          "label": "Event के दिन check-in",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=289s"
+        },
+        {
+          "t": "5:05",
+          "s": 305,
+          "label": "ज़रूरी बातें",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=305s"
+        },
+        {
+          "t": "5:33",
+          "s": 333,
+          "label": "आख़िर में",
+          "url": "https://www.youtube.com/watch?v=nczdyn8btXY&t=333s"
+        }
+      ],
+      "youtubeId": "nczdyn8btXY",
+      "url": "https://www.youtube.com/watch?v=nczdyn8btXY",
+      "thumbnail": "/guide/lifafa-guide-thumbnail-hi.jpg",
+      "thumbnailAlt": "लिफ़ाफ़ा की पूरी गाइड, हिंदी में"
     }
   ]
 }
