@@ -1,8 +1,6 @@
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { paperSans } from "@/components/theme/fonts";
-
-/* Inline, because the unlayered .lifafa-strip rule outranks any utility class. */
-const BEHIND: CSSProperties = { zIndex: -1 };
+import PageSlot from "@/components/theme/PageSlot";
 
 /**
  * The light theme for a host page: washi ivory, emerald and gold, Manrope for
@@ -17,6 +15,12 @@ const BEHIND: CSSProperties = { zIndex: -1 };
  * 640px), absolute so they scroll with the page. The wrapper is its own
  * stacking context and the strips sit at z-index -1 in it, so they are drawn
  * over the page's ivory and under everything else, panels and bars included.
+ *
+ * That z-index is in globals.css (.lifafa-paper > .lifafa-strip), not an
+ * inline style. One style object shared by both strips is sent from the
+ * server as a reference back into its own row, which left the second strip
+ * waiting on that row while the page hydrated: a pause on this <div>, and
+ * React error #418 on /create (see PageSlot).
  */
 export default function PaperTheme({
   children,
@@ -35,11 +39,12 @@ export default function PaperTheme({
     >
       {patterned ? (
         <>
-          <span aria-hidden="true" className="lifafa-strip" data-side="left" data-pattern="seigaiha" style={BEHIND} />
-          <span aria-hidden="true" className="lifafa-strip" data-side="right" data-pattern="seigaiha" style={BEHIND} />
+          <span aria-hidden="true" className="lifafa-strip" data-side="left" data-pattern="seigaiha" />
+          <span aria-hidden="true" className="lifafa-strip" data-side="right" data-pattern="seigaiha" />
         </>
       ) : null}
-      {children}
+      {/* Not straight inside the <div>: see PageSlot. */}
+      <PageSlot>{children}</PageSlot>
     </div>
   );
 }

@@ -297,6 +297,11 @@ html:has(.lifafa-paper) body {
   mask-image: linear-gradient(to bottom, transparent, #000 64px, #000 calc(100% - 64px), transparent);
 }
 
+/* A PaperTheme page's strips (components/theme/PaperTheme.tsx): under its panels and bars, over its ivory. */
+.lifafa-paper > .lifafa-strip {
+  z-index: -1;
+}
+
 .lifafa-strip[data-side="left"] {
   left: 0;
 }
