@@ -5,6 +5,9 @@ import type { TemplateConfig } from "@/templates/types";
 /**
  * The "midnight-lantern" preset as a template: its look from lib/presets.ts, and
  * the colourways and type pairs a host may change it to. See presetTemplate.
+ *
+ * Its painting is the lake palace by night, its lights on the water under the
+ * lanterns; mogra garlands part its sections.
  */
 export const MIDNIGHT_LANTERN: TemplateConfig = presetTemplate({
   presetId: "midnight-lantern",
@@ -14,5 +17,7 @@ export const MIDNIGHT_LANTERN: TemplateConfig = presetTemplate({
     plain("maroon", "maroon"),
     { id: "forest", label: "Forest", paletteId: "forest", accentOverride: GOLD },
   ],
-  fontPairs: ["royal", "luxe"],
+  fontPairs: ["regal", "royal"],
+  scene: "lakePalace",
+  divider: "mogra",
 });

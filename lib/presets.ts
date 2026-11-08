@@ -281,7 +281,7 @@ const PRESETS: readonly Preset[] = [
   {
     id: "midnight-lantern",
     name: "Midnight Lantern",
-    description: "Night blue and gold, lanterns, moons, stars and a royal scroll.",
+    description: "Night blue, blue roses and gold, lanterns over the moonlit lake, fireflies.",
     tradition: "muslim",
     settings: {
       paletteId: "midnight",
@@ -289,15 +289,19 @@ const PRESETS: readonly Preset[] = [
       dateReveal: "scroll",
       /* Midnight's own accent is already the gold this look is named for. */
       accentOverride: null,
-      fontPairId: "regal",
+      fontPairId: "luxe",
       density: "comfortable",
-      borderStyle: "flowerNoir",
+      /* Blue roses on gold scrollwork, the night's own colour. */
+      borderStyle: "flowerBlue",
       decorMotion: "float",
       decorIntensity: "subtle",
-      butterflies: "none",
+      /* On, so something flies; what flies is fireflies, not butterflies. */
+      butterflies: "yellow",
+      flying: "fireflies",
       leaves: false,
       petals: "none",
-      coverAnimation: "curtain-reveal",
+      /* The breeze, drawn on the card's own navy. */
+      coverAnimation: "petal-dust",
       ornaments: ["lantern", "crescentMoon", "stars"],
       /* The marriage verse, so this look does not open the way the other three do. */
       calligraphy: "versePairs",
