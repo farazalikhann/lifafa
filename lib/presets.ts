@@ -463,24 +463,29 @@ const PRESETS: readonly Preset[] = [
   {
     id: "kesri-anand-karaj",
     name: "Kesri Anand Karaj",
-    description: "Warm sand and saffron, the Khanda, lotuses and rose petals.",
+    description: "Saffron on sand, the phulkari band over a jaal weave, the Khanda and marigolds.",
     tradition: "sikh",
     settings: {
       paletteId: "sand",
       textPairId: "haldiSaffron",
       /* Sand's own accent is brown; the word-mark and the rules want kesri. */
       accentOverride: PALETTE_KESRI,
-      fontPairId: "royal",
+      fontPairId: "warm",
       density: "comfortable",
+      /* Yellow blossoms, the nearest of the flower frames to kesri. */
       borderStyle: "flowerGold",
       decorMotion: "float",
       decorIntensity: "subtle",
-      butterflies: "red",
+      butterflies: "yellow",
       leaves: false,
       petals: "open",
-      petalFlower: "rose",
-      coverAnimation: "envelope-seal",
-      ornaments: ["khanda", "lotus"],
+      petalFlower: "marigold",
+      /* No painting: the jaal, a trellis of flowers, is the ground. */
+      royalTexture: true,
+      royalTexturePattern: "jaal",
+      coverAnimation: "fold-unfold",
+      /* The phulkari band at the head, the Khanda above the names, gold lotuses in the corners. */
+      ornaments: ["kandaFloralBorder", "khanda", "lotus"],
       calligraphy: "anandKaraj",
       greetingIfNone: "ikOnkar",
       blessingIfNone: "anandBlessing",
