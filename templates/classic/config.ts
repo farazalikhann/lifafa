@@ -13,8 +13,13 @@ export const CLASSIC_TEMPLATE_ID = "classic";
  * Every invitation saved before templates is one of these: its CardConfig is
  * the whole design, chosen control by control in the full editor, and it
  * carries no templateId at all. Reading such a card never touches its design.
- * Only choosing Classic in the wizard's gallery lays this base design down,
- * and it is the design a new card has always started with.
+ * Only choosing Classic in the wizard's gallery lays this base design down.
+ *
+ * Its look is the plain new card's (lib/newCard.ts, from DEFAULT_DESIGN) with
+ * a little more of its own, so it is not mistaken for any of the wedding
+ * cards: a gold geometric rule round the card in the accent, the damask, a
+ * shower of confetti as it opens, and the names in a clean sans. The empty
+ * card a host starts from is unchanged.
  */
 export const CLASSIC_TEMPLATE: TemplateConfig = {
   /* The "Made with Lifafa" credit in the card's text colour. */
@@ -37,8 +42,16 @@ export const CLASSIC_TEMPLATE: TemplateConfig = {
     plain("cream", "cream"),
     plain("blush", "blush"),
   ],
-  fontPairs: [DEFAULT_DESIGN.style.fontPairId, "modern", "elegant"],
+  fontPairs: ["modern", DEFAULT_DESIGN.style.fontPairId, "elegant"],
   sections: SWITCHABLE_SECTIONS,
-  /* With the royal texture, as a new card has it. */
-  baseDesign: { ...DEFAULT_DESIGN, royalTexture: true },
+  baseDesign: {
+    ...DEFAULT_DESIGN,
+    style: { ...DEFAULT_DESIGN.style, fontPairId: "modern" },
+    /* A gold rule round the card, drawn in the accent: stationery, and no flowers. */
+    borderStyle: "geometricRule",
+    /* Confetti as it opens, for any occasion; nothing else moves. */
+    petals: "open",
+    petalFlower: "confetti",
+    royalTexture: true,
+  },
 };
