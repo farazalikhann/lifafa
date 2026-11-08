@@ -632,25 +632,32 @@ const PRESETS: readonly Preset[] = [
   {
     id: "lotus-blush",
     name: "Lotus Blush",
-    description: "Soft blush, lotuses, the ahimsa hand, petals and butterflies.",
+    description: "Blush in a scalloped frame, the toran, lotuses, the ahimsa hand and a jaal weave.",
     tradition: "jain",
     settings: {
       paletteId: "blush",
       textPairId: "ivoryRose",
       accentOverride: null,
-      fontPairId: "romantic",
+      fontPairId: "classic",
       density: "comfortable",
-      borderStyle: "none",
+      /* A scalloped line in the card's terracotta: lotuses lead, not roses. */
+      borderStyle: "scallopedFrame",
       decorMotion: "float",
       decorIntensity: "subtle",
+      /* On, so something flies; what flies is dragonflies, as over a lotus pond. */
       butterflies: "yellow",
+      flying: "dragonflies",
       leaves: false,
       petals: "both",
       petalFlower: "lotus",
-      coverAnimation: "petal-dust",
-      /* No toran: the top of this one is left to the hand and the word-mark. */
-      ornaments: ["ahimsaHand", "lotus"],
-      calligraphy: "jainShubhVivah",
+      /* No painting: the jaal is the ground. */
+      royalTexture: true,
+      royalTexturePattern: "jaal",
+      /* The floral gatefold with its satin bow, in blush and white roses. */
+      coverAnimation: "ribbon-seal",
+      /* The toran at the head, the hand above the names, kalash and lotus in the corners. */
+      ornaments: ["tornGate", "ahimsaHand", "kalash", "lotus"],
+      calligraphy: "jainMangalParinay",
       greetingIfNone: "jaiJinendra",
       blessingIfNone: "mangalBlessing",
     },
