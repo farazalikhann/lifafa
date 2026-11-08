@@ -690,25 +690,29 @@ const PRESETS: readonly Preset[] = [
   {
     id: "bodhi-ivory",
     name: "Bodhi Ivory",
-    description: "Ivory, maroon and gold, prayer flags, the dharma wheel and a Bodhi leaf.",
+    description: "Sand and jade, prayer flags over the valley tree, the endless knot and a Bodhi leaf.",
     tradition: "buddhist",
     settings: {
-      paletteId: "cream",
-      /* Maroon for the second ink, and gold for the word-mark and the rules. */
-      textPairId: "ivoryRose",
-      accentOverride: PALETTE_CHAMPAGNE,
-      fontPairId: "royal",
+      paletteId: "sand",
+      /* Deep green for the first ink, and the sage pair's bronze for the second. */
+      textPairId: "sageGarden",
+      /* Jade for the word-mark and the rules: 4.6:1 on Sand. */
+      accentOverride: "#4A6B52",
+      fontPairId: "clean",
       density: "comfortable",
       /* No frame: the flags are the border, and a second one would crowd them. */
       borderStyle: "none",
-      decorMotion: "float",
+      decorMotion: "drift",
       decorIntensity: "subtle",
       butterflies: "none",
-      leaves: false,
+      /* Green leaves drifting from the tree. */
+      leaves: true,
+      nature: "greenLeaves",
       petals: "none",
-      coverAnimation: "fold-unfold",
-      /* The lotus at the left and the Bodhi leaf at the right: the pack's own order. */
-      ornaments: ["prayerFlagString", "dharmaWheel", "lotus", "bodhiLeaf"],
+      /* The breeze, drawn on the card's own sand. */
+      coverAnimation: "petal-dust",
+      /* The Bodhi leaf at the left and the conch at the right: the pack's own order. */
+      ornaments: ["prayerFlagString", "endlessKnot", "bodhiLeaf", "conchShell"],
       calligraphy: "buddhistBuddhamSaranam",
       greetingIfNone: "namoBuddhaya",
       /* The Mangala Sutta's verse on the home: the pack's wedding blessing. */

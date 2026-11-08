@@ -231,7 +231,7 @@ export const SCENE_TONES: Readonly<Record<SceneTone, string | null>> = {
   natural: null,
   rose: "sepia(0.35) hue-rotate(-28deg) saturate(1.15)",
   gold: "sepia(0.6) saturate(0.85) brightness(1.03)",
-  jade: "sepia(0.35) hue-rotate(48deg) saturate(0.8)",
+  jade: "sepia(0.25) hue-rotate(36deg) saturate(0.7)",
 };
 
 /**

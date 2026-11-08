@@ -5,14 +5,17 @@ import type { TemplateConfig } from "@/templates/types";
 /**
  * The "bodhi-ivory" preset as a template: its look from lib/presets.ts, and
  * the colourways and type pairs a host may change it to. See presetTemplate.
+ *
+ * Its painting is the valley and its broad tree printed in jade, under the
+ * prayer flags; mogra garlands part its sections.
  */
 export const BODHI_IVORY: TemplateConfig = presetTemplate({
   presetId: "bodhi-ivory",
   preview,
-  ownPaletteLabel: "Ivory",
-  palettes: [
-    plain("sand", "sand"),
-    plain("midnight", "midnight"),
-  ],
+  ownPaletteLabel: "Sand",
+  palettes: [plain("ivory", "cream"), plain("midnight", "midnight")],
   fontPairs: ["elegant", "graceful"],
+  scene: "valleyTree",
+  sceneTone: "jade",
+  divider: "mogra",
 });
