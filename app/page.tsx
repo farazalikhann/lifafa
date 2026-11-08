@@ -17,6 +17,7 @@ import PremiumShowcase, { demoPath } from "@/components/landing/PremiumShowcase"
 import Pricing from "@/components/landing/Pricing";
 import SectionRule from "@/components/landing/SectionRule";
 import SideStrips, { type StripPattern } from "@/components/landing/SideStrips";
+import VideoGuide from "@/components/landing/VideoGuide";
 import { paperDisplay, paperSans } from "@/components/theme/fonts";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import { listedPremium } from "@/templates/premium";
@@ -57,13 +58,15 @@ function Band({
 /**
  * The landing page, light and editorial (DESIGN.md at the repo root), for a
  * host arriving on a phone from an ad: what Lifafa is and the two ways on,
- * the Premium designs opening on a phone, how it works, how it compares, what
- * it does, the price, six questions, Instagram and a last way in.
+ * the Premium designs opening on a phone, the video guide, how it works, how
+ * it compares, what it does, the price, six questions, Instagram and a last
+ * way in.
  *
  * Built to be light on a slow connection. Every section is a server component
- * except the carousel, so the page is in the HTML and the first screen is
- * text alone: it paints without waiting for a picture or a video. Only the
- * centred slide's video is ever fetched, and only once the carousel is near.
+ * except the two carousels, so the page is in the HTML and the first screen
+ * is text alone: it paints without waiting for a picture or a video. Only the
+ * centred slide's video is ever fetched, and only once the carousel is near;
+ * the guide's videos are on YouTube, behind plain links.
  */
 export default function Page() {
   /* The hero's live demo: the first premium design the gallery lists. */
@@ -85,6 +88,8 @@ export default function Page() {
         <Band pattern="seigaiha">
           <Hero demoHref={demoHref} />
           <PremiumShowcase />
+          <SectionRule />
+          <VideoGuide />
         </Band>
         <SectionRule />
         <Band pattern="asanoha">

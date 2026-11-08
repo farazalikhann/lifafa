@@ -119,6 +119,8 @@ Rules
 
 **Template carousel**: one row of phone frames with CSS scroll snap, previous and next buttons and a dot per slide. Auto-advances every 5 seconds; see section 7.
 
+**Video guide** (`components/landing/VideoGuide.tsx`, with its browser parts in `VideoGuideCarousel.tsx`): under the template carousel, after a gold rule. Two paper cards, Hindi first, built the same way as the template carousel (scroll snap, previous and next, a dot per card, a pause button): one card wide on phones with the next peeking in, both side by side from 1024px. Every word, link and chapter time comes from `components/landing/guide-videos.json`, never from the component. Each card opens with its 16:9 thumbnail (`public/guide/`) flush with the card's top edge and an outline "Watch on YouTube" pill under it, one plain link to the video in a new tab: no iframe and no YouTube script on the page. Then the language badge on blush, the length, the title, the summary, what the video covers (gold lozenges, the section rule's own) and the chapters, each a row that opens the video at that second; phones show the first five with "Show all". The Hindi card carries `lang="hi"`, which takes the tracking off its labels and sets its text at the Devanagari leading. The thumbnails are asked for only once the page has loaded and the cards are a screen away. A tap on a thumbnail sends the Meta Pixel custom event `GuideVideoOpen` with its `language`.
+
 **Comparison table**: a real `<table>` on `paper`, three option columns after a row label column. The Lifafa column has a blush tint, an emerald header with ivory text and 600 weight cells. Below 768px the table is replaced by one small card per row, with Lifafa's answer first on a blush band and the other two under it, so the page never scrolls sideways and Lifafa is never out of view.
 
 **Feature tile**: a line icon drawn in code (`components/landing/FeatureIcons.tsx`: 24px grid, 1.5px emerald stroke with round ends, one small gold detail, no fills) at 28px in a 56px `paper` circle with a 1px gold hairline, then an h3 and one line of body copy. On hover the rim turns full gold and the icon lifts 2px.
@@ -168,6 +170,7 @@ Motion follows the lifafa-motion rules: low-end Android first.
 - Animate transform and opacity only (and mask-position for the hero underline's wipe). Nothing animates layout, box-shadow, filter or clip-path.
 - Brush washes fade and settle in once as they come into view (IntersectionObserver, `components/landing/BrushReveal.tsx`). With reduced motion they are simply there, in their final state.
 - The carousel auto-advances every 5 seconds. It pauses on touch, hover, focus or drag and resumes after 8 seconds without interaction. It also pauses while it is off screen (IntersectionObserver) or the tab is hidden. With `prefers-reduced-motion: reduce` it never auto-advances and no video autoplays.
+- The video guide auto-advances every 6 seconds below 1024px, with the same pauses and the same 8 second resume. From 1024px both cards are in view and it never moves.
 - Only the centred slide plays its preview video (muted, inline, looped). Others show the poster. A video that fails falls back to the poster.
 - Hover lifts are 2px transforms over 200ms, removed under reduced motion.
 
@@ -195,9 +198,9 @@ Motion follows the lifafa-motion rules: low-end Android first.
 
 | Width | Changes |
 |---|---|
-| < 640px | One column. Pattern strips hidden. Hero centred. Carousel shows one phone with the next peeking. Comparison shown as stacked cards. |
+| < 640px | One column. Pattern strips hidden. Hero centred. Carousel shows one phone with the next peeking; the video guide one card with the next peeking. Comparison shown as stacked cards. |
 | 640 to 1023px | Pattern strips 28px wide. Features 2 across. Pricing 2 across. Comparison is a table from 768px. |
-| >= 1024px | Pattern strips 64px wide. How it works 3 across, features 3 across. With three phones or fewer the carousel shows them all and moves a spotlight across them instead of scrolling; the lit one plays. |
+| >= 1024px | Pattern strips 64px wide. How it works 3 across, features 3 across. With three phones or fewer the carousel shows them all and moves a spotlight across them instead of scrolling; the lit one plays. The video guide's two cards sit side by side with every chapter shown. |
 | >= 1440px | Same as desktop, more side margin. Content never wider than 1120px. |
 
 - Touch targets are at least 44 by 44px, buttons 48px tall.

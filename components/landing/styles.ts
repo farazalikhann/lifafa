@@ -38,6 +38,10 @@ export const SECTION_HEADING =
 export const SECTION_LEAD =
   "text-base leading-[1.6] text-pretty text-[var(--paper-muted)] sm:text-lg";
 
+/** A carousel's round previous, next and pause buttons, 44px. */
+export const CAROUSEL_CONTROL =
+  "flex h-11 w-11 items-center justify-center rounded-full border border-[var(--paper-hairline)] bg-[var(--paper-card)] text-[var(--paper-emerald)] transition-colors duration-150 hover:border-[var(--paper-emerald)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]";
+
 /** A card: paper on washi with a gold hairline, no shadow. */
 export const CARD =
   "rounded-3xl border border-[var(--paper-hairline)] bg-[var(--paper-card)]";

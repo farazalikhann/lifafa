@@ -853,3 +853,13 @@ export function openInBrowserClick(click: {
     { custom: true },
   );
 }
+
+/**
+ * A tap on a video guide's thumbnail on the home page, which opens the video
+ * on YouTube (components/landing/VideoGuide.tsx). A custom event: `language`
+ * is the video's, hi or en. Sent at once as a keepalive request, since the tap
+ * may take the visitor off the page (Instagram's browser opens it in place).
+ */
+export function guideVideoOpen(language: string): boolean {
+  return track("GuideVideoOpen", { language }, { custom: true, keepalive: true });
+}
