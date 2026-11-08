@@ -419,28 +419,36 @@ const PRESETS: readonly Preset[] = [
   {
     id: "maroon-royal",
     name: "Maroon Royal",
-    description: "Maroon and gold, a marigold garland, Om, diya and kalash.",
+    description: "Maroon paisley brocade, a toran, ivory roses and the carved jharokha.",
     tradition: "hindu",
     settings: {
       paletteId: "maroon",
       textPairId: "royalMaroon",
       accentOverride: null,
-      fontPairId: "royal",
+      fontPairId: "regal",
       density: "comfortable",
-      /* Noir's slim gold line and cream roses: a photo frame that holds on a dark ground. */
-      borderStyle: "flowerNoir",
-      decorMotion: "float",
+      /* Ivory and pink roses on a gold rule: a photo frame that holds on a dark ground. */
+      borderStyle: "flowerIvory",
+      decorMotion: "drift",
       decorIntensity: "subtle",
-      /* Yellow, not red: red wings disappear into maroon, as rose petals do. */
-      butterflies: "yellow",
-      leaves: false,
-      petals: "both",
-      petalFlower: "marigold",
-      coverAnimation: "envelope-seal",
-      ornaments: ["marigold", "om", "diya", "kalash"],
+      butterflies: "none",
+      /* Gold leaves drifting over the brocade. */
+      leaves: true,
+      nature: "goldLeaves",
+      /* White, not red: rose petals disappear into maroon. */
+      petals: "open",
+      petalFlower: "mogra",
+      /* Woven: the paisley brocade is the ground, and there is no painting over it. */
+      royalTexture: true,
+      royalTexturePattern: "paisley",
+      /* Maroon velvet with gold fringe, the colour of the card behind it. */
+      coverAnimation: "curtain-reveal",
+      /* The white lotus mandala turning in the two top corners, over the brocade. */
+      ornaments: ["toran", "swastik", "diya", "mandala"],
       /* A carved gold arch on maroon: the palace doorway the look is named for. */
       namesFrame: "jharokha",
-      calligraphy: "shubhVivah",
+      /* Vivahotsav and its kalash: no figure on the word-mark. */
+      calligraphy: "vivahotsav",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
     },
