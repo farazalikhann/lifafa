@@ -182,9 +182,18 @@ const PALETTE_CHAMPAGNE = "#86672E";
  * behind. The greeting and the dua they open with are added only to a card
  * that has none, and a look headed by the Barakallahu lakuma word-mark never
  * adds the dua that says the same words. Then
- * four Vivah looks, three of them taken from cards the Lifafa team designed by
- * hand in the editor — ivory with the Ivory frame, ivory with the blossom
- * frame, blush with a toran — and a fourth, the same card in Maroon and gold.
+ * four Vivah looks: Shubh Vivah, ivory in crimson roses under a marigold
+ * garland; Shri Ganesh, ivory with the blossom frame; Toran Blush; and Maroon
+ * Royal, the maroon card woven with the paisley under a toran.
+ *
+ * EIGHT OF THESE ARE TRADITIONS TEMPLATES (templates/*, through
+ * presetTemplate), and those eight, with Ivory Chapel and Classic, are each a
+ * look no other card in the collection shares: no two share a painting and a
+ * palette, or a frame and its flowers. Neither a figure nor a face is drawn
+ * on any of them, so none is headed by the Shubh Vivah word-mark, which draws
+ * Ganesh. Which painting each has, the colour it is printed in and the
+ * garland between its sections are the template's (its config.ts), not the
+ * preset's.
  *
  * EVERY VIVAH PRESET SETS EVERYTHING IT IS ABOUT: the palette and accent, the
  * type, the length, the border, the motifs' motion and amount, the
@@ -215,8 +224,8 @@ const PALETTE_CHAMPAGNE = "#86672E";
  * card does not draw a greeting its calligraphy already says (see
  * greetingSaidByCalligraphy in lib/calligraphy.ts).
  *
- * THEN THREE BUDDHIST VIVAH LOOKS, built the same way: ivory, saffron and
- * midnight, each headed by a different word-mark and hung with the prayer
+ * THEN THREE BUDDHIST VIVAH LOOKS, built the same way: sand and jade, saffron
+ * and midnight, each headed by a different word-mark and hung with the prayer
  * flags. The dharma wheel, the endless knot and the stupa are emblems of the
  * faith and are only ever above the names, one to a look. The lotus, the
  * Bodhi leaf and the conch are the corners. No figure and no face: the Buddha
