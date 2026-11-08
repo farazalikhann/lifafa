@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type ReactElement } from "react";
 export const INTRO_TEMPLATE_ID = "emerald-shahi";
 
 export const INTRO_HEADLINE = "Your wedding card, as a website";
-export const INTRO_LINE = "Guests open it like a real envelope. You see who is coming.";
+export const INTRO_LINE = "Guests open it on their phone, just like a real card. You see who is coming.";
 
 /**
  * Said under the gallery's heading, above the prices. True to the flow: a
