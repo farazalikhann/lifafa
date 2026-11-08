@@ -45,6 +45,35 @@ function FieldSkeleton({ delay }: { delay: number }): ReactElement {
   );
 }
 
+/**
+ * The form, drawn as blocks: the tab bar, the occasion grid and four fields.
+ * Also what a step of the wizard shows while the editor's code is on its way
+ * (components/wizard/Wizard.tsx).
+ */
+export function EditorFormSkeleton(): ReactElement {
+  return (
+    <div className="flex min-w-0 flex-col gap-9">
+      {/* The tab bar. */}
+      <div className="flex gap-2">
+        {[0, 80, 160, 240].map((delay) => (
+          <Bar key={delay} className="h-10 flex-1 rounded-xl" delay={delay} />
+        ))}
+      </div>
+
+      {/* The occasion grid. */}
+      <div className="grid grid-cols-3 gap-3">
+        {[0, 70, 140, 210, 280, 350].map((delay) => (
+          <Bar key={delay} className="h-16 rounded-2xl" delay={delay} />
+        ))}
+      </div>
+
+      {[0, 120, 240, 360].map((delay) => (
+        <FieldSkeleton key={delay} delay={delay} />
+      ))}
+    </div>
+  );
+}
+
 export default function EditorSkeleton({
   step = "details",
 }: {
@@ -81,25 +110,7 @@ export default function EditorSkeleton({
       >
         <span className="sr-only">Opening the editor…</span>
 
-        <div className="flex min-w-0 flex-col gap-9">
-          {/* The tab bar. */}
-          <div className="flex gap-2">
-            {[0, 80, 160, 240].map((delay) => (
-              <Bar key={delay} className="h-10 flex-1 rounded-xl" delay={delay} />
-            ))}
-          </div>
-
-          {/* The occasion grid. */}
-          <div className="grid grid-cols-3 gap-3">
-            {[0, 70, 140, 210, 280, 350].map((delay) => (
-              <Bar key={delay} className="h-16 rounded-2xl" delay={delay} />
-            ))}
-          </div>
-
-          {[0, 120, 240, 360].map((delay) => (
-            <FieldSkeleton key={delay} delay={delay} />
-          ))}
-        </div>
+        <EditorFormSkeleton />
 
         {/* The phone the card is previewed in, beside the form at lg only. */}
         <div className="hidden lg:block">

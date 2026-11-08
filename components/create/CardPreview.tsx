@@ -2,9 +2,10 @@
 
 import { useCallback, useRef, useState, type ReactElement } from "react";
 import TemplateCard from "@/templates/TemplateCard";
-import dynamic from "next/dynamic";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";
+import { useLazyModule } from "@/hooks/useLazyModule";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import BusyLabel from "@/components/network/BusyLabel";
 import { PREVIEW_INVITE } from "@/lib/calendar";
 import type { Motif } from "@/lib/motifs";
 import { cardPalette } from "@/lib/textColors";
@@ -15,8 +16,12 @@ import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
 import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
 
-/* The full-screen preview: its cover player and every cover drawn in code. Fetched when it is opened. */
-const FullScreenPreview = dynamic(() => import("@/components/create/FullScreenPreview"), { ssr: false });
+/*
+  The full-screen preview: its cover player and every cover drawn in code.
+  Fetched when it is opened, with a retry if it does not arrive (hooks/useLazyModule.ts).
+*/
+const loadFullScreenPreview = () =>
+  import("@/components/create/FullScreenPreview").then((module) => module.default);
 
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
 const FRAME_QUERY = "(min-width: 64rem)";
@@ -93,6 +98,12 @@ export default function CardPreview({
   const isFramed = useMediaQuery(FRAME_QUERY);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
+  const {
+    module: FullScreenPreview,
+    failed: previewFailed,
+    retry: retryPreview,
+  } = useLazyModule(loadFullScreenPreview, { wanted: isPreviewOpen, id: "frame-preview" });
+  const previewOpening = isPreviewOpen && FullScreenPreview === null && !previewFailed;
   /* Handed to the overlay, which returns focus here when it unmounts. */
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -148,10 +159,17 @@ export default function CardPreview({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setIsPreviewOpen(true)}
+        onClick={() => {
+          if (previewFailed) {
+            retryPreview();
+          }
+          setIsPreviewOpen(true);
+        }}
+        disabled={previewOpening}
+        aria-busy={previewOpening}
         className="mx-auto min-h-11 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
       >
-        Preview full screen
+        <BusyLabel busy={previewOpening}>Preview full screen</BusyLabel>
       </button>
 
       {/*
@@ -159,7 +177,7 @@ export default function CardPreview({
         up and torn down by the overlay's own lifecycle rather than by a flag
         it has to keep watching.
       */}
-      {isPreviewOpen ? (
+      {isPreviewOpen && FullScreenPreview !== null ? (
         <FullScreenPreview
           draft={draft}
           theme={theme}

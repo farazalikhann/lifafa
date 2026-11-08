@@ -15,9 +15,12 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
-import EditorSkeleton from "@/components/create/EditorSkeleton";
+import EditorSkeleton, { EditorFormSkeleton } from "@/components/create/EditorSkeleton";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
-import dynamic from "next/dynamic";
+import BusyLabel from "@/components/network/BusyLabel";
+import { startLoad, useLazyModule } from "@/hooks/useLazyModule";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { isOnline, reportWaiting, setSavesOnPhone } from "@/lib/loadNotice";
 import PendingCardNotice, {
   displayHost,
   type PendingCardProblem,
@@ -78,27 +81,38 @@ import type { TemplateConfig } from "@/templates/types";
 import type { EventContact, EventDraft } from "@/types/event";
 import Logo from "@/components/Logo";
 
-/* The full-screen preview: its cover player and every cover drawn in code. Fetched when it is opened. */
-const FullScreenPreview = dynamic(() => import("@/components/create/FullScreenPreview"), { ssr: false });
 /*
-  The card beside the steps, at lg. Client-only and fetched when drawn: it is
-  what brings the card renderers (templates/parts.ts), and below lg it draws
-  nothing, so a phone choosing a design never downloads them.
+  Code fetched when it is needed, through useLazyModule rather than
+  next/dynamic: a chunk that does not arrive (a slow line, the connection
+  gone) leaves its skeleton on screen and "Try again" in the network notice,
+  where a dynamic component threw and took the editor down with it.
+
+  The full-screen preview: its cover player and every cover drawn in code.
+  Fetched when it is opened, and once the editor has arrived, while the
+  browser is idle, so it opens with the connection gone too.
 */
-const CardPreview = dynamic(() => import("@/components/create/CardPreview"), { ssr: false });
+const loadFullScreenPreview = () =>
+  import("@/components/create/FullScreenPreview").then((module) => module.default);
+/*
+  The card beside the steps, at lg only: it is what brings the card
+  renderers (templates/parts.ts), so a phone never downloads it.
+*/
+const loadCardPreview = () => import("@/components/create/CardPreview").then((module) => module.default);
+const FRAME_QUERY = "(min-width: 64rem)";
 
 /*
   THE EDITOR (the details and customize steps, components/wizard/editorSteps.ts)
   is one chunk, not part of the gallery's download. It is fetched when a design
   opens: a template chosen, Next pressed, or an address that already names a
   later step, which starts it as this file loads, beside hydration. Until it
-  is here a step holds a screen's height, so nothing below it moves into view.
+  is here a step shows the form's skeleton, a screen high, so nothing below it
+  moves into view.
 */
 const loadEditorSteps = () => import("@/components/wizard/editorSteps");
 
 function preloadEditorSteps(): void {
   /* A failed fetch is tried again when a step is drawn. */
-  loadEditorSteps().catch(() => undefined);
+  startLoad(loadEditorSteps);
   /* The auth client too: Save asks who is signed in first, and must not wait for a download. */
   preloadClient();
 }
@@ -111,17 +125,22 @@ if (typeof window !== "undefined") {
   }
 }
 
-function StepLoading(): ReactElement {
-  return <div aria-hidden="true" className="min-h-[100svh]" />;
+/** A step whose code is on its way: the form's skeleton, a screen high, said to a screen reader too. */
+function StepSkeleton(): ReactElement {
+  return (
+    <div role="status" className="min-h-[100svh]">
+      <span className="sr-only">Opening the editor…</span>
+      <EditorFormSkeleton />
+    </div>
+  );
 }
 
-const LanguagePicker = dynamic(() => loadEditorSteps().then((steps) => steps.LanguagePicker), { loading: StepLoading });
-const EventForm = dynamic(() => loadEditorSteps().then((steps) => steps.EventForm), { loading: () => null });
-const SubEventEditor = dynamic(() => loadEditorSteps().then((steps) => steps.SubEventEditor), { loading: () => null });
-const ContactEditor = dynamic(() => loadEditorSteps().then((steps) => steps.ContactEditor), { loading: () => null });
-const AutoTranslate = dynamic(() => loadEditorSteps().then((steps) => steps.AutoTranslate), { loading: () => null });
-const TranslationPanel = dynamic(() => loadEditorSteps().then((steps) => steps.TranslationPanel), { loading: () => null });
-const CustomizeStep = dynamic(() => loadEditorSteps().then((steps) => steps.CustomizeStep), { loading: StepLoading });
+/** Whether the connection is one to spend on code the visitor has not asked for yet. */
+function roomToPrefetch(): boolean {
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+
+  return connection?.saveData !== true && !/(^|-)2g$/.test(connection?.effectiveType ?? "");
+}
 
 /**
  * A new invitation, made in four steps: a template, the details, the few
@@ -150,6 +169,36 @@ function useIsClient(): boolean {
     () => true,
     () => false,
   );
+}
+
+/**
+ * Around the previews: a part of the card whose code did not arrive (the
+ * connection gone, templates/parts.ts) closes the preview instead of taking
+ * the editor down with it, and onError says so in the network notice.
+ */
+class PreviewBoundary extends Component<
+  { onError: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown): void {
+    console.error("[wizard] a preview could not be drawn:", error);
+    this.props.onError();
+  }
+
+  render(): ReactNode {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/** A preview could not be drawn: what is missing comes with the page, so the retry loads it again. */
+function reportPreviewFailed(): void {
+  reportWaiting("preview-parts", { kind: "failed", retry: () => window.location.reload(), reloads: true });
 }
 
 /**
@@ -703,6 +752,8 @@ function WizardSteps({
       }
 
       window.history.pushState(null, "", wizardStepPath(next, path));
+      /* A second tap before the step has drawn goes nowhere new: no step is skipped, no history doubled. */
+      stepRef.current = next;
       window.scrollTo({ top: 0 });
     },
     [path],
@@ -815,6 +866,13 @@ function WizardSteps({
         and the change limits it holds a paid card to.
       */
       if (edit !== undefined) {
+        if (!isOnline()) {
+          return {
+            ok: false,
+            error: "You are offline. Connect to the internet, then save your changes again.",
+          };
+        }
+
         const result = await updateEvent(edit.eventId, {
           draft: snapshot.draft,
           cardConfig: snapshot.config,
@@ -842,6 +900,15 @@ function WizardSteps({
         router.push(`${dashboardHref}?saved=${detailsMoved ? "details" : "1"}`);
 
         return { ok: true };
+      }
+
+      /* Nothing can be saved or handed on without a connection: say so, and keep the card here. */
+      if (!isOnline()) {
+        return {
+          ok: false,
+          error:
+            "You are offline. Your card is saved on this phone. Connect to the internet, then press Save and continue again.",
+        };
       }
 
       const supabase = await loadClient();
@@ -969,14 +1036,68 @@ function WizardSteps({
     [handleChange, setBlocks],
   );
 
+  /* The editor's code, for the details and customize steps: their skeleton until it is here. */
+  const { module: editor } = useLazyModule(loadEditorSteps, {
+    wanted: step === "details" || step === "customize",
+    id: "editor",
+  });
+  const isFramed = useMediaQuery(FRAME_QUERY);
+  const { module: CardPreview } = useLazyModule(loadCardPreview, { wanted: isFramed, id: "card-preview" });
+
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const {
+    module: FullScreenPreview,
+    failed: previewFailed,
+    retry: retryPreview,
+  } = useLazyModule(loadFullScreenPreview, { wanted: isPreviewOpen, id: "preview" });
+  /* Pressed, and its code still on the way: the button says so and cannot be pressed again. */
+  const previewOpening = isPreviewOpen && FullScreenPreview === null && !previewFailed;
   const previewTrigger = useRef<HTMLButtonElement>(null);
   const closePreview = useCallback((): void => setIsPreviewOpen(false), []);
   /* Whichever of the two preview buttons was pressed gets the focus back. */
   const openPreview = (button: HTMLButtonElement): void => {
     previewTrigger.current = button;
+
+    if (previewFailed) {
+      retryPreview();
+    }
+
     setIsPreviewOpen(true);
   };
+
+  /* Once the editor is here, the preview's code too, while the browser is idle: it then opens offline as well. */
+  useEffect(() => {
+    if (editor === null || !roomToPrefetch()) {
+      return;
+    }
+
+    const prefetch = (): void => {
+      startLoad(loadFullScreenPreview);
+      /* And what draws the chosen design in it: the card, its cover, its reply frame. */
+      void import("@/components/create/FullScreenPreview").then(
+        (module) => module.preloadTemplateParts(templateId),
+        () => undefined,
+      );
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(prefetch, { timeout: 5000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+
+    const timer = window.setTimeout(prefetch, 2000);
+    return () => window.clearTimeout(timer);
+  }, [editor, templateId]);
+
+  /* A new card is kept on this phone as it is typed: the offline notice can say so. */
+  useEffect(() => {
+    if (editing) {
+      return;
+    }
+
+    setSavesOnPhone(true);
+    return () => setSavesOnPhone(false);
+  }, [editing]);
 
   const template = getTemplate(templateId);
   /* The intro and the trust line: a new card's gallery, never a saved one's. */
@@ -1125,7 +1246,9 @@ function WizardSteps({
             />
           ) : null}
 
-          {step === "details" ? (
+          {(step === "details" || step === "customize") && editor === null ? <StepSkeleton /> : null}
+
+          {step === "details" && editor !== null ? (
             /* Everything the host types: masked from Clarity (lib/clarity.ts). `contents` keeps the layout as it was. */
             <div className="contents" data-clarity-mask="true">
               {/*
@@ -1137,11 +1260,11 @@ function WizardSteps({
                 className="flex min-w-0 flex-col gap-9"
                 onFocusCapture={() => setPreviewLanguage(language)}
               >
-                <LanguagePicker
+                <editor.LanguagePicker
                   language={language}
                   onLanguageChange={handleLanguageSelect}
                 />
-                <EventForm
+                <editor.EventForm
                   draft={draft}
                   onChange={handleChange}
                   occasionId={occasionId}
@@ -1149,17 +1272,17 @@ function WizardSteps({
                   /* After payment: how many changes of date and of names are left, on those fields. */
                   paidLimits={limitNotes}
                 />
-                <SubEventEditor
+                <editor.SubEventEditor
                   subEvents={draft.subEvents}
                   openId={openSubEventId}
                   onChange={(subEvents) => handleChange("subEvents", subEvents)}
                   onOpenIdChange={setOpenSubEventId}
                 />
-                <ContactEditor
+                <editor.ContactEditor
                   contacts={draft.contacts ?? []}
                   onChange={handleContacts}
                 />
-                <AutoTranslate
+                <editor.AutoTranslate
                   cardLanguage={language}
                   draft={draft}
                   blocks={blocks}
@@ -1174,7 +1297,7 @@ function WizardSteps({
                 />
               </div>
 
-              <TranslationPanel
+              <editor.TranslationPanel
                 cardLanguage={language}
                 draft={draft}
                 blocks={blocks}
@@ -1188,8 +1311,8 @@ function WizardSteps({
             </div>
           ) : null}
 
-          {step === "customize" ? (
-            <CustomizeStep
+          {step === "customize" && editor !== null ? (
+            <editor.CustomizeStep
               template={template}
               namesLine={coverNameLine(names)}
               style={style}
@@ -1239,9 +1362,11 @@ function WizardSteps({
                 <button
                   type="button"
                   onClick={(event) => openPreview(event.currentTarget)}
+                  disabled={previewOpening}
+                  aria-busy={previewOpening}
                   className={`${QUIET_BUTTON} self-start`}
                 >
-                  Preview full screen
+                  <BusyLabel busy={previewOpening}>Preview full screen</BusyLabel>
                 </button>
               </div>
 
@@ -1278,21 +1403,25 @@ function WizardSteps({
           ) : null}
         </div>
 
-        {/* The card, beside every step at lg. Draws nothing below it. */}
+        {/* The card, beside every step at lg. Nothing below it, where its code is not fetched. */}
         <div
           data-clarity-mask="true"
           className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-24"
         >
-          <CardPreview
-            draft={preview.draft}
-            config={preview.config}
-            onPreviewLanguageChange={setPreviewLanguage}
-            motifs={motifs}
-            coverAnimation={coverAnimation}
-            weather={previewWeather}
-            weatherTheme={weatherTheme}
-            isPaid={edit?.isPaid === true}
-          />
+          {CardPreview === null ? null : (
+            <PreviewBoundary onError={reportPreviewFailed}>
+              <CardPreview
+                draft={preview.draft}
+                config={preview.config}
+                onPreviewLanguageChange={setPreviewLanguage}
+                motifs={motifs}
+                coverAnimation={coverAnimation}
+                weather={previewWeather}
+                weatherTheme={weatherTheme}
+                isPaid={edit?.isPaid === true}
+              />
+            </PreviewBoundary>
+          )}
         </div>
       </main>
 
@@ -1315,7 +1444,8 @@ function WizardSteps({
         What went wrong with a save is said here, over the buttons, so it is
         seen from whichever step the save was pressed on.
       */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
+      {/* data-lifafa-foot-bar: the network notice sits above it (components/network/NetworkNotice.tsx). */}
+      <div data-lifafa-foot-bar="" className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
         {error !== null ? (
           <p
             role="alert"
@@ -1349,9 +1479,11 @@ function WizardSteps({
             <button
               type="button"
               onClick={(event) => openPreview(event.currentTarget)}
+              disabled={previewOpening}
+              aria-busy={previewOpening}
               className={`${QUIET_BUTTON} lg:hidden`}
             >
-              Preview
+              <BusyLabel busy={previewOpening}>Preview</BusyLabel>
             </button>
           ) : (
             /* As GalleryFirstScreen draws it, so nothing moves when the wizard takes over. */
@@ -1416,20 +1548,27 @@ function WizardSteps({
       {/* "Open in Chrome" by hand, when "Save and continue" could not open it. In-app browsers only. */}
       {inAppPrompt}
 
-      {isPreviewOpen ? (
-        <FullScreenPreview
-          draft={preview.draft}
-          theme={getTheme(preview.draft.themeId)}
-          config={preview.config}
-          motifs={motifs}
-          coverAnimation={coverAnimation}
-          weather={previewWeather}
-          weatherTheme={weatherTheme}
-          triggerRef={previewTrigger}
-          onClose={closePreview}
-          onPreviewLanguageChange={setPreviewLanguage}
-          isPaid={edit?.isPaid === true}
-        />
+      {isPreviewOpen && FullScreenPreview !== null ? (
+        <PreviewBoundary
+          onError={() => {
+            setIsPreviewOpen(false);
+            reportPreviewFailed();
+          }}
+        >
+          <FullScreenPreview
+            draft={preview.draft}
+            theme={getTheme(preview.draft.themeId)}
+            config={preview.config}
+            motifs={motifs}
+            coverAnimation={coverAnimation}
+            weather={previewWeather}
+            weatherTheme={weatherTheme}
+            triggerRef={previewTrigger}
+            onClose={closePreview}
+            onPreviewLanguageChange={setPreviewLanguage}
+            isPaid={edit?.isPaid === true}
+          />
+        </PreviewBoundary>
       ) : null}
     </div>
   );

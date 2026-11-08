@@ -11,8 +11,11 @@ import ErrorScreen from "@/components/error/ErrorScreen";
  * to it. The copy answers that before anything else.
  *
  * And it is honest: reset() re-renders this segment, which remounts the editor
- * and loses the draft held in its state. Saying the card is gone is better than
- * a cheerful "try again" that quietly hands back an empty form.
+ * and drops the card held in its state, but a new card is kept on this phone
+ * as it is typed (lib/cardAutosave.ts, written again as the editor unmounts),
+ * and the editor that opens brings it back with "Your card details were
+ * restored". A code chunk that fails to arrive no longer lands here at all
+ * (hooks/useLazyModule.ts).
  */
 export default function CreateError({
   error,
@@ -27,7 +30,7 @@ export default function CreateError({
       reset={reset}
       context="app/create/error.tsx"
       title="The editor could not load"
-      description="Something went wrong while opening your card, so anything you had started is not here. Try again, and if the editor still will not open, it is a problem at our end rather than anything you did."
+      description="Something went wrong while opening your card. What you typed is saved on this phone, and it will be there when you try again. If the editor still will not open, it is a problem at our end rather than anything you did."
     />
   );
 }

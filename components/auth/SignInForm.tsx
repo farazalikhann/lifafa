@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isOnline } from "@/lib/loadNotice";
 
 /**
  * Sign in with Google, and nothing else.
@@ -100,6 +101,13 @@ export default function SignInForm({
 
   const handleGoogleSignIn = async (): Promise<void> => {
     if (isRedirecting) {
+      return;
+    }
+
+    /* Offline, the browser would leave for Google and land on its own error page: say so here instead. */
+    if (!isOnline()) {
+      setNotice(null);
+      setError("You are offline. Connect to the internet, then try again.");
       return;
     }
 

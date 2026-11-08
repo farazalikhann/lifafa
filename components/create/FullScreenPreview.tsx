@@ -15,6 +15,9 @@ import TemplateCard from "@/templates/TemplateCard";
 import { paperSans } from "@/components/theme/fonts";
 import { getTemplate } from "@/templates/registry";
 import { templateParts } from "@/templates/parts";
+
+/* For the wizard, which fetches this module ahead of time and the chosen template's parts with it. */
+export { preloadTemplateParts } from "@/templates/parts";
 import { borderFootDepth } from "@/components/card/decor/BorderFrame";
 import Watermark, { WATERMARK_PILL_SELECTOR } from "@/components/card/Watermark";
 import PreviewLanguageSwitch from "@/components/create/PreviewLanguageSwitch";

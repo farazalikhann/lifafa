@@ -1,16 +1,21 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
 import { useLinkStatus } from "next/link";
+import BusyLabel from "@/components/network/BusyLabel";
+import { SLOW_LOAD_MS, clearWaiting, reportWaiting } from "@/lib/loadNotice";
 
 /**
- * A Create button's label, which becomes a spinner and "Opening…" the moment
- * the button is tapped, so the tap is answered before the next page (or its
- * skeleton, app/create/loading.tsx) has come down a slow connection.
+ * A link's label, which becomes a spinner and "Opening…" the moment the link
+ * is tapped, so the tap is answered before the next page (or its skeleton,
+ * app/create/loading.tsx) has come down a slow connection. Same width either
+ * way (BusyLabel), so nothing moves.
  *
- * Goes inside the <Link>: useLinkStatus reads the link it is in. Both labels
- * sit in the same grid cell, the one not showing kept invisible, so the
- * button keeps the width of the wider and does not change size on the tap.
+ * Still waiting after SLOW_LOAD_MS, the network notice says the internet
+ * seems slow, with "Try again", which loads the page the link leads to
+ * directly (lib/loadNotice.ts).
+ *
+ * Goes inside the <Link>: useLinkStatus reads the link it is in.
  */
 export default function LinkPending({
   children,
@@ -18,23 +23,31 @@ export default function LinkPending({
   children: ReactNode;
 }): ReactElement {
   const { pending } = useLinkStatus();
+  const id = `link-${useId()}`;
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!pending) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const href = ref.current?.closest("a")?.href;
+      reportWaiting(id, {
+        kind: "slow",
+        retry: () => (href === undefined ? window.location.reload() : window.location.assign(href)),
+      });
+    }, SLOW_LOAD_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      clearWaiting(id);
+    };
+  }, [pending, id]);
 
   return (
-    <span className="grid place-items-center">
-      <span className={`col-start-1 row-start-1 ${pending ? "invisible" : ""}`}>
-        {children}
-      </span>
-      <span
-        className={`col-start-1 row-start-1 inline-flex items-center gap-2 ${
-          pending ? "" : "invisible"
-        }`}
-      >
-        <span
-          aria-hidden="true"
-          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
-        />
-        Opening…
-      </span>
+    <span ref={ref} className="contents">
+      <BusyLabel busy={pending}>{children}</BusyLabel>
     </span>
   );
 }

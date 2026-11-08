@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
 import Clarity from "@/components/analytics/Clarity";
 import MetaPixel from "@/components/analytics/MetaPixel";
+import NetworkNotice from "@/components/network/NetworkNotice";
 import { clarityEnabled } from "@/lib/clarity";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
 import { metaPixelEnabled } from "@/lib/metaPixel";
@@ -107,6 +108,8 @@ export default function RootLayout({
         ) : null}
         {/* Hosts' pages on the production domain only; see lib/clarity.ts. */}
         {clarityEnabled() ? <Clarity /> : null}
+        {/* Says when the page is slow to load or the connection is gone; see the component. */}
+        <NetworkNotice />
       </body>
     </html>
   );

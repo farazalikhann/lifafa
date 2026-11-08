@@ -664,3 +664,55 @@ html:has(.lifafa-paper) body {
     transform: translateY(0);
   }
 }
+
+/*
+  The network notice (components/network/NetworkNotice.tsx): fixed at the
+  foot of the screen, clear of a bar pinned there. Once the page has run the
+  notice measures the bar it sits above (the wizard's, a demo's) and sets
+  its own bottom; this is for before that.
+*/
+.lifafa-notice {
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+/*
+  The early notice, from the server's HTML: shown by the stylesheet after
+  8 seconds, so it needs no script (its script shows it 8 seconds from the
+  start of the load, data-show); at once when a button was tapped before
+  the page was ready, saying the tap will work.
+*/
+.lifafa-load-notice {
+  animation: lifafa-notice-in 300ms ease-out 8s both;
+}
+
+.lifafa-load-notice[data-waiting],
+.lifafa-load-notice[data-show] {
+  animation: none;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* A tap made early, before 8 seconds: "Loading. Your tap will work in a moment." */
+.lifafa-load-notice[data-waiting]:not([data-slow]) [data-wait-line] {
+  display: inline !important;
+}
+
+.lifafa-load-notice[data-waiting]:not([data-slow]) [data-slow-line] {
+  display: none;
+}
+
+/* A card kept on this phone (lib/cardAutosave.ts): said with the slow line. */
+.lifafa-load-notice[data-kept][data-slow] [data-kept-line] {
+  display: inline !important;
+}
+
+@keyframes lifafa-notice-in {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}

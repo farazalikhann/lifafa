@@ -59,3 +59,49 @@ const CLASSIC_PARTS: TemplateParts = { Card: ClassicCard };
 export function templateParts(templateId: unknown): TemplateParts {
   return PARTS[getTemplate(templateId).id] ?? CLASSIC_PARTS;
 }
+
+/*
+  The same files, fetched ahead of time. Written out again rather than shared
+  with PARTS above, because next/dynamic only finds a part's module (to list
+  it for the server's render) when its import() is written inside the
+  dynamic() call itself.
+*/
+const PRELOADS: Readonly<Record<string, () => Promise<unknown>[]>> = {
+  "emerald-shahi": () => [
+    import("@/templates/emerald-shahi/Card"),
+    import("@/templates/emerald-shahi/Cover"),
+    import("@/templates/emerald-shahi/RsvpFrame"),
+    import("@/templates/emerald-shahi/Closing"),
+  ],
+  "gulab-mahal": () => [
+    import("@/templates/gulab-mahal/Card"),
+    import("@/templates/gulab-mahal/Cover"),
+    import("@/templates/gulab-mahal/RsvpFrame"),
+    import("@/templates/gulab-mahal/Closing"),
+  ],
+  "dak-ghar": () => [
+    import("@/templates/dak-ghar/Card"),
+    import("@/templates/dak-ghar/Cover"),
+    import("@/templates/dak-ghar/RsvpFrame"),
+    import("@/templates/dak-ghar/Closing"),
+  ],
+  "sheesh-mahal": () => [
+    import("@/templates/sheesh-mahal/Card"),
+    import("@/templates/sheesh-mahal/Cover"),
+    import("@/templates/sheesh-mahal/RsvpFrame"),
+    import("@/templates/sheesh-mahal/Closing"),
+  ],
+};
+
+/**
+ * Fetches what draws a template before it is drawn, so the full-screen
+ * preview on /create opens on that template with the connection gone too.
+ * A fetch that fails is left to be tried again when the part is drawn.
+ */
+export function preloadTemplateParts(templateId: unknown): void {
+  const load = PRELOADS[getTemplate(templateId).id] ?? (() => [import("@/templates/classic/Card")]);
+
+  for (const part of load()) {
+    part.catch(() => undefined);
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LinkPending from "@/components/landing/LinkPending";
 import type { ReactElement } from "react";
 import { useAdParamsHref } from "@/hooks/useAdParamsHref";
 import PinnedStrip, {
@@ -50,7 +51,7 @@ export default function SampleBanner({
           href={adHref(start?.href ?? NEW_CARD_HREF)}
           className={PINNED_STRIP_ACTION}
         >
-          {start !== undefined ? "Create this card" : "Create yours"}
+          <LinkPending>{start !== undefined ? "Create this card" : "Create yours"}</LinkPending>
         </Link>
       }
     >

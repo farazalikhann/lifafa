@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LinkPending from "@/components/landing/LinkPending";
 import { useLayoutEffect, useRef, type ReactElement } from "react";
 import { useAdParamsHref } from "@/hooks/useAdParamsHref";
 import { formatPrice } from "@/lib/pricing";
@@ -111,7 +112,7 @@ export default function DemoCreateBar({
               : { backgroundColor: tone.button, color: tone.buttonText }
           }
         >
-          {label}
+          <LinkPending>{label}</LinkPending>
         </Link>
       </div>
     </div>
