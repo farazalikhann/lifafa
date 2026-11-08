@@ -227,24 +227,27 @@ const PRESETS: readonly Preset[] = [
   {
     id: "nikah-blush",
     name: "Nikah Blush",
-    description: "Soft blush, a blossom frame, lanterns and a crescent moon.",
+    description: "Blush roses, a rose-lit garden, strung lights and cherry blossom.",
     tradition: "muslim",
     settings: {
       paletteId: "blush",
       textPairId: "ivoryRose",
-      accentOverride: null,
-      fontPairId: "elegant",
+      /* Cream's rose, not Blush's terracotta: the look is rose throughout. */
+      accentOverride: "#A4394F",
+      fontPairId: "romantic",
       density: "comfortable",
-      borderStyle: "flowerBackground",
+      /* Pink, red and white roses down both sides. */
+      borderStyle: "flowerBlush",
       decorMotion: "float",
       decorIntensity: "subtle",
-      butterflies: "red",
+      butterflies: "purple",
       leaves: false,
       petals: "open",
-      /* Rose, as it had before there was a choice: blush and red butterflies. */
-      petalFlower: "rose",
-      coverAnimation: "petal-dust",
-      ornaments: ["lantern", "crescentMoon"],
+      petalFlower: "cherryBlossom",
+      /* A red rose opening, for a look made of roses. */
+      coverAnimation: "rose-bloom",
+      /* Strung lights at the head, as at a nikah; the lanterns are Midnight Lantern's. */
+      ornaments: ["hangingLights"],
       calligraphy: "bismillah",
       greetingIfNone: "salam",
       blessingIfNone: "jamaBaynakuma",
