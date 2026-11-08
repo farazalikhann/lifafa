@@ -333,7 +333,7 @@ const PRESETS: readonly Preset[] = [
   {
     id: "shubh-vivah-ivory",
     name: "Shubh Vivah",
-    description: "Ivory and rose, a marigold garland, Om and kalash.",
+    description: "Ivory and crimson roses, the lake palace, a marigold garland and varmala.",
     tradition: "hindu",
     settings: {
       paletteId: "cream",
@@ -342,19 +342,20 @@ const PRESETS: readonly Preset[] = [
       accentOverride: null,
       fontPairId: "royal",
       density: "comfortable",
-      borderStyle: "flowerIvory",
+      /* Crimson roses on gold scrollwork: kumkum and gold on ivory. */
+      borderStyle: "flowerCrimson",
       decorMotion: "float",
       decorIntensity: "subtle",
-      butterflies: "red",
+      butterflies: "none",
       leaves: false,
       petals: "both",
-      petalFlower: "lotus",
+      petalFlower: "marigold",
       coverAnimation: "fold-unfold",
-      /* Om rather than Ganesh above the names: Shubh Vivah already draws Ganesh. */
       ornaments: ["marigold", "om", "kalash"],
-      /* Pink lotuses on ivory and rose, and the look's petals are lotus. */
-      namesFrame: "lotus",
-      calligraphy: "shubhVivah",
+      /* The marigold and mogra garland, under the marigold garland and among marigold petals. */
+      namesFrame: "varmala",
+      /* Sadar Nimantran and its lotus: no figure on the word-mark. */
+      calligraphy: "sadarNimantran",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
     },
