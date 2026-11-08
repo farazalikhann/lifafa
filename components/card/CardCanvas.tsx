@@ -99,7 +99,14 @@ import {
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import { getTraditionPack } from "@/lib/traditionPacks";
 import { OPENING_TEXT_ATTRIBUTE } from "@/lib/openingKeepOut";
-import { sceneArtFor, sceneDusk, sceneGrounding, sceneOf } from "@/lib/scene";
+import {
+  SCENE_TONES,
+  sceneArtFor,
+  sceneDusk,
+  sceneGrounding,
+  sceneOf,
+  sceneToneOf,
+} from "@/lib/scene";
 import { tearInkColor, tearPaperColor, type TearConfig } from "@/lib/tearReveal";
 import {
   ROYAL_TEXTURE_ATTRIBUTE,
@@ -1943,6 +1950,10 @@ export default function CardCanvas({
             art={scenePicture}
             dusk={sceneDusk(effectiveTheme.background, effectiveTheme.accent)}
             grounding={sceneGrounding(scenePicture, effectiveTheme.background)}
+            /* The colour its template prints it in; the painting's own on every card saved before tones. */
+            tone={SCENE_TONES[sceneToneOf(config.sceneTone)]}
+            /* The other way round only where its template turned it. */
+            mirror={config.sceneMirror === true}
             slot={sceneSlot}
           />
         ) : null}

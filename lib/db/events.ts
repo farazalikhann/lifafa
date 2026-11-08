@@ -84,6 +84,8 @@ const CARD_CONFIG_KEYS = {
   invitedHeading: true,
   venueIllustration: true,
   scene: true,
+  sceneTone: true,
+  sceneMirror: true,
   royalTexture: true,
   royalTexturePattern: true,
   dateReveal: true,

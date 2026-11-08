@@ -1,5 +1,5 @@
 import { hueAndSaturation, relativeLuminance } from "@/lib/contrast";
-import type { Scene } from "@/types/card";
+import type { Scene, SceneTone } from "@/types/card";
 
 /**
  * The painted scene on a card's first screen: a lake palace, a palace garden
@@ -217,6 +217,32 @@ export function sceneGrounding(art: SceneArt, background: string): SceneGroundin
     tint: another ? GROUNDED_TINT : 0,
     lights: art.sky.lights ?? null,
   };
+}
+
+/**
+ * The colours a painting can be printed in, as the CSS filter laid on the
+ * picture: its own, or leaned toward rose, old gold or jade. A filter on the
+ * still picture and nothing else: it is drawn once with the picture and not
+ * again as the painting moves, and it never animates. Each keeps the
+ * painting's lights and darks where they were, so the words over its sky and
+ * the fades at its ends are as on the natural one.
+ */
+export const SCENE_TONES: Readonly<Record<SceneTone, string | null>> = {
+  natural: null,
+  rose: "sepia(0.35) hue-rotate(-28deg) saturate(1.15)",
+  gold: "sepia(0.6) saturate(0.85) brightness(1.03)",
+  jade: "sepia(0.35) hue-rotate(48deg) saturate(0.8)",
+};
+
+/**
+ * Absent from every card saved before there were tones, and from every card
+ * whose template names none: a missing or unknown value is the painting's
+ * own colour.
+ */
+export function sceneToneOf(value: unknown): SceneTone {
+  return typeof value === "string" && Object.hasOwn(SCENE_TONES, value)
+    ? (value as SceneTone)
+    : "natural";
 }
 
 /**

@@ -21,6 +21,7 @@ import type {
   NatureKind,
   PetalFlower,
   PetalStyle,
+  RoyalTexturePattern,
 } from "@/types/card";
 import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { TraditionId } from "@/types/occasion";
@@ -95,6 +96,11 @@ interface PresetSettings {
    * a look that does not name it leaves the card's ground as the host had it.
    */
   royalTexture?: true;
+  /**
+   * Which cloth that texture is, on a look woven with one that is not the
+   * damask: the paisley or the jaal. Read only with `royalTexture`.
+   */
+  royalTexturePattern?: Exclude<RoyalTexturePattern, "damask">;
   /**
    * The frame the names are set in, on a look for a card that sets its
    * names in one. A look for such a card that names none gets the lotus ring,
@@ -914,12 +920,17 @@ export function applyPreset(design: DesignState, preset: Preset): DesignState {
       : null),
     /*
       A look that asks for the texture asks for the damask, which is what it
-      was drawn with. One that does not name the texture leaves the host's
-      pattern as it was, with the texture itself.
+      was drawn with, unless it names another cloth. One that does not name
+      the texture leaves the host's pattern as it was, with the texture
+      itself.
     */
-    ...(settings.royalTexture !== true && design.royalTexturePattern !== undefined
-      ? { royalTexturePattern: design.royalTexturePattern }
-      : null),
+    ...(settings.royalTexture === true
+      ? settings.royalTexturePattern !== undefined
+        ? { royalTexturePattern: settings.royalTexturePattern }
+        : null
+      : design.royalTexturePattern !== undefined
+        ? { royalTexturePattern: design.royalTexturePattern }
+        : null),
     ...(namesFrame !== "lotus" ? { namesFrame } : null),
     ...(settings.dateReveal !== undefined
       ? { dateReveal: settings.dateReveal }

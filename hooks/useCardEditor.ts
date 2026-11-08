@@ -17,7 +17,7 @@ import {
 import { petalFlowerType, petalStyle } from "@/lib/petals";
 import { hasChosenDivider, scratchFrameOf } from "@/lib/cardDecor";
 import { coupleIllustrationOn } from "@/lib/coupleCard";
-import { DEFAULT_SCENE, sceneOf } from "@/lib/scene";
+import { DEFAULT_SCENE, sceneOf, sceneToneOf } from "@/lib/scene";
 import { venueIllustrationOf } from "@/lib/venueIllustration";
 import { namesFrameOf } from "@/lib/namesFrame";
 import { pdfDownloadOn } from "@/lib/pdfDownload";
@@ -55,6 +55,7 @@ import type {
   RoyalTexturePattern,
   VenueIllustration,
   Scene,
+  SceneTone,
   NamesFrame,
   PetalStyle,
   CardBorderStyle,
@@ -139,6 +140,10 @@ interface CardLook {
   venueIllustration: VenueIllustration;
   /** The painted scene after the first screen. */
   scene: Scene;
+  /** The colour the scene is printed in; its own unless the template leaned it. */
+  sceneTone: SceneTone;
+  /** Whether the scene is printed the other way round; only a template turns it. */
+  sceneMirror: boolean;
   /** Whether the damask is woven into the card's ground. */
   royalTexture: boolean;
   royalTexturePattern: RoyalTexturePattern;
@@ -236,6 +241,8 @@ function toState(snapshot: EditorSnapshot): EditorState {
       invitedHeading: invitedHeadingOn(config.invitedHeading),
       venueIllustration: venueIllustrationOf(config.venueIllustration),
       scene: sceneOf(config.scene),
+      sceneTone: sceneToneOf(config.sceneTone),
+      sceneMirror: config.sceneMirror === true,
       royalTexture: royalTextureOn(config.royalTexture),
       royalTexturePattern: royalTexturePatternOf(config.royalTexturePattern),
       namesFrame: namesFrameOf(config.namesFrame),
@@ -316,6 +323,10 @@ function toSnapshot(state: EditorState): EditorSnapshot {
         : null),
       /* Only ever stored when it is not the floral arch, so an older card is stored as it was. */
       ...(look.scene !== DEFAULT_SCENE ? { scene: look.scene } : null),
+      /* Only ever stored when it is not the painting's own, so an older card is stored as it was. */
+      ...(look.sceneTone !== "natural" ? { sceneTone: look.sceneTone } : null),
+      /* Only ever stored as true, so an older card is stored as it was. */
+      ...(look.sceneMirror ? { sceneMirror: true as const } : null),
       /* Only ever stored as on: a card that never had the key has no texture. */
       ...(look.royalTexture ? { royalTexture: true } : null),
       /* Only ever stored when it is not the damask, and kept while the texture is off. */

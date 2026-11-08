@@ -166,6 +166,13 @@ export type DateReveal = "scroll" | "scratch" | "tear" | "simple";
  */
 export type Scene = "lakePalace" | "palaceGarden" | "valleyTree" | "off";
 
+/**
+ * The colour the scene's painting is printed in: its own, or leaned toward
+ * rose, old gold or jade by a fixed filter, so two cards that share a
+ * painting do not share its look. See SCENE_TONES in lib/scene.ts.
+ */
+export type SceneTone = "natural" | "rose" | "gold" | "jade";
+
 /** The painting of the place above the venue's name, or none. See lib/venueIllustration.ts. */
 export type VenueIllustration = "none" | "garden" | "banquet";
 
@@ -364,6 +371,19 @@ export interface CardConfig {
    * `sceneOf` in lib/scene.ts, which knows them.
    */
   scene?: Scene;
+  /**
+   * The colour the scene is printed in. Stored only when it is not the
+   * painting's own: absent, and on every card saved before there were tones,
+   * the painting is as it was painted. Set by a card's template. Read it
+   * through `sceneToneOf` in lib/scene.ts.
+   */
+  sceneTone?: SceneTone;
+  /**
+   * Whether the scene is printed the other way round, left to right. Stored
+   * only as `true`, by a template: absent, and on every card saved before,
+   * the painting is as it was painted.
+   */
+  sceneMirror?: true;
   /**
    * Whether the damask is woven into the card's ground. Stored only as `true`:
    * absent, and on every card saved before the texture existed, there is none.

@@ -256,9 +256,24 @@ export default function SceneScreen({
   art,
   dusk = null,
   grounding = null,
+  tone = null,
+  mirror = false,
   slot,
 }: {
   art: SceneArt;
+  /**
+   * Whether the picture is printed the other way round, left to right. On
+   * the picture, inside the box that moves, so the fades, the sky and the
+   * band over the lights (all of them across its whole width) are where
+   * they were.
+   */
+  mirror?: boolean;
+  /**
+   * The colour the painting is printed in, as a CSS filter on the picture
+   * alone, or null for the painting's own (SCENE_TONES in lib/scene.ts). On
+   * the still picture, so it is drawn once and not again as it moves.
+   */
+  tone?: string | null;
   /** How its ends meet a dark card; null on a light one. See sceneDusk. */
   dusk?: SceneDusk | null;
   /** How it gives its sky up to a dark card; null on a light one. See sceneGrounding. */
@@ -466,7 +481,11 @@ export default function SceneScreen({
           draggable={false}
           onLoad={() => setShown(true)}
           className="absolute inset-0 h-full w-full object-cover select-none transition-opacity duration-700 ease-out motion-reduce:transition-none"
-          style={{ opacity: shown || still ? 1 : 0 }}
+          style={{
+            opacity: shown || still ? 1 : 0,
+            ...(tone !== null ? { filter: tone } : null),
+            ...(mirror ? { transform: "scaleX(-1)" } : null),
+          }}
         />
       ) : null}
 

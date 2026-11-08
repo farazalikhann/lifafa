@@ -8,7 +8,14 @@ import type { Theme } from "@/lib/themes";
 import type { CreditInk } from "@/components/invite/MadeWithLifafa";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
-import type { CardBorderStyle, CardLanguage, CardSectionId, Scene } from "@/types/card";
+import type {
+  CardBorderStyle,
+  CardLanguage,
+  CardSectionId,
+  DividerStyle,
+  Scene,
+  SceneTone,
+} from "@/types/card";
 import type { CoverAnimationOption } from "@/types/coverAnimation";
 import type { TraditionId } from "@/types/occasion";
 import type { FontPairId, PaletteId } from "@/types/style";
@@ -126,6 +133,24 @@ export interface TemplateConfig {
    * when the template is chosen.
    */
   scene?: Scene;
+  /**
+   * The colour that scene is printed in, where it is not the painting's own:
+   * so two templates that share a painting do not share its look. Laid down
+   * with the scene.
+   */
+  sceneTone?: SceneTone;
+  /**
+   * Whether that scene is printed the other way round, left to right: the
+   * same painting as another template's, with what was on its left now on
+   * its right. Laid down with the scene.
+   */
+  sceneMirror?: true;
+  /**
+   * The garland between the card's sections, where it is not the
+   * tradition's own (see `dividerStyleOf` in lib/cardDecor.ts). Laid down
+   * with the base design, and the host can still change it.
+   */
+  divider?: DividerStyle;
   /**
    * Which of the card's own colours the "Made with Lifafa" credit at the end
    * of the invitation is set in: its text colour or its accent. Only the

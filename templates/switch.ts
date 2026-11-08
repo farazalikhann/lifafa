@@ -26,8 +26,9 @@ import type { TemplateConfig } from "@/templates/types";
  *
  * EVERYTHING ELSE IS THE LOOK, and is the new template's. Its base design is
  * laid down whole, and the design keys it has no word for (the scratch panel,
- * the scene, the venue's painting, the divider) are left off the card, which
- * every reader takes as that key's default. Nothing of the old look is left
+ * the venue's painting, and the scene, its tone or the divider where the
+ * template names none) are left off the card, which every reader takes as
+ * that key's default. Nothing of the old look is left
  * behind for the new one to be drawn over.
  *
  * Classic is a template like the others here: choosing it lays down the plain
@@ -99,6 +100,14 @@ export function switchTemplate(
         : null),
       /* The template's own scene, where it names one; otherwise the card's default. */
       ...(template.scene !== undefined ? { scene: template.scene } : null),
+      /* And the colour it is printed in, where that is not the painting's own. */
+      ...(template.sceneTone !== undefined && template.sceneTone !== "natural"
+        ? { sceneTone: template.sceneTone }
+        : null),
+      /* And which way round, where the template turns it. */
+      ...(template.sceneMirror === true ? { sceneMirror: true as const } : null),
+      /* The template's own garland, where it names one; otherwise the tradition's. */
+      ...(template.divider !== undefined ? { divider: template.divider } : null),
     },
     coverAnimation: design.coverAnimation,
     showWeather: snapshot.showWeather,

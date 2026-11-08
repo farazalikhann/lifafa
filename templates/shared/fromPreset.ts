@@ -41,9 +41,18 @@ export function presetTemplate({
   palettes,
   fontPairs,
   scene,
+  sceneTone,
+  sceneMirror,
+  divider,
 }: {
+  /** Whether it is printed the other way round; see `sceneMirror` on TemplateConfig. */
+  sceneMirror?: TemplateConfig["sceneMirror"];
   /** The painted scene, where it is not the card's default; see `scene` on TemplateConfig. */
   scene?: TemplateConfig["scene"];
+  /** The colour it is printed in; see `sceneTone` on TemplateConfig. */
+  sceneTone?: TemplateConfig["sceneTone"];
+  /** The garland between sections; see `divider` on TemplateConfig. */
+  divider?: TemplateConfig["divider"];
   /** One of the editor's presets, by its id; or */
   presetId?: string;
   /**
@@ -100,6 +109,9 @@ export function presetTemplate({
     sections: SWITCHABLE_SECTIONS,
     baseDesign,
     ...(scene !== undefined ? { scene } : null),
+    ...(sceneTone !== undefined ? { sceneTone } : null),
+    ...(sceneMirror === true ? { sceneMirror } : null),
+    ...(divider !== undefined ? { divider } : null),
   };
 }
 
