@@ -138,6 +138,9 @@ for (const id of ids) {
     for (const node of document.querySelectorAll("body *")) {
       if (getComputedStyle(node).position === "fixed" && /sample invitation/i.test(node.textContent ?? "") && node.getBoundingClientRect().height < 140) node.remove();
     }
+    /* Nor the price and "Create this card" bar at the foot, and the room the card left for it. */
+    document.querySelectorAll("[data-demo-create-bar]").forEach((node) => node.remove());
+    document.documentElement.style.setProperty("--lifafa-foot-h", "0px");
     window.scrollTo(0, 0);
   })()`);
   await sleep(1200);
