@@ -30,6 +30,9 @@ import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { CardLanguage } from "@/types/card";
 import Logo from "@/components/Logo";
 import HelpWidget from "@/components/help/HelpWidget";
+import CardChecklist from "@/components/create/CardChecklist";
+import { cardChecklist, checklistAnchor } from "@/lib/cardChecklist";
+import { isEditLocked } from "@/lib/eventLock";
 
 /**
  * One event's dashboard.
@@ -138,6 +141,13 @@ export default async function DashboardPage({
     event.isPaid && metaPixelEnabled() ? recentRazorpayPayment(event.id) : null,
   ]);
   const templateId = getTemplate(event.config.templateId).id;
+  const checklist = cardChecklist(draft, event.config.occasionId);
+  /* An event that is over cannot be edited (lib/eventLock.ts), so it is not asked to be completed. */
+  const locked = isEditLocked({
+    isPaid: event.isPaid,
+    draft,
+    editUnlockedUntil: event.changes.editUnlockedUntil,
+  });
   const guests = guestsResult.ok ? guestsResult.data : [];
 
   return (
@@ -271,6 +281,20 @@ export default async function DashboardPage({
             templateId={templateId}
           />
         )}
+
+        {/*
+          What the card still lacks, while it lacks something and can still be
+          changed: each item a link to that field on the edit page.
+        */}
+        {checklist.some((item) => !item.done) && !locked ? (
+          <CardChecklist
+            items={checklist}
+            hrefFor={(id) =>
+              `/dashboard/${event.id}/edit?step=details#${checklistAnchor(id, draft, event.config.occasionId)}`
+            }
+            showAllHref={`/dashboard/${event.id}/edit?step=details`}
+          />
+        ) : null}
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">

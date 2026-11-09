@@ -718,6 +718,14 @@ const QUICK_START_LINE =
   "Just your names and the wedding date. You can add the venue, functions and family details next, or anytime later.";
 const CARD_TITLE = "Your card";
 
+/** Said over "Save and continue" when the card has no venue, or no start time. */
+const NO_VENUE_REMINDER =
+  "Your card has no venue yet. Guests will need it to find you. Add it now, or save and add it later from your dashboard.";
+const NO_TIME_REMINDER =
+  "Your card has no start time yet. Guests will need it to plan their day. Add it now, or save and add it later from your dashboard.";
+const REMINDER_BUTTON =
+  "min-h-11 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
+
 function WizardSteps({
   start,
   untouched = start,
@@ -1183,6 +1191,31 @@ function WizardSteps({
   */
   const onAddVenue =
     editing || draft.venueName.trim().length > 0 ? undefined : () => openItem("venue");
+
+  /*
+    "Save and continue" on a new card with no venue or no start time: a small
+    word first, with "Add venue" and "Save anyway". Never a block: pressed
+    again, or "Save anyway", it saves as it always has.
+  */
+  const [saveReminder, setSaveReminder] = useState<"venue" | "time" | null>(null);
+
+  /* Said for one press on the last step: gone once the host moves to another. */
+  useEffect(() => {
+    setSaveReminder(null);
+  }, [step]);
+
+  const pressSave = (): void => {
+    const noVenue = draft.venueName.trim().length === 0;
+    const noTime = draft.eventTime.trim().length === 0;
+
+    if (saveReminder === null && (noVenue || noTime)) {
+      setSaveReminder(noVenue ? "venue" : "time");
+      return;
+    }
+
+    setSaveReminder(null);
+    handleSave();
+  };
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const {
@@ -1692,6 +1725,39 @@ function WizardSteps({
             {error}
           </p>
         ) : null}
+        {saveReminder !== null && isLast && !editing ? (
+          <div
+            role="status"
+            data-save-reminder=""
+            className="mx-auto flex max-w-6xl flex-col gap-2.5 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 sm:px-12 lg:px-[5.5rem] xl:px-8"
+          >
+            <p className="text-[0.8125rem] leading-relaxed text-[var(--lifafa-cream)]">
+              {saveReminder === "venue" ? NO_VENUE_REMINDER : NO_TIME_REMINDER}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSaveReminder(null);
+                  openItem("venue");
+                }}
+                className={REMINDER_BUTTON}
+              >
+                {saveReminder === "venue" ? "Add venue" : "Add time"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSaveReminder(null);
+                  handleSave();
+                }}
+                className={REMINDER_BUTTON}
+              >
+                Save anyway
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
           {index > 0 ? (
             <button
@@ -1745,7 +1811,7 @@ function WizardSteps({
             ) : isLast ? (
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={pressSave}
                 disabled={isSaving || openingBrowser !== null}
                 className={PRIMARY_BUTTON}
               >
