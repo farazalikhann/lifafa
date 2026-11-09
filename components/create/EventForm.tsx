@@ -329,12 +329,106 @@ function FamilyGroup({
   );
 }
 
+/**
+ * The parts of the form, for showing one or two of them on their own: the
+ * "Add" buttons of a new card's checklist open only the part they name
+ * (components/create/CardChecklist.tsx). The same fields either way.
+ */
+export type EventFormPart = "names" | "families" | "title" | "date" | "time" | "venue" | "message";
+
+const ALL_PARTS: ReadonlySet<EventFormPart> = new Set([
+  "names",
+  "families",
+  "title",
+  "date",
+  "time",
+  "venue",
+  "message",
+]);
+
+/**
+ * The quick start of a new card: the two names and the date, nothing else.
+ * The joining word keeps the card's own, and every other field waits for the
+ * checklist. The same fields as the full form, ids and all, so whatever is
+ * typed here is in place when the full form opens.
+ */
+export function EventBasics({
+  draft,
+  onChange,
+  occasionId,
+  language,
+}: {
+  draft: EventDraft;
+  onChange: DraftChangeHandler;
+  occasionId: OccasionId;
+  language: CardLanguage;
+}): ReactElement {
+  const examples = EXAMPLES[language];
+  const isPair = pairsNames(occasionId);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {isPair ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="partyOneName" label="First name">
+            <input
+              id="partyOneName"
+              type="text"
+              value={draft.partyOneName}
+              onChange={(event) => onChange("partyOneName", event.target.value)}
+              placeholder={examples.partyOneName}
+              autoComplete="off"
+              enterKeyHint="next"
+              className={INPUT_CLASS}
+            />
+          </Field>
+          <Field id="partyTwoName" label="Second name">
+            <input
+              id="partyTwoName"
+              type="text"
+              value={draft.partyTwoName}
+              onChange={(event) => onChange("partyTwoName", event.target.value)}
+              placeholder={examples.partyTwoName}
+              autoComplete="off"
+              enterKeyHint="next"
+              className={INPUT_CLASS}
+            />
+          </Field>
+        </div>
+      ) : (
+        <Field id="hostNames" label="Name on the card">
+          <input
+            id="hostNames"
+            type="text"
+            value={draft.hostNames}
+            onChange={(event) => onChange("hostNames", event.target.value)}
+            placeholder={examples.partyOneName}
+            autoComplete="off"
+            className={INPUT_CLASS}
+          />
+        </Field>
+      )}
+
+      <Field id="eventDate" label={isPair ? "Wedding date" : "Date"}>
+        <input
+          id="eventDate"
+          type="date"
+          value={draft.eventDate}
+          onChange={(event) => onChange("eventDate", event.target.value)}
+          className={INPUT_CLASS}
+        />
+      </Field>
+    </div>
+  );
+}
+
 export default function EventForm({
   draft,
   onChange,
   occasionId,
   language,
   paidLimits,
+  parts = ALL_PARTS,
 }: {
   draft: EventDraft;
   onChange: DraftChangeHandler;
@@ -355,7 +449,10 @@ export default function EventForm({
   language: CardLanguage;
   /** After payment: how many date and name changes remain. */
   paidLimits?: PaidLimitNotes;
+  /** Which parts to show; every one, the whole form, unless said. */
+  parts?: ReadonlySet<EventFormPart>;
 }): ReactElement {
+  const has = (part: EventFormPart): boolean => parts.has(part);
   const remaining = MESSAGE_LIMIT - draft.message.length;
   const isPair = pairsNames(occasionId);
   const examples = EXAMPLES[language];
@@ -372,7 +469,10 @@ export default function EventForm({
   return (
     /* Deliberately a div, not a <form>: nothing submits in this step. */
     <div className="flex flex-col gap-9">
+      {has("names") || has("families") ? (
       <Section label="Who">
+        {has("names") ? (
+        <>
         {/*
           The two party fields and the joining word are one thought — they
           build a single line of the card between them — so they sit under
@@ -476,7 +576,11 @@ export default function EventForm({
         {paidLimits !== undefined ? (
           <LimitNote note={paidLimits.names} noun="name" />
         ) : null}
+        </>
+        ) : null}
 
+        {has("families") ? (
+        <>
         {/*
           The families, under the names they belong to.
 
@@ -522,9 +626,14 @@ export default function EventForm({
             Optional. Shown on the card if you fill it in.
           </p>
         </div>
+        </>
+        ) : null}
       </Section>
+      ) : null}
 
+      {has("title") || has("date") || has("time") ? (
       <Section label="What">
+        {has("title") ? (
         <Field id="eventTitle" label="Event title">
           <input
             id="eventTitle"
@@ -536,8 +645,11 @@ export default function EventForm({
             className={INPUT_CLASS}
           />
         </Field>
+        ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        {has("date") || has("time") ? (
+        <div className={has("date") && has("time") ? "grid gap-4 sm:grid-cols-2" : "grid gap-4"}>
+          {has("date") ? (
           <Field id="eventDate" label="Date" hint={DATE_HINT}>
             <input
               id="eventDate"
@@ -548,7 +660,9 @@ export default function EventForm({
               className={INPUT_CLASS}
             />
           </Field>
+          ) : null}
 
+          {has("time") ? (
           <Field id="eventTime" label="Start time">
             <input
               id="eventTime"
@@ -558,13 +672,17 @@ export default function EventForm({
               className={INPUT_CLASS}
             />
           </Field>
+          ) : null}
         </div>
+        ) : null}
 
-        {paidLimits !== undefined ? (
+        {paidLimits !== undefined && has("date") ? (
           <LimitNote note={paidLimits.dates} noun="date" />
         ) : null}
       </Section>
+      ) : null}
 
+      {has("venue") ? (
       <Section label="Where">
         <Field id="venueName" label="Venue name">
           <input
@@ -597,7 +715,9 @@ export default function EventForm({
           inputClass={INPUT_CLASS}
         />
       </Section>
+      ) : null}
 
+      {has("message") ? (
       <Section label="Message">
         <Field id="message" label="A short note for your guests">
           <textarea
@@ -622,6 +742,7 @@ export default function EventForm({
           </p>
         </Field>
       </Section>
+      ) : null}
     </div>
   );
 }

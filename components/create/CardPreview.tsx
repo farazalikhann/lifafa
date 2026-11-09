@@ -23,6 +23,9 @@ import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
 const loadFullScreenPreview = () =>
   import("@/components/create/FullScreenPreview").then((module) => module.default);
 
+/** The inline frame on a phone, in px: the h-[480px] below. */
+const INLINE_FRAME_HEIGHT = 480;
+
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
 const FRAME_QUERY = "(min-width: 64rem)";
 
@@ -59,7 +62,15 @@ export default function CardPreview({
   weatherTheme,
   onPreviewLanguageChange,
   isPaid,
+  inline = false,
 }: {
+  /**
+   * Drawn below `lg` too, in a shorter frame: a new card's details step on a
+   * phone, once the quick start has its names and date, shows the host their
+   * card in the page (Wizard.tsx). Everywhere else the phone gets the Preview
+   * button, as the note above says.
+   */
+  inline?: boolean;
   /** The event's paid state as the server read it; see FullScreenPreview. */
   isPaid: boolean;
   /**
@@ -112,9 +123,12 @@ export default function CardPreview({
   }, []);
 
   /* The phone gets the wizard's Preview button instead — see the note above. */
-  if (!isFramed) {
+  if (!isFramed && !inline) {
     return null;
   }
+
+  /* The phone's frame is shorter, so the card's first screen and what follows it both fit. */
+  const frameHeight = isFramed ? undefined : INLINE_FRAME_HEIGHT;
 
   return (
     <div className="flex flex-col gap-3">
@@ -127,7 +141,7 @@ export default function CardPreview({
 
       {/* lifafa-card-scope: the card is drawn as a guest sees it, not in the page's light theme. */}
       <div
-        className="lifafa-card-scope lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.45)]"
+        className={`lifafa-card-scope lifafa-no-scrollbar mx-auto ${isFramed ? "h-[620px]" : "h-[480px]"} w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.45)]`}
         style={{ backgroundColor: palette.background }}
       >
         {/* Sections size against the 620px frame, which is what scrolls here. */}
@@ -137,6 +151,7 @@ export default function CardPreview({
           config={config}
           motifs={motifs}
           sizing="frame"
+          frameHeight={frameHeight}
           /* No code minted yet — the host sees the buttons, not a live link. */
           invite={PREVIEW_INVITE}
           /*

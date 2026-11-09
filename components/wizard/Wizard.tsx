@@ -49,6 +49,7 @@ import {
   type SaveOutcome,
 } from "@/hooks/useCardEditor";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
+import { hasCardDetails } from "@/lib/cardChecklist";
 import { withContactBlock } from "@/lib/contacts";
 import { createEvent, updateEvent } from "@/lib/db/events";
 import type { ChangeAllowance } from "@/lib/eventLock";
@@ -660,6 +661,19 @@ export function EditWizard({
   );
 }
 
+/**
+ * What the details step shows: the quick start of a new card ("quick"), the
+ * card as it now is ("card"), or the whole form ("all"), as every saved
+ * invitation has it.
+ */
+type DetailsView = "quick" | "card" | "all";
+
+/** The quick start's heading and line, and the card's, over the details step of a new card. */
+const QUICK_START_TITLE = "Start with the basics";
+const QUICK_START_LINE =
+  "Just your names and the wedding date. You can add the venue, functions and family details next, or anytime later.";
+const CARD_TITLE = "Your card";
+
 function WizardSteps({
   start,
   untouched = start,
@@ -726,6 +740,17 @@ function WizardSteps({
   );
   const step: WizardStepId = templateChosen && !heldOnGallery ? requestedStep : "template";
   const index = wizardStepIndex(step);
+
+  /*
+    How the details step is shown. A new card with nothing typed in it starts
+    on the quick start: the two names and the date, and "See my card". A saved
+    invitation, and a card brought back with details already in it, open on the
+    whole form. Held here, not in the address, so moving between the steps
+    keeps it and Back and Next are as they were.
+  */
+  const [detailsView, setDetailsView] = useState<DetailsView>(() =>
+    editing || hasCardDetails(start.draft) ? "all" : "quick",
+  );
   const isLast = index === WIZARD_STEPS.length - 1;
 
   /* Read by the sign-in detour, which is built before the step can change. */
@@ -775,7 +800,7 @@ function WizardSteps({
     }
 
     headingRef.current?.focus({ preventScroll: true });
-  }, [step]);
+  }, [step, detailsView]);
 
   /**
    * Stashes the card and the step, and sends the host to sign in. Returns the
@@ -1042,7 +1067,33 @@ function WizardSteps({
     id: "editor",
   });
   const isFramed = useMediaQuery(FRAME_QUERY);
-  const { module: CardPreview } = useLazyModule(loadCardPreview, { wanted: isFramed, id: "card-preview" });
+  /*
+    A new card's details step on a phone, past the quick start: the card in
+    the page, above what is left to add. At lg it is beside the step as always.
+  */
+  const inlinePreview = !editing && !isFramed && step === "details" && detailsView === "card";
+  const { module: CardPreview } = useLazyModule(loadCardPreview, {
+    wanted: isFramed || inlinePreview,
+    id: "card-preview",
+  });
+
+  /*
+    While the quick start is filled in, the card's code is fetched quietly, so
+    "See my card" draws it at once. Not reported: nothing waits on it yet.
+  */
+  const quickStart = !editing && step === "details" && detailsView === "quick";
+
+  useEffect(() => {
+    if (quickStart && !isFramed && editor !== null && roomToPrefetch()) {
+      startLoad(loadCardPreview);
+    }
+  }, [quickStart, isFramed, editor]);
+
+  /* "See my card": the card with what was typed, from the top of the page. */
+  const showCard = (): void => {
+    setDetailsView("card");
+    window.scrollTo({ top: 0 });
+  };
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const {
@@ -1233,9 +1284,16 @@ function WizardSteps({
               {/* The last step publishes a new card; for a saved one it is only a last look. */}
               {editing && step === "preview"
                 ? "Preview your changes"
-                : WIZARD_STEPS[index].title}
+                : step === "details" && detailsView === "quick"
+                  ? QUICK_START_TITLE
+                  : step === "details" && detailsView === "card"
+                    ? CARD_TITLE
+                    : WIZARD_STEPS[index].title}
             </h1>
             {showIntro ? <p className={TRUST_TEXT}>{TRUST_LINE}</p> : null}
+            {step === "details" && detailsView === "quick" ? (
+              <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">{QUICK_START_LINE}</p>
+            ) : null}
           </div>
 
           {step === "template" ? (
@@ -1251,6 +1309,54 @@ function WizardSteps({
           {step === "details" && editor !== null ? (
             /* Everything the host types: masked from Clarity (lib/clarity.ts). `contents` keeps the layout as it was. */
             <div className="contents" data-clarity-mask="true">
+              {detailsView === "quick" ? (
+                /* A div, not a form: Enter on a phone's keyboard moves on, it does not submit. */
+                <div className="flex min-w-0 flex-col gap-6">
+                  <editor.EventBasics
+                    draft={draft}
+                    onChange={handleChange}
+                    occasionId={occasionId}
+                    language={language}
+                  />
+                  <button type="button" onClick={showCard} className={`${PRIMARY_BUTTON} self-start`}>
+                    See my card
+                  </button>
+                </div>
+              ) : detailsView === "card" ? (
+                <div className="flex min-w-0 flex-col gap-6">
+                  {inlinePreview ? (
+                    CardPreview === null ? (
+                      /* As tall as the frame, so nothing moves when the card arrives. */
+                      <div
+                        aria-hidden="true"
+                        className="mx-auto mt-[3.25rem] mb-14 h-[480px] w-full max-w-[380px] animate-pulse rounded-[2rem] border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]"
+                      />
+                    ) : (
+                      <PreviewBoundary onError={reportPreviewFailed}>
+                        <CardPreview
+                          inline
+                          draft={preview.draft}
+                          config={preview.config}
+                          onPreviewLanguageChange={setPreviewLanguage}
+                          motifs={motifs}
+                          coverAnimation={coverAnimation}
+                          weather={previewWeather}
+                          weatherTheme={weatherTheme}
+                          isPaid={false}
+                        />
+                      </PreviewBoundary>
+                    )
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setDetailsView("all")}
+                    className={`${QUIET_BUTTON} self-start`}
+                  >
+                    Show all details
+                  </button>
+                </div>
+              ) : (
+              <>
               {/*
                 Typing in the card's own words turns the preview back to the
                 card's own language, after the host has been writing the other
@@ -1308,6 +1414,8 @@ function WizardSteps({
                 onFocusLanguage={setPreviewLanguage}
                 revealSignal={translatedSignal}
               />
+              </>
+              )}
             </div>
           ) : null}
 
