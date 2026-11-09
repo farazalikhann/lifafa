@@ -158,7 +158,8 @@ export default function SubEventEditor({
   };
 
   return (
-    <section className="flex flex-col gap-4">
+    /* The id is where the dashboard's "Add functions" lands (lib/cardChecklist.ts). */
+    <section id="card-functions" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
           More functions

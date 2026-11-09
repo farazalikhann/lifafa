@@ -49,7 +49,13 @@ import {
   type SaveOutcome,
 } from "@/hooks/useCardEditor";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import { hasCardDetails } from "@/lib/cardChecklist";
+import {
+  cardChecklist,
+  checklistAnchor,
+  hasCardDetails,
+  type ChecklistItemId,
+} from "@/lib/cardChecklist";
+import type { EventFormPart } from "@/components/create/EventForm";
 import { withContactBlock } from "@/lib/contacts";
 import { createEvent, updateEvent } from "@/lib/db/events";
 import type { ChangeAllowance } from "@/lib/eventLock";
@@ -663,10 +669,48 @@ export function EditWizard({
 
 /**
  * What the details step shows: the quick start of a new card ("quick"), the
- * card as it now is ("card"), or the whole form ("all"), as every saved
- * invitation has it.
+ * card as it now is with what is left to add ("card"), one part of the form
+ * opened from that list (an item's id), or the whole form ("all"), as every
+ * saved invitation has it.
  */
-type DetailsView = "quick" | "card" | "all";
+type DetailsView = "quick" | "card" | "all" | ChecklistItemId;
+
+/** The parts of the details form each item of the checklist opens; Functions is its own editor. */
+const ITEM_PARTS: Readonly<Record<Exclude<ChecklistItemId, "functions">, ReadonlySet<EventFormPart>>> = {
+  names: new Set(["names"]),
+  date: new Set(["date"]),
+  venue: new Set(["time", "venue"]),
+  families: new Set(["families"]),
+  message: new Set(["message"]),
+};
+
+/** The heading over one part of the form, opened from the checklist. */
+const CHECKLIST_TITLES: Readonly<Record<ChecklistItemId, string>> = {
+  names: "Names",
+  date: "Date",
+  venue: "Venue and time",
+  functions: "Functions",
+  families: "Family names",
+  message: "Message for guests",
+};
+
+const isItemView = (view: DetailsView): view is ChecklistItemId =>
+  view !== "quick" && view !== "card" && view !== "all";
+
+/** Where an element of the form is drawn, brought into view and, when it takes typing, focused. */
+function revealField(id: string): void {
+  const element = document.getElementById(id);
+
+  if (element === null) {
+    return;
+  }
+
+  element.scrollIntoView({ block: "center" });
+
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    element.focus({ preventScroll: true });
+  }
+}
 
 /** The quick start's heading and line, and the card's, over the details step of a new card. */
 const QUICK_START_TITLE = "Start with the basics";
@@ -743,13 +787,14 @@ function WizardSteps({
 
   /*
     How the details step is shown. A new card with nothing typed in it starts
-    on the quick start: the two names and the date, and "See my card". A saved
-    invitation, and a card brought back with details already in it, open on the
-    whole form. Held here, not in the address, so moving between the steps
-    keeps it and Back and Next are as they were.
+    on the quick start: the two names and the date, and "See my card". A card
+    brought back with details already in it opens on itself and its checklist.
+    A saved invitation opens on the whole form, as it always has. Held here,
+    not in the address, so moving between the steps keeps it and Back and
+    Next are as they were.
   */
   const [detailsView, setDetailsView] = useState<DetailsView>(() =>
-    editing || hasCardDetails(start.draft) ? "all" : "quick",
+    editing ? "all" : hasCardDetails(start.draft) ? "card" : "quick",
   );
   const isLast = index === WIZARD_STEPS.length - 1;
 
@@ -1089,11 +1134,55 @@ function WizardSteps({
     }
   }, [quickStart, isFramed, editor]);
 
-  /* "See my card": the card with what was typed, from the top of the page. */
+  /* "See my card", and Done under a part of the form: the card with what was typed, from the top of the page. */
   const showCard = (): void => {
     setDetailsView("card");
     window.scrollTo({ top: 0 });
   };
+
+  /*
+    A field of the details form to bring into view once it is drawn: the
+    first field of a part opened from the checklist, the venue from the
+    preview's hint, or the field a dashboard link names in the address
+    (`#venueName`) on a saved invitation's edit page. Waits for the editor's
+    code where that is still on its way.
+  */
+  const [reveal, setReveal] = useState<{ id: string } | null>(() => {
+    /* The edit page is drawn on the server too, where there is no address to read. */
+    const hash = typeof window === "undefined" ? "" : window.location.hash.slice(1);
+    return editing && /^[A-Za-z][\w-]*$/.test(hash) ? { id: hash } : null;
+  });
+
+  useEffect(() => {
+    if (reveal === null || editor === null || step !== "details") {
+      return;
+    }
+
+    /* After the frame that draws the part, and once: clearing it below does not cancel this. */
+    window.requestAnimationFrame(() => revealField(reveal.id));
+    setReveal(null);
+  }, [reveal, editor, step]);
+
+  /**
+   * An item of the checklist, its "Add" or "Edit": that part of the form on
+   * its own, on the details step. From the whole form, the same fields there.
+   */
+  const openItem = (id: ChecklistItemId): void => {
+    goTo("details");
+
+    if (detailsView !== "all") {
+      setDetailsView(id);
+    }
+
+    setReveal({ id: checklistAnchor(id, draft, occasionId) });
+  };
+
+  /*
+    The light "+ Add venue" over the preview's frame, on a new card with no
+    venue yet. The previews only: the guest's page never has it.
+  */
+  const onAddVenue =
+    editing || draft.venueName.trim().length > 0 ? undefined : () => openItem("venue");
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const {
@@ -1288,7 +1377,9 @@ function WizardSteps({
                   ? QUICK_START_TITLE
                   : step === "details" && detailsView === "card"
                     ? CARD_TITLE
-                    : WIZARD_STEPS[index].title}
+                    : step === "details" && isItemView(detailsView)
+                      ? (CHECKLIST_TITLES[detailsView] ?? WIZARD_STEPS[index].title)
+                      : WIZARD_STEPS[index].title}
             </h1>
             {showIntro ? <p className={TRUST_TEXT}>{TRUST_LINE}</p> : null}
             {step === "details" && detailsView === "quick" ? (
@@ -1343,20 +1434,58 @@ function WizardSteps({
                           weather={previewWeather}
                           weatherTheme={weatherTheme}
                           isPaid={false}
+                          onAddVenue={onAddVenue}
                         />
                       </PreviewBoundary>
                     )
                   ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setDetailsView("all")}
-                    className={`${QUIET_BUTTON} self-start`}
-                  >
-                    Show all details
+                  <editor.CardChecklist
+                    items={cardChecklist(draft, occasionId)}
+                    onAdd={openItem}
+                    onShowAll={() => {
+                      setDetailsView("all");
+                      window.scrollTo({ top: 0 });
+                    }}
+                  />
+                </div>
+              ) : isItemView(detailsView) ? (
+                /* One part of the form, opened from the checklist: the same fields as the whole form. */
+                <div
+                  className="flex min-w-0 flex-col gap-8"
+                  onFocusCapture={() => setPreviewLanguage(language)}
+                >
+                  {detailsView === "functions" ? (
+                    <editor.SubEventEditor
+                      subEvents={draft.subEvents}
+                      openId={openSubEventId}
+                      onChange={(subEvents) => handleChange("subEvents", subEvents)}
+                      onOpenIdChange={setOpenSubEventId}
+                    />
+                  ) : (
+                    <editor.EventForm
+                      draft={draft}
+                      onChange={handleChange}
+                      occasionId={occasionId}
+                      language={language}
+                      parts={ITEM_PARTS[detailsView]}
+                    />
+                  )}
+                  <button type="button" onClick={showCard} className={`${PRIMARY_BUTTON} self-start`}>
+                    Done
                   </button>
                 </div>
               ) : (
               <>
+              {/* A new card's whole form keeps a way back to its checklist. */}
+              {editing ? null : (
+                <button
+                  type="button"
+                  onClick={showCard}
+                  className="-mt-4 inline-flex min-h-11 items-center self-start rounded text-sm font-medium text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+                >
+                  Back to your card
+                </button>
+              )}
               {/*
                 Typing in the card's own words turns the preview back to the
                 card's own language, after the host has been writing the other
@@ -1527,6 +1656,7 @@ function WizardSteps({
                 weather={previewWeather}
                 weatherTheme={weatherTheme}
                 isPaid={edit?.isPaid === true}
+                onAddVenue={onAddVenue}
               />
             </PreviewBoundary>
           )}

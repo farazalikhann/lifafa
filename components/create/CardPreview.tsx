@@ -63,6 +63,7 @@ export default function CardPreview({
   onPreviewLanguageChange,
   isPaid,
   inline = false,
+  onAddVenue,
 }: {
   /**
    * Drawn below `lg` too, in a shorter frame: a new card's details step on a
@@ -71,6 +72,12 @@ export default function CardPreview({
    * button, as the note above says.
    */
   inline?: boolean;
+  /**
+   * A new card with no venue yet: a light "+ Add venue" over the foot of the
+   * frame, which opens that part of the form. Outside the card itself, so the
+   * guest's page can never draw it. Absent, the frame is exactly as before.
+   */
+  onAddVenue?: () => void;
   /** The event's paid state as the server read it; see FullScreenPreview. */
   isPaid: boolean;
   /**
@@ -130,6 +137,23 @@ export default function CardPreview({
   /* The phone's frame is shorter, so the card's first screen and what follows it both fit. */
   const frameHeight = isFramed ? undefined : INLINE_FRAME_HEIGHT;
 
+  /* The frame as it is, or with "+ Add venue" over its foot: outside the card, in the editor only. */
+  const withVenueHint = (frame: ReactElement): ReactElement =>
+    onAddVenue === undefined ? (
+      frame
+    ) : (
+      <div className="relative mx-auto w-full max-w-[380px]">
+        {frame}
+        <button
+          type="button"
+          onClick={onAddVenue}
+          className="absolute bottom-4 left-1/2 min-h-11 -translate-x-1/2 rounded-full border border-dashed border-[#8a7a5c]/60 bg-[#fffaf0]/85 px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[#3d3427] shadow-sm backdrop-blur-sm transition-colors duration-150 hover:bg-[#fffaf0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+        >
+          + Add venue
+        </button>
+      </div>
+    );
+
   return (
     <div className="flex flex-col gap-3">
       {/* Over the frame, because it changes what the frame shows. */}
@@ -140,6 +164,7 @@ export default function CardPreview({
       />
 
       {/* lifafa-card-scope: the card is drawn as a guest sees it, not in the page's light theme. */}
+      {withVenueHint(
       <div
         className={`lifafa-card-scope lifafa-no-scrollbar mx-auto ${isFramed ? "h-[620px]" : "h-[480px]"} w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.45)]`}
         style={{ backgroundColor: palette.background }}
@@ -168,7 +193,8 @@ export default function CardPreview({
         />
         {/* The credit a guest meets at the very end, under the card, as on the invitation. */}
         <MadeWithLifafa theme={theme} config={config} />
-      </div>
+      </div>,
+      )}
 
       {/* Directly under the frame, because it is an action on that card. */}
       <button
