@@ -23,6 +23,8 @@ import {
   TEST_PRICE_BELOW_PAISE,
 } from "../lib/checkoutPrice.ts";
 import { quoteWithCoupon, RAZORPAY_MINIMUM_PAISE } from "../lib/coupons/quote.ts";
+import { couponRefusal } from "../lib/coupons/usable.ts";
+import { offerOpen, WEDDING10_OFFER } from "../lib/offers.ts";
 import {
   LOWEST_PRICE_PAISE,
   PREMIUM_PRICE_PAISE,
@@ -63,6 +65,53 @@ for (const [row, base, finalPaise, test] of quotes) {
 }
 
 console.log(`Prices: list prices are never a test price; a code leaving under ${TEST_PRICE_BELOW_PAISE} paise is one.`);
+
+/* ── WEDDING10: 10% off, until the end of 30 November 2026, India time ──── */
+
+/* As the admin form stores it: percent, 10; the end of that day, IST (app/admin/coupons/actions.ts). */
+const wedding10 = {
+  ...coupon("WEDDING10", "percent", 10),
+  is_active: true,
+  expires_at: new Date("2026-11-30T23:59:59+05:30").toISOString(),
+  max_uses: null,
+  used_count: 4000,
+};
+const ist = (stamp) => new Date(`${stamp}+05:30`);
+
+for (const [base, finalPaise] of [
+  [TRADITIONS_PRICE_PAISE, 62910],
+  [PREMIUM_PRICE_PAISE, 89910],
+  [SHEESH_MAHAL_PRICE_PAISE, SHEESH_MAHAL_PRICE_PAISE - Math.floor(SHEESH_MAHAL_PRICE_PAISE / 10)],
+]) {
+  const quote = quoteWithCoupon(wedding10, base);
+  assert.equal(quote.finalPaise, finalPaise, `WEDDING10 on ${base}`);
+  assert.equal(quote.discountPaise, base - finalPaise);
+  assert.equal(isTestPrice(quote.finalPaise), false, `WEDDING10 on ${base} is a test price`);
+}
+
+/* The offer ends when the coupon does, to the second. */
+assert.equal(WEDDING10_OFFER.code, wedding10.code);
+assert.equal(Date.parse(WEDDING10_OFFER.endsAt), Date.parse(wedding10.expires_at), "the offer and its coupon end at different moments");
+
+for (const [stamp, open] of [
+  ["2026-11-09T10:00:00", true],
+  ["2026-11-30T23:59:00", true],
+  ["2026-11-30T23:59:59", false],
+  ["2026-12-01T00:00:00", false],
+  ["2027-01-15T12:00:00", false],
+]) {
+  assert.equal(offerOpen(WEDDING10_OFFER, ist(stamp)), open, `the offer at ${stamp} IST`);
+  /* And the coupon itself, as the preview and the order ask it. */
+  assert.equal(couponRefusal(wedding10, ist(stamp)), open ? null : "expired", `WEDDING10 at ${stamp} IST`);
+}
+
+/* No usage limit: any number of uses; the other refusals still apply. */
+assert.equal(couponRefusal({ ...wedding10, used_count: 1_000_000 }, ist("2026-11-20T12:00:00")), null);
+assert.equal(couponRefusal({ ...wedding10, is_active: false }, ist("2026-11-20T12:00:00")), "inactive");
+assert.equal(couponRefusal({ ...wedding10, max_uses: 3, used_count: 3 }, ist("2026-11-20T12:00:00")), "exhausted");
+assert.equal(couponRefusal({ ...wedding10, expires_at: null }, ist("2030-01-01T00:00:00")), null, "a code with no end date ends");
+
+console.log("WEDDING10: Rs 629.10 on Rs 699 and Rs 899.10 on Rs 999, no limit; the offer and the code both end at 23:59:59 IST on 30 Nov 2026.");
 
 /* ── Who may pay a test price ───────────────────────────────────────────── */
 
@@ -116,7 +165,25 @@ assert.match(
 );
 assert.match(captureRefusal({ ...testOrder, pricePaise: null }), /test price/, "a test price for a missing event publishes");
 
-console.log("Capture: the amount must equal the order, the order must cover the template, a test price must be allowed.");
+/* An order made with WEDDING10 must have been made before it ended; paying a little after is honoured. */
+const weddingOrder = {
+  ...paid,
+  capturedPaise: 89910,
+  orderPaise: 89910,
+  discountPaise: 9990,
+  coupon: { code: "WEDDING10", endsAt: wedding10.expires_at },
+};
+assert.equal(captureRefusal({ ...weddingOrder, orderMadeAt: ist("2026-11-20T18:00:00").toISOString() }), null, "a WEDDING10 order in time is refused");
+assert.equal(captureRefusal({ ...weddingOrder, orderMadeAt: ist("2026-11-30T23:58:00").toISOString() }), null, "an order made at 23:58 on the last day is refused");
+assert.match(
+  captureRefusal({ ...weddingOrder, orderMadeAt: ist("2026-12-01T00:05:00").toISOString() }),
+  /made with WEDDING10 .* after it ended/,
+  "an order made after WEDDING10 ended publishes",
+);
+assert.equal(captureRefusal({ ...weddingOrder, coupon: { code: "FOREVER", endsAt: null }, orderMadeAt: ist("2030-01-01T00:00:00").toISOString() }), null, "a code with no end is refused");
+assert.equal(captureRefusal({ ...paid, coupon: null, orderMadeAt: ist("2030-01-01T00:00:00").toISOString() }), null, "an order with no coupon is refused");
+
+console.log("Capture: the amount must equal the order, the order must cover the template, its coupon must not have ended when it was made, a test price must be allowed.");
 
 /* ── The server code asks these rules ───────────────────────────────────── */
 
@@ -188,6 +255,19 @@ assert.ok(
   applyPayment.indexOf("captureRefusal(") < applyPayment.indexOf('status: "paid"'),
   "the webhook marks a payment paid before checking it",
 );
+assert.match(applyPayment, /coupon,\s*orderMadeAt: order\.created_at,/, "the webhook does not check the coupon's end date");
+assert.match(applyPayment, /\.from\("coupons"\)\s*\.select\("expires_at"\)/, "the webhook does not read the coupon's end date");
+
+/* The preview and the order ask the coupon's end date through the one rule. */
+const lookup = source("lib/coupons/lookup.ts");
+assert.match(lookup, /couponRefusal\(coupon, new Date\(\)\)/, "findUsableCoupon does not ask couponRefusal at this moment");
+assert.equal((payments.match(/findUsableCoupon\(/g) ?? []).length >= 2, true, "the preview or the order does not look the code up");
+for (const [name, from, to] of [
+  ["previewCoupon", "export async function previewCoupon(", "async function requireUnpaidOwnedEvent("],
+  ["createPaymentOrder", "export async function createPaymentOrder(", "export async function activateWithFreeCoupon("],
+]) {
+  assert.match(between(payments, from, to), /findUsableCoupon\(/, `${name} does not check the code is still on`);
+}
 
 assert.match(source("lib/db/confirmedPayment.ts"), /isTestPrice\(data\.amount\)/, "the dashboard may report a test price to Meta");
 

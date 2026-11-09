@@ -117,8 +117,9 @@ export async function applyCapturedPayment(
        to a cheaper template after ordering is the host's own loss and is let
        through.
 
-    And a third, below: a test price (lib/checkoutPrice.ts) must have been
-    paid by an account allowed one.
+    And two more, below: a test price (lib/checkoutPrice.ts) must have been
+    paid by an account allowed one, and an order made with a coupon must have
+    been made before the coupon ended.
 
     An order that fails any is NOT settled and its invitation is not
     published. It is marked as under review instead, by markUnderReview below,
@@ -127,7 +128,7 @@ export async function applyCapturedPayment(
   */
   const { data: order, error: orderError } = await admin
     .from("payments")
-    .select("event_id, amount, discount_amount, status")
+    .select("event_id, amount, discount_amount, status, coupon_code, created_at")
     .eq("razorpay_order_id", orderId)
     .maybeSingle();
 
@@ -167,12 +168,35 @@ export async function applyCapturedPayment(
       hostAllowed = allowed;
     }
 
+    /*
+      4. Was the order's coupon still on when the order was made? Its end date
+         is read from the coupon row now; the order's time is the row's own.
+    */
+    let coupon: { code: string; endsAt: string | null } | null = null;
+
+    if (order.coupon_code !== null) {
+      const { data: couponRow, error: couponError } = await admin
+        .from("coupons")
+        .select("expires_at")
+        .eq("code", order.coupon_code)
+        .maybeSingle();
+
+      if (couponError !== null) {
+        console.error("[razorpay] could not read the order's coupon:", couponError);
+        return { kind: "error", message: "coupons read failed" };
+      }
+
+      coupon = { code: order.coupon_code, endsAt: couponRow?.expires_at ?? null };
+    }
+
     const reason = captureRefusal({
       capturedPaise,
       orderPaise: order.amount,
       discountPaise: order.discount_amount ?? 0,
       pricePaise: event === null ? null : pricePaise,
       hostMayPayTestPrice: hostAllowed,
+      coupon,
+      orderMadeAt: order.created_at,
     });
 
     if (reason !== null) {

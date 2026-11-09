@@ -74,7 +74,12 @@ export function mayPayTestPrice(
  *     must be at least what the invitation's template costs now, so a card
  *     moved to a dearer template after ordering is not published on the
  *     cheaper order.
- *  3. A test price must have been paid by an account allowed one.
+ *  3. An order made with a coupon must have been made before that coupon's
+ *     end date. createPaymentOrder never makes one after (lib/coupons/usable.ts
+ *     refuses the code), so this holds an order that got past it. An order made
+ *     in time and paid a little after the end is honoured: its price was quoted
+ *     and fixed while the offer was on.
+ *  4. A test price must have been paid by an account allowed one.
  */
 export function captureRefusal(check: {
   /** Paise Razorpay captured, from the signed webhook. */
@@ -87,6 +92,13 @@ export function captureRefusal(check: {
   pricePaise: number | null;
   /** Whether the invitation's host may pay a test price. */
   hostMayPayTestPrice: boolean;
+  /**
+   * The order's coupon and when it ended, from the coupons row; null for an
+   * order with no coupon, or a coupon with no end date.
+   */
+  coupon?: { code: string; endsAt: string | null } | null;
+  /** When the order was made, from the payments row. */
+  orderMadeAt?: string | null;
 }): string | null {
   if (check.capturedPaise !== check.orderPaise) {
     return `captured ${check.capturedPaise} paise against an order for ${check.orderPaise}`;
@@ -96,6 +108,18 @@ export function captureRefusal(check: {
 
   if (check.pricePaise !== null && listPaise < check.pricePaise) {
     return `the order was priced at ${listPaise} paise and the invitation's template now costs ${check.pricePaise}`;
+  }
+
+  const endsAt = check.coupon?.endsAt ?? null;
+  const madeAt = check.orderMadeAt ?? null;
+
+  if (
+    check.coupon != null &&
+    endsAt !== null &&
+    madeAt !== null &&
+    Date.parse(madeAt) >= Date.parse(endsAt)
+  ) {
+    return `the order was made with ${check.coupon.code} at ${madeAt}, after it ended at ${endsAt}`;
   }
 
   if (isTestPrice(check.orderPaise) && !check.hostMayPayTestPrice) {

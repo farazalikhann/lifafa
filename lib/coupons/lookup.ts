@@ -1,3 +1,4 @@
+import { couponRefusal } from "@/lib/coupons/usable";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CouponRow } from "@/types/database";
 
@@ -72,9 +73,8 @@ export function isPossibleCouponCode(code: string): boolean {
 /**
  * Looks a code up and says whether it may be used.
  *
- * THE ORDER OF THE CHECKS IS THE ORDER OF THE MESSAGES, deliberately: inactive
- * first, then expired, then exhausted, so a code that is all three reports the
- * most fundamental reason rather than an incidental one.
+ * THE ORDER OF THE CHECKS IS THE ORDER OF THE MESSAGES: see couponRefusal in
+ * lib/coupons/usable.ts, which this applies to the row it reads.
  *
  * EVERY CHECK IS ON THE STORED ROW. Nothing here consults an argument beyond
  * the code string, and the code string is used for one thing only — finding the
@@ -112,22 +112,15 @@ export async function findUsableCoupon(
     return { kind: "unknown" };
   }
 
-  if (!coupon.is_active) {
-    return { kind: "inactive" };
-  }
-
   /*
-    Compared here as well as in redeem_coupon()'s WHERE clause. Two clocks, and
-    they are allowed to disagree by the width of a request: this one decides
-    what the host is shown and charged, and the database's decides whether the
-    use is counted. The database is the one that matters for the limit.
+    Inactive, past its end date, or used up: the rules are in
+    lib/coupons/usable.ts, asked of the server's clock at this moment. The end
+    date is compared in redeem_coupon()'s WHERE clause as well (0010).
   */
-  if (coupon.expires_at !== null && new Date(coupon.expires_at) <= new Date()) {
-    return { kind: "expired" };
-  }
+  const refusal = couponRefusal(coupon, new Date());
 
-  if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
-    return { kind: "exhausted" };
+  if (refusal !== null) {
+    return { kind: refusal };
   }
 
   return { kind: "ok", coupon };

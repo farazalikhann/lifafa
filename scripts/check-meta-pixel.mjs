@@ -303,8 +303,36 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
       true,
       "Purchase refused for a real payment",
     );
+
+    /*
+      A sale at a coupon's price is reported at what was paid: WEDDING10 on a
+      Rs 699 and a Rs 999 card. On a dashboard address the events go to the
+      image endpoint once fbevents.js has settled; the stand-in Image keeps them.
+    */
+    const images = [];
+    globalThis.Image = class {
+      set src(url) {
+        images.push(new URL(url));
+      }
+    };
+    for (const amountPaise of [62910, 89910]) {
+      assert.equal(
+        checkout.purchase({ paymentId: `pay_WEDDING10_${amountPaise}`, templateId: "shubh-vivah-ivory", amountPaise }),
+        true,
+        `Purchase refused for a WEDDING10 sale of ${amountPaise} paise`,
+      );
+    }
+    checkout.metaPixelSettled();
+    const purchased = [...images, ...requests.map(({ url }) => url)]
+      .filter((url) => url.searchParams.get("ev") === "Purchase")
+      .map((url) => url.searchParams.get("cd[value]"));
+    assert.ok(
+      purchased.includes("629.1") && purchased.includes("899.1"),
+      `a WEDDING10 sale is not reported at the price paid: ${purchased.join(", ")}`,
+    );
   } finally {
     globalThis.fetch = realFetch;
+    delete globalThis.Image;
     delete globalThis.window;
     delete globalThis.document;
     if (realPixelId === undefined) {
@@ -315,7 +343,7 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
   }
 
   console.log("PageView and ViewContent: sent at once and kept alive, with fbc and fbp, once each, held until released.");
-  console.log("InitiateCheckout and Purchase: never for a test price or a free one.");
+  console.log("InitiateCheckout and Purchase: never for a test price or a free one; a WEDDING10 sale is reported at what was paid.");
 }
 
 const base = process.argv[2];
