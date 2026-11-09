@@ -1397,7 +1397,14 @@ function WizardSteps({
             />
           ) : null}
 
-          <div className="flex min-w-0 flex-col gap-1.5">
+          {/*
+            Over a new card's still card on a phone, the heading is for screen
+            readers only: the card says what it is, and the checklist under it
+            then fits on the first screen.
+          */}
+          <div
+            className={`flex min-w-0 flex-col gap-1.5${inlinePreview ? " max-lg:sr-only" : ""}`}
+          >
             <h1
               ref={headingRef}
               tabIndex={-1}
@@ -1447,13 +1454,13 @@ function WizardSteps({
                   </button>
                 </div>
               ) : detailsView === "card" ? (
-                <div className="flex min-w-0 flex-col gap-6">
+                <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
                   {inlinePreview ? (
                     CardPreview === null ? (
-                      /* As tall as the frame, so nothing moves when the card arrives. */
+                      /* The still card's size (CardPreview.tsx), so nothing moves when it arrives. */
                       <div
                         aria-hidden="true"
-                        className="mx-auto mt-[3.25rem] mb-14 h-[480px] w-full max-w-[380px] animate-pulse rounded-[2rem] border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]"
+                        className="mx-auto h-[min(620px,55vh)] aspect-[390/720] animate-pulse rounded-[1.25rem] border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]"
                       />
                     ) : (
                       <PreviewBoundary onError={reportPreviewFailed}>

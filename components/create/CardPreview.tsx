@@ -23,8 +23,21 @@ import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
 const loadFullScreenPreview = () =>
   import("@/components/create/FullScreenPreview").then((module) => module.default);
 
-/** The inline frame on a phone, in px: the h-[480px] below. */
-const INLINE_FRAME_HEIGHT = 480;
+/*
+  The phone's still card: drawn at a phone's size, the card's own
+  proportions, then scaled to about 55% of the screen's height (at most 620px).
+*/
+const STILL_WIDTH = 390;
+const STILL_HEIGHT = 720;
+const STILL_SHARE = 0.55;
+const STILL_MAX = 620;
+
+/* Read once: the in-app browsers' bars move the height as the page scrolls, and the card must not resize with them. */
+function stillPreviewHeight(): number {
+  return typeof window === "undefined"
+    ? Math.round(844 * STILL_SHARE)
+    : Math.min(STILL_MAX, Math.round(window.innerHeight * STILL_SHARE));
+}
 
 /** Tailwind's `lg` as a query: 64rem, the breakpoint the page grid uses. */
 const FRAME_QUERY = "(min-width: 64rem)";
@@ -66,10 +79,10 @@ export default function CardPreview({
   onAddVenue,
 }: {
   /**
-   * Drawn below `lg` too, in a shorter frame: a new card's details step on a
-   * phone, once the quick start has its names and date, shows the host their
-   * card in the page (Wizard.tsx). Everywhere else the phone gets the Preview
-   * button, as the note above says.
+   * Drawn below `lg` too, as a small still card that opens the full-screen
+   * preview when tapped: a new card's details step on a phone, once the quick
+   * start has its names and date (Wizard.tsx). Everywhere else the phone gets
+   * the Preview button, as the note above says.
    */
   inline?: boolean;
   /**
@@ -128,14 +141,106 @@ export default function CardPreview({
   const closePreview = useCallback((): void => {
     setIsPreviewOpen(false);
   }, []);
+  const [stillHeight] = useState(stillPreviewHeight);
 
   /* The phone gets the wizard's Preview button instead — see the note above. */
   if (!isFramed && !inline) {
     return null;
   }
 
-  /* The phone's frame is shorter, so the card's first screen and what follows it both fit. */
-  const frameHeight = isFramed ? undefined : INLINE_FRAME_HEIGHT;
+  const openPreview = (): void => {
+    if (previewFailed) {
+      retryPreview();
+    }
+    setIsPreviewOpen(true);
+  };
+
+  /*
+    Mounted only while open, so the scroll lock and the focus trap are set
+    up and torn down by the overlay's own lifecycle rather than by a flag
+    it has to keep watching.
+  */
+  const overlay =
+    isPreviewOpen && FullScreenPreview !== null ? (
+      <FullScreenPreview
+        draft={draft}
+        theme={theme}
+        config={config}
+        motifs={motifs}
+        coverAnimation={coverAnimation}
+        weather={weather}
+        weatherTheme={weatherTheme}
+        triggerRef={triggerRef}
+        onClose={closePreview}
+        onPreviewLanguageChange={onPreviewLanguageChange}
+        isPaid={isPaid}
+      />
+    ) : null;
+
+  /*
+    THE PHONE'S STILL CARD. A picture of the card's first screen, shrunk to
+    about half the screen's height in the card's own proportions: nothing in
+    it can be touched, scrolled or swiped, so a finger on it scrolls the page,
+    and the checklist under it stays in reach. A tap opens the full-screen
+    preview, where the card works as a guest's does.
+  */
+  if (!isFramed) {
+    const scale = stillHeight / STILL_HEIGHT;
+
+    return (
+      <div
+        className="relative mx-auto"
+        style={{ width: Math.round(STILL_WIDTH * scale), height: stillHeight }}
+      >
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={openPreview}
+          disabled={previewOpening}
+          aria-busy={previewOpening}
+          aria-label="Tap to open full preview"
+          data-still-preview=""
+          className="lifafa-card-scope relative block size-full overflow-hidden rounded-[1.25rem] border border-[var(--lifafa-hairline)] shadow-[0_20px_40px_-24px_rgba(30,27,24,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          style={{ backgroundColor: palette.background, touchAction: "pan-y" }}
+        >
+          {/* Drawn at a phone's size and scaled down; inert, so no part of the card takes a touch or the focus. */}
+          <div
+            aria-hidden="true"
+            inert
+            className="pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none"
+            style={{ width: STILL_WIDTH, height: STILL_HEIGHT, transform: `scale(${scale})` }}
+          >
+            <TemplateCard
+              draft={draft}
+              theme={theme}
+              config={config}
+              motifs={motifs}
+              sizing="frame"
+              frameHeight={STILL_HEIGHT}
+              invite={PREVIEW_INVITE}
+              audience="host-preview"
+              weather={weather}
+              weatherTheme={weatherTheme}
+              closingNote="card"
+            />
+          </div>
+          <span className="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[#1e1b18]/70 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[#fffaf0] backdrop-blur-sm">
+            <BusyLabel busy={previewOpening}>Tap to open full preview</BusyLabel>
+          </span>
+        </button>
+        {onAddVenue === undefined ? null : (
+          <button
+            type="button"
+            onClick={onAddVenue}
+            className="absolute bottom-3 left-1/2 min-h-11 -translate-x-1/2 rounded-full border border-dashed border-[#8a7a5c]/60 bg-[#fffaf0]/85 px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[#3d3427] shadow-sm backdrop-blur-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            + Add venue
+          </button>
+        )}
+        {overlay}
+      </div>
+    );
+  }
 
   /* The frame as it is, or with "+ Add venue" over its foot: outside the card, in the editor only. */
   const withVenueHint = (frame: ReactElement): ReactElement =>
@@ -166,7 +271,7 @@ export default function CardPreview({
       {/* lifafa-card-scope: the card is drawn as a guest sees it, not in the page's light theme. */}
       {withVenueHint(
       <div
-        className={`lifafa-card-scope lifafa-no-scrollbar mx-auto ${isFramed ? "h-[620px]" : "h-[480px]"} w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.45)]`}
+        className="lifafa-card-scope lifafa-no-scrollbar mx-auto h-[620px] w-full max-w-[380px] overflow-y-auto overscroll-contain rounded-[2rem] border border-[var(--lifafa-hairline)] shadow-[0_30px_60px_-30px_rgba(30,27,24,0.45)]"
         style={{ backgroundColor: palette.background }}
       >
         {/* Sections size against the 620px frame, which is what scrolls here. */}
@@ -176,7 +281,6 @@ export default function CardPreview({
           config={config}
           motifs={motifs}
           sizing="frame"
-          frameHeight={frameHeight}
           /* No code minted yet — the host sees the buttons, not a live link. */
           invite={PREVIEW_INVITE}
           /*
@@ -200,12 +304,7 @@ export default function CardPreview({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => {
-          if (previewFailed) {
-            retryPreview();
-          }
-          setIsPreviewOpen(true);
-        }}
+        onClick={openPreview}
         disabled={previewOpening}
         aria-busy={previewOpening}
         className="mx-auto min-h-11 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
@@ -213,26 +312,7 @@ export default function CardPreview({
         <BusyLabel busy={previewOpening}>Preview full screen</BusyLabel>
       </button>
 
-      {/*
-        Mounted only while open, so the scroll lock and the focus trap are set
-        up and torn down by the overlay's own lifecycle rather than by a flag
-        it has to keep watching.
-      */}
-      {isPreviewOpen && FullScreenPreview !== null ? (
-        <FullScreenPreview
-          draft={draft}
-          theme={theme}
-          config={config}
-          motifs={motifs}
-          coverAnimation={coverAnimation}
-          weather={weather}
-          weatherTheme={weatherTheme}
-          triggerRef={triggerRef}
-          onClose={closePreview}
-          onPreviewLanguageChange={onPreviewLanguageChange}
-          isPaid={isPaid}
-        />
-      ) : null}
+      {overlay}
     </div>
   );
 }
