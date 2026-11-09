@@ -189,11 +189,12 @@ const PALETTE_CHAMPAGNE = "#86672E";
  * EIGHT OF THESE ARE TRADITIONS TEMPLATES (templates/*, through
  * presetTemplate), and those eight, with Ivory Chapel and Classic, are each a
  * look no other card in the collection shares: no two share a painting and a
- * palette, or a frame and its flowers. Neither a figure nor a face is drawn
- * on any of them, so none is headed by the Shubh Vivah word-mark, which draws
- * Ganesh. Which painting each has, the colour it is printed in and the
- * garland between its sections are the template's (its config.ts), not the
- * preset's.
+ * palette, or a frame and its flowers. The two Hindu ones, Shubh Vivah Ivory
+ * and Maroon Royal, open with Shri Ganesh, as most Hindu wedding cards do: the
+ * Shubh Vivah word-mark, which draws him above the words. No other figure or
+ * face is drawn on any of them, and Ganesh on none but those two. Which
+ * painting each has, the colour it is printed in and the garland between its
+ * sections are the template's (its config.ts), not the preset's.
  *
  * EVERY VIVAH PRESET SETS EVERYTHING IT IS ABOUT: the palette and accent, the
  * type, the length, the border, the motifs' motion and amount, the
@@ -367,11 +368,12 @@ const PRESETS: readonly Preset[] = [
       petals: "both",
       petalFlower: "marigold",
       coverAnimation: "fold-unfold",
+      /* Om rather than Ganesh above the names: Shubh Vivah already draws Ganesh. */
       ornaments: ["marigold", "om", "kalash"],
       /* The marigold and mogra garland, under the marigold garland and among marigold petals. */
       namesFrame: "varmala",
-      /* Sadar Nimantran and its lotus: no figure on the word-mark. */
-      calligraphy: "sadarNimantran",
+      /* Shubh Vivah with Shri Ganesh above it: the opening a Hindu wedding card is expected to have. */
+      calligraphy: "shubhVivah",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
     },
@@ -463,8 +465,8 @@ const PRESETS: readonly Preset[] = [
       ornaments: ["toran", "swastik", "diya", "mandala"],
       /* A carved gold arch on maroon: the palace doorway the look is named for. */
       namesFrame: "jharokha",
-      /* Vivahotsav and its kalash: no figure on the word-mark. */
-      calligraphy: "vivahotsav",
+      /* Shubh Vivah with Shri Ganesh above it: the opening a Hindu wedding card is expected to have. */
+      calligraphy: "shubhVivah",
       greetingIfNone: "ganeshaya",
       blessingIfNone: "vakratunda",
     },
