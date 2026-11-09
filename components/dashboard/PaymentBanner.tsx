@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import PublishButton from "@/components/dashboard/PublishButton";
+import { liveOffer } from "@/lib/coupons/offer";
 import { isRazorpayTestMode, razorpayKeyId } from "@/lib/razorpay/keys";
 import { formatPrice } from "@/lib/pricing";
 import { PAYMENT_UNDER_REVIEW_MESSAGE } from "@/lib/paymentReview";
@@ -21,7 +22,7 @@ import { PAYMENT_UNDER_REVIEW_MESSAGE } from "@/lib/paymentReview";
  * key are all settled on the server; only the button needs state, and only the
  * button crosses. See components/dashboard/PublishButton.tsx.
  */
-export default function PaymentBanner({
+export default async function PaymentBanner({
   isPaid,
   eventId,
   pricePaise,
@@ -46,7 +47,7 @@ export default function PaymentBanner({
   isPaid: boolean;
   /** Which invitation this publishes. The server action re-checks ownership. */
   eventId: string;
-}): ReactElement | null {
+}): Promise<ReactElement | null> {
   if (isPaid) {
     return null;
   }
@@ -69,6 +70,8 @@ export default function PaymentBanner({
   }
 
   const configured = razorpayKeyId() !== null;
+  /* The offer over the coupon field, decided now by the server (lib/coupons/offer.ts). */
+  const offer = configured ? await liveOffer() : null;
 
   return (
     <section
@@ -91,6 +94,7 @@ export default function PaymentBanner({
               eventId={eventId}
               pricePaise={pricePaise}
               templateId={templateId}
+              offer={offer}
             />
           ) : (
             /*

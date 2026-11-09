@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactElement } from "react";
 import { previewCoupon } from "@/lib/db/payments";
+import type { OfferBanner } from "@/lib/offers";
 import { formatInr } from "@/lib/pricing";
 
 /**
@@ -45,25 +46,28 @@ export default function CouponField({
   onApplied,
   /** True while the checkout is opening, so the field cannot be edited mid-flight. */
   locked,
+  offer = null,
 }: {
   eventId: string;
   applied: AppliedCoupon | null;
   onApplied: (coupon: AppliedCoupon | null) => void;
   locked: boolean;
+  /**
+   * The offer to show over the field, or null. Only ever handed down by the
+   * server while the offer is on and its code works (lib/coupons/offer.ts);
+   * this component decides nothing about dates.
+   */
+  offer?: OfferBanner | null;
 }): ReactElement {
   const [code, setCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* The offer's Apply was pressed: the banner gives way to the field it filled. */
+  const [offerTaken, setOfferTaken] = useState(false);
 
-  const handleApply = async (event: FormEvent): Promise<void> => {
-    /*
-      A nested <form> is impossible and this sits inside the banner, so the
-      submit is on this element and prevented here. Keeping it a form at all is
-      what makes Enter apply the code, which is what a host will press.
-    */
-    event.preventDefault();
-
-    if (checking || code.trim().length === 0) {
+  /** Asks the server what a code is worth here, and settles on it or says why not. */
+  const apply = async (value: string): Promise<void> => {
+    if (checking || value.trim().length === 0) {
       return;
     }
 
@@ -71,7 +75,7 @@ export default function CouponField({
     setError(null);
 
     try {
-      const result = await previewCoupon(eventId, code);
+      const result = await previewCoupon(eventId, value);
 
       if (!result.ok) {
         onApplied(null);
@@ -101,6 +105,28 @@ export default function CouponField({
     }
   };
 
+  const handleApply = (event: FormEvent): void => {
+    /*
+      A nested <form> is impossible and this sits inside the banner, so the
+      submit is on this element and prevented here. Keeping it a form at all is
+      what makes Enter apply the code, which is what a host will press.
+    */
+    event.preventDefault();
+    void apply(code);
+  };
+
+  /*
+    The offer's Apply: the code goes into the field and is applied in the same
+    tap, the way a host typing it and pressing Apply would. The banner goes at
+    once, in the tap itself, so the field it filled takes its place without
+    anything moving later; the price follows as it does for any code.
+  */
+  const handleOffer = (offered: OfferBanner): void => {
+    setOfferTaken(true);
+    setCode(offered.code);
+    void apply(offered.code);
+  };
+
   const handleChange = (value: string): void => {
     setCode(value);
     setError(null);
@@ -117,11 +143,24 @@ export default function CouponField({
   const handleRemove = (): void => {
     setCode("");
     setError(null);
+    setOfferTaken(false);
     onApplied(null);
   };
 
+  /* Not once a code is applied, nor once its own Apply has been pressed. */
+  const showOffer = offer !== null && applied === null && !offerTaken;
+
   return (
-    <form onSubmit={(event) => void handleApply(event)} className="w-full">
+    <form onSubmit={handleApply} className="w-full">
+      {showOffer ? (
+        <OfferNote
+          offer={offer}
+          fieldId={`coupon-${eventId}`}
+          disabled={checking || locked}
+          onApply={() => handleOffer(offer)}
+        />
+      ) : null}
+
       <label
         htmlFor={`coupon-${eventId}`}
         className="block text-xs font-medium text-[var(--lifafa-muted)]"
@@ -184,6 +223,15 @@ export default function CouponField({
             ? `${applied.code} applied. Your invitation is free.`
             : `${applied.code} applied: ${paiseToInr(applied.discountPaise)} off. You pay ${paiseToInr(applied.finalPaise)}.`}
         </p>
+      ) : offerTaken && checking ? (
+        /*
+          The line the answer will be written on, put there in the offer's tap,
+          so the answer changes its words and not the height of the step: the
+          price and the button under it do not move when the server replies.
+        */
+        <p role="status" className="mt-1.5 text-xs text-[var(--lifafa-muted)]">
+          Applying {code}…
+        </p>
       ) : null}
 
       {error !== null ? (
@@ -196,5 +244,66 @@ export default function CouponField({
         </p>
       ) : null}
     </form>
+  );
+}
+
+/**
+ * The offer over the coupon field: its title, its line with the code picked
+ * out, and an Apply that puts the code in the field and applies it.
+ *
+ * In the field's own palette and sizes (the card's hairline, the raised ink
+ * of the input, the marigold of an applied code), so it reads as part of the
+ * payment step and not as an advert over it. Drawn in the server's HTML when
+ * the offer is on, so the page does not move when it loads.
+ */
+function OfferNote({
+  offer,
+  fieldId,
+  disabled,
+  onApply,
+}: {
+  offer: OfferBanner;
+  /** The coupon input it fills, which a screen reader is pointed to. */
+  fieldId: string;
+  disabled: boolean;
+  onApply: () => void;
+}): ReactElement {
+  const titleId = `${fieldId}-offer`;
+  /* The code in bold where the line says it; the line itself is the offer's. */
+  const [before, after] = offer.text.includes(offer.code)
+    ? offer.text.split(offer.code, 2)
+    : [offer.text, null];
+
+  return (
+    <div
+      role="group"
+      aria-labelledby={titleId}
+      className="mb-3 flex items-center gap-3 rounded-xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-ink-raised)] px-3 py-2.5"
+    >
+      <div className="min-w-0 flex-1">
+        <p id={titleId} className="text-xs font-semibold text-[var(--lifafa-marigold)]">
+          {offer.title}
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-[var(--lifafa-cream)]">
+          {before}
+          {after === null ? null : (
+            <>
+              <span className="font-semibold tracking-wide">{offer.code}</span>
+              {after}
+            </>
+          )}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onApply}
+        disabled={disabled}
+        aria-controls={fieldId}
+        aria-label={`Apply ${offer.code}`}
+        className="min-h-10 shrink-0 rounded-full border border-[var(--lifafa-marigold)] px-4 text-xs font-semibold text-[var(--lifafa-marigold)] transition-colors duration-150 hover:bg-[var(--lifafa-marigold)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Apply
+      </button>
+    </div>
   );
 }

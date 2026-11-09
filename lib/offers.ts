@@ -23,12 +23,20 @@ export interface Offer {
   code: string;
   /** The moment it ends, with its offset: ISO 8601. */
   endsAt: string;
+  /** The banner's two lines on the payment step (components/dashboard/CouponField.tsx). */
+  title: string;
+  text: string;
 }
 
 export const WEDDING10_OFFER: Offer = {
   code: "WEDDING10",
   endsAt: "2026-11-30T23:59:59+05:30",
+  title: "Limited time offer",
+  text: "Get 10% off with code WEDDING10. Valid till 30 November.",
 };
+
+/** What the payment step is handed: the banner's words and the code its button applies. */
+export type OfferBanner = Pick<Offer, "code" | "title" | "text">;
 
 /** Whether the offer is still on at this moment. Asked of the server's clock, never the browser's. */
 export function offerOpen(offer: Offer, now: Date): boolean {

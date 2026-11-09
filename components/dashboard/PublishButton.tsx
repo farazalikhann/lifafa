@@ -8,6 +8,7 @@ import CouponField, {
   type AppliedCoupon,
 } from "@/components/dashboard/CouponField";
 import { initiateCheckout } from "@/lib/metaPixel";
+import type { OfferBanner } from "@/lib/offers";
 import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 import HelpLine from "@/components/legal/HelpLine";
@@ -122,12 +123,15 @@ export default function PublishButton({
   eventId,
   pricePaise,
   templateId,
+  offer = null,
 }: {
   eventId: string;
   /** This invitation's list price, for the label. The charge is the server's to work out. */
   pricePaise: number;
   /** The invitation's template, for the ads' InitiateCheckout. */
   templateId: string;
+  /** The offer over the coupon field, when the server says one is on (lib/coupons/offer.ts). */
+  offer?: OfferBanner | null;
 }): ReactElement {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -342,6 +346,7 @@ export default function PublishButton({
             applied={coupon}
             onApplied={setCoupon}
             locked={busy}
+            offer={offer}
           />
         </div>
       )}
