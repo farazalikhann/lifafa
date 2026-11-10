@@ -8,7 +8,7 @@ import {
   type MouseEvent,
   type ReactElement,
 } from "react";
-import { chromeIntentUrl, inAppName, type InAppBrowser } from "@/lib/inAppBrowser";
+import { chromeIntentUrl, inAppName, safariUrl, type InAppBrowser } from "@/lib/inAppBrowser";
 import { PRIMARY_BUTTON } from "@/components/landing/styles";
 
 /**
@@ -24,7 +24,12 @@ import { PRIMARY_BUTTON } from "@/components/landing/styles";
  * ANDROID gets one button, an intent link that opens the link in Chrome.
  * IPHONE gets "Copy link". Without a card to carry, the ⋯ menu steps are drawn
  * as well, since "Open in external browser" opens this very page; with one,
- * they are not, because that page is not the link that carries the card.
+ * they are not, because that page is not the link that carries the card, and
+ * "Open in Safari" (x-safari-https://, as the first try) comes before "Copy
+ * link instead".
+ *
+ * A CARD THAT COULD NOT BE SAVED is never sent on without it: `getLink`
+ * rejects, the prompt says so and stays, and the next tap tries again.
  *
  * THE LINK MAY NOT BE READY. `getLink` is asked on the tap, and may still be
  * saving the card; Android waits for it, iPhone copies it as it arrives.
@@ -149,6 +154,7 @@ export default function OpenInChromePrompt({
   const appName = inAppName(app);
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const [busy, setBusy] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   /** What the intent link opens until the tap asks for the real one. */
   const [here, setHere] = useState("");
@@ -205,16 +211,54 @@ export default function OpenInChromePrompt({
 
     onTap?.();
     setBusy(true);
-    const link = await getLink();
-    setBusy(false);
-    window.location.href = chromeIntentUrl(link);
+    setSaveFailed(false);
+
+    try {
+      const link = await getLink();
+      window.location.href = chromeIntentUrl(link);
+    } catch {
+      /* The card could not be saved for Chrome: said, and the prompt stays to try again. */
+      setSaveFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* iPhone, with a card: the link, then Safari, by x-safari-https:// as the first try was. */
+  const handleSafari = async (): Promise<void> => {
+    if (busy) {
+      return;
+    }
+
+    onTap?.();
+    setBusy(true);
+    setSaveFailed(false);
+
+    try {
+      const link = await getLink();
+      window.location.href = safariUrl(link);
+    } catch {
+      setSaveFailed(true);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleCopy = async (): Promise<void> => {
     onTap?.();
     setBusy(true);
+    setSaveFailed(false);
 
     const link = getLink();
+    /* A link that never comes is a card that could not be saved: said below, not copied. */
+    const saved = await link.then(() => true, () => false);
+
+    if (!saved) {
+      setBusy(false);
+      setSaveFailed(true);
+      return;
+    }
+
     let ok = false;
 
     /*
@@ -279,7 +323,7 @@ export default function OpenInChromePrompt({
               ? "Continue in Chrome to sign in, and your card comes with you."
               : "Continue in Chrome to sign in with one tap."
             : withCard
-              ? "Copy the link and open it in Safari to sign in, and your card comes with you."
+              ? "Continue in Safari to sign in, and your card comes with you."
               : "Open this page in Safari to sign in with one tap."}
         </p>
 
@@ -292,6 +336,29 @@ export default function OpenInChromePrompt({
           >
             {busy ? "Opening Chrome…" : "Open in Chrome"}
           </a>
+        ) : withCard ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void handleSafari()}
+              disabled={busy}
+              aria-busy={busy}
+              className={`${PRIMARY_BUTTON} mt-5 w-full disabled:cursor-wait`}
+            >
+              {busy ? "Opening Safari…" : "Open in Safari"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              disabled={busy}
+              className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--paper-hairline)] px-5 text-[0.9375rem] font-semibold text-[var(--paper-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)] disabled:cursor-wait"
+            >
+              {copied === "done" ? "Link copied" : "Copy link instead"}
+            </button>
+            <p role="status" className="mt-2 min-h-5 text-center text-sm text-[var(--paper-muted)]">
+              {copied === "done" ? "Paste it into Safari’s address bar." : copied === "failed" ? "Could not copy. Please try again." : ""}
+            </p>
+          </>
         ) : (
           <>
             {withCard ? null : (
@@ -331,6 +398,12 @@ export default function OpenInChromePrompt({
             </p>
           </>
         )}
+
+        {saveFailed ? (
+          <p role="alert" className="mt-3 text-center text-sm leading-relaxed text-[var(--paper-ink)]">
+            {`We could not save your card for ${platform === "android" ? "Chrome" : "Safari"}. Check your connection and try again.`}
+          </p>
+        ) : null}
 
         <div className={`${platform === "android" ? "mt-2" : ""} flex justify-center`}>
           <button

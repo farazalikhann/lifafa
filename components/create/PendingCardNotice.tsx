@@ -17,7 +17,17 @@ export type PendingCardProblem =
   /** There, but it would not open. */
   | { kind: "damaged" }
   /** The browser would not let the page read its storage at all. */
-  | { kind: "blocked" };
+  | { kind: "blocked" }
+  /**
+   * A card handed over from Instagram's or Facebook's browser that is no
+   * longer on the server: past its day, or already saved to an account.
+   */
+  | { kind: "handoff-gone" }
+  /**
+   * A handed-over card that is safe on the server but could not be opened
+   * just now (the server did not answer). `retryHref` brings it back.
+   */
+  | { kind: "handoff-unreachable"; retryHref: string };
 
 /** An address as a host would type it: no scheme, no trailing slash. */
 export function displayHost(origin: string): string {
@@ -65,6 +75,16 @@ function messageFor(problem: PendingCardProblem, here: string): Message {
         title: "Your browser would not let us bring your card back.",
         body: "It is set to block the storage Lifafa uses to hold your card while you sign in. Allow this site to store data in your browser's settings and reload this page, or start again below.",
       };
+    case "handoff-gone":
+      return {
+        title: "We could not find the card you started.",
+        body: "We keep a card for one day while you sign in, and this one is no longer there. If you already saved it, it is in your invitations. Otherwise, please start again below.",
+      };
+    case "handoff-unreachable":
+      return {
+        title: "Your card is safe, but it did not open.",
+        body: "We could not reach it just now. Check your connection and try again.",
+      };
   }
 }
 
@@ -108,6 +128,24 @@ export default function PendingCardNotice({
             className="mt-1 inline-flex min-h-11 items-center rounded font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
           >
             Open my card on {displayHost(problem.origin)}
+          </a>
+        ) : null}
+
+        {problem.kind === "handoff-gone" ? (
+          <a
+            href="/dashboard"
+            className="mt-1 inline-flex min-h-11 items-center rounded font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            See my invitations
+          </a>
+        ) : null}
+
+        {problem.kind === "handoff-unreachable" ? (
+          <a
+            href={problem.retryHref}
+            className="mt-1 inline-flex min-h-11 items-center rounded font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            Try again
           </a>
         ) : null}
       </div>

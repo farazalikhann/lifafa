@@ -484,8 +484,31 @@ function WizardArrival({
 
       /* Not found, past its day, or the server would not answer: this browser's own copies. */
       adoptions.delete(handoff);
+      const retryHref = `${here.pathname}${here.search}`;
       here.searchParams.delete(HANDOFF_PARAM);
       const local = localStart(templateId, here.search);
+
+      /*
+        Nothing of the card in this browser either, which is the usual case:
+        it was made in Instagram's or Facebook's browser. Said plainly, on the
+        first step, instead of an empty gallery that says nothing. A card that
+        is still on the server but did not open gets a way to try again.
+      */
+      if (local.arrival.kind === "fresh") {
+        setArrived({
+          ...local,
+          arrival: {
+            kind: "lost",
+            problem:
+              result.reason === "missing"
+                ? { kind: "handoff-gone" }
+                : { kind: "handoff-unreachable", retryHref },
+          },
+          address: NEW_CARD_HREF,
+        });
+        return;
+      }
+
       setArrived({ ...local, address: local.address ?? `${here.pathname}${here.search}` });
     });
 

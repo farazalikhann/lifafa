@@ -56,7 +56,12 @@ const LOCK_DIR = "locks";
 /** A lock older than this was left by a request that died; it is taken over. */
 const LOCK_STALE_MS = 60 * 1000;
 
-const SAVES_PER_WINDOW = 10;
+/*
+  Per IP. Generous on purpose: Indian mobile networks put many phones behind
+  one address, and a visitor refused here cannot take their card to Chrome.
+  The size cap above is what keeps a single save small.
+*/
+const SAVES_PER_WINDOW = 40;
 const WINDOW_MS = 10 * 60 * 1000;
 /** Best effort, per instance, like the Help bot's limiter (lib/help/rateLimit.ts). */
 const recentSaves = new Map<string, number[]>();

@@ -31,14 +31,23 @@ import type { PendingCard } from "@/lib/pendingCard";
  *
  * Both are tried straight from the tap, so the web view still counts it as
  * one: the save is a single short request, well inside the few seconds a tap
- * lasts for. When that does not work — the save takes over 2 seconds or
+ * lasts for. When that does not work — the save takes over 4 seconds or
  * fails, or the page is still on screen a moment after (2 seconds on Android,
  * 1.5 on iPhone) — the small prompt opens with a button to do it by hand.
+ *
+ * NEVER WITHOUT THE CARD. The prompt's button opens the browser only with the
+ * card's id: a save that failed is tried again on the tap, and if it fails
+ * again the prompt says so and stays, rather than opening a sign in that
+ * would bring back nothing (the card is only in this app's browser).
  */
 
-/** How long the tap waits for the card to be saved before showing the prompt instead. */
-const QUICK_SAVE_MS = 2000;
-/** How long the prompt's button waits for a slow save before going without the card. */
+/**
+ * How long the tap waits for the card to be saved before showing the prompt
+ * instead: inside the 5 seconds a tap still counts as one for opening another
+ * app, and long enough for a slow mobile line.
+ */
+const QUICK_SAVE_MS = 4000;
+/** How long one save may take before it counts as failed. */
 const SLOW_SAVE_MS = 8000;
 /** How long the page may stay on screen after opening the browser before it counts as failed. */
 const LEAVE_WAIT_MS = { android: 2000, ios: 1500 } as const;
@@ -101,7 +110,8 @@ async function leftWithin(ms: number): Promise<boolean> {
 
 interface PromptState {
   browser: InAppBrowser;
-  link: Promise<string>;
+  /** The link with the card's id; rejects when the card could not be saved. */
+  getLink: () => Promise<string>;
 }
 
 export function useInAppHandoff(): {
@@ -139,7 +149,22 @@ export function useInAppHandoff(): {
 
       try {
         const saved = saveCard(card);
-        const link = saved.then((id) => loginLink(redirectTo, id));
+        /* The save already under way, or, when it failed, one more on the prompt's tap. */
+        let carried = saved;
+        const getLink = async (): Promise<string> => {
+          let id = await carried;
+
+          if (id === null) {
+            carried = saveCard(card);
+            id = await carried;
+          }
+
+          if (id === null) {
+            throw new Error("the card could not be saved for the other browser");
+          }
+
+          return loginLink(redirectTo, id);
+        };
         const quick = await Promise.race([saved, wait(QUICK_SAVE_MS).then(() => null)]);
 
         if (quick !== null) {
@@ -152,7 +177,7 @@ export function useInAppHandoff(): {
           }
         }
 
-        setState({ browser, link });
+        setState({ browser, getLink });
         return true;
       } finally {
         busy.current = false;
@@ -166,7 +191,7 @@ export function useInAppHandoff(): {
     state === null ? null : (
       <OpenInChromePrompt
         browser={state.browser}
-        getLink={() => state.link}
+        getLink={state.getLink}
         withCard
         onStay={() => setState(null)}
       />
