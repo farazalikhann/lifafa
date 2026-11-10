@@ -12,7 +12,8 @@ export type FeatureIconName =
   | "pass"
   | "languages"
   | "traditions"
-  | "edit";
+  | "edit"
+  | "venue";
 
 /** The one gold touch in an icon. */
 function Gold({ children }: { children: ReactNode }): ReactElement {
@@ -93,6 +94,16 @@ const ICONS: Record<FeatureIconName, ReactElement> = {
       <Gold>
         <path d="M21.25 17.5a3.5 3.5 0 1 1-3.5-3.5c.98 0 1.92.39 2.62 1.07l.88.49" />
         <path d="M21.25 13.6v1.95H19.3" />
+      </Gold>
+    </>
+  ),
+
+  /* The venue section's pin (components/card/sections/VenueSection.tsx), with a gold centre. */
+  venue: (
+    <>
+      <path d="M12 21.5s-6.5-6.9-6.5-11.5a6.5 6.5 0 0 1 13 0c0 4.6-6.5 11.5-6.5 11.5Z" />
+      <Gold>
+        <circle cx="12" cy="10" r="2.25" />
       </Gold>
     </>
   ),

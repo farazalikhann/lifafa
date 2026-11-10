@@ -712,11 +712,11 @@ function revealField(id: string): void {
   }
 }
 
-/** The quick start's heading and line, and the card's, over the details step of a new card. */
-const QUICK_START_TITLE = "Start with the basics";
-const QUICK_START_LINE =
-  "Just your names and the wedding date. You can add the venue, functions and family details next, or anytime later.";
+/** The quick start's heading, and the card's, over the details step of a new card. */
+const QUICK_START_TITLE = "Let's see your card in 10 seconds";
 const CARD_TITLE = "Your card";
+/** Over the card the moment "See my card" has made it. */
+const CARD_READY = "Your card is ready! Now add your venue and functions to complete it.";
 
 /** Said over "Save and continue" when the card has no venue, or no start time. */
 const NO_VENUE_REMINDER =
@@ -1135,6 +1135,12 @@ function WizardSteps({
     "See my card" draws it at once. Not reported: nothing waits on it yet.
   */
   const quickStart = !editing && step === "details" && detailsView === "quick";
+  /*
+    The quick start on screen: "See my card" is its one main action, so the
+    bar's Next and Preview wait (Back stays). Not while its code is still on
+    the way, so a step that never arrives still has its way on.
+  */
+  const quickStartShown = quickStart && editor !== null;
 
   useEffect(() => {
     if (quickStart && !isFramed && editor !== null && roomToPrefetch()) {
@@ -1146,6 +1152,24 @@ function WizardSteps({
   const showCard = (): void => {
     setDetailsView("card");
     window.scrollTo({ top: 0 });
+  };
+
+  /*
+    "Your card is ready!" over the card, from "See my card" until the host
+    opens a part of the form or leaves the step: the moment after, not a
+    standing notice.
+  */
+  const [justMade, setJustMade] = useState(false);
+
+  useEffect(() => {
+    if (step !== "details" || detailsView !== "card") {
+      setJustMade(false);
+    }
+  }, [step, detailsView]);
+
+  const seeMyCard = (): void => {
+    setJustMade(true);
+    showCard();
   };
 
   /*
@@ -1422,9 +1446,6 @@ function WizardSteps({
                       : WIZARD_STEPS[index].title}
             </h1>
             {showIntro ? <p className={TRUST_TEXT}>{TRUST_LINE}</p> : null}
-            {step === "details" && detailsView === "quick" ? (
-              <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">{QUICK_START_LINE}</p>
-            ) : null}
           </div>
 
           {step === "template" ? (
@@ -1449,12 +1470,30 @@ function WizardSteps({
                     occasionId={occasionId}
                     language={language}
                   />
-                  <button type="button" onClick={showCard} className={`${PRIMARY_BUTTON} self-start`}>
-                    See my card
-                  </button>
+                  {/* The one main action here: the bar's Next and Preview wait until the card is made. */}
+                  <div className="flex flex-col gap-2">
+                    <button type="button" onClick={seeMyCard} className={`${PRIMARY_BUTTON} w-full`}>
+                      See my card
+                    </button>
+                    <p className="text-center text-xs text-[var(--lifafa-muted)]">You can add the rest next</p>
+                  </div>
+                  <editor.QuickStartNext />
                 </div>
               ) : detailsView === "card" ? (
                 <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+                  {justMade ? (
+                    <p
+                      role="status"
+                      data-card-ready=""
+                      className="flex items-start gap-2.5 rounded-2xl border border-[var(--paper-emerald)]/25 bg-[var(--paper-emerald)]/10 px-4 py-2.5 text-[0.8125rem] leading-snug font-medium text-[var(--paper-emerald)]"
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 20 20" className="mt-px size-[18px] shrink-0">
+                        <circle cx="10" cy="10" r="10" fill="currentColor" />
+                        <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#fffaf0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {CARD_READY}
+                    </p>
+                  ) : null}
                   {inlinePreview ? (
                     CardPreview === null ? (
                       /* The still card's size (CardPreview.tsx), so nothing moves when it arrives. */
@@ -1786,7 +1825,7 @@ function WizardSteps({
                 Next
               </button>
             )
-          ) : isLast ? null : templateChosen ? (
+          ) : isLast || quickStartShown ? null : templateChosen ? (
             <button
               type="button"
               onClick={(event) => openPreview(event.currentTarget)}
@@ -1830,7 +1869,7 @@ function WizardSteps({
                       ? "Saving…"
                       : "Save and continue"}
               </button>
-            ) : (
+            ) : quickStartShown ? null : (
               <button
                 type="button"
                 onClick={() => goTo(WIZARD_STEPS[index + 1].id)}

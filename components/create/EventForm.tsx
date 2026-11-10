@@ -346,6 +346,14 @@ const ALL_PARTS: ReadonlySet<EventFormPart> = new Set([
   "message",
 ]);
 
+/*
+  The quick start's fields: the same, with the example said as one ("e.g.
+  Aarav") and drawn lighter, so it is not mistaken for a name already typed.
+  Important, because the paper theme sets the placeholder's opacity itself
+  (app/globals.css, .lifafa-paper ::placeholder).
+*/
+const BASICS_INPUT_CLASS = `${INPUT_CLASS} placeholder:opacity-50!`;
+
 /**
  * The quick start of a new card: the two names and the date, nothing else.
  * The joining word keeps the card's own, and every other field waits for the
@@ -376,10 +384,10 @@ export function EventBasics({
               type="text"
               value={draft.partyOneName}
               onChange={(event) => onChange("partyOneName", event.target.value)}
-              placeholder={examples.partyOneName}
+              placeholder={`e.g. ${examples.partyOneName}`}
               autoComplete="off"
               enterKeyHint="next"
-              className={INPUT_CLASS}
+              className={BASICS_INPUT_CLASS}
             />
           </Field>
           <Field id="partyTwoName" label="Second name">
@@ -388,10 +396,10 @@ export function EventBasics({
               type="text"
               value={draft.partyTwoName}
               onChange={(event) => onChange("partyTwoName", event.target.value)}
-              placeholder={examples.partyTwoName}
+              placeholder={`e.g. ${examples.partyTwoName}`}
               autoComplete="off"
               enterKeyHint="next"
-              className={INPUT_CLASS}
+              className={BASICS_INPUT_CLASS}
             />
           </Field>
         </div>
@@ -402,9 +410,9 @@ export function EventBasics({
             type="text"
             value={draft.hostNames}
             onChange={(event) => onChange("hostNames", event.target.value)}
-            placeholder={examples.partyOneName}
+            placeholder={`e.g. ${examples.partyOneName}`}
             autoComplete="off"
-            className={INPUT_CLASS}
+            className={BASICS_INPUT_CLASS}
           />
         </Field>
       )}
@@ -415,7 +423,7 @@ export function EventBasics({
           type="date"
           value={draft.eventDate}
           onChange={(event) => onChange("eventDate", event.target.value)}
-          className={INPUT_CLASS}
+          className={BASICS_INPUT_CLASS}
         />
       </Field>
     </div>
