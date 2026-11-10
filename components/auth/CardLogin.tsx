@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import SavedCardPreview, { type LoginCard, type SavedCardStatus } from "@/components/auth/SavedCardPreview";
 import SignInForm from "@/components/auth/SignInForm";
 import WhatsAppLink from "@/components/legal/WhatsAppLink";
+import { clarityEvent } from "@/lib/clarity";
 
 /**
  * The sign-in page for a visitor with a card waiting (app/login/page.tsx):
@@ -23,7 +24,15 @@ export default function CardLogin({
 }): ReactElement {
   return (
     <div className="flex flex-col">
-      <SavedCardPreview status={status} card={card} />
+      <SavedCardPreview
+        status={status}
+        card={card}
+        onShown={(shown) => {
+          if (shown === "card") {
+            clarityEvent("login_view_with_card");
+          }
+        }}
+      />
 
       <div className="mt-6">
         <SignInForm redirectTo={redirectTo} initialError={initialError} withEmail />

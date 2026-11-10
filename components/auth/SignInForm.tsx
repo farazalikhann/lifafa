@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent, type ReactElement } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isOnline } from "@/lib/loadNotice";
+import { clarityEvent } from "@/lib/clarity";
 
 /**
  * Sign in with Google, and, on the sign-in page for a saved card, with an
@@ -85,8 +86,6 @@ export default function SignInForm({
   redirectTo,
   initialError,
   withEmail = false,
-  onGoogle,
-  onEmail,
 }: {
   /** Where to land after signing in. A path, already validated by the caller. */
   redirectTo: string;
@@ -98,9 +97,6 @@ export default function SignInForm({
    * (app/login/page.tsx); the plain page has Google alone.
    */
   withEmail?: boolean;
-  /** Told when Google is pressed, and when the email option is opened. */
-  onGoogle?: () => void;
-  onEmail?: () => void;
 }): ReactElement {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -148,7 +144,7 @@ export default function SignInForm({
       return;
     }
 
-    onGoogle?.();
+    clarityEvent("login_google_click");
     setIsRedirecting(true);
     setError(null);
     setNotice(null);
@@ -326,7 +322,7 @@ export default function SignInForm({
           <button
             type="button"
             onClick={() => {
-              onEmail?.();
+              clarityEvent("login_email_click");
               setEmailOpen(true);
             }}
             className="mt-3 flex min-h-12 w-full items-center justify-center gap-2.5 rounded-full border border-[var(--lifafa-hairline)] px-5 text-base font-semibold text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"

@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import Script from "next/script";
 import {
   clarityAllowedOn,
+  clarityEvent,
   clarityHostAllowed,
   claritySnippet,
   guardClarityNavigation,
+  SIGNED_IN_COOKIE,
 } from "@/lib/clarity";
 
 /**
@@ -31,6 +33,17 @@ export default function Clarity(): ReactElement | null {
       setInstalledOn(pathname);
     }
   }, [pathname, installed]);
+
+  /*
+    Back from a sign in: the callback marked it (app/auth/callback/route.ts).
+    Sent from the first page Clarity runs on, then the mark is cleared.
+  */
+  useEffect(() => {
+    if (installed && document.cookie.split("; ").includes(`${SIGNED_IN_COOKIE}=1`)) {
+      document.cookie = `${SIGNED_IN_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+      clarityEvent("login_success");
+    }
+  }, [installed, pathname]);
 
   if (!installed) {
     return null;

@@ -6,6 +6,7 @@ import {
 } from "@supabase/supabase-js";
 import { metaPixelEnabled, NEW_ACCOUNT_COOKIE } from "@/lib/metaPixel";
 import { createClient } from "@/lib/supabase/server";
+import { SIGNED_IN_COOKIE } from "@/lib/clarity";
 
 /**
  * Where a return from Google, or an email sign in link, lands.
@@ -101,6 +102,14 @@ function exits(origin: string, destination: string) {
     */
     succeed(newAccount: boolean): NextResponse {
       const response = NextResponse.redirect(`${origin}${destination}`);
+
+      /* For Clarity's login_success, read and cleared on the next page it runs on (lib/clarity.ts). */
+      response.cookies.set(SIGNED_IN_COOKIE, "1", {
+        maxAge: 600,
+        path: "/",
+        sameSite: "lax",
+        secure: origin.startsWith("https:"),
+      });
 
       if (newAccount && metaPixelEnabled()) {
         response.cookies.set(NEW_ACCOUNT_COOKIE, "1", {

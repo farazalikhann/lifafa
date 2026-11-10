@@ -200,3 +200,57 @@ export function guardClarityNavigation(): void {
     { capture: true },
   );
 }
+
+/**
+ * The sign-in funnel, as Clarity custom events: to see where hosts with a
+ * card leave between "Save and continue" and their account. Clarity only,
+ * never the Meta pixel.
+ *
+ * - login_view_with_card: the sign-in page showed the visitor's own card.
+ * - login_google_click / login_email_click: a sign-in way was chosen.
+ * - login_success: back from a sign in (marked by app/auth/callback/route.ts
+ *   in SIGNED_IN_COOKIE, read by components/analytics/Clarity.tsx).
+ * - handoff_open_failed: the card did not reach Chrome or Safari by itself
+ *   from Instagram's or Facebook's browser, or could not be saved for it.
+ */
+export type ClarityEventName =
+  | "login_view_with_card"
+  | "login_google_click"
+  | "login_email_click"
+  | "login_success"
+  | "handoff_open_failed";
+
+/** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
+export const SIGNED_IN_COOKIE = "lifafa_signed_in";
+
+/**
+ * Sends one event, where Clarity runs. Clarity's tag may not have loaded yet
+ * (on /create it waits for the page), so its usual queue is put in place
+ * first and the event waits in it; the tag keeps that queue when it arrives.
+ * Off the pages and addresses Clarity is allowed on, nothing is sent.
+ */
+export function clarityEvent(name: ClarityEventName): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (window.clarity === undefined) {
+    if (!clarityEnabled() || !clarityHostAllowed() || !clarityAllowedOn(window.location.pathname)) {
+      return;
+    }
+
+    const queue: ClarityFn = Object.assign(
+      (...args: unknown[]): void => {
+        (queue.q ??= []).push(args);
+      },
+      { q: [] as unknown[] },
+    );
+    window.clarity = queue;
+  }
+
+  try {
+    window.clarity("event", name);
+  } catch {
+    /* Measuring must never break the page. */
+  }
+}

@@ -12,6 +12,7 @@ import {
   type InAppBrowser,
   type InAppPlatform,
 } from "@/lib/inAppBrowser";
+import { clarityEvent } from "@/lib/clarity";
 import { openInBrowserClick } from "@/lib/metaPixel";
 import type { PendingCard } from "@/lib/pendingCard";
 
@@ -177,6 +178,8 @@ export function useInAppHandoff(): {
           }
         }
 
+        /* Not in Chrome or Safari by itself: the prompt asks for a tap (lib/clarity.ts). */
+        clarityEvent("handoff_open_failed");
         setState({ browser, getLink });
         return true;
       } finally {

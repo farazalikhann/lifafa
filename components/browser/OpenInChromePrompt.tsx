@@ -10,6 +10,7 @@ import {
 } from "react";
 import { chromeIntentUrl, inAppName, safariUrl, type InAppBrowser } from "@/lib/inAppBrowser";
 import { PRIMARY_BUTTON } from "@/components/landing/styles";
+import { clarityEvent } from "@/lib/clarity";
 
 /**
  * "Open in Chrome", the small prompt for a visitor in Instagram's or
@@ -218,6 +219,7 @@ export default function OpenInChromePrompt({
       window.location.href = chromeIntentUrl(link);
     } catch {
       /* The card could not be saved for Chrome: said, and the prompt stays to try again. */
+      clarityEvent("handoff_open_failed");
       setSaveFailed(true);
     } finally {
       setBusy(false);
@@ -238,6 +240,7 @@ export default function OpenInChromePrompt({
       const link = await getLink();
       window.location.href = safariUrl(link);
     } catch {
+      clarityEvent("handoff_open_failed");
       setSaveFailed(true);
     } finally {
       setBusy(false);
@@ -254,6 +257,7 @@ export default function OpenInChromePrompt({
     const saved = await link.then(() => true, () => false);
 
     if (!saved) {
+      clarityEvent("handoff_open_failed");
       setBusy(false);
       setSaveFailed(true);
       return;
