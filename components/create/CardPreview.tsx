@@ -15,6 +15,7 @@ import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
 import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
+import StillCard, { STILL_HEIGHT, STILL_WIDTH } from "@/components/create/StillCard";
 
 /*
   The full-screen preview: its cover player and every cover drawn in code.
@@ -27,8 +28,6 @@ const loadFullScreenPreview = () =>
   The phone's still card: drawn at a phone's size, the card's own
   proportions, then scaled to about 55% of the screen's height (at most 620px).
 */
-const STILL_WIDTH = 390;
-const STILL_HEIGHT = 720;
 const STILL_SHARE = 0.55;
 const STILL_MAX = 620;
 
@@ -204,26 +203,15 @@ export default function CardPreview({
           style={{ backgroundColor: palette.background, touchAction: "pan-y" }}
         >
           {/* Drawn at a phone's size and scaled down; inert, so no part of the card takes a touch or the focus. */}
-          <div
-            aria-hidden="true"
-            inert
-            className="pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none"
-            style={{ width: STILL_WIDTH, height: STILL_HEIGHT, transform: `scale(${scale})` }}
-          >
-            <TemplateCard
-              draft={draft}
-              theme={theme}
-              config={config}
-              motifs={motifs}
-              sizing="frame"
-              frameHeight={STILL_HEIGHT}
-              invite={PREVIEW_INVITE}
-              audience="host-preview"
-              weather={weather}
-              weatherTheme={weatherTheme}
-              closingNote="card"
-            />
-          </div>
+          <StillCard
+            draft={draft}
+            theme={theme}
+            config={config}
+            motifs={motifs}
+            weather={weather}
+            weatherTheme={weatherTheme}
+            scale={scale}
+          />
           <span className="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[#1e1b18]/70 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[#fffaf0] backdrop-blur-sm">
             <BusyLabel busy={previewOpening}>Tap to open full preview</BusyLabel>
           </span>

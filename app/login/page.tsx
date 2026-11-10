@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import CardLogin from "@/components/auth/CardLogin";
+import type { SavedCardStatus } from "@/components/auth/SavedCardPreview";
 import SignInForm from "@/components/auth/SignInForm";
+import { peekDraftHandoff } from "@/lib/handoff/peek";
 import InAppLoginPrompt from "@/components/browser/InAppLoginPrompt";
 import LegalFooter from "@/components/legal/LegalFooter";
 import Logo from "@/components/Logo";
@@ -48,9 +51,12 @@ function withCarriedCard(redirectTo: string, handoff: string | null): string {
     return redirectTo;
   }
 
-  const onCreate = redirectTo === "/create" || redirectTo.startsWith("/create?");
+  return pathWithHandoff(isCreatePath(redirectTo) ? redirectTo : "/create", handoff);
+}
 
-  return pathWithHandoff(onCreate ? redirectTo : "/create", handoff);
+/** Whether a return path goes back to the card maker, /create. */
+function isCreatePath(path: string): boolean {
+  return path === "/create" || path.startsWith("/create?");
 }
 
 export default async function LoginPage({
@@ -64,6 +70,22 @@ export default async function LoginPage({
   const handoff = isHandoffId(params.handoff)
     ? params.handoff
     : handoffFromSearch(redirectTo.split("?")[1] ?? "");
+
+  /*
+    A card waiting: handed over from Instagram's or Facebook's browser (the
+    handoff), or stashed in this browser on its way back to /create. The page
+    is then about that card (components/auth/CardLogin.tsx). Whether a handed
+    over card is really there is read on the server, so the page never says
+    it is saved when it is not; a slow answer only means the friendly line.
+  */
+  const forCard = handoff !== null || isCreatePath(redirectTo);
+  const peek = handoff === null ? null : await peekDraftHandoff(handoff);
+  const status: SavedCardStatus = peek === null ? "local" : peek.status;
+  const card =
+    peek?.status === "saved"
+      ? /* What the picture needs, and no phone numbers: the page holds it in its HTML. */
+        { draft: { ...peek.card.draft, contacts: [] }, config: peek.card.config }
+      : null;
 
   return (
     <main className="relative flex min-h-screen flex-col bg-[var(--lifafa-ink)]">
@@ -91,6 +113,15 @@ export default async function LoginPage({
 
       <div className="relative z-10 flex flex-1 items-start justify-center px-5 pt-6 pb-16 sm:items-center sm:pt-0">
         <div className="w-full max-w-[400px]">
+          {forCard ? (
+            <CardLogin
+              status={status}
+              card={card}
+              redirectTo={withCarriedCard(redirectTo, handoff)}
+              initialError={params.error ?? null}
+            />
+          ) : (
+          <>
           <h1 className="font-[family-name:var(--font-display)] text-[2rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance text-[var(--lifafa-cream)]">
             Sign in to Lifafa
           </h1>
@@ -99,24 +130,13 @@ export default async function LoginPage({
           </p>
 
           <div className="mt-8">
-            {/*
-              A card carried over from Instagram's or Facebook's browser. It is
-              safe on the server and is not touched here; /create saves it to
-              the account once sign in brings the visitor back.
-            */}
-            {handoff !== null ? (
-              <p
-                role="status"
-                className="mb-4 rounded-xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 text-sm leading-relaxed text-[var(--lifafa-muted)]"
-              >
-                Your card is saved. Sign in to finish it.
-              </p>
-            ) : null}
             <SignInForm
               redirectTo={withCarriedCard(redirectTo, handoff)}
               initialError={params.error ?? null}
             />
           </div>
+          </>
+          )}
 
           <p className="mt-6 text-center text-xs leading-relaxed text-[var(--lifafa-muted)]">
             By signing in you agree to the{" "}

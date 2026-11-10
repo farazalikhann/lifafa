@@ -1,0 +1,62 @@
+import type { ReactElement } from "react";
+import TemplateCard from "@/templates/TemplateCard";
+import { PREVIEW_INVITE } from "@/lib/calendar";
+import type { Motif } from "@/lib/motifs";
+import type { Theme } from "@/lib/themes";
+import type { CardConfig } from "@/types/card";
+import type { EventDraft } from "@/types/event";
+import type { EventWeather, WeatherThemeId } from "@/types/weather";
+
+/** The card drawn at a phone's size, in its own proportions, then scaled. */
+export const STILL_WIDTH = 390;
+export const STILL_HEIGHT = 720;
+
+/**
+ * A still picture of the card's first screen: drawn at a phone's size and
+ * scaled down, inert, so no part of it takes a touch, a scroll or the focus.
+ *
+ * The phone's preview on /create (components/create/CardPreview.tsx) and the
+ * card on the sign-in page (components/auth/SavedCardPreview.tsx). Placed
+ * absolutely at the top left of a box `STILL_WIDTH * scale` wide and
+ * `STILL_HEIGHT * scale` high, which the caller draws.
+ */
+export default function StillCard({
+  draft,
+  theme,
+  config,
+  motifs,
+  weather,
+  weatherTheme,
+  scale,
+}: {
+  draft: EventDraft;
+  theme: Theme;
+  config: CardConfig;
+  motifs: readonly Motif[];
+  weather: EventWeather | null;
+  weatherTheme: WeatherThemeId;
+  scale: number;
+}): ReactElement {
+  return (
+    <div
+      aria-hidden="true"
+      inert
+      className="pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none"
+      style={{ width: STILL_WIDTH, height: STILL_HEIGHT, transform: `scale(${scale})` }}
+    >
+      <TemplateCard
+        draft={draft}
+        theme={theme}
+        config={config}
+        motifs={motifs}
+        sizing="frame"
+        frameHeight={STILL_HEIGHT}
+        invite={PREVIEW_INVITE}
+        audience="host-preview"
+        weather={weather}
+        weatherTheme={weatherTheme}
+        closingNote="card"
+      />
+    </div>
+  );
+}
