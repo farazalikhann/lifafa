@@ -8,7 +8,7 @@ import { clarityEvent } from "@/lib/clarity";
 
 /**
  * The sign-in page for a visitor with a card waiting (app/login/page.tsx):
- * their card, why to sign in, Google, "Continue with email", two lines of
+ * their card, why to sign in, Continue with Google, two lines of
  * reassurance and a way to ask for help.
  */
 export default function CardLogin({
@@ -40,7 +40,7 @@ export default function CardLogin({
       />
 
       <div className="mt-6">
-        <SignInForm redirectTo={redirectTo} initialError={initialError} withEmail />
+        <SignInForm redirectTo={redirectTo} initialError={initialError} />
       </div>
 
       <ul className="mt-5 flex flex-col gap-1.5 text-[0.8125rem] leading-snug text-[var(--lifafa-muted)]">

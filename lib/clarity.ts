@@ -207,7 +207,7 @@ export function guardClarityNavigation(): void {
  * never the Meta pixel.
  *
  * - login_view_with_card: the sign-in page showed the visitor's own card.
- * - login_google_click / login_email_click: a sign-in way was chosen.
+ * - login_google_click: Continue with Google was pressed.
  * - login_success: back from a sign in (marked by app/auth/callback/route.ts
  *   in SIGNED_IN_COOKIE, read by components/analytics/Clarity.tsx).
  * - handoff_open_failed: the card did not reach Chrome or Safari by itself
@@ -216,7 +216,6 @@ export function guardClarityNavigation(): void {
 export type ClarityEventName =
   | "login_view_with_card"
   | "login_google_click"
-  | "login_email_click"
   | "login_success"
   | "handoff_open_failed";
 

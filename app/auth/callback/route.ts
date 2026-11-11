@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   isAuthPKCECodeVerifierMissingError,
-  type EmailOtpType,
   type User,
 } from "@supabase/supabase-js";
 import { metaPixelEnabled, NEW_ACCOUNT_COOKIE } from "@/lib/metaPixel";
@@ -9,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SIGNED_IN_COOKIE } from "@/lib/clarity";
 
 /**
- * Where a return from Google, or an email sign in link, lands.
+ * Where a return from Google lands.
  *
  * Google sign in comes back as a PKCE `code`, exchanged below for a session.
  * The verifier cookie is written by the tab that pressed the button, and
@@ -19,8 +18,6 @@ import { SIGNED_IN_COOKIE } from "@/lib/clarity";
 
 const DEFAULT_DESTINATION = "/dashboard";
 
-/** The verification types a sign in email can carry. */
-const EMAIL_OTP_TYPES: ReadonlySet<string> = new Set<EmailOtpType>(["email", "magiclink", "signup"]);
 
 /**
  * Only same-origin paths are honoured as a destination.
@@ -161,33 +158,6 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-
-  /*
-    An email sign in link ("Continue with email" on the sign-in page for a
-    saved card). Verifying its token_hash needs nothing from the browser that
-    asked for it, which matters: a mail app opens links in its own browser.
-  */
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type");
-
-  if (tokenHash !== null && type !== null) {
-    if (!EMAIL_OTP_TYPES.has(type)) {
-      return fail("link");
-    }
-
-    const { data, error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: type as EmailOtpType,
-    });
-
-    if (error !== null) {
-      /* Server side only: the message names tokens and internals. */
-      console.error("[auth] email link verification failed:", error);
-      return fail("expired");
-    }
-
-    return succeed(isNewAccount(data.user));
-  }
 
   if (code === null) {
     return fail("link");
