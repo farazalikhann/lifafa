@@ -904,10 +904,11 @@ function WizardSteps({
         return "Your browser would not let us hold onto this card. Please try again, or check your privacy settings.";
       }
 
+      /* The design too, so the sign-in page can show its picture at once (app/login/page.tsx). */
       router.push(
         `/login?redirectTo=${encodeURIComponent(
           pendingCardReturnPath(wizardStepPath(stepRef.current)),
-        )}`,
+        )}&design=${encodeURIComponent(getTemplate(snapshot.config.templateId).id)}`,
       );
       return null;
     },

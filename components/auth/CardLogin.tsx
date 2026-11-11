@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import SavedCardPreview, { type LoginCard, type SavedCardStatus } from "@/components/auth/SavedCardPreview";
+import SavedCardPreview, { type SavedCardStatus } from "@/components/auth/SavedCardPreview";
 import SignInForm from "@/components/auth/SignInForm";
 import WhatsAppLink from "@/components/legal/WhatsAppLink";
 import { clarityEvent } from "@/lib/clarity";
@@ -13,12 +13,16 @@ import { clarityEvent } from "@/lib/clarity";
  */
 export default function CardLogin({
   status,
-  card,
+  handoff,
+  placeholder,
   redirectTo,
   initialError,
 }: {
   status: SavedCardStatus;
-  card: LoginCard | null;
+  /** The handed-over card's id, when there is one. */
+  handoff: string | null;
+  /** The chosen design's gallery picture, shown until the card arrives (SavedCardPreview). */
+  placeholder: string | null;
   redirectTo: string;
   initialError: string | null;
 }): ReactElement {
@@ -26,7 +30,8 @@ export default function CardLogin({
     <div className="flex flex-col">
       <SavedCardPreview
         status={status}
-        card={card}
+        handoff={handoff}
+        placeholder={placeholder}
         onShown={(shown) => {
           if (shown === "card") {
             clarityEvent("login_view_with_card");

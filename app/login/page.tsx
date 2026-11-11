@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import CardLogin from "@/components/auth/CardLogin";
+import dynamic from "next/dynamic";
 import type { SavedCardStatus } from "@/components/auth/SavedCardPreview";
 import SignInForm from "@/components/auth/SignInForm";
-import { peekDraftHandoff } from "@/lib/handoff/peek";
+import { findTemplate } from "@/templates/registry";
+import { LOGIN_PLACEHOLDERS } from "@/lib/loginPlaceholders";
 import InAppLoginPrompt from "@/components/browser/InAppLoginPrompt";
 import LegalFooter from "@/components/legal/LegalFooter";
 import Logo from "@/components/Logo";
 import { handoffFromSearch, isHandoffId, pathWithHandoff } from "@/lib/handoff/link";
+
+/* Its own download: the plain sign-in page never fetches the card version's code. */
+const CardLogin = dynamic(() => import("@/components/auth/CardLogin"));
 
 export const metadata: Metadata = {
   title: "Sign in · Lifafa",
@@ -62,7 +66,13 @@ function isCreatePath(path: string): boolean {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirectTo?: string; error?: string; handoff?: string | string[] }>;
+  searchParams: Promise<{
+    redirectTo?: string;
+    error?: string;
+    handoff?: string | string[];
+    /** The design of a card stashed in this browser, named by the wizard (components/wizard/Wizard.tsx). */
+    design?: string | string[];
+  }>;
 }): Promise<ReactElement> {
   const params = await searchParams;
   const redirectTo = safeRedirect(params.redirectTo);
@@ -74,18 +84,19 @@ export default async function LoginPage({
   /*
     A card waiting: handed over from Instagram's or Facebook's browser (the
     handoff), or stashed in this browser on its way back to /create. The page
-    is then about that card (components/auth/CardLogin.tsx). Whether a handed
-    over card is really there is read on the server, so the page never says
-    it is saved when it is not; a slow answer only means the friendly line.
+    is then about that card (components/auth/CardLogin.tsx). The page is sent
+    without waiting to look the card up: the page itself asks once it is up,
+    and says so plainly if the card is not there (SavedCardPreview).
   */
   const forCard = handoff !== null || isCreatePath(redirectTo);
-  const peek = handoff === null ? null : await peekDraftHandoff(handoff);
-  const status: SavedCardStatus = peek === null ? "local" : peek.status;
-  const card =
-    peek?.status === "saved"
-      ? /* What the picture needs, and no phone numbers: the page holds it in its HTML. */
-        { draft: { ...peek.card.draft, contacts: [] }, config: peek.card.config }
-      : null;
+  const status: SavedCardStatus = handoff === null ? "local" : "handoff";
+  /*
+    The design's gallery picture, drawn at once while the card itself loads,
+    from the design the link names (`design`: the in-app handoff and the
+    wizard both add it).
+  */
+  const template = typeof params.design === "string" ? findTemplate(params.design) : null;
+  const placeholder = template === null ? null : (LOGIN_PLACEHOLDERS[template.id] ?? null);
 
   return (
     <main className="relative flex min-h-screen flex-col bg-[var(--lifafa-ink)]">
@@ -116,7 +127,8 @@ export default async function LoginPage({
           {forCard ? (
             <CardLogin
               status={status}
-              card={card}
+              handoff={handoff}
+              placeholder={placeholder}
               redirectTo={withCarriedCard(redirectTo, handoff)}
               initialError={params.error ?? null}
             />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ComponentType, type ReactElement } from "react";
+import { loginCardFor, type LoginCardRead } from "@/lib/handoff/loginCard";
 import { readPendingCard } from "@/lib/pendingCard";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -8,23 +9,24 @@ import type { EventDraft } from "@/types/event";
 /**
  * The top of the sign-in page when it was opened for a card: the visitor's
  * own card, small and still, "Your card is saved" and why to sign in. Or,
- * when the card cannot be found, a friendly line and no picture.
+ * when the card cannot be found, a friendly line.
  *
- * WHERE THE CARD COMES FROM (app/login/page.tsx decides):
- * - "saved": a card handed over from Instagram's or Facebook's browser, read
- *   on the server from the handoff (lib/handoff/peek.ts) and passed in.
- * - "adopted": that card is already in an account. Saved, nothing to draw.
+ * WHERE THE CARD COMES FROM (app/login/page.tsx decides which):
+ * - "handoff": a card handed over from Instagram's or Facebook's browser. Read
+ *   from the server once the page is up (lib/handoff/loginCard.ts): saved and
+ *   drawn, already in an account, or not found (the friendly line).
  * - "local": a card stashed in this browser before sign in (lib/pendingCard.ts),
- *   read here after the page has loaded. Drawn as saved until that read says
- *   otherwise, which is rare: this browser stashed it a moment ago.
- * - "missing" or "unknown": not found, or storage did not answer in time.
+ *   read here once the page is up. The friendly line until it is found.
  *
- * The picture's code (components/auth/SavedCardStill.tsx) is fetched once the
- * page is idle, into a box already its size: the buttons below are ready
- * first and nothing moves when the card arrives.
+ * NOTHING MOVES. The page is sent without waiting for either answer, so the
+ * box and the words keep their room whatever the answer is. In the box, the
+ * design's gallery picture is there from the first paint (inline and tiny,
+ * blurred: it shows the gallery's sample names), and the card itself covers
+ * it once its code has come, fetched when the page is idle so the buttons
+ * below are ready first.
  */
 
-export type SavedCardStatus = "saved" | "adopted" | "local" | "missing" | "unknown";
+export type SavedCardStatus = "handoff" | "local";
 
 export interface LoginCard {
   draft: EventDraft;
@@ -48,23 +50,40 @@ function useStillModule(wanted: boolean): StillModule | null {
       return;
     }
 
+    /*
+      Not before the page has loaded, then when the browser is idle: the
+      card's code and pictures are the heaviest thing here, and on a slow line
+      they must not hold up the page's own first picture and buttons.
+    */
     let live = true;
+    let handle: number | null = null;
+    const idle = typeof window.requestIdleCallback === "function";
     const load = (): void => {
       void import("@/components/auth/SavedCardStill").then(
         (module) => live && setStill(() => module.default),
         () => undefined,
       );
     };
-    const idle = typeof window.requestIdleCallback === "function";
-    const handle = idle ? window.requestIdleCallback(load, { timeout: 1500 }) : window.setTimeout(load, 300);
+    const whenIdle = (): void => {
+      handle = idle ? window.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 300);
+    };
+
+    if (document.readyState === "complete") {
+      whenIdle();
+    } else {
+      window.addEventListener("load", whenIdle, { once: true });
+    }
 
     return () => {
       live = false;
+      window.removeEventListener("load", whenIdle);
 
-      if (idle) {
-        window.cancelIdleCallback(handle);
-      } else {
-        window.clearTimeout(handle);
+      if (handle !== null) {
+        if (idle) {
+          window.cancelIdleCallback(handle);
+        } else {
+          window.clearTimeout(handle);
+        }
       }
     };
   }, [wanted]);
@@ -74,32 +93,63 @@ function useStillModule(wanted: boolean): StillModule | null {
 
 export default function SavedCardPreview({
   status,
-  card,
+  handoff,
+  placeholder,
   onShown,
 }: {
   status: SavedCardStatus;
-  /** The card, when the server read it ("saved"). */
-  card: LoginCard | null;
-  /** Told once what the page ended up saying: a card shown, or the friendly line. */
+  /** The handed-over card's id ("handoff"). */
+  handoff: string | null;
+  /** The chosen design's gallery picture, a tiny inline image (lib/loginPlaceholders.ts), or null. */
+  placeholder: string | null;
+  /** Told once what the page ended up saying: a card shown, saved without one, or the friendly line. */
   onShown?: (shown: "card" | "saved" | "friendly") => void;
 }): ReactElement {
-  /* "local": the stash, once read. Undefined until then, null when there is none. */
-  const [local, setLocal] = useState<LoginCard | null | undefined>(undefined);
+  /* What was found: undefined until the answer, then the card, "saved" without one, or null. */
+  const [found, setFound] = useState<LoginCard | "saved" | null | undefined>(undefined);
 
   useEffect(() => {
-    if (status !== "local") {
+    if (status === "local") {
+      const read = readPendingCard();
+      setFound(read.kind === "card" ? { draft: read.card.draft, config: read.card.config } : null);
       return;
     }
 
-    const read = readPendingCard();
-    setLocal(read.kind === "card" ? { draft: read.card.draft, config: read.card.config } : null);
-  }, [status]);
+    if (handoff === null) {
+      setFound(null);
+      return;
+    }
 
-  const shownCard = status === "saved" ? card : status === "local" ? (local ?? null) : null;
-  const friendly = status === "missing" || status === "unknown" || (status === "local" && local === null);
-  /* The box is kept while the stash is being read, so the page does not jump when it is there. */
-  const withBox = shownCard !== null || (status === "local" && local === undefined);
-  const Still = useStillModule(shownCard !== null);
+    let live = true;
+    const settle = (read: LoginCardRead): void => {
+      if (!live) {
+        return;
+      }
+
+      setFound(
+        read.status === "saved"
+          ? { draft: read.draft, config: read.config }
+          : read.status === "adopted"
+            ? "saved"
+            : null,
+      );
+    };
+    void loginCardFor(handoff).then(settle, () => settle({ status: "unknown" }));
+
+    return () => {
+      live = false;
+    };
+  }, [status, handoff]);
+
+  const card = typeof found === "object" && found !== null ? found : null;
+  /*
+    A handed-over card is said to be saved from the start: it was saved a
+    moment ago, and the answer only rarely says otherwise. A card stashed in
+    this browser waits for it, so words never claim a card that is not there
+    on the page Lighthouse and a stranger's link would see.
+  */
+  const friendly = status === "local" ? found === undefined || found === null : found === null;
+  const Still = useStillModule(card !== null);
   const boxRef = useRef<HTMLDivElement>(null);
   const [boxHeight, setBoxHeight] = useState(0);
 
@@ -109,42 +159,50 @@ export default function SavedCardPreview({
     }
   }, [Still]);
 
-  const settled = status !== "local" || local !== undefined;
-  const shown = friendly ? "friendly" : shownCard !== null ? "card" : "saved";
+  const shown = friendly ? "friendly" : card !== null ? "card" : "saved";
 
   /* Once per answer: held in a ref, so a new callback each render does not tell it again. */
   const onShownRef = useRef(onShown);
   onShownRef.current = onShown;
 
   useEffect(() => {
-    if (settled) {
+    if (found !== undefined) {
       onShownRef.current?.(shown);
     }
-  }, [settled, shown]);
+  }, [found, shown]);
 
-  const names = shownCard === null ? "" : cardNames(shownCard.draft);
+  const names = card === null ? "" : cardNames(card.draft);
 
   return (
     <div className="flex flex-col items-center text-center">
-      {withBox ? (
-        <div
-          ref={boxRef}
-          data-login-card=""
-          className={`relative mb-5 ${BOX} shrink-0 overflow-hidden rounded-[1.125rem] border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] shadow-[0_20px_40px_-24px_rgba(30,27,24,0.5)]`}
-        >
-          {shownCard !== null && Still !== null && boxHeight > 0 ? (
-            <Still draft={shownCard.draft} config={shownCard.config} height={boxHeight} />
-          ) : null}
-          {names !== "" ? <span className="sr-only">{`Your card: ${names}`}</span> : null}
-        </div>
-      ) : null}
+      <div
+        ref={boxRef}
+        data-login-card=""
+        className={`relative mb-5 ${BOX} shrink-0 overflow-hidden rounded-[1.125rem] border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] shadow-[0_20px_40px_-24px_rgba(30,27,24,0.5)]`}
+      >
+        {placeholder !== null ? (
+          // eslint-disable-next-line @next/next/no-img-element -- inline and tiny: next/image would add a request.
+          <img
+            src={placeholder}
+            alt=""
+            aria-hidden="true"
+            decoding="sync"
+            className="absolute inset-0 size-full scale-105 object-cover blur-[2px]"
+          />
+        ) : null}
+        {card !== null && Still !== null && boxHeight > 0 ? (
+          <Still draft={card.draft} config={card.config} height={boxHeight} />
+        ) : null}
+        {names !== "" ? <span className="sr-only">{`Your card: ${names}`}</span> : null}
+      </div>
 
-      <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance text-[var(--lifafa-cream)]">
-        {friendly ? "Sign in to continue with your card" : "Your card is saved"}
+      <h1 className="flex min-h-[4.025rem] items-center justify-center font-[family-name:var(--font-display)] text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance text-[var(--lifafa-cream)]">
+        {/* Short, one line: the words below, in the body font, are what a slow line shows first. */}
+        {friendly ? "Welcome back" : "Your card is saved"}
       </h1>
-      <p className="mt-2.5 text-sm leading-relaxed text-pretty text-[var(--lifafa-muted)]">
+      <p className="mt-2.5 min-h-[2.85rem] text-sm leading-relaxed text-pretty text-[var(--lifafa-muted)]">
         {friendly
-          ? "Sign in, and you will be taken back to your card."
+          ? "Sign in to continue with your card. You will be taken straight back to it."
           : "Sign in once to keep it safe, get your link and see who is coming."}
       </p>
     </div>

@@ -72,8 +72,13 @@ function saveCard(card: PendingCard): Promise<string | null> {
  * one, and the ad's tags. The id goes on /login and inside the return path,
  * which is what sign in hands back to /create.
  */
-export function loginLink(redirectTo: string, handoffId: string | null): string {
+export function loginLink(redirectTo: string, handoffId: string | null, design?: string): string {
   const url = new URL("/login", window.location.origin);
+
+  /* The card's design, so the sign-in page draws its picture at once (app/login/page.tsx). */
+  if (design !== undefined) {
+    url.searchParams.set("design", design);
+  }
 
   if (handoffId === null) {
     url.searchParams.set("redirectTo", redirectTo);
@@ -164,12 +169,12 @@ export function useInAppHandoff(): {
             throw new Error("the card could not be saved for the other browser");
           }
 
-          return loginLink(redirectTo, id);
+          return loginLink(redirectTo, id, card.config.templateId);
         };
         const quick = await Promise.race([saved, wait(QUICK_SAVE_MS).then(() => null)]);
 
         if (quick !== null) {
-          const target = loginLink(redirectTo, quick);
+          const target = loginLink(redirectTo, quick, card.config.templateId);
           window.location.href =
             browser.platform === "android" ? chromeIntentUrl(target) : safariUrl(target);
 
