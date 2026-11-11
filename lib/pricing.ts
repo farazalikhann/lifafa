@@ -34,13 +34,23 @@ export const LOWEST_PRICE_PAISE = Math.min(
   SHEESH_MAHAL_PRICE_PAISE,
 );
 
+/*
+  Each formatter is built once and kept: building one is far slower than
+  using one, and a page of prices (the gallery, the pricing table) asks for
+  dozens.
+*/
+let inr: Intl.NumberFormat | null = null;
+let grouped: Intl.NumberFormat | null = null;
+
 /** Rupees, as a whole number, in India's own grouping: ₹1,499. */
 export function formatInr(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
+  inr ??= new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(amount);
+  });
+
+  return inr.format(amount);
 }
 
 /**
@@ -52,9 +62,9 @@ export function formatInr(amount: number): string {
  * built for. "Rs" is read the same way and costs nothing.
  */
 export function formatPriceRs(paise: number): string {
-  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
-    Math.round(paise / 100),
-  )}`;
+  grouped ??= new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+
+  return `Rs ${grouped.format(Math.round(paise / 100))}`;
 }
 
 /** A price in paise as it is shown: 69900 is "₹699". */

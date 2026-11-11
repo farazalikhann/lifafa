@@ -236,7 +236,32 @@ const IST_DAY_FORMAT: Intl.DateTimeFormatOptions = {
  * in Asia/Kolkata answers it the way the guest holding the card would.
  */
 export function istDayKey(instant: Date): string {
-  return new Intl.DateTimeFormat("en-CA", IST_DAY_FORMAT).format(instant);
+  return dateFormat("en-CA", IST_DAY_FORMAT).format(instant);
+}
+
+/*
+  Each date formatter is built once per locale and options and kept: building
+  one is far slower than using one, and a card formats its dates on every
+  render. The options are this file's constants, so they are the key.
+*/
+const dateFormats = new Map<string, Map<Intl.DateTimeFormatOptions, Intl.DateTimeFormat>>();
+
+function dateFormat(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  let byOptions = dateFormats.get(locale);
+
+  if (byOptions === undefined) {
+    byOptions = new Map();
+    dateFormats.set(locale, byOptions);
+  }
+
+  let format = byOptions.get(options);
+
+  if (format === undefined) {
+    format = new Intl.DateTimeFormat(locale, options);
+    byOptions.set(options, format);
+  }
+
+  return format;
 }
 
 function hasTime(eventTime: string): boolean {
@@ -391,7 +416,7 @@ export function formatWeekday(
 
   return language === "hi"
     ? HINDI_WEEKDAYS[istParts(instant).weekday]
-    : new Intl.DateTimeFormat("en-IN", WEEKDAY_FORMAT).format(instant);
+    : dateFormat("en-IN", WEEKDAY_FORMAT).format(instant);
 }
 
 /**
@@ -417,16 +442,14 @@ export function formatDateAndTime(
       : hindiDate(parts);
   }
 
-  const datePart = new Intl.DateTimeFormat("en-IN", DATE_ONLY_FORMAT).format(
-    instant,
-  );
+  const datePart = dateFormat("en-IN", DATE_ONLY_FORMAT).format(instant);
 
   if (!hasTime(eventTime)) {
     return datePart;
   }
 
   const timePart = normaliseTime(
-    new Intl.DateTimeFormat("en-IN", TIME_FORMAT).format(instant),
+    dateFormat("en-IN", TIME_FORMAT).format(instant),
   );
 
   return `${datePart} at ${timePart}`;
@@ -454,16 +477,14 @@ export function formatWhen(
     return hasTime(eventTime) ? `${datePart}, ${hindiTime(parts)}` : datePart;
   }
 
-  const datePart = new Intl.DateTimeFormat("en-IN", FULL_DATE_FORMAT).format(
-    instant,
-  );
+  const datePart = dateFormat("en-IN", FULL_DATE_FORMAT).format(instant);
 
   if (!hasTime(eventTime)) {
     return datePart;
   }
 
   const timePart = normaliseTime(
-    new Intl.DateTimeFormat("en-IN", TIME_FORMAT).format(instant),
+    dateFormat("en-IN", TIME_FORMAT).format(instant),
   );
 
   return `${datePart} at ${timePart}`;

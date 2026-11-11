@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { loadClient, preloadClient } from "@/lib/supabase/loadClient";
 import { isOnline } from "@/lib/loadNotice";
 import { clarityEvent } from "@/lib/clarity";
 
@@ -100,6 +100,29 @@ export default function SignInForm({
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
+  /*
+    The sign-in client is the biggest script on this page and only the button
+    needs it, so it comes down once the page is up and idle, not with the page
+    (lib/supabase/loadClient.ts). A press before then fetches it itself.
+  */
+  useEffect(() => {
+    const fetchClient = (): void => {
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(preloadClient, { timeout: 2000 });
+      } else {
+        window.setTimeout(preloadClient, 200);
+      }
+    };
+
+    if (document.readyState === "complete") {
+      fetchClient();
+      return;
+    }
+
+    window.addEventListener("load", fetchClient, { once: true });
+    return () => window.removeEventListener("load", fetchClient);
+  }, []);
+
   const handleGoogleSignIn = async (): Promise<void> => {
     if (isRedirecting) {
       return;
@@ -117,8 +140,6 @@ export default function SignInForm({
     setError(null);
     setNotice(null);
 
-    const supabase = createClient();
-
     /*
       The destination rides on the callback URL, so a host sent here from
       /create goes back to /create.
@@ -132,6 +153,7 @@ export default function SignInForm({
     callback.searchParams.set("redirectTo", redirectTo);
 
     try {
+      const supabase = await loadClient();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: callback.toString() },
@@ -170,6 +192,7 @@ export default function SignInForm({
       <button
         type="button"
         onClick={() => void handleGoogleSignIn()}
+        onPointerDown={preloadClient}
         disabled={isRedirecting}
         aria-busy={isRedirecting}
         aria-describedby={error === null ? undefined : "signin-error"}
