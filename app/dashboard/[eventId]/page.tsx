@@ -34,6 +34,26 @@ import CardChecklist from "@/components/create/CardChecklist";
 import { cardChecklist, checklistAnchor } from "@/lib/cardChecklist";
 import { isEditLocked } from "@/lib/eventLock";
 
+/** An event id as the database writes them; anything else is not read early. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/*
+  How long this page waits for a venue lookup it has to make itself (a row
+  whose coordinates are still being filled in after a save). Past it the
+  page is drawn without the forecast rather than held for Open-Meteo.
+*/
+const GEOCODE_WAIT_MS = 1500;
+
+/** The answer, or null if it has not come within `ms`. */
+function withinMs<T>(work: Promise<T | null>, ms: number): Promise<T | null> {
+  return Promise.race([
+    work,
+    new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), ms);
+    }),
+  ]);
+}
+
 /**
  * One event's dashboard.
  *
@@ -56,7 +76,19 @@ export default async function DashboardPage({
 }): Promise<ReactElement> {
   const { eventId } = await params;
   const { saved } = await searchParams;
-  const eventResult = await getEventById(eventId);
+  /*
+    The event, its guests, whether a payment for it is being checked, and the
+    site's address, all at once. The guest list and the review are read for
+    the id in the address and only shown once the event read below has found
+    the event this host's (the guest list is the host's own through RLS too).
+  */
+  const lookUp = UUID.test(eventId);
+  const [eventResult, guestsEarly, reviewEarly, origin] = await Promise.all([
+    getEventById(eventId),
+    lookUp ? getGuestsForEvent(eventId) : null,
+    lookUp ? isUnderReview(eventId) : false,
+    serverSiteOrigin(),
+  ]);
 
   if (!eventResult.ok) {
     return <EventNotFound message={eventResult.error} />;
@@ -86,7 +118,7 @@ export default async function DashboardPage({
     and handed down, so the client components render the same string they
     hydrate with.
   */
-  const url = inviteUrl(event.inviteCode, await serverSiteOrigin());
+  const url = inviteUrl(event.inviteCode, origin);
 
   /*
     Read whatever the host chose for their guests.
@@ -114,7 +146,7 @@ export default async function DashboardPage({
   const readWeather = async () => {
     const coordinates =
       event.coordinates ??
-      (await geocodeVenue(draft.venueName, draft.venueAddress));
+      (await withinMs(geocodeVenue(draft.venueName, draft.venueAddress), GEOCODE_WAIT_MS));
 
     return getEventWeather(coordinates, draft.eventDate);
   };
@@ -126,14 +158,14 @@ export default async function DashboardPage({
     spend queued behind a forecast.
   */
   const [guestsResult, weather, underReview, confirmedPayment] = await Promise.all([
-    getGuestsForEvent(event.id),
+    guestsEarly ?? getGuestsForEvent(event.id),
     readWeather(),
     /*
       Whether a payment for it is being verified (lib/paymentReview.ts). Only
       an unpaid invitation can be, and the event was read above under the
       host's own session.
     */
-    event.isPaid ? false : isUnderReview(event.id),
+    event.isPaid ? false : reviewEarly,
     /*
       The payment that published it, for the ads' Purchase, and only when
       there are ads to tell: lib/db/confirmedPayment.ts says which count.
