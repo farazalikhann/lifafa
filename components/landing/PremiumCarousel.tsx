@@ -11,6 +11,7 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import PendingLabel, { PendingOverlay } from "@/components/network/PendingLabel";
 import { CAROUSEL_CONTROL } from "@/components/landing/styles";
 import { useAdParamsHref } from "@/hooks/useAdParamsHref";
 
@@ -454,6 +455,7 @@ export default function PremiumCarousel({
                       aria-hidden="true"
                       className="absolute top-2 left-1/2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-black/60"
                     />
+                    <PendingOverlay />
                   </span>
                   <span className="mt-5 font-[family-name:var(--paper-display)] text-2xl leading-tight font-semibold text-[var(--paper-ink)]">
                     {slide.name}
@@ -470,7 +472,7 @@ export default function PremiumCarousel({
                   tabIndex={isActive ? 0 : -1}
                   className="mt-1 inline-flex min-h-11 items-center rounded px-1 text-[0.9375rem] font-semibold text-[var(--paper-emerald)] underline decoration-[var(--paper-gold)] underline-offset-[5px] hover:decoration-[var(--paper-emerald)] focus-visible:outline-2 focus-visible:outline-[var(--paper-emerald)]"
                 >
-                  Open live demo
+                  <PendingLabel>Open live demo</PendingLabel>
                   <span className="sr-only"> of {slide.name}</span>
                 </Link>
               </div>

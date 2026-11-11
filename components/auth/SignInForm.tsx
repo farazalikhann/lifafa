@@ -175,7 +175,14 @@ export default function SignInForm({
         aria-describedby={error === null ? undefined : "signin-error"}
         className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[var(--lifafa-marigold)] px-5 text-base font-semibold text-[var(--lifafa-ink)] shadow-sm transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:cursor-wait disabled:opacity-70"
       >
-        <GoogleMark />
+        {/* The mark gives way to a spinner the moment it is pressed. */}
+        {isRedirecting ? (
+          <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" />
+          </span>
+        ) : (
+          <GoogleMark />
+        )}
         {isRedirecting ? "Redirecting to Google…" : "Continue with Google"}
       </button>
 

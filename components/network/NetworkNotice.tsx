@@ -56,9 +56,11 @@ declare global {
   this phone, shows it with the slow line 8 seconds from the start of the
   page load (the stylesheet alone counts from when it arrived), and
   holds a button tap made before the page is ready (stopped, so nothing
-  half-loaded acts on it) for NetworkNotice to make again.
+  half-loaded acts on it) for NetworkNotice to make again. A link tapped
+  then is left to load its page, and marked busy (NavProgress) so the tap
+  shows at once.
 */
-const EARLY_SCRIPT = `(function(){var w=window,d=document,n=d.getElementById("lifafa-load-notice");if(!n||w.__lifafaEarly)return;w.__lifafaEarly=1;try{if(localStorage.getItem(${JSON.stringify(AUTOSAVE_KEY)}))n.setAttribute("data-kept","")}catch(e){}setTimeout(function(){n.setAttribute("data-slow","");n.setAttribute("data-show","")},Math.max(0,8000-performance.now()));d.addEventListener("click",function(e){if(w.__lifafaReady)return;var t=e.target,b=t&&t.closest?t.closest("button"):null;if(!b||b.disabled)return;e.preventDefault();e.stopImmediatePropagation();w.__lifafaTap={el:b,label:b.getAttribute("aria-label")||b.textContent.trim(),at:Date.now()};n.setAttribute("data-waiting","")},true)})();`;
+const EARLY_SCRIPT = `(function(){var w=window,d=document,n=d.getElementById("lifafa-load-notice");if(!n||w.__lifafaEarly)return;w.__lifafaEarly=1;try{if(localStorage.getItem(${JSON.stringify(AUTOSAVE_KEY)}))n.setAttribute("data-kept","")}catch(e){}setTimeout(function(){n.setAttribute("data-slow","");n.setAttribute("data-show","")},Math.max(0,8000-performance.now()));d.addEventListener("click",function(e){if(w.__lifafaReady)return;var t=e.target,a=t&&t.closest?t.closest("a[href]"):null;if(a&&!a.target&&!a.hasAttribute("download")&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&a.origin===location.origin&&(a.pathname!==location.pathname||a.search!==location.search)){d.documentElement.setAttribute("data-nav-busy","");a.setAttribute("data-nav-pending","");return}var b=t&&t.closest?t.closest("button"):null;if(!b||b.disabled)return;e.preventDefault();e.stopImmediatePropagation();w.__lifafaTap={el:b,label:b.getAttribute("aria-label")||b.textContent.trim(),at:Date.now()};n.setAttribute("data-waiting","")},true);w.addEventListener("pageshow",function(e){if(!e.persisted)return;d.documentElement.removeAttribute("data-nav-busy");var p=d.querySelectorAll("[data-nav-pending]");for(var i=0;i<p.length;i++)p[i].removeAttribute("data-nav-pending")})})();`;
 
 const BOX =
   "lifafa-notice fixed inset-x-4 z-[70] mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-2.5 text-sm leading-snug text-[var(--lifafa-cream)] shadow-lg";

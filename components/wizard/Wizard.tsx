@@ -353,6 +353,20 @@ function localStart(templateId: string | null, search: string): ArrivalStart {
 
 /** How long to wait before asking about a card again. */
 const ADOPT_RETRY_MS = 1500;
+/**
+ * Runs `work` in a task of its own after the next paint, so a button's busy
+ * state is on screen before heavy rendering starts. A hidden tab paints no
+ * frames, so the timer alone carries it there.
+ */
+function afterPaint(work: () => void): void {
+  if (document.visibilityState === "hidden") {
+    window.setTimeout(work, 0);
+    return;
+  }
+
+  window.requestAnimationFrame(() => window.setTimeout(work, 0));
+}
+
 /** How many times to ask about a card another request is still saving (about 18 seconds). */
 const ADOPT_BUSY_TRIES = 12;
 /** How many times a save that broke is tried before this browser's own copy is used. */
@@ -1191,9 +1205,39 @@ function WizardSteps({
     }
   }, [step, detailsView]);
 
+  /*
+    "See my card" turns into a spinner first, and the card, the heavy part,
+    is drawn in the task after that paint: the tap is answered at once even
+    on a slow phone, and cannot be pressed twice.
+  */
+  const [making, setMaking] = useState(false);
+
   const seeMyCard = (): void => {
-    setJustMade(true);
-    showCard();
+    if (making) {
+      return;
+    }
+
+    setMaking(true);
+    afterPaint(() => {
+      setMaking(false);
+      setJustMade(true);
+      showCard();
+    });
+  };
+
+  /* Next, the same way: its spinner first, then the step. */
+  const [moving, setMoving] = useState(false);
+
+  const nextStep = (to: WizardStepId): void => {
+    if (moving) {
+      return;
+    }
+
+    setMoving(true);
+    afterPaint(() => {
+      setMoving(false);
+      goTo(to);
+    });
   };
 
   /*
@@ -1496,8 +1540,15 @@ function WizardSteps({
                   />
                   {/* The one main action here: the bar's Next and Preview wait until the card is made. */}
                   <div className="flex flex-col gap-2">
-                    <button type="button" onClick={seeMyCard} className={`${PRIMARY_BUTTON} w-full`}>
-                      See my card
+                    <button
+                      type="button"
+                      onClick={seeMyCard}
+                      aria-busy={making}
+                      className={`${PRIMARY_BUTTON} w-full`}
+                    >
+                      <BusyLabel busy={making} busyText="Making your card…">
+                        See my card
+                      </BusyLabel>
                     </button>
                     <p className="text-center text-xs text-[var(--lifafa-muted)]">You can add the rest next</p>
                   </div>
@@ -1873,9 +1924,12 @@ function WizardSteps({
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
+                  aria-busy={isSaving}
                   className={PRIMARY_BUTTON}
                 >
-                  {isSaving ? "Saving…" : "Save changes"}
+                  <BusyLabel busy={isSaving} busyText="Saving…">
+                    Save changes
+                  </BusyLabel>
                 </button>
               )
             ) : isLast ? (
@@ -1883,25 +1937,32 @@ function WizardSteps({
                 type="button"
                 onClick={pressSave}
                 disabled={isSaving || openingBrowser !== null}
+                aria-busy={isSaving || openingBrowser !== null}
                 className={PRIMARY_BUTTON}
               >
-                {openingBrowser === "android"
-                  ? "Opening Chrome…"
-                  : openingBrowser === "ios"
-                    ? "Opening Safari…"
-                    : isSaving
-                      ? "Saving…"
-                      : "Save and continue"}
+                <BusyLabel
+                  busy={isSaving || openingBrowser !== null}
+                  busyText={
+                    openingBrowser === "android"
+                      ? "Opening Chrome…"
+                      : openingBrowser === "ios"
+                        ? "Opening Safari…"
+                        : "Saving…"
+                  }
+                >
+                  Save and continue
+                </BusyLabel>
               </button>
             ) : quickStartShown ? null : (
               <button
                 type="button"
-                onClick={() => goTo(WIZARD_STEPS[index + 1].id)}
+                onClick={() => nextStep(WIZARD_STEPS[index + 1].id)}
                 disabled={!templateChosen}
+                aria-busy={moving}
                 aria-describedby={templateChosen ? undefined : CHOOSE_DESIGN_HINT_ID}
                 className={PRIMARY_BUTTON}
               >
-                Next
+                <BusyLabel busy={moving}>Next</BusyLabel>
               </button>
             )}
           </div>

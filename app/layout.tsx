@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
 import Clarity from "@/components/analytics/Clarity";
 import MetaPixel from "@/components/analytics/MetaPixel";
+import NavProgress from "@/components/network/NavProgress";
 import NetworkNotice from "@/components/network/NetworkNotice";
 import { clarityEnabled } from "@/lib/clarity";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
@@ -110,6 +111,15 @@ export default function RootLayout({
         {clarityEnabled() ? <Clarity /> : null}
         {/* Says when the page is slow to load or the connection is gone; see the component. */}
         <NetworkNotice />
+        {/*
+          The bar along the top while a tapped link loads its page. Shown by the
+          stylesheet when <html> is marked busy: by NavProgress, or before React
+          runs by NetworkNotice's early script.
+        */}
+        <div id="lifafa-nav-bar" aria-hidden="true" />
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
       </body>
     </html>
   );

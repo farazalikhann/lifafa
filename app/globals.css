@@ -716,3 +716,73 @@ html:has(.lifafa-paper) body {
     visibility: visible;
   }
 }
+
+/*
+  The bar along the top while a tapped link loads its page, and the link
+  itself dimmed, so a tap is answered at once even on a slow connection.
+  Marked by components/network/NavProgress.tsx, or before React runs by the
+  early script in NetworkNotice. A link with a busy label of its own
+  (LinkPending) or a spinner of its own (data-own-pending) is left as it is.
+*/
+#lifafa-nav-bar {
+  display: none;
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 2147483000;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+html[data-nav-busy] #lifafa-nav-bar {
+  display: block;
+}
+
+#lifafa-nav-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: 0 2px 2px 0;
+  background: #e8a33d;
+  animation: lifafa-nav-run 1.1s ease-in-out infinite;
+}
+
+@keyframes lifafa-nav-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lifafa-nav-bar::before {
+    width: 100%;
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+html[data-nav-busy] {
+  cursor: progress;
+}
+
+a[data-nav-pending]:not([data-own-pending]):not(:has([data-own-pending])) {
+  opacity: 0.6;
+  transition: opacity 120ms ease-out;
+}
+
+/* A tapped link's spinner, on its label or over its picture (components/network/PendingLabel.tsx). */
+.lifafa-card-pending,
+.lifafa-pending-busy,
+a[data-nav-pending] .lifafa-pending-idle {
+  visibility: hidden;
+}
+
+/* !important: they are hidden in their own style too, until the stylesheet is here. */
+a[data-nav-pending] .lifafa-card-pending,
+a[data-nav-pending] .lifafa-pending-busy {
+  visibility: visible !important;
+}

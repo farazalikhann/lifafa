@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Image from "next/image";
+import PendingLabel, { PendingOverlay } from "@/components/network/PendingLabel";
 import { getPalette } from "@/lib/palettes";
 import { formatPrice } from "@/lib/pricing";
 import { templateDemoPath } from "@/lib/templateSamples";
@@ -114,6 +115,7 @@ function TemplateCard({
             {template.badge}
           </span>
         ) : null}
+        <PendingOverlay />
       </a>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5 p-3">
@@ -141,7 +143,7 @@ function TemplateCard({
             onClick={openDemo}
             className={`${CARD_BUTTON} border border-[var(--lifafa-hairline)] text-[var(--lifafa-cream)] hover:border-[var(--lifafa-marigold)]`}
           >
-            See live demo
+            <PendingLabel>See live demo</PendingLabel>
             <span className="sr-only">
               {" "}
               of {template.name}

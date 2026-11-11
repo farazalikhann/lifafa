@@ -46,7 +46,7 @@ export default function LinkPending({
   }, [pending, id]);
 
   return (
-    <span ref={ref} className="contents">
+    <span ref={ref} className="contents" data-own-pending="">
       <BusyLabel busy={pending}>{children}</BusyLabel>
     </span>
   );
