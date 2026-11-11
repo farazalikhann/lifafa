@@ -18,6 +18,7 @@ import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorSkeleton, { EditorFormSkeleton } from "@/components/create/EditorSkeleton";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import BusyLabel from "@/components/network/BusyLabel";
+import { holdForTyping, useLightMotionHere } from "@/lib/motionBudget";
 import { startLoad, useLazyModule } from "@/hooks/useLazyModule";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { isOnline, reportWaiting, setSavesOnPhone } from "@/lib/loadNotice";
@@ -253,6 +254,10 @@ export default function Wizard({
    */
   firstScreen?: ReactNode;
 }): ReactElement {
+  /* The preview's floating layers: fewer on a light phone, and held while the host types (lib/motionBudget.ts). */
+  useLightMotionHere();
+  useEffect(() => holdForTyping(document), []);
+
   /* The step the address names, for the skeleton's header. */
   const step = wizardStepId(useSearchParams().get(WIZARD_STEP_PARAM)) ?? WIZARD_STEPS[0].id;
 

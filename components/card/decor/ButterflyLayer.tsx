@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties, ReactElement } from "react";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
+import { motionHeld, subscribeMotion, useLightMotion, useMotionStill } from "@/lib/motionBudget";
 import {
   LOOP_PIECE_ATTRIBUTE,
   type KeepOutWatch,
@@ -1628,7 +1629,7 @@ function startFlight(
   }
 
   function sync(): void {
-    const run = onScreen && document.visibilityState === "visible";
+    const run = onScreen && document.visibilityState === "visible" && !motionHeld();
 
     if (run && !running) {
       start();
@@ -1754,10 +1755,13 @@ function startFlight(
   window.addEventListener("scroll", staleRect, passiveCapture);
   window.addEventListener("resize", staleBand, passive);
   document.addEventListener("visibilitychange", sync);
+  /* Held while the host types in the editor; see lib/motionBudget.ts. */
+  const unsubscribeMotion = subscribeMotion(sync);
 
   sync();
 
   return () => {
+    unsubscribeMotion();
     window.clearTimeout(timer);
     running = false;
     resize?.disconnect();
@@ -2134,7 +2138,13 @@ export default function ButterflyLayer({
    */
   behindWords?: boolean;
 }): ReactElement {
-  const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  /* A card drawn as a still picture holds its flyers where a guest who asked for less movement sees them. */
+  const reducedQuery = useMediaQuery(REDUCED_MOTION_QUERY);
+  const stillCard = useMotionStill();
+  const prefersReducedMotion = reducedQuery || stillCard;
+  /* A light phone on the editor or a demo: the "subtle" number, never more. */
+  const light = useLightMotion();
+  const amount: DecorIntensity = light ? "subtle" : intensity;
   const bandRef = useRef<HTMLDivElement>(null);
   /* The wingbeat, the leaves and the fireflies are CSS loops: held while unseen. */
   const pauseRef = useFloatingPause();
@@ -2145,8 +2155,8 @@ export default function ButterflyLayer({
   const pieces = style === "none" ? [] : flyingPieces(kind, style);
   const manner = mannerOf(kind);
   const flyers = manner.level ? LEVEL_FLYERS : FLYERS;
-  const flyerCount = style === "none" || fireflies ? 0 : COUNT[intensity];
-  const leafCount = leaves ? LEAF_COUNT[intensity] : 0;
+  const flyerCount = style === "none" || fireflies ? 0 : COUNT[amount];
+  const leafCount = leaves ? LEAF_COUNT[amount] : 0;
   /* A change of kind swaps each image and leaves every leaf where it is in its drift. */
   const leaf = naturePiece(nature);
 
@@ -2233,7 +2243,7 @@ export default function ButterflyLayer({
 
         {/* As many as there would be butterflies, at the same Amount. */}
         {fireflies
-          ? FIREFLIES.slice(0, COUNT[intensity]).map((glow) => (
+          ? FIREFLIES.slice(0, COUNT[amount]).map((glow) => (
               <Firefly
                 key={`firefly-${glow.left}-${glow.top}`}
                 glow={glow}

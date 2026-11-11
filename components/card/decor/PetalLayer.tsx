@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { preload } from "react-dom";
 import { useFloatingPause } from "@/hooks/useFloatingPause";
+import { useLightMotion, useMotionStill } from "@/lib/motionBudget";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useBurstGate } from "@/hooks/useRevealGate";
 import { artWidth } from "@/lib/cardScale";
@@ -414,7 +415,12 @@ export default function PetalLayer({
   /** Under the reading column while the opening screen is on screen; see ButterflyLayer. */
   behindWords?: boolean;
 }): ReactElement | null {
-  const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  /* A card drawn as a still picture lets nothing fall, as for a guest who asked for less movement. */
+  const reducedQuery = useMediaQuery(REDUCED_MOTION_QUERY);
+  const stillCard = useMotionStill();
+  const prefersReducedMotion = reducedQuery || stillCard;
+  /* A light phone on the editor or a demo: the "subtle" number, never more (lib/motionBudget.ts). */
+  const amount: DecorIntensity = useLightMotion() ? "subtle" : intensity;
   const gateOpen = useBurstGate();
   /* Every fall here is a CSS loop: held while the tab is hidden or the card off screen. */
   const pauseRef = useFloatingPause();
@@ -494,7 +500,7 @@ export default function PetalLayer({
         style={{ height: bandHeight, containerType: "size" }}
       >
         {fall
-          ? FALLERS.slice(0, FALL_COUNT[intensity]).map((faller, index) => {
+          ? FALLERS.slice(0, FALL_COUNT[amount]).map((faller, index) => {
               const pieces = FALL_PIECES[flower];
 
               return (
@@ -509,7 +515,7 @@ export default function PetalLayer({
           : null}
 
         {isBursting
-          ? THROWN.slice(0, BURST_COUNT[intensity]).map((thrown, index) => {
+          ? THROWN.slice(0, BURST_COUNT[amount]).map((thrown, index) => {
               const pieces = BURST_PIECES[flower];
               const piece = pieces[index % pieces.length];
 

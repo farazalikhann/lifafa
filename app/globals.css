@@ -786,3 +786,12 @@ a[data-nav-pending] .lifafa-card-pending,
 a[data-nav-pending] .lifafa-pending-busy {
   visibility: visible !important;
 }
+
+/*
+  A card drawn as a still picture (components/create/StillCard.tsx, on /create
+  and /login), once its opening has played: every loop left in it is held
+  where it is.
+*/
+[data-motion-still][data-settled] * {
+  animation-play-state: paused !important;
+}

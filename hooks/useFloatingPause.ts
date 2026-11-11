@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { motionHeld, subscribeMotion, useMotionStill } from "@/lib/motionBudget";
 
 /**
  * Holds a floating layer's CSS loops still while nobody could be watching
@@ -17,8 +18,13 @@ import { useCallback } from "react";
  * and a rule in globals.css pauses every animation under it, so nothing here
  * is React state and nothing renders again. A ref callback with a cleanup, so
  * it follows a layer that mounts late, as the petals do.
+ *
+ * Held as well while the host types in the editor, and always in a card
+ * drawn as a still picture (lib/motionBudget.ts).
  */
 export function useFloatingPause(): (node: HTMLElement | null) => (() => void) | undefined {
+  const still = useMotionStill();
+
   return useCallback((node: HTMLElement | null) => {
     if (node === null) {
       return undefined;
@@ -29,7 +35,7 @@ export function useFloatingPause(): (node: HTMLElement | null) => (() => void) |
     const sync = (): void => {
       node.toggleAttribute(
         "data-floating-paused",
-        !onScreen || document.visibilityState !== "visible",
+        still || motionHeld() || !onScreen || document.visibilityState !== "visible",
       );
     };
 
@@ -43,11 +49,13 @@ export function useFloatingPause(): (node: HTMLElement | null) => (() => void) |
 
     observer?.observe(node);
     document.addEventListener("visibilitychange", sync);
+    const unsubscribe = subscribeMotion(sync);
     sync();
 
     return () => {
       observer?.disconnect();
       document.removeEventListener("visibilitychange", sync);
+      unsubscribe();
     };
-  }, []);
+  }, [still]);
 }
