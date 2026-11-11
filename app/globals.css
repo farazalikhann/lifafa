@@ -685,6 +685,17 @@ html:has(.lifafa-paper) body {
   animation: lifafa-notice-in 300ms ease-out 8s both;
 }
 
+/*
+  While it waits hidden it is still laid out, and a face is fetched for any
+  text laid out in it: on a page whose words are all in other faces, that
+  was Inter, downloaded on every page for a notice nobody saw. The phone's
+  own font until it shows; a page slow enough to show it with no script
+  shows it in that.
+*/
+.lifafa-load-notice:not([data-waiting]):not([data-show]) {
+  font-family: system-ui, sans-serif;
+}
+
 .lifafa-load-notice[data-waiting],
 .lifafa-load-notice[data-show] {
   animation: none;

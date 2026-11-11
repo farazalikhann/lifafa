@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Rupees from "@/components/type/Rupees";
 import LinkPending from "@/components/landing/LinkPending";
 import type { ReactElement } from "react";
 import { useAdParamsHref } from "@/hooks/useAdParamsHref";
@@ -58,9 +59,8 @@ export default function SampleBanner({
       <span className={PINNED_STRIP_HIGHLIGHT}>
         This is a sample invitation.
       </span>{" "}
-      {start !== undefined
-        ? `Create yours for ${formatPrice(start.pricePaise)}.`
-        : `Create yours from ${formatPrice(LOWEST_PRICE_PAISE)}.`}
+      {start !== undefined ? "Create yours for " : "Create yours from "}
+      <Rupees text={formatPrice(start !== undefined ? start.pricePaise : LOWEST_PRICE_PAISE)} />.
     </PinnedStrip>
   );
 }

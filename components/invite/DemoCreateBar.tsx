@@ -5,6 +5,7 @@ import LinkPending from "@/components/landing/LinkPending";
 import { useLayoutEffect, useRef, type ReactElement } from "react";
 import { useAdParamsHref } from "@/hooks/useAdParamsHref";
 import { formatPrice } from "@/lib/pricing";
+import Rupees from "@/components/type/Rupees";
 import type { StripTone } from "@/lib/stripTone";
 
 /** For the scroll cue to stand clear of (InvitedCue's `clearOf`). */
@@ -101,7 +102,9 @@ export default function DemoCreateBar({
           style={tone === null || tone === undefined ? undefined : { color: tone.text }}
         >
           <span className="truncate text-xs">{name}</span>
-          <span className="text-lg font-semibold">{formatPrice(pricePaise)}</span>
+          <span className="text-lg font-semibold">
+            <Rupees text={formatPrice(pricePaise)} />
+          </span>
         </p>
         <Link
           href={adHref(href)}
