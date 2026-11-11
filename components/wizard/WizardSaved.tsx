@@ -7,6 +7,7 @@ import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
 import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
 import Logo from "@/components/Logo";
+import SaveTimingReport from "@/components/wizard/SaveTimingReport";
 
 const LINK_CLASS =
   "flex min-h-12 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] px-5 text-[0.9375rem] font-medium text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
@@ -39,6 +40,8 @@ export default function WizardSaved({
 
   return (
     <div className="min-h-screen">
+      {/* Finishes the "Save and continue" clock, if this card was just saved here. */}
+      <SaveTimingReport eventId={event.id} />
       <header className="border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]">
         <div className="mx-auto max-w-2xl px-4 pt-2.5 pb-1 sm:px-5">
           <WizardProgress

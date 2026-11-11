@@ -18,6 +18,7 @@ import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorSkeleton, { EditorFormSkeleton } from "@/components/create/EditorSkeleton";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import BusyLabel from "@/components/network/BusyLabel";
+import { startSaveClock } from "@/lib/saveTiming";
 import { holdForTyping, useLightMotionHere } from "@/lib/motionBudget";
 import { startLoad, useLazyModule } from "@/hooks/useLazyModule";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -1032,8 +1033,12 @@ function WizardSteps({
         };
       }
 
+      /* Each phase timed, for the saved card's page to report (lib/saveTiming.ts). */
+      const clock = startSaveClock();
       const supabase = await loadClient();
+      clock.lap("client");
       const { data, error: authError } = await supabase.auth.getUser();
+      clock.lap("auth");
       const user = authError === null ? data.user : null;
 
       if (user === null) {
@@ -1048,6 +1053,8 @@ function WizardSteps({
         snapshot.qrCheckinEnabled,
       );
 
+      clock.lap("create");
+
       if (!result.ok) {
         /* The stash stays: the card is still not saved anywhere else. */
         return { ok: false, error: result.error };
@@ -1056,6 +1063,7 @@ function WizardSteps({
       clearPendingCard();
       autosaveStopped.current = true;
       clearCardAutosave();
+      clock.handOff(result.data.id);
       router.push(
         `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${result.data.id}`,
       );

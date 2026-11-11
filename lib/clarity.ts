@@ -217,7 +217,15 @@ export type ClarityEventName =
   | "login_view_with_card"
   | "login_google_click"
   | "login_success"
-  | "handoff_open_failed";
+  | "handoff_open_failed"
+  /* "Save and continue" measured from the press to the saved card on screen (lib/saveTiming.ts). */
+  | "save_timing"
+  /* The saved card had not opened 6 seconds after the save, so the page was loaded directly. */
+  | "save_watchdog"
+  /* Back from sign-in on an empty gallery, with no card to bring back (components/wizard/Wizard.tsx). */
+  | "card_lost_after_login"
+  /* Back from sign-in with the handoff gone, and the card brought back from this phone's autosave. */
+  | "card_restored_after_login";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";
@@ -249,6 +257,37 @@ export function clarityEvent(name: ClarityEventName): void {
 
   try {
     window.clarity("event", name);
+  } catch {
+    /* Measuring must never break the page. */
+  }
+}
+
+/**
+ * Tags the session with a value (a timing, a phase), where Clarity runs, on
+ * the same terms as clarityEvent: Clarity filters sessions by tag, and an
+ * event alone carries no number. Values are strings, as Clarity takes them.
+ */
+export function claritySet(key: string, value: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (window.clarity === undefined) {
+    if (!clarityEnabled() || !clarityHostAllowed() || !clarityAllowedOn(window.location.pathname)) {
+      return;
+    }
+
+    const queue: ClarityFn = Object.assign(
+      (...args: unknown[]): void => {
+        (queue.q ??= []).push(args);
+      },
+      { q: [] as unknown[] },
+    );
+    window.clarity = queue;
+  }
+
+  try {
+    window.clarity("set", key, value);
   } catch {
     /* Measuring must never break the page. */
   }
