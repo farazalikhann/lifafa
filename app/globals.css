@@ -732,8 +732,10 @@ html:has(.lifafa-paper) body {
   The bar along the top while a tapped link loads its page, and the link
   itself dimmed, so a tap is answered at once even on a slow connection.
   Marked by components/network/NavProgress.tsx, or before React runs by the
-  early script in NetworkNotice. A link with a busy label of its own
-  (LinkPending) or a spinner of its own (data-own-pending) is left as it is.
+  early script in NetworkNotice. A link with a busy label or a spinner of its
+  own (data-own-pending inside it) is not dimmed: the script leaves off
+  data-nav-dim. Marked by script, not found by :has(), which made every
+  style recalculation on the page dearer.
 */
 #lifafa-nav-bar {
   display: none;
@@ -780,7 +782,7 @@ html[data-nav-busy] {
   cursor: progress;
 }
 
-a[data-nav-pending]:not([data-own-pending]):not(:has([data-own-pending])) {
+a[data-nav-dim] {
   opacity: 0.6;
   transition: opacity 120ms ease-out;
 }
@@ -798,11 +800,19 @@ a[data-nav-pending] .lifafa-pending-busy {
   visibility: visible !important;
 }
 
-/*
-  A card drawn as a still picture (components/create/StillCard.tsx, on /create
-  and /login), once its opening has played: every loop left in it is held
-  where it is.
-*/
-[data-motion-still][data-settled] * {
-  animation-play-state: paused !important;
+/* The spinner in a tapped link's label or picture: turning only while it shows. */
+a[data-nav-pending] .lifafa-pending-spin {
+  animation: lifafa-pending-spin 0.9s linear infinite;
+}
+
+@keyframes lifafa-pending-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a[data-nav-pending] .lifafa-pending-spin {
+    animation: none;
+  }
 }

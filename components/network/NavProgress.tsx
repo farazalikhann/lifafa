@@ -24,10 +24,13 @@ const PENDING = "data-nav-pending";
 /** Long enough for the slowest real load; only a link whose navigation never happened waits this out. */
 const GIVE_UP_MS = 30000;
 
+const DIM = "data-nav-dim";
+
 function clear(): void {
   document.documentElement.removeAttribute(BUSY);
   for (const link of document.querySelectorAll(`[${PENDING}]`)) {
     link.removeAttribute(PENDING);
+    link.removeAttribute(DIM);
   }
 }
 
@@ -95,6 +98,10 @@ export default function NavProgress(): null {
       stop();
       document.documentElement.setAttribute(BUSY, "");
       link.setAttribute(PENDING, "");
+      /* Dimmed, unless it shows a spinner of its own (PendingLabel, LinkPending). */
+      if (link.querySelector("[data-own-pending]") === null) {
+        link.setAttribute(DIM, "");
+      }
 
       const href = link.href;
       slow = window.setTimeout(() => {

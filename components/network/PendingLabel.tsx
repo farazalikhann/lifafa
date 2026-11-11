@@ -5,7 +5,9 @@ import type { ReactElement, ReactNode } from "react";
  * is tapped, before or after React runs: the stylesheet shows it from the
  * mark NavProgress (or the early script) puts on a tapped link,
  * data-nav-pending. No state and no hook, so it works in a plain <a> as well
- * as a <Link>. Same width either way, so nothing moves.
+ * as a <Link>. Same width either way, so nothing moves. The spinner turns
+ * only while it shows: a hidden one left turning costs the page a style
+ * update every frame.
  */
 export default function PendingLabel({
   children,
@@ -23,7 +25,7 @@ export default function PendingLabel({
         className="lifafa-pending-busy col-start-1 row-start-1 inline-flex items-center gap-2"
         style={{ visibility: "hidden" }}
       >
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" />
+        <span className="lifafa-pending-spin h-4 w-4 rounded-full border-2 border-current border-r-transparent" />
         {busyText}
       </span>
     </span>
@@ -40,7 +42,7 @@ export function PendingOverlay(): ReactElement {
       style={{ visibility: "hidden" }}
     >
       <span className="flex flex-col items-center gap-2 rounded-2xl bg-black/60 px-4 py-3 text-sm font-semibold text-white">
-        <span className="h-7 w-7 animate-spin rounded-full border-[3px] border-white border-r-transparent motion-reduce:animate-none" />
+        <span className="lifafa-pending-spin h-7 w-7 rounded-full border-[3px] border-white border-r-transparent" />
         Opening…
       </span>
     </span>

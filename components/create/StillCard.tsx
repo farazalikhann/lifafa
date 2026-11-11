@@ -29,7 +29,7 @@ const SETTLE_MS = 2500;
  * STILL MEANS STILL. Its floating layers start held, as for a guest who asked
  * for less movement (MotionStillContext, lib/motionBudget.ts), and once the
  * card's opening has played (SETTLE_MS) every CSS loop left in it is held
- * where it is (data-settled, app/globals.css): a picture this small costs the
+ * where it is: a picture this small costs the
  * phone nothing while the host reads and types beside it.
  */
 export default function StillCard({
@@ -52,14 +52,18 @@ export default function StillCard({
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => root.current?.setAttribute("data-settled", ""), SETTLE_MS);
+    const timer = window.setTimeout(() => {
+      /* Once, by script: a stylesheet rule for this would be checked against every element on the page. */
+      for (const animation of root.current?.getAnimations?.({ subtree: true }) ?? []) {
+        animation.pause();
+      }
+    }, SETTLE_MS);
     return () => window.clearTimeout(timer);
   }, []);
 
   return (
     <div
       ref={root}
-      data-motion-still=""
       aria-hidden="true"
       inert
       className="pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none"

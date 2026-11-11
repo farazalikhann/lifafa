@@ -22,9 +22,12 @@ export default function BusyLabel({
         aria-hidden={!busy}
         className={`col-start-1 row-start-1 inline-flex items-center gap-2 ${busy ? "" : "invisible"}`}
       >
+        {/* Turning only while busy: a hidden spinner left turning costs a style update every frame. */}
         <span
           aria-hidden="true"
-          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
+          className={`h-4 w-4 rounded-full border-2 border-current border-r-transparent ${
+            busy ? "animate-spin motion-reduce:animate-none" : ""
+          }`}
         />
         {busyText}
       </span>

@@ -102,25 +102,30 @@ export default function SignInForm({
 
   /*
     The sign-in client is the biggest script on this page and only the button
-    needs it, so it comes down once the page is up and idle, not with the page
-    (lib/supabase/loadClient.ts). A press before then fetches it itself.
+    needs it, so it does not come with the page (lib/supabase/loadClient.ts).
+    It is fetched at the visitor's first touch or key, which is usually the
+    press on the button itself, a moment before its click: not in an idle
+    moment, where starting it would be a task of its own just when a tap
+    could land.
   */
   useEffect(() => {
+    const events = ["pointerdown", "keydown"] as const;
     const fetchClient = (): void => {
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(preloadClient, { timeout: 2000 });
-      } else {
-        window.setTimeout(preloadClient, 200);
+      preloadClient();
+      for (const name of events) {
+        window.removeEventListener(name, fetchClient, true);
       }
     };
 
-    if (document.readyState === "complete") {
-      fetchClient();
-      return;
+    for (const name of events) {
+      window.addEventListener(name, fetchClient, { capture: true, passive: true });
     }
 
-    window.addEventListener("load", fetchClient, { once: true });
-    return () => window.removeEventListener("load", fetchClient);
+    return () => {
+      for (const name of events) {
+        window.removeEventListener(name, fetchClient, true);
+      }
+    };
   }, []);
 
   const handleGoogleSignIn = async (): Promise<void> => {
@@ -192,7 +197,6 @@ export default function SignInForm({
       <button
         type="button"
         onClick={() => void handleGoogleSignIn()}
-        onPointerDown={preloadClient}
         disabled={isRedirecting}
         aria-busy={isRedirecting}
         aria-describedby={error === null ? undefined : "signin-error"}
