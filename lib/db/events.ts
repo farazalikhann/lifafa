@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { UPGRADE_AFTER_PAYMENT_MESSAGE } from "@/lib/templateUpgrade";
 import { templatePricePaise } from "@/templates/registry";
@@ -21,6 +22,7 @@ import {
   type PaidEditRefusal,
 } from "@/lib/eventLock";
 import { geocodeVenue } from "@/lib/weather";
+import { deepEqual } from "@/lib/deepEqual";
 import {
   DEFAULT_WEATHER_THEME,
   isWeatherThemeId,
@@ -160,6 +162,52 @@ function missingColumn(cause: unknown): PendingColumn | null {
   return PENDING_COLUMNS.find((column) => pg.message.includes(column)) ?? null;
 }
 
+/** What createEvent answers: the row, a failure to show, or nobody signed in. */
+export type CreateEventResult =
+  | { ok: true; data: StoredEvent }
+  | { ok: false; error: string; signedOut?: true };
+
+/** How far back a save of the very same card returns the row already made. */
+const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+
+/** A value as it comes back out of a jsonb column: undefined keys gone. */
+function jsonCopy(value: unknown): unknown {
+  return JSON.parse(JSON.stringify(value)) as unknown;
+}
+
+/**
+ * Geocodes the venue and writes the coordinates onto the event, after the
+ * response has gone. The two coordinate columns and nothing else, and only
+ * when the lookup found the place: a miss leaves the row as it is, a card with
+ * no weather, which is what a miss always meant. Never throws.
+ */
+async function fillCoordinates(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  eventId: string,
+  hostId: string,
+  draft: EventDraft,
+): Promise<void> {
+  try {
+    const coordinates = await geocodeVenue(draft.venueName, draft.venueAddress);
+
+    if (coordinates === null) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("events")
+      .update({ latitude: coordinates.latitude, longitude: coordinates.longitude })
+      .eq("id", eventId)
+      .eq("host_id", hostId);
+
+    if (error !== null) {
+      console.error("[db] fillCoordinates:", error);
+    }
+  } catch (cause: unknown) {
+    console.error("[db] fillCoordinates:", cause);
+  }
+}
+
 /** One insert, returning the row it wrote. Split out so the retry above reads. */
 function insert(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -175,6 +223,21 @@ function insert(
  * would make it a claim the caller could forge — and while events_insert_own
  * would refuse the row, refusing at the boundary is better than relying on the
  * database to catch a lie the application chose to repeat.
+ *
+ * NOBODY SIGNED IN is its own answer, `signedOut`, and the wizard sends the
+ * host to sign in on it: the session is checked here, on the server, once,
+ * rather than asked of the browser before this is called (a second trip to
+ * Supabase before every save).
+ *
+ * THE SAME CARD TWICE is one invitation. A second press, or a save made again
+ * after a page that never showed the first one, gets back the row this host
+ * made in the last DUPLICATE_WINDOW_MS with the same draft and config.
+ *
+ * THE VENUE IS GEOCODED AFTER THE REPLY. The row is written without
+ * coordinates and the host is answered; the lookup (one to three calls to
+ * Open-Meteo) runs after the response (after() from next/server) and writes
+ * the coordinates onto the row it finds. A lookup that finds nothing leaves a
+ * card with no weather, as it always did.
  */
 export async function createEvent(
   draft: EventDraft,
@@ -182,7 +245,7 @@ export async function createEvent(
   coverAnimation: string,
   weather: { showWeather: boolean; themeId: string },
   qrCheckinEnabled: boolean,
-): Promise<DbResult<StoredEvent>> {
+): Promise<CreateEventResult> {
   const supabase = await createClient();
 
   /*
@@ -221,23 +284,47 @@ export async function createEvent(
   } = await supabase.auth.getUser();
 
   if (authError !== null || user === null) {
-    return dbFailure(
-      "createEvent/auth",
-      authError,
-      "You need to be signed in to save an event.",
-    );
+    /* Not logged as a failure: a signed-out press is the ordinary way to sign in. */
+    return { ok: false, signedOut: true, error: "You need to be signed in to save an event." };
   }
 
   /*
-    The one geocode this feature ever performs.
-
-    Here rather than on the invite page, because the venue does not move and a
-    link opened by three hundred guests would otherwise resolve the same address
-    three hundred times. Null when Open-Meteo recognises nothing in what the
-    host typed, and null is a card with no weather rather than a failed save:
-    the row is written either way.
+    The same card, saved by this host a moment ago: that row, not a second
+    one. Compared as the insert would write them (toEventInsert), so a
+    difference the row would not keep is not a difference here either. A
+    failed read is no reason to refuse the save; it inserts as before.
   */
-  const coordinates = await geocodeVenue(draft.venueName, draft.venueAddress);
+  const probe = toEventInsert(
+    user.id,
+    "",
+    unpaidConfig,
+    draft,
+    chosenCover,
+    { showWeather, themeId: chosenTheme, coordinates: null },
+    wantsQrCheckin,
+  );
+  const since = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString();
+  const { data: recent, error: recentError } = await supabase
+    .from("events")
+    .select("*")
+    .eq("host_id", user.id)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (recentError !== null) {
+    console.error("[db] createEvent/recent:", recentError);
+  }
+
+  const same = (recent ?? []).find(
+    (row) =>
+      deepEqual(row.event_draft, jsonCopy(probe.event_draft)) &&
+      deepEqual(row.card_config, jsonCopy(probe.card_config)),
+  );
+
+  if (same !== undefined) {
+    return dbSuccess(toStoredEvent(same));
+  }
 
   /*
     Retried rather than trusted first time. Eight characters over a 31 symbol
@@ -254,7 +341,8 @@ export async function createEvent(
       unpaidConfig,
       draft,
       chosenCover,
-      { showWeather, themeId: chosenTheme, coordinates },
+      /* Filled in after the reply; see the head of this function. */
+      { showWeather, themeId: chosenTheme, coordinates: null },
       wantsQrCheckin,
     );
 
@@ -285,6 +373,8 @@ export async function createEvent(
     const { data, error } = attemptResult;
 
     if (error === null && data !== null) {
+      const eventId = data.id;
+      after(() => fillCoordinates(supabase, eventId, user.id, draft));
       return dbSuccess(toStoredEvent(data));
     }
 
@@ -656,11 +746,14 @@ export async function updateEvent(
 
     A failed lookup still writes null — a card with no weather rather than a
     refused save, the same trade createEvent makes.
+
+    Not waited for. The row is written without them (a moved venue's old
+    coordinates would be the wrong place) and the lookup runs after the reply,
+    as in createEvent (fillCoordinates), writing the two coordinate columns
+    and nothing else.
   */
-  const coordinates =
-    venueMoved || storedCoordinates === null
-      ? await geocodeVenue(patch.draft.venueName, patch.draft.venueAddress)
-      : storedCoordinates;
+  const lookUpVenue = venueMoved || storedCoordinates === null;
+  const coordinates = lookUpVenue ? null : storedCoordinates;
 
   const row: EventContentUpdate = {
     /*
@@ -739,6 +832,10 @@ export async function updateEvent(
       error,
       "Could not save your changes, please try again.",
     );
+  }
+
+  if (lookUpVenue) {
+    after(() => fillCoordinates(supabase, id, user.id, patch.draft));
   }
 
   return dbSuccess(toStoredEvent(data));

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { findUsableCoupon } from "@/lib/coupons/lookup";
 import { WEDDING10_OFFER, offerOpen, type OfferBanner } from "@/lib/offers";
 
@@ -19,7 +20,8 @@ import { WEDDING10_OFFER, offerOpen, type OfferBanner } from "@/lib/offers";
  * A server module: it reads the coupons table with the service-role key, through
  * lib/coupons/lookup.ts, which refuses to load in a browser.
  */
-export async function liveOffer(): Promise<OfferBanner | null> {
+/* Once per request: the page that shows the banner can start it early, beside its other reads. */
+export const liveOffer = cache(async (): Promise<OfferBanner | null> => {
   if (!offerOpen(WEDDING10_OFFER, new Date())) {
     return null;
   }
@@ -35,4 +37,4 @@ export async function liveOffer(): Promise<OfferBanner | null> {
     title: WEDDING10_OFFER.title,
     text: WEDDING10_OFFER.text,
   };
-}
+});

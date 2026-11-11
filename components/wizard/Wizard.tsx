@@ -18,7 +18,8 @@ import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
 import EditorSkeleton, { EditorFormSkeleton } from "@/components/create/EditorSkeleton";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import BusyLabel from "@/components/network/BusyLabel";
-import { startSaveClock } from "@/lib/saveTiming";
+import { markSaveReload, startSaveClock } from "@/lib/saveTiming";
+import { clarityEvent } from "@/lib/clarity";
 import { holdForTyping, useLightMotionHere } from "@/lib/motionBudget";
 import { startLoad, useLazyModule } from "@/hooks/useLazyModule";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -72,7 +73,6 @@ import {
   writePendingCard,
 } from "@/lib/pendingCard";
 import { formatPrice } from "@/lib/pricing";
-import { loadClient, preloadClient } from "@/lib/supabase/loadClient";
 import { getTheme } from "@/lib/themes";
 import {
   NEW_CARD_HREF,
@@ -122,8 +122,6 @@ const loadEditorSteps = () => import("@/components/wizard/editorSteps");
 function preloadEditorSteps(): void {
   /* A failed fetch is tried again when a step is drawn. */
   startLoad(loadEditorSteps);
-  /* The auth client too: Save asks who is signed in first, and must not wait for a download. */
-  preloadClient();
 }
 
 if (typeof window !== "undefined") {
@@ -372,6 +370,10 @@ function afterPaint(work: () => void): void {
 
   window.requestAnimationFrame(() => window.setTimeout(work, 0));
 }
+
+/** After a save: when the button says the card is on its way, and when the page is loaded directly. */
+const SAVE_SLOW_MS = 4000;
+const SAVE_RELOAD_MS = 6000;
 
 /** How many times to ask about a card another request is still saving (about 18 seconds). */
 const ADOPT_BUSY_TRIES = 12;
@@ -976,6 +978,45 @@ function WizardSteps({
    * at the click, as on /create, so one that has not loaded yet or has
    * expired is not mistaken for signed out or signed in.
    */
+  /*
+    THE WATCHDOG after a save. The row is written; what is left is the move to
+    the saved card's page, and a router.push can stall there (a phone that
+    dropped the request, an in-app browser that never finishes it), leaving
+    the host on "Saving…" over a card that is already saved. After
+    SAVE_SLOW_MS the button says so; after SAVE_RELOAD_MS, still here and not
+    on the saved card, the page is loaded directly.
+  */
+  const [saveSlow, setSaveSlow] = useState(false);
+  const saveTimers = useRef<number[]>([]);
+
+  useEffect(
+    () => () => {
+      for (const timer of saveTimers.current) {
+        window.clearTimeout(timer);
+      }
+    },
+    [],
+  );
+
+  const watchSavedCard = useCallback((eventId: string, target: string): void => {
+    for (const timer of saveTimers.current) {
+      window.clearTimeout(timer);
+    }
+
+    saveTimers.current = [
+      window.setTimeout(() => setSaveSlow(true), SAVE_SLOW_MS),
+      window.setTimeout(() => {
+        if (new URLSearchParams(window.location.search).get("event") === eventId) {
+          return;
+        }
+
+        clarityEvent("save_watchdog");
+        markSaveReload();
+        window.location.assign(target);
+      }, SAVE_RELOAD_MS),
+    ];
+  }, []);
+
   /* Set once the card is saved to an account: nothing is kept in this browser after that. */
   const autosaveStopped = useRef(false);
 
@@ -1033,18 +1074,13 @@ function WizardSteps({
         };
       }
 
-      /* Each phase timed, for the saved card's page to report (lib/saveTiming.ts). */
+      /*
+        Timed, for the saved card's page to report (lib/saveTiming.ts). The
+        session is asked by createEvent itself, on the server: nobody signed
+        in comes back as `signedOut`, and only then is the host sent to sign
+        in. There is no second trip to Supabase from the browser first.
+      */
       const clock = startSaveClock();
-      const supabase = await loadClient();
-      clock.lap("client");
-      const { data, error: authError } = await supabase.auth.getUser();
-      clock.lap("auth");
-      const user = authError === null ? data.user : null;
-
-      if (user === null) {
-        return continueSignedOut(snapshot);
-      }
-
       const result = await createEvent(
         snapshot.draft,
         snapshot.config,
@@ -1056,6 +1092,10 @@ function WizardSteps({
       clock.lap("create");
 
       if (!result.ok) {
+        if (result.signedOut === true) {
+          return continueSignedOut(snapshot);
+        }
+
         /* The stash stays: the card is still not saved anywhere else. */
         return { ok: false, error: result.error };
       }
@@ -1064,13 +1104,14 @@ function WizardSteps({
       autosaveStopped.current = true;
       clearCardAutosave();
       clock.handOff(result.data.id);
-      router.push(
-        `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${result.data.id}`,
-      );
+
+      const target = `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${result.data.id}`;
+      router.push(target);
+      watchSavedCard(result.data.id, target);
 
       return { ok: true };
     },
-    [router, continueSignedOut, edit, start, dashboardHref],
+    [router, continueSignedOut, edit, start, dashboardHref, watchSavedCard],
   );
 
   const {
@@ -1960,7 +2001,9 @@ function WizardSteps({
                       ? "Opening Chrome…"
                       : openingBrowser === "ios"
                         ? "Opening Safari…"
-                        : "Saving…"
+                        : saveSlow
+                          ? "Almost done, opening your card…"
+                          : "Saving…"
                   }
                 >
                   Save and continue

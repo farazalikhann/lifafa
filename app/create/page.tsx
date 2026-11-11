@@ -9,10 +9,15 @@ import GalleryFirstScreen from "@/components/wizard/GalleryFirstScreen";
 import Wizard from "@/components/wizard/Wizard";
 import { getEventById } from "@/lib/db/events";
 import { isUnderReview } from "@/lib/db/paymentReview";
+import { liveOffer } from "@/lib/coupons/offer";
+import { razorpayKeyId } from "@/lib/razorpay/keys";
 import { opensOnGallery } from "@/lib/opensOnGallery";
 import { NEW_CARD_HREF } from "@/lib/wizardSteps";
 import { findTemplate } from "@/templates/registry";
 import { marketingShare } from "@/lib/shareImage";
+
+/** An event id as the database writes them; anything else is not looked up for payments. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * A new invitation, made in the wizard: a template, the details, the few
@@ -108,7 +113,18 @@ export default async function CreatePage({
     );
   }
 
-  const result = await getEventById(eventId);
+  /*
+    The three reads this screen makes, at once rather than one after another:
+    the event, whether a payment for it is being checked, and the offer over
+    the coupon field (liveOffer is read once per request, so PaymentBanner's
+    own call gets this one). The two that do not depend on the event's owner
+    are only shown after the event read below has found it this host's.
+  */
+  const [result, underReview] = await Promise.all([
+    getEventById(eventId),
+    UUID.test(eventId) ? isUnderReview(eventId) : Promise.resolve(false),
+    razorpayKeyId() !== null ? liveOffer() : Promise.resolve(null),
+  ]);
 
   if (!result.ok) {
     return <EventNotFound message={result.error} />;
@@ -130,7 +146,7 @@ export default async function CreatePage({
     <WizardSaved
       event={result.data}
       /* Asked for the event this host's own session has just read. */
-      underReview={await isUnderReview(result.data.id)}
+      underReview={underReview}
     />
   );
 }
