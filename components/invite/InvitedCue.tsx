@@ -30,6 +30,9 @@ const AT_TOP_PX = 12;
 /** Air between the cue and the element it stands clear of, in px. */
 const CLEAR_GAP_PX = 8;
 
+/** The demo's bar (DemoCreateBar's DEMO_CREATE_BAR_SELECTOR), written out so this file does not load it. */
+const DEMO_BAR = "[data-demo-create-bar]";
+
 /** How far the arrow drops on its bounce, in px: lifafa-cue-bounce in globals.css. */
 const BOUNCE_PX = 4;
 
@@ -145,7 +148,8 @@ export default function InvitedCue({
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const [shown, setShown] = useState(false);
   /** How far off the bottom of the screen it sits, in px. */
-  const [lift, setLift] = useState(0);
+  /* Null until measured; see `bottom` below for where it stands until then. */
+  const [lift, setLift] = useState<number | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   /*
@@ -347,7 +351,21 @@ export default function InvitedCue({
     */
     <div
       className="pointer-events-none fixed inset-x-0 z-40 flex justify-center"
-      style={{ bottom: `${lift}px` }}
+      style={{
+        /*
+          Until measured: on a demo, above the bar at the foot, from the
+          bar's height the page published as it loaded (DemoCreateBar), as
+          the measure below puts it on a phone; it used to start at the
+          bottom of the screen and jump up when the script ran. Everywhere
+          else the bottom of the screen, as always.
+        */
+        bottom:
+          lift !== null
+            ? `${lift}px`
+            : clearOf === DEMO_BAR
+              ? `calc(var(--lifafa-foot-h, 0px) + min(var(--lifafa-foot-h, 0px), ${CLEAR_GAP_PX}px))`
+              : "0px",
+      }}
     >
       <button
         ref={buttonRef}

@@ -75,6 +75,7 @@ export default function PinnedStrip({
   }, []);
 
   return (
+    <>
     <div
       ref={ref}
       role="region"
@@ -109,8 +110,21 @@ export default function PinnedStrip({
         {action}
       </div>
     </div>
+    {/*
+      The same height, published while the page is still being read, before
+      its first paint. Without it the card was laid out under a strip it did
+      not know about until the page's script ran, seconds later on a slow
+      phone, and then everything under the strip jumped down by its height
+      (the largest layout shift on the demos). The effect above takes over
+      from here, and keeps it right as the strip changes size.
+    */}
+    <script dangerouslySetInnerHTML={{ __html: PUBLISH_HEIGHT }} />
+    </>
   );
 }
+
+/** Runs where it stands, right after the strip: measures it and sets --lifafa-preview-h. */
+const PUBLISH_HEIGHT = `(function(){var s=document.currentScript,p=s&&s.previousElementSibling;if(p&&p.getBoundingClientRect)document.documentElement.style.setProperty("--lifafa-preview-h",Math.ceil(p.getBoundingClientRect().height)+"px")})();`;
 
 /**
  * The strip's button: the marigold pill both strips end in, or the card's

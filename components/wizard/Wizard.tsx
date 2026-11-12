@@ -15,7 +15,10 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
-import EditorSkeleton, { EditorFormSkeleton } from "@/components/create/EditorSkeleton";
+import EditorSkeleton, {
+  EditorFormSkeleton,
+  QuickStartSkeleton,
+} from "@/components/create/EditorSkeleton";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import BusyLabel from "@/components/network/BusyLabel";
 import { markSaveReload, startSaveClock } from "@/lib/saveTiming";
@@ -134,11 +137,12 @@ if (typeof window !== "undefined") {
 }
 
 /** A step whose code is on its way: the form's skeleton, a screen high, said to a screen reader too. */
-function StepSkeleton(): ReactElement {
+function StepSkeleton({ quick = false }: { quick?: boolean }): ReactElement {
+  /* The quick start at its own height, so the footer under it does not jump up when it arrives. */
   return (
-    <div role="status" className="min-h-[100svh]">
+    <div role="status" className={quick ? undefined : "min-h-[100svh]"}>
       <span className="sr-only">Opening the editor…</span>
-      <EditorFormSkeleton />
+      {quick ? <QuickStartSkeleton /> : <EditorFormSkeleton />}
     </div>
   );
 }
@@ -1633,10 +1637,18 @@ function WizardSteps({
           <div
             className={`flex min-w-0 flex-col gap-1.5${inlinePreview ? " max-lg:sr-only" : ""}`}
           >
+            {/*
+              The quick start's title is two lines in Fraunces on a screen up to
+              396px wide and one line in the fallback face it is first drawn in:
+              its second line is held from the start there, so the form under
+              it does not drop when the font arrives.
+            */}
             <h1
               ref={headingRef}
               tabIndex={-1}
-              className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
+              className={`font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none${
+                step === "details" && detailsView === "quick" ? " max-[396px]:min-h-16" : ""
+              }`}
             >
               {/* The last step publishes a new card; for a saved one it is only a last look. */}
               {editing && step === "preview"
@@ -1660,7 +1672,9 @@ function WizardSteps({
             />
           ) : null}
 
-          {(step === "details" || step === "customize") && editor === null ? <StepSkeleton /> : null}
+          {(step === "details" || step === "customize") && editor === null ? (
+            <StepSkeleton quick={step === "details" && detailsView === "quick"} />
+          ) : null}
 
           {step === "details" && editor !== null ? (
             /* Everything the host types: masked from Clarity (lib/clarity.ts). `contents` keeps the layout as it was. */

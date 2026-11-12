@@ -14,6 +14,9 @@ export const DEMO_CREATE_BAR_SELECTOR = "[data-demo-create-bar]";
 /** The bar's height on <html>: what the cards that fill the screen leave for it. */
 const FOOT_HEIGHT_VARIABLE = "--lifafa-foot-h";
 
+/** Runs where it stands, right after the bar: measures it and sets FOOT_HEIGHT_VARIABLE. */
+const PUBLISH_FOOT_HEIGHT = `(function(){var s=document.currentScript,b=s&&s.previousElementSibling;if(b&&b.getBoundingClientRect)document.documentElement.style.setProperty(${JSON.stringify(FOOT_HEIGHT_VARIABLE)},Math.ceil(b.getBoundingClientRect().height)+"px")})();`;
+
 /**
  * The bar pinned to the foot of a phone's screen on a template's live demo:
  * what this card costs and "Create this card", where a thumb is.
@@ -81,6 +84,7 @@ export default function DemoCreateBar({
   }, []);
 
   return (
+    <>
     <div
       ref={ref}
       data-demo-create-bar=""
@@ -119,5 +123,13 @@ export default function DemoCreateBar({
         </Link>
       </div>
     </div>
+    {/*
+      The bar's height, published while the page is still being read. The
+      cards that fill the screen take it off their height; told only when the
+      page's script ran, seconds later on a slow phone, they shrank in front
+      of the visitor (a layout shift). The effect above takes over from here.
+    */}
+    <script dangerouslySetInnerHTML={{ __html: PUBLISH_FOOT_HEIGHT }} />
+    </>
   );
 }

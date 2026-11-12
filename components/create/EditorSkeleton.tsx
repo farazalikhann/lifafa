@@ -74,6 +74,28 @@ export function EditorFormSkeleton(): ReactElement {
   );
 }
 
+/**
+ * The quick start (the two names, the date, See my card and what comes next),
+ * drawn as blocks at its own height: 493px on a phone, 367px from the sm
+ * breakpoint, as measured. A screen-high skeleton there let the footer under
+ * it jump up into view when the form arrived.
+ */
+export function QuickStartSkeleton(): ReactElement {
+  return (
+    <div className="flex min-w-0 flex-col gap-6">
+      <div className="grid h-[250px] content-start gap-6 overflow-hidden sm:h-[162px] sm:grid-cols-2">
+        {[0, 120, 240].map((delay) => (
+          <FieldSkeleton key={delay} delay={delay} />
+        ))}
+      </div>
+      <div className="flex h-[72px] flex-col items-center gap-2">
+        <Bar className="h-14 w-full rounded-full" delay={300} />
+      </div>
+      <Bar className="h-[122px] w-full rounded-2xl sm:h-[86px]" delay={360} />
+    </div>
+  );
+}
+
 export default function EditorSkeleton({
   step = "details",
 }: {
