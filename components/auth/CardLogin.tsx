@@ -5,10 +5,11 @@ import SavedCardPreview, { type SavedCardStatus } from "@/components/auth/SavedC
 import SignInForm from "@/components/auth/SignInForm";
 import WhatsAppLink from "@/components/legal/WhatsAppLink";
 import { clarityEvent } from "@/lib/clarity";
+import type { InAppBrowser } from "@/lib/inAppBrowser";
 
 /**
  * The sign-in page for a visitor with a card waiting (app/login/page.tsx):
- * their card, why to sign in, Continue with Google, two lines of
+ * their card, why to sign in, the ways in (SignInForm), two lines of
  * reassurance and a way to ask for help.
  */
 export default function CardLogin({
@@ -17,6 +18,7 @@ export default function CardLogin({
   placeholder,
   redirectTo,
   initialError,
+  inApp,
 }: {
   status: SavedCardStatus;
   /** The handed-over card's id, when there is one. */
@@ -25,6 +27,7 @@ export default function CardLogin({
   placeholder: string | null;
   redirectTo: string;
   initialError: string | null;
+  inApp: InAppBrowser | null;
 }): ReactElement {
   return (
     <div className="flex flex-col">
@@ -40,7 +43,7 @@ export default function CardLogin({
       />
 
       <div className="mt-6">
-        <SignInForm redirectTo={redirectTo} initialError={initialError} />
+        <SignInForm redirectTo={redirectTo} initialError={initialError} inApp={inApp} />
       </div>
 
       <ul className="mt-5 flex flex-col gap-1.5 text-[0.8125rem] leading-snug text-[var(--lifafa-muted)]">

@@ -19,8 +19,9 @@ import { clarityEvent } from "@/lib/clarity";
  * - the wizard shows it when "Save and continue" could not open the real
  *   browser on its own (components/browser/useInAppHandoff.tsx), with a link
  *   to /login that carries the card;
- * - /login shows it on arrival (InAppLoginPrompt.tsx), since Google will not
- *   sign anyone in from here.
+ * - /login shows it when "Open in Chrome for Google" is pressed
+ *   (InAppLoginPrompt.tsx), since Google will not sign anyone in from here.
+ *   The email code comes first there, and works without leaving.
  *
  * ANDROID gets one button, an intent link that opens the link in Chrome.
  * IPHONE gets "Copy link". Without a card to carry, the ⋯ menu steps are drawn

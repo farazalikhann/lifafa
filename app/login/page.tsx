@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { headers } from "next/headers";
 import type { SavedCardStatus } from "@/components/auth/SavedCardPreview";
 import SignInForm from "@/components/auth/SignInForm";
 import { findTemplate } from "@/templates/registry";
 import { LOGIN_PLACEHOLDERS } from "@/lib/loginPlaceholders";
-import InAppLoginPrompt from "@/components/browser/InAppLoginPrompt";
+import { inAppBrowser } from "@/lib/inAppBrowser";
 import LegalFooter from "@/components/legal/LegalFooter";
 import Logo from "@/components/Logo";
 import { handoffFromSearch, isHandoffId, pathWithHandoff } from "@/lib/handoff/link";
@@ -97,6 +98,12 @@ export default async function LoginPage({
   */
   const template = typeof params.design === "string" ? findTemplate(params.design) : null;
   const placeholder = template === null ? null : (LOGIN_PLACEHOLDERS[template.id] ?? null);
+  /*
+    Instagram's or Facebook's browser, where Google will not sign anyone in:
+    the email code comes first there (SignInForm). Read from the request, not
+    in the browser, so the order is right from the first paint.
+  */
+  const inApp = inAppBrowser((await headers()).get("user-agent") ?? "");
 
   return (
     <main className="relative flex min-h-screen flex-col bg-[var(--lifafa-ink)]">
@@ -131,6 +138,7 @@ export default async function LoginPage({
               placeholder={placeholder}
               redirectTo={withCarriedCard(redirectTo, handoff)}
               initialError={params.error ?? null}
+              inApp={inApp}
             />
           ) : (
           <>
@@ -145,6 +153,7 @@ export default async function LoginPage({
             <SignInForm
               redirectTo={withCarriedCard(redirectTo, handoff)}
               initialError={params.error ?? null}
+              inApp={inApp}
             />
           </div>
           </>
@@ -173,9 +182,6 @@ export default async function LoginPage({
       </div>
 
       <LegalFooter className="relative z-10" />
-
-      {/* Google will not sign anyone in from Instagram's or Facebook's browser. Those only. */}
-      <InAppLoginPrompt />
     </main>
   );
 }

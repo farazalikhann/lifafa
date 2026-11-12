@@ -208,6 +208,11 @@ export function guardClarityNavigation(): void {
  *
  * - login_view_with_card: the sign-in page showed the visitor's own card.
  * - login_google_click: Continue with Google was pressed.
+ * - login_email_code_sent: a sign-in code was sent by email (the first, or a
+ *   new one).
+ * - login_email_code_verified: the code was accepted.
+ * - login_email_code_failed: sending or checking a code failed. Why is the
+ *   session's login_email_code_failed_reason tag (lib/auth/emailCode.ts).
  * - login_success: back from a sign in (marked by app/auth/callback/route.ts
  *   in SIGNED_IN_COOKIE, read by components/analytics/Clarity.tsx).
  * - handoff_open_failed: the card did not reach Chrome or Safari by itself
@@ -216,6 +221,9 @@ export function guardClarityNavigation(): void {
 export type ClarityEventName =
   | "login_view_with_card"
   | "login_google_click"
+  | "login_email_code_sent"
+  | "login_email_code_verified"
+  | "login_email_code_failed"
   | "login_success"
   | "handoff_open_failed"
   /* "Save and continue" measured from the press to the saved card on screen (lib/saveTiming.ts). */

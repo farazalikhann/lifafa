@@ -38,8 +38,10 @@ export default function LoginLoading(): ReactElement {
           </p>
 
           <div className="mt-8">
-            {/* Continue with Google. */}
+            {/* Continue with Google, "or", and Get a code on email. */}
             <Shimmer className="h-14 w-full rounded-full" />
+            <div className="my-5 h-4" />
+            <Shimmer className="h-12 w-full rounded-full" />
           </div>
         </div>
       </div>

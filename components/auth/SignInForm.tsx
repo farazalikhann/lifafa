@@ -1,18 +1,31 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import dynamic from "next/dynamic";
 import { loadClient, preloadClient } from "@/lib/supabase/loadClient";
 import { isOnline } from "@/lib/loadNotice";
 import { clarityEvent } from "@/lib/clarity";
+import { rememberAdParams, type InAppBrowser } from "@/lib/inAppBrowser";
+import EmailCodeForm, { MailMark } from "@/components/auth/EmailCodeForm";
+import { PRIMARY_SIGNIN_BUTTON, SECONDARY_SIGNIN_BUTTON } from "@/components/auth/styles";
+
+/* Its own download, fetched only when a visitor in an app's browser asks for Google. */
+const InAppLoginPrompt = dynamic(() => import("@/components/browser/InAppLoginPrompt"));
 
 /**
- * Sign in with Google, and nothing else.
+ * Sign in with Google, or with a 6-digit code sent by email.
  *
  * No password field, and no account to create: a host who has never been here
- * and a host returning press the same button. Google is the same Supabase
- * Auth, so a host who signed in another way before lands on the same
- * auth.users row when their Google address matches, and the host_id on their
- * events, and every RLS policy that compares it with auth.uid(), still matches.
+ * and a host returning do the same thing. Both are the same Supabase Auth, so
+ * a host lands on the same auth.users row whichever way they come, when the
+ * address matches, and the host_id on their events, and every RLS policy that
+ * compares it with auth.uid(), still matches.
+ *
+ * THE ORDER. Google first, the email code second. In Instagram's and
+ * Facebook's browsers (`inApp`, read from the user agent by the page, so it is
+ * right from the first paint), Google refuses to sign anyone in, so the email
+ * code comes first and Google second, as "Open in Chrome for Google" (or
+ * Safari), which opens the existing prompt (InAppLoginPrompt).
  */
 
 /** Messages for the reasons the callback route can hand back. */
@@ -22,6 +35,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   browser:
     "That sign in was started in a different browser from this one. Please try again here.",
   config: "Sign in is not available right now. Please try again shortly.",
+  session:
+    "Your code was right, but this browser did not keep you signed in. Please try again, or open this page in Chrome or Safari.",
 };
 
 /**
@@ -63,16 +78,37 @@ function GoogleMark(): ReactElement {
   );
 }
 
+/** "or", between the two ways in. */
+function Or(): ReactElement {
+  return (
+    <div
+      aria-hidden="true"
+      className="my-5 flex items-center gap-3 text-xs font-medium tracking-[0.08em] text-[var(--lifafa-muted)] uppercase"
+    >
+      <span className="h-px flex-1 bg-[var(--lifafa-hairline)]" />
+      or
+      <span className="h-px flex-1 bg-[var(--lifafa-hairline)]" />
+    </div>
+  );
+}
+
 export default function SignInForm({
   redirectTo,
   initialError,
+  inApp,
 }: {
   /** Where to land after signing in. A path, already validated by the caller. */
   redirectTo: string;
   /** A reason code from the callback route, if it bounced someone back here. */
   initialError: string | null;
+  /** Instagram's or Facebook's browser, read from the request's user agent; null elsewhere. */
+  inApp: InAppBrowser | null;
 }): ReactElement {
   const [isRedirecting, setIsRedirecting] = useState(false);
+  /** Elsewhere, the email code opens at a tap on "Get a code on email". */
+  const [emailOpen, setEmailOpen] = useState(false);
+  /** In an app's browser: the "Open in Chrome" prompt, at a tap. */
+  const [chromeOpen, setChromeOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(
     initialError === "cancelled" ? CANCELLED_NOTICE : null,
   );
@@ -82,6 +118,13 @@ export default function SignInForm({
       : (ERROR_MESSAGES[initialError] ??
         "Something went wrong signing you in. Please try again."),
   );
+
+  /* The ad's tags, kept for the link to the real browser (lib/inAppBrowser.ts). */
+  useEffect(() => {
+    if (inApp !== null) {
+      rememberAdParams(window.location.search);
+    }
+  }, [inApp]);
 
   /*
     Pressing Back on Google's screen can restore this page from the back/forward
@@ -183,6 +226,27 @@ export default function SignInForm({
     }
   };
 
+  const googleButton = (
+    <button
+      type="button"
+      onClick={() => void handleGoogleSignIn()}
+      disabled={isRedirecting}
+      aria-busy={isRedirecting}
+      aria-describedby={error === null ? undefined : "signin-error"}
+      className={PRIMARY_SIGNIN_BUTTON}
+    >
+      {/* The mark gives way to a spinner the moment it is pressed. */}
+      {isRedirecting ? (
+        <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" />
+        </span>
+      ) : (
+        <GoogleMark />
+      )}
+      {isRedirecting ? "Redirecting to Google…" : "Continue with Google"}
+    </button>
+  );
+
   return (
     <div>
       {notice !== null ? (
@@ -194,35 +258,51 @@ export default function SignInForm({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => void handleGoogleSignIn()}
-        disabled={isRedirecting}
-        aria-busy={isRedirecting}
-        aria-describedby={error === null ? undefined : "signin-error"}
-        className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[var(--lifafa-marigold)] px-5 text-base font-semibold text-[var(--lifafa-ink)] shadow-sm transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:cursor-wait disabled:opacity-70"
-      >
-        {/* The mark gives way to a spinner the moment it is pressed. */}
-        {isRedirecting ? (
-          <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" />
-          </span>
-        ) : (
-          <GoogleMark />
-        )}
-        {isRedirecting ? "Redirecting to Google…" : "Continue with Google"}
-      </button>
-
       {/* Inline, never an alert: a dialog interrupts and cannot be re-read. */}
       {error !== null ? (
         <p
           id="signin-error"
           role="alert"
-          className="mt-4 rounded-xl border border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/10 px-4 py-3 text-sm text-[var(--lifafa-cream)]"
+          className="mb-4 rounded-xl border border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/10 px-4 py-3 text-sm text-[var(--lifafa-cream)]"
         >
           {error}
         </p>
       ) : null}
+
+      {inApp === null ? (
+        <>
+          {googleButton}
+          <Or />
+          {emailOpen ? (
+            <EmailCodeForm redirectTo={redirectTo} primary={false} autoFocus />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEmailOpen(true)}
+              className={SECONDARY_SIGNIN_BUTTON}
+            >
+              <MailMark />
+              Get a code on email
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <EmailCodeForm redirectTo={redirectTo} primary autoFocus={false} />
+          <Or />
+          <button
+            type="button"
+            onClick={() => setChromeOpen(true)}
+            className={SECONDARY_SIGNIN_BUTTON}
+          >
+            <GoogleMark />
+            {inApp.platform === "android" ? "Open in Chrome for Google" : "Open in Safari for Google"}
+          </button>
+          {chromeOpen ? (
+            <InAppLoginPrompt browser={inApp} onClose={() => setChromeOpen(false)} />
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
