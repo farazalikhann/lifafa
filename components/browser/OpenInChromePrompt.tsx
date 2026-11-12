@@ -103,6 +103,37 @@ function LeaveIcon(): ReactElement {
   );
 }
 
+/** How long the page may stay in sight after opening the real browser before it counts as not opened. */
+const LEAVE_WAIT_MS = { android: 2000, ios: 1500 } as const;
+
+/**
+ * handoff_open_failed when the real browser did not open: the page is still
+ * in sight `ms` after it was asked to (lib/clarity.ts). Opened, this page goes
+ * out of sight and nothing is sent.
+ */
+function reportIfStillHere(ms: number): void {
+  let left = document.visibilityState === "hidden";
+  const onHide = (): void => {
+    if (document.visibilityState === "hidden") {
+      left = true;
+    }
+  };
+  const onPageHide = (): void => {
+    left = true;
+  };
+
+  document.addEventListener("visibilitychange", onHide);
+  window.addEventListener("pagehide", onPageHide);
+  window.setTimeout(() => {
+    document.removeEventListener("visibilitychange", onHide);
+    window.removeEventListener("pagehide", onPageHide);
+
+    if (!left && document.visibilityState === "visible") {
+      clarityEvent("handoff_open_failed");
+    }
+  }, ms);
+}
+
 /**
  * The top of the app's browser as a small sketch: the close cross, the
  * address, the ⋯ ringed in gold, and the menu it opens with the right row
@@ -217,6 +248,7 @@ export default function OpenInChromePrompt({
     try {
       const link = await getLink();
       window.location.href = chromeIntentUrl(link);
+      reportIfStillHere(LEAVE_WAIT_MS.android);
     } catch {
       /* The card could not be saved for Chrome: said, and the prompt stays to try again. */
       clarityEvent("handoff_open_failed");
@@ -239,6 +271,7 @@ export default function OpenInChromePrompt({
     try {
       const link = await getLink();
       window.location.href = safariUrl(link);
+      reportIfStillHere(LEAVE_WAIT_MS.ios);
     } catch {
       clarityEvent("handoff_open_failed");
       setSaveFailed(true);

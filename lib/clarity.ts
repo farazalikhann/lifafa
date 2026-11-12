@@ -215,8 +215,9 @@ export function guardClarityNavigation(): void {
  *   session's login_email_code_failed_reason tag (lib/auth/emailCode.ts).
  * - login_success: back from a sign in (marked by app/auth/callback/route.ts
  *   in SIGNED_IN_COOKIE, read by components/analytics/Clarity.tsx).
- * - handoff_open_failed: the card did not reach Chrome or Safari by itself
- *   from Instagram's or Facebook's browser, or could not be saved for it.
+ * - handoff_open_failed: from Instagram's or Facebook's browser, "Open in
+ *   Chrome" (Safari) on /login did not open it, or the card could not be
+ *   saved for it (components/browser/OpenInChromePrompt.tsx).
  */
 export type ClarityEventName =
   | "login_view_with_card"
