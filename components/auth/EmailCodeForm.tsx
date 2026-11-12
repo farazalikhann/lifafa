@@ -379,12 +379,9 @@ export default function EmailCodeForm({
           }}
           readOnly={busy !== null}
           aria-invalid={problem !== null}
-          aria-describedby={problem !== null ? `${problemId} ${helpId}` : helpId}
+          aria-describedby={problem !== null ? problemId : undefined}
           className={`${SIGNIN_FIELD} mt-2`}
         />
-        <p id={helpId} className="mt-2 text-[0.8125rem] leading-snug text-[var(--lifafa-muted)]">
-          We will email you a 6-digit code. No password needed.
-        </p>
 
         <button
           type="submit"
