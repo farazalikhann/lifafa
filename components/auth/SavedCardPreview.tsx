@@ -7,6 +7,9 @@ import { readPendingCard } from "@/lib/pendingCard";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
 
+/** When to ask again for a handed-over card the server could not read in time. */
+const UNKNOWN_RETRIES_MS = [1500, 3000] as const;
+
 /**
  * The top of the sign-in page when it was opened for a card: the visitor's
  * own card, small and still, "Your card is saved" and why to sign in. Or,
@@ -122,8 +125,24 @@ export default function SavedCardPreview({
     }
 
     let live = true;
+    let tries = 0;
+    let retry = 0;
+    const ask = (): void => {
+      void loginCardFor(handoff).then(settle, () => settle({ status: "unknown" }));
+    };
     const settle = (read: LoginCardRead): void => {
       if (!live) {
+        return;
+      }
+
+      /*
+        The server could not say in time (a slow read, a slow phone line):
+        asked again, a little later each time, while the page stays usable
+        with its friendly words. The card is shown whenever it arrives.
+      */
+      if (read.status === "unknown" && tries < UNKNOWN_RETRIES_MS.length) {
+        retry = window.setTimeout(ask, UNKNOWN_RETRIES_MS[tries]);
+        tries += 1;
         return;
       }
 
@@ -140,10 +159,11 @@ export default function SavedCardPreview({
             : null,
       );
     };
-    void loginCardFor(handoff).then(settle, () => settle({ status: "unknown" }));
+    ask();
 
     return () => {
       live = false;
+      window.clearTimeout(retry);
     };
   }, [status, handoff]);
 

@@ -10,14 +10,18 @@ import { hasCardOutline, toPendingCard, type PendingCard } from "@/lib/pendingCa
  * adoptDraftHandoff's, once sign in brings the visitor back to /create
  * (lib/handoff/actions.ts). Server code only: it reads the private bucket.
  *
- * Never holds the page up for long: an answer that has not come within
- * PEEK_MS is "unknown", and the page says only what is true either way.
+ * Never holds the page up: the page is drawn and usable without it, and asks
+ * for the card once it is up (components/auth/SavedCardPreview.tsx). An
+ * answer that has not come within PEEK_MS is "unknown", and the page asks
+ * again. PEEK_MS was 1.5 seconds, which a cold read of the bucket could take
+ * on its own (0.7 to 1.4 seconds were measured), and the card was then never
+ * shown at all.
  */
 
 const BUCKET = "draft-handoffs";
 /** As in lib/handoff/actions.ts. */
 const TTL_MS = 24 * 60 * 60 * 1000;
-const PEEK_MS = 1500;
+const PEEK_MS = 6000;
 
 export type HandoffPeek =
   /** Waiting to be saved to the account. */
