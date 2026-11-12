@@ -78,6 +78,15 @@ function GoogleMark(): ReactElement {
   );
 }
 
+/** One short line under a way in: what it asks of the host. */
+function Hint({ id, children }: { id: string; children: string }): ReactElement {
+  return (
+    <p id={id} className="mt-2 text-center text-xs leading-relaxed text-[var(--lifafa-muted)]">
+      {children}
+    </p>
+  );
+}
+
 /** "or", between the two ways in. */
 function Or(): ReactElement {
   return (
@@ -232,7 +241,7 @@ export default function SignInForm({
       onClick={() => void handleGoogleSignIn()}
       disabled={isRedirecting}
       aria-busy={isRedirecting}
-      aria-describedby={error === null ? undefined : "signin-error"}
+      aria-describedby={error === null ? "signin-google-hint" : "signin-error signin-google-hint"}
       className={PRIMARY_SIGNIN_BUTTON}
     >
       {/* The mark gives way to a spinner the moment it is pressed. */}
@@ -272,6 +281,7 @@ export default function SignInForm({
       {inApp === null ? (
         <>
           {googleButton}
+          <Hint id="signin-google-hint">Fastest. One tap with your Google account.</Hint>
           <Or />
           {emailOpen ? (
             <EmailCodeForm redirectTo={redirectTo} primary={false} autoFocus />
@@ -279,25 +289,34 @@ export default function SignInForm({
             <button
               type="button"
               onClick={() => setEmailOpen(true)}
+              aria-describedby="signin-email-hint"
               className={SECONDARY_SIGNIN_BUTTON}
             >
               <MailMark />
               Get a code on email
             </button>
           )}
+          <Hint id="signin-email-hint">No password. We email you a 6-digit code.</Hint>
         </>
       ) : (
         <>
           <EmailCodeForm redirectTo={redirectTo} primary autoFocus={false} />
+          <Hint id="signin-email-hint">Works right here. We email you a 6-digit code.</Hint>
           <Or />
           <button
             type="button"
             onClick={() => setChromeOpen(true)}
+            aria-describedby="signin-browser-hint"
             className={SECONDARY_SIGNIN_BUTTON}
           >
             <GoogleMark />
             {inApp.platform === "android" ? "Open in Chrome for Google" : "Open in Safari for Google"}
           </button>
+          <Hint id="signin-browser-hint">
+            {inApp.platform === "android"
+              ? "Opens Chrome, then pick your Google account."
+              : "Opens Safari, then pick your Google account."}
+          </Hint>
           {chromeOpen ? (
             <InAppLoginPrompt browser={inApp} onClose={() => setChromeOpen(false)} />
           ) : null}
