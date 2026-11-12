@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactElement } from "react";
 import { MotionStillContext } from "@/lib/motionBudget";
+import { PlaceholderScope } from "@/components/card/placeholders";
 import TemplateCard from "@/templates/TemplateCard";
 import { PREVIEW_INVITE } from "@/lib/calendar";
 import type { Motif } from "@/lib/motifs";
@@ -40,6 +41,7 @@ export default function StillCard({
   weather,
   weatherTheme,
   scale,
+  placeholders = true,
 }: {
   draft: EventDraft;
   theme: Theme;
@@ -48,6 +50,11 @@ export default function StillCard({
   weather: EventWeather | null;
   weatherTheme: WeatherThemeId;
   scale: number;
+  /**
+   * Whether empty details show the editor's placeholders ("Your names"). Yes
+   * beside the editor; no for a card shown as saved (/login).
+   */
+  placeholders?: boolean;
 }): ReactElement {
   const root = useRef<HTMLDivElement>(null);
 
@@ -70,6 +77,7 @@ export default function StillCard({
       style={{ width: STILL_WIDTH, height: STILL_HEIGHT, transform: `scale(${scale})` }}
     >
       <MotionStillContext.Provider value={true}>
+      <PlaceholderScope show={placeholders}>
       <TemplateCard
         draft={draft}
         theme={theme}
@@ -83,6 +91,7 @@ export default function StillCard({
         weatherTheme={weatherTheme}
         closingNote="card"
       />
+      </PlaceholderScope>
       </MotionStillContext.Provider>
     </div>
   );

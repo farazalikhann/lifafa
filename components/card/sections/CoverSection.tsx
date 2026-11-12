@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import type { ReactElement, ReactNode } from "react";
 import FrameStage from "@/components/card/FrameStage";
 import { useInView } from "@/hooks/useInView";
@@ -154,6 +155,7 @@ export default function CoverSection({
   const copy = cardCopy(language);
   const names = resolveCoverNames(draft, occasionId, language);
   const title = resolve(draft.eventTitle, copy.cover.titlePlaceholder);
+  const showPlaceholders = useShowPlaceholders();
 
   /*
     Where the stagger picks up after the names. A pair spends three steps, a
@@ -233,7 +235,8 @@ export default function CoverSection({
             />
           </div>
         </div>
-      ) : (
+      ) : names.isPlaceholder && !showPlaceholders ? null : (
+        /* The editor's "Your names"; nothing for a guest (components/card/placeholders.tsx). */
         <div className={reveal} style={lineDelay(0)}>
           <HeroName
             text={names.text}
@@ -243,6 +246,7 @@ export default function CoverSection({
         </div>
       )}
 
+      {title.isPlaceholder && !showPlaceholders ? null : (
       <div className={reveal} style={lineDelay(stepAfterNames)}>
         <p
           className="text-[calc(0.84*var(--card-rem,1rem))] tracking-[0.28em] break-words uppercase text-balance"
@@ -254,6 +258,7 @@ export default function CoverSection({
           {title.text}
         </p>
       </div>
+      )}
 
       <div className={reveal} style={lineDelay(stepAfterNames + 1)}>
         <CardFlourish accent={theme.accent} />

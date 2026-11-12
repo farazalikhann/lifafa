@@ -208,7 +208,14 @@ export async function GET(
             <div style={heroStyle(palette.textPrimary)}>{names.second}</div>
           </div>
         ) : (
-          <div style={heroStyle(palette.textPrimary)}>{names.text}</div>
+          /* Never the card's "Your names": the title, or a plain welcome, on a card with no names. */
+          <div style={heroStyle(palette.textPrimary)}>
+            {names.isPlaceholder
+              ? draft.eventTitle.trim().length > 0
+                ? draft.eventTitle.trim()
+                : "You are invited"
+              : names.text}
+          </div>
         )}
 
         <div

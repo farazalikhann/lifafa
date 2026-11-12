@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import { useLayoutEffect, useRef, type CSSProperties, type ReactElement } from "react";
 import { preload } from "react-dom";
 import GoldFlower from "@/components/invite/covers/GoldFlower";
@@ -44,6 +45,7 @@ export default function DakGharNames({
   language: CardLanguage;
   minHeight: string;
 }): ReactElement {
+  const showPlaceholders = useShowPlaceholders();
   /* Seen as the slip lifts away: asked for early, though the cover does not wait on it. */
   preload(ART.letter, { as: "image" });
   preload(ART.paper, { as: "image" });
@@ -128,7 +130,10 @@ export default function DakGharNames({
               </div>
             ) : (
               <p className={`${styles.line} max-w-full wrap-anywhere text-balance`} style={{ ...line(2), ...nameStyle }}>
-                <span style={{ opacity: names.isPlaceholder ? placeholderOpacity(true, "primary") : 1 }}>{names.text}</span>
+                {/* The editor's "Your names"; nothing for a guest (components/card/placeholders.tsx). */}
+                {names.isPlaceholder && !showPlaceholders ? null : (
+                  <span style={{ opacity: names.isPlaceholder ? placeholderOpacity(true, "primary") : 1 }}>{names.text}</span>
+                )}
               </p>
             )}
 

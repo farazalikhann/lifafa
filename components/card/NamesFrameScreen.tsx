@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import FrameStage from "@/components/card/FrameStage";
 import { OpeningCorner } from "@/components/card/decor/SlotOrnaments";
@@ -149,6 +150,7 @@ export default function NamesFrameScreen({
   const copy = cardCopy(language);
   const names = resolveCoverNames(draft, occasionId, language);
   const title = resolve(draft.eventTitle, copy.cover.titlePlaceholder);
+  const showPlaceholders = useShowPlaceholders();
 
   /* On the block's own children, which are the flex items the fitting rules name. */
   const reveal = `${REVEAL_BASE} ${revealClass(isInView)}`;
@@ -248,7 +250,8 @@ export default function NamesFrameScreen({
                 style={{ "--card-names-leading": NAMES_LEADING } as CSSProperties}
               >
                 <HeroName
-                  text={names.text}
+                  /* The editor's "Your names"; nothing for a guest (components/card/placeholders.tsx). */
+                  text={names.isPlaceholder && !showPlaceholders ? "" : names.text}
                   isPlaceholder={names.isPlaceholder}
                   script={copy.script}
                 />
@@ -276,7 +279,7 @@ export default function NamesFrameScreen({
             opacity: placeholderOpacity(title.isPlaceholder, "muted"),
           }}
         >
-          {title.text}
+          {title.isPlaceholder && !showPlaceholders ? "" : title.text}
         </p>
 
         {corners !== null ? (

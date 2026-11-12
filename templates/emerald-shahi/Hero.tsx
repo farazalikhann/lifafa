@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import {
   useLayoutEffect,
   useRef,
@@ -149,6 +150,7 @@ export default function EmeraldShahiHero({
   headingFont: CSSProperties;
   bodyFont: CSSProperties;
 }): ReactElement {
+  const showPlaceholders = useShowPlaceholders();
   /* The frame is the first thing seen as the envelope fades; fetched early, though the cover does not wait on it. */
   preload(ART.heroFrame, { as: "image" });
 
@@ -324,10 +326,12 @@ export default function EmeraldShahiHero({
                 style={{ ...line(2).style, ...script }}
               >
                 {names.isPlaceholder ? (
-                  /* The editor's "Your names", fainter than a name; never seen by a guest. */
-                  <span style={{ opacity: placeholderOpacity(true, "primary") }}>
-                    {names.text}
-                  </span>
+                  /* The editor's "Your names", fainter than a name; nothing for a guest (components/card/placeholders.tsx). */
+                  showPlaceholders ? (
+                    <span style={{ opacity: placeholderOpacity(true, "primary") }}>
+                      {names.text}
+                    </span>
+                  ) : null
                 ) : (
                   <Shimmering text={names.text} />
                 )}

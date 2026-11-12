@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import {
   useEffect,
   useRef,
@@ -137,7 +138,7 @@ export default function VenueSection({
   language: CardLanguage;
   /** The painting of the place the host chose, or null for none. */
   illustration: VenueArt | null;
-}): ReactElement {
+}): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
   const shared = useScratchReveal(scratch === null ? undefined : "venue");
   const [copied, setCopied] = useState(false);
@@ -153,6 +154,7 @@ export default function VenueSection({
   );
 
   const copy = cardCopy(language);
+  const showPlaceholders = useShowPlaceholders();
   const venue = resolve(draft.venueName, copy.venue.namePlaceholder);
   const address = resolve(
     readableAddress(draft.venueAddress),
@@ -231,6 +233,7 @@ export default function VenueSection({
         pair's heading face in whichever of the card's two text colours reads
         on it. A long name wraps inside it rather than running off the card.
       */}
+      {venue.isPlaceholder && !showPlaceholders ? null : (
       <p
         className="max-w-full px-7 py-2 text-[calc(1.3*var(--card-rem,1rem))] break-words text-balance"
         style={{
@@ -246,12 +249,14 @@ export default function VenueSection({
       >
         {venue.text}
       </p>
+      )}
 
       {/*
         A guest has to be able to read the address in full, so it is never
         truncated: 34ch and text-pretty, and `break-words` for a plus code or a
         run-together landmark name that would otherwise run off the card.
       */}
+      {address.isPlaceholder && !showPlaceholders ? null : (
       <p
         className="max-w-[34ch] text-[calc(0.9*var(--card-rem,1rem))] leading-relaxed break-words text-pretty"
         style={{
@@ -261,8 +266,14 @@ export default function VenueSection({
       >
         {address.text}
       </p>
+      )}
     </div>
   );
+
+  /* No venue yet, on a guest's card: the section is left out, not drawn around placeholders. */
+  if (venue.isPlaceholder && address.isPlaceholder && !showPlaceholders) {
+    return null;
+  }
 
   const buttonBase =
     "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[calc(0.9*var(--card-rem,1rem))] font-semibold whitespace-nowrap transition-[transform,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none";

@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import {
   useLayoutEffect,
   useRef,
@@ -139,6 +140,7 @@ export default function SheeshNamesPage({
   language: CardLanguage;
   fonts: SheeshFonts;
 }): ReactElement {
+  const showPlaceholders = useShowPlaceholders();
   /* The cover's hall, the same picture: asked for with the cover's (lighter.ts). */
   const art = useCoverArt();
 
@@ -227,10 +229,12 @@ export default function SheeshNamesPage({
           ) : (
             <Line order={1} name className={styles.nameLine} style={script}>
               {names.isPlaceholder ? (
-                /* The editor's "Your names", fainter than a name; never seen by a guest. */
-                <span className={styles.onNight} style={{ opacity: placeholderOpacity(true, "primary") }}>
-                  {names.text}
-                </span>
+                /* The editor's "Your names", fainter than a name; nothing for a guest (components/card/placeholders.tsx). */
+                showPlaceholders ? (
+                  <span className={styles.onNight} style={{ opacity: placeholderOpacity(true, "primary") }}>
+                    {names.text}
+                  </span>
+                ) : null
               ) : (
                 <Foil text={names.text} />
               )}

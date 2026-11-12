@@ -35,6 +35,8 @@ export default function SavedCardStill({
       weather={null}
       weatherTheme={DEFAULT_WEATHER_THEME}
       scale={height / STILL_HEIGHT}
+      /* Shown as saved: an empty detail is left out, never "Your names". */
+      placeholders={false}
       />
     </>
   );

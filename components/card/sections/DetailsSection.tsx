@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import AddToCalendar from "@/components/card/AddToCalendar";
 import FrameStage from "@/components/card/FrameStage";
@@ -173,8 +174,9 @@ export default function DetailsSection({
    * panel or the scroll.
    */
   tear?: TearConfig | null;
-}): ReactElement {
+}): ReactElement | null {
   const { ref, isInView } = useInView<HTMLElement>(SECTION_REVEAL_OPTIONS);
+  const showPlaceholders = useShowPlaceholders();
 
   const copy = cardCopy(language);
   const page = calendarPageText(draft.eventDate, draft.eventTime, language);
@@ -366,6 +368,11 @@ export default function DetailsSection({
     ) : (
       <ScratchPanel {...scratch}>{when}</ScratchPanel>
     );
+
+  /* No date yet, on a guest's card: the section is left out, not drawn around a placeholder. */
+  if (page === null && !showPlaceholders) {
+    return null;
+  }
 
   return (
     <section

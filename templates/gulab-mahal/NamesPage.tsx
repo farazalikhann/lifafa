@@ -1,5 +1,6 @@
 "use client";
 
+import { useShowPlaceholders } from "@/components/card/placeholders";
 import {
   useRef,
   type CSSProperties,
@@ -91,6 +92,7 @@ export default function GulabNamesPage({
   language: CardLanguage;
   fonts: GulabFonts;
 }): ReactElement {
+  const showPlaceholders = useShowPlaceholders();
   /* The first thing seen as the letter fades; fetched early, though the cover does not wait on it. */
   preload(ART.cameo, { as: "image", fetchPriority: "high" });
   preload(ART.corner, { as: "image" });
@@ -216,10 +218,12 @@ export default function GulabNamesPage({
                 style={script}
               >
                 {names.isPlaceholder ? (
-                  /* The editor's "Your names", fainter than a name; never seen by a guest. */
-                  <span style={{ opacity: placeholderOpacity(true, "primary") }}>
-                    {names.text}
-                  </span>
+                  /* The editor's "Your names", fainter than a name; nothing for a guest (components/card/placeholders.tsx). */
+                  showPlaceholders ? (
+                    <span style={{ opacity: placeholderOpacity(true, "primary") }}>
+                      {names.text}
+                    </span>
+                  ) : null
                 ) : (
                   <Foil text={names.text} />
                 )}
