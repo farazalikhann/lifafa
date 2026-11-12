@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { SLOW_LOAD_MS, clearWaiting, reportWaiting } from "@/lib/loadNotice";
 
@@ -69,20 +69,26 @@ export default function NavProgress(): null {
   const pathname = usePathname();
   const search = useSearchParams().toString();
   const id = `nav-${useId()}`;
+  /*
+    The tap's two timers, held here so the arrival below can stop them. They
+    used to outlive the navigation: the next page was on screen in a moment,
+    and 8 seconds after the tap the notice still said the internet seemed
+    slow (seen on /login, reached from "Sign in", on a fast phone).
+  */
+  const timers = useRef({ slow: 0, giveUp: 0 });
 
-  /* The address changed: the next page is here. */
+  /* The address changed: the next page is here, and nothing is waiting any more. */
   useEffect(() => {
+    window.clearTimeout(timers.current.slow);
+    window.clearTimeout(timers.current.giveUp);
     clear();
     clearWaiting(id);
   }, [pathname, search, id]);
 
   useEffect(() => {
-    let slow = 0;
-    let giveUp = 0;
-
     const stop = (): void => {
-      window.clearTimeout(slow);
-      window.clearTimeout(giveUp);
+      window.clearTimeout(timers.current.slow);
+      window.clearTimeout(timers.current.giveUp);
       clear();
       clearWaiting(id);
     };
@@ -104,10 +110,16 @@ export default function NavProgress(): null {
       }
 
       const href = link.href;
-      slow = window.setTimeout(() => {
-        reportWaiting(id, { kind: "slow", retry: () => window.location.assign(href) });
+      timers.current.slow = window.setTimeout(() => {
+        /* Only while that page is still on its way: still busy, and still not the page on screen. */
+        if (
+          document.documentElement.hasAttribute(BUSY) &&
+          new URL(href).pathname + new URL(href).search !== window.location.pathname + window.location.search
+        ) {
+          reportWaiting(id, { kind: "slow", retry: () => window.location.assign(href) });
+        }
       }, SLOW_LOAD_MS);
-      giveUp = window.setTimeout(stop, GIVE_UP_MS);
+      timers.current.giveUp = window.setTimeout(stop, GIVE_UP_MS);
     };
 
     const onPageShow = (event: PageTransitionEvent): void => {
