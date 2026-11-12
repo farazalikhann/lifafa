@@ -838,9 +838,10 @@ export function purchase(payment: {
 /**
  * A visitor in Instagram's or Facebook's in-app browser being sent to the real
  * one (lib/inAppBrowser.ts). A custom event: `platform` is android or ios,
- * `app` is instagram or facebook, and `step` is save ("Save and continue" in
- * the wizard, components/browser/useInAppHandoff.tsx) or signin (the button
- * in the prompt on /login, components/browser/InAppLoginPrompt.tsx).
+ * `app` is instagram or facebook, and `step` is signin (the button in the
+ * prompt on /login, components/browser/InAppLoginPrompt.tsx). `save` was the
+ * wizard's own hand-over, which no longer happens; kept in the type so old
+ * reports still read.
  */
 export function openInBrowserClick(click: {
   platform: "android" | "ios";

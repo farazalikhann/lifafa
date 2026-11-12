@@ -31,8 +31,6 @@ import PendingCardNotice, {
   displayHost,
   type PendingCardProblem,
 } from "@/components/create/PendingCardNotice";
-import { useInAppHandoff } from "@/components/browser/useInAppHandoff";
-import { inAppBrowser } from "@/lib/inAppBrowser";
 import { adoptDraftHandoff, type AdoptResult } from "@/lib/handoff/actions";
 import { HANDOFF_PARAM, handoffFromSearch, pathWithHandoff } from "@/lib/handoff/link";
 import { forgetHandoff, rememberHandoff, seenHandoff } from "@/lib/handoff/seen";
@@ -975,27 +973,6 @@ function WizardSteps({
    * Stashes the card and the step, and sends the host to sign in. Returns the
    * error to show when the card could not be kept, and null once on the way.
    */
-  const {
-    leave: leaveInAppBrowser,
-    prepare: prepareInAppLeave,
-    prompt: inAppPrompt,
-    opening: openingBrowser,
-  } = useInAppHandoff();
-
-  /* The card as it is carried to sign in: stashed here, or handed to the real browser. */
-  const carriedCard = useCallback(
-    (snapshot: EditorSnapshot) => ({
-      draft: snapshot.draft,
-      config: snapshot.config,
-      coverAnimation: snapshot.coverAnimation,
-      showWeather: snapshot.showWeather,
-      weatherTheme: snapshot.weatherTheme,
-      qrCheckinEnabled: snapshot.qrCheckinEnabled,
-      step: stepRef.current,
-    }),
-    [],
-  );
-
   const sendToSignIn = useCallback(
     (snapshot: EditorSnapshot): string | null => {
       const stashed = writePendingCard({
@@ -1024,30 +1001,20 @@ function WizardSteps({
   );
 
   /**
-   * "Save and continue" while signed out. In Instagram's or Facebook's
-   * browser, where Google will not sign anyone in, the card goes on to Chrome
-   * or Safari and this page stays (components/browser/useInAppHandoff.tsx);
-   * the stash is still written, so a reload here keeps the card. Anywhere
-   * else, sendToSignIn as always.
+   * "Save and continue" while signed out: sendToSignIn, in every browser.
+   *
+   * Instagram's and Facebook's browsers too, since /login signs a host in
+   * there with an email code. The card used to be handed over to Chrome or
+   * Safari from here; now it goes to /login in this same browser like any
+   * other, and /login offers Chrome or Safari for Google only at a tap
+   * (components/browser/InAppLoginPrompt.tsx), carrying the card then.
    */
   const continueSignedOut = useCallback(
     async (snapshot: EditorSnapshot): Promise<SaveOutcome> => {
-      if (inAppBrowser(navigator.userAgent) === null) {
-        const failure = sendToSignIn(snapshot);
-        return failure === null ? { ok: true } : { ok: false, error: failure };
-      }
-
-      const card = carriedCard(snapshot);
-
-      writePendingCard(card);
-      await leaveInAppBrowser(
-        card,
-        pendingCardReturnPath(wizardStepPath(stepRef.current)),
-      );
-
-      return { ok: true, stay: true };
+      const failure = sendToSignIn(snapshot);
+      return failure === null ? { ok: true } : { ok: false, error: failure };
     },
-    [sendToSignIn, leaveInAppBrowser, carriedCard],
+    [sendToSignIn],
   );
 
   /**
@@ -1159,14 +1126,6 @@ function WizardSteps({
         in. There is no second trip to Supabase from the browser first.
       */
       const clock = startSaveClock();
-      /*
-        In Instagram's or Facebook's browser nobody can sign in with Google,
-        so the save is almost always a hand-over to Chrome or Safari: the card
-        starts saving for it now, beside the server's answer, so the other
-        browser still opens inside the 5 seconds a tap allows. A signed-in
-        host's unused copy goes with its day.
-      */
-      prepareInAppLeave(carriedCard(snapshot));
       const result = await createEvent(
         snapshot.draft,
         snapshot.config,
@@ -1197,7 +1156,7 @@ function WizardSteps({
 
       return { ok: true };
     },
-    [router, continueSignedOut, edit, start, dashboardHref, watchSavedCard, prepareInAppLeave, carriedCard],
+    [router, continueSignedOut, edit, start, dashboardHref, watchSavedCard],
   );
 
   const {
@@ -2086,21 +2045,13 @@ function WizardSteps({
               <button
                 type="button"
                 onClick={pressSave}
-                disabled={isSaving || openingBrowser !== null}
-                aria-busy={isSaving || openingBrowser !== null}
+                disabled={isSaving}
+                aria-busy={isSaving}
                 className={PRIMARY_BUTTON}
               >
                 <BusyLabel
-                  busy={isSaving || openingBrowser !== null}
-                  busyText={
-                    openingBrowser === "android"
-                      ? "Opening Chrome…"
-                      : openingBrowser === "ios"
-                        ? "Opening Safari…"
-                        : saveSlow
-                          ? "Almost done, opening your card…"
-                          : "Saving…"
-                  }
+                  busy={isSaving}
+                  busyText={saveSlow ? "Almost done, opening your card…" : "Saving…"}
                 >
                   Save and continue
                 </BusyLabel>
@@ -2131,9 +2082,6 @@ function WizardSteps({
           }}
         />
       ) : null}
-
-      {/* "Open in Chrome" by hand, when "Save and continue" could not open it. In-app browsers only. */}
-      {inAppPrompt}
 
       {isPreviewOpen && FullScreenPreview !== null ? (
         <PreviewBoundary

@@ -15,12 +15,11 @@ import { clarityEvent } from "@/lib/clarity";
 /**
  * "Open in Chrome", the small prompt for a visitor in Instagram's or
  * Facebook's in-app browser (lib/inAppBrowser.ts). It never opens by itself:
- *
- * - the wizard shows it when "Save and continue" could not open the real
- *   browser on its own (components/browser/useInAppHandoff.tsx), with a link
- *   to /login that carries the card;
- * - /login shows it when "Open in Chrome for Google" is pressed
- *   (InAppLoginPrompt.tsx), since Google will not sign anyone in from here.
+ * /login shows it when "Open in Chrome for Google" is pressed
+ * (InAppLoginPrompt.tsx), since Google will not sign anyone in from here,
+ * with a link that carries the card. The wizard no longer sends anyone to
+ * the real browser: it goes to /login in the same browser, where the email
+ * code works.
  *   The email code comes first there, and works without leaving.
  *
  * ANDROID gets one button, an intent link that opens the link in Chrome.

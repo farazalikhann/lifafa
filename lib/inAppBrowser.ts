@@ -2,10 +2,10 @@
  * Instagram's and Facebook's in-app browsers, and the way out of them.
  *
  * Google refuses to sign anyone in from inside an app's own web view, so a
- * host who taps an ad there can design a card but cannot save it. They are
- * let be until they press "Save and continue"; then the card is saved on the
- * server (lib/handoff/actions.ts) and they are sent to /login in a real
- * browser with its id (components/browser/useInAppHandoff.tsx).
+ * host who taps an ad there signs in on /login with an email code instead,
+ * in the same browser. "Open in Chrome for Google" on /login is the way to
+ * Google: the card is saved on the server (lib/handoff/actions.ts) and the
+ * real browser opens /login with its id (components/browser/InAppLoginPrompt.tsx).
  *
  * INSTAGRAM AND FACEBOOK ONLY. Instagram's web view puts "Instagram" in the
  * user agent; Facebook's puts FBAN, FBAV or FB_IAB. Every other browser,
