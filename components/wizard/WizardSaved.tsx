@@ -64,13 +64,33 @@ export default function WizardSaved({
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)]">
             Your invitation is saved
           </h1>
-          <p
-            data-clarity-mask="true"
-            className="text-[0.9375rem] leading-relaxed break-words text-[var(--lifafa-muted)]"
-          >
-            {coverNameLine(names)}
-          </p>
+          {/* The names when there are any; never the card's "Your names" placeholder. */}
+          {names.kind === "line" && names.isPlaceholder ? null : (
+            <p
+              data-clarity-mask="true"
+              className="text-[0.9375rem] leading-relaxed break-words text-[var(--lifafa-muted)]"
+            >
+              {coverNameLine(names)}
+            </p>
+          )}
         </div>
+
+        {/*
+          Where the card is changed from now on. "Edit", never "anytime": once
+          paid, the dashboard explains what can still change (lib/eventLock.ts).
+        */}
+        <p
+          data-edit-pointer=""
+          className="rounded-2xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/[0.08] px-4 py-3 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)]"
+        >
+          You can edit your card from your dashboard.{" "}
+          <Link
+            href={`/dashboard/${event.id}/edit`}
+            className="whitespace-nowrap text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            Edit my card
+          </Link>
+        </p>
 
         <PaymentBanner
           isPaid={event.isPaid}

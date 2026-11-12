@@ -3,8 +3,9 @@ import Link from "next/link";
 import type { ChecklistItem, ChecklistItemId } from "@/lib/cardChecklist";
 
 /**
- * "Complete your card": what a card has and what it still needs, one line
- * each, with a way to add what is missing.
+ * "Add more to your card": what a card has and what it could also have, one
+ * line each, with a way to add it. Optional, all of it: a guide, never a list
+ * of things that must be done before saving.
  *
  * Two homes, one look. Under a new card's preview in the wizard, where "Add"
  * opens only that part of the details form (`onAdd`). On the dashboard of a
@@ -48,32 +49,21 @@ export default function CardChecklist({
   /** On the dashboard: the whole form. */
   showAllHref?: string;
 }): ReactElement {
-  const done = items.filter((item) => item.done).length;
-
   return (
     <section
       aria-labelledby="card-checklist-heading"
       data-card-checklist=""
       className="flex flex-col gap-4 rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] p-5"
     >
-      <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2
-            id="card-checklist-heading"
-            className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--lifafa-cream)]"
-          >
-            Complete your card
-          </h2>
-          <p className="text-sm whitespace-nowrap text-[var(--lifafa-muted)] tabular-nums">
-            {done} of {items.length} done
-          </p>
-        </div>
-        <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-[var(--lifafa-hairline)]">
-          <div
-            className="h-full rounded-full bg-[var(--lifafa-marigold)]"
-            style={{ width: `${(done / items.length) * 100}%` }}
-          />
-        </div>
+      {/* A guide, not a task list: no count of what is done and no progress bar. */}
+      <div className="flex flex-col gap-1">
+        <h2
+          id="card-checklist-heading"
+          className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--lifafa-cream)]"
+        >
+          Add more to your card
+        </h2>
+        <p className="text-sm text-[var(--lifafa-muted)]">Add what you have now. Everything here is optional.</p>
       </div>
 
       <ul className="flex flex-col">

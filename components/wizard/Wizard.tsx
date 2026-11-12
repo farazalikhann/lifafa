@@ -904,15 +904,19 @@ function revealField(id: string): void {
 const QUICK_START_TITLE = "Let's see your card in 10 seconds";
 const CARD_TITLE = "Your card";
 /** Over the card the moment "See my card" has made it. */
-const CARD_READY = "Your card is ready! Now add your venue and functions to complete it.";
+const CARD_READY =
+  "Your card is ready! Nothing here is final. Add more details now, or edit your card later from your dashboard.";
 
-/** Said over "Save and continue" when the card has no venue, or no start time. */
-const NO_VENUE_REMINDER =
-  "Your card has no venue yet. Guests will need it to find you. Add it now, or save and add it later from your dashboard.";
-const NO_TIME_REMINDER =
-  "Your card has no start time yet. Guests will need it to plan their day. Add it now, or save and add it later from your dashboard.";
-const REMINDER_BUTTON =
-  "min-h-11 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
+/*
+  What the host is told about changing the card later. True for every card:
+  a card is edited from its dashboard, before payment as much as the host
+  likes and after it within the limits the dashboard explains (a date and the
+  names can be changed a few times, and an invitation whose day is over is
+  closed; lib/eventLock.ts). So "edit", and never "anytime" or "everything".
+*/
+const DETAILS_REASSURANCE =
+  "Nothing here is final. Add what you have now. You can edit your card later from your dashboard.";
+const SAVE_REASSURANCE = "Save now. You can edit your card later from your dashboard.";
 
 function WizardSteps({
   start,
@@ -1458,29 +1462,12 @@ function WizardSteps({
     editing || draft.venueName.trim().length > 0 ? undefined : () => openItem("venue");
 
   /*
-    "Save and continue" on a new card with no venue or no start time: a small
-    word first, with "Add venue" and "Save anyway". Never a block: pressed
-    again, or "Save anyway", it saves as it always has.
+    "Save and continue" saves, on the first press. Every detail is optional
+    and nothing stands in front of the save: no reminder about a venue or a
+    time, and nothing listing what is still to add. The card can be changed
+    from the dashboard after it is saved, which the step says above the button.
   */
-  const [saveReminder, setSaveReminder] = useState<"venue" | "time" | null>(null);
-
-  /* Said for one press on the last step: gone once the host moves to another. */
-  useEffect(() => {
-    setSaveReminder(null);
-  }, [step]);
-
-  const pressSave = (): void => {
-    const noVenue = draft.venueName.trim().length === 0;
-    const noTime = draft.eventTime.trim().length === 0;
-
-    if (saveReminder === null && (noVenue || noTime)) {
-      setSaveReminder(noVenue ? "venue" : "time");
-      return;
-    }
-
-    setSaveReminder(null);
-    handleSave();
-  };
+  const pressSave = handleSave;
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const {
@@ -1575,12 +1562,6 @@ function WizardSteps({
   };
 
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
-  const missing = [
-    draft.eventTitle.trim().length === 0 ? "the event's title" : null,
-    draft.eventDate.length === 0 ? "the date" : null,
-    draft.venueName.trim().length === 0 ? "the venue" : null,
-  ].filter((entry): entry is string => entry !== null);
-
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
@@ -1696,6 +1677,33 @@ function WizardSteps({
             </h1>
             {showIntro ? <p className={TRUST_TEXT}>{TRUST_LINE}</p> : null}
           </div>
+
+          {/*
+            At the top of the details, in words a host cannot miss: nothing here
+            has to be right now. Over a card just made, the "ready" line says
+            the same, so the card and its guide stay on the first screen.
+          */}
+          {step === "details" && !editing && !(detailsView === "card" && justMade) ? (
+            <p
+              data-details-reassurance=""
+              className="flex items-start gap-2.5 rounded-2xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/[0.08] px-4 py-3 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--lifafa-marigold)]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+              {DETAILS_REASSURANCE}
+            </p>
+          ) : null}
 
           {step === "template" ? (
             <TemplateGallery
@@ -1926,7 +1934,8 @@ function WizardSteps({
                     data-clarity-mask="true"
                     className="font-[family-name:var(--font-display)] text-xl font-semibold break-words text-[var(--lifafa-cream)]"
                   >
-                    {coverNameLine(names)}
+                    {/* The names when there are any; never the card's "Your names" placeholder. */}
+                    {names.kind === "line" && names.isPlaceholder ? "Your card" : coverNameLine(names)}
                   </p>
                   <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
                     Open the invitation exactly as your guests will: the cover,
@@ -1943,26 +1952,6 @@ function WizardSteps({
                   <BusyLabel busy={previewOpening}>Preview full screen</BusyLabel>
                 </button>
               </div>
-
-              {missing.length > 0 ? (
-                <div
-                  role="status"
-                  className="flex flex-col items-start gap-1 rounded-2xl border border-[var(--lifafa-hairline)] px-5 py-4"
-                >
-                  <p className="text-sm leading-relaxed text-[var(--lifafa-cream)]">
-                    Still to add: {missing.join(", ")}. You can save without{" "}
-                    {missing.length === 1 ? "it" : "them"} and fill{" "}
-                    {missing.length === 1 ? "it" : "them"} in later.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => goTo("details")}
-                    className="min-h-11 rounded text-sm font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
-                  >
-                    Go to details
-                  </button>
-                </div>
-              ) : null}
 
               {/* A saved invitation is not being paid for here: its link, and its price, are as they were. */}
               {editing ? null : (
@@ -2029,38 +2018,14 @@ function WizardSteps({
             {error}
           </p>
         ) : null}
-        {saveReminder !== null && isLast && !editing ? (
-          <div
-            role="status"
-            data-save-reminder=""
-            className="mx-auto flex max-w-6xl flex-col gap-2.5 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 sm:px-12 lg:px-[5.5rem] xl:px-8"
+        {isLast && !editing ? (
+          /* Right over "Save and continue": saving now is safe, and the card is not final. */
+          <p
+            data-save-reassurance=""
+            className="mx-auto max-w-6xl border-b border-[var(--lifafa-hairline)] px-4 py-2.5 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)] sm:px-12 lg:px-[5.5rem] xl:px-8"
           >
-            <p className="text-[0.8125rem] leading-relaxed text-[var(--lifafa-cream)]">
-              {saveReminder === "venue" ? NO_VENUE_REMINDER : NO_TIME_REMINDER}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSaveReminder(null);
-                  openItem("venue");
-                }}
-                className={REMINDER_BUTTON}
-              >
-                {saveReminder === "venue" ? "Add venue" : "Add time"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSaveReminder(null);
-                  handleSave();
-                }}
-                className={REMINDER_BUTTON}
-              >
-                Save anyway
-              </button>
-            </div>
-          </div>
+            {SAVE_REASSURANCE}
+          </p>
         ) : null}
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
           {index > 0 ? (
