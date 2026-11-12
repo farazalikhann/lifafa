@@ -521,6 +521,61 @@ function WizardArrival({
   const [arrived, setArrived] = useState<ArrivalStart | null>(() =>
     handoff === null ? localStart(templateId, window.location.search) : null,
   );
+  /*
+    Back from signing in (Google or the email code) with the card stashed in
+    this browser: saved to the account at once and opened as the saved card,
+    as a card handed over from Instagram's or Facebook's browser always was
+    (adoptDraftHandoff). The host used to land back in the editor and press
+    "Save and continue" again. Signed out after all (Back from /login), or a
+    save that fails: the editor with the card, as before.
+  */
+  const [finishing, setFinishing] = useState(
+    () =>
+      handoff === null &&
+      arrived?.arrival.kind === "restored" &&
+      stashOriginFromUrl(window.location.search) !== null,
+  );
+
+  useEffect(() => {
+    if (!finishing || arrived === null || arrived.arrival.kind !== "restored") {
+      return;
+    }
+
+    let live = true;
+    const card = arrived.start;
+    const step = arrived.arrival.step;
+
+    void createEvent(
+      card.draft,
+      card.config,
+      card.coverAnimation,
+      { showWeather: card.showWeather, themeId: card.weatherTheme },
+      card.qrCheckinEnabled,
+    ).then(
+      (result) => {
+        if (!live) {
+          return;
+        }
+
+        if (!result.ok) {
+          setFinishing(false);
+          return;
+        }
+
+        /* In the account now: nothing of it is kept in this browser. */
+        clearPendingCard();
+        clearCardAutosave();
+        router.replace(adoptedHref(result.data.id, step));
+      },
+      () => live && setFinishing(false),
+    );
+
+    return () => {
+      live = false;
+    };
+    /* Once, for the card this page arrived with. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (handoff === null) {
@@ -653,11 +708,11 @@ function WizardArrival({
     setGeneration((value) => value + 1);
   }, [templateId]);
 
-  if (!settled || arrived === null) {
+  if (!settled || arrived === null || finishing) {
     const skeletonStep =
       wizardStepId(searchParams.get(WIZARD_STEP_PARAM)) ?? WIZARD_STEPS[0].id;
 
-    return handoff === null ? (
+    return handoff === null && !finishing ? (
       <EditorSkeleton step={skeletonStep} />
     ) : (
       <>
