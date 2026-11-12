@@ -479,6 +479,25 @@ function adoptOnce(id: string): Promise<AdoptResult> {
  * "Save and continue" leads a signed-in host. From an earlier one it is the
  * same step of the wizard over the saved invitation.
  */
+/** How long a move to the saved card may take before the page is loaded directly. */
+const OPEN_SAVED_MS = 3000;
+
+/**
+ * Moves to the saved card, and makes sure of it. A router.replace here was
+ * seen to fetch the page and then never show it (the address and the screen
+ * stayed where they were), which left a host who had just signed in on a
+ * skeleton. Not there after OPEN_SAVED_MS, the page is loaded directly; the
+ * card is saved either way.
+ */
+function openSavedCard(router: ReturnType<typeof useRouter>, href: string): void {
+  router.replace(href);
+  window.setTimeout(() => {
+    if (`${window.location.pathname}${window.location.search}` !== href) {
+      window.location.assign(href);
+    }
+  }, OPEN_SAVED_MS);
+}
+
 function adoptedHref(eventId: string, step: string | null): string {
   const stepId = wizardStepId(step);
 
@@ -565,7 +584,7 @@ function WizardArrival({
         /* In the account now: nothing of it is kept in this browser. */
         clearPendingCard();
         clearCardAutosave();
-        router.replace(adoptedHref(result.data.id, step));
+        openSavedCard(router, adoptedHref(result.data.id, step));
       },
       () => live && setFinishing(false),
     );
@@ -594,7 +613,7 @@ function WizardArrival({
         clearPendingCard();
         clearCardAutosave();
         forgetHandoff(handoff);
-        router.replace(adoptedHref(result.eventId, result.step));
+        openSavedCard(router, adoptedHref(result.eventId, result.step));
         return;
       }
 
