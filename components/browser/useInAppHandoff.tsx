@@ -127,6 +127,15 @@ export function useInAppHandoff(): {
    * once the browser has opened or the prompt is showing.
    */
   leave: (card: PendingCard, redirectTo: string) => Promise<boolean>;
+  /**
+   * Starts saving the card for the real browser now, beside whatever the
+   * press does first (the wizard asks the server whether anyone is signed in
+   * while this runs), so a leave() that follows does not start the save only
+   * then. A tap opens another app only within 5 seconds of it: the two
+   * waits side by side, not one after the other. Nothing outside an in-app
+   * browser.
+   */
+  prepare: (card: PendingCard) => void;
   /** The fallback prompt, to render somewhere on the page; null while hidden. */
   prompt: ReactElement | null;
   /** Which browser is being opened while the card saves and it opens; null otherwise. */
@@ -135,6 +144,16 @@ export function useInAppHandoff(): {
   const [state, setState] = useState<PromptState | null>(null);
   const [opening, setOpening] = useState<InAppPlatform | null>(null);
   const busy = useRef(false);
+  /* A save started by prepare(), for the next leave() to use. */
+  const prepared = useRef<{ promise: Promise<string | null>; at: number } | null>(null);
+
+  const prepare = useCallback((card: PendingCard): void => {
+    if (inAppBrowser(navigator.userAgent) === null) {
+      return;
+    }
+
+    prepared.current = { promise: saveCard(card), at: Date.now() };
+  }, []);
 
   const leave = useCallback(
     async (card: PendingCard, redirectTo: string): Promise<boolean> => {
@@ -154,7 +173,11 @@ export function useInAppHandoff(): {
       openInBrowserClick({ platform: browser.platform, app: browser.app, step: "save" });
 
       try {
-        const saved = saveCard(card);
+        /* The save prepare() started for this press, or a new one. */
+        const early = prepared.current;
+        prepared.current = null;
+        const saved =
+          early !== null && Date.now() - early.at < SLOW_SAVE_MS ? early.promise : saveCard(card);
         /* The save already under way, or, when it failed, one more on the prompt's tap. */
         let carried = saved;
         const getLink = async (): Promise<string> => {
@@ -205,5 +228,5 @@ export function useInAppHandoff(): {
       />
     );
 
-  return { leave, prompt, opening };
+  return { leave, prepare, prompt, opening };
 }

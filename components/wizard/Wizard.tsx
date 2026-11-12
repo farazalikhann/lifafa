@@ -31,7 +31,8 @@ import PendingCardNotice, {
 import { useInAppHandoff } from "@/components/browser/useInAppHandoff";
 import { inAppBrowser } from "@/lib/inAppBrowser";
 import { adoptDraftHandoff, type AdoptResult } from "@/lib/handoff/actions";
-import { HANDOFF_PARAM, handoffFromSearch } from "@/lib/handoff/link";
+import { HANDOFF_PARAM, handoffFromSearch, pathWithHandoff } from "@/lib/handoff/link";
+import { forgetHandoff, rememberHandoff, seenHandoff } from "@/lib/handoff/seen";
 import LegalFooter from "@/components/legal/LegalFooter";
 import CreateIntro, { INTRO_TEMPLATE_ID, TRUST_LINE } from "@/components/wizard/CreateIntro";
 import TemplateGallery, { looked } from "@/components/wizard/TemplateGallery";
@@ -312,6 +313,12 @@ interface ArrivalStart {
    * a handed-over card that could not be brought back loses its id.
    */
   address: string | null;
+  /**
+   * For Clarity, once the steps are drawn: back from sign in with the card
+   * brought back from this browser's own copy (`restored`), or with nothing
+   * to bring back (`lost`). Null for every other arrival.
+   */
+  report: "lost" | "restored" | null;
 }
 
 /**
@@ -319,7 +326,12 @@ interface ArrivalStart {
  * kept as the visitor typed, then an empty card. `search` is the query the
  * address will have once the steps are drawn.
  */
-function localStart(templateId: string | null, search: string): ArrivalStart {
+function localStart(
+  templateId: string | null,
+  search: string,
+  /** Back from sign in with a handed-over card that did not open: that is said by the caller. */
+  afterHandoff = false,
+): ArrivalStart {
   const read = arrivalFor(
     readPendingCard(),
     stashOriginFromUrl(search),
@@ -338,12 +350,46 @@ function localStart(templateId: string | null, search: string): ArrivalStart {
       autosaved: false,
       chosen: true,
       address: null,
+      report: afterHandoff ? "restored" : null,
     };
   }
 
   const kept = read.kind === "fresh" ? readCardAutosave() : null;
-  /* Back from sign in with nothing here at all: the first step, and not a word about it. */
-  const restart = read.kind === "fresh" && read.restart === true && kept === null;
+  /* Back from sign in, and the card kept for the trip is not here. */
+  const cameBack = (read.kind === "fresh" && read.restart === true) || afterHandoff;
+
+  if (read.kind === "fresh" && kept === null) {
+    /*
+      Nothing of the card in this browser. Said plainly on the first step,
+      never an empty gallery that says nothing: a card handed over from
+      Instagram or Facebook that this browser was shown is still on the
+      server and is offered back (lib/handoff/seen.ts); otherwise, after a
+      sign in, that the card could not be found.
+    */
+    const waiting = afterHandoff ? null : seenHandoff();
+    const problem: PendingCardProblem | null =
+      waiting !== null
+        ? {
+            kind: "handoff-waiting",
+            id: waiting,
+            href: pathWithHandoff(wizardStepPath("preview"), waiting),
+          }
+        : read.restart === true
+          ? { kind: "after-login-empty" }
+          : null;
+
+    if (problem !== null) {
+      return {
+        arrival: { kind: "lost", problem },
+        start: empty,
+        fallback: empty,
+        autosaved: false,
+        chosen: templateId !== null,
+        address: read.restart === true ? NEW_CARD_HREF : null,
+        report: read.restart === true ? "lost" : null,
+      };
+    }
+  }
 
   return {
     arrival: read,
@@ -351,7 +397,9 @@ function localStart(templateId: string | null, search: string): ArrivalStart {
     fallback: empty,
     autosaved: kept !== null,
     chosen: kept !== null || templateId !== null,
-    address: restart ? NEW_CARD_HREF : null,
+    address: null,
+    /* Back from sign in without the card, and the one kept as it was typed brought back instead. */
+    report: cameBack && kept !== null ? "restored" : null,
   };
 }
 
@@ -488,6 +536,7 @@ function WizardArrival({
         /* In the account now: nothing of it is kept in this browser. */
         clearPendingCard();
         clearCardAutosave();
+        forgetHandoff(handoff);
         router.replace(adoptedHref(result.eventId, result.step));
         return;
       }
@@ -497,6 +546,7 @@ function WizardArrival({
       if (result.reason === "signed-out") {
         /* Untouched on the server; sign in brings the id back here. */
         adoptions.delete(handoff);
+        rememberHandoff(handoff);
         const login = new URL("/login", here.origin);
         login.searchParams.set("redirectTo", `${here.pathname}${here.search}`);
         login.searchParams.set(HANDOFF_PARAM, handoff);
@@ -506,9 +556,14 @@ function WizardArrival({
 
       /* Not found, past its day, or the server would not answer: this browser's own copies. */
       adoptions.delete(handoff);
+
+      if (result.reason === "missing") {
+        forgetHandoff(handoff);
+      }
+
       const retryHref = `${here.pathname}${here.search}`;
       here.searchParams.delete(HANDOFF_PARAM);
-      const local = localStart(templateId, here.search);
+      const local = localStart(templateId, here.search, true);
 
       /*
         Nothing of the card in this browser either, which is the usual case:
@@ -527,6 +582,7 @@ function WizardArrival({
                 : { kind: "handoff-unreachable", retryHref },
           },
           address: NEW_CARD_HREF,
+          report: "lost",
         });
         return;
       }
@@ -547,6 +603,17 @@ function WizardArrival({
       window.history.replaceState(null, "", address);
     }
   }, [address]);
+
+  /* Back from sign in: whether the card came back from this browser, or could not come back at all. */
+  const report = arrived?.report ?? null;
+
+  useEffect(() => {
+    if (report === "lost") {
+      clarityEvent("card_lost_after_login");
+    } else if (report === "restored") {
+      clarityEvent("card_restored_after_login");
+    }
+  }, [report]);
 
   /*
     Settled once the address is where the arrival put it, and settled for
@@ -906,9 +973,24 @@ function WizardSteps({
    */
   const {
     leave: leaveInAppBrowser,
+    prepare: prepareInAppLeave,
     prompt: inAppPrompt,
     opening: openingBrowser,
   } = useInAppHandoff();
+
+  /* The card as it is carried to sign in: stashed here, or handed to the real browser. */
+  const carriedCard = useCallback(
+    (snapshot: EditorSnapshot) => ({
+      draft: snapshot.draft,
+      config: snapshot.config,
+      coverAnimation: snapshot.coverAnimation,
+      showWeather: snapshot.showWeather,
+      weatherTheme: snapshot.weatherTheme,
+      qrCheckinEnabled: snapshot.qrCheckinEnabled,
+      step: stepRef.current,
+    }),
+    [],
+  );
 
   const sendToSignIn = useCallback(
     (snapshot: EditorSnapshot): string | null => {
@@ -951,15 +1033,7 @@ function WizardSteps({
         return failure === null ? { ok: true } : { ok: false, error: failure };
       }
 
-      const card = {
-        draft: snapshot.draft,
-        config: snapshot.config,
-        coverAnimation: snapshot.coverAnimation,
-        showWeather: snapshot.showWeather,
-        weatherTheme: snapshot.weatherTheme,
-        qrCheckinEnabled: snapshot.qrCheckinEnabled,
-        step: stepRef.current,
-      };
+      const card = carriedCard(snapshot);
 
       writePendingCard(card);
       await leaveInAppBrowser(
@@ -969,7 +1043,7 @@ function WizardSteps({
 
       return { ok: true, stay: true };
     },
-    [sendToSignIn, leaveInAppBrowser],
+    [sendToSignIn, leaveInAppBrowser, carriedCard],
   );
 
   /**
@@ -1081,6 +1155,14 @@ function WizardSteps({
         in. There is no second trip to Supabase from the browser first.
       */
       const clock = startSaveClock();
+      /*
+        In Instagram's or Facebook's browser nobody can sign in with Google,
+        so the save is almost always a hand-over to Chrome or Safari: the card
+        starts saving for it now, beside the server's answer, so the other
+        browser still opens inside the 5 seconds a tap allows. A signed-in
+        host's unused copy goes with its day.
+      */
+      prepareInAppLeave(carriedCard(snapshot));
       const result = await createEvent(
         snapshot.draft,
         snapshot.config,
@@ -1111,7 +1193,7 @@ function WizardSteps({
 
       return { ok: true };
     },
-    [router, continueSignedOut, edit, start, dashboardHref, watchSavedCard],
+    [router, continueSignedOut, edit, start, dashboardHref, watchSavedCard, prepareInAppLeave, carriedCard],
   );
 
   const {

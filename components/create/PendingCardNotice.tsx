@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { forgetHandoff } from "@/lib/handoff/seen";
 
 /**
  * Why the card a host stashed before signing in is not in the editor.
@@ -27,7 +28,18 @@ export type PendingCardProblem =
    * A handed-over card that is safe on the server but could not be opened
    * just now (the server did not answer). `retryHref` brings it back.
    */
-  | { kind: "handoff-unreachable"; retryHref: string };
+  | { kind: "handoff-unreachable"; retryHref: string }
+  /**
+   * Back from signing in, and the card this browser was keeping for the trip
+   * is not here any more, with nothing else to bring back in its place.
+   */
+  | { kind: "after-login-empty" }
+  /**
+   * A card handed over from Instagram's or Facebook's browser that this
+   * browser was shown on the sign-in page, still on the server: the host left
+   * without signing in. `href` opens it (lib/handoff/seen.ts).
+   */
+  | { kind: "handoff-waiting"; id: string; href: string };
 
 /** An address as a host would type it: no scheme, no trailing slash. */
 export function displayHost(origin: string): string {
@@ -85,6 +97,16 @@ function messageFor(problem: PendingCardProblem, here: string): Message {
         title: "Your card is safe, but it did not open.",
         body: "We could not reach it just now. Check your connection and try again.",
       };
+    case "after-login-empty":
+      return {
+        title: "We could not find the card you started.",
+        body: "You signed in, but this browser no longer has the card you were making. If you saved it before, it is in your invitations. Otherwise, please start again below.",
+      };
+    case "handoff-waiting":
+      return {
+        title: "Your card is still saved.",
+        body: "You started a card in Instagram or Facebook. Open it here and sign in once to keep it.",
+      };
   }
 }
 
@@ -131,12 +153,21 @@ export default function PendingCardNotice({
           </a>
         ) : null}
 
-        {problem.kind === "handoff-gone" ? (
+        {problem.kind === "handoff-gone" || problem.kind === "after-login-empty" ? (
           <a
             href="/dashboard"
             className="mt-1 inline-flex min-h-11 items-center rounded font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
           >
             See my invitations
+          </a>
+        ) : null}
+
+        {problem.kind === "handoff-waiting" ? (
+          <a
+            href={problem.href}
+            className="mt-1 inline-flex min-h-11 items-center rounded font-medium text-[var(--lifafa-marigold)] underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lifafa-marigold)]"
+          >
+            Open my card
           </a>
         ) : null}
 
@@ -152,7 +183,14 @@ export default function PendingCardNotice({
 
       <button
         type="button"
-        onClick={() => setDismissed(true)}
+        onClick={() => {
+          /* A waiting card the host has chosen to leave is not offered again. */
+          if (problem.kind === "handoff-waiting") {
+            forgetHandoff(problem.id);
+          }
+
+          setDismissed(true);
+        }}
         aria-label="Dismiss this notice"
         className="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--lifafa-muted)] transition-colors duration-150 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
       >

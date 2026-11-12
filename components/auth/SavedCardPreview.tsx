@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ComponentType, type ReactElement } from "react";
 import { loginCardFor, type LoginCardRead } from "@/lib/handoff/loginCard";
+import { rememberHandoff } from "@/lib/handoff/seen";
 import { readPendingCard } from "@/lib/pendingCard";
 import type { CardConfig } from "@/types/card";
 import type { EventDraft } from "@/types/event";
@@ -124,6 +125,11 @@ export default function SavedCardPreview({
     const settle = (read: LoginCardRead): void => {
       if (!live) {
         return;
+      }
+
+      /* Kept in this browser, so leaving here without signing in does not lose it (lib/handoff/seen.ts). */
+      if (read.status === "saved") {
+        rememberHandoff(handoff);
       }
 
       setFound(
