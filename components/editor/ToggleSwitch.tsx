@@ -10,6 +10,10 @@ import type { ReactElement } from "react";
  * switch, on". The state is in words as well as in the knob's position, and
  * the words are hidden from assistive technology because aria-checked already
  * says it. At least 44px square to tap, whatever the track measures.
+ *
+ * THE WHOLE ROW IS ITS TAP: the button is stretched over the row it sits in,
+ * which is `relative` (CustomizeStep's section rows). A tap on the row's name
+ * did nothing before; Clarity counted those as dead clicks.
  */
 export default function ToggleSwitch({
   checked,
@@ -31,7 +35,7 @@ export default function ToggleSwitch({
       aria-label={label}
       aria-describedby={describedBy}
       onClick={() => onChange(!checked)}
-      className="flex min-h-11 min-w-11 shrink-0 items-center justify-end gap-2 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+      className="flex min-h-11 min-w-11 shrink-0 items-center justify-end gap-2 rounded-lg px-1 after:absolute after:inset-0 after:rounded-xl after:content-[''] active:after:bg-[var(--lifafa-cream)]/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
     >
       <span
         aria-hidden="true"

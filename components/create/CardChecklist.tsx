@@ -32,6 +32,9 @@ function Mark({ done }: { done: boolean }): ReactElement {
   );
 }
 
+/** A button stretched over its row (the row is `relative`), so a tap anywhere on the row is its tap. */
+const ROW_TAP = "after:absolute after:inset-0 after:rounded-xl after:content-[''] active:after:bg-[var(--lifafa-cream)]/[0.06]";
+
 export default function CardChecklist({
   items,
   onAdd,
@@ -70,12 +73,17 @@ export default function CardChecklist({
         {items.map((item) => {
           const label = item.done ? "Edit" : "Add";
           const named = `${label} ${item.label.toLowerCase()}`;
-          const className = item.done ? EDIT : ADD;
+          /*
+            The whole row answers a tap, not only its Add or Edit: the button
+            is stretched over the row (ROW_TAP). The row's name and its mark
+            were tapped and did nothing (Clarity's dead clicks, Nov 2026).
+          */
+          const className = `${item.done ? EDIT : ADD} ${ROW_TAP}`;
 
           return (
             <li
               key={item.id}
-              className="flex min-h-14 items-center justify-between gap-3 border-t border-[var(--lifafa-hairline)] py-1.5 first:border-t-0"
+              className="relative flex min-h-14 items-center justify-between gap-3 border-t border-[var(--lifafa-hairline)] py-1.5 first:border-t-0"
             >
               <span className="flex min-w-0 items-center gap-3 text-[0.9375rem] text-[var(--lifafa-cream)]">
                 <Mark done={item.done} />

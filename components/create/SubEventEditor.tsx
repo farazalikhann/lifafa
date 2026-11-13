@@ -184,7 +184,8 @@ export default function SubEventEditor({
                 key={entry.id}
                 className="flex flex-col gap-3 rounded-2xl border border-[var(--lifafa-hairline)] px-3 py-3"
               >
-                <div className="flex items-center gap-3">
+                {/* The pencil is stretched over the row: a tap on the function's name opens it too. */}
+                <div className="relative flex items-center gap-3">
                   <div className="flex min-w-0 flex-1 flex-col">
                     <p
                       className={`truncate text-[0.875rem] font-medium ${
@@ -207,7 +208,7 @@ export default function SubEventEditor({
                     aria-label={
                       isOpen ? `Close ${title}` : `Edit ${title}`
                     }
-                    className={ICON_BUTTON_CLASS}
+                    className={`${ICON_BUTTON_CLASS} after:absolute after:inset-0 after:rounded-xl after:content-[''] active:after:bg-[var(--lifafa-cream)]/[0.06]`}
                   >
                     {/* A pencil, and a chevron once the fields are open. */}
                     <svg
@@ -234,7 +235,8 @@ export default function SubEventEditor({
                     type="button"
                     onClick={() => handleRemove(entry.id)}
                     aria-label={`Remove ${title}`}
-                    className={ICON_BUTTON_CLASS}
+                    /* Over the pencil's stretch, so Remove stays its own tap. */
+                    className={`${ICON_BUTTON_CLASS} relative z-10`}
                   >
                     <svg
                       viewBox="0 0 24 24"

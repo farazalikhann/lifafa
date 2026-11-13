@@ -244,7 +244,7 @@ export default function CustomizeStep({
           {switchable.map((block) => (
             <li
               key={block.id}
-              className="flex min-h-14 items-center justify-between gap-3 py-1.5"
+              className="relative flex min-h-14 items-center justify-between gap-3 py-1.5"
             >
               <span className="min-w-0 text-[0.9375rem] text-[var(--lifafa-cream)]">
                 {CARD_SECTIONS[block.id].label}
@@ -256,7 +256,7 @@ export default function CustomizeStep({
               />
             </li>
           ))}
-          <li className="flex min-h-14 items-center justify-between gap-3 py-1.5">
+          <li className="relative flex min-h-14 items-center justify-between gap-3 py-1.5">
             <span className="min-w-0 text-[0.9375rem] text-[var(--lifafa-cream)]">
               Reply form (RSVP)
             </span>
@@ -267,7 +267,7 @@ export default function CustomizeStep({
             />
           </li>
           {template.countdownScratch === true ? (
-            <li className="flex min-h-14 items-center justify-between gap-3 py-1.5">
+            <li className="relative flex min-h-14 items-center justify-between gap-3 py-1.5">
               <span className="min-w-0 text-[0.9375rem] text-[var(--lifafa-cream)]">
                 Scratch to reveal the countdown
               </span>
