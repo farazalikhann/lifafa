@@ -22,7 +22,7 @@ import EditorSkeleton, {
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import BusyLabel from "@/components/network/BusyLabel";
 import { markSaveReload, startSaveClock } from "@/lib/saveTiming";
-import { clarityEvent } from "@/lib/clarity";
+import { clarityEvent, claritySet } from "@/lib/clarity";
 import { holdForTyping, useLightMotionHere } from "@/lib/motionBudget";
 import { startLoad, useLazyModule } from "@/hooks/useLazyModule";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -516,21 +516,19 @@ function openSavedCard(router: ReturnType<typeof useRouter>, eventId: string, hr
 }
 
 /**
- * Where a card just saved continues, from "Save my card" and from a sign in
- * or a handoff alike: the step it was left on. From the last step, the saved screen
- * (payment). From an earlier one, "Save my card" on the details or the
- * customize step, the same step of the saved card's editor, where the host
- * goes on to the next steps and "Save changes" keeps what they change.
- * `saved=new` there says "Your card is saved" once (JustSavedNotice).
+ * Where a card just saved continues, from "Save and continue" and from a
+ * sign in or a handoff alike: the step AFTER the one it was saved on. Saved
+ * on the details step, the customize step of the saved card's editor, where
+ * Next goes on and "Save changes" keeps what they change; `saved=new` there
+ * says "Your card is saved" once (JustSavedNotice). Saved on the customize
+ * or the preview step, the saved screen: the saved card, and payment.
  */
 function adoptedHref(eventId: string, step: string | null): string {
-  const stepId = wizardStepId(step);
-
-  if (stepId === null || stepId === "preview" || stepId === "template") {
-    return `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${encodeURIComponent(eventId)}`;
+  if (wizardStepId(step) === "details") {
+    return `${wizardStepPath("customize", `/dashboard/${encodeURIComponent(eventId)}/edit`)}&${JUST_SAVED_PARAM}=new`;
   }
 
-  return `${wizardStepPath(stepId, `/dashboard/${encodeURIComponent(eventId)}/edit`)}&${JUST_SAVED_PARAM}=new`;
+  return `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${encodeURIComponent(eventId)}`;
 }
 
 /**
@@ -570,7 +568,7 @@ function WizardArrival({
     this browser: saved to the account at once and opened as the saved card,
     as a card handed over from Instagram's or Facebook's browser always was
     (adoptDraftHandoff). The host used to land back in the editor and press
-    "Save my card" again. Signed out after all (Back from /login), or a
+    "Save" again. Signed out after all (Back from /login), or a
     save that fails: the editor with the card, as before.
   */
   const [finishing, setFinishing] = useState(
@@ -593,11 +591,11 @@ function WizardArrival({
     const step = arrived.arrival.step;
 
     /*
-      Saved from the details or customize step, the card opens in its editor
-      on that step, which draws the form: its code fetched now, beside the
+      Saved from the details step, the card opens in its editor on the
+      customize step, which needs the editor's code: fetched now, beside the
       save, rather than after the editor's page has arrived.
     */
-    if (step === "details" || step === "customize") {
+    if (step === "details") {
       preloadEditorSteps();
     }
 
@@ -1116,7 +1114,7 @@ function WizardSteps({
   );
 
   /**
-   * "Save my card" while signed out: sendToSignIn, in every browser.
+   * "Save and continue" while signed out: sendToSignIn, in every browser.
    *
    * Instagram's and Facebook's browsers too, since /login signs a host in
    * there with an email code. The card used to be handed over to Chrome or
@@ -1231,7 +1229,7 @@ function WizardSteps({
         return {
           ok: false,
           error:
-            "You are offline. Your card is kept on this phone. Connect to the internet, then press Save my card again.",
+            "You are offline. Your card is kept on this phone. Connect to the internet, then press Save and continue again.",
         };
       }
 
@@ -1353,7 +1351,7 @@ function WizardSteps({
   /*
     A signed-in host on the editor of a new card: the function that saves it,
     and its connection to Supabase, woken now and every few minutes while the
-    page is open, so "Save my card" does not meet them cold (warmSave). Not
+    page is open, so "Save and continue" does not meet them cold (warmSave). Not
     for a visitor with no session cookie, whose Save goes straight to sign in.
   */
   const onEditor = !editing && step !== "template";
@@ -1536,12 +1534,22 @@ function WizardSteps({
     editing || draft.venueName.trim().length > 0 ? undefined : () => openItem("venue");
 
   /*
-    "Save my card" saves, on the first press. Every detail is optional
+    "Save and continue" saves, on the first press. Every detail is optional
     and nothing stands in front of the save: no reminder about a venue or a
     time, and nothing listing what is still to add. The card can be changed
     from the dashboard after it is saved, which the step says above the button.
+
+    Each press is a Clarity event, with the step it was pressed on as a tag
+    (details, customize or preview): where hosts choose to save.
   */
-  const pressSave = handleSave;
+  const pressSave = (): void => {
+    if (!isSaving) {
+      claritySet("save_and_continue_step", step);
+      clarityEvent("save_and_continue_click");
+    }
+
+    handleSave();
+  };
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const {
@@ -1636,14 +1644,27 @@ function WizardSteps({
   };
 
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
-  /* A new card's details and customize steps, once its design is chosen: Save on a row of its own. */
-  const saveRow =
-    !editing && templateChosen && (step === "details" || step === "customize");
+  /*
+    A new card, its design chosen, on the details step past the quick start,
+    the customize step or the preview step: "Save and continue" is the one
+    main button. On the quick start, "See my card" is the step's main action
+    and the bar has only Back.
+  */
+  const saveMain =
+    !editing &&
+    templateChosen &&
+    !quickStartShown &&
+    (step === "details" || step === "customize" || step === "preview");
   /* A saved card not paid for yet, as one just saved continues in: Save changes has the line too. */
   const unpaidEdit = editing && !readOnly && edit.isPaid !== true;
   /*
-    "Save my card", wherever a new card offers it: the same save from every
-    step (`save` above), the same sign in, handoff and duplicate guard.
+    Such a card on its details or customize step: Next is the main button,
+    and Save changes is the quiet one beside Back.
+  */
+  const nextMain = unpaidEdit && (step === "details" || step === "customize");
+  /*
+    "Save and continue", wherever a new card offers it: the same save from
+    every step (`save` above), the same sign in, handoff and duplicate guard.
   */
   const saveButton = (className: string): ReactElement => (
     <button
@@ -1655,7 +1676,7 @@ function WizardSteps({
       className={className}
     >
       <BusyLabel busy={isSaving} busyText={savedCard ? "Saved" : "Saving…"} done={savedCard}>
-        Save my card
+        Save and continue
       </BusyLabel>
     </button>
   );
@@ -2092,28 +2113,31 @@ function WizardSteps({
         </div>
       </main>
 
-      {/* Bottom room for the bar pinned to the bottom, over the safe area: two rows where Save has its own. */}
-      <LegalFooter className={saveRow ? "pb-48" : "pb-32"} />
+      {/* Bottom room for the bar pinned to the bottom, over the safe area: three rows on a phone where the main button has its own. */}
+      <LegalFooter className={saveMain || nextMain ? "pb-56 sm:pb-40" : unpaidEdit ? "pb-44" : "pb-32"} />
 
       {/*
-        Back and Next, pinned to the bottom of the screen where a thumb is.
+        Back and the main button, pinned to the bottom of the screen where a
+        thumb is. ONE MAIN BUTTON on every step: two side by side ("Save my
+        card" and Next) left hosts in Instagram's browser unsure which to press.
 
-        A NEW CARD can be saved from every step once its design is chosen:
-        "Save my card" is here on the details, the customize and the preview
-        step, with the line on what saving costs beside it. A visitor who
-        filled in everything and changed the look on step 3 left without
-        ever reaching the one Save there was, on step 4. On the details and
-        customize steps it has a row of its own over Back, Preview and Next,
-        since the four do not fit one row at 360px; Next is the outline
-        button there, so Save is the one main action. On the quick start,
-        "See my card" is the step's main action and Save is the outline one.
-        On the preview step it is the last step's own button, beside Back.
+        A NEW CARD, until it is saved: "Save and continue" on the details
+        step (past the quick start), the customize step and the preview step,
+        with the line on what saving costs right over it. It saves and opens
+        the next step of the saved card (adoptedHref): the details step opens
+        the customize step of its editor; the customize and the preview step
+        open the saved screen, and payment. Back and Preview are the quiet
+        buttons. On a phone the main button is the width of the screen, over
+        Back and Preview; from sm they share one row, the main one on the
+        right. On the quick start, "See my card" is the step's main action and
+        the bar has only Back. On the gallery, Next (or the hint before a
+        design is chosen).
 
-        A SAVED CARD can be saved from any step, since a host fixing a venue
-        should not have to walk to the end to do it: "Save changes" is always
-        here, beside Back and Next, and the preview is the last step's own
-        button (and the card itself at lg). At 360px the three are 306px of
-        the 328 there is. Nothing to save once the event is over.
+        A SAVED CARD NOT PAID FOR YET, on its details or customize step: Next
+        is the main button, laid out the same way, with "Save changes" the
+        quiet one beside Back. On its preview step, and on every step of a
+        paid card, "Save changes" is the main button as it always was, beside
+        Back and Next. Nothing to save once the event is over.
 
         What went wrong with a save is said here, over the buttons, so it is
         seen from whichever step the save was pressed on.
@@ -2128,105 +2152,147 @@ function WizardSteps({
             {error}
           </p>
         ) : null}
-        {(isLast && !editing) || unpaidEdit ? (
-          /* Right over the last step's Save, and over Save changes on a card not paid for: what saving costs. */
+        {saveMain || unpaidEdit ? (
+          /* Right over the main button: what saving costs. */
           <p
             data-save-reassurance=""
             aria-live="polite"
-            className="mx-auto max-w-6xl border-b border-[var(--lifafa-hairline)] px-4 py-2.5 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)] sm:px-12 lg:px-[5.5rem] xl:px-8"
+            className="mx-auto max-w-6xl px-4 pt-3 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)] sm:px-12 lg:px-[5.5rem] xl:px-8"
           >
             {savedCard ? SAVED_OPENING : FREE_SAVE_LINE}
           </p>
         ) : null}
-        {saveRow ? (
-          /* The details and customize steps: Save on a row of its own, the line beside it. */
+        {saveMain || nextMain ? (
+          /*
+            The quiet buttons first, for a screen reader and the keyboard as in
+            every other bar here; on a phone the main button is drawn over them.
+          */
           <div
-            data-save-row=""
-            className="mx-auto flex max-w-6xl items-center gap-3 border-b border-[var(--lifafa-hairline)] px-4 py-2.5 sm:px-12 lg:px-[5.5rem] xl:px-8"
+            data-main-action-bar=""
+            className="mx-auto flex max-w-6xl flex-col-reverse gap-2 px-4 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:px-12 lg:px-[5.5rem] xl:px-8"
           >
-            <p
-              data-save-reassurance=""
-            aria-live="polite"
-              className="min-w-0 flex-1 text-[0.8125rem] leading-snug font-medium text-[var(--lifafa-cream)]"
-            >
-              {savedCard ? SAVED_OPENING : FREE_SAVE_LINE}
-            </p>
-            {saveButton(quickStartShown ? QUIET_BUTTON : PRIMARY_BUTTON)}
-          </div>
-        ) : null}
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
-          {index > 0 ? (
-            <button
-              type="button"
-              onClick={() => goTo(WIZARD_STEPS[index - 1].id)}
-              className={QUIET_BUTTON}
-            >
-              Back
-            </button>
-          ) : null}
-
-          {editing ? (
-            isLast ? null : (
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => goTo(WIZARD_STEPS[index + 1].id)}
+                onClick={() => goTo(WIZARD_STEPS[index - 1].id)}
                 className={QUIET_BUTTON}
               >
-                Next
+                Back
               </button>
-            )
-          ) : isLast || quickStartShown ? null : templateChosen ? (
-            <button
-              type="button"
-              onClick={(event) => openPreview(event.currentTarget)}
-              disabled={previewOpening}
-              aria-busy={previewOpening}
-              className={`${QUIET_BUTTON} lg:hidden`}
-            >
-              <BusyLabel busy={previewOpening}>Preview</BusyLabel>
-            </button>
-          ) : (
-            /* As GalleryFirstScreen draws it, so nothing moves when the wizard takes over. */
-            <p id={CHOOSE_DESIGN_HINT_ID} className={HINT_TEXT}>
-              {CHOOSE_DESIGN_HINT}
-            </p>
-          )}
-
-          <div className="ml-auto">
-            {editing ? (
-              readOnly ? null : (
+              {saveMain && !isLast ? (
+                <button
+                  type="button"
+                  onClick={(event) => openPreview(event.currentTarget)}
+                  disabled={previewOpening}
+                  aria-busy={previewOpening}
+                  className={`${QUIET_BUTTON} lg:hidden`}
+                >
+                  <BusyLabel busy={previewOpening}>Preview</BusyLabel>
+                </button>
+              ) : null}
+              {nextMain ? (
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
                   aria-busy={isSaving}
-                  className={PRIMARY_BUTTON}
+                  className={QUIET_BUTTON}
                 >
                   <BusyLabel busy={isSaving} busyText="Saving…">
                     Save changes
                   </BusyLabel>
                 </button>
-              )
-            ) : isLast ? (
-              saveButton(PRIMARY_BUTTON)
-            ) : quickStartShown ? null : (
+              ) : null}
+            </div>
+            <div className="flex sm:ml-auto">
+              {saveMain ? (
+                saveButton(`${PRIMARY_BUTTON} w-full sm:w-auto`)
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => nextStep(WIZARD_STEPS[index + 1].id)}
+                  aria-busy={moving}
+                  className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
+                >
+                  <BusyLabel busy={moving} busyText="Next">
+                    Next
+                  </BusyLabel>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
+            {index > 0 ? (
               <button
                 type="button"
-                onClick={() => nextStep(WIZARD_STEPS[index + 1].id)}
-                disabled={!templateChosen}
-                aria-busy={moving}
-                aria-describedby={templateChosen ? undefined : CHOOSE_DESIGN_HINT_ID}
-                /* Beside Save, the outline button: Save is the one main action. */
-                className={saveRow ? QUIET_BUTTON : PRIMARY_BUTTON}
+                onClick={() => goTo(WIZARD_STEPS[index - 1].id)}
+                className={QUIET_BUTTON}
               >
-                {/* Its own word while busy: "Opening…" made it 127px wide, and Back, Preview and Next 338px of the 328 at 360px. */}
-                <BusyLabel busy={moving} busyText="Next">
-                  Next
-                </BusyLabel>
+                Back
               </button>
+            ) : null}
+
+            {editing ? (
+              isLast ? null : (
+                <button
+                  type="button"
+                  onClick={() => goTo(WIZARD_STEPS[index + 1].id)}
+                  className={QUIET_BUTTON}
+                >
+                  Next
+                </button>
+              )
+            ) : quickStartShown ? null : templateChosen ? (
+              <button
+                type="button"
+                onClick={(event) => openPreview(event.currentTarget)}
+                disabled={previewOpening}
+                aria-busy={previewOpening}
+                className={`${QUIET_BUTTON} lg:hidden`}
+              >
+                <BusyLabel busy={previewOpening}>Preview</BusyLabel>
+              </button>
+            ) : (
+              /* As GalleryFirstScreen draws it, so nothing moves when the wizard takes over. */
+              <p id={CHOOSE_DESIGN_HINT_ID} className={HINT_TEXT}>
+                {CHOOSE_DESIGN_HINT}
+              </p>
             )}
+
+            <div className="ml-auto">
+              {editing ? (
+                readOnly ? null : (
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    aria-busy={isSaving}
+                    className={PRIMARY_BUTTON}
+                  >
+                    <BusyLabel busy={isSaving} busyText="Saving…">
+                      Save changes
+                    </BusyLabel>
+                  </button>
+                )
+              ) : quickStartShown ? null : (
+                /* The gallery's Next. */
+                <button
+                  type="button"
+                  onClick={() => nextStep(WIZARD_STEPS[index + 1].id)}
+                  disabled={!templateChosen}
+                  aria-busy={moving}
+                  aria-describedby={templateChosen ? undefined : CHOOSE_DESIGN_HINT_ID}
+                  className={PRIMARY_BUTTON}
+                >
+                  <BusyLabel busy={moving} busyText="Next">
+                    Next
+                  </BusyLabel>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {pendingHref !== null ? (

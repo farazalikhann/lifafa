@@ -1,7 +1,7 @@
 import { clarityEvent, claritySet } from "@/lib/clarity";
 
 /**
- * "Save my card", timed from the press to the saved card on screen.
+ * "Save and continue", timed from the press to the saved card on screen.
  *
  * The wizard starts a clock at the press and laps each phase (the save on the
  * server, and any other step before it). When it sends the host on, it leaves

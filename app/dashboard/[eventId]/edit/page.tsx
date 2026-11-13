@@ -121,7 +121,7 @@ export default async function EditEventPage({
     <EventEndedNotice eventId={event.id} />
   ) : (
     <>
-      {/* A new card saved a moment ago with "Save my card": said once, over the step it was saved on. */}
+      {/* A new card saved a moment ago with "Save and continue" on its details step: said once, over the step it opens on. */}
       {justSaved && !event.isPaid ? <JustSavedNotice /> : null}
       <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
     </>

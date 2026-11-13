@@ -5,9 +5,9 @@ import { JUST_SAVED_PARAM } from "@/lib/wizardSteps";
 
 /**
  * "Your card is saved", over the editor of a card saved a moment ago with
- * "Save my card" on the details or customize step of a new card (or brought
- * back saved from a sign in on one of those steps). The host carries on from
- * the same step, now over the saved card: Next goes on to the next steps, and
+ * "Save and continue" on the details step of a new card (or brought back
+ * saved from a sign in on that step). The host carries on from the next step,
+ * customize, now over the saved card: Next goes on to the preview, and
  * "Save changes" keeps whatever they change from here.
  *
  * Takes `saved` out of the address once it is on screen, as SavedNotice does
