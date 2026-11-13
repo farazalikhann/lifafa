@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
 import EventEndedNotice from "@/components/create/EventEndedNotice";
 import GuestsRepliedNotice from "@/components/create/GuestsRepliedNotice";
+import JustSavedNotice from "@/components/create/JustSavedNotice";
+import SaveTimingReport from "@/components/wizard/SaveTimingReport";
 import EventNotFound from "@/components/dashboard/EventNotFound";
 import { EditWizard } from "@/components/wizard/Wizard";
 import { getCoverAnimation } from "@/lib/coverAnimations";
@@ -8,6 +10,7 @@ import { countGuestsForEvent } from "@/lib/db/guests";
 import { getEventById } from "@/lib/db/events";
 import { isEditLocked } from "@/lib/eventLock";
 import { getWeatherTheme } from "@/lib/weatherThemes";
+import { JUST_SAVED_PARAM } from "@/lib/wizardSteps";
 
 /**
  * Editing an invitation that already exists.
@@ -33,10 +36,14 @@ import { getWeatherTheme } from "@/lib/weatherThemes";
  */
 export default async function EditEventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>;
+  /** `saved=new`: a new card saved a moment ago from this step (JustSavedNotice). */
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<ReactElement> {
-  const { eventId } = await params;
+  const [{ eventId }, query] = await Promise.all([params, searchParams]);
+  const justSaved = query[JUST_SAVED_PARAM] === "new";
   const eventResult = await getEventById(eventId);
 
   if (!eventResult.ok) {
@@ -109,11 +116,18 @@ export default async function EditEventPage({
   const notice = locked ? (
     <EventEndedNotice eventId={event.id} />
   ) : (
-    <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
+    <>
+      {/* A new card saved a moment ago with "Save my card": said once, over the step it was saved on. */}
+      {justSaved && !event.isPaid ? <JustSavedNotice /> : null}
+      <GuestsRepliedNotice count={guestCount.ok ? guestCount.data : 0} />
+    </>
   );
 
   return (
-    <EditWizard
+    <>
+      {/* Finishes the save clock (lib/saveTiming.ts), if this card was just saved on the way here. */}
+      {justSaved ? <SaveTimingReport eventId={event.id} /> : null}
+      <EditWizard
       eventId={event.id}
       /*
         The column, as this server page just read it under the host's own
@@ -126,6 +140,7 @@ export default async function EditEventPage({
       readOnly={locked}
       paidLimits={paidLimits}
       notice={notice}
-    />
+      />
+    </>
   );
 }

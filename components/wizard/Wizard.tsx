@@ -77,6 +77,7 @@ import {
 import { formatPrice } from "@/lib/pricing";
 import { getTheme } from "@/lib/themes";
 import {
+  JUST_SAVED_PARAM,
   NEW_CARD_HREF,
   WIZARD_PATH,
   WIZARD_STEPS,
@@ -473,12 +474,6 @@ function adoptOnce(id: string): Promise<AdoptResult> {
   return adoption;
 }
 
-/**
- * Where a card saved to the account from a handoff continues: the step it
- * was left on. From the last step that is the saved screen, exactly where
- * "Save and continue" leads a signed-in host. From an earlier one it is the
- * same step of the wizard over the saved invitation.
- */
 /** How long a move to the saved card may take before the page is loaded directly. */
 const OPEN_SAVED_MS = 3000;
 
@@ -489,23 +484,36 @@ const OPEN_SAVED_MS = 3000;
  * skeleton. Not there after OPEN_SAVED_MS, the page is loaded directly; the
  * card is saved either way.
  */
-function openSavedCard(router: ReturnType<typeof useRouter>, href: string): void {
+function openSavedCard(router: ReturnType<typeof useRouter>, eventId: string, href: string): void {
   router.replace(href);
   window.setTimeout(() => {
-    if (`${window.location.pathname}${window.location.search}` !== href) {
+    /*
+      On the saved card by the id in its address, not the address itself: the
+      saved card's editor takes `saved=new` out of it as soon as it is drawn.
+    */
+    if (!window.location.href.includes(eventId)) {
+      clarityEvent("open_saved_fallback");
       window.location.assign(href);
     }
   }, OPEN_SAVED_MS);
 }
 
+/**
+ * Where a card just saved continues, from "Save my card" and from a sign in
+ * or a handoff alike: the step it was left on. From the last step, the saved screen
+ * (payment). From an earlier one, "Save my card" on the details or the
+ * customize step, the same step of the saved card's editor, where the host
+ * goes on to the next steps and "Save changes" keeps what they change.
+ * `saved=new` there says "Your card is saved" once (JustSavedNotice).
+ */
 function adoptedHref(eventId: string, step: string | null): string {
   const stepId = wizardStepId(step);
 
-  if (stepId === null || stepId === "preview") {
+  if (stepId === null || stepId === "preview" || stepId === "template") {
     return `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${encodeURIComponent(eventId)}`;
   }
 
-  return wizardStepPath(stepId, `/dashboard/${encodeURIComponent(eventId)}/edit`);
+  return `${wizardStepPath(stepId, `/dashboard/${encodeURIComponent(eventId)}/edit`)}&${JUST_SAVED_PARAM}=new`;
 }
 
 /**
@@ -545,7 +553,7 @@ function WizardArrival({
     this browser: saved to the account at once and opened as the saved card,
     as a card handed over from Instagram's or Facebook's browser always was
     (adoptDraftHandoff). The host used to land back in the editor and press
-    "Save and continue" again. Signed out after all (Back from /login), or a
+    "Save my card" again. Signed out after all (Back from /login), or a
     save that fails: the editor with the card, as before.
   */
   const [finishing, setFinishing] = useState(
@@ -584,7 +592,7 @@ function WizardArrival({
         /* In the account now: nothing of it is kept in this browser. */
         clearPendingCard();
         clearCardAutosave();
-        openSavedCard(router, adoptedHref(result.data.id, step));
+        openSavedCard(router, result.data.id, adoptedHref(result.data.id, step));
       },
       () => live && setFinishing(false),
     );
@@ -613,7 +621,7 @@ function WizardArrival({
         clearPendingCard();
         clearCardAutosave();
         forgetHandoff(handoff);
-        openSavedCard(router, adoptedHref(result.eventId, result.step));
+        openSavedCard(router, result.eventId, adoptedHref(result.eventId, result.step));
         return;
       }
 
@@ -1079,7 +1087,7 @@ function WizardSteps({
   );
 
   /**
-   * "Save and continue" while signed out: sendToSignIn, in every browser.
+   * "Save my card" while signed out: sendToSignIn, in every browser.
    *
    * Instagram's and Facebook's browsers too, since /login signs a host in
    * there with an email code. The card used to be handed over to Chrome or
@@ -1129,7 +1137,8 @@ function WizardSteps({
     saveTimers.current = [
       window.setTimeout(() => setSaveSlow(true), SAVE_SLOW_MS),
       window.setTimeout(() => {
-        if (new URLSearchParams(window.location.search).get("event") === eventId) {
+        /* On the saved card already: the saved screen, or its editor on the step the save was pressed on. */
+        if (window.location.href.includes(eventId)) {
           return;
         }
 
@@ -1193,7 +1202,7 @@ function WizardSteps({
         return {
           ok: false,
           error:
-            "You are offline. Your card is saved on this phone. Connect to the internet, then press Save and continue again.",
+            "You are offline. Your card is kept on this phone. Connect to the internet, then press Save my card again.",
         };
       }
 
@@ -1228,7 +1237,8 @@ function WizardSteps({
       clearCardAutosave();
       clock.handOff(result.data.id);
 
-      const target = `${WIZARD_PATH}?${WIZARD_STEP_PARAM}=preview&event=${result.data.id}`;
+      /* The saved screen from the last step; from the details or customize step, that step of the saved card. */
+      const target = adoptedHref(result.data.id, stepRef.current);
       router.push(target);
       watchSavedCard(result.data.id, target);
 
@@ -1462,7 +1472,7 @@ function WizardSteps({
     editing || draft.venueName.trim().length > 0 ? undefined : () => openItem("venue");
 
   /*
-    "Save and continue" saves, on the first press. Every detail is optional
+    "Save my card" saves, on the first press. Every detail is optional
     and nothing stands in front of the save: no reminder about a venue or a
     time, and nothing listing what is still to add. The card can be changed
     from the dashboard after it is saved, which the step says above the button.
@@ -1562,6 +1572,30 @@ function WizardSteps({
   };
 
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
+  /* A new card's details and customize steps, once its design is chosen: Save on a row of its own. */
+  const saveRow =
+    !editing && templateChosen && (step === "details" || step === "customize");
+  /*
+    "Save my card", wherever a new card offers it: the same save from every
+    step (`save` above), the same sign in, handoff and duplicate guard.
+  */
+  const saveButton = (className: string): ReactElement => (
+    <button
+      type="button"
+      onClick={pressSave}
+      disabled={isSaving}
+      aria-busy={isSaving}
+      data-save-card=""
+      className={className}
+    >
+      <BusyLabel
+        busy={isSaving}
+        busyText={saveSlow ? "Almost done, opening your card…" : "Saving…"}
+      >
+        Save my card
+      </BusyLabel>
+    </button>
+  );
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
@@ -1989,15 +2023,22 @@ function WizardSteps({
         </div>
       </main>
 
-      {/* `pb-32` clears the bar pinned to the bottom, over the safe area. */}
-      <LegalFooter className="pb-32" />
+      {/* Bottom room for the bar pinned to the bottom, over the safe area: two rows where Save has its own. */}
+      <LegalFooter className={saveRow ? "pb-48" : "pb-32"} />
 
       {/*
         Back and Next, pinned to the bottom of the screen where a thumb is.
 
-        A NEW CARD saves at the end: the last step's button is "Save and
-        continue", and on a phone the way to the card sits between Back and
-        Next on the steps before it.
+        A NEW CARD can be saved from every step once its design is chosen:
+        "Save my card" is here on the details, the customize and the preview
+        step, with the line on what saving costs beside it. A visitor who
+        filled in everything and changed the look on step 3 left without
+        ever reaching the one Save there was, on step 4. On the details and
+        customize steps it has a row of its own over Back, Preview and Next,
+        since the four do not fit one row at 360px; Next is the outline
+        button there, so Save is the one main action. On the quick start,
+        "See my card" is the step's main action and Save is the outline one.
+        On the preview step it is the last step's own button, beside Back.
 
         A SAVED CARD can be saved from any step, since a host fixing a venue
         should not have to walk to the end to do it: "Save changes" is always
@@ -2019,13 +2060,28 @@ function WizardSteps({
           </p>
         ) : null}
         {isLast && !editing ? (
-          /* Right over "Save and continue": saving now is safe, and the card is not final. */
+          /* Right over the last step's Save: saving now is safe, and the card is not final. */
           <p
             data-save-reassurance=""
             className="mx-auto max-w-6xl border-b border-[var(--lifafa-hairline)] px-4 py-2.5 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)] sm:px-12 lg:px-[5.5rem] xl:px-8"
           >
             {SAVE_REASSURANCE}
           </p>
+        ) : null}
+        {saveRow ? (
+          /* The details and customize steps: Save on a row of its own, the line beside it. */
+          <div
+            data-save-row=""
+            className="mx-auto flex max-w-6xl items-center gap-3 border-b border-[var(--lifafa-hairline)] px-4 py-2.5 sm:px-12 lg:px-[5.5rem] xl:px-8"
+          >
+            <p
+              data-save-reassurance=""
+              className="min-w-0 flex-1 text-[0.8125rem] leading-snug font-medium text-[var(--lifafa-cream)]"
+            >
+              {SAVE_REASSURANCE}
+            </p>
+            {saveButton(quickStartShown ? QUIET_BUTTON : PRIMARY_BUTTON)}
+          </div>
         ) : null}
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
           {index > 0 ? (
@@ -2081,20 +2137,7 @@ function WizardSteps({
                 </button>
               )
             ) : isLast ? (
-              <button
-                type="button"
-                onClick={pressSave}
-                disabled={isSaving}
-                aria-busy={isSaving}
-                className={PRIMARY_BUTTON}
-              >
-                <BusyLabel
-                  busy={isSaving}
-                  busyText={saveSlow ? "Almost done, opening your card…" : "Saving…"}
-                >
-                  Save and continue
-                </BusyLabel>
-              </button>
+              saveButton(PRIMARY_BUTTON)
             ) : quickStartShown ? null : (
               <button
                 type="button"
@@ -2102,9 +2145,13 @@ function WizardSteps({
                 disabled={!templateChosen}
                 aria-busy={moving}
                 aria-describedby={templateChosen ? undefined : CHOOSE_DESIGN_HINT_ID}
-                className={PRIMARY_BUTTON}
+                /* Beside Save, the outline button: Save is the one main action. */
+                className={saveRow ? QUIET_BUTTON : PRIMARY_BUTTON}
               >
-                <BusyLabel busy={moving}>Next</BusyLabel>
+                {/* Its own word while busy: "Opening…" made it 127px wide, and Back, Preview and Next 338px of the 328 at 360px. */}
+                <BusyLabel busy={moving} busyText="Next">
+                  Next
+                </BusyLabel>
               </button>
             )}
           </div>

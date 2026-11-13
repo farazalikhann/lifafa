@@ -63,3 +63,11 @@ export function wizardStepPath(
 ): string {
   return `${path}?${WIZARD_STEP_PARAM}=${id}`;
 }
+
+/**
+ * On a saved card's edit page, `saved=new`: the card was saved a moment ago
+ * from the details or customize step of a new card, and the editor says so
+ * once (components/create/JustSavedNotice.tsx). Removed from the address
+ * as soon as it is read, so a reload does not say it again.
+ */
+export const JUST_SAVED_PARAM = "saved";

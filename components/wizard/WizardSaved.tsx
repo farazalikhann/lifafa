@@ -40,7 +40,7 @@ export default function WizardSaved({
 
   return (
     <div className="min-h-screen">
-      {/* Finishes the "Save and continue" clock, if this card was just saved here. */}
+      {/* Finishes the save clock, if this card was just saved here. */}
       <SaveTimingReport eventId={event.id} />
       <header className="border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]">
         <div className="mx-auto max-w-2xl px-4 pt-2.5 pb-1 sm:px-5">

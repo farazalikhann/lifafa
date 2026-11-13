@@ -203,7 +203,7 @@ export function guardClarityNavigation(): void {
 
 /**
  * The sign-in funnel, as Clarity custom events: to see where hosts with a
- * card leave between "Save and continue" and their account. Clarity only,
+ * card leave between "Save my card" and their account. Clarity only,
  * never the Meta pixel.
  *
  * - login_view_with_card: the sign-in page showed the visitor's own card.
@@ -227,10 +227,12 @@ export type ClarityEventName =
   | "login_email_code_failed"
   | "login_success"
   | "handoff_open_failed"
-  /* "Save and continue" measured from the press to the saved card on screen (lib/saveTiming.ts). */
+  /* "Save my card" measured from the press to the saved card on screen (lib/saveTiming.ts). */
   | "save_timing"
   /* The saved card had not opened 6 seconds after the save, so the page was loaded directly. */
   | "save_watchdog"
+  /* Back from sign in, the saved card had not opened 3 seconds after its save, so it was loaded directly. */
+  | "open_saved_fallback"
   /* Back from sign-in on an empty gallery, with no card to bring back (components/wizard/Wizard.tsx). */
   | "card_lost_after_login"
   /* Back from sign-in with the handoff gone, and the card brought back from this phone's autosave. */
