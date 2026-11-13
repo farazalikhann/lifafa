@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import { FREE_SAVE_LINE } from "@/components/wizard/wizardStyles";
 
 /** The template the intro shows opening, and whose live demo it leads to. */
 export const INTRO_TEMPLATE_ID = "emerald-shahi";
@@ -14,7 +15,7 @@ export const INTRO_LINE = "Guests open it on their phone, just like a real card.
  * account), and it is paid for once, per invitation, when the host publishes
  * it, which is what opens the link to guests (components/dashboard/PaymentBanner.tsx).
  */
-export const TRUST_LINE = "Design for free. Pay once when you are ready to share.";
+export const TRUST_LINE = FREE_SAVE_LINE;
 
 /*
   Made from the landing page's recording of Emerald Shahi opening

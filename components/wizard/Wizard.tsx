@@ -43,6 +43,7 @@ import WizardProgress from "@/components/wizard/WizardProgress";
 import {
   CHOOSE_DESIGN_HINT,
   CHOOSE_DESIGN_HINT_ID,
+  FREE_SAVE_LINE,
   HINT_TEXT,
   PRIMARY_BUTTON,
   QUIET_BUTTON,
@@ -924,7 +925,6 @@ const CARD_READY =
 */
 const DETAILS_REASSURANCE =
   "Nothing here is final. Add what you have now. You can edit your card later from your dashboard.";
-const SAVE_REASSURANCE = "Save now. You can edit your card later from your dashboard.";
 
 function WizardSteps({
   start,
@@ -1575,6 +1575,8 @@ function WizardSteps({
   /* A new card's details and customize steps, once its design is chosen: Save on a row of its own. */
   const saveRow =
     !editing && templateChosen && (step === "details" || step === "customize");
+  /* A saved card not paid for yet, as one just saved continues in: Save changes has the line too. */
+  const unpaidEdit = editing && !readOnly && edit.isPaid !== true;
   /*
     "Save my card", wherever a new card offers it: the same save from every
     step (`save` above), the same sign in, handoff and duplicate guard.
@@ -1735,7 +1737,13 @@ function WizardSteps({
               >
                 <path d="M5 12.5l4.5 4.5L19 7.5" />
               </svg>
-              {DETAILS_REASSURANCE}
+              {/* What saving costs first: a visitor from a demo lands here, past the gallery's line. */}
+              <span className="flex min-w-0 flex-col gap-1">
+                <span data-free-line="" className="font-semibold">
+                  {FREE_SAVE_LINE}
+                </span>
+                <span>{DETAILS_REASSURANCE}</span>
+              </span>
             </p>
           ) : null}
 
@@ -2059,13 +2067,13 @@ function WizardSteps({
             {error}
           </p>
         ) : null}
-        {isLast && !editing ? (
-          /* Right over the last step's Save: saving now is safe, and the card is not final. */
+        {(isLast && !editing) || unpaidEdit ? (
+          /* Right over the last step's Save, and over Save changes on a card not paid for: what saving costs. */
           <p
             data-save-reassurance=""
             className="mx-auto max-w-6xl border-b border-[var(--lifafa-hairline)] px-4 py-2.5 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)] sm:px-12 lg:px-[5.5rem] xl:px-8"
           >
-            {SAVE_REASSURANCE}
+            {FREE_SAVE_LINE}
           </p>
         ) : null}
         {saveRow ? (
@@ -2078,7 +2086,7 @@ function WizardSteps({
               data-save-reassurance=""
               className="min-w-0 flex-1 text-[0.8125rem] leading-snug font-medium text-[var(--lifafa-cream)]"
             >
-              {SAVE_REASSURANCE}
+              {FREE_SAVE_LINE}
             </p>
             {saveButton(quickStartShown ? QUIET_BUTTON : PRIMARY_BUTTON)}
           </div>

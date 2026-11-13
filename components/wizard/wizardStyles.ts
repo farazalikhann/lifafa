@@ -17,3 +17,12 @@ export const HINT_TEXT =
   "min-w-0 text-[0.8125rem] leading-snug text-[var(--lifafa-muted)]";
 export const QUIET_BUTTON =
   "min-h-12 rounded-full border border-[var(--lifafa-hairline)] px-4 text-[0.9375rem] font-medium whitespace-nowrap text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
+
+/**
+ * What saving costs, said near the top of /create and beside every save
+ * button of a card not yet paid for. True to the code: a card is saved to a
+ * free account for nothing, and paid for once (Rs 699 or Rs 999, by template)
+ * when it is published, which is what lets guests open its link
+ * (lib/db/inviteEvent.ts: an unpaid card is shown to its host only).
+ */
+export const FREE_SAVE_LINE = "Saving is free. You pay only when you share your invitation.";
