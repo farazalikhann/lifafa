@@ -12,7 +12,7 @@ import {
   templateDemoPath,
 } from "@/lib/templateSamples";
 import { cardPalette } from "@/lib/textColors";
-import { NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
+import { CREATE_THIS_CARD, NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
 import { TEMPLATES, findTemplate } from "@/templates/registry";
 
 /**
@@ -99,7 +99,7 @@ export default async function TemplateDemoPage({
       <div aria-hidden="true" style={{ height: "var(--lifafa-foot-h, 0px)" }} />
       <DemoCreateBar
         href={startHref}
-        label={template.listed ? "Create this card" : "Create yours"}
+        label={template.listed ? CREATE_THIS_CARD : "Create yours"}
         name={template.name}
         pricePaise={template.price}
         tone={tone}

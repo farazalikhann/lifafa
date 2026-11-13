@@ -11,7 +11,7 @@ import PinnedStrip, {
 } from "@/components/invite/PinnedStrip";
 import { LOWEST_PRICE_PAISE, formatPrice } from "@/lib/pricing";
 import type { StripTone } from "@/lib/stripTone";
-import { NEW_CARD_HREF } from "@/lib/wizardSteps";
+import { CREATE_THIS_CARD, NEW_CARD_HREF } from "@/lib/wizardSteps";
 
 /**
  * The strip across the top of the sample invitation.
@@ -52,7 +52,17 @@ export default function SampleBanner({
           href={adHref(start?.href ?? NEW_CARD_HREF)}
           className={PINNED_STRIP_ACTION}
         >
-          <LinkPending>{start !== undefined ? "Create this card" : "Create yours"}</LinkPending>
+          <LinkPending>
+            {start === undefined ? (
+              "Create yours"
+            ) : (
+              <>
+                {/* On a phone the bar at the foot carries the whole words; the strip keeps short. */}
+                <span className="sm:hidden">Create this card</span>
+                <span className="max-sm:hidden">{CREATE_THIS_CARD}</span>
+              </>
+            )}
+          </LinkPending>
         </Link>
       }
     >

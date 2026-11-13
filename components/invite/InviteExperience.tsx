@@ -315,8 +315,12 @@ export default function InviteExperience({
     Whether the card ends with the way to keep it, which is the host's to
     switch off (lib/pdfDownload.ts). When it does, the note above it is no
     longer the last thing on the page.
+
+    Never on a sample (/demo/*): visitors saved the sample as a PDF and left
+    with it, 20 taps on "Save as PDF" to 5 on "Create this card" in a week.
+    A sample's one way on is to make the card with their own names.
   */
-  const keepsake = pdfDownloadOn(config.pdfDownload);
+  const keepsake = sample === undefined && pdfDownloadOn(config.pdfDownload);
 
   /* The royal texture as the card's colour takes it, for the page's ground; null without it. */
   const pageTexture = royalTextureOn(config.royalTexture)

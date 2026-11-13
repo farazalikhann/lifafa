@@ -19,7 +19,8 @@ const PUBLISH_FOOT_HEIGHT = `(function(){var s=document.currentScript,b=s&&s.pre
 
 /**
  * The bar pinned to the foot of a phone's screen on a template's live demo:
- * what this card costs and "Create this card", where a thumb is.
+ * "Create this card with your names", the page's main button, the width of
+ * the screen where a thumb is, and what this card costs over it.
  *
  * Where it leads is the strip's (SampleBanner): the wizard's details step
  * with this design chosen, or the gallery for a template not offered yet,
@@ -49,7 +50,7 @@ export default function DemoCreateBar({
   tone?: StripTone | null;
   /** Where the button leads, before the ad's tags. */
   href: string;
-  /** "Create this card", or "Create yours" where it opens the gallery. */
+  /** "Create this card with your names", or "Create yours" where it opens the gallery. */
   label: string;
   /** The template's name. */
   name: string;
@@ -100,19 +101,26 @@ export default function DemoCreateBar({
             }
       }
     >
-      <div className="mx-auto flex max-w-md items-center gap-3 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))]">
+      {/*
+        The page's main button, the width of the screen: a visitor who likes
+        the sample makes it with their own names. What it costs is one small
+        line over it.
+      */}
+      <div className="mx-auto flex max-w-md flex-col gap-1.5 px-4 pt-2 pb-[calc(0.625rem+env(safe-area-inset-bottom))]">
         <p
-          className="flex min-w-0 flex-1 flex-col leading-tight text-[var(--lifafa-cream)]"
+          className="flex min-w-0 items-baseline justify-center gap-1.5 text-xs leading-tight text-[var(--lifafa-cream)]"
           style={tone === null || tone === undefined ? undefined : { color: tone.text }}
         >
-          <span className="truncate text-xs">{name}</span>
-          <span className="text-lg font-semibold">
+          <span className="truncate">{name}</span>
+          <span aria-hidden="true">·</span>
+          <span className="shrink-0 font-semibold">
             <Rupees text={formatPrice(pricePaise)} />
           </span>
         </p>
         <Link
           href={adHref(href)}
-          className="inline-flex min-h-12 shrink-0 items-center rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.9375rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+          data-demo-create=""
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--lifafa-marigold)] px-5 text-base font-semibold whitespace-nowrap text-[var(--lifafa-ink)] shadow-[0_6px_18px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
           style={
             tone === null || tone === undefined
               ? undefined

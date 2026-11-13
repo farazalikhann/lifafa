@@ -71,3 +71,9 @@ export function wizardStepPath(
  * as soon as it is read, so a reload does not say it again.
  */
 export const JUST_SAVED_PARAM = "saved";
+
+/**
+ * A live demo's main button (/demo/*): the sample, made with the visitor's
+ * own names. Leads to templateStartHref.
+ */
+export const CREATE_THIS_CARD = "Create this card with your names";
