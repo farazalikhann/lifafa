@@ -396,6 +396,29 @@ export async function createEvent(
   );
 }
 
+/**
+ * Wakes the function that saves a card, before the host presses Save.
+ *
+ * A server action runs in the function of the page it is called from, so
+ * this, called from /create, is answered by the same function createEvent
+ * will be, and opens the same connection to Supabase (getUser asks it). A
+ * save in production took 0.9 to 2 seconds on the server, and 11 and 15
+ * seconds twice (Clarity's save_create_ms, 11 to 13 Nov): a function and a
+ * connection started cold. The wizard calls this while a signed-in host is
+ * on the editor (components/wizard/Wizard.tsx), so the save finds them warm.
+ *
+ * Reads nothing of the host's and writes nothing; answers only whether the
+ * session it was sent with is a signed-in one.
+ */
+export async function warmSave(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user !== null;
+}
+
 /*
   The guest-facing read by invite code lives in lib/db/inviteEvent.ts, not here:
   every export of this "use server" file is an endpoint a browser can call, and

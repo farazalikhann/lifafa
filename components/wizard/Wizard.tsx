@@ -63,7 +63,8 @@ import {
 } from "@/lib/cardChecklist";
 import type { EventFormPart } from "@/components/create/EventForm";
 import { withContactBlock } from "@/lib/contacts";
-import { createEvent, updateEvent } from "@/lib/db/events";
+import { createEvent, updateEvent, warmSave } from "@/lib/db/events";
+import { hasSessionCookie } from "@/lib/supabase/sessionCookie";
 import type { ChangeAllowance } from "@/lib/eventLock";
 import { EMPTY_SNAPSHOT, arrivalFor, restoredSnapshot, type Arrival } from "@/lib/newCard";
 import { clearCardAutosave, readCardAutosave } from "@/lib/cardAutosave";
@@ -423,9 +424,19 @@ function afterPaint(work: () => void): void {
   window.requestAnimationFrame(() => window.setTimeout(work, 0));
 }
 
-/** After a save: when the button says the card is on its way, and when the page is loaded directly. */
-const SAVE_SLOW_MS = 4000;
-const SAVE_RELOAD_MS = 6000;
+/**
+ * After a save: when the saved card's page is loaded directly, if the move
+ * to it has not happened. Above the slowest move a normal save made in
+ * production (4.1 seconds, Clarity's save_screen_ms, 11 to 13 Nov): a full
+ * load started on a page that was about to arrive only makes it later.
+ */
+const SAVE_RELOAD_MS = 8000;
+
+/** How often a signed-in host's save is kept warm while they edit (warmSave). */
+const WARM_EVERY_MS = 4 * 60 * 1000;
+
+/** Said the moment a save is confirmed, while the saved card's page is on its way. */
+const SAVED_OPENING = "Your card is saved. Opening it…";
 
 /** How many times to ask about a card another request is still saving (about 18 seconds). */
 const ADOPT_BUSY_TRIES = 12;
@@ -475,8 +486,13 @@ function adoptOnce(id: string): Promise<AdoptResult> {
   return adoption;
 }
 
-/** How long a move to the saved card may take before the page is loaded directly. */
-const OPEN_SAVED_MS = 3000;
+/**
+ * How long a move to the saved card may take before the page is loaded
+ * directly. It was 3 seconds, and a normal move took up to 4.1 in production
+ * (SAVE_RELOAD_MS), so on a slower phone the fallback reloaded a page that
+ * was on its way.
+ */
+const OPEN_SAVED_MS = 8000;
 
 /**
  * Moves to the saved card, and makes sure of it. A router.replace here was
@@ -564,6 +580,9 @@ function WizardArrival({
       stashOriginFromUrl(window.location.search) !== null,
   );
 
+  /* Back from sign in and saved: said at once, while the saved card's page is fetched. */
+  const [finishedSaving, setFinishedSaving] = useState(false);
+
   useEffect(() => {
     if (!finishing || arrived === null || arrived.arrival.kind !== "restored") {
       return;
@@ -572,6 +591,15 @@ function WizardArrival({
     let live = true;
     const card = arrived.start;
     const step = arrived.arrival.step;
+
+    /*
+      Saved from the details or customize step, the card opens in its editor
+      on that step, which draws the form: its code fetched now, beside the
+      save, rather than after the editor's page has arrived.
+    */
+    if (step === "details" || step === "customize") {
+      preloadEditorSteps();
+    }
 
     void createEvent(
       card.draft,
@@ -593,6 +621,7 @@ function WizardArrival({
         /* In the account now: nothing of it is kept in this browser. */
         clearPendingCard();
         clearCardAutosave();
+        setFinishedSaving(true);
         openSavedCard(router, result.data.id, adoptedHref(result.data.id, step));
       },
       () => live && setFinishing(false),
@@ -748,7 +777,7 @@ function WizardArrival({
           role="status"
           className="fixed inset-x-4 top-20 z-20 mx-auto max-w-sm rounded-2xl border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)] px-4 py-3 text-center text-sm text-[var(--lifafa-cream)] shadow-sm"
         >
-          Welcome back. Let&apos;s finish your card.
+          {finishedSaving ? SAVED_OPENING : <>Welcome back. Let&apos;s finish your card.</>}
         </p>
         <EditorSkeleton step={skeletonStep} />
       </>
@@ -1113,11 +1142,12 @@ function WizardSteps({
     THE WATCHDOG after a save. The row is written; what is left is the move to
     the saved card's page, and a router.push can stall there (a phone that
     dropped the request, an in-app browser that never finishes it), leaving
-    the host on "Saving…" over a card that is already saved. After
-    SAVE_SLOW_MS the button says so; after SAVE_RELOAD_MS, still here and not
+    the host over a card that is already saved. The button says "Saved" and
+    the line beside it that the card is opening from the moment the server
+    confirms the save (`savedCard`); after SAVE_RELOAD_MS, still here and not
     on the saved card, the page is loaded directly.
   */
-  const [saveSlow, setSaveSlow] = useState(false);
+  const [savedCard, setSavedCard] = useState(false);
   const saveTimers = useRef<number[]>([]);
 
   useEffect(
@@ -1135,7 +1165,6 @@ function WizardSteps({
     }
 
     saveTimers.current = [
-      window.setTimeout(() => setSaveSlow(true), SAVE_SLOW_MS),
       window.setTimeout(() => {
         /* On the saved card already: the saved screen, or its editor on the step the save was pressed on. */
         if (window.location.href.includes(eventId)) {
@@ -1207,6 +1236,15 @@ function WizardSteps({
       }
 
       /*
+        No session cookie in this browser: nobody is signed in, and the
+        server would only say so after a round trip (lib/supabase/sessionCookie.ts).
+        Straight to sign in, as `signedOut` below would send the host.
+      */
+      if (!hasSessionCookie()) {
+        return continueSignedOut(snapshot);
+      }
+
+      /*
         Timed, for the saved card's page to report (lib/saveTiming.ts). The
         session is asked by createEvent itself, on the server: nobody signed
         in comes back as `signedOut`, and only then is the host sent to sign
@@ -1236,6 +1274,8 @@ function WizardSteps({
       autosaveStopped.current = true;
       clearCardAutosave();
       clock.handOff(result.data.id);
+      /* Saved: the button says so now, not when the saved card's page has arrived. */
+      setSavedCard(true);
 
       /* The saved screen from the last step; from the details or customize step, that step of the saved card. */
       const target = adoptedHref(result.data.id, stepRef.current);
@@ -1309,6 +1349,30 @@ function WizardSteps({
     onSave: save,
     paidLimits: edit?.paidLimits,
   });
+
+  /*
+    A signed-in host on the editor of a new card: the function that saves it,
+    and its connection to Supabase, woken now and every few minutes while the
+    page is open, so "Save my card" does not meet them cold (warmSave). Not
+    for a visitor with no session cookie, whose Save goes straight to sign in.
+  */
+  const onEditor = !editing && step !== "template";
+
+  useEffect(() => {
+    if (!onEditor || !hasSessionCookie()) {
+      return;
+    }
+
+    const warm = (): void => {
+      if (document.visibilityState === "visible") {
+        void warmSave().catch(() => undefined);
+      }
+    };
+
+    warm();
+    const timer = window.setInterval(warm, WARM_EVERY_MS);
+    return () => window.clearInterval(timer);
+  }, [onEditor]);
 
   /* A new card is kept in this browser as it is made; see hooks/useCardAutosave.ts. */
   useCardAutosave({ snapshot, start: untouched, enabled: !editing, stopped: autosaveStopped });
@@ -1590,10 +1654,7 @@ function WizardSteps({
       data-save-card=""
       className={className}
     >
-      <BusyLabel
-        busy={isSaving}
-        busyText={saveSlow ? "Almost done, opening your card…" : "Saving…"}
-      >
+      <BusyLabel busy={isSaving} busyText={savedCard ? "Saved" : "Saving…"} done={savedCard}>
         Save my card
       </BusyLabel>
     </button>
@@ -2071,9 +2132,10 @@ function WizardSteps({
           /* Right over the last step's Save, and over Save changes on a card not paid for: what saving costs. */
           <p
             data-save-reassurance=""
+            aria-live="polite"
             className="mx-auto max-w-6xl border-b border-[var(--lifafa-hairline)] px-4 py-2.5 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)] sm:px-12 lg:px-[5.5rem] xl:px-8"
           >
-            {FREE_SAVE_LINE}
+            {savedCard ? SAVED_OPENING : FREE_SAVE_LINE}
           </p>
         ) : null}
         {saveRow ? (
@@ -2084,9 +2146,10 @@ function WizardSteps({
           >
             <p
               data-save-reassurance=""
+            aria-live="polite"
               className="min-w-0 flex-1 text-[0.8125rem] leading-snug font-medium text-[var(--lifafa-cream)]"
             >
-              {FREE_SAVE_LINE}
+              {savedCard ? SAVED_OPENING : FREE_SAVE_LINE}
             </p>
             {saveButton(quickStartShown ? QUIET_BUTTON : PRIMARY_BUTTON)}
           </div>

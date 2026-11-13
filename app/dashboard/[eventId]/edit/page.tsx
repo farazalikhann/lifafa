@@ -44,7 +44,20 @@ export default async function EditEventPage({
 }): Promise<ReactElement> {
   const [{ eventId }, query] = await Promise.all([params, searchParams]);
   const justSaved = query[JUST_SAVED_PARAM] === "new";
-  const eventResult = await getEventById(eventId);
+  /*
+    The event and its tally at once, not one after the other: the tally needs
+    only the id, and row level security counts nothing for another host's.
+
+    The tally, not the list. What the editor needs is whether anyone is already
+    holding this date and how many; who they are is the dashboard's business and
+    loading it here would be a guest list read for a page that cannot show one.
+    A failed count says nothing rather than blocking the edit — the notice is a
+    caution, and a host who cannot see it can still fix their venue.
+  */
+  const [eventResult, guestCount] = await Promise.all([
+    getEventById(eventId),
+    countGuestsForEvent(eventId),
+  ]);
 
   if (!eventResult.ok) {
     return <EventNotFound message={eventResult.error} />;
@@ -63,15 +76,6 @@ export default async function EditEventPage({
   }
 
   const event = eventResult.data;
-
-  /*
-    The tally, not the list. What the editor needs is whether anyone is already
-    holding this date and how many; who they are is the dashboard's business and
-    loading it here would be a guest list read for a page that cannot show one.
-    A failed count says nothing rather than blocking the edit — the notice is a
-    caution, and a host who cannot see it can still fix their venue.
-  */
-  const guestCount = await countGuestsForEvent(event.id);
 
   /*
     Over, and not unlocked by an admin: read-only (lib/eventLock.ts). Decided

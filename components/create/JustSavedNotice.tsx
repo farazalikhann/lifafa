@@ -22,7 +22,11 @@ export default function JustSavedNotice(): ReactElement {
     }
 
     url.searchParams.delete(JUST_SAVED_PARAM);
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    /*
+      Null, as SavedNotice does: handing Next its own state back with a new
+      address made the router fetch the whole page a second time.
+    */
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }, []);
 
   return (
