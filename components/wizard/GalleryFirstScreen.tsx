@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import LegalFooter from "@/components/legal/LegalFooter";
+import SignedInWelcome from "@/components/create/SignedInWelcome";
 import { TemplateGalleryView } from "@/components/wizard/TemplateGalleryView";
 import WizardProgress from "@/components/wizard/WizardProgress";
 import CreateIntro, { INTRO_TEMPLATE_ID, TRUST_LINE } from "@/components/wizard/CreateIntro";
@@ -48,7 +49,12 @@ import { WIZARD_STEPS } from "@/lib/wizardSteps";
  * intro's card (CreateIntro) are links, so they work from the first moment.
  * The intro asks for nothing here: its poster and clip are the wizard's.
  */
-export default function GalleryFirstScreen(): ReactElement {
+export default function GalleryFirstScreen({
+  welcome = false,
+}: {
+  /** Straight from a sign in with nothing to save: "Start your card", as the wizard draws it. */
+  welcome?: boolean;
+}): ReactElement {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/90 backdrop-blur">
@@ -68,6 +74,7 @@ export default function GalleryFirstScreen(): ReactElement {
       </header>
 
       <main className="mx-auto grid max-w-6xl gap-8 px-4 pt-6 pb-12 sm:px-12 lg:grid-cols-[58fr_42fr] lg:items-start lg:gap-10 lg:px-[5.5rem] lg:pt-10 xl:px-8">
+        {welcome ? <SignedInWelcome /> : null}
         <div className="flex min-w-0 flex-col gap-8">
           {/* Not `live`: the words and the tile's place, and nothing fetched before the gallery's pictures. */}
           <CreateIntro demoHref={templateDemoPath(INTRO_TEMPLATE_ID)} />

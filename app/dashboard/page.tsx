@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import EventCard from "@/components/dashboard/EventCard";
 import HelpWidget from "@/components/help/HelpWidget";
 import SignOutButton from "@/components/dashboard/SignOutButton";
@@ -7,7 +8,7 @@ import HelpLine from "@/components/legal/HelpLine";
 import LegalFooter from "@/components/legal/LegalFooter";
 import { countEventsForHost, getEventsForHost } from "@/lib/db/events";
 import { eventsUnderReview } from "@/lib/db/paymentReview";
-import { NEW_CARD_HREF } from "@/lib/wizardSteps";
+import { AFTER_SIGN_IN_PARAM, NEW_CARD_HREF } from "@/lib/wizardSteps";
 import Logo from "@/components/Logo";
 
 /**
@@ -22,7 +23,14 @@ import Logo from "@/components/Logo";
  * Newest first, which is the order getEventsForHost already returns.
  */
 
-export default async function DashboardIndexPage(): Promise<ReactElement> {
+export default async function DashboardIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<ReactElement> {
+  /* Straight from a sign in (lib/auth/signInExits.ts). */
+  const afterSignIn = (await searchParams)[AFTER_SIGN_IN_PARAM] !== undefined;
+
   /*
     The tally comes from countEventsForHost rather than from result.data.length,
     so the number a host reads here and the number the notice on /create reads
@@ -39,6 +47,17 @@ export default async function DashboardIndexPage(): Promise<ReactElement> {
     countEventsForHost(),
   ]);
   const count = countResult.ok ? countResult.data : null;
+
+  /*
+    Just signed in, with no invitations: on to make one, with "Start your
+    card", rather than an empty list. /create also saves a card still unsaved
+    in the browser, if the sign-in page had not already sent the host there
+    with it (components/wizard/Wizard.tsx). Only when the list was read and is
+    empty: a failed read shows its error here as before.
+  */
+  if (afterSignIn && result.ok && result.data.length === 0) {
+    redirect(`${NEW_CARD_HREF}&${AFTER_SIGN_IN_PARAM}=1`);
+  }
 
   /*
     Which of the unpaid ones have been paid for and are being verified, so

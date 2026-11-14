@@ -78,7 +78,10 @@ import {
 } from "@/lib/pendingCard";
 import { formatPrice } from "@/lib/pricing";
 import { getTheme } from "@/lib/themes";
+import { stashWaitingCard } from "@/lib/signInCard";
+import SignedInWelcome from "@/components/create/SignedInWelcome";
 import {
+  AFTER_SIGN_IN_PARAM,
   JUST_SAVED_PARAM,
   NEW_CARD_HREF,
   WIZARD_PATH,
@@ -321,9 +324,16 @@ interface ArrivalStart {
   /**
    * For Clarity, once the steps are drawn: back from sign in with the card
    * brought back from this browser's own copy (`restored`), or with nothing
-   * to bring back (`lost`). Null for every other arrival.
+   * to bring back (`lost`). Sent on from the dashboard after a sign in with
+   * no invitation and no card in this browser (`no-card`). Null for every
+   * other arrival.
    */
-  report: "lost" | "restored" | null;
+  report: "lost" | "restored" | "no-card" | null;
+  /**
+   * Straight from a sign in with no invitation and no card waiting here:
+   * "Start your card" over the gallery (SignedInWelcome).
+   */
+  welcome?: boolean;
 }
 
 /**
@@ -337,6 +347,24 @@ function localStart(
   /** Back from sign in with a handed-over card that did not open: that is said by the caller. */
   afterHandoff = false,
 ): ArrivalStart {
+  /*
+    Sent on from the dashboard straight after a sign in (app/dashboard/page.tsx).
+    The newest card unsaved in this browser goes into the sign-in stash first,
+    so it is read below and saved at once, as on any return from sign in
+    (`finishing` in WizardArrival). The sign-in page usually sent such a host
+    to /create with it already; this is for a sign in that did not ask.
+  */
+  const params = new URLSearchParams(search);
+  const afterSignIn = !afterHandoff && params.has(AFTER_SIGN_IN_PARAM);
+  const signedInStep = afterSignIn ? stashWaitingCard() : null;
+  params.delete(AFTER_SIGN_IN_PARAM);
+  /* The address without the mark: on the step the card saves from, or as it was. */
+  const unmarked = afterSignIn
+    ? signedInStep !== null
+      ? wizardStepPath(signedInStep)
+      : `${WIZARD_PATH}?${params.toString()}`
+    : null;
+
   const read = arrivalFor(
     readPendingCard(),
     stashOriginFromUrl(search),
@@ -354,7 +382,7 @@ function localStart(
       fallback: empty,
       autosaved: false,
       chosen: true,
-      address: null,
+      address: unmarked,
       report: afterHandoff ? "restored" : null,
     };
   }
@@ -390,7 +418,7 @@ function localStart(
         fallback: empty,
         autosaved: false,
         chosen: templateId !== null,
-        address: read.restart === true ? NEW_CARD_HREF : null,
+        address: read.restart === true ? NEW_CARD_HREF : unmarked,
         report: read.restart === true ? "lost" : null,
       };
     }
@@ -402,9 +430,10 @@ function localStart(
     fallback: empty,
     autosaved: kept !== null,
     chosen: kept !== null || templateId !== null,
-    address: null,
+    address: unmarked,
     /* Back from sign in without the card, and the one kept as it was typed brought back instead. */
-    report: cameBack && kept !== null ? "restored" : null,
+    report: afterSignIn ? "no-card" : cameBack && kept !== null ? "restored" : null,
+    welcome: afterSignIn,
   };
 }
 
@@ -575,7 +604,9 @@ function WizardArrival({
     () =>
       handoff === null &&
       arrived?.arrival.kind === "restored" &&
-      stashOriginFromUrl(window.location.search) !== null,
+      (stashOriginFromUrl(window.location.search) !== null ||
+        /* Sent on from the dashboard after a sign in, with a card found here (localStart). */
+        new URLSearchParams(window.location.search).has(AFTER_SIGN_IN_PARAM)),
   );
 
   /* Back from sign in and saved: said at once, while the saved card's page is fetched. */
@@ -619,6 +650,7 @@ function WizardArrival({
         /* In the account now: nothing of it is kept in this browser. */
         clearPendingCard();
         clearCardAutosave();
+        clarityEvent("card_saved_after_signin");
         setFinishedSaving(true);
         openSavedCard(router, result.data.id, adoptedHref(result.data.id, step));
       },
@@ -649,6 +681,7 @@ function WizardArrival({
         clearPendingCard();
         clearCardAutosave();
         forgetHandoff(handoff);
+        clarityEvent("card_saved_after_signin");
         openSavedCard(router, result.eventId, adoptedHref(result.eventId, result.step));
         return;
       }
@@ -724,6 +757,8 @@ function WizardArrival({
       clarityEvent("card_lost_after_login");
     } else if (report === "restored") {
       clarityEvent("card_restored_after_login");
+    } else if (report === "no-card") {
+      clarityEvent("no_card_after_signin");
     }
   }, [report]);
 
@@ -822,6 +857,7 @@ function WizardArrival({
       problem={arrival.kind === "lost" ? arrival.problem : null}
       stashedStep={null}
       onStartFresh={autosaved ? startFresh : undefined}
+      welcome={arrived.welcome === true}
     />
   );
 
@@ -961,6 +997,7 @@ function WizardSteps({
   stashedStep,
   edit,
   onStartFresh,
+  welcome = false,
 }: {
   start: EditorSnapshot;
   /**
@@ -986,6 +1023,8 @@ function WizardSteps({
    * and offer to clear it (lib/cardAutosave.ts).
    */
   onStartFresh?: () => void;
+  /** Just signed in, with nothing to save: "Start your card" over the gallery. */
+  welcome?: boolean;
 }): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1725,6 +1764,7 @@ function WizardSteps({
             here={displayHost(window.location.origin)}
           />
         ) : null}
+        {welcome && step === "template" ? <SignedInWelcome /> : null}
         {onStartFresh !== undefined ? (
           <p
             role="status"

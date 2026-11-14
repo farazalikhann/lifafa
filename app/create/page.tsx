@@ -12,7 +12,7 @@ import { isUnderReview } from "@/lib/db/paymentReview";
 import { liveOffer } from "@/lib/coupons/offer";
 import { razorpayKeyId } from "@/lib/razorpay/keys";
 import { opensOnGallery } from "@/lib/opensOnGallery";
-import { NEW_CARD_HREF } from "@/lib/wizardSteps";
+import { AFTER_SIGN_IN_PARAM, NEW_CARD_HREF } from "@/lib/wizardSteps";
 import { findTemplate } from "@/templates/registry";
 import { marketingShare } from "@/lib/shareImage";
 
@@ -104,7 +104,11 @@ export default async function CreatePage({
               The gallery itself on the server, where the address opens on it
               and nothing this browser holds can change that (lib/opensOnGallery.ts).
             */
-            firstScreen={opensOnGallery(queryGetter(query)) ? <GalleryFirstScreen /> : undefined}
+            firstScreen={
+              opensOnGallery(queryGetter(query)) ? (
+                <GalleryFirstScreen welcome={query[AFTER_SIGN_IN_PARAM] !== undefined} />
+              ) : undefined
+            }
           />
         </Suspense>
         {/* Keeps the ad's tags in Instagram's and Facebook's browsers; renders nothing. */}

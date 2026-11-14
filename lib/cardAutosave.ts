@@ -46,6 +46,13 @@ export function writeCardAutosave(card: PendingCard): boolean {
 
 /** The card kept here, if there is one, it reads as a card, and it is not too old. */
 export function readCardAutosave(now: number = Date.now()): PendingCard | null {
+  return readCardAutosaveEntry(now)?.card ?? null;
+}
+
+/** The same, with when it was last changed: sign in takes the newest card this browser has (lib/signInCard.ts). */
+export function readCardAutosaveEntry(
+  now: number = Date.now(),
+): { card: PendingCard; savedAt: number } | null {
   let raw: string | null;
 
   try {
@@ -71,7 +78,7 @@ export function readCardAutosave(now: number = Date.now()): PendingCard | null {
     }
 
     /* The ids beside the config checked, as the sign-in stash's are. */
-    return toPendingCard(parsed);
+    return { card: toPendingCard(parsed), savedAt: (parsed as StoredAutosave).savedAt };
   } catch {
     clearCardAutosave();
     return null;

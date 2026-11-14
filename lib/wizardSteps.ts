@@ -32,6 +32,14 @@ export const WIZARD_STEP_PARAM = "step";
  */
 export const NEW_CARD_HREF = "/create?step=template";
 
+/**
+ * On /dashboard and on /create, `signedIn=1`: the page was reached straight
+ * from a sign in (lib/auth/signInExits.ts). A host with no invitations is sent
+ * on from the dashboard to the gallery with it, where a card still unsaved in
+ * this browser is saved, or "Start your card" is said (components/wizard/Wizard.tsx).
+ */
+export const AFTER_SIGN_IN_PARAM = "signedIn";
+
 /** The query parameter naming a template chosen before the wizard opened. */
 export const WIZARD_TEMPLATE_PARAM = "template";
 

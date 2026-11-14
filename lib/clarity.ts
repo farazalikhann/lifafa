@@ -241,7 +241,18 @@ export type ClarityEventName =
   /* Back from sign-in on an empty gallery, with no card to bring back (components/wizard/Wizard.tsx). */
   | "card_lost_after_login"
   /* Back from sign-in with the handoff gone, and the card brought back from this phone's autosave. */
-  | "card_restored_after_login";
+  | "card_restored_after_login"
+  /*
+    A card unsaved in this browser (or handed over from Instagram's or
+    Facebook's) saved to the account as the host arrived from signing in,
+    whichever way they signed in (lib/signInCard.ts, components/wizard/Wizard.tsx).
+  */
+  | "card_saved_after_signin"
+  /*
+    Signed in with no invitation and no card in this browser: sent on from the
+    dashboard to the gallery with "Start your card" (app/dashboard/page.tsx).
+  */
+  | "no_card_after_signin";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";

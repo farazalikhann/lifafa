@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { metaPixelEnabled, NEW_ACCOUNT_COOKIE } from "@/lib/metaPixel";
 import { SIGNED_IN_COOKIE } from "@/lib/clarity";
+import { AFTER_SIGN_IN_PARAM } from "@/lib/wizardSteps";
 
 /**
  * The end of every sign in, shared by the two routes that finish one: the
@@ -93,7 +94,18 @@ export function exits(origin: string, destination: string) {
       clears (lib/metaPixel.ts). Not when there is no pixel to tell.
     */
     succeed(newAccount: boolean): NextResponse {
-      const response = NextResponse.redirect(`${origin}${destination}`);
+      /*
+        To the dashboard, marked as straight from a sign in: a host with no
+        invitations is sent on from there to make one (app/dashboard/page.tsx),
+        not left on an empty list. A card still unsaved in the browser does
+        not come here: the sign-in page sends that host to /create
+        (lib/signInCard.ts).
+      */
+      const landing =
+        destination === DEFAULT_DESTINATION
+          ? `${DEFAULT_DESTINATION}?${AFTER_SIGN_IN_PARAM}=1`
+          : destination;
+      const response = NextResponse.redirect(`${origin}${landing}`);
 
       /* For Clarity's login_success, read and cleared on the next page it runs on (lib/clarity.ts). */
       response.cookies.set(SIGNED_IN_COOKIE, "1", {

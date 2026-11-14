@@ -10,6 +10,7 @@ import {
   type ReactElement,
 } from "react";
 import { loadClient } from "@/lib/supabase/loadClient";
+import { signInDestination } from "@/lib/auth/signInDestination";
 import { isOnline } from "@/lib/loadNotice";
 import { clarityEvent, claritySet } from "@/lib/clarity";
 import {
@@ -298,7 +299,12 @@ export default function EmailCodeForm({
         replace(): Back from the card should not land on a used code.
       */
       const finish = new URL("/auth/email", window.location.origin);
-      finish.searchParams.set("redirectTo", redirectTo);
+      /*
+        With a card still unsaved in this browser, back to /create, which saves
+        it to the account at once, wherever this page was opened from
+        (lib/signInCard.ts).
+      */
+      finish.searchParams.set("redirectTo", await signInDestination(redirectTo));
       window.location.replace(finish.toString());
     } catch (cause: unknown) {
       console.error("[auth] email code check failed:", cause);

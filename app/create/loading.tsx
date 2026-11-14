@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import GalleryFirstScreen from "@/components/wizard/GalleryFirstScreen";
 import { CREATE_QUERY_HEADER, opensOnGallery } from "@/lib/opensOnGallery";
-import { WIZARD_STEPS, WIZARD_STEP_PARAM, wizardStepId } from "@/lib/wizardSteps";
+import { AFTER_SIGN_IN_PARAM, WIZARD_STEPS, WIZARD_STEP_PARAM, wizardStepId } from "@/lib/wizardSteps";
 
 /**
  * What a visitor sees first on /create: the first bytes of the page when it
@@ -34,7 +34,7 @@ export default async function CreateLoading(): Promise<ReactElement> {
   const query = new URLSearchParams(search);
 
   if (opensOnGallery(query)) {
-    return <GalleryFirstScreen />;
+    return <GalleryFirstScreen welcome={query.has(AFTER_SIGN_IN_PARAM)} />;
   }
 
   const step =

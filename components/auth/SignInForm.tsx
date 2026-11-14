@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import dynamic from "next/dynamic";
 import { loadClient, preloadClient } from "@/lib/supabase/loadClient";
+import { preloadSignInCard, signInDestination } from "@/lib/auth/signInDestination";
 import { isOnline } from "@/lib/loadNotice";
 import { clarityEvent } from "@/lib/clarity";
 import { rememberAdParams, type InAppBrowser } from "@/lib/inAppBrowser";
@@ -164,6 +165,8 @@ export default function SignInForm({
     const events = ["pointerdown", "keydown"] as const;
     const fetchClient = (): void => {
       preloadClient();
+      /* And what finds a card waiting in this browser, which every sign in asks. */
+      preloadSignInCard();
       for (const name of events) {
         window.removeEventListener(name, fetchClient, true);
       }
@@ -207,7 +210,12 @@ export default function SignInForm({
       callback on any other domain fails every time.
     */
     const callback = new URL("/auth/callback", window.location.origin);
-    callback.searchParams.set("redirectTo", redirectTo);
+    /*
+      A card still unsaved in this browser goes with the sign in, wherever
+      this page was opened from: back to /create, which saves it to the
+      account at once (lib/signInCard.ts).
+    */
+    callback.searchParams.set("redirectTo", await signInDestination(redirectTo));
 
     try {
       const supabase = await loadClient();

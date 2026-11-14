@@ -6,7 +6,7 @@ import { saveDraftHandoff } from "@/lib/handoff/actions";
 import { HANDOFF_PARAM, handoffFromSearch, pathWithHandoff } from "@/lib/handoff/link";
 import { withAdParams, type InAppBrowser } from "@/lib/inAppBrowser";
 import { openInBrowserClick } from "@/lib/metaPixel";
-import { readPendingCard } from "@/lib/pendingCard";
+import { waitingCard } from "@/lib/signInCard";
 
 /**
  * On /login, for a visitor in Instagram's or Facebook's in-app browser: the
@@ -18,7 +18,8 @@ import { readPendingCard } from "@/lib/pendingCard";
  * the app: they are sent straight to the real browser's /login. This is for
  * those who come to /login directly. Their link is this page as it is, with
  * the ad's tags. If a card happens to be waiting in this browser's storage it
- * is carried too, the same way the wizard carries it.
+ * is carried too, the same way the wizard carries it: the newest one, stashed
+ * by "Save and continue" or kept as it was typed.
  */
 
 /** How long the button waits for a waiting card to be saved before going without it. */
@@ -46,15 +47,19 @@ async function linkFromHere(): Promise<string> {
 
   url.searchParams.delete(HANDOFF_PARAM);
 
-  const stash = readPendingCard();
+  /* The newest card unsaved here: the sign-in stash, or the one kept as it was typed (lib/signInCard.ts). */
+  const waiting = waitingCard();
 
-  if (stash.kind === "card") {
+  if (waiting !== null) {
     const timeout = new Promise<null>((resolve) => {
       window.setTimeout(() => resolve(null), SAVE_TIMEOUT_MS);
     });
 
     try {
-      const saved = await Promise.race([saveDraftHandoff(stash.card), timeout]);
+      const saved = await Promise.race([
+        saveDraftHandoff({ ...waiting.card, step: waiting.card.step ?? "details" }),
+        timeout,
+      ]);
 
       if (saved !== null && saved.ok) {
         url.searchParams.set(HANDOFF_PARAM, saved.id);
