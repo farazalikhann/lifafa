@@ -1782,11 +1782,11 @@ function WizardSteps({
                 onFocusCapture={() => setPreviewLanguage(language)}
               >
                 {/*
-                  ENGLISH ONLY FOR A NEW CARD: no language picker, no Hindi
-                  words and no "Translate to Hindi" here. A new card is in
-                  English (EMPTY_SNAPSHOT). A saved invitation's edit page
-                  keeps all three, so a Hindi card, and the guest page's
-                  language switch, are as they were.
+                  NO LANGUAGE PICKER FOR A NEW CARD: its details are typed in
+                  English (EMPTY_SNAPSHOT). "Translate to Hindi" and "Share in
+                  Hindi too" stay at the foot of the step, as before, for the
+                  guest page's English and Hindi switch. A saved invitation's
+                  edit page keeps the picker too, so a Hindi card is as it was.
                 */}
                 {editing ? (
                   <editor.LanguagePicker
@@ -1827,32 +1827,32 @@ function WizardSteps({
                   language={language}
                   parts={DETAILS_MESSAGE}
                 />
-                {editing ? (
-                  <editor.AutoTranslate
-                    cardLanguage={language}
-                    draft={draft}
-                    blocks={blocks}
-                    occasionId={occasionId}
-                    eventId={edit.eventId}
-                    onTranslated={handleTranslated}
-                    onCardId={handleCardId}
-                  />
-                ) : null}
-              </div>
-
-              {editing ? (
-                <editor.TranslationPanel
+                <editor.AutoTranslate
                   cardLanguage={language}
                   draft={draft}
                   blocks={blocks}
                   occasionId={occasionId}
-                  onDraftWord={handleDraftWord}
-                  onSubEventWord={handleSubEventWord}
-                  onSectionWord={handleSectionWord}
-                  onFocusLanguage={setPreviewLanguage}
-                  revealSignal={translatedSignal}
+                  eventId={edit?.eventId}
+                  onTranslated={handleTranslated}
+                  onCardId={handleCardId}
+                  /* An edit page is behind sign-in already; only a new card can meet a signed-out host. */
+                  onSignInRequired={
+                    editing ? undefined : () => sendToSignIn(snapshot)
+                  }
                 />
-              ) : null}
+              </div>
+
+              <editor.TranslationPanel
+                cardLanguage={language}
+                draft={draft}
+                blocks={blocks}
+                occasionId={occasionId}
+                onDraftWord={handleDraftWord}
+                onSubEventWord={handleSubEventWord}
+                onSectionWord={handleSectionWord}
+                onFocusLanguage={setPreviewLanguage}
+                revealSignal={translatedSignal}
+              />
             </div>
           ) : null}
 
