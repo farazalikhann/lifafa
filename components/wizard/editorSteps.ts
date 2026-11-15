@@ -12,6 +12,3 @@ export { default as LanguagePicker } from "@/components/create/LanguagePicker";
 export { default as SubEventEditor } from "@/components/create/SubEventEditor";
 export { default as TranslationPanel } from "@/components/create/TranslationPanel";
 export { default as CustomizeStep } from "@/components/wizard/CustomizeStep";
-export { EventBasics } from "@/components/create/EventForm";
-export { default as CardChecklist } from "@/components/create/CardChecklist";
-export { default as QuickStartNext } from "@/components/create/QuickStartNext";

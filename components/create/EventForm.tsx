@@ -65,8 +65,6 @@ function Field({
   );
 }
 
-const HOST_HINT = "Used only when the two name fields are empty.";
-
 /** One of the two allowances a paid invitation has; see lib/eventLock.ts. */
 interface ChangeNote {
   left: number;
@@ -330,9 +328,9 @@ function FamilyGroup({
 }
 
 /**
- * The parts of the form, for showing one or two of them on their own: the
- * "Add" buttons of a new card's checklist open only the part they name
- * (components/create/CardChecklist.tsx). The same fields either way.
+ * The parts of the form, for drawing it in pieces: the details step puts the
+ * functions and the contact numbers between them (components/wizard/Wizard.tsx).
+ * The same fields either way.
  */
 export type EventFormPart = "names" | "families" | "title" | "date" | "time" | "venue" | "message";
 
@@ -345,90 +343,6 @@ const ALL_PARTS: ReadonlySet<EventFormPart> = new Set([
   "venue",
   "message",
 ]);
-
-/*
-  The quick start's fields: the same, with the example said as one ("e.g.
-  Aarav") and drawn lighter, so it is not mistaken for a name already typed.
-  Important, because the paper theme sets the placeholder's opacity itself
-  (app/globals.css, .lifafa-paper ::placeholder).
-*/
-const BASICS_INPUT_CLASS = `${INPUT_CLASS} placeholder:opacity-50!`;
-
-/**
- * The quick start of a new card: the two names and the date, nothing else.
- * The joining word keeps the card's own, and every other field waits for the
- * checklist. The same fields as the full form, ids and all, so whatever is
- * typed here is in place when the full form opens.
- */
-export function EventBasics({
-  draft,
-  onChange,
-  occasionId,
-  language,
-}: {
-  draft: EventDraft;
-  onChange: DraftChangeHandler;
-  occasionId: OccasionId;
-  language: CardLanguage;
-}): ReactElement {
-  const examples = EXAMPLES[language];
-  const isPair = pairsNames(occasionId);
-
-  return (
-    <div className="flex flex-col gap-4">
-      {isPair ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="partyOneName" label="First name">
-            <input
-              id="partyOneName"
-              type="text"
-              value={draft.partyOneName}
-              onChange={(event) => onChange("partyOneName", event.target.value)}
-              placeholder={`e.g. ${examples.partyOneName}`}
-              autoComplete="off"
-              enterKeyHint="next"
-              className={BASICS_INPUT_CLASS}
-            />
-          </Field>
-          <Field id="partyTwoName" label="Second name">
-            <input
-              id="partyTwoName"
-              type="text"
-              value={draft.partyTwoName}
-              onChange={(event) => onChange("partyTwoName", event.target.value)}
-              placeholder={`e.g. ${examples.partyTwoName}`}
-              autoComplete="off"
-              enterKeyHint="next"
-              className={BASICS_INPUT_CLASS}
-            />
-          </Field>
-        </div>
-      ) : (
-        <Field id="hostNames" label="Name on the card">
-          <input
-            id="hostNames"
-            type="text"
-            value={draft.hostNames}
-            onChange={(event) => onChange("hostNames", event.target.value)}
-            placeholder={`e.g. ${examples.partyOneName}`}
-            autoComplete="off"
-            className={BASICS_INPUT_CLASS}
-          />
-        </Field>
-      )}
-
-      <Field id="eventDate" label={isPair ? "Wedding date" : "Date"}>
-        <input
-          id="eventDate"
-          type="date"
-          value={draft.eventDate}
-          onChange={(event) => onChange("eventDate", event.target.value)}
-          className={BASICS_INPUT_CLASS}
-        />
-      </Field>
-    </div>
-  );
-}
 
 export default function EventForm({
   draft,
@@ -559,15 +473,16 @@ export default function EventForm({
         ) : null}
 
         {/*
-          One field, two jobs. Beside the pair it is the escape hatch for a line
-          the three fields cannot make — "The Sharma family", a name with a
-          title in it. On its own it *is* the name, so it takes the plain label
-          and drops the hint about fields that are not on screen.
+          One field, two jobs. On its own it *is* the name, for an occasion
+          about one person. Beside the pair it was a line written instead of
+          the names ("The Sharma family"), no longer offered: it is drawn only
+          for a card that already has one, so that line can still be changed
+          or cleared. The card keeps showing it either way (resolveCoverNames).
         */}
+        {!isPair || draft.hostNames.trim().length > 0 ? (
         <Field
           id="hostNames"
-          label={isPair ? "Or write one line yourself" : "Name on the card"}
-          hint={isPair ? HOST_HINT : undefined}
+          label={isPair ? "Names as one line" : "Name on the card"}
         >
           <input
             id="hostNames"
@@ -576,10 +491,10 @@ export default function EventForm({
             onChange={(event) => onChange("hostNames", event.target.value)}
             placeholder={isPair ? examples.pairLine : examples.partyOneName}
             autoComplete="off"
-            aria-describedby={isPair ? "hostNames-hint" : undefined}
             className={INPUT_CLASS}
           />
         </Field>
+        ) : null}
 
         {paidLimits !== undefined ? (
           <LimitNote note={paidLimits.names} noun="name" />
@@ -630,9 +545,6 @@ export default function EventForm({
             />
           ) : null}
 
-          <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-            Optional. Shown on the card if you fill it in.
-          </p>
         </div>
         </>
         ) : null}

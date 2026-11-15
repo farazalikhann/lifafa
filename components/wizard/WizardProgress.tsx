@@ -24,6 +24,7 @@ export default function WizardProgress({
   brand,
   current,
   done = false,
+  editing = false,
   onSelect,
 }: {
   /** The logo (a link home), at the start of the line. */
@@ -31,10 +32,14 @@ export default function WizardProgress({
   current: WizardStepId;
   /** Every step is behind the host: the card is saved. */
   done?: boolean;
+  /** A saved invitation's edit page: the steps by their edit labels. */
+  editing?: boolean;
   onSelect?: (step: WizardStepId) => void;
 }): ReactElement {
   const index = wizardStepIndex(current);
   const step = WIZARD_STEPS[index];
+  const labelOf = (entry: (typeof WIZARD_STEPS)[number]): string =>
+    editing ? (entry.editLabel ?? entry.label) : entry.label;
 
   return (
     <nav aria-label="Steps" className="flex flex-col">
@@ -42,7 +47,7 @@ export default function WizardProgress({
         {brand}
         <p className="min-w-0 truncate text-[0.8125rem] text-[var(--lifafa-muted)]">
           <span className="font-medium text-[var(--lifafa-cream)]">
-            {step.label}
+            {labelOf(step)}
           </span>{" "}
           · Step {index + 1} of {WIZARD_STEPS.length}
         </p>
@@ -68,7 +73,7 @@ export default function WizardProgress({
                 <span className="flex h-7 items-center">
                   {bar}
                   <span className="sr-only">
-                    {entry.label}
+                    {labelOf(entry)}
                     {at === index ? " (current step)" : ""}
                   </span>
                 </span>
@@ -81,7 +86,7 @@ export default function WizardProgress({
                 >
                   {bar}
                   <span className="sr-only">
-                    Step {at + 1}: {entry.label}
+                    Step {at + 1}: {labelOf(entry)}
                   </span>
                 </button>
               )}

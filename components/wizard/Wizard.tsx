@@ -15,10 +15,8 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import DiscardChangesDialog from "@/components/create/DiscardChangesDialog";
-import EditorSkeleton, {
-  EditorFormSkeleton,
-  QuickStartSkeleton,
-} from "@/components/create/EditorSkeleton";
+import EditorSkeleton, { EditorFormSkeleton } from "@/components/create/EditorSkeleton";
+import DetailsProgress from "@/components/create/DetailsProgress";
 import ExistingInvitationsNotice from "@/components/create/ExistingInvitationsNotice";
 import BusyLabel from "@/components/network/BusyLabel";
 import { markSaveReload, startSaveClock } from "@/lib/saveTiming";
@@ -55,12 +53,6 @@ import {
   type SaveOutcome,
 } from "@/hooks/useCardEditor";
 import { coverNameLine, resolveCoverNames } from "@/lib/cardFormat";
-import {
-  cardChecklist,
-  checklistAnchor,
-  hasCardDetails,
-  type ChecklistItemId,
-} from "@/lib/cardChecklist";
 import type { EventFormPart } from "@/components/create/EventForm";
 import { withContactBlock } from "@/lib/contacts";
 import { createEvent, updateEvent, warmSave } from "@/lib/db/events";
@@ -141,12 +133,11 @@ if (typeof window !== "undefined") {
 }
 
 /** A step whose code is on its way: the form's skeleton, a screen high, said to a screen reader too. */
-function StepSkeleton({ quick = false }: { quick?: boolean }): ReactElement {
-  /* The quick start at its own height, so the footer under it does not jump up when it arrives. */
+function StepSkeleton(): ReactElement {
   return (
-    <div role="status" className={quick ? undefined : "min-h-[100svh]"}>
+    <div role="status" className="min-h-[100svh]">
       <span className="sr-only">Opening the editor…</span>
-      {quick ? <QuickStartSkeleton /> : <EditorFormSkeleton />}
+      <EditorFormSkeleton />
     </div>
   );
 }
@@ -927,35 +918,15 @@ export function EditWizard({
   );
 }
 
-/**
- * What the details step shows: the quick start of a new card ("quick"), the
- * card as it now is with what is left to add ("card"), one part of the form
- * opened from that list (an item's id), or the whole form ("all"), as every
- * saved invitation has it.
- */
-type DetailsView = "quick" | "card" | "all" | ChecklistItemId;
-
-/** The parts of the details form each item of the checklist opens; Functions is its own editor. */
-const ITEM_PARTS: Readonly<Record<Exclude<ChecklistItemId, "functions">, ReadonlySet<EventFormPart>>> = {
-  names: new Set(["names"]),
-  date: new Set(["date"]),
-  venue: new Set(["time", "venue"]),
-  families: new Set(["families"]),
-  message: new Set(["message"]),
-};
-
-/** The heading over one part of the form, opened from the checklist. */
-const CHECKLIST_TITLES: Readonly<Record<ChecklistItemId, string>> = {
-  names: "Names",
-  date: "Date",
-  venue: "Venue and time",
-  functions: "Functions",
-  families: "Family names",
-  message: "Message for guests",
-};
-
-const isItemView = (view: DetailsView): view is ChecklistItemId =>
-  view !== "quick" && view !== "card" && view !== "all";
+/*
+  THE DETAILS STEP IS ONE PAGE: every field at once, in the order the card
+  reads them. The form is drawn in its parts so the functions and the contact
+  numbers sit where they belong on the card: after the start time, and after
+  the venue's map link.
+*/
+const DETAILS_FIRST: ReadonlySet<EventFormPart> = new Set(["names", "families", "title", "date", "time"]);
+const DETAILS_VENUE: ReadonlySet<EventFormPart> = new Set(["venue"]);
+const DETAILS_MESSAGE: ReadonlySet<EventFormPart> = new Set(["message"]);
 
 /** Where an element of the form is drawn, brought into view and, when it takes typing, focused. */
 function revealField(id: string): void {
@@ -972,22 +943,15 @@ function revealField(id: string): void {
   }
 }
 
-/** The quick start's heading, and the card's, over the details step of a new card. */
-const QUICK_START_TITLE = "Let's see your card in 10 seconds";
-const CARD_TITLE = "Your card";
-/** Over the card the moment "See my card" has made it. */
-const CARD_READY =
-  "Your card is ready! Nothing here is final. Add more details now, or edit your card later from your dashboard.";
-
 /*
-  What the host is told about changing the card later. True for every card:
-  a card is edited from its dashboard, before payment as much as the host
-  likes and after it within the limits the dashboard explains (a date and the
-  names can be changed a few times, and an invitation whose day is over is
-  closed; lib/eventLock.ts). So "edit", and never "anytime" or "everything".
+  Under the details step's heading, in words a host cannot miss. True for
+  every card: a card is edited from its dashboard, before payment as much as
+  the host likes and after it within the limits the dashboard explains (a
+  date and the names can be changed a few times, and an invitation whose day
+  is over is closed; lib/eventLock.ts).
 */
 const DETAILS_REASSURANCE =
-  "Nothing here is final. Add what you have now. You can edit your card later from your dashboard.";
+  "Everything is optional. You can add or change any detail later from your dashboard.";
 
 function WizardSteps({
   start,
@@ -1059,17 +1023,6 @@ function WizardSteps({
   const step: WizardStepId = templateChosen && !heldOnGallery ? requestedStep : "template";
   const index = wizardStepIndex(step);
 
-  /*
-    How the details step is shown. A new card with nothing typed in it starts
-    on the quick start: the two names and the date, and "See my card". A card
-    brought back with details already in it opens on itself and its checklist.
-    A saved invitation opens on the whole form, as it always has. Held here,
-    not in the address, so moving between the steps keeps it and Back and
-    Next are as they were.
-  */
-  const [detailsView, setDetailsView] = useState<DetailsView>(() =>
-    editing ? "all" : hasCardDetails(start.draft) ? "card" : "quick",
-  );
   const isLast = index === WIZARD_STEPS.length - 1;
 
   /* Read by the sign-in detour, which is built before the step can change. */
@@ -1119,7 +1072,7 @@ function WizardSteps({
     }
 
     headingRef.current?.focus({ preventScroll: true });
-  }, [step, detailsView]);
+  }, [step]);
 
   /**
    * Stashes the card and the step, and sends the host to sign in. Returns the
@@ -1446,74 +1399,13 @@ function WizardSteps({
     id: "editor",
   });
   const isFramed = useMediaQuery(FRAME_QUERY);
-  /*
-    A new card's details step on a phone, past the quick start: the card in
-    the page, above what is left to add. At lg it is beside the step as always.
-  */
-  const inlinePreview = !editing && !isFramed && step === "details" && detailsView === "card";
+  /* The card beside the steps at lg; on a phone, Preview opens it full screen. */
   const { module: CardPreview } = useLazyModule(loadCardPreview, {
-    wanted: isFramed || inlinePreview,
+    wanted: isFramed,
     id: "card-preview",
   });
 
-  /*
-    While the quick start is filled in, the card's code is fetched quietly, so
-    "See my card" draws it at once. Not reported: nothing waits on it yet.
-  */
-  const quickStart = !editing && step === "details" && detailsView === "quick";
-  /*
-    The quick start on screen: "See my card" is its one main action, so the
-    bar's Next and Preview wait (Back stays). Not while its code is still on
-    the way, so a step that never arrives still has its way on.
-  */
-  const quickStartShown = quickStart && editor !== null;
-
-  useEffect(() => {
-    if (quickStart && !isFramed && editor !== null && roomToPrefetch()) {
-      startLoad(loadCardPreview);
-    }
-  }, [quickStart, isFramed, editor]);
-
-  /* "See my card", and Done under a part of the form: the card with what was typed, from the top of the page. */
-  const showCard = (): void => {
-    setDetailsView("card");
-    window.scrollTo({ top: 0 });
-  };
-
-  /*
-    "Your card is ready!" over the card, from "See my card" until the host
-    opens a part of the form or leaves the step: the moment after, not a
-    standing notice.
-  */
-  const [justMade, setJustMade] = useState(false);
-
-  useEffect(() => {
-    if (step !== "details" || detailsView !== "card") {
-      setJustMade(false);
-    }
-  }, [step, detailsView]);
-
-  /*
-    "See my card" turns into a spinner first, and the card, the heavy part,
-    is drawn in the task after that paint: the tap is answered at once even
-    on a slow phone, and cannot be pressed twice.
-  */
-  const [making, setMaking] = useState(false);
-
-  const seeMyCard = (): void => {
-    if (making) {
-      return;
-    }
-
-    setMaking(true);
-    afterPaint(() => {
-      setMaking(false);
-      setJustMade(true);
-      showCard();
-    });
-  };
-
-  /* Next, the same way: its spinner first, then the step. */
+  /* Next: its spinner first, then the step, drawn in the task after that paint. */
   const [moving, setMoving] = useState(false);
 
   const nextStep = (to: WizardStepId): void => {
@@ -1551,26 +1443,18 @@ function WizardSteps({
     setReveal(null);
   }, [reveal, editor, step]);
 
-  /**
-   * An item of the checklist, its "Add" or "Edit": that part of the form on
-   * its own, on the details step. From the whole form, the same fields there.
-   */
-  const openItem = (id: ChecklistItemId): void => {
-    goTo("details");
-
-    if (detailsView !== "all") {
-      setDetailsView(id);
-    }
-
-    setReveal({ id: checklistAnchor(id, draft, occasionId) });
-  };
-
   /*
     The light "+ Add venue" over the preview's frame, on a new card with no
-    venue yet. The previews only: the guest's page never has it.
+    venue yet: the venue's field on the details step. The previews only: the
+    guest's page never has it.
   */
   const onAddVenue =
-    editing || draft.venueName.trim().length > 0 ? undefined : () => openItem("venue");
+    editing || draft.venueName.trim().length > 0
+      ? undefined
+      : () => {
+          goTo("details");
+          setReveal({ id: "venueName" });
+        };
 
   /*
     "Save and continue" saves, on the first press. Every detail is optional
@@ -1684,16 +1568,12 @@ function WizardSteps({
 
   const names = resolveCoverNames(preview.draft, occasionId, previewLanguage);
   /*
-    A new card, its design chosen, on the details step past the quick start,
-    the customize step or the preview step: "Save and continue" is the one
-    main button. On the quick start, "See my card" is the step's main action
-    and the bar has only Back.
+    A new card, its design chosen: Next is the one main button on the details
+    and customize steps, and "Save and continue" on the last step, where the
+    card is saved and paid for. One path, one main button on every step.
   */
-  const saveMain =
-    !editing &&
-    templateChosen &&
-    !quickStartShown &&
-    (step === "details" || step === "customize" || step === "preview");
+  const newNext = !editing && templateChosen && (step === "details" || step === "customize");
+  const saveMain = !editing && templateChosen && step === "preview";
   /* A saved card not paid for yet, as one just saved continues in: Save changes has the line too. */
   const unpaidEdit = editing && !readOnly && edit.isPaid !== true;
   /*
@@ -1747,6 +1627,7 @@ function WizardSteps({
               )
             }
             current={step}
+            editing={editing}
             onSelect={goTo}
           />
         </div>
@@ -1801,72 +1682,33 @@ function WizardSteps({
             />
           ) : null}
 
-          {/*
-            Over a new card's still card on a phone, the heading is for screen
-            readers only: the card says what it is, and the checklist under it
-            then fits on the first screen.
-          */}
-          <div
-            className={`flex min-w-0 flex-col gap-1.5${inlinePreview ? " max-lg:sr-only" : ""}`}
-          >
-            {/*
-              The quick start's title is two lines in Fraunces on a screen up to
-              396px wide and one line in the fallback face it is first drawn in:
-              its second line is held from the start there, so the form under
-              it does not drop when the font arrives.
-            */}
+          <div className="flex min-w-0 flex-col gap-1.5">
             <h1
               ref={headingRef}
               tabIndex={-1}
-              className={`font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none${
-                step === "details" && detailsView === "quick" ? " max-[396px]:min-h-16" : ""
-              }`}
+              className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)] focus:outline-none"
             >
               {/* The last step publishes a new card; for a saved one it is only a last look. */}
-              {editing && step === "preview"
-                ? "Preview your changes"
-                : step === "details" && detailsView === "quick"
-                  ? QUICK_START_TITLE
-                  : step === "details" && detailsView === "card"
-                    ? CARD_TITLE
-                    : step === "details" && isItemView(detailsView)
-                      ? (CHECKLIST_TITLES[detailsView] ?? WIZARD_STEPS[index].title)
-                      : WIZARD_STEPS[index].title}
+              {editing && step === "preview" ? "Preview your changes" : WIZARD_STEPS[index].title}
             </h1>
             {showIntro ? <p className={TRUST_TEXT}>{TRUST_LINE}</p> : null}
           </div>
 
           {/*
-            At the top of the details, in words a host cannot miss: nothing here
-            has to be right now. Over a card just made, the "ready" line says
-            the same, so the card and its guide stay on the first screen.
+            At the top of a new card's details, in words a host cannot miss:
+            nothing here has to be filled now. Then how much is filled, which
+            only encourages: an empty field stops nothing.
           */}
-          {step === "details" && !editing && !(detailsView === "card" && justMade) ? (
-            <p
-              data-details-reassurance=""
-              className="flex items-start gap-2.5 rounded-2xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/[0.08] px-4 py-3 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--lifafa-marigold)]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {step === "details" && !editing ? (
+            <div className="-mt-4 flex min-w-0 flex-col gap-5">
+              <p
+                data-details-reassurance=""
+                className="text-[1.0625rem] leading-snug font-medium text-pretty text-[var(--lifafa-cream)]"
               >
-                <path d="M5 12.5l4.5 4.5L19 7.5" />
-              </svg>
-              {/* What saving costs first: a visitor from a demo lands here, past the gallery's line. */}
-              <span className="flex min-w-0 flex-col gap-1">
-                <span data-free-line="" className="font-semibold">
-                  {FREE_SAVE_LINE}
-                </span>
-                <span>{DETAILS_REASSURANCE}</span>
-              </span>
-            </p>
+                {DETAILS_REASSURANCE}
+              </p>
+              <DetailsProgress draft={draft} occasionId={occasionId} />
+            </div>
           ) : null}
 
           {step === "template" ? (
@@ -1877,125 +1719,15 @@ function WizardSteps({
             />
           ) : null}
 
-          {(step === "details" || step === "customize") && editor === null ? (
-            <StepSkeleton quick={step === "details" && detailsView === "quick"} />
-          ) : null}
+          {(step === "details" || step === "customize") && editor === null ? <StepSkeleton /> : null}
 
           {step === "details" && editor !== null ? (
             /* Everything the host types: masked from Clarity (lib/clarity.ts). `contents` keeps the layout as it was. */
             <div className="contents" data-clarity-mask="true">
-              {detailsView === "quick" ? (
-                /* A div, not a form: Enter on a phone's keyboard moves on, it does not submit. */
-                <div className="flex min-w-0 flex-col gap-6">
-                  <editor.EventBasics
-                    draft={draft}
-                    onChange={handleChange}
-                    occasionId={occasionId}
-                    language={language}
-                  />
-                  {/* The one main action here: the bar's Next and Preview wait until the card is made. */}
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={seeMyCard}
-                      aria-busy={making}
-                      className={`${PRIMARY_BUTTON} w-full`}
-                    >
-                      <BusyLabel busy={making} busyText="Making your card…">
-                        See my card
-                      </BusyLabel>
-                    </button>
-                    <p className="text-center text-xs text-[var(--lifafa-muted)]">You can add the rest next</p>
-                  </div>
-                  <editor.QuickStartNext />
-                </div>
-              ) : detailsView === "card" ? (
-                <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-                  {justMade ? (
-                    <p
-                      role="status"
-                      data-card-ready=""
-                      className="flex items-start gap-2.5 rounded-2xl border border-[var(--paper-emerald)]/25 bg-[var(--paper-emerald)]/10 px-4 py-2.5 text-[0.8125rem] leading-snug font-medium text-[var(--paper-emerald)]"
-                    >
-                      <svg aria-hidden="true" viewBox="0 0 20 20" className="mt-px size-[18px] shrink-0">
-                        <circle cx="10" cy="10" r="10" fill="currentColor" />
-                        <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#fffaf0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      {CARD_READY}
-                    </p>
-                  ) : null}
-                  {inlinePreview ? (
-                    CardPreview === null ? (
-                      /* The still card's size (CardPreview.tsx), so nothing moves when it arrives. */
-                      <div
-                        aria-hidden="true"
-                        className="mx-auto h-[min(620px,55vh)] aspect-[390/720] animate-pulse rounded-[1.25rem] border border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink-raised)]"
-                      />
-                    ) : (
-                      <PreviewBoundary onError={reportPreviewFailed}>
-                        <CardPreview
-                          inline
-                          draft={preview.draft}
-                          config={preview.config}
-                          onPreviewLanguageChange={setPreviewLanguage}
-                          motifs={motifs}
-                          coverAnimation={coverAnimation}
-                          weather={previewWeather}
-                          weatherTheme={weatherTheme}
-                          isPaid={false}
-                          onAddVenue={onAddVenue}
-                        />
-                      </PreviewBoundary>
-                    )
-                  ) : null}
-                  <editor.CardChecklist
-                    items={cardChecklist(draft, occasionId)}
-                    onAdd={openItem}
-                    onShowAll={() => {
-                      setDetailsView("all");
-                      window.scrollTo({ top: 0 });
-                    }}
-                  />
-                </div>
-              ) : isItemView(detailsView) ? (
-                /* One part of the form, opened from the checklist: the same fields as the whole form. */
-                <div
-                  className="flex min-w-0 flex-col gap-8"
-                  onFocusCapture={() => setPreviewLanguage(language)}
-                >
-                  {detailsView === "functions" ? (
-                    <editor.SubEventEditor
-                      subEvents={draft.subEvents}
-                      openId={openSubEventId}
-                      onChange={(subEvents) => handleChange("subEvents", subEvents)}
-                      onOpenIdChange={setOpenSubEventId}
-                    />
-                  ) : (
-                    <editor.EventForm
-                      draft={draft}
-                      onChange={handleChange}
-                      occasionId={occasionId}
-                      language={language}
-                      parts={ITEM_PARTS[detailsView]}
-                    />
-                  )}
-                  <button type="button" onClick={showCard} className={`${PRIMARY_BUTTON} self-start`}>
-                    Done
-                  </button>
-                </div>
-              ) : (
-              <>
-              {/* A new card's whole form keeps a way back to its checklist. */}
-              {editing ? null : (
-                <button
-                  type="button"
-                  onClick={showCard}
-                  className="-mt-4 inline-flex min-h-11 items-center self-start rounded text-sm font-medium text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
-                >
-                  Back to your card
-                </button>
-              )}
               {/*
+                Every field at once, in the order the card reads them: the
+                names and families, the title, the date and the start time,
+                the functions, the venue, the contact numbers, the message.
                 Typing in the card's own words turns the preview back to the
                 card's own language, after the host has been writing the other
                 one in the panel below.
@@ -2015,6 +1747,7 @@ function WizardSteps({
                   language={language}
                   /* After payment: how many changes of date and of names are left, on those fields. */
                   paidLimits={limitNotes}
+                  parts={DETAILS_FIRST}
                 />
                 <editor.SubEventEditor
                   subEvents={draft.subEvents}
@@ -2022,9 +1755,23 @@ function WizardSteps({
                   onChange={(subEvents) => handleChange("subEvents", subEvents)}
                   onOpenIdChange={setOpenSubEventId}
                 />
+                <editor.EventForm
+                  draft={draft}
+                  onChange={handleChange}
+                  occasionId={occasionId}
+                  language={language}
+                  parts={DETAILS_VENUE}
+                />
                 <editor.ContactEditor
                   contacts={draft.contacts ?? []}
                   onChange={handleContacts}
+                />
+                <editor.EventForm
+                  draft={draft}
+                  onChange={handleChange}
+                  occasionId={occasionId}
+                  language={language}
+                  parts={DETAILS_MESSAGE}
                 />
                 <editor.AutoTranslate
                   cardLanguage={language}
@@ -2052,8 +1799,6 @@ function WizardSteps({
                 onFocusLanguage={setPreviewLanguage}
                 revealSignal={translatedSignal}
               />
-              </>
-              )}
             </div>
           ) : null}
 
@@ -2154,24 +1899,24 @@ function WizardSteps({
       </main>
 
       {/* Bottom room for the bar pinned to the bottom, over the safe area: three rows on a phone where the main button has its own. */}
-      <LegalFooter className={saveMain || nextMain ? "pb-56 sm:pb-40" : unpaidEdit ? "pb-44" : "pb-32"} />
+      <LegalFooter
+        className={
+          saveMain || nextMain ? "pb-56 sm:pb-40" : newNext ? "pb-40 sm:pb-32" : unpaidEdit ? "pb-44" : "pb-32"
+        }
+      />
 
       {/*
         Back and the main button, pinned to the bottom of the screen where a
         thumb is. ONE MAIN BUTTON on every step: two side by side ("Save my
         card" and Next) left hosts in Instagram's browser unsure which to press.
 
-        A NEW CARD, until it is saved: "Save and continue" on the details
-        step (past the quick start), the customize step and the preview step,
-        with the line on what saving costs right over it. It saves and opens
-        the next step of the saved card (adoptedHref): the details step opens
-        the customize step of its editor; the customize and the preview step
-        open the saved screen, and payment. Back and Preview are the quiet
-        buttons. On a phone the main button is the width of the screen, over
-        Back and Preview; from sm they share one row, the main one on the
-        right. On the quick start, "See my card" is the step's main action and
-        the bar has only Back. On the gallery, Next (or the hint before a
-        design is chosen).
+        A NEW CARD, until it is saved: Next on the details and the customize
+        step, with Back and Preview the quiet buttons; "Save and continue" on
+        the last step, with the line on what saving costs right over it. It
+        saves and opens the saved screen, and payment (adoptedHref). On a
+        phone the main button is the width of the screen, over the quiet
+        ones; from sm they share one row, the main one on the right. On the
+        gallery, Next (or the hint before a design is chosen).
 
         A SAVED CARD NOT PAID FOR YET, on its details or customize step: Next
         is the main button, laid out the same way, with "Save changes" the
@@ -2202,7 +1947,7 @@ function WizardSteps({
             {savedCard ? SAVED_OPENING : FREE_SAVE_LINE}
           </p>
         ) : null}
-        {saveMain || nextMain ? (
+        {saveMain || nextMain || newNext ? (
           /*
             The quiet buttons first, for a screen reader and the keyboard as in
             every other bar here; on a phone the main button is drawn over them.
@@ -2219,7 +1964,7 @@ function WizardSteps({
               >
                 Back
               </button>
-              {saveMain && !isLast ? (
+              {newNext ? (
                 <button
                   type="button"
                   onClick={(event) => openPreview(event.currentTarget)}
@@ -2283,7 +2028,7 @@ function WizardSteps({
                   Next
                 </button>
               )
-            ) : quickStartShown ? null : templateChosen ? (
+            ) : templateChosen ? (
               <button
                 type="button"
                 onClick={(event) => openPreview(event.currentTarget)}
@@ -2315,7 +2060,7 @@ function WizardSteps({
                     </BusyLabel>
                   </button>
                 )
-              ) : quickStartShown ? null : (
+              ) : (
                 /* The gallery's Next. */
                 <button
                   type="button"

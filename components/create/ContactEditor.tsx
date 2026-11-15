@@ -68,18 +68,12 @@ export default function ContactEditor({
 
   return (
     <section aria-labelledby="contacts-heading" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2
-          id="contacts-heading"
-          className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase"
-        >
-          Contact numbers
-        </h2>
-        <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-          Optional. Up to two people guests can call with a question. They are
-          shown on the card, so add only numbers you are happy to share.
-        </p>
-      </div>
+      <h2
+        id="contacts-heading"
+        className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase"
+      >
+        Contact numbers
+      </h2>
 
       {contacts.length > 0 ? (
         <ul className="flex flex-col gap-3">

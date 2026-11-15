@@ -9,17 +9,23 @@ export type WizardStepId = "template" | "details" | "customize" | "preview";
 
 export interface WizardStep {
   id: WizardStepId;
-  /** One or two words, for the progress bar. */
+  /** A few words, for the progress bar. */
   label: string;
+  /** The label on a saved invitation's edit page, where it differs: nothing is paid for there. */
+  editLabel?: string;
   /** The step's heading, as a sentence. */
   title: string;
 }
 
+/*
+  One path for a new card: choose the design, enter the details on one page,
+  customize the look, then save and pay. The progress bar names exactly these.
+*/
 export const WIZARD_STEPS: readonly WizardStep[] = [
-  { id: "template", label: "Template", title: "Choose a template" },
-  { id: "details", label: "Details", title: "Enter your details" },
+  { id: "template", label: "Choose design", title: "Choose a template" },
+  { id: "details", label: "Enter your details", title: "Enter your details" },
   { id: "customize", label: "Customize", title: "Make it yours" },
-  { id: "preview", label: "Preview", title: "Preview and publish" },
+  { id: "preview", label: "Save and pay", editLabel: "Preview", title: "Save and pay" },
 ];
 
 export const WIZARD_PATH = "/create";

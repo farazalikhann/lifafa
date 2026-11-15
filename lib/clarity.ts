@@ -235,7 +235,8 @@ export type ClarityEventName =
   | "open_saved_fallback"
   /*
     "Save and continue" pressed on a new card; the session's
-    save_and_continue_step tag says on which step (details, customize or preview).
+    save_and_continue_step tag says on which step (preview, the last step, for
+    every card made since the four-step flow; details or customize before it).
   */
   | "save_and_continue_click"
   /* Back from sign-in on an empty gallery, with no card to bring back (components/wizard/Wizard.tsx). */
@@ -252,7 +253,13 @@ export type ClarityEventName =
     Signed in with no invitation and no card in this browser: sent on from the
     dashboard to the gallery with "Start your card" (app/dashboard/page.tsx).
   */
-  | "no_card_after_signin";
+  | "no_card_after_signin"
+  /*
+    A new card's details form first filled past 50 percent, then past 100
+    percent, once each per page; the details_progress_pct tag says which
+    (components/create/DetailsProgress.tsx).
+  */
+  | "details_progress";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";

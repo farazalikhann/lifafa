@@ -160,15 +160,9 @@ export default function SubEventEditor({
   return (
     /* The id is where the dashboard's "Add functions" lands (lib/cardChecklist.ts). */
     <section id="card-functions" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
-          More functions
-        </h2>
-        <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-          The mehndi, the sangeet, the reception. Your main event stays where it
-          is; these are added around it.
-        </p>
-      </div>
+      <h2 className="text-[0.6875rem] tracking-[0.26em] text-[var(--lifafa-marigold)] uppercase">
+        More functions
+      </h2>
 
       {subEvents.length > 0 ? (
         <ul className="flex flex-col gap-2">

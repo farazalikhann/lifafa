@@ -3,7 +3,6 @@
 import { useState, type ReactElement } from "react";
 import { parseMapsLink } from "@/lib/cardFormat";
 
-const HELPER = "Paste the venue's Google Maps link for exact directions.";
 const ERROR =
   "This is not a Google Maps link. Paste a maps.app.goo.gl, goo.gl/maps or google.com/maps link, or coordinates like 19.1036, 72.8747.";
 
@@ -42,8 +41,7 @@ export default function MapsLinkField({
         htmlFor={id}
         className="text-[0.8125rem] font-medium text-[var(--lifafa-cream)]"
       >
-        Google Maps link{" "}
-        <span className="font-normal text-[var(--lifafa-muted)]">(optional)</span>
+        Google Maps link
       </label>
       <input
         id={id}
@@ -59,16 +57,10 @@ export default function MapsLinkField({
         autoComplete="off"
         spellCheck={false}
         aria-invalid={showError}
-        aria-describedby={`${id}-hint${showError ? ` ${id}-error` : ""}`}
+        aria-describedby={showError ? `${id}-error` : undefined}
         className={inputClass}
         style={showError ? { borderColor: "var(--lifafa-rose)" } : undefined}
       />
-      <p
-        id={`${id}-hint`}
-        className="text-xs leading-relaxed text-[var(--lifafa-muted)]"
-      >
-        {HELPER}
-      </p>
       {showError ? (
         <p
           id={`${id}-error`}

@@ -51,30 +51,42 @@ export function cardChecklist(draft: EventDraft, occasionId: OccasionId): Checkl
 }
 
 /**
- * Whether anything of the event has been typed into the card yet. A card
- * with nothing (a new one, or one kept with only its design chosen) starts on
- * the quick start; one with details opens on its checklist instead.
+ * How much of the details form is filled, for the "Details filled" bar over
+ * it (components/create/DetailsProgress.tsx). Every field the form shows
+ * counts once: each name, each family's parents and city, the title, the
+ * date, the start time, the functions (one or more), the venue, its address,
+ * its map link, the contact numbers (one or more with a number) and the
+ * message. The joining word is left out: it always has a word in it.
+ *
+ * Only an encouragement. Nothing here stops a save, a step or a payment.
  */
-export function hasCardDetails(draft: EventDraft): boolean {
-  return (
-    [
-      draft.partyOneName,
-      draft.partyTwoName,
-      draft.hostNames,
-      draft.eventTitle,
-      draft.eventDate,
-      draft.eventTime,
-      draft.venueName,
-      draft.venueAddress,
-      draft.message,
-      draft.partyOneParents,
-      draft.partyTwoParents,
-      draft.partyOneCity,
-      draft.partyTwoCity,
-    ].some(filled) ||
-    draft.subEvents.length > 0 ||
-    (draft.contacts ?? []).length > 0
-  );
+export function detailsFilled(
+  draft: EventDraft,
+  occasionId: OccasionId,
+): { filled: number; total: number } {
+  /* A line written in place of the names (an older card's) fills the names. */
+  const line = filled(draft.hostNames);
+  const names = pairsNames(occasionId)
+    ? [line || filled(draft.partyOneName), line || filled(draft.partyTwoName)]
+    : [line];
+  const families = pairsNames(occasionId)
+    ? [draft.partyOneParents, draft.partyOneCity, draft.partyTwoParents, draft.partyTwoCity]
+    : [draft.partyOneParents, draft.partyOneCity];
+  const checks = [
+    ...names,
+    ...families.map(filled),
+    filled(draft.eventTitle),
+    filled(draft.eventDate),
+    filled(draft.eventTime),
+    draft.subEvents.length > 0,
+    filled(draft.venueName),
+    filled(draft.venueAddress),
+    filled(draft.venueMapsLink),
+    (draft.contacts ?? []).some((contact) => filled(contact.phone)),
+    filled(draft.message),
+  ];
+
+  return { filled: checks.filter(Boolean).length, total: checks.length };
 }
 
 /**
