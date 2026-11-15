@@ -25,9 +25,16 @@ export interface InAppBrowser {
  * ordinary browser. Anything that is not Android gets the iPhone treatment.
  */
 export function inAppBrowser(userAgent: string): InAppBrowser | null {
-  const app: InAppApp | null = userAgent.includes("Instagram")
+  /*
+    "Instagram <version>" on both platforms, in any case. Facebook's own
+    tokens (FBAN, FBAV, FB_IAB, FB4A, FBIOS), and Meta's newer IABMV/ token,
+    which its in-app browsers (Messenger and Threads among them) add whether
+    or not the older tokens are there. Instagram's strings carry IABMV/ too,
+    which is why Instagram is asked first.
+  */
+  const app: InAppApp | null = /instagram/i.test(userAgent)
     ? "instagram"
-    : /FBAN|FBAV|FB_IAB/.test(userAgent)
+    : /FBAN|FBAV|FB_IAB|FB4A|FBIOS|IABMV\//.test(userAgent)
       ? "facebook"
       : null;
 

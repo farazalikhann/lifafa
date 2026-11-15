@@ -3,7 +3,6 @@ import { Suspense, type ReactElement } from "react";
 import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import RememberAdParams from "@/components/browser/RememberAdParams";
-import StartInChrome from "@/components/browser/StartInChrome";
 import EditorSkeleton from "@/components/create/EditorSkeleton";
 import EventNotFound from "@/components/dashboard/EventNotFound";
 import GalleryFirstScreen from "@/components/wizard/GalleryFirstScreen";
@@ -114,8 +113,6 @@ export default async function CreatePage({
         </Suspense>
         {/* Keeps the ad's tags in Instagram's and Facebook's browsers; renders nothing. */}
         <RememberAdParams />
-        {/* Instagram's and Facebook's browsers only: "open in Chrome", once per session, before step 1. */}
-        <StartInChrome />
       </>
     );
   }

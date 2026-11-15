@@ -11,6 +11,7 @@ import {
 import { chromeIntentUrl, inAppName, safariUrl, type InAppBrowser } from "@/lib/inAppBrowser";
 import { PRIMARY_BUTTON } from "@/components/landing/styles";
 import { clarityEvent } from "@/lib/clarity";
+import { IN_APP_TEST_PARAM } from "@/lib/startInChrome";
 
 /**
  * "Open in Chrome", the small prompt for a visitor in Instagram's or
@@ -36,7 +37,7 @@ import { clarityEvent } from "@/lib/clarity";
  * saving the card; Android waits for it, iPhone copies it as it arrives.
  *
  * THE "start" VARIANT is the sheet a visitor from Instagram or Facebook meets
- * once per session as /create or a demo opens (StartInChromeSheet.tsx): the
+ * once per session on the first page they open (StartInChromeSheet.tsx): the
  * same buttons and the same iPhone steps, with why the real browser is
  * smoother (three short benefits) and "Continue here" as a clear way to stay,
  * where everything works too.
@@ -219,6 +220,7 @@ export default function OpenInChromePrompt({
   getLink,
   withCard,
   variant = "sign-in",
+  note,
   onTap,
   onStay,
 }: {
@@ -229,6 +231,8 @@ export default function OpenInChromePrompt({
   withCard: boolean;
   /** "sign-in" on /login (the default); "start" for the sheet as /create or a demo opens. */
   variant?: "sign-in" | "start";
+  /** One small line under the main button, when there is something to add. */
+  note?: string;
   /** Called on the main button's tap, before anything else. */
   onTap?: () => void;
   onStay: () => void;
@@ -243,7 +247,10 @@ export default function OpenInChromePrompt({
   const [here, setHere] = useState("");
 
   useEffect(() => {
-    setHere(window.location.href);
+    /* Without the test switch (lib/startInChrome.ts), which must not follow the visitor to Chrome. */
+    const url = new URL(window.location.href);
+    url.searchParams.delete(IN_APP_TEST_PARAM);
+    setHere(url.href);
   }, []);
 
   /*
@@ -503,6 +510,12 @@ export default function OpenInChromePrompt({
             </p>
           </>
         )}
+
+        {note !== undefined ? (
+          <p data-prompt-note="" className="mt-2 text-center text-sm leading-relaxed text-[var(--paper-muted)]">
+            {note}
+          </p>
+        ) : null}
 
         {saveFailed ? (
           <p role="alert" className="mt-3 text-center text-sm leading-relaxed text-[var(--paper-ink)]">
