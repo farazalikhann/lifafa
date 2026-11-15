@@ -34,7 +34,55 @@ import { clarityEvent } from "@/lib/clarity";
  *
  * THE LINK MAY NOT BE READY. `getLink` is asked on the tap, and may still be
  * saving the card; Android waits for it, iPhone copies it as it arrives.
+ *
+ * THE "start" VARIANT is the sheet a visitor from Instagram or Facebook meets
+ * once per session as /create or a demo opens (StartInChromeSheet.tsx): the
+ * same buttons and the same iPhone steps, with why the real browser is
+ * smoother (three short benefits) and "Continue here" as a clear way to stay,
+ * where everything works too.
  */
+
+/** Why the real browser is smoother, said on the "start" sheet. */
+const START_BENEFITS = [
+  { icon: "account", label: "Google sign-in works" },
+  { icon: "upi", label: "UPI payment works with every app" },
+  { icon: "saved", label: "Your card is saved, nothing is lost" },
+] as const;
+
+/** A small line icon for each benefit, in the theme's emerald. */
+function BenefitIcon({ name }: { name: (typeof START_BENEFITS)[number]["icon"] }): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 24 24"
+      className="size-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {name === "account" ? (
+        <>
+          <circle cx="12" cy="8" r="3.5" />
+          <path d="M5 19.5c1.2-3.3 4-5 7-5s5.8 1.7 7 5" />
+        </>
+      ) : name === "upi" ? (
+        <>
+          <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+          <path d="M10.5 18h3" />
+          <path d="M9.5 9.5l2 2 3.5-4" />
+        </>
+      ) : (
+        <>
+          <path d="M12 3l7 3v5.5c0 4.2-3 7.7-7 9.5-4-1.8-7-5.3-7-9.5V6l7-3z" />
+          <path d="M9 12l2.2 2.2L15.5 10" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 /** Clipboard API first, then the old textarea route some web views still need. */
 async function copyText(text: string): Promise<boolean> {
@@ -170,6 +218,7 @@ export default function OpenInChromePrompt({
   browser,
   getLink,
   withCard,
+  variant = "sign-in",
   onTap,
   onStay,
 }: {
@@ -178,6 +227,8 @@ export default function OpenInChromePrompt({
   getLink: () => Promise<string>;
   /** Whether the link is meant to carry the card, which changes the iPhone steps. */
   withCard: boolean;
+  /** "sign-in" on /login (the default); "start" for the sheet as /create or a demo opens. */
+  variant?: "sign-in" | "start";
   /** Called on the main button's tap, before anything else. */
   onTap?: () => void;
   onStay: () => void;
@@ -348,21 +399,38 @@ export default function OpenInChromePrompt({
           id="open-in-chrome-title"
           className="text-center font-[family-name:var(--paper-display)] text-[1.375rem] leading-[1.2] font-semibold tracking-[-0.015em] text-balance"
         >
-          {platform === "android" ? "Open in Chrome to sign in" : "Open in Safari to sign in"}
+          {variant === "start"
+            ? `For the smoothest experience, open in ${platform === "android" ? "Chrome" : "Safari"}`
+            : platform === "android"
+              ? "Open in Chrome to sign in"
+              : "Open in Safari to sign in"}
         </h2>
-        <p
-          id="open-in-chrome-body"
-          className="mt-3 text-center text-base leading-[1.6] text-pretty text-[var(--paper-muted)]"
-        >
-          {`${appName}’s browser does not support Google sign-in. `}
-          {platform === "android"
-            ? withCard
-              ? "Continue in Chrome to sign in, and your card comes with you."
-              : "Continue in Chrome to sign in with one tap."
-            : withCard
-              ? "Continue in Safari to sign in, and your card comes with you."
-              : "Open this page in Safari to sign in with one tap."}
-        </p>
+        {variant === "start" ? (
+          <ul id="open-in-chrome-body" data-start-benefits="" className="mx-auto mt-4 flex w-fit flex-col gap-2.5">
+            {START_BENEFITS.map((benefit) => (
+              <li key={benefit.icon} className="flex items-center gap-3 text-[0.9375rem] leading-snug text-[var(--paper-ink)]">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--paper-hairline)] bg-[var(--paper-washi)] text-[var(--paper-emerald)]">
+                  <BenefitIcon name={benefit.icon} />
+                </span>
+                {benefit.label}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p
+            id="open-in-chrome-body"
+            className="mt-3 text-center text-base leading-[1.6] text-pretty text-[var(--paper-muted)]"
+          >
+            {`${appName}’s browser does not support Google sign-in. `}
+            {platform === "android"
+              ? withCard
+                ? "Continue in Chrome to sign in, and your card comes with you."
+                : "Continue in Chrome to sign in with one tap."
+              : withCard
+                ? "Continue in Safari to sign in, and your card comes with you."
+                : "Open this page in Safari to sign in with one tap."}
+          </p>
+        )}
 
         {platform === "android" ? (
           <a
@@ -443,13 +511,24 @@ export default function OpenInChromePrompt({
         ) : null}
 
         <div className={`${platform === "android" ? "mt-2" : ""} flex justify-center`}>
-          <button
-            type="button"
-            onClick={onStay}
-            className="inline-flex min-h-11 items-center rounded px-3 text-sm font-medium text-[var(--paper-muted)] underline decoration-[var(--paper-gold)] underline-offset-4 transition-colors duration-150 hover:text-[var(--paper-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]"
-          >
-            Stay here
-          </button>
+          {variant === "start" ? (
+            /* A clear second choice: everything works here too, the email code and payment included. */
+            <button
+              type="button"
+              onClick={onStay}
+              className="inline-flex min-h-12 items-center rounded px-4 text-[0.9375rem] font-semibold text-[var(--paper-ink)] underline decoration-[var(--paper-gold)] decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]"
+            >
+              Continue here
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onStay}
+              className="inline-flex min-h-11 items-center rounded px-3 text-sm font-medium text-[var(--paper-muted)] underline decoration-[var(--paper-gold)] underline-offset-4 transition-colors duration-150 hover:text-[var(--paper-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--paper-emerald)]"
+            >
+              Stay here
+            </button>
+          )}
         </div>
       </div>
     </div>

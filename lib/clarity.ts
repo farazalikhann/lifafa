@@ -259,7 +259,16 @@ export type ClarityEventName =
     percent, once each per page; the details_progress_pct tag says which
     (components/create/DetailsProgress.tsx).
   */
-  | "details_progress";
+  | "details_progress"
+  /*
+    The "open in Chrome" sheet a visitor in Instagram's or Facebook's browser
+    meets once per session on /create or a demo: shown, its main button
+    pressed (Open in Chrome, or Copy link on an iPhone), and "Continue here"
+    (components/browser/StartInChromeSheet.tsx).
+  */
+  | "open_in_chrome_shown"
+  | "open_in_chrome_click"
+  | "continue_here_click";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";
