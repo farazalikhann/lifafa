@@ -8,11 +8,13 @@ import CouponField, {
   type AppliedCoupon,
 } from "@/components/dashboard/CouponField";
 import { initiateCheckout } from "@/lib/metaPixel";
+import { clarityEvent, claritySet } from "@/lib/clarity";
 import type { OfferBanner } from "@/lib/offers";
 import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 import HelpLine from "@/components/legal/HelpLine";
 import SecurePayment from "@/components/dashboard/SecurePayment";
+import { PRIMARY_BUTTON } from "@/components/wizard/wizardStyles";
 
 /**
  * Razorpay's checkout, loaded from Razorpay's own domain.
@@ -124,6 +126,7 @@ export default function PublishButton({
   pricePaise,
   templateId,
   offer = null,
+  variant = "banner",
 }: {
   eventId: string;
   /** This invitation's list price, for the label. The charge is the server's to work out. */
@@ -132,7 +135,15 @@ export default function PublishButton({
   templateId: string;
   /** The offer over the coupon field, when the server says one is on (lib/coupons/offer.ts). */
   offer?: OfferBanner | null;
+  /**
+   * "banner" on the dashboard; "checkout" on the payment page of a card just
+   * saved (WizardSaved.tsx): one column, the full width, a large button that
+   * says "Pay ₹699 and share with your guests". The same order, the same
+   * Razorpay window, the same webhook either way.
+   */
+  variant?: "banner" | "checkout";
 }): ReactElement {
+  const checkout = variant === "checkout";
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
 
@@ -159,6 +170,10 @@ export default function PublishButton({
   }, []);
 
   const handleClick = useCallback(async (): Promise<void> => {
+    /* For Clarity, on the pages it runs on: the payment page of a card just saved (lib/clarity.ts). */
+    claritySet("pay_place", variant === "checkout" ? "create" : "dashboard");
+    clarityEvent("pay_click");
+
     /*
       A code that covers the whole price: no checkout. The server re-checks the
       code and activates the invitation itself (activateWithFreeCoupon); this
@@ -318,7 +333,7 @@ export default function PublishButton({
 
     setPhase({ kind: "open" });
     checkout.open();
-  }, [coupon, eventId, router, templateId]);
+  }, [coupon, eventId, router, templateId, variant]);
 
   const busy =
     phase.kind === "starting" ||
@@ -333,14 +348,14 @@ export default function PublishButton({
   const free = coupon !== null && coupon.finalPaise === 0;
 
   return (
-    <div className="flex flex-col items-stretch gap-3 sm:items-end">
+    <div className={`flex flex-col items-stretch gap-3 ${checkout ? "" : "sm:items-end"}`}>
       {/*
         Above the button, and hidden once there is nothing left to decide. A
         coupon field beside a checkout that has already been paid is a field
         offering to change a price that is settled.
       */}
       {decided ? null : (
-        <div className="w-full sm:max-w-[18rem]">
+        <div className={`w-full ${checkout ? "" : "sm:max-w-[18rem]"}`}>
           <CouponField
             eventId={eventId}
             applied={coupon}
@@ -360,7 +375,7 @@ export default function PublishButton({
         comes off, and replies land on the dashboard.
       */}
       {decided ? null : (
-        <div className="flex flex-col gap-1 sm:items-end sm:text-right">
+        <div className={`flex flex-col gap-1 ${checkout ? "" : "sm:items-end sm:text-right"}`}>
           <p className="text-sm text-[var(--lifafa-cream)]">
             {free ? (
               <span className="font-semibold">Free with your coupon</span>
@@ -384,7 +399,7 @@ export default function PublishButton({
 
       {/* What paying agrees to, said where the decision is made. Gone with the coupon field once it is made. */}
       {decided ? null : (
-        <p className="text-xs leading-relaxed text-[var(--lifafa-muted)] sm:text-right">
+        <p className={`text-xs leading-relaxed text-[var(--lifafa-muted)] ${checkout ? "" : "sm:text-right"}`}>
           By paying you agree to the{" "}
           <Link href="/terms" prefetch={false} className={AGREEMENT_LINK}>
             Terms
@@ -403,18 +418,23 @@ export default function PublishButton({
         disabled={
           busy || phase.kind === "confirming" || phase.kind === "activated"
         }
-        className="min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50"
+        data-pay-button=""
+        className={
+          checkout
+            ? `${PRIMARY_BUTTON} min-h-14 w-full px-5 text-base whitespace-normal`
+            : "min-h-11 rounded-full bg-[var(--lifafa-marigold)] px-5 text-[0.8125rem] font-semibold whitespace-nowrap text-[var(--lifafa-ink)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] disabled:opacity-50"
+        }
       >
-        {buttonLabel(phase, coupon, pricePaise)}
+        {buttonLabel(phase, coupon, pricePaise, variant)}
       </button>
 
       {/* How the money is taken, right under the button. Not said for a code that makes it free: then nothing is. */}
-      {decided || free ? null : <SecurePayment className="sm:justify-end" />}
+      {decided || free ? null : <SecurePayment className={checkout ? "justify-center" : "sm:justify-end"} />}
 
       <StatusLine phase={phase} onCheckAgain={() => router.refresh()} />
 
       {/* Where a host stuck on a payment looks first. */}
-      <HelpLine className="sm:text-right" />
+      <HelpLine className={checkout ? "text-center" : "sm:text-right"} />
     </div>
   );
 }
@@ -431,6 +451,7 @@ function buttonLabel(
   phase: Phase,
   coupon: AppliedCoupon | null,
   pricePaise: number,
+  variant: "banner" | "checkout",
 ): string {
   const free = coupon !== null && coupon.finalPaise === 0;
   const price = formatPrice(coupon === null ? pricePaise : coupon.finalPaise);
@@ -452,7 +473,11 @@ function buttonLabel(
       return free ? "Try again · free" : `Try again · ${price}`;
     case "pending":
     case "idle":
-      return free ? "Activate for free" : `Publish for ${price}`;
+      return free
+        ? "Activate for free"
+        : variant === "checkout"
+          ? `Pay ${price} and share with your guests`
+          : `Publish for ${price}`;
   }
 }
 

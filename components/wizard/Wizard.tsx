@@ -69,6 +69,7 @@ import {
   writePendingCard,
 } from "@/lib/pendingCard";
 import { formatPrice } from "@/lib/pricing";
+import { craftingLines, craftingSaved, startCrafting, stopCrafting } from "@/lib/crafting";
 import { getTheme } from "@/lib/themes";
 import { stashWaitingCard } from "@/lib/signInCard";
 import SignedInWelcome from "@/components/create/SignedInWelcome";
@@ -621,6 +622,13 @@ function WizardArrival({
       preloadEditorSteps();
     }
 
+    /* Saved from the last step: "Crafting your card…" while it saves, then payment. */
+    const crafting = wizardStepId(step) === "preview";
+
+    if (crafting) {
+      startCrafting(craftingLines(card.draft, card.config, getTemplate(card.config.templateId).name));
+    }
+
     void createEvent(
       card.draft,
       card.config,
@@ -634,6 +642,7 @@ function WizardArrival({
         }
 
         if (!result.ok) {
+          stopCrafting();
           setFinishing(false);
           return;
         }
@@ -643,9 +652,20 @@ function WizardArrival({
         clearCardAutosave();
         clarityEvent("card_saved_after_signin");
         setFinishedSaving(true);
+
+        if (crafting) {
+          craftingSaved(result.data.id);
+        }
+
         openSavedCard(router, result.data.id, adoptedHref(result.data.id, step));
       },
-      () => live && setFinishing(false),
+      () => {
+        stopCrafting();
+
+        if (live) {
+          setFinishing(false);
+        }
+      },
     );
 
     return () => {
@@ -673,6 +693,7 @@ function WizardArrival({
         clearCardAutosave();
         forgetHandoff(handoff);
         clarityEvent("card_saved_after_signin");
+
         openSavedCard(router, result.eventId, adoptedHref(result.eventId, result.step));
         return;
       }
@@ -1241,23 +1262,47 @@ function WizardSteps({
         in. There is no second trip to Supabase from the browser first.
       */
       const clock = startSaveClock();
-      const result = await createEvent(
-        snapshot.draft,
-        snapshot.config,
-        snapshot.coverAnimation,
-        { showWeather: snapshot.showWeather, themeId: snapshot.weatherTheme },
-        snapshot.qrCheckinEnabled,
-      );
+      /*
+        From the last step, "Crafting your card…" comes up with the save and
+        waits for it; the move to payment starts the moment it succeeds
+        (lib/crafting.ts). Any other ending takes the screen down at once.
+      */
+      const crafting = stepRef.current === "preview";
+
+      if (crafting) {
+        startCrafting(craftingLines(snapshot.draft, snapshot.config, getTemplate(snapshot.config.templateId).name));
+      }
+
+      let result: Awaited<ReturnType<typeof createEvent>>;
+
+      try {
+        result = await createEvent(
+          snapshot.draft,
+          snapshot.config,
+          snapshot.coverAnimation,
+          { showWeather: snapshot.showWeather, themeId: snapshot.weatherTheme },
+          snapshot.qrCheckinEnabled,
+        );
+      } catch (cause) {
+        stopCrafting();
+        throw cause;
+      }
 
       clock.lap("create");
 
       if (!result.ok) {
+        stopCrafting();
+
         if (result.signedOut === true) {
           return continueSignedOut(snapshot);
         }
 
         /* The stash stays: the card is still not saved anywhere else. */
         return { ok: false, error: result.error };
+      }
+
+      if (crafting) {
+        craftingSaved(result.data.id);
       }
 
       clearPendingCard();
@@ -1873,11 +1918,9 @@ function WizardSteps({
 
               {/* A saved invitation is not being paid for here: its link, and its price, are as they were. */}
               {editing ? null : (
-                <p className="text-sm leading-relaxed text-[var(--lifafa-muted)]">
-                  Saving creates your invitation and its link. Publishing it is
-                  the next step and costs {formatPrice(template.price)}: guests
-                  can open the link once it is published. Each invitation is a
-                  separate payment.
+                <p className="text-[0.9375rem] leading-relaxed text-[var(--lifafa-cream)]">
+                  Save your card, then pay {formatPrice(template.price)} to share
+                  it with your guests.
                 </p>
               )}
             </div>

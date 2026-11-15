@@ -28,6 +28,7 @@ export default async function PaymentBanner({
   pricePaise,
   templateId,
   underReview = false,
+  variant = "banner",
 }: {
   /** The template the invitation is on, as the registry resolves it: what the ads count it as. */
   templateId: string;
@@ -47,6 +48,13 @@ export default async function PaymentBanner({
   isPaid: boolean;
   /** Which invitation this publishes. The server action re-checks ownership. */
   eventId: string;
+  /**
+   * "banner" on the dashboard. "checkout" on the payment page of a card just
+   * saved (components/wizard/WizardSaved.tsx): no sentence about publishing,
+   * only the price, the coupon field and the large Pay button, which the page
+   * itself frames.
+   */
+  variant?: "banner" | "checkout";
 }): Promise<ReactElement | null> {
   if (isPaid) {
     return null;
@@ -72,6 +80,27 @@ export default async function PaymentBanner({
   const configured = razorpayKeyId() !== null;
   /* The offer over the coupon field, decided now by the server (lib/coupons/offer.ts). */
   const offer = configured ? await liveOffer() : null;
+
+  if (variant === "checkout") {
+    return (
+      <section aria-label="Pay and share" className="flex flex-col gap-4">
+        {configured ? (
+          <PublishButton
+            eventId={eventId}
+            pricePaise={pricePaise}
+            templateId={templateId}
+            offer={offer}
+            variant="checkout"
+          />
+        ) : (
+          <p className="text-center text-sm text-[var(--lifafa-muted)]">
+            Payments are not set up on this deployment.
+          </p>
+        )}
+        <TestModeNote show={configured && isRazorpayTestMode()} />
+      </section>
+    );
+  }
 
   return (
     <section

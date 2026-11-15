@@ -268,7 +268,13 @@ export type ClarityEventName =
   */
   | "open_in_chrome_shown"
   | "open_in_chrome_click"
-  | "continue_here_click";
+  | "continue_here_click"
+  /* "Crafting your card…" came up, after Save and continue on the last step (components/wizard/CraftingScreen.tsx). */
+  | "crafting_screen_shown"
+  /* The payment page of a card just saved, "Your card is ready" (components/wizard/WizardSaved.tsx). */
+  | "pay_page_shown"
+  /* Its main button, "Pay ₹699 and share with your guests", pressed (components/dashboard/PublishButton.tsx). */
+  | "pay_click";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";

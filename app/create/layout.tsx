@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 /* The card's own styles: see the head of app/card.css. */
 import "@/app/card.css";
 import PaperTheme from "@/components/theme/PaperTheme";
+import CraftingScreen from "@/components/wizard/CraftingScreen";
 
 /**
  * Metadata only, because app/create/page.tsx cannot carry any: it is a Client
@@ -26,5 +27,15 @@ export default function CreateLayout({
   children: ReactNode;
 }): ReactNode {
   /* The create flow, in the light theme (DESIGN.md), with the faint seigaiha strips down its edges. */
-  return <PaperTheme patterned>{children}</PaperTheme>;
+  return (
+    <PaperTheme patterned>
+      {children}
+      {/*
+        "Crafting your card…" between the last step's save and the payment
+        page. Here, not in the wizard, so it stays up while the page under it
+        changes from the wizard to the payment page.
+      */}
+      <CraftingScreen />
+    </PaperTheme>
+  );
 }

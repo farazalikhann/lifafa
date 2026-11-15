@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { MotionStillContext } from "@/lib/motionBudget";
 import { PlaceholderScope } from "@/components/card/placeholders";
 import TemplateCard from "@/templates/TemplateCard";
@@ -22,16 +22,21 @@ const SETTLE_MS = 2500;
  * A still picture of the card's first screen: drawn at a phone's size and
  * scaled down, inert, so no part of it takes a touch, a scroll or the focus.
  *
- * The phone's preview on /create (components/create/CardPreview.tsx) and the
- * card on the sign-in page (components/auth/SavedCardPreview.tsx). Placed
+ * The card on the sign-in page (components/auth/SavedCardPreview.tsx) and on
+ * the payment page of a card just saved (components/wizard/PayCardPreview.tsx),
+ * through SavedCardStill; and the phone's inline preview on /create
+ * (components/create/CardPreview.tsx), which the details step no longer draws.
+ * Placed
  * absolutely at the top left of a box `STILL_WIDTH * scale` wide and
  * `STILL_HEIGHT * scale` high, which the caller draws.
  *
- * STILL MEANS STILL. Its floating layers start held, as for a guest who asked
- * for less movement (MotionStillContext, lib/motionBudget.ts), and once the
- * card's opening has played (SETTLE_MS) every CSS loop left in it is held
- * where it is: a picture this small costs the
- * phone nothing while the host reads and types beside it.
+ * STILL MEANS STILL, ONCE THE CARD HAS OPENED. The card's opening plays first:
+ * a design whose names arrive inside a floating layer (Emerald Shahi's frame)
+ * would otherwise be held before its names had come in, and show an empty
+ * frame. Then (SETTLE_MS) its floating layers are held, as for a guest who
+ * asked for less movement (MotionStillContext, lib/motionBudget.ts), and every
+ * CSS loop left in it is held where it is: a picture this small costs the
+ * phone nothing while the host reads beside it.
  */
 export default function StillCard({
   draft,
@@ -58,8 +63,11 @@ export default function StillCard({
 }): ReactElement {
   const root = useRef<HTMLDivElement>(null);
 
+  const [settled, setSettled] = useState(false);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      setSettled(true);
       /* Once, by script: a stylesheet rule for this would be checked against every element on the page. */
       for (const animation of root.current?.getAnimations?.({ subtree: true }) ?? []) {
         animation.pause();
@@ -76,7 +84,7 @@ export default function StillCard({
       className="pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none"
       style={{ width: STILL_WIDTH, height: STILL_HEIGHT, transform: `scale(${scale})` }}
     >
-      <MotionStillContext.Provider value={true}>
+      <MotionStillContext.Provider value={settled}>
       <PlaceholderScope show={placeholders}>
       <TemplateCard
         draft={draft}

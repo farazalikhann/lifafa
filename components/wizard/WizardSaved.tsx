@@ -8,21 +8,26 @@ import { getTemplate, templatePricePaise } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
 import Logo from "@/components/Logo";
 import SaveTimingReport from "@/components/wizard/SaveTimingReport";
-
-const LINK_CLASS =
-  "flex min-h-12 items-center justify-center rounded-full border border-[var(--lifafa-hairline)] px-5 text-[0.9375rem] font-medium text-[var(--lifafa-cream)] transition-colors duration-150 hover:border-[var(--lifafa-marigold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]";
+import PayCardPreview from "@/components/wizard/PayCardPreview";
+import PayPageShown from "@/components/wizard/PayPageShown";
+import { LOGIN_PLACEHOLDERS } from "@/lib/loginPlaceholders";
 
 /**
- * The end of the wizard: the card is saved, and this is where it is paid for.
+ * The end of the wizard, "Your card is ready": the payment page of a card
+ * just saved. Reached straight after "Crafting your card…" (the crafting
+ * screen goes once this page is here under it, PayPageShown).
  *
- * A server component, drawn from the row that was just written, and the
- * payment is the dashboard's own PaymentBanner: the same button, the same
- * coupon field, the same order and webhook behind it. Nothing here is a second
- * way to pay.
+ * The card, its price, the coupon field and one main button, "Pay ₹699 and
+ * share with your guests" (₹999 on a Premium design: the template's own
+ * price, templatePricePaise). The payment is the dashboard's own
+ * PaymentBanner and PublishButton: the same coupon field, the same order and
+ * Razorpay window, the same webhook behind it. Nothing here is a second way
+ * to pay. "Go to my dashboard" is there for a host who pays later.
  *
- * Reached at /create?step=preview&event=<id>, so a reload stays on it
- * and the card is not saved twice. The steps are no longer open from here: the
- * card is a saved invitation now, and changing it is the editor's job.
+ * A server component, drawn from the row that was just written, at
+ * /create?step=preview&event=<id>, so a reload stays on it and the card is not
+ * saved twice. A card already paid for never reaches it: the page sends it to
+ * its dashboard (app/create/page.tsx).
  */
 export default function WizardSaved({
   event,
@@ -37,11 +42,15 @@ export default function WizardSaved({
     event.config.occasionId,
     event.config.language,
   );
+  const template = getTemplate(event.config.templateId);
+  const namesLine = names.kind === "line" && names.isPlaceholder ? null : coverNameLine(names);
 
   return (
     <div className="min-h-screen">
       {/* Finishes the save clock, if this card was just saved here. */}
       <SaveTimingReport eventId={event.id} />
+      {/* The crafting screen can go now; Clarity pay_page_shown. */}
+      <PayPageShown eventId={event.id} />
       <header className="border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]">
         <div className="mx-auto max-w-2xl px-4 pt-2.5 pb-1 sm:px-5">
           <WizardProgress
@@ -59,66 +68,43 @@ export default function WizardSaved({
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-6 pb-16 sm:px-5 lg:pt-10">
-        <div className="flex min-w-0 flex-col gap-2">
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-[-0.01em] text-balance text-[var(--lifafa-cream)]">
-            Your invitation is saved
+      <main className="mx-auto flex max-w-md flex-col gap-6 px-4 pt-6 pb-16 sm:px-5 lg:pt-10">
+        <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
+          <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] leading-tight font-semibold tracking-[-0.015em] text-balance text-[var(--lifafa-cream)]">
+            Your card is ready
           </h1>
-          {/* The names when there are any; never the card's "Your names" placeholder. */}
-          {names.kind === "line" && names.isPlaceholder ? null : (
+          {namesLine === null ? null : (
             <p
               data-clarity-mask="true"
               className="text-[0.9375rem] leading-relaxed break-words text-[var(--lifafa-muted)]"
             >
-              {coverNameLine(names)}
+              {namesLine}
             </p>
           )}
         </div>
 
-        {/*
-          Where the card is changed from now on. "Edit", never "anytime": once
-          paid, the dashboard explains what can still change (lib/eventLock.ts).
-        */}
-        <p
-          data-edit-pointer=""
-          className="rounded-2xl border border-[var(--lifafa-marigold)]/40 bg-[var(--lifafa-marigold)]/[0.08] px-4 py-3 text-[0.9375rem] leading-snug font-medium text-[var(--lifafa-cream)]"
-        >
-          You can edit your card from your dashboard.{" "}
-          <Link
-            href={`/dashboard/${event.id}/edit`}
-            className="whitespace-nowrap text-[var(--lifafa-marigold)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
-          >
-            Edit my card
-          </Link>
-        </p>
+        <PayCardPreview
+          draft={event.draft}
+          config={event.config}
+          placeholder={LOGIN_PLACEHOLDERS[template.id] ?? null}
+          label={namesLine === null ? `Your ${template.name} card` : `Your card: ${namesLine}`}
+        />
 
         <PaymentBanner
           isPaid={event.isPaid}
           eventId={event.id}
           pricePaise={templatePricePaise(event.config.templateId)}
-          templateId={getTemplate(event.config.templateId).id}
+          templateId={template.id}
           underReview={underReview}
+          variant="checkout"
         />
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          {/* The host's own preview of the real link, watermarked until it is published. */}
-          <Link href={`/i/${event.inviteCode}`} className={LINK_CLASS}>
-            Open my invitation
-          </Link>
-          <Link href={`/dashboard/${event.id}/edit`} className={LINK_CLASS}>
-            Edit it
-          </Link>
-          <Link href={`/dashboard/${event.id}`} className={LINK_CLASS}>
-            Go to my dashboard
-          </Link>
-        </div>
-
-        {underReview ? null : (
-          <p className="text-xs leading-relaxed text-[var(--lifafa-muted)]">
-            You can also publish later from your dashboard. Your invitation and
-            everything in it is kept.
-          </p>
-        )}
+        <Link
+          href={`/dashboard/${event.id}`}
+          className="mx-auto inline-flex min-h-11 items-center rounded px-3 text-sm font-medium text-[var(--lifafa-muted)] underline underline-offset-4 hover:text-[var(--lifafa-cream)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)]"
+        >
+          Go to my dashboard
+        </Link>
       </main>
 
       <LegalFooter />
