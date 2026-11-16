@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactElement, ReactNode } from "react";
 import ActivateFreeButton from "@/components/admin/ActivateFreeButton";
+import CustomMusicPanel from "@/components/admin/CustomMusicPanel";
 import { PageHeading } from "@/components/admin/AdminShell";
 import { PaidPill } from "@/components/admin/EventsTable";
 import { EmptyState, ErrorNotice } from "@/components/admin/Feedback";
@@ -33,6 +34,11 @@ import {
  * and neither touches the card, the guests or any money. See EditingPanel.
  * And activating an unpaid invitation for free, which records a ₹0
  * complimentary payment and moves no money. See ActivateFreeButton.
+ * And the card's own song (CustomMusicPanel): support uploads a host's song
+ * and it becomes this one card's music. It is safe for the same reason the
+ * others are: it changes card_config.musicUrl of this one event and nothing
+ * else (no other field, no payment, no lock or change count), and only from
+ * here, behind the admin session. Removing it sets musicUrl back to null.
  *
  * The guest list shows names and phone numbers, which are a host's guests'
  * details and not the owner's to browse idly. They are here because support —
@@ -209,6 +215,8 @@ export default async function AdminEventPage({
       )}
 
       <EditingPanel event={event} />
+
+      <CustomMusicPanel eventId={event.id} musicUrl={event.musicUrl} />
 
       <StatSection title="Replies">
         {/*

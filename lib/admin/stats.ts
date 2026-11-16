@@ -729,6 +729,8 @@ export interface AdminEventDetail {
   qrCheckinEnabled: boolean;
   showWeather: boolean;
   coverAnimation: string | null;
+  /** card_config.musicUrl: null for no music. See lib/admin/cardMusic.ts. */
+  musicUrl: string | null;
   createdAt: string;
   updatedAt: string;
   /**
@@ -899,6 +901,8 @@ export async function getAdminEventDetail(
       qrCheckinEnabled: event.qr_checkin_enabled === true,
       showWeather: event.show_weather === true,
       coverAnimation: event.cover_animation,
+      musicUrl:
+        typeof event.card_config.musicUrl === "string" ? event.card_config.musicUrl : null,
       createdAt: event.created_at,
       updatedAt: event.updated_at,
       lock: {
