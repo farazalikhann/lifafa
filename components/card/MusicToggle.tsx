@@ -207,8 +207,8 @@ export default function MusicToggle({
           <circle cx="6.5" cy="18" r="2.5" />
           <circle cx="16.5" cy="16" r="2.5" />
 
-          {/* Struck through while it is playing, which is what tapping will do. */}
-          {isPlaying ? <path d="M3 21 21 3" /> : null}
+          {/* Struck through while it is paused: what the guest hears now. */}
+          {isPlaying ? null : <path d="M3 21 21 3" />}
         </svg>
       </button>
     </div>
