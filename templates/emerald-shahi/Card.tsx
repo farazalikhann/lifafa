@@ -84,7 +84,7 @@ export default function EmeraldShahiCard(
   } = props;
 
   const language = cardLanguage(config.language);
-  /* The pictures far down the card wait for the envelope to be drawn: `.artLater` in emerald.module.css. */
+  /* The pictures far down the card, and its ground, wait for the envelope to be drawn: `.artLater` in emerald.module.css. */
   const coverReady = useCoverReady();
   const cardTheme = effectiveTheme(theme, config.style);
   const fonts = emeraldFonts(config.style.fontPairId);

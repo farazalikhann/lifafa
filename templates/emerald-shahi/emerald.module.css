@@ -494,7 +494,20 @@
 .coverGround {
   position: absolute;
   inset: 0;
-  background-color: var(--es-emerald, #082a1c);
+  /*
+    The pattern's own average under the same 45% emerald (#122c1b), so the
+    envelope can be shown on it before the pattern has arrived, and the
+    pattern fading in over it reads as the ground coming into focus rather
+    than as a colour changing. The envelope does not wait for it; see
+    Cover.tsx.
+  */
+  background-color: #122c1b;
+}
+
+/* The pattern itself, laid over that colour once it has loaded. */
+.coverGroundArt {
+  position: absolute;
+  inset: 0;
   background-image:
     linear-gradient(rgb(4 23 15 / 0.45), rgb(4 23 15 / 0.45)),
     url("/templates/emerald-shahi/emerald-bg.webp");
@@ -934,7 +947,16 @@
   envelope and taps it. Nothing here is on screen until well after the open:
   the cover hides the card, and these are below its first screen. The events'
   card keeps its border widths, so nothing moves when its picture arrives.
+
+  The page's ground waits too, as the cover's own does: it is the same
+  300 kB pattern, and the envelope is shown without it. Until then it is the
+  plain colour the cover's ground starts from (.coverGround).
 */
+.artLater .ground {
+  background-image: none;
+  background-color: #122c1b;
+}
+
 .artLater .figure,
 .artLater .paperCorner {
   background-image: none;

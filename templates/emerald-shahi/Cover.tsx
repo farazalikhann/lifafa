@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactElement } from "react";
+import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
 import type { CoverVisualState } from "@/components/invite/CoverShell";
 import GoldFlower from "@/components/invite/covers/GoldFlower";
 import { initialOf, initialsOf } from "@/components/invite/covers/initials";
@@ -42,7 +42,45 @@ import styles from "@/templates/emerald-shahi/emerald.module.css";
  *
  * Under reduced motion the shell never hands over "opening": the closed
  * envelope stays as it is while the shell fades the whole cover in 300ms.
+ *
+ * THE ENVELOPE IS NOT KEPT WAITING FOR THE GROUND. The shell shows the cover
+ * once the closed envelope and its seal are in (COVER_IMAGES); the ground is
+ * a plain colour until then, matched to the pattern, and the pattern is asked
+ * for only now (`ready`) and fades in over GROUND_FADE_MS when it arrives.
+ * The open envelope, seen only after the tap, is asked for at the same time.
  */
+
+/* How long the ground's pattern takes to come in over its plain colour. */
+const GROUND_FADE_MS = 300;
+
+/** True once `src` is loaded and decoded; null asks for nothing. A picture that fails stays false. */
+function useLoaded(src: string | null): boolean {
+  const [loaded, setLoaded] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (src === null) {
+      return;
+    }
+
+    let live = true;
+    const image = new Image();
+    image.src = src;
+    image
+      .decode()
+      .then(() => {
+        if (live) {
+          setLoaded(src);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      live = false;
+    };
+  }, [src]);
+
+  return src !== null && loaded === src;
+}
 
 const EASE_OUT = "cubic-bezier(0.2, 0.7, 0.2, 1)";
 const GLIDE = "cubic-bezier(0.45, 0.05, 0.2, 1)";
@@ -62,6 +100,7 @@ const POCKET_CLIP = `polygon(0 0, 100% 0, 100% ${percent(inClip(LETTER.shoulder)
 
 export default function EmeraldShahiCover({
   phase,
+  ready,
   pair,
   title,
   prompt,
@@ -69,6 +108,7 @@ export default function EmeraldShahiCover({
   headingFont,
 }: CoverVisualState): ReactElement {
   const opening = phase !== "closed";
+  const groundIn = useLoaded(ready ? ART.ground : null);
 
   /* Two letters for two names, or the first two of whatever the card is titled. */
   const initials =
@@ -90,7 +130,17 @@ export default function EmeraldShahiCover({
           opacity: opening ? 0 : 1,
           transition: opening ? `opacity 650ms ease-in-out 1750ms` : undefined,
         }}
-      />
+      >
+        {ready ? (
+          <div
+            className={styles.coverGroundArt}
+            style={{
+              opacity: groundIn ? 1 : 0,
+              transition: `opacity ${GROUND_FADE_MS}ms ease-out`,
+            }}
+          />
+        ) : null}
+      </div>
 
       {/*
         The envelope's body. Everything is sized from its width, `--box`, so
@@ -115,18 +165,21 @@ export default function EmeraldShahiCover({
           } as CSSProperties
         }
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={ART.envelopeOpen}
-          alt=""
-          draggable={false}
-          style={{
-            ...picture,
-            ...OPEN_PLACEMENT,
-            opacity: opening ? 1 : 0,
-            transition: opening ? `opacity 450ms ease-in-out 250ms` : undefined,
-          }}
-        />
+        {/* Asked for once the closed envelope is up, not with it: it is only seen after the tap. */}
+        {ready ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={ART.envelopeOpen}
+            alt=""
+            draggable={false}
+            style={{
+              ...picture,
+              ...OPEN_PLACEMENT,
+              opacity: opening ? 1 : 0,
+              transition: opening ? `opacity 450ms ease-in-out 250ms` : undefined,
+            }}
+          />
+        ) : null}
 
         {/*
           The card that comes out. It starts exactly on the card drawn inside

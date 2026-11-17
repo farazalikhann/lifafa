@@ -25,7 +25,8 @@ export function useCoverOpen(): boolean {
  * there is no cover. Earlier than CoverOpenContext: the guest is looking at
  * the envelope, not yet at the card.
  *
- * For a card's pictures far below its first screen. Asked for while the
+ * For a card's pictures the cover hides: those far below its first screen,
+ * and a ground the cover shows its envelope without. Asked for while the
  * cover is still waiting, they share a phone's slow line with the cover's own
  * pictures, and the cover (the page's largest paint) is held until those are
  * in. Asked for here instead, they load while the guest reads the envelope

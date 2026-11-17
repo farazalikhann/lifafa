@@ -30,13 +30,14 @@ export const ART = {
   butterfly: `${DIR}/butterfly-gold.webp`,
 } as const;
 
-/** What the cover waits for before it shows: its own pictures, and nothing of the card's. */
-export const COVER_IMAGES: readonly string[] = [
-  ART.ground,
-  ART.envelopeClosed,
-  ART.envelopeOpen,
-  ART.seal,
-];
+/**
+ * What the cover waits for before it shows: the closed envelope and the seal
+ * on it, and nothing else. The ground is a plain colour until its pattern
+ * arrives, and the open envelope is only seen after the tap, so both are
+ * asked for once the envelope is up (see Cover.tsx); on a phone's 4G line
+ * they used to share the bandwidth with it and hold it back by seconds.
+ */
+export const COVER_IMAGES: readonly string[] = [ART.envelopeClosed, ART.seal];
 
 const PICTURE = { width: 1200, height: 800 };
 const CLOSED_BODY = { left: 36, top: 83, width: 1127, height: 636 };

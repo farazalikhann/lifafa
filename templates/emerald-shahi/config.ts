@@ -27,8 +27,9 @@ const IVORY_SOFT = "#D9CBA6";
  *   2.4s in all. The card page is let go under the cover at 1.7s, as the
  *   envelope starts to fade, which is `revealAt`. See Cover.tsx for the parts.
  *
- *   It waits for its four pictures and no longer than five seconds; none of
- *   the films or drawings the stock envelope falls back to are loaded.
+ *   It waits for the closed envelope and its seal, and no longer than five
+ *   seconds; the ground fades in when it arrives. None of the films or
+ *   drawings the stock envelope falls back to are loaded.
  *
  *   The prompt is drawn by the cover itself, under the envelope.
  */
