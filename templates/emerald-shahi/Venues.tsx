@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { useCardStill } from "@/hooks/useCardStill";
+import { useCoverReady } from "@/hooks/useCoverOpen";
 import { directionsUrl, readableAddress } from "@/lib/cardFormat";
 import { timelineEntries, type TimelineEntry } from "@/lib/cardSections";
 import Slide from "@/templates/emerald-shahi/Slide";
@@ -96,6 +97,7 @@ export default function EmeraldShahiVenues({
 }): ReactElement | null {
   const { ref, entered } = useEnter<HTMLElement>();
   const still = useCardStill();
+  const coverReady = useCoverReady();
   const entries = timelineEntries(draft, language).filter(hasVenue);
   const [openId, setOpenId] = useState<string | null>(null);
   const [seen, setSeen] = useState<readonly Stage[]>([]);
@@ -180,7 +182,8 @@ export default function EmeraldShahiVenues({
             order={2}
             className="relative aspect-square w-[min(82%,20rem)]"
           >
-            {stages.map((stage) => (
+            {/* Not while the cover is still waiting: see `.artLater` in emerald.module.css. */}
+            {(coverReady ? stages : []).map((stage) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={stage}

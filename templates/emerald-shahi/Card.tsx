@@ -4,6 +4,7 @@ import type { CSSProperties, ReactElement } from "react";
 import MusicToggle from "@/components/card/MusicToggle";
 import { ScratchRevealProvider } from "@/components/card/ScratchReveal";
 import WeatherPanel from "@/components/card/WeatherPanel";
+import { useCoverReady } from "@/hooks/useCoverOpen";
 import { cardLanguage } from "@/lib/cardLanguage";
 import {
   hasCountdown,
@@ -83,6 +84,8 @@ export default function EmeraldShahiCard(
   } = props;
 
   const language = cardLanguage(config.language);
+  /* The pictures far down the card wait for the envelope to be drawn: `.artLater` in emerald.module.css. */
+  const coverReady = useCoverReady();
   const cardTheme = effectiveTheme(theme, config.style);
   const fonts = emeraldFonts(config.style.fontPairId);
   const { occasionId } = config;
@@ -188,9 +191,9 @@ export default function EmeraldShahiCard(
     >
       <div
         lang={language}
-        className={`${styles.root} ${fluid ? styles.fluid : ""} relative ${
-          pagewide ? "" : "isolate"
-        }`}
+        className={`${styles.root} ${fluid ? styles.fluid : ""} ${
+          coverReady ? "" : styles.artLater
+        } relative ${pagewide ? "" : "isolate"}`}
       >
         <div
           aria-hidden="true"

@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactElement, ReactNode } from "react";
+import { useCoverReady } from "@/hooks/useCoverOpen";
 import styles from "@/templates/emerald-shahi/emerald.module.css";
 
 /**
@@ -22,8 +25,11 @@ export default function EmeraldShahiRsvpFrame({
 }: {
   children: ReactNode;
 }): ReactElement {
+  /* The corners wait for the envelope to be drawn: `.artLater` in emerald.module.css. */
+  const coverReady = useCoverReady();
+
   return (
-    <div className="mx-auto w-full max-w-[30rem] px-4 py-[2.5rem]">
+    <div className={`mx-auto w-full max-w-[30rem] px-4 py-[2.5rem] ${coverReady ? "" : styles.artLater}`}>
       <div className={styles.paper}>
         <span aria-hidden="true" className={styles.paperRule} />
         <span aria-hidden="true" className={`${styles.paperCorner} ${styles.paperCornerTL}`} />

@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { preload } from "react-dom";
-import { CoverOpenContext } from "@/hooks/useCoverOpen";
+import { CoverOpenContext, CoverReadyContext } from "@/hooks/useCoverOpen";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { BurstGateContext, RevealGateContext } from "@/hooks/useRevealGate";
 import { cardCopy } from "@/lib/cardLanguage";
@@ -1107,11 +1107,14 @@ export default function CoverShell({
       <RevealGateContext value={!covered || cardLetGo}>
         {/* Later than the gate: only once the cover has unmounted. */}
         <CoverOpenContext value={!covered}>
-          <BurstGateContext value={!covered || burstLetGo}>
-            <div ref={cardRef} className="contents" inert={covered}>
-              {children}
-            </div>
-          </BurstGateContext>
+          {/* Earlier still: the wait is over and the cover is drawn. See hooks/useCoverOpen.ts. */}
+          <CoverReadyContext value={!covered || ready}>
+            <BurstGateContext value={!covered || burstLetGo}>
+              <div ref={cardRef} className="contents" inert={covered}>
+                {children}
+              </div>
+            </BurstGateContext>
+          </CoverReadyContext>
         </CoverOpenContext>
       </RevealGateContext>
 

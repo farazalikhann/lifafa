@@ -922,6 +922,29 @@
   }
 }
 
+/* ───────────────────────── Behind the cover ───────────────────────── */
+
+/*
+  While the cover is still waiting for its own pictures, the ones far down
+  the card are not asked for: the couple's line drawings, the events' card
+  and the reply card's corners, about 0.75 MB. On a phone's 4G line they
+  shared the bandwidth with the envelope, the page's largest paint, and held
+  it back by seconds. The root is marked `.artLater` until the cover is drawn
+  (useCoverReady, hooks/useCoverOpen.ts); they load while the guest reads the
+  envelope and taps it. Nothing here is on screen until well after the open:
+  the cover hides the card, and these are below its first screen. The events'
+  card keeps its border widths, so nothing moves when its picture arrives.
+*/
+.artLater .figure,
+.artLater .paperCorner {
+  background-image: none;
+}
+
+.artLater .eventCard::before {
+  border-image: none;
+  border-color: transparent;
+}
+
 /* ───────────────────────── On paper ───────────────────────── */
 
 /*
