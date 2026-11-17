@@ -106,7 +106,8 @@ export default function GalleryFirstScreen({
 
       <LegalFooter className="pb-32" />
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
+      {/* data-lifafa-foot-bar: the network notice and the WhatsApp button sit above it, as over the wizard's own. */}
+      <div data-lifafa-foot-bar="" className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-12 lg:px-[5.5rem] xl:px-8">
           <p id={CHOOSE_DESIGN_HINT_ID} className={HINT_TEXT}>
             {CHOOSE_DESIGN_HINT}

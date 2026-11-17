@@ -13,6 +13,7 @@ import type { OfferBanner } from "@/lib/offers";
 import { formatPrice } from "@/lib/pricing";
 import type { RazorpayFailure } from "@/types/razorpay";
 import HelpLine from "@/components/legal/HelpLine";
+import WhatsAppLink, { WhatsAppIcon } from "@/components/legal/WhatsAppLink";
 import SecurePayment from "@/components/dashboard/SecurePayment";
 import { PRIMARY_BUTTON } from "@/components/wizard/wizardStyles";
 
@@ -433,8 +434,26 @@ export default function PublishButton({
 
       <StatusLine phase={phase} onCheckAgain={() => router.refresh()} />
 
-      {/* Where a host stuck on a payment looks first. */}
-      <HelpLine className={checkout ? "text-center" : "sm:text-right"} />
+      {/*
+        Where a host stuck on a payment looks first. On the payment page, a
+        button the width of the Pay button: a chat on WhatsApp, the way most
+        hosts ask a question, outlined in its green so it never competes with
+        Pay. The email is the line under it. Elsewhere, the one small line.
+      */}
+      {checkout ? (
+        <>
+          <WhatsAppLink
+            source="pay_page"
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-[#1A9E4F] bg-[#1A9E4F]/10 px-4 py-2 text-center text-[0.875rem] leading-snug font-semibold text-[var(--lifafa-cream)] transition-colors duration-150 hover:bg-[#1A9E4F]/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A9E4F]"
+          >
+            <WhatsAppIcon className="h-6 w-6 text-[#1A9E4F]" />
+            Questions? Chat with us on WhatsApp
+          </WhatsAppLink>
+          <HelpLine whatsapp={false} className="text-center" />
+        </>
+      ) : (
+        <HelpLine className="sm:text-right" />
+      )}
     </div>
   );
 }

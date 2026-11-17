@@ -1979,7 +1979,7 @@ function WizardSteps({
         What went wrong with a save is said here, over the buttons, so it is
         seen from whichever step the save was pressed on.
       */}
-      {/* data-lifafa-foot-bar: the network notice sits above it (components/network/NetworkNotice.tsx). */}
+      {/* data-lifafa-foot-bar: the network notice and the WhatsApp button sit above it (NetworkNotice.tsx, WhatsAppFloat.tsx). */}
       <div data-lifafa-foot-bar="" className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
         {error !== null ? (
           <p

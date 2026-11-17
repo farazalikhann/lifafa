@@ -10,12 +10,28 @@ const LINK =
  * a host is likely to get stuck, the dashboard and the checkout. Light theme
  * only (the host's pages), small muted type, and the address and the chat are
  * the links.
+ *
+ * Without the chat (`whatsapp={false}`) where a WhatsApp button is already
+ * over it, the payment page's: "Or email help@getlifafa.co.in".
  */
 export default function HelpLine({
   className = "",
+  whatsapp = true,
 }: {
   className?: string;
+  whatsapp?: boolean;
 }): ReactElement {
+  if (!whatsapp) {
+    return (
+      <p className={`text-xs text-[var(--lifafa-muted)] ${className}`}>
+        Or email{" "}
+        <a href={HELP_MAILTO} className={LINK}>
+          {HELP_EMAIL}
+        </a>
+      </p>
+    );
+  }
+
   return (
     <p className={`text-xs text-[var(--lifafa-muted)] ${className}`}>
       Questions?{" "}

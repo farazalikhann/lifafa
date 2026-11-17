@@ -53,6 +53,8 @@ export default function HelpWidget({
       <div aria-hidden="true" className="h-[88px] sm:hidden" />
       <button
         ref={launcherRef}
+        /* The WhatsApp button sits above it (components/help/WhatsAppFloat.tsx). */
+        data-help-launcher=""
         type="button"
         aria-label="Help"
         aria-haspopup="dialog"

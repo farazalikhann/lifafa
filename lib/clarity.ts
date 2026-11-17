@@ -274,7 +274,13 @@ export type ClarityEventName =
   /* The payment page of a card just saved, "Your card is ready" (components/wizard/WizardSaved.tsx). */
   | "pay_page_shown"
   /* Its main button, "Pay ₹699 and share with your guests", pressed (components/dashboard/PublishButton.tsx). */
-  | "pay_click";
+  | "pay_click"
+  /*
+    A WhatsApp help chat opened; the session's whatsapp_click_from tag says
+    which: "floating" (the round button), "pay_page" (the button under Pay) or
+    "link" (a "Chat on WhatsApp" in a line of text). components/legal/WhatsAppLink.tsx.
+  */
+  | "whatsapp_click";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";

@@ -5,6 +5,7 @@ import MetaPixel from "@/components/analytics/MetaPixel";
 import NavProgress from "@/components/network/NavProgress";
 import NetworkNotice from "@/components/network/NetworkNotice";
 import StartInChrome from "@/components/browser/StartInChrome";
+import WhatsAppFloat from "@/components/help/WhatsAppFloat";
 import { clarityEnabled } from "@/lib/clarity";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
 import { metaPixelEnabled } from "@/lib/metaPixel";
@@ -128,6 +129,8 @@ export default function RootLayout({
           payment; see lib/startInChrome.ts.
         */}
         <StartInChrome />
+        {/* The round WhatsApp help button, on host pages only (never a guest's invitation). */}
+        <WhatsAppFloat />
       </body>
     </html>
   );
