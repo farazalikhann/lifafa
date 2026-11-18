@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
 import { hasCustomContent } from "@/lib/cardSections";
 import {
@@ -79,7 +79,17 @@ export default function CustomSection({
             className="max-w-[32ch] text-[calc(1.0625*var(--card-rem,1rem))] leading-relaxed break-words whitespace-pre-line text-pretty"
             style={{ color: textRoles(theme).body }}
           >
-            {body}
+            {/*
+              Each line in a span of its own, with the line breaks between them
+              still text, so it reads exactly as one block did; the spans are
+              hooks for a card's own styling (CardConfig.customCss), by line.
+            */}
+            {body.split("\n").map((line, index, lines) => (
+              <Fragment key={index}>
+                <span data-line={index}>{line}</span>
+                {index < lines.length - 1 ? "\n" : null}
+              </Fragment>
+            ))}
           </p>
         </div>
       ) : null}
