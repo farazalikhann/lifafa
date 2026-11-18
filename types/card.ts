@@ -490,6 +490,15 @@ export interface CardConfig {
    * always has.
    */
   hostTitle?: string;
+  /**
+   * A stylesheet for this one card's guest page, for a change a family asked
+   * for that no setting makes: say, the cover's words moved off the artwork.
+   * Set per card by Lifafa, never by the editor, and carried across a save
+   * like `topImage`. Printed by app/i/[inviteCode]/page.tsx with any "<"
+   * taken out (see cardCustomCss in lib/cardTopImage.ts). Absent on every
+   * other card.
+   */
+  customCss?: string;
 }
 
 export interface CardTopImage {

@@ -38,6 +38,15 @@ export function cardTopImage(
   };
 }
 
+/**
+ * A card's own stylesheet (CardConfig.customCss), safe to print inside a
+ * <style>: no "<", so it can never close the element it is in. Empty for a
+ * card that has none.
+ */
+export function cardCustomCss(config: Pick<CardConfig, "customCss">): string {
+  return typeof config.customCss === "string" ? config.customCss.replace(/</g, "") : "";
+}
+
 /** What the host's dashboard calls a card: its hostTitle where set, else its title. */
 export function hostCardTitle(
   config: Pick<CardConfig, "hostTitle">,

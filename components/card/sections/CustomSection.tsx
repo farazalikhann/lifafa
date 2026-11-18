@@ -47,6 +47,8 @@ export default function CustomSection({
   return (
     <section
       ref={ref}
+      /* A hook for a card's own styling (CardConfig.customCss): the host's section id. */
+      data-custom-section={section.id}
       className="flex flex-col items-center justify-center px-7 text-center"
       style={{
         minHeight,
@@ -73,6 +75,7 @@ export default function CustomSection({
       {body.length > 0 ? (
         <div className={reveal} style={lineDelay(1)}>
           <p
+            data-custom-body=""
             className="max-w-[32ch] text-[calc(1.0625*var(--card-rem,1rem))] leading-relaxed break-words whitespace-pre-line text-pretty"
             style={{ color: textRoles(theme).body }}
           >

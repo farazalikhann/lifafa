@@ -433,6 +433,7 @@ export default function FamilySection({
 
           {block.parents !== null ? (
             <p
+              data-family-parents={block.key}
               className="max-w-[30ch] text-[calc(0.9375*var(--card-rem,1rem))] leading-relaxed break-words text-pretty"
               style={{ color: textRoles(theme).detail }}
             >
@@ -442,6 +443,8 @@ export default function FamilySection({
 
           {block.city !== null ? (
             <p
+              /* A hook for a card's own styling (CardConfig.customCss), like the one on the parents. */
+              data-family-city={block.key}
               className="text-[calc(0.8125*var(--card-rem,1rem))] tracking-[0.14em] uppercase"
               style={{ color: theme.textMuted }}
             >

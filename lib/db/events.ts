@@ -102,6 +102,7 @@ const CARD_CONFIG_KEYS = {
   shareMessages: true,
   topImage: true,
   hostTitle: true,
+  customCss: true,
 } as const satisfies Record<keyof CardConfig, true>;
 
 /**
@@ -278,8 +279,13 @@ export async function createEvent(
     payment path is the only thing entitled to say otherwise, and it has not
     run for a row that does not exist yet.
   */
-  /* topImage and hostTitle are Lifafa's to set on a saved card, never a new one's. */
-  const { topImage: _topImage, hostTitle: _hostTitle, ...ownConfig } = cardConfig;
+  /* topImage, hostTitle and customCss are Lifafa's to set on a saved card, never a new one's. */
+  const {
+    topImage: _topImage,
+    hostTitle: _hostTitle,
+    customCss: _customCss,
+    ...ownConfig
+  } = cardConfig;
   const unpaidConfig: CardConfig = { ...ownConfig, isPaid: false };
 
   const {
@@ -802,6 +808,7 @@ export async function updateEvent(
       /* Lifafa's, set per card and never the editor's: kept as stored. */
       topImage: existing.card_config.topImage,
       hostTitle: existing.card_config.hostTitle,
+      customCss: existing.card_config.customCss,
       isPaid: existing.is_paid,
     },
     event_draft: patch.draft,

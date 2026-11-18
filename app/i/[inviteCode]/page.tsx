@@ -14,6 +14,7 @@ import {
 import { getGuestEvent } from "@/lib/db/inviteEvent";
 import { hasEnded } from "@/lib/eventLock";
 import { cardPalette } from "@/lib/textColors";
+import { cardCustomCss } from "@/lib/cardTopImage";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { getEventWeather } from "@/lib/weather";
@@ -277,6 +278,10 @@ export default async function InvitePage({
   return (
     <>
       <style>{`html,body{background-color:${ground}}`}</style>
+      {/* This card's own stylesheet, where Lifafa set one; see CardConfig.customCss. */}
+      {cardCustomCss(event.config).length > 0 ? (
+        <style>{cardCustomCss(event.config)}</style>
+      ) : null}
       {guest.kind === "preview" ? (
         <HostPreviewBanner
           eventId={event.id}
