@@ -40,6 +40,7 @@ type HinduGreetingId =
   | "ganeshaya"
   | "namaste"
   | "shubh-mangal"
+  | "jai-mata-di"
   | "none";
 
 export interface HinduGreeting {
@@ -84,6 +85,14 @@ export const HINDU_GREETINGS: readonly HinduGreeting[] = [
     translation: "Auspicious beginnings",
   },
   {
+    /* Supplied by a host for a Mata ka Jagran card, Nov 2026, with its ॥ marks. */
+    id: "jai-mata-di",
+    label: "Jai Mata Di",
+    devanagari: "॥ जय माता दी ॥",
+    transliteration: "Jai Mata Di",
+    translation: "Victory to the Mother Goddess",
+  },
+  {
     /*
       The opt-out. Every field stays empty permanently — this entry is not
       waiting on content, it is the absence of content, and nothing that
@@ -103,6 +112,7 @@ type ShlokId =
   | "vastoshpate"
   | "ayushman"
   | "sarve-sukhinah"
+  | "sarvamangal"
   | "none";
 
 export interface Shlok {
@@ -171,6 +181,15 @@ export const SHLOKS: readonly Shlok[] = [
     transliteration: "",
     translation: "May all beings be happy",
     occasionNote: "Any occasion",
+  },
+  {
+    /* Supplied by a host for a Mata ka Jagran card, Nov 2026: both lines, as given. */
+    id: "sarvamangal",
+    label: "Sarva Mangala Mangalye",
+    devanagari: "सर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके।\nशरण्ये त्र्यंबके गौरी नारायणि नमोऽस्तुते॥",
+    transliteration: "",
+    translation: "Salutations to Narayani, the auspicious one who grants every wish",
+    occasionNote: "Mata ka Jagran, Navratri",
   },
   {
     /* The opt-out — see the matching note on the "none" greeting. */
