@@ -18,6 +18,7 @@ import { printSheets } from "@/lib/printCard";
 import { serverSiteOrigin } from "@/lib/serverSiteOrigin";
 import { inviteUrl } from "@/lib/siteUrl";
 import { cardPalette } from "@/lib/textColors";
+import { cardCustomCss } from "@/lib/cardTopImage";
 import { getTemplate } from "@/templates/registry";
 import type { StoredEvent } from "@/types/database";
 import { MADE_WITH_LIFAFA } from "@/components/invite/MadeWithLifafa";
@@ -61,7 +62,12 @@ async function printableEvent(inviteCode: string): Promise<StoredEvent | null> {
 
   const guest = await getGuestEvent(inviteCode);
 
-  if (guest.kind !== "active" && guest.kind !== "preview") {
+  /* As on the card's page: paid, its host, or a signed-in Lifafa admin. */
+  if (
+    guest.kind !== "active" &&
+    guest.kind !== "preview" &&
+    guest.kind !== "adminPreview"
+  ) {
     return null;
   }
 
@@ -162,6 +168,8 @@ export default async function PrintPage({
         host typed.
       */}
       <style>{`@page{size:A5 portrait;margin:0}@media print{html,body{background-color:${palette.background} !important}}`}</style>
+      {/* This card's own stylesheet, where Lifafa set one, as on its page; see CardConfig.customCss. */}
+      {cardCustomCss(config).length > 0 ? <style>{cardCustomCss(config)}</style> : null}
 
       <PrintBar
         backHref={
