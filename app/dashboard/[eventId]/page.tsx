@@ -10,6 +10,7 @@ import PaymentBanner from "@/components/dashboard/PaymentBanner";
 import ReminderPanel from "@/components/dashboard/ReminderPanel";
 import RepliesOffNotice from "@/components/dashboard/RepliesOffNotice";
 import SavedNotice from "@/components/dashboard/SavedNotice";
+import SeeYourCard from "@/components/dashboard/SeeYourCard";
 import ShareBar from "@/components/dashboard/ShareBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import WeatherSummary from "@/components/dashboard/WeatherSummary";
@@ -271,6 +272,9 @@ export default async function DashboardPage({
       </header>
 
       <main className="mx-auto flex max-w-[1100px] flex-col gap-8 px-5 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+        {/* The very top of an unpaid card's page: the card itself, before paying for it. */}
+        {event.isPaid ? null : <SeeYourCard inviteUrl={url} />}
+
         {/*
           First thing on the page after an edit, and gone on the next visit.
           "details" is the editor saying the date or the venue moved, which is
