@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { ADMIN_COOKIE_NAME, verifyAdminToken } from "@/lib/admin/session";
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_PREVIEW_COOKIE_NAME,
+  ADMIN_PREVIEW_COOKIE_OPTIONS,
+  verifyAdminToken,
+} from "@/lib/admin/session";
 import { CREATE_QUERY_HEADER } from "@/lib/opensOnGallery";
 
 /**
@@ -122,7 +127,22 @@ async function adminGate(request: NextRequest): Promise<NextResponse | null> {
     );
   }
 
-  return withNoIndex(NextResponse.next({ request }));
+  const response = withNoIndex(NextResponse.next({ request }));
+
+  /*
+    A session signed in before the /i copy existed gets it here, good for as
+    long as the session itself. See ADMIN_PREVIEW_COOKIE_NAME.
+  */
+  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+
+  if (token !== undefined && request.cookies.get(ADMIN_PREVIEW_COOKIE_NAME)?.value !== token) {
+    response.cookies.set(ADMIN_PREVIEW_COOKIE_NAME, token, {
+      ...ADMIN_PREVIEW_COOKIE_OPTIONS,
+      maxAge: Math.max(0, session.expiresAt - Math.floor(Date.now() / 1000)),
+    });
+  }
+
+  return response;
 }
 
 export async function middleware(request: NextRequest) {

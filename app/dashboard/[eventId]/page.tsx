@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { hostCardTitle } from "@/lib/cardTopImage";
 import EventNotFound from "@/components/dashboard/EventNotFound";
 import ExportCsvButton from "@/components/dashboard/ExportCsvButton";
 import GuestTable from "@/components/dashboard/GuestTable";
@@ -110,8 +111,8 @@ export default async function DashboardPage({
   const { draft } = event;
   /* The host's page, so the host's language, whatever the card is written in. */
   const when = formatWhen(draft.eventDate, draft.eventTime, "en");
-  const title =
-    draft.eventTitle.length > 0 ? draft.eventTitle : "Untitled invitation";
+  const ownTitle = hostCardTitle(event.config, draft.eventTitle);
+  const title = ownTitle.length > 0 ? ownTitle : "Untitled invitation";
   /*
     One link, built once, shared by the share bar's field, its copy button and
     its WhatsApp message, and by the reminder message. Built here on the server

@@ -293,3 +293,19 @@ export const ADMIN_COOKIE_OPTIONS = {
   sameSite: "strict",
   path: ADMIN_COOKIE_PATH,
 } as const;
+
+/**
+ * The same signed token again, scoped to /i, so a signed-in admin opening an
+ * unpaid card's guest link sees the card (see getGuestEvent in
+ * lib/db/inviteEvent.ts). A copy rather than widening the cookie above: this
+ * one goes only to the invitation pages, and it is verified exactly as the
+ * /admin one is, so it lets nobody in that the dashboard would not. Written
+ * at sign in and by the /admin middleware for a session that predates it;
+ * cleared at sign out.
+ */
+export const ADMIN_PREVIEW_COOKIE_NAME = "lifafa_admin_preview";
+
+export const ADMIN_PREVIEW_COOKIE_OPTIONS = {
+  ...ADMIN_COOKIE_OPTIONS,
+  path: "/i",
+} as const;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import DeleteEventButton from "@/components/dashboard/DeleteEventButton";
 import PaymentBadge from "@/components/dashboard/PaymentBadge";
 import { coverNameLine, formatWhen, resolveCoverNames } from "@/lib/cardFormat";
+import { hostCardTitle } from "@/lib/cardTopImage";
 import type { HostEvent } from "@/types/database";
 
 /**
@@ -31,6 +32,13 @@ import type { HostEvent } from "@/types/database";
  * check rather than trusting the string it returns.
  */
 function eventHeading(event: HostEvent): string {
+  /* The title Lifafa set for this card's dashboard, where there is one. */
+  const own = event.config.hostTitle?.trim() ?? "";
+
+  if (own.length > 0) {
+    return own;
+  }
+
   const names = resolveCoverNames(event.draft, event.config.occasionId, "en");
 
   if (names.kind === "pair" || !names.isPlaceholder) {
@@ -50,7 +58,7 @@ function eventHeading(event: HostEvent): string {
  * than leaving the line short — "when" is the fact a host scans this list for.
  */
 function eventSubtitle(event: HostEvent, heading: string): string {
-  const title = event.draft.eventTitle.trim();
+  const title = hostCardTitle(event.config, event.draft.eventTitle);
   /* The host's list, so English, whatever each card is written in. */
   const when = formatWhen(event.draft.eventDate, event.draft.eventTime, "en");
 

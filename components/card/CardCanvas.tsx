@@ -154,6 +154,7 @@ import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
 import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
 import type { AnyOrnamentId } from "@/types/ornament";
+import { cardTopImage } from "@/lib/cardTopImage";
 
 /*
   Everything past the first screen, and the decor that only moves once the
@@ -1199,6 +1200,9 @@ export default function CardCanvas({
     today is every line of four of the six packs.
   */
   const hasBlessing = (blessing?.script.length ?? 0) > 0;
+
+  /* Drawn at the top of the opening, so only on a card that has one. */
+  const topImage = cardTopImage(config);
 
   /*
     The three claims a pack can make on an ornament, and what is left over.
@@ -2331,6 +2335,17 @@ hasHead ? (
                     proportions: the piece is a box of its own shape filled
                     with ink, and a height laid on it would only squash it.
                   */}
+                  {/* The card's own picture, where Lifafa set one: first, above everything. */}
+                  {topImage !== null ? (
+                    <img
+                      src={topImage.src}
+                      alt={topImage.alt}
+                      decoding="async"
+                      className="mx-auto block h-auto"
+                      style={{ width: cardPx(topImage.width), maxWidth: "40%" }}
+                    />
+                  ) : null}
+
                   {headIsFirstScreen ? invitedHeading : null}
 
                   {calligraphy.map((panel) => (

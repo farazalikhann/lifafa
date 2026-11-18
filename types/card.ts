@@ -475,6 +475,30 @@ export interface CardConfig {
    * the stored row. Stripped from the guest's read, since it is the host's.
    */
   shareMessages?: Partial<Record<CardLanguage, SavedShareMessage>>;
+  /**
+   * One small picture centred at the very top of the card's opening, above
+   * the sacred line: a deity's image a family asked for, say. Set per card
+   * by Lifafa, never by the editor, and carried across a host's save like
+   * `shareMessages`. Only a path under /card-art/ is drawn (see
+   * lib/cardTopImage.ts). Absent on every other card.
+   */
+  topImage?: CardTopImage;
+  /**
+   * What the host's dashboard calls this card, where that should differ from
+   * the title on the card. Set per card by Lifafa, carried across a save like
+   * `topImage`. Absent on every other card, which the dashboard titles as it
+   * always has.
+   */
+  hostTitle?: string;
+}
+
+export interface CardTopImage {
+  /** A same-site path under /card-art/, e.g. "/card-art/kumra-jagran/maa-durga.webp". */
+  src: string;
+  /** Read out in its place. */
+  alt: string;
+  /** Drawn width in card px; 110 when absent. */
+  width?: number;
 }
 
 /** A WhatsApp message the host rewrote. See CardConfig.shareMessages. */

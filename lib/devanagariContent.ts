@@ -183,10 +183,14 @@ export const SHLOKS: readonly Shlok[] = [
     occasionNote: "Any occasion",
   },
   {
-    /* Supplied by a host for a Mata ka Jagran card, Nov 2026: both lines, as given. */
+    /*
+      Supplied by a host for a Mata ka Jagran card, Nov 2026: the three lines
+      that open it, as given. Jai Mata Di is the first of them here, not the
+      greeting row of that name, because no card draws its greeting.
+    */
     id: "sarvamangal",
-    label: "Sarva Mangala Mangalye",
-    devanagari: "सर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके।\nशरण्ये त्र्यंबके गौरी नारायणि नमोऽस्तुते॥",
+    label: "Jai Mata Di, Sarva Mangala Mangalye",
+    devanagari: "॥ जय माता दी ॥\nसर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके।\nशरण्ये त्र्यंबके गौरी नारायणि नमोऽस्तुते॥",
     transliteration: "",
     translation: "Salutations to Narayani, the auspicious one who grants every wish",
     occasionNote: "Mata ka Jagran, Navratri",

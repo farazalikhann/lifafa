@@ -284,8 +284,22 @@ export default async function InvitePage({
           underReview={await isUnderReview(event.id)}
         />
       ) : null}
+      {guest.kind === "adminPreview" ? (
+        /* A Lifafa admin on an unpaid card: the card as guests will see it, marked. */
+        <p
+          className="pointer-events-none fixed top-2 left-2 z-[2147483000] rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white"
+          aria-live="polite"
+        >
+          Admin preview
+        </p>
+      ) : null}
       <InviteExperience
-        event={event}
+        event={
+          guest.kind === "adminPreview"
+            ? /* Drawn as it will be once paid: no watermark. Nothing here is written back. */
+              { ...event, isPaid: true, config: { ...event.config, isPaid: true } }
+            : event
+        }
         initialLanguage={language}
         linkLanguage={linkLanguage}
         /* Past its end date in India: a keepsake, with the replies closed. */

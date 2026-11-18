@@ -1,5 +1,8 @@
+import { cookies } from "next/headers";
 import { cache } from "react";
+import { ADMIN_PREVIEW_COOKIE_NAME, verifyAdminToken } from "@/lib/admin/session";
 import { isEventHost } from "@/lib/db/events";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { dbFailure, dbSuccess, type DbResult } from "@/lib/db/result";
 import { isValidInviteCode } from "@/lib/inviteCode";
 import { createClient } from "@/lib/supabase/server";
@@ -82,6 +85,8 @@ export async function readEventByInviteCode(
 export type GuestEvent =
   | { kind: "active"; event: StoredEvent }
   | { kind: "preview"; event: StoredEvent }
+  /* An unpaid card opened by a signed-in Lifafa admin; see adminPreviewOf. */
+  | { kind: "adminPreview"; event: StoredEvent }
   | { kind: "inactive" }
   | { kind: "missing" }
   | { kind: "failed" };
@@ -109,16 +114,56 @@ async function resolveGuestEvent(code: string): Promise<GuestEvent> {
       p_invite_code: code,
     });
 
-    return pending === true ? { kind: "inactive" } : { kind: "missing" };
+    if (pending !== true) {
+      return { kind: "missing" };
+    }
+
+    return (await adminPreviewOf(code)) ?? { kind: "inactive" };
   }
 
   if (read.data.isPaid) {
     return { kind: "active", event: read.data };
   }
 
-  return (await isEventHost(read.data.id))
-    ? { kind: "preview", event: read.data }
-    : { kind: "inactive" };
+  if (await isEventHost(read.data.id)) {
+    return { kind: "preview", event: read.data };
+  }
+
+  return (await adminPreviewOf(code)) ?? { kind: "inactive" };
+}
+
+/**
+ * An unpaid card, for a signed-in Lifafa admin and nobody else: the row read
+ * with the service client, since the database hands an unpaid card only to
+ * its host. Null for everyone without a valid admin token on /i (see
+ * ADMIN_PREVIEW_COOKIE_NAME), which is every guest.
+ */
+async function adminPreviewOf(code: string): Promise<GuestEvent | null> {
+  const store = await cookies();
+  const session = await verifyAdminToken(store.get(ADMIN_PREVIEW_COOKIE_NAME)?.value);
+
+  if (session === null) {
+    return null;
+  }
+
+  const { data, error } = await createAdminClient()
+    .from("events")
+    .select("*")
+    .eq("invite_code", code)
+    .maybeSingle();
+
+  if (error !== null || data === null) {
+    if (error !== null) {
+      console.error("[db] adminPreviewOf:", error);
+    }
+    return null;
+  }
+
+  const event = toStoredEvent(data);
+  /* The host's WhatsApp wording stays theirs, as in readEventByInviteCode. */
+  const { shareMessages: _hostOnly, ...config } = event.config;
+
+  return { kind: "adminPreview", event: { ...event, config } };
 }
 
 /**

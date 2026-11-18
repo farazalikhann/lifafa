@@ -14,6 +14,8 @@ import {
 import {
   ADMIN_COOKIE_NAME,
   ADMIN_COOKIE_OPTIONS,
+  ADMIN_PREVIEW_COOKIE_NAME,
+  ADMIN_PREVIEW_COOKIE_OPTIONS,
   ADMIN_SESSION_MAX_AGE_SECONDS,
   mintAdminToken,
 } from "@/lib/admin/session";
@@ -178,6 +180,12 @@ export async function signIn(
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   });
 
+  /* The copy for unpaid cards' guest links; see ADMIN_PREVIEW_COOKIE_NAME. */
+  store.set(ADMIN_PREVIEW_COOKIE_NAME, token, {
+    ...ADMIN_PREVIEW_COOKIE_OPTIONS,
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+  });
+
   console.info(`[admin] signed in from ${ip}`);
 
   /*
@@ -201,6 +209,10 @@ export async function signOut(): Promise<void> {
   store.delete({
     name: ADMIN_COOKIE_NAME,
     path: ADMIN_COOKIE_OPTIONS.path,
+  });
+  store.delete({
+    name: ADMIN_PREVIEW_COOKIE_NAME,
+    path: ADMIN_PREVIEW_COOKIE_OPTIONS.path,
   });
 
   redirect("/admin/login");

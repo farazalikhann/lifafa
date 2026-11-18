@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import CheckinScreen from "@/components/checkin/CheckinScreen";
+import { hostCardTitle } from "@/lib/cardTopImage";
 import { getEventById } from "@/lib/db/events";
 import { getGuestsForEvent } from "@/lib/db/guests";
 
@@ -68,9 +69,7 @@ export default async function CheckinPage({
     <CheckinScreen
       eventId={event.id}
       eventTitle={
-        event.draft.eventTitle.length > 0
-          ? event.draft.eventTitle
-          : "Untitled invitation"
+        hostCardTitle(event.config, event.draft.eventTitle) || "Untitled invitation"
       }
       initialGuests={guestsResult.ok ? guestsResult.data : []}
       loadError={guestsResult.ok ? null : guestsResult.error}
