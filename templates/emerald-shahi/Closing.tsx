@@ -42,9 +42,10 @@ export default function EmeraldShahiClosing({
   const language = cardLanguage(config.language);
   const fonts = emeraldFonts(config.style.fontPairId);
   const names = resolveCoverNames(draft, config.occasionId, language);
-  const families = (coupleOf(draft, config.occasionId) ?? [])
-    .map((person) => person.parents)
-    .filter((parents): parents is string => parents !== null);
+  const families = (coupleOf(draft, config.occasionId) ?? []).flatMap(
+    (person) =>
+      person.parents === null ? [] : [{ key: person.key, parents: person.parents }],
+  );
 
   return (
     <section
@@ -104,9 +105,11 @@ export default function EmeraldShahiClosing({
           order={3}
           className="flex flex-col items-center gap-1"
         >
-          {families.map((parents) => (
+          {families.map(({ key, parents }) => (
             <p
-              key={parents}
+              key={key}
+              /* A hook for a card's own styling (CardConfig.customCss), like data-family-parents. */
+              data-closing-parents={key}
               className="max-w-[32ch] text-[calc(0.84*var(--es))] leading-snug wrap-anywhere text-balance"
               style={{ ...fonts.body, color: "var(--es-gold)" }}
             >

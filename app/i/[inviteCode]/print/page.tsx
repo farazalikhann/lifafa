@@ -200,10 +200,12 @@ export default async function PrintPage({
               style={{ color: palette.textPrimary }}
             >
               {copy.keepsake.scan}
-              {/* The credit, as words only: paper has nothing to tap. */}
-              <span className="lifafa-print-credit" lang="en-IN">
-                {MADE_WITH_LIFAFA}
-              </span>
+              {/* The credit, as words only: paper has nothing to tap. Off where Lifafa set hideCredit. */}
+              {config.hideCredit === true ? null : (
+                <span className="lifafa-print-credit" lang="en-IN">
+                  {MADE_WITH_LIFAFA}
+                </span>
+              )}
             </span>
           </>
         }

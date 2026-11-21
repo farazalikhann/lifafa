@@ -499,6 +499,13 @@ export interface CardConfig {
    * other card.
    */
   customCss?: string;
+  /**
+   * True to leave the "Made with Lifafa" credit off the end of this one card
+   * (its guest page, previews and print copy). Set per card by Lifafa, never
+   * by the editor, and carried across a save like `customCss`. Absent on
+   * every other card, which keeps the credit.
+   */
+  hideCredit?: boolean;
 }
 
 export interface CardTopImage {

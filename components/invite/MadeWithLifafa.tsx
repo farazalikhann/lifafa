@@ -32,6 +32,8 @@ const INK_OPACITY = 0.65;
  *
  * `clearPill`: on a card that shows the "not yet active" pill (an unpaid
  * card's host preview), the credit stands clear above it.
+ *
+ * Nothing at all on a card Lifafa set `hideCredit` on (CardConfig.hideCredit).
  */
 export default function MadeWithLifafa({
   theme,
@@ -42,7 +44,11 @@ export default function MadeWithLifafa({
   theme: Theme;
   config: CardConfig;
   clearPill?: boolean;
-}): ReactElement {
+}): ReactElement | null {
+  if (config.hideCredit === true) {
+    return null;
+  }
+
   const cardTheme = effectiveTheme(theme, config.style);
   const ink =
     getTemplate(config.templateId).creditInk === "accent"
