@@ -42,9 +42,13 @@ export default function EmeraldShahiClosing({
   const language = cardLanguage(config.language);
   const fonts = emeraldFonts(config.style.fontPairId);
   const names = resolveCoverNames(draft, config.occasionId, language);
+  /* Less any family Lifafa set to be left out here (CardConfig.hideClosingParents). */
+  const hidden = config.hideClosingParents ?? [];
   const families = (coupleOf(draft, config.occasionId) ?? []).flatMap(
     (person) =>
-      person.parents === null ? [] : [{ key: person.key, parents: person.parents }],
+      person.parents === null || hidden.includes(person.key)
+        ? []
+        : [{ key: person.key, parents: person.parents }],
   );
 
   return (

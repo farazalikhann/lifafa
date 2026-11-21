@@ -506,6 +506,14 @@ export interface CardConfig {
    * every other card, which keeps the credit.
    */
   hideCredit?: boolean;
+  /**
+   * The families ("one" the first side, "two" the second, as FamilyBlock.key)
+   * whose parents the card's closing words leave out, for a family that asked
+   * to be named only in Meet the Couple. Read by the template's closing itself,
+   * so it holds on the guest page and in every preview alike. Set per card by
+   * Lifafa, never by the editor, and carried across a save like `hideCredit`.
+   */
+  hideClosingParents?: readonly ("one" | "two")[];
 }
 
 export interface CardTopImage {
