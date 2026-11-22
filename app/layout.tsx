@@ -4,7 +4,6 @@ import Clarity from "@/components/analytics/Clarity";
 import MetaPixel from "@/components/analytics/MetaPixel";
 import NavProgress from "@/components/network/NavProgress";
 import NetworkNotice from "@/components/network/NetworkNotice";
-import StartInChrome from "@/components/browser/StartInChrome";
 import WhatsAppFloat from "@/components/help/WhatsAppFloat";
 import { clarityEnabled } from "@/lib/clarity";
 import { PAIR_FONT_STACKS } from "@/lib/fontPairs";
@@ -122,13 +121,6 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>
-        {/*
-          Instagram's and Facebook's browsers only: "open in Chrome", once per
-          session, on the first page opened (the bio link opens this site's
-          home page). Never on a guest's invitation, the dashboard, sign in or
-          payment; see lib/startInChrome.ts.
-        */}
-        <StartInChrome />
         {/* The round WhatsApp help button, on host pages only (never a guest's invitation). */}
         <WhatsAppFloat />
       </body>
