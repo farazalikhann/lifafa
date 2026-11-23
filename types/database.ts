@@ -341,6 +341,12 @@ export type CouponRow = {
   /** Paise owed per captured sale. Null on a discount code. */
   commission_per_sale: number | null;
   created_at: string;
+  /**
+   * The one invitation this code works on, or null for a code that works on
+   * any (0018). Optional because a database without 0018 has no such column,
+   * and a row from it is a code for any invitation, as every code was before.
+   */
+  event_id?: string | null;
 }
 
 /** A plain price reduction, or one that also owes somebody a commission. */

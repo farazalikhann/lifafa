@@ -26,7 +26,8 @@ export const liveOffer = cache(async (): Promise<OfferBanner | null> => {
     return null;
   }
 
-  const lookup = await findUsableCoupon(WEDDING10_OFFER.code);
+  /* No invitation in hand: a code made for one card is never offered to all. */
+  const lookup = await findUsableCoupon(WEDDING10_OFFER.code, null);
 
   if (lookup.kind !== "ok") {
     return null;

@@ -163,7 +163,7 @@ export async function previewCoupon(
     return { ok: false, error: owned.error };
   }
 
-  const lookup = await findUsableCoupon(code);
+  const lookup = await findUsableCoupon(code, eventId);
 
   if (lookup.kind !== "ok") {
     return { ok: false, error: couponRefusalMessage(lookup.kind) };
@@ -407,7 +407,7 @@ export async function createPaymentOrder(
   let quote: CouponQuote | null = null;
 
   if (rawCouponCode !== null && normaliseCouponCode(rawCouponCode).length > 0) {
-    const lookup = await findUsableCoupon(rawCouponCode);
+    const lookup = await findUsableCoupon(rawCouponCode, eventId);
 
     if (lookup.kind !== "ok") {
       return dbFailure(
@@ -618,7 +618,7 @@ export async function activateWithFreeCoupon(
     );
   }
 
-  const lookup = await findUsableCoupon(rawCouponCode);
+  const lookup = await findUsableCoupon(rawCouponCode, eventId);
 
   if (lookup.kind !== "ok") {
     return dbFailure(
@@ -677,6 +677,7 @@ function freeCouponRefusalMessage(outcome: string | null): string {
     case "inactive":
     case "expired":
     case "exhausted":
+    case "wrong_event":
       return couponRefusalMessage(outcome);
     /* A free code with no usage limit is never honoured; see 0014. */
     case "no_limit":

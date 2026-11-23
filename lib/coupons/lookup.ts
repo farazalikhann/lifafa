@@ -48,6 +48,7 @@ export type CouponLookup =
   | { kind: "inactive" }
   | { kind: "expired" }
   | { kind: "exhausted" }
+  | { kind: "wrong_event" }
   /** The query itself failed. Distinct from "no such code". */
   | { kind: "error" };
 
@@ -88,6 +89,8 @@ export function isPossibleCouponCode(code: string): boolean {
  */
 export async function findUsableCoupon(
   rawCode: string,
+  /** The invitation it is for, so a code made for another is refused; null where there is none. */
+  eventId: string | null,
 ): Promise<CouponLookup> {
   const code = normaliseCouponCode(rawCode);
 
@@ -117,7 +120,7 @@ export async function findUsableCoupon(
     lib/coupons/usable.ts, asked of the server's clock at this moment. The end
     date is compared in redeem_coupon()'s WHERE clause as well (0010).
   */
-  const refusal = couponRefusal(coupon, new Date());
+  const refusal = couponRefusal(coupon, new Date(), eventId);
 
   if (refusal !== null) {
     return { kind: refusal };
@@ -145,6 +148,8 @@ export function couponRefusalMessage(
       return "That code has expired.";
     case "exhausted":
       return "That code has already been fully used.";
+    case "wrong_event":
+      return "This code is not valid for this card.";
     case "error":
       return "Could not check that code, please try again.";
   }

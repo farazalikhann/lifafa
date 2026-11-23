@@ -18,11 +18,23 @@ import type { CouponRow } from "@/types/database";
  * the database's decides whether the use is counted.
  */
 export function couponRefusal(
-  coupon: Pick<CouponRow, "is_active" | "expires_at" | "max_uses" | "used_count">,
+  coupon: Pick<
+    CouponRow,
+    "is_active" | "expires_at" | "max_uses" | "used_count" | "event_id"
+  >,
   now: Date,
-): "inactive" | "expired" | "exhausted" | null {
+  /** The invitation the code is being used on; null where there is none (the offer banner). */
+  eventId: string | null,
+): "inactive" | "expired" | "exhausted" | "wrong_event" | null {
   if (!coupon.is_active) {
     return "inactive";
+  }
+
+  /* A code made for one invitation (coupons.event_id, 0018) works on that one alone. */
+  const onlyFor = coupon.event_id ?? null;
+
+  if (onlyFor !== null && onlyFor !== eventId) {
+    return "wrong_event";
   }
 
   if (coupon.expires_at !== null && Date.parse(coupon.expires_at) <= now.getTime()) {
