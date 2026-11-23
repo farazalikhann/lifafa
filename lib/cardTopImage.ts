@@ -1,4 +1,4 @@
-import type { CardConfig, CardTopImage } from "@/types/card";
+import type { CardConfig, CardTopGreeting, CardTopImage } from "@/types/card";
 
 /**
  * The card's own picture at the top of its opening (CardConfig.topImage), or
@@ -36,6 +36,34 @@ export function cardTopImage(
     alt: typeof image.alt === "string" ? image.alt : "",
     width,
   };
+}
+
+const TOP_GREETING_MAX = 120;
+
+/**
+ * The line the card opens with (CardConfig.topGreeting), or null. Its text is
+ * trimmed and never longer than 120 characters; a `lang` that is not a plain
+ * language code is dropped rather than written into the page.
+ */
+export function cardTopGreeting(
+  config: Pick<CardConfig, "topGreeting">,
+): Required<CardTopGreeting> | null {
+  const greeting = config.topGreeting;
+  const text =
+    greeting !== undefined && greeting !== null && typeof greeting.text === "string"
+      ? greeting.text.trim().slice(0, TOP_GREETING_MAX)
+      : "";
+
+  if (greeting === undefined || greeting === null || text.length === 0) {
+    return null;
+  }
+
+  const lang =
+    typeof greeting.lang === "string" && /^[a-z]{2,3}$/.test(greeting.lang)
+      ? greeting.lang
+      : "";
+
+  return { text, lang };
 }
 
 /**

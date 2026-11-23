@@ -237,6 +237,14 @@
   transform: translate3d(0, 0.7em, 0);
 }
 
+/* A card's own picture over its words (CardConfig.topImage), in the artwork's gold. */
+.heroTopImage {
+  display: block;
+  max-width: 40%;
+  height: auto;
+  user-select: none;
+}
+
 .heroRule {
   display: block;
   width: 3.2em;
@@ -1015,6 +1023,11 @@
 :global(.lifafa-print-sheet) .frameBox {
   position: static;
   overflow: visible;
+}
+
+/* The picture is drawn in the card's gold; on paper it darkens with the rest of the gold. */
+:global(.lifafa-print-sheet) .heroTopImage {
+  filter: brightness(0.6);
 }
 
 :global(.lifafa-print-sheet) .heroLine {

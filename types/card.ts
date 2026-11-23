@@ -514,6 +514,21 @@ export interface CardConfig {
    * Lifafa, never by the editor, and carried across a save like `hideCredit`.
    */
   hideClosingParents?: readonly ("one" | "two")[];
+  /**
+   * One line the card opens with, under `topImage` where it has one: a
+   * greeting a family asked for, as they wrote it ("॥ श्री गणेशाय नमः ॥").
+   * Set per card by Lifafa, never by the editor, and carried across a save
+   * like `topImage`. Read through cardTopGreeting in lib/cardTopImage.ts.
+   * Absent on every other card.
+   */
+  topGreeting?: CardTopGreeting;
+}
+
+export interface CardTopGreeting {
+  /** The line exactly as the family gave it. */
+  text: string;
+  /** Its language, for the font and for a screen reader: "hi" for Devanagari. */
+  lang?: string;
 }
 
 export interface CardTopImage {

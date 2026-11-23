@@ -19,6 +19,7 @@ import {
   resolveCoverNames,
 } from "@/lib/cardFormat";
 import { cardCopy } from "@/lib/cardLanguage";
+import { cardTopGreeting, cardTopImage } from "@/lib/cardTopImage";
 import { dateRevealOf } from "@/lib/royalScroll";
 import { ART } from "@/templates/emerald-shahi/art";
 import styles from "@/templates/emerald-shahi/emerald.module.css";
@@ -38,7 +39,11 @@ const FIT_STEP = 0.04;
  * it is stepped down from full size until the words are no taller and no
  * wider than the box, which is what keeps a long pair of names, or the taller
  * lines of Devanagari, off the gold. Done before the first paint, and again
- * when the box changes size or the fonts arrive, never while anything moves.
+ * when the box changes size, the fonts arrive or the words change size by
+ * themselves (a card's own picture loading, which has no height until it
+ * does), never while anything moves. A fit always starts again from full
+ * size, so the same box and words always come to the same size, and the
+ * size it sets cannot start another.
  */
 function useFitInside(
   box: RefObject<HTMLElement | null>,
@@ -78,6 +83,7 @@ function useFitInside(
     const observer =
       typeof ResizeObserver === "function" ? new ResizeObserver(fit) : null;
     observer?.observe(outer);
+    observer?.observe(inner);
     void document.fonts?.ready.then(fit);
 
     return () => {
@@ -132,6 +138,10 @@ function Shimmering({ text }: { text: string }): ReactElement {
  *
  * The date is left off a card whose host has hidden it behind a scratch panel
  * or a strip of paper, which would otherwise be given away here.
+ *
+ * A card Lifafa gave its own picture or opening line (CardConfig.topImage,
+ * topGreeting) has them first in the words, above the invitation line: they
+ * are sized and fitted with the rest, so they keep inside the frame too.
  */
 export default function EmeraldShahiHero({
   draft,
@@ -161,6 +171,10 @@ export default function EmeraldShahiHero({
   const copy = cardCopy(language);
   const names = resolveCoverNames(draft, config.occasionId, language);
   const title = draft.eventTitle.trim();
+  const topImage = cardTopImage(config);
+  const greeting = cardTopGreeting(config);
+  /* The card's own picture and line come first, and the rest fade up after them. */
+  const lead = (topImage !== null ? 1 : 0) + (greeting !== null ? 1 : 0);
 
   const reveal = dateRevealOf(config.dateReveal, config.scratchTarget);
   const dateHidden =
@@ -170,7 +184,7 @@ export default function EmeraldShahiHero({
   useFitInside(
     boxRef,
     wordsRef,
-    `${title}|${coverNameLine(names)}|${when}|${language}`,
+    `${title}|${coverNameLine(names)}|${when}|${language}|${greeting?.text ?? ""}|${topImage?.src ?? ""}`,
   );
 
   const initials =
@@ -181,10 +195,13 @@ export default function EmeraldShahiHero({
         : initialsOf(names.text);
 
   /* One line of the words, fading up `order` steps after the frame and the seal. */
-  const line = (order: number): { className: string; style: CSSProperties } => ({
+  const step = (order: number): { className: string; style: CSSProperties } => ({
     className: styles.heroLine,
     style: { "--es-delay": `${950 + order * 140}ms` } as CSSProperties,
   });
+  /* The card's own words, after the picture and the line Lifafa set, if any. */
+  const line = (order: number): { className: string; style: CSSProperties } =>
+    step(order + lead);
 
   const script: CSSProperties = {
     ...namesFont,
@@ -254,6 +271,43 @@ export default function EmeraldShahiHero({
             className="flex w-full flex-col items-center text-center"
             style={{ gap: "0.62em" }}
           >
+            {/*
+              The card's own picture, drawn at its width in card px as `em`
+              of the words (30 to one), so it shrinks with them to fit.
+            */}
+            {topImage !== null ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                {...step(0)}
+                src={topImage.src}
+                alt={topImage.alt}
+                draggable={false}
+                decoding="async"
+                className={`${styles.heroLine} ${styles.heroTopImage}`}
+                style={{
+                  ...step(0).style,
+                  width: `${topImage.width / 30}em`,
+                }}
+              />
+            ) : null}
+
+            {greeting !== null ? (
+              <p
+                {...step(topImage !== null ? 1 : 0)}
+                lang={greeting.lang.length > 0 ? greeting.lang : undefined}
+                className={`${styles.heroLine} max-w-full text-balance`}
+                style={{
+                  ...step(topImage !== null ? 1 : 0).style,
+                  ...headingFont,
+                  fontSize: "0.92em",
+                  lineHeight: 1.5,
+                  color: "var(--es-gold-bright)",
+                }}
+              >
+                {greeting.text}
+              </p>
+            ) : null}
+
             <p
               {...line(0)}
               style={{

@@ -154,7 +154,7 @@ import type { EventDraft } from "@/types/event";
 import type { OccasionId, TraditionId } from "@/types/occasion";
 import type { PackBlessing, TraditionPack } from "@/lib/traditionPacks";
 import type { AnyOrnamentId } from "@/types/ornament";
-import { cardTopImage } from "@/lib/cardTopImage";
+import { cardTopGreeting, cardTopImage } from "@/lib/cardTopImage";
 
 /*
   Everything past the first screen, and the decor that only moves once the
@@ -1203,6 +1203,8 @@ export default function CardCanvas({
 
   /* Drawn at the top of the opening, so only on a card that has one. */
   const topImage = cardTopImage(config);
+  /* And the line Lifafa set for it to open with, under that picture. */
+  const topGreeting = cardTopGreeting(config);
 
   /*
     The three claims a pack can make on an ornament, and what is left over.
@@ -2344,6 +2346,20 @@ hasHead ? (
                       className="mx-auto block h-auto"
                       style={{ width: cardPx(topImage.width), maxWidth: "40%" }}
                     />
+                  ) : null}
+
+                  {topGreeting !== null ? (
+                    <p
+                      lang={topGreeting.lang.length > 0 ? topGreeting.lang : undefined}
+                      className="mx-auto max-w-full text-center text-balance"
+                      style={{
+                        color: textRoles(effectiveTheme).heading,
+                        fontSize: cardPx(18),
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {topGreeting.text}
+                    </p>
                   ) : null}
 
                   {headIsFirstScreen ? invitedHeading : null}
