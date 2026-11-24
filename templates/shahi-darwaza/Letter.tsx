@@ -6,21 +6,12 @@ import { initialOf, initialsOf } from "@/components/invite/covers/initials";
 import { resolveCoverNames } from "@/lib/cardFormat";
 import { ART, ENVELOPE } from "@/templates/shahi-darwaza/art";
 import styles from "@/templates/shahi-darwaza/darwaza.module.css";
+import { letterLines } from "@/templates/shahi-darwaza/sections";
 import type { DarwazaFonts } from "@/templates/shahi-darwaza/shared";
 import { useEnter } from "@/templates/shahi-darwaza/useEnter";
 import { useNear } from "@/templates/shahi-darwaza/useNear";
 import type { CardConfig, CardLanguage } from "@/types/card";
 import type { EventDraft } from "@/types/event";
-
-/** The lines of the letter: the host's note and the two families. Empty: no letter. */
-export function letterLines(draft: EventDraft): { message: string; families: string[] } {
-  return {
-    message: draft.message.trim(),
-    families: [draft.partyOneParents, draft.partyTwoParents]
-      .map((line) => line?.trim() ?? "")
-      .filter((line) => line.length > 0),
-  };
-}
 
 /**
  * The letter: a cream envelope sealed in pink wax with the couple's

@@ -84,61 +84,64 @@ export default function ShahiDarwazaRsvpFrame({
   const showSignature = stage === "confirmed" && name.length > 0;
 
   return (
-    <div
-      ref={(element) => {
-        ref.current = element;
-        near.ref.current = element;
-      }}
-      className={`${styles.scrollStage} ${entered ? styles.scrollOpen : ""}`}
-    >
-      <span aria-hidden="true" className={`${styles.rose} ${styles.roseScroll}`} />
-      <div className={styles.scroll}>
-        <span aria-hidden="true" className={`${styles.scrollPaper} ${near.near ? styles.scrollPaperArt : ""}`} />
-        <span aria-hidden="true" className={styles.scrollRodTrack}>
-          <span className={`${styles.scrollRod} ${near.near ? styles.scrollRodTop : ""}`} />
-        </span>
-        <span aria-hidden="true" className={`${styles.scrollRodTrack} ${styles.scrollRodTrackFoot}`}>
-          <span className={`${styles.scrollRod} ${near.near ? styles.scrollRodFoot : ""}`} />
-        </span>
+    /* The page's width, clipped across: the rose leans past the scroll's edge, never past the screen's. */
+    <div className="w-full overflow-x-clip">
+      <div
+        ref={(element) => {
+          ref.current = element;
+          near.ref.current = element;
+        }}
+        className={`${styles.scrollStage} ${entered ? styles.scrollOpen : ""}`}
+      >
+        <span aria-hidden="true" className={`${styles.rose} ${styles.roseScroll}`} />
+        <div className={styles.scroll}>
+          <span aria-hidden="true" className={`${styles.scrollPaper} ${near.near ? styles.scrollPaperArt : ""}`} />
+          <span aria-hidden="true" className={styles.scrollRodTrack}>
+            <span className={`${styles.scrollRod} ${near.near ? styles.scrollRodTop : ""}`} />
+          </span>
+          <span aria-hidden="true" className={`${styles.scrollRodTrack} ${styles.scrollRodTrackFoot}`}>
+            <span className={`${styles.scrollRod} ${near.near ? styles.scrollRodFoot : ""}`} />
+          </span>
 
-        <div className={styles.scrollWords}>
-          <p className={styles.scrollTitle} style={{ lineHeight: scriptLeading(language) }}>
-            {copy.swagatPatra}
-          </p>
-
-          {showSignature ? (
-            <p className={`${styles.signature} ${signing ? styles.signing : ""}`}>
-              <span className="sr-only">{copy.signedBy}: </span>
-              {/*
-                The window the name is seen through, and the quill's track, move
-                together from one name's width to the left to where the name is;
-                the name moves the other way inside the window, so it stays put
-                and is uncovered from its left, with the nib at the edge.
-              */}
-              <span className={styles.signatureBox}>
-                <span className={styles.signatureWindow}>
-                  <span className={styles.signatureName} style={{ lineHeight: scriptLeading(language) }}>
-                    {name}
-                  </span>
-                </span>
-                {signing ? (
-                  <span aria-hidden="true" className={styles.quillTrack}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={ART.quill} alt="" draggable={false} className={styles.quill} />
-                  </span>
-                ) : null}
-              </span>
+          <div className={styles.scrollWords}>
+            <p className={styles.scrollTitle} style={{ lineHeight: scriptLeading(language) }}>
+              {copy.swagatPatra}
             </p>
-          ) : null}
 
-          <div
-            className="relative"
-            style={{
-              opacity: stage === "confirmed" && !signed ? 0 : 1,
-              transition: "opacity 500ms ease-out",
-            }}
-          >
-            {children}
+            {showSignature ? (
+              <p className={`${styles.signature} ${signing ? styles.signing : ""}`}>
+                <span className="sr-only">{copy.signedBy}: </span>
+                {/*
+                  The window the name is seen through, and the quill's track, move
+                  together from one name's width to the left to where the name is;
+                  the name moves the other way inside the window, so it stays put
+                  and is uncovered from its left, with the nib at the edge.
+                */}
+                <span className={styles.signatureBox}>
+                  <span className={styles.signatureWindow}>
+                    <span className={styles.signatureName} style={{ lineHeight: scriptLeading(language) }}>
+                      {name}
+                    </span>
+                  </span>
+                  {signing ? (
+                    <span aria-hidden="true" className={styles.quillTrack}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={ART.quill} alt="" draggable={false} className={styles.quill} />
+                    </span>
+                  ) : null}
+                </span>
+              </p>
+            ) : null}
+
+            <div
+              className="relative"
+              style={{
+                opacity: stage === "confirmed" && !signed ? 0 : 1,
+                transition: "opacity 500ms ease-out",
+              }}
+            >
+              {children}
+            </div>
           </div>
         </div>
       </div>

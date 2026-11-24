@@ -140,6 +140,8 @@ for (const id of ids) {
     }
     /* Nor the price and "Create this card" bar at the foot, and the room the card left for it. */
     document.querySelectorAll("[data-demo-create-bar]").forEach((node) => node.remove());
+    /* Nor the round WhatsApp help button over the corner: the page's, for a visitor with a question. */
+    document.querySelectorAll('[data-whatsapp-source="floating"]').forEach((node) => node.remove());
     document.documentElement.style.setProperty("--lifafa-foot-h", "0px");
     window.scrollTo(0, 0);
   })()`);

@@ -20,6 +20,7 @@ import ShahiDarwazaLetter from "@/templates/shahi-darwaza/Letter";
 import ShahiDarwazaPetals from "@/templates/shahi-darwaza/Petals";
 import ShahiDarwazaTimeline from "@/templates/shahi-darwaza/Timeline";
 import ShahiDarwazaVenue from "@/templates/shahi-darwaza/Venue";
+import { hasSection } from "@/templates/shahi-darwaza/sections";
 import styles from "@/templates/shahi-darwaza/darwaza.module.css";
 import { darwazaFonts } from "@/templates/shahi-darwaza/shared";
 import type { TemplateCardProps } from "@/templates/types";
@@ -130,7 +131,7 @@ export default function ShahiDarwazaCard(props: TemplateCardProps): ReactElement
       ) : null;
     }
 
-    if (!block.enabled) {
+    if (!block.enabled || !hasSection(block.id, draft, config, language)) {
       return null;
     }
 

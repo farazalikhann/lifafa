@@ -69,9 +69,6 @@ const COVER_OPTION: CoverAnimationOption = {
  * thread, the palace, the countdown over the courtyard at night, and the
  * reply form on a scroll. See Card.tsx.
  *
- * NOT IN THE GALLERY YET (`listed: false` in premium.ts): it is seen at
- * /demo/shahi-darwaza while it is built.
- *
  * A CARD FOR EVERY WEDDING: there is no symbol of any faith on it. Its
  * sample is the Hindu wedding.
  */

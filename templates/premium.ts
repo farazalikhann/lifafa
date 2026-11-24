@@ -2,6 +2,7 @@ import { PREMIUM_PRICE_PAISE, SHEESH_MAHAL_PRICE_PAISE } from "@/lib/pricing";
 import dakGharPreview from "@/templates/dak-ghar/preview.webp";
 import emeraldShahiPreview from "@/templates/emerald-shahi/preview.webp";
 import gulabMahalPreview from "@/templates/gulab-mahal/preview.webp";
+import shahiDarwazaPreview from "@/templates/shahi-darwaza/preview.webp";
 import sheeshMahalPreview from "@/templates/sheesh-mahal/preview.webp";
 import type { TemplateConfig } from "@/templates/types";
 
@@ -61,14 +62,13 @@ export const DAK_GHAR_LISTING = {
   preview: dakGharPreview,
 } as const satisfies TemplateListing;
 
-/* Not in the gallery yet: seen at /demo/shahi-darwaza while it is built. No preview until it is shot. */
 export const SHAHI_DARWAZA_LISTING = {
   id: "shahi-darwaza",
   name: "Shahi Darwaza",
-  listed: false,
+  listed: true,
   collection: "premium",
   price: PREMIUM_PRICE_PAISE,
-  preview: null,
+  preview: shahiDarwazaPreview,
 } as const satisfies TemplateListing;
 
 /** The Premium Collection, in the gallery's order (and the landing page's carousel). */
