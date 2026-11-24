@@ -19,6 +19,11 @@ export const MAROON_DEEP = "#22050B";
 export const GOLD = "#D9B36C";
 export const IVORY = "#F5E9D3";
 export const IVORY_SOFT = "#DCC9A8";
+/* The paper the card below the hero is set on, and its inks. */
+export const PAPER = "#F3E7D2";
+export const INK = "#4A0F1A";
+export const INK_SOFT = "#6E3A3A";
+export const GOLD_DEEP = "#8A5A1A";
 
 export interface DarwazaFonts {
   /** The couple's names: the pair's script face. */
@@ -64,6 +69,71 @@ export const DRAG_PROMPT: Readonly<Record<CardLanguage, string>> = {
 
 export function tapPrompt(language: CardLanguage): string {
   return PROMPTS[language].tap;
+}
+
+interface DarwazaCopy {
+  /** Over the venue's card. */
+  venue: string;
+  /** The venue card's one button. */
+  openInMaps: string;
+  /** Over the reply form, on the scroll. */
+  swagatPatra: string;
+  /** The closing's first words. */
+  withLove: string;
+  /** Under the guest's signed name, once the reply is sent. */
+  signedBy: string;
+  /** The calendar's weekday initials, Sunday first. */
+  weekdays: readonly string[];
+}
+
+/* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
+const COPY: Readonly<Record<CardLanguage, DarwazaCopy>> = {
+  en: {
+    venue: "The Venue",
+    openInMaps: "Open in Maps",
+    swagatPatra: "Swagat Patra",
+    withLove: "With love",
+    signedBy: "Signed",
+    weekdays: ["S", "M", "T", "W", "T", "F", "S"],
+  },
+  hi: {
+    venue: "समारोह स्थल",
+    openInMaps: "मैप में खोलें",
+    swagatPatra: "स्वागत पत्र",
+    withLove: "सप्रेम",
+    signedBy: "हस्ताक्षर",
+    weekdays: ["र", "सो", "मं", "बु", "गु", "शु", "श"],
+  },
+};
+
+export function darwazaCopy(language: CardLanguage): DarwazaCopy {
+  return COPY[language];
+}
+
+/**
+ * The gold icon for a function, by what it is called: the mehendi cone, the
+ * dholak, the chandelier for a reception or a dinner, and the rings for the
+ * wedding and anything else. Read in English and in Hindi.
+ *
+ * "Wedding Reception" is a reception: the reception names are tried before
+ * the wedding ones, since a reception is so often called after the wedding.
+ */
+export function functionIcon(label: string): string {
+  const name = label.toLowerCase();
+
+  if (/mehendi|mehndi|mehandi|mehadi|henna|मेहंदी|मेंहदी|मेहँदी/.test(name)) {
+    return "/decor/shahi-darwaza/icon-mehendi.webp";
+  }
+
+  if (/sangeet|sangit|music|संगीत/.test(name)) {
+    return "/decor/shahi-darwaza/icon-sangeet.webp";
+  }
+
+  if (/reception|dinner|रिसेप्शन|स्वागत समारोह|प्रीतिभोज|भोज/.test(name)) {
+    return "/decor/shahi-darwaza/icon-reception.webp";
+  }
+
+  return "/decor/shahi-darwaza/icon-wedding.webp";
 }
 
 /** Script lines sit taller in Devanagari, whose marks reach above and below the line. */

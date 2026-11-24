@@ -237,6 +237,8 @@ export interface TemplateParts {
     children: ReactNode;
     stage?: "form" | "confirmed";
     language?: CardLanguage;
+    /** The name the guest replied under, once the reply has landed: for a frame that signs it. */
+    guestName?: string;
   }>;
   /** In place of the card's closing note, after the reply form. For a template with `page`. */
   Closing?: ComponentType<{ draft: EventDraft; config: CardConfig }>;

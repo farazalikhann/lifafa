@@ -4,10 +4,12 @@ import { COVER_IMAGES } from "@/templates/shahi-darwaza/art";
 import { TAPPED } from "@/templates/shahi-darwaza/coverTiming";
 import {
   DRAG_PROMPT,
-  GOLD,
+  GOLD_DEEP,
+  INK,
+  INK_SOFT,
   IVORY,
   IVORY_SOFT,
-  MAROON,
+  PAPER,
   paperTheme,
 } from "@/templates/shahi-darwaza/shared";
 import { SWITCHABLE_SECTIONS } from "@/templates/shared/fromPreset";
@@ -61,9 +63,11 @@ const COVER_OPTION: CoverAnimationOption = {
  *
  * Maroon velvet and a hanging gold key; the door's film opens onto a
  * courtyard of drapes, roses and lanterns, which is the hero, with the
- * invitation, the names and the date over its sky. The sections below are
- * the card's own, set in ivory and gold on maroon, and the reply form is on
- * ivory paper.
+ * invitation, the names and the date over its sky. Below it everything is on
+ * ivory paper in maroon ink: a letter in a sealed envelope, the couple in a
+ * marble arch, the month with the day circled, the functions down a silk
+ * thread, the palace, the countdown over the courtyard at night, and the
+ * reply form on a scroll. See Card.tsx.
  *
  * NOT IN THE GALLERY YET (`listed: false` in premium.ts): it is seen at
  * /demo/shahi-darwaza while it is built.
@@ -81,7 +85,7 @@ export const SHAHI_DARWAZA: TemplateConfig = {
   categoryLabel: "For every wedding",
   badge: "New",
   palettes: [
-    { id: "own", label: "Maroon", paletteId: "maroon", accentOverride: GOLD },
+    { id: "own", label: "Ivory and maroon", paletteId: "cream", accentOverride: GOLD_DEEP },
   ],
   fontPairs: ["royal", "graceful", "romantic"],
   sections: SWITCHABLE_SECTIONS,
@@ -89,18 +93,20 @@ export const SHAHI_DARWAZA: TemplateConfig = {
     ...DEFAULT_DESIGN,
     style: {
       fontPairId: "royal",
-      paletteId: "maroon",
+      /* The nearest of the card's palettes, for anything that reads one by name. */
+      paletteId: "cream",
       density: "comfortable",
-      accentOverride: GOLD,
+      accentOverride: GOLD_DEEP,
+      /* The paper and its inks: what the card below the hero, and the page round it, are painted in. */
       textColors: {
-        textPrimary: IVORY,
-        textSecondary: IVORY_SOFT,
-        cardColor: MAROON,
-        accent: GOLD,
+        textPrimary: INK,
+        textSecondary: INK_SOFT,
+        cardColor: PAPER,
+        accent: GOLD_DEEP,
         chosen: false,
       },
     },
-    /* Its decoration is its own artwork: nothing scattered, flying or falling over it. */
+    /* Its decoration is its own artwork, its rose petals included (Petals.tsx): none of the card's shared ones. */
     borderStyle: "none",
     decorMotion: "none",
     butterflies: "none",

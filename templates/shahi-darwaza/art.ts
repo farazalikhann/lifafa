@@ -25,6 +25,40 @@ export const ART = {
   garland: `${DIR}/garland-divider.webp`,
   rsvpScroll: `${DIR}/rsvp-scroll.webp`,
   roseCorner: `${DIR}/rose-corner.webp`,
+  /* envelope.webp in two: its pocket, and its flap with the seal (see ENVELOPE below). */
+  envelopePocket: `${DIR}/envelope-pocket.webp`,
+  envelopeFlap: `${DIR}/envelope-flap.webp`,
+  waxSeal: `${DIR}/wax-seal.webp`,
+  letterPaper: `${DIR}/letter-paper.webp`,
+  archFrame: `${DIR}/arch-frame.webp`,
+  silkThread: `${DIR}/silk-thread.webp`,
+  venuePalace: `${DIR}/venue-palace.webp`,
+  nightCourtyard: `${DIR}/night-courtyard.webp`,
+  quill: `${DIR}/quill.webp`,
+} as const;
+
+/**
+ * The envelope, measured off envelope.webp (900 by 736): its body is x 160 to
+ * 896 and y 5 to 552, with three petals on the table to its lower left. The
+ * picture is cut in two along a V from the body's top corners (y 62) down to
+ * (528, 452), under the seal and its shadow: envelope-pocket.webp is below
+ * the V and envelope-flap.webp above it, the seal included. Laid on each
+ * other they are the picture whole; the flap fades and the pocket stays.
+ *
+ * Everything is placed as a share of the body's width, B: the picture is
+ * 900/736 B wide and exactly B tall, its left edge 160/736 B left of the body.
+ */
+export const ENVELOPE = {
+  /** The picture's width, its left edge, and where the body starts down it, in B. */
+  width: 900 / 736,
+  left: -160 / 736,
+  bodyTop: 5 / 736,
+  bodyBottom: 552 / 736,
+  /** The pocket's top corners and its V's point, down from the picture's top, in B. */
+  pocketCorner: 62 / 736,
+  pocketPoint: 452 / 736,
+  /** The seal: its centre across and down, and its width, in B. */
+  seal: { x: (528 - 160) / 736, y: 308 / 736, size: 196 / 736 },
 } as const;
 
 /**

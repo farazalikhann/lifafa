@@ -279,7 +279,15 @@ export default function InviteExperience({
   const onPaper = (panel: ReactElement, shows: "form" | "confirmed"): ReactElement => {
     const Frame = templatePage !== undefined ? parts.RsvpFrame : undefined;
 
-    return Frame === undefined ? panel : <Frame stage={shows} language={language}>{panel}</Frame>;
+    return Frame === undefined ? panel : (
+      <Frame
+        stage={shows}
+        language={language}
+        guestName={shows === "confirmed" ? submitted?.name : undefined}
+      >
+        {panel}
+      </Frame>
+    );
   };
   const TemplateClosing = templatePage !== undefined ? parts.Closing : undefined;
 

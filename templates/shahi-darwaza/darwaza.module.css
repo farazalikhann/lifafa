@@ -10,8 +10,12 @@
   --sd-ivory: #f5e9d3;
   --sd-gold: #d9b36c;
   --sd-maroon: #3a0a14;
+  --sd-paper: #f3e7d2;
+  --sd-ink: #4a0f1a;
+  --sd-ink-soft: #6e3a3a;
+  --sd-gold-deep: #8a5a1a;
 
-  color: var(--sd-ivory);
+  color: var(--sd-ink);
   overflow-x: clip;
 }
 
@@ -22,8 +26,7 @@
   black at the edges, broad soft folds running down it, and the faint
   vertical grain of the pile.
 */
-.velvet,
-.ground {
+.velvet {
   background-color: #2a0610;
   background-image:
     repeating-linear-gradient(90deg, rgb(255 255 255 / 0.018) 0 2px, rgb(0 0 0 / 0.035) 2px 5px),
@@ -41,8 +44,23 @@
     radial-gradient(120% 70% at 50% 32%, #6e1626 0%, #4b0d19 42%, #2a0610 78%, #18030a 100%);
 }
 
+/* ───────────────────────── The paper ground ───────────────────────── */
+
+/*
+  Ivory paper, under the whole page: fixed under the guest's page, or pinned
+  to the top of a preview's own scroll box. Its colour until its picture is
+  asked for, once the cover is drawn (`.artLater`).
+*/
 .ground {
   pointer-events: none;
+  background-color: var(--sd-paper);
+  background-image: url("/decor/shahi-darwaza/paper-bg.webp");
+  background-position: center;
+  background-size: cover;
+}
+
+.artLater > .ground {
+  background-image: none;
 }
 
 .groundFixed {
@@ -244,7 +262,7 @@
   }
 }
 
-/* ───────────────────────── The rest of the card ───────────────────────── */
+/* ───────────────────────── The sections ───────────────────────── */
 
 @media (min-width: 48rem) {
   .fluid {
@@ -252,72 +270,915 @@
   }
 }
 
+.section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 2.75rem 1.25rem;
+  text-align: center;
+  color: var(--sd-ink);
+}
+
+/* Small spaced gold capitals over each section. Devanagari is never spaced out or set in capitals. */
+.heading {
+  font-size: 0.86rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--sd-gold-deep);
+}
+
+.heading:lang(hi) {
+  font-size: 1.05rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 /* A garland between one section and the next. */
-.block + .block::before,
-.garland {
+.block + .block::before {
   content: "";
   display: block;
   width: min(80%, 22rem);
   aspect-ratio: 8 / 1;
-  margin-inline: auto;
+  margin: 0.75rem auto 0;
   background: url("/decor/shahi-darwaza/garland-divider.webp") center / contain no-repeat;
 }
 
-.closing {
-  color: var(--sd-ivory);
+.artLater .block + .block::before {
+  background-image: none;
 }
 
-/* ───────────────────────── The paper ───────────────────────── */
-
-.paper {
-  position: relative;
-  border-radius: 0.5rem;
-  background-color: #f3e7d2;
-  background-image: url("/decor/shahi-darwaza/paper-bg.webp");
-  background-size: cover;
-  background-position: center;
-  box-shadow:
-    inset 0 0 0 1px rgb(138 90 26 / 0.45),
-    inset 0 0 0 5px #f3e7d2,
-    inset 0 0 0 6px rgb(138 90 26 / 0.3),
-    0 10px 30px rgb(0 0 0 / 0.35);
+/*
+  Once, as a block comes on screen: up 24px as it fades in, over 0.6s, each
+  line after the one before by its own transition-delay. Under reduced
+  motion it only fades.
+*/
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition:
+    opacity 600ms ease-out,
+    transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.paperRose {
+.revealIn .reveal,
+.reveal.revealIn {
+  opacity: 1;
+  transform: none;
+}
+
+/* Three roses on the whole card: the couple's top right, the venue card's lower left, the scroll's top right. */
+.rose {
   position: absolute;
-  top: -1.25rem;
-  right: -0.75rem;
-  width: 6.5rem;
+  z-index: 2;
+  width: 5.5rem;
   aspect-ratio: 700 / 711;
   background: url("/decor/shahi-darwaza/rose-corner.webp") center / contain no-repeat;
   pointer-events: none;
 }
 
-/*
-  Below the first screen, the pictures wait for the cover to be drawn, so
-  they do not share a slow line with the key and the door.
-*/
-.artLater .paper,
-.artLater .paperRose,
-.artLater.paper {
+.artLater .rose {
   background-image: none;
 }
 
-.artLater .block + .block::before,
-.artLater .garland,
-.artLater.closing .garland {
+.roseTopRight {
+  top: 0.25rem;
+  right: -1.25rem;
+  transform: scaleX(-1);
+}
+
+.roseBottomLeft {
+  bottom: -1.5rem;
+  left: -1.5rem;
+  transform: scaleY(-1);
+}
+
+/* ───────────────────────── The letter ───────────────────────── */
+
+/*
+  --b is the envelope body's width. The stage is that wide and moved right by
+  half the picture's overhang on the left (its petals), so the whole picture
+  is centred.
+*/
+.letterStage {
+  --b: min(76vw, 21rem);
+  position: relative;
+  isolation: isolate;
+  width: var(--b);
+  left: calc(var(--b) * var(--env-left) * -0.5);
+}
+
+/* The letter's box, cut off at the envelope's foot, so it is hidden there until it rises. */
+.letterClip {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  padding-bottom: calc(var(--b) * 0.09);
+  margin-bottom: calc(var(--b) * -0.09);
+}
+
+/*
+  The letter: inside the envelope (its top just under the flap's) until the
+  flap has faded, then up to its place with its foot still in the pocket.
+  Deep at the foot, because the pocket's V covers more of it toward its sides.
+*/
+.letter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  width: 88%;
+  min-height: calc(var(--b) * 0.88 * 1.448);
+  margin-inline: auto;
+  padding: calc(var(--b) * 0.17) calc(var(--b) * 0.14) calc(var(--b) * 0.4);
+  background-color: #f6eddc;
+  text-align: center;
+  color: var(--sd-ink);
+  transform: translate3d(0, calc(100% - var(--b) * 0.62), 0);
+  transition: transform 900ms cubic-bezier(0.3, 0.7, 0.2, 1) 380ms;
+}
+
+.letterIn .letter {
+  transform: none;
+}
+
+/* The paper, in nine: its gold corners kept, its middle stretched to the note's length. */
+.letterPaper {
+  background-color: transparent;
+  border-style: solid;
+  border-width: calc(var(--b) * 0.07);
+  border-image: url("/decor/shahi-darwaza/letter-paper.webp") 70 fill / calc(var(--b) * 0.07) stretch;
+}
+
+.letterRule {
+  display: block;
+  width: 4rem;
+  height: 1px;
+  background-image: linear-gradient(90deg, transparent, #b08a3e, transparent);
+}
+
+.envelope {
+  position: relative;
+  height: var(--b);
+  margin-top: calc(var(--b) * -0.66);
+}
+
+/* The inside of the envelope, seen above the pocket once the flap has gone. */
+.envelopeInside {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  width: 100%;
+  top: calc(var(--b) * var(--env-body-top));
+  height: calc(var(--b) * (var(--env-point) - var(--env-body-top)));
+  background-image: linear-gradient(#d6c5a9, #e8dbc5);
+  clip-path: polygon(0 0, 100% 0, 100% 12.75%, 50% 100%, 0 12.75%);
+}
+
+.envelopePocket,
+.envelopeFlap {
+  position: absolute;
+  top: 0;
+  left: calc(var(--b) * var(--env-left));
+  width: calc(var(--b) * var(--env-w));
+  height: var(--b);
+  max-width: none;
+}
+
+.envelopePocket {
+  z-index: 2;
+}
+
+.envelopeFlap {
+  z-index: 3;
+  transition: opacity 500ms ease-out;
+}
+
+.letterIn .envelopeFlap {
+  opacity: 0;
+}
+
+.seal {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--b) * var(--seal-size));
+  aspect-ratio: 1;
+  left: calc(var(--b) * (var(--seal-x) - var(--env-left)));
+  top: calc(var(--b) * var(--seal-y));
+  transform: translate(-50%, -50%);
+}
+
+/* The initials pressed into the wax: a lighter edge below, a darker one above. */
+.sealInitials {
+  position: relative;
+  font-size: calc(var(--b) * 0.08);
+  line-height: 1.2;
+  color: #93505b;
+  text-shadow:
+    0 1px 0 rgb(255 228 232 / 0.7),
+    0 -1px 0 rgb(96 34 44 / 0.35);
+}
+
+/* ───────────────────────── The couple ───────────────────────── */
+
+.coupleSection {
+  padding-top: 3.25rem;
+}
+
+/* The jharokha. Its window, measured off arch-frame.webp, is x 232 to 495 and y 300 to 710 of 720 by 988. */
+.arch {
+  --arch-w: min(66vw, 17rem);
+  position: relative;
+  width: var(--arch-w);
+  aspect-ratio: 720 / 988;
+}
+
+.archFill {
+  position: absolute;
+  left: 32.2%;
+  width: 36.6%;
+  top: 30.4%;
+  height: 41.5%;
+  border-radius: 50% 50% 0 0 / 24% 24% 0 0;
+  background-image: radial-gradient(ellipse at 50% 38%, #fbf3e4, #eadcc2);
+}
+
+.archWindow {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  left: 32.2%;
+  width: 36.6%;
+  top: 34%;
+  height: 38%;
+}
+
+/* One initial over the other, with the "&" between: the window is tall and narrow. */
+.monogram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: calc(var(--arch-w) * 0.15);
+  color: var(--sd-gold-deep);
+}
+
+.monogramAnd {
+  margin-block: -0.15em;
+  font-size: 0.45em;
+}
+
+/* ───────────────────────── The calendar ───────────────────────── */
+
+.calendar {
+  width: min(84vw, 20rem);
+  padding: 1.1rem 0.9rem 1.25rem;
+  border: 1px solid rgb(138 90 26 / 0.35);
+  border-radius: 0.5rem;
+  background-color: rgb(255 250 240 / 0.55);
+}
+
+.calendarMonth {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  color: var(--sd-ink);
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 0.2rem;
+  margin-top: 0.6rem;
+}
+
+.calendarWeekday {
+  padding-bottom: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--sd-gold-deep);
+}
+
+.calendarDay {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.2rem;
+  font-size: 0.95rem;
+  color: var(--sd-ink-soft);
+}
+
+.calendarTheDay {
+  font-weight: 600;
+  color: var(--sd-ink);
+}
+
+/* The thin gold ring round the day, drawn in after the month has come in. */
+.calendarRing {
+  position: absolute;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid #b08a3e;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 600ms ease-out 550ms,
+    transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1.2) 550ms;
+}
+
+.calendarRose {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  opacity: 0;
+  transform: scale(0.4) rotate(-30deg);
+  transition:
+    opacity 450ms ease-out 900ms,
+    transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1.3) 900ms;
+}
+
+.revealIn .calendarRing,
+.revealIn .calendarRose {
+  opacity: 1;
+  transform: none;
+}
+
+/* ───────────────────────── The functions ───────────────────────── */
+
+/*
+  The list, and the silk thread down its left. The thread is scaled down
+  from its top: tied to the scroll where the browser can, through the list's
+  own view timeline, and otherwise grown once as the list comes on screen.
+*/
+.timeline {
+  position: relative;
+  width: min(90vw, 24rem);
+  padding-left: 3.4rem;
+  text-align: left;
+  view-timeline: --sd-list block;
+}
+
+.thread {
+  position: absolute;
+  left: 0.6rem;
+  top: 0;
+  bottom: 0;
+  width: 1.4rem;
+  background-image: linear-gradient(90deg, transparent 44%, #a3574f 44% 56%, transparent 56%);
+  transform-origin: top;
+  transform: scaleY(0.04);
+  transition: transform 1400ms ease-out;
+}
+
+.timelineIn .thread {
+  transform: none;
+}
+
+@supports (animation-timeline: view()) {
+  .thread,
+  .timelineIn .thread {
+    transform: none;
+    transition: none;
+    animation: sd-thread linear both;
+    animation-timeline: --sd-list;
+    animation-range: entry 0% cover 60%;
+  }
+}
+
+@keyframes sd-thread {
+  from {
+    transform: scaleY(0.04);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* The thread's picture in two: the cord stretched to the list's length, the tassel at its foot kept whole. */
+.threadArt {
   background-image: none;
+  border-style: solid;
+  border-width: 0 0 calc(1.4rem * 380 / 160) 0;
+  border-image: url("/decor/shahi-darwaza/silk-thread.webp") 0 0 380 0 fill / 0 0 calc(1.4rem * 380 / 160) 0 stretch;
+}
+
+.eventRow {
+  position: relative;
+}
+
+/* The function's icon, on a paper disc over the thread. */
+.eventIcon {
+  position: absolute;
+  z-index: 1;
+  left: -3.4rem;
+  top: 0.75rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.35rem;
+  border-radius: 50%;
+  background-color: #f7eedd;
+  box-shadow: 0 0 0 1px rgb(138 90 26 / 0.45);
+  object-fit: contain;
+}
+
+.eventCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid rgb(138 90 26 / 0.3);
+  border-radius: 0.5rem;
+  background-color: rgb(255 250 240 / 0.7);
+  box-shadow: 0 4px 14px rgb(74 15 26 / 0.06);
+}
+
+/* ───────────────────────── The venue ───────────────────────── */
+
+.venueCard {
+  position: relative;
+  width: min(88vw, 23rem);
+  border: 1px solid rgb(138 90 26 / 0.4);
+  border-radius: 0.75rem;
+  background-color: #fbf4e6;
+  box-shadow: 0 10px 28px rgb(74 15 26 / 0.12);
+}
+
+.venuePicture {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1080 / 1000;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.mapsButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-top: 0.5rem;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  background-color: var(--sd-ink);
+  color: var(--sd-ivory);
+  font-size: 0.84rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mapsButton:lang(hi) {
+  font-size: 0.95rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.mapsButton:focus-visible {
+  outline: 2px solid var(--sd-gold-deep);
+  outline-offset: 3px;
+}
+
+/* ───────────────────────── The courtyard at night ───────────────────────── */
+
+/* The countdown and the closing: the night courtyard, its words in the calm sky at its head. */
+.night {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 30rem;
+  min-height: min(100svh, 52rem);
+  margin-inline: auto;
+  overflow: hidden;
+  color: #fff4e2;
+}
+
+.nightPicture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.nightScrim {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgb(12 8 24 / 0.62), rgb(12 8 24 / 0.3) 40%, transparent 62%);
+}
+
+.nightWords {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 3.25rem 1.25rem 0;
+  text-align: center;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+}
+
+.nightHeading {
+  font-size: 2.3rem;
+  line-height: 1.25;
+  color: #f2d896;
+}
+
+.countdownRow {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.countdownUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 4.1rem;
+  padding: 0.6rem 0.3rem 0.5rem;
+  border: 1px solid rgb(242 216 150 / 0.45);
+  border-radius: 0.5rem;
+  background-color: rgb(20 10 25 / 0.38);
+}
+
+.countdownValue {
+  font-size: 1.8rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: #fff4e2;
+}
+
+.countdownLabel {
+  margin-top: 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e8c77f;
+}
+
+.closingNight {
+  min-height: min(80svh, 40rem);
+}
+
+.closingGarland {
+  position: relative;
+  z-index: 1;
+  width: min(80%, 22rem);
+  margin-top: 1.75rem;
+}
+
+/* ───────────────────────── The Swagat Patra ───────────────────────── */
+
+/*
+  The scroll: paper between two gold rods, which unrolls from its middle as
+  it comes on screen. --rod is a rod's height: 48 of the picture's 1000 across.
+*/
+.scrollStage {
+  position: relative;
+  width: min(94vw, 28rem);
+  margin: 2.5rem auto 2rem;
+}
+
+.roseScroll {
+  top: -1.75rem;
+  right: -1rem;
+  transform: scaleX(-1);
+}
+
+.scroll {
+  --rod: calc(min(94vw, 28rem) * 0.048);
+  position: relative;
+  padding: calc(var(--rod) + 1.5rem) 9.5% calc(var(--rod) + 1.75rem);
+}
+
+.scrollPaper {
+  position: absolute;
+  left: 8%;
+  right: 8.5%;
+  top: calc(var(--rod) / 2);
+  bottom: calc(var(--rod) / 2);
+  background-color: #f3e6cc;
+  transform: scaleY(0.03);
+  transition: transform 700ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+/* The picture's paper alone, x 80 to 915 and y 48 to 1279, stretched to the form's length. */
+.scrollPaperArt {
+  border-image: url("/decor/shahi-darwaza/rsvp-scroll.webp") 48 85 48 80 fill / 0 stretch;
+}
+
+.scrollRodTrack {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translate3d(0, calc(50% - var(--rod) / 2), 0);
+  transition: transform 700ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.scrollRodTrackFoot {
+  transform: translate3d(0, calc(var(--rod) / 2 - 50%), 0);
+}
+
+.scrollRod {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--rod);
+  border-radius: 999px;
+  background-image: linear-gradient(#ecd79e, #b8913f);
+}
+
+.scrollRodTrackFoot .scrollRod {
+  top: auto;
+  bottom: 0;
+}
+
+.scrollRodTop,
+.scrollRodFoot {
+  border-radius: 0;
+  background: url("/decor/shahi-darwaza/rsvp-scroll.webp") top / 100% auto no-repeat;
+}
+
+.scrollRodFoot {
+  background-position: bottom;
+}
+
+.scrollWords {
+  position: relative;
+  opacity: 0;
+  transition: opacity 500ms ease-out 550ms;
+}
+
+.scrollOpen .scrollPaper,
+.scrollOpen .scrollRodTrack {
+  transform: none;
+}
+
+.scrollOpen .scrollWords {
+  opacity: 1;
+}
+
+.scrollTitle {
+  text-align: center;
+  font-family: var(--pair-royal-names), cursive;
+  font-size: 2.3rem;
+  color: var(--sd-ink, #4a0f1a);
+}
+
+/* The guest's name, signed: the window and the quill's track move together; the name counter-moves inside. */
+.signature {
+  display: flex;
+  justify-content: center;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.signatureBox {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.signatureWindow {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.signatureName {
+  display: inline-block;
+  padding: 0 0.3em;
+  font-family: var(--pair-royal-names), cursive;
+  font-size: 2.3rem;
+  color: #2d2446;
+  overflow-wrap: anywhere;
+}
+
+.quillTrack {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Its nib, the picture's lower left corner, on the track's right edge. */
+.quill {
+  position: absolute;
+  left: 100%;
+  bottom: 30%;
+  width: 3.2rem;
+  max-width: none;
+  transform-origin: 0 100%;
+  animation: sd-quill-ink 1300ms ease-in-out both;
+}
+
+.signing .signatureWindow,
+.signing .quillTrack {
+  animation: sd-sign-window 1300ms ease-in-out both;
+}
+
+.signing .signatureName {
+  animation: sd-sign-name 1300ms ease-in-out both;
+}
+
+@keyframes sd-sign-window {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sd-sign-name {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sd-quill-ink {
+  0% {
+    opacity: 0;
+    transform: rotate(-6deg);
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: rotate(8deg);
+  }
+}
+
+/* ───────────────────────── Rose petals ───────────────────────── */
+
+/*
+  Behind the sections (a negative z-index, over the paper ground), taking no
+  taps. Twelve at most; eight under 400px.
+*/
+.petals {
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -5;
+}
+
+.petalsFixed {
+  position: fixed;
+  inset: 0;
+  --fall: calc(100vh + 4rem);
+}
+
+.petalsPinned {
+  position: sticky;
+  top: 0;
+  height: var(--sd-band);
+  margin-bottom: calc(-1 * var(--sd-band));
+  --fall: calc(var(--sd-band) + 4rem);
+}
+
+.petalFall {
+  position: absolute;
+  top: -2.5rem;
+  animation-name: sd-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.petalSway {
+  display: block;
+  animation-name: sd-sway;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.petal {
+  display: block;
+  border-radius: 70% 12% 70% 30% / 60% 20% 80% 40%;
+  opacity: 0.85;
+}
+
+.petalTint0 {
+  background-image: radial-gradient(circle at 30% 30%, #fbe1e4, #e7a1ab 72%);
+}
+
+.petalTint1 {
+  background-image: radial-gradient(circle at 30% 30%, #f8d3d8, #d98794 72%);
+}
+
+.petalTint2 {
+  background-image: radial-gradient(circle at 30% 30%, #fdece8, #efb6b0 72%);
+}
+
+.petalsPaused .petalFall,
+.petalsPaused .petalSway {
+  animation-play-state: paused;
+}
+
+@media (max-width: 399px) {
+  .petalFall:nth-child(n + 9) {
+    display: none;
+  }
+}
+
+@keyframes sd-fall {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, var(--fall), 0);
+  }
+}
+
+@keyframes sd-sway {
+  from {
+    transform: translate3d(-14px, 0, 0) rotate(-30deg);
+  }
+
+  to {
+    transform: translate3d(14px, 0, 0) rotate(40deg);
+  }
+}
+
+/* ───────────────────────── Reduced motion ───────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .petals {
+    display: none;
+  }
+
+  .reveal {
+    transform: none;
+  }
+
+  .letter,
+  .letterIn .letter {
+    transform: none;
+    transition: none;
+  }
+
+  .envelopeFlap {
+    opacity: 0;
+    transition: none;
+  }
+
+  .thread,
+  .timelineIn .thread {
+    animation: none;
+    transform: none;
+    transition: none;
+  }
+
+  .scrollPaper,
+  .scrollRodTrack,
+  .scrollRodTrackFoot {
+    transform: none;
+    transition: none;
+  }
+
+  .scrollWords {
+    opacity: 1;
+    transition: none;
+  }
 }
 
 /* ───────────────────────── On paper ───────────────────────── */
 
 @media print {
   .ground,
-  .heroScrim {
+  .heroScrim,
+  .petals {
     display: none;
   }
 
-  .heroLine {
+  .heroLine,
+  .reveal {
     opacity: 1;
     transform: none;
     transition: none;
