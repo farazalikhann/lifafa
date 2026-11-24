@@ -1,0 +1,325 @@
+/*
+  Shahi Darwaza's own styles: its velvet, its key, its hero and its paper.
+  Colours are the artwork's and are fixed; the template offers one colourway.
+
+  Everything that moves here moves by transform and opacity alone. The
+  velvet is gradients, drawn once.
+*/
+
+.root {
+  --sd-ivory: #f5e9d3;
+  --sd-gold: #d9b36c;
+  --sd-maroon: #3a0a14;
+
+  color: var(--sd-ivory);
+  overflow-x: clip;
+}
+
+/* ───────────────────────── Velvet ───────────────────────── */
+
+/*
+  Maroon velvet: a pool of light high in the middle falling off to near
+  black at the edges, broad soft folds running down it, and the faint
+  vertical grain of the pile.
+*/
+.velvet,
+.ground {
+  background-color: #2a0610;
+  background-image:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.018) 0 2px, rgb(0 0 0 / 0.035) 2px 5px),
+    linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.32),
+      transparent 16%,
+      rgb(255 200 210 / 0.045) 30%,
+      transparent 44%,
+      rgb(0 0 0 / 0.14) 58%,
+      transparent 72%,
+      rgb(255 200 210 / 0.03) 84%,
+      rgb(0 0 0 / 0.34)
+    ),
+    radial-gradient(120% 70% at 50% 32%, #6e1626 0%, #4b0d19 42%, #2a0610 78%, #18030a 100%);
+}
+
+.ground {
+  pointer-events: none;
+}
+
+.groundFixed {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+}
+
+.groundPinned {
+  position: sticky;
+  top: 0;
+  z-index: -10;
+  height: var(--sd-band);
+  margin-bottom: calc(-1 * var(--sd-band));
+}
+
+/* ───────────────────────── The cover ───────────────────────── */
+
+/* The door's frame: the screen's height, as wide as the hero's courtyard. */
+.stage {
+  max-width: 30rem;
+  transform: translateX(-50%);
+}
+
+.lockGlow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background-image: radial-gradient(
+    closest-side,
+    rgb(255 232 170 / 0.95),
+    rgb(232 190 110 / 0.45) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0);
+  pointer-events: none;
+}
+
+.initials {
+  color: #e8c77f;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+}
+
+.initialsRule {
+  display: block;
+  width: 5rem;
+  height: 1px;
+  background-image: linear-gradient(90deg, transparent, #d9b36c, transparent);
+}
+
+/*
+  Where the key hangs: --key-h tall, from a little below the initials. Over
+  the shell's own button (z-index), so the finger finds the key and not the
+  button; under the loader.
+*/
+.keyBox {
+  --key-h: min(48dvh, 118vw, 30rem);
+  z-index: 20;
+  top: calc(var(--cover-top-h, 0px) + 21dvh);
+  left: 50%;
+  height: var(--key-h);
+  width: calc(var(--key-h) * var(--key-aspect));
+  margin-left: calc(var(--key-h) * var(--key-aspect) / -2);
+  pointer-events: none;
+}
+
+/* Scaled about its tip, so the tip stays exactly where it is put. */
+.keyScale {
+  transform-origin: 43% 99.7%;
+}
+
+.keyPulse {
+  transform-origin: 43% 60%;
+}
+
+/* Swung about the top of its cord. */
+.keySway {
+  transform-origin: 43.25% 0;
+}
+
+/* Turned about its shaft. */
+.keyTurn {
+  transform-origin: 43% 50%;
+}
+
+/* The cord fades out above, so the key hangs from the velvet rather than from a cut. */
+.keyArt {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 9%);
+}
+
+/* What the finger takes: the key's body, not the faded cord above it. */
+.keyGrip {
+  position: absolute;
+  inset: 26% -18% -2% -18%;
+  touch-action: none;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.prompt {
+  top: calc(var(--cover-top-h, 0px) + 21dvh + min(48dvh, 118vw, 30rem) + 3dvh);
+  color: #ecd08f;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+
+/* ───────────────────────── The hero ───────────────────────── */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The courtyard, in exactly the box the cover's door and film are in. */
+.heroArt {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 30rem;
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+
+/* What the words are read on: the head of the picture darkened, fading in with them. */
+.heroScrim {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to bottom,
+    rgb(34 5 11 / 0.66) 0%,
+    rgb(34 5 11 / 0.42) 20%,
+    rgb(34 5 11 / 0.12) 34%,
+    rgb(34 5 11 / 0) 44%
+  );
+  opacity: 0;
+  transition: opacity 900ms ease-out;
+}
+
+.heroIn .heroScrim {
+  opacity: 1;
+}
+
+/* Over the courtyard's sky, clear of the music button above. */
+.heroWords {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 22rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 4.25rem) 1.25rem 0;
+  text-align: center;
+  color: #fff4e2;
+  text-shadow:
+    0 1px 3px rgb(34 5 11 / 0.75),
+    0 0 18px rgb(34 5 11 / 0.5);
+}
+
+/* A line that fades up in turn, once, as the cover lets the card go. */
+.heroLine {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition:
+    opacity 900ms ease-out var(--sd-delay, 0ms),
+    transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--sd-delay, 0ms);
+}
+
+.heroIn .heroLine {
+  opacity: 1;
+  transform: none;
+}
+
+.heroRule {
+  display: block;
+  width: 6rem;
+  height: 1px;
+  background-image: linear-gradient(90deg, transparent, #e8c77f, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroLine {
+    transform: none;
+  }
+}
+
+/* ───────────────────────── The rest of the card ───────────────────────── */
+
+@media (min-width: 48rem) {
+  .fluid {
+    font-size: 1.1rem;
+  }
+}
+
+/* A garland between one section and the next. */
+.block + .block::before,
+.garland {
+  content: "";
+  display: block;
+  width: min(80%, 22rem);
+  aspect-ratio: 8 / 1;
+  margin-inline: auto;
+  background: url("/decor/shahi-darwaza/garland-divider.webp") center / contain no-repeat;
+}
+
+.closing {
+  color: var(--sd-ivory);
+}
+
+/* ───────────────────────── The paper ───────────────────────── */
+
+.paper {
+  position: relative;
+  border-radius: 0.5rem;
+  background-color: #f3e7d2;
+  background-image: url("/decor/shahi-darwaza/paper-bg.webp");
+  background-size: cover;
+  background-position: center;
+  box-shadow:
+    inset 0 0 0 1px rgb(138 90 26 / 0.45),
+    inset 0 0 0 5px #f3e7d2,
+    inset 0 0 0 6px rgb(138 90 26 / 0.3),
+    0 10px 30px rgb(0 0 0 / 0.35);
+}
+
+.paperRose {
+  position: absolute;
+  top: -1.25rem;
+  right: -0.75rem;
+  width: 6.5rem;
+  aspect-ratio: 700 / 711;
+  background: url("/decor/shahi-darwaza/rose-corner.webp") center / contain no-repeat;
+  pointer-events: none;
+}
+
+/*
+  Below the first screen, the pictures wait for the cover to be drawn, so
+  they do not share a slow line with the key and the door.
+*/
+.artLater .paper,
+.artLater .paperRose,
+.artLater.paper {
+  background-image: none;
+}
+
+.artLater .block + .block::before,
+.artLater .garland,
+.artLater.closing .garland {
+  background-image: none;
+}
+
+/* ───────────────────────── On paper ───────────────────────── */
+
+@media print {
+  .ground,
+  .heroScrim {
+    display: none;
+  }
+
+  .heroLine {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

@@ -61,12 +61,23 @@ export const DAK_GHAR_LISTING = {
   preview: dakGharPreview,
 } as const satisfies TemplateListing;
 
+/* Not in the gallery yet: seen at /demo/shahi-darwaza while it is built. No preview until it is shot. */
+export const SHAHI_DARWAZA_LISTING = {
+  id: "shahi-darwaza",
+  name: "Shahi Darwaza",
+  listed: false,
+  collection: "premium",
+  price: PREMIUM_PRICE_PAISE,
+  preview: null,
+} as const satisfies TemplateListing;
+
 /** The Premium Collection, in the gallery's order (and the landing page's carousel). */
 export const PREMIUM_LISTINGS: readonly TemplateListing[] = [
   EMERALD_SHAHI_LISTING,
   DAK_GHAR_LISTING,
   GULAB_MAHAL_LISTING,
   SHEESH_MAHAL_LISTING,
+  SHAHI_DARWAZA_LISTING,
 ];
 
 /** The premium templates the gallery offers, with a preview to show: what the landing page lists. */

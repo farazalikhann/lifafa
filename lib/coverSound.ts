@@ -53,7 +53,8 @@ export type CoverSoundId =
   | "petal-dust"
   | "fold"
   | "sheesh-mahal"
-  | "sheesh-mahal-rsvp";
+  | "sheesh-mahal-rsvp"
+  | "shahi-darwaza";
 
 /**
  * Part of a sound made of more than one recording, each starting at its own
@@ -81,6 +82,8 @@ const RECORDINGS: Record<CoverSoundId, string | readonly RecordingPart[]> = {
     has landed.
   */
   "sheesh-mahal-rsvp": "/sounds/sheesh-mahal-rsvp.mp3",
+  /* Shahi Darwaza's own: the key going home in the lock, a soft brass click and the turn. */
+  "shahi-darwaza": "/sounds/shahi-darwaza-click.mp3",
 };
 
 /**

@@ -47,6 +47,12 @@ const PARTS: Readonly<Record<string, TemplateParts>> = {
     RsvpFrame: dynamic(() => import("@/templates/sheesh-mahal/RsvpFrame")),
     Closing: dynamic(() => import("@/templates/sheesh-mahal/Closing")),
   },
+  "shahi-darwaza": {
+    Card: dynamic(() => import("@/templates/shahi-darwaza/Card")),
+    CoverVisual: dynamic(() => import("@/templates/shahi-darwaza/Cover")),
+    RsvpFrame: dynamic(() => import("@/templates/shahi-darwaza/RsvpFrame")),
+    Closing: dynamic(() => import("@/templates/shahi-darwaza/Closing")),
+  },
 };
 
 const CLASSIC_PARTS: TemplateParts = { Card: ClassicCard };
@@ -90,6 +96,12 @@ const PRELOADS: Readonly<Record<string, () => Promise<unknown>[]>> = {
     import("@/templates/sheesh-mahal/Cover"),
     import("@/templates/sheesh-mahal/RsvpFrame"),
     import("@/templates/sheesh-mahal/Closing"),
+  ],
+  "shahi-darwaza": () => [
+    import("@/templates/shahi-darwaza/Card"),
+    import("@/templates/shahi-darwaza/Cover"),
+    import("@/templates/shahi-darwaza/RsvpFrame"),
+    import("@/templates/shahi-darwaza/Closing"),
   ],
 };
 

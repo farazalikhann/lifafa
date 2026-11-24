@@ -96,6 +96,12 @@ export interface CoverArt {
    * line is set.
    */
   wordsLine?: boolean;
+  /**
+   * False for a cover whose card says "You are invited" itself as the cover
+   * hands over to it: the shell's heading over the closed cover, and the
+   * names and line under it, are left off. Absent, they are set.
+   */
+  invite?: boolean;
   /** Skip and the focus ring, over the artwork. */
   ink?: string;
   inkMuted?: string;

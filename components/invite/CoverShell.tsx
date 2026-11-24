@@ -34,7 +34,7 @@ import {
 } from "@/lib/coverSound";
 import { enterFullscreen, enterFullscreenThen } from "@/lib/fullscreen";
 import type { CardLanguage } from "@/types/card";
-import type { CoverAnimationOption } from "@/types/coverAnimation";
+import type { CoverAnimationOption, CoverFilmTiming } from "@/types/coverAnimation";
 import type { FontPairId } from "@/types/style";
 
 /** Set when a guest has asked, at the OS level, not to be shown effects. */
@@ -227,6 +227,18 @@ export interface CoverVisualState {
    * there until the cover has gone.
    */
   dismissSkip: () => void;
+  /**
+   * Opens the cover, exactly as a tap on it does: for a visual the guest
+   * opens with a gesture of its own rather than a tap anywhere (Shahi
+   * Darwaza's key, dragged to its lock). Called from inside that gesture's
+   * own handler, a pointerup or a click, so the screen, the sound and the
+   * music are asked for while the browser still allows them. A second call,
+   * or one after a tap, is turned away as a second tap is. `timing`, for an
+   * open that runs to other numbers than the cover's own (`film`, or
+   * `durationMs` and `revealAt`): the key already in its lock has no flight
+   * to wait for.
+   */
+  open: (timing?: CoverFilmTiming) => void;
 }
 
 /** For useSyncExternalStore, where the only question is server or browser. */
@@ -729,7 +741,13 @@ export default function CoverShell({
     return () => observer.disconnect();
   }, [title, prompt]);
 
-  const handleOpen = useCallback((event: MouseEvent<HTMLButtonElement>): void => {
+  /**
+   * The open itself, from a tap on the cover or a visual's own gesture
+   * (`open` on CoverVisualState). `point` is where the tap landed, in the
+   * page's pixels, or null; `timing` replaces the cover's own numbers for
+   * this one open.
+   */
+  const openCover = useCallback((point: { x: number; y: number } | null, timing?: CoverFilmTiming): void => {
     /* A second tap while the screen settles, or after: the cover is already on its way. */
     if (tappedRef.current) {
       return;
@@ -737,22 +755,23 @@ export default function CoverShell({
 
     tappedRef.current = true;
 
-    /*
-      A click from the keyboard reports no position (its detail is 0), and
-      neither does one a screen reader makes.
-    */
     const layer = layerRef.current;
 
-    if (layer !== null && event.detail > 0) {
+    if (layer !== null && point !== null) {
       const bounds = layer.getBoundingClientRect();
 
       if (bounds.width > 0 && bounds.height > 0) {
         setOrigin({
-          x: (event.clientX - bounds.left) / bounds.width,
-          y: (event.clientY - bounds.top) / bounds.height,
+          x: (point.x - bounds.left) / bounds.width,
+          y: (point.y - bounds.top) / bounds.height,
         });
       }
     }
+
+    const runMs = timing?.durationMs ?? durationMs;
+    const letGoAt = timing?.revealAt ?? revealAt;
+    const burstShare = timing !== undefined ? undefined : burstAt;
+    const delayMs = timing?.soundDelayMs ?? soundDelayMs;
 
     /*
       THE TAP ASKS FOR THE SCREEN, AND NOTHING ELSE MOVES UNTIL IT HAS IT.
@@ -771,7 +790,7 @@ export default function CoverShell({
       A cover may cap the wait (`settleLimitMs`), and then starts at once where
       there is no fullscreen to wait for.
     */
-    const sounds = !reducedMotion && durationMs > 0;
+    const sounds = !reducedMotion && runMs > 0;
 
     cancelSettleRef.current = enterFullscreenThen(() => {
       cancelSettleRef.current = null;
@@ -786,7 +805,7 @@ export default function CoverShell({
         the card in silence and says nothing about it.
       */
       if (sounds) {
-        playCoverSound(option.sound, soundDelayMs);
+        playCoverSound(option.sound, delayMs);
       }
 
       /* Still "closed" here: a skip during the wait calls this off before it runs. */
@@ -795,7 +814,7 @@ export default function CoverShell({
           return current;
         }
 
-        if (!reducedMotion && durationMs <= 0) {
+        if (!reducedMotion && runMs <= 0) {
           return "open";
         }
 
@@ -804,9 +823,9 @@ export default function CoverShell({
           go at once under it, so the card is what the envelope fades into.
         */
         schedule(
-          reducedMotion ? REDUCED_FADE_MS : durationMs,
-          reducedMotion ? 0 : durationMs * revealAt,
-          reducedMotion ? 0 : durationMs * (burstAt ?? revealAt),
+          reducedMotion ? REDUCED_FADE_MS : runMs,
+          reducedMotion ? 0 : runMs * letGoAt,
+          reducedMotion ? 0 : runMs * (burstShare ?? letGoAt),
         );
 
         return "opening";
@@ -831,7 +850,7 @@ export default function CoverShell({
     */
     if (!reducedMotion) {
       const soundMs = sounds ? coverSoundLengthMs(option.sound) : null;
-      startMusicFromTap(soundMs === null ? (sounds ? durationMs : 0) : soundMs + soundDelayMs + MUSIC_AFTER_SOUND_MS);
+      startMusicFromTap(soundMs === null ? (sounds ? runMs : 0) : soundMs + delayMs + MUSIC_AFTER_SOUND_MS);
     }
 
     if (sounds) {
@@ -868,6 +887,22 @@ export default function CoverShell({
     schedule,
     soundDelayMs,
   ]);
+
+  const handleOpen = useCallback(
+    (event: MouseEvent<HTMLButtonElement>): void => {
+      /*
+        A click from the keyboard reports no position (its detail is 0), and
+        neither does one a screen reader makes.
+      */
+      openCover(event.detail > 0 ? { x: event.clientX, y: event.clientY } : null);
+    },
+    [openCover],
+  );
+
+  const openFromVisual = useCallback(
+    (timing?: CoverFilmTiming): void => openCover(null, timing),
+    [openCover],
+  );
 
   const handleSkip = useCallback((): void => {
     /* Also a tap, so also a gesture the browser will honour. */
@@ -1069,6 +1104,7 @@ export default function CoverShell({
     origin,
     retime,
     dismissSkip,
+    open: openFromVisual,
   });
   const hasVisual = visual !== null && visual !== undefined;
   const fadesWhole = !hasVisual || reducedMotion;
@@ -1185,7 +1221,8 @@ export default function CoverShell({
 
           {/*
             "You are invited", and the line under it, across the head of the
-            closed cover.
+            closed cover. Left off a cover whose card says it as the cover
+            hands over (CoverArt `invite`).
 
             ABOVE THE ARTWORK'S OWN CENTRE, never over it. Every cover keeps its
             seal, oval or medallion at the middle of the screen and its prompt
@@ -1207,6 +1244,7 @@ export default function CoverShell({
 
             Never a tap target: the button under it is the whole screen.
           */}
+          {art?.invite !== false ? (
           <div
             data-cover-invite=""
             className="pointer-events-none absolute inset-x-0 z-10 mx-auto flex flex-col items-center gap-2 px-7 text-center motion-reduce:transition-none"
@@ -1294,6 +1332,7 @@ export default function CoverShell({
               </p>
             ) : null}
           </div>
+          ) : null}
 
           <button
             type="button"

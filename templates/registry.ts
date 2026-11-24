@@ -14,6 +14,7 @@ import { MAROON_ROYAL } from "@/templates/maroon-royal/config";
 import { MIDNIGHT_LANTERN } from "@/templates/midnight-lantern/config";
 import { NIKAH_BLUSH } from "@/templates/nikah-blush/config";
 import { PREMIUM_LISTINGS } from "@/templates/premium";
+import { SHAHI_DARWAZA } from "@/templates/shahi-darwaza/config";
 import { SHEESH_MAHAL } from "@/templates/sheesh-mahal/config";
 import { SHUBH_VIVAH_IVORY } from "@/templates/shubh-vivah-ivory/config";
 import type { TemplateConfig } from "@/templates/types";
@@ -34,6 +35,7 @@ export const TEMPLATES: readonly TemplateConfig[] = [
   DAK_GHAR,
   GULAB_MAHAL,
   SHEESH_MAHAL,
+  SHAHI_DARWAZA,
   SHUBH_VIVAH_IVORY,
   MAROON_ROYAL,
   NIKAH_BLUSH,
