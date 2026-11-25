@@ -3,7 +3,7 @@ import { DEFAULT_DESIGN } from "@/lib/designDefaults";
 import { COVER_IMAGES } from "@/templates/shahi-darwaza/art";
 import { TAPPED } from "@/templates/shahi-darwaza/coverTiming";
 import {
-  DRAG_PROMPT,
+  KEY_PROMPT,
   GOLD_DEEP,
   INK,
   INK_SOFT,
@@ -46,12 +46,13 @@ const COVER_ART = {
 
 const COVER_OPTION: CoverAnimationOption = {
   ...ENVELOPE,
-  openPromptText: DRAG_PROMPT,
+  openPromptText: KEY_PROMPT,
   durationMs: TAPPED.durationMs,
   revealAt: TAPPED.revealAt,
   burstAt: undefined,
   sound: "shahi-darwaza",
-  haptic: 10,
+  /* The cover's own 10ms tick, on the first touch (Cover.tsx); the shell's would make it two. */
+  haptic: undefined,
   wordsOn: "visual",
   art: () => COVER_ART,
   /* The film's timings, for a tap: the key's flight, the turn, the film and the fade. */

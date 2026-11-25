@@ -158,17 +158,6 @@
   mask-image: linear-gradient(to bottom, transparent 0, #000 9%);
 }
 
-/* What the finger takes: the key's body, not the faded cord above it. */
-.keyGrip {
-  position: absolute;
-  inset: 26% -18% -2% -18%;
-  touch-action: none;
-  cursor: grab;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  user-select: none;
-}
-
 .prompt {
   top: calc(var(--cover-top-h, 0px) + 21dvh + min(48dvh, 118vw, 30rem) + 3dvh);
   color: #ecd08f;

@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type PointerEvent,
   type ReactElement,
 } from "react";
 import GoldFlower from "@/components/invite/covers/GoldFlower";
@@ -20,7 +19,6 @@ import {
   coverPoint,
 } from "@/templates/shahi-darwaza/art";
 import {
-  DRAGGED,
   END_FADE_MS,
   FALLBACK_MS,
   FILM_RATE,
@@ -33,52 +31,45 @@ import { tapPrompt } from "@/templates/shahi-darwaza/shared";
 import type { TemplateCoverProps } from "@/templates/types";
 
 /**
- * Shahi Darwaza's opening: a gold key on maroon velvet, which the guest
- * drags to the lock of a palace door.
+ * Shahi Darwaza's opening: a gold key on maroon velvet, which flies to the
+ * lock of a palace door at the guest's first touch.
  *
  * THE SHELL STILL OWNS THE OPEN. The loader, the wait for the key and the
  * door, the sound, the music, Skip, the guard against a second open and what
  * a guest who asked for no motion gets are CoverShell's. What is here is the
- * key and what the guest does with it; it opens the cover through the shell
+ * key and the touch that sends it; it opens the cover through the shell
  * (`open`), from inside the guest's own gesture, and tells the shell when the
  * film has really ended (`retime`).
  *
  * CLOSED: the velvet, the couple's initials, the key swaying on its cord and
- * "Drag the key to the lock" under it. After three seconds with nothing
- * touched, the key pulses gently.
+ * "Tap the key to unlock" under it. After three seconds with nothing touched,
+ * the key pulses gently.
  *
- * THE DRAG. The key alone takes the finger (touch-action: none on it and
- * nothing else): it shrinks a little as it is picked up, with a tick of the
- * motor, and the door fades in behind it. Brought within SNAP_PX of the
- * keyhole it snaps in and stays; lifting the finger then opens the cover,
- * which is the gesture the browser lets the sound and the screen start in.
- * Let go anywhere else, it springs back to its cord and the door fades
- * away again. Where the keyhole is was measured once, from the door's box,
- * when the key was picked up: nothing is read while it moves, and each move
- * is written once a frame.
+ * ANY TOUCH, ANYWHERE ON THE COVER: a tap on the key, a tap on the velvet, a
+ * click, a quick swipe. Listened for on the shell's whole layer
+ * (pointerdown, and touchstart for an app's browser that is slow to send
+ * pointer events), not on the key: the touch is taken at once (the page does
+ * not scroll, nothing is zoomed, the prompt goes, a 10ms tick where the phone
+ * allows it) and the opening starts as the finger lifts, which is the moment
+ * a browser counts as a gesture and lets the click, the music and the full
+ * screen start. A touch the browser calls off (an app taking the swipe for
+ * itself) opens it all the same. Skip is the shell's own button and is left
+ * alone; the language switch and the sample's strip are not on the cover at
+ * all. Once it has started, more touches do nothing.
  *
- * A TAP opens the cover too, on the key or anywhere: the key flies to the
- * lock by itself (FLY_MS).
- *
- * IN THE LOCK: the click, the key turns (squashed across and back) with a
- * little gold light on the lock, the key fades and the film plays over the
- * door, exactly in its frame. It ends on the courtyard, which is the card's
- * hero; the cover fades onto it and the card's words come in. Where the film
- * is not ready, fails or stalls, the door crossfades and slowly zooms into
- * the courtyard instead (FALLBACK_MS).
+ * THE KEY FLIES to the lock by itself (FLY_MS), and in the lock: the click,
+ * the key turns (squashed across and back) with a little gold light on the
+ * lock, the key fades and the film plays over the door, exactly in its frame.
+ * It ends on the courtyard, which is the card's hero; the cover fades onto it
+ * and the card's words come in. Where the film is not ready, fails or stalls,
+ * the door crossfades and slowly zooms into the courtyard instead
+ * (FALLBACK_MS).
  *
  * Transform and opacity only. Under reduced motion the shell keeps this
  * closed and fades the whole cover onto the card in 300ms: the key hangs
- * still, takes no finger, and the prompt says "Tap to open".
+ * still and the prompt says "Tap to open".
  */
 
-/* How near the keyhole the key's tip must come to snap in, in px. */
-const SNAP_PX = 40;
-/* How far a press may move and still be a tap, in px, and how long it may last. */
-const TAP_SLOP_PX = 10;
-const TAP_MS = 600;
-/* How small the key is held, of its size on the cord. */
-const HELD_SCALE = 0.72;
 /* How tall the key is in the lock, as a share of the door's drawn height. */
 const LOCKED_HEIGHT = 0.24;
 /* How long the key waits untouched before it pulses. */
@@ -88,15 +79,16 @@ const STALL_MS = 1500;
 
 const GLIDE = "cubic-bezier(0.45, 0.05, 0.2, 1)";
 const EASE_OUT = "cubic-bezier(0.2, 0.7, 0.2, 1)";
-/* A spring back to the cord: past it a little, and settling. */
-const SPRING = "cubic-bezier(0.34, 1.45, 0.55, 1)";
+
+/** What on the cover keeps its own tap: any control but the shell's open button, which is the whole screen. */
+const CONTROLS = "button, a, input, select, textarea, [role='button']";
 
 interface Point {
   x: number;
   y: number;
 }
 
-/** Where things are, read once when the key is picked up or flown. */
+/** Where things are, read once when the key is flown. */
 interface Geometry {
   /** The key's tip on its cord, in the page's px. */
   tip: Point;
@@ -108,7 +100,7 @@ interface Geometry {
   lockScale: number;
 }
 
-type Stage = "rest" | "held" | "locked" | "flying" | "turning" | "film" | "fallback";
+type Stage = "rest" | "flying" | "turning" | "film" | "fallback";
 
 export default function ShahiDarwazaCover({
   phase,
@@ -138,17 +130,20 @@ export default function ShahiDarwazaCover({
   const [doorIn, setDoorIn] = useState<boolean>(false);
   const [filmIn, setFilmIn] = useState<boolean>(false);
   const [ending, setEnding] = useState<boolean>(false);
+  /* A finger is down on the cover: the prompt and the initials go at once. */
+  const [pressed, setPressed] = useState<boolean>(false);
   const stageNow = useRef<Stage>("rest");
   const geometry = useRef<Geometry | null>(null);
-  const press = useRef<{
-    id: number;
-    start: Point;
-    offset: Point;
-    at: number;
-    moved: boolean;
-  } | null>(null);
-  const frame = useRef<number | null>(null);
-  const pending = useRef<Point | null>(null);
+  /* The touch that opens the cover: taken (down), and spent (the open asked for). Refs, so a re-render between the two loses neither. */
+  const claimed = useRef<boolean>(false);
+  const spent = useRef<boolean>(false);
+  /* The tick was felt; a phone that refused it on the first touch is asked again on the lift. */
+  const buzzed = useRef<boolean>(false);
+  /* The shell's `open` and the phase, for listeners attached once. */
+  const openRef = useRef(open);
+  openRef.current = open;
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
   const timers = useRef<number[]>([]);
   const sway = useRef<Animation | null>(null);
   const pulse = useRef<Animation | null>(null);
@@ -303,21 +298,17 @@ export default function ShahiDarwazaCover({
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  /* Every pending step, and a frame not yet written, go with the cover. */
+  /* Every pending step goes with the cover. */
   useEffect(
     () => () => {
       for (const timer of timers.current) {
         window.clearTimeout(timer);
       }
-
-      if (frame.current !== null) {
-        window.cancelAnimationFrame(frame.current);
-      }
     },
     [],
   );
 
-  /** Where the key's tip hangs and where the keyhole is drawn: read once, never while anything moves. */
+  /** Where the key's tip hangs and where the keyhole is drawn: read once, before anything moves. */
   const measure = useCallback((): Geometry | null => {
     const rest = restRef.current;
     const door = stageRef.current;
@@ -471,7 +462,7 @@ export default function ShahiDarwazaCover({
     [go, later, playFilm],
   );
 
-  /* The open, once the shell has started it: a tap flies the key first, a drag has put it there. */
+  /* The open, once the shell has started it (from a touch here, or the keyboard on the shell's button): the key flies to the lock. */
   useEffect(() => {
     if (phase !== "opening" || started.current || reducedMotion) {
       return;
@@ -489,13 +480,6 @@ export default function ShahiDarwazaCover({
       return;
     }
 
-    if (stageNow.current === "locked") {
-      place(toLock(at));
-      size(at.lockScale, 0);
-      turn(at);
-      return;
-    }
-
     stopSway();
     go("flying");
     place(toLock(at), FLY_MS, GLIDE);
@@ -503,188 +487,90 @@ export default function ShahiDarwazaCover({
     later(FLY_MS, () => turn(at));
   }, [phase, reducedMotion, fallBack, go, later, measure, place, size, stopHint, stopSway, turn]);
 
-  /* ───── The finger. ───── */
+  /* ───── The touch, anywhere on the cover. ───── */
 
-  const write = useCallback((): void => {
-    frame.current = null;
-    const tip = pending.current;
-    const at = geometry.current;
-    const held = press.current;
+  useEffect(() => {
+    const layer = stageRef.current?.closest<HTMLElement>("[data-phase]") ?? null;
 
-    if (tip === null || at === null || held === null || stageNow.current !== "held") {
+    if (!ready || layer === null) {
       return;
     }
 
-    pending.current = null;
+    /* The shell's open button is the whole screen; its first button. Skip is the other. */
+    const openButton = layer.querySelector<HTMLButtonElement>(":scope > button");
 
-    if (Math.hypot(tip.x - at.hole.x, tip.y - at.hole.y) <= SNAP_PX) {
-      /* In. It stays, whatever the finger does now; lifting it opens the door. */
-      go("locked");
-      place(toLock(at), 140);
-      size(at.lockScale, 200);
-      return;
-    }
-
-    /* Eased for the first moment, while the key shrinks to the finger; then exactly under it. */
-    place(
-      { x: tip.x - at.tip.x, y: tip.y - at.tip.y },
-      performance.now() - held.at < 220 ? 120 : 0,
-    );
-  }, [go, place, size]);
-
-  const onPointerDown = useCallback(
-    (event: PointerEvent<HTMLDivElement>): void => {
-      if (!ready || reducedMotion || phase !== "closed" || stageNow.current !== "rest") {
-        return;
+    /** A touch that is the cover's to take: on the layer, and not on a control with a tap of its own. */
+    const ours = (target: EventTarget | null): boolean => {
+      if (!(target instanceof Element) || !layer.contains(target)) {
+        return false;
       }
 
-      event.preventDefault();
-      event.stopPropagation();
+      const control = target.closest(CONTROLS);
+      return control === null || control === openButton;
+    };
 
-      const at = measure();
-      const key = scaleRef.current;
-
-      if (at === null || key === null) {
+    const buzz = (): void => {
+      if (buzzed.current || reducedMotion || typeof navigator.vibrate !== "function") {
         return;
       }
 
       try {
-        event.currentTarget.setPointerCapture(event.pointerId);
+        buzzed.current = navigator.vibrate(10);
       } catch {
-        /* Followed without capture: the key still moves while the finger is on it. */
+        /* Opened without a tick. */
+      }
+    };
+
+    const begin = (event: Event): void => {
+      if (!ours(event.target)) {
+        return;
       }
 
-      /* Where the tip is drawn now: on its cord, or on its way back to it. */
-      const drawn = key.getBoundingClientRect();
-      const tipNow = {
-        x: drawn.left + KEY_TIP.x * drawn.width,
-        y: drawn.top + KEY_TIP.y * drawn.height,
-      };
-      const finger = { x: event.clientX, y: event.clientY };
-      const ratio = drawn.height > 0 ? (restRef.current?.getBoundingClientRect().height ?? 0) / drawn.height : 1;
+      /* No scroll, no zoom, no second (synthesised) click: whatever the touch was, it is the cover's. */
+      if (event.cancelable) {
+        event.preventDefault();
+      }
 
-      /* The finger keeps hold of the same part of the key as it shrinks to HELD_SCALE. */
-      press.current = {
-        id: event.pointerId,
-        start: finger,
-        offset: {
-          x: (finger.x - tipNow.x) * HELD_SCALE * (ratio > 0 ? ratio : 1),
-          y: (finger.y - tipNow.y) * HELD_SCALE * (ratio > 0 ? ratio : 1),
-        },
-        at: performance.now(),
-        moved: false,
-      };
+      if (claimed.current || spent.current || phaseRef.current !== "closed") {
+        return;
+      }
 
+      claimed.current = true;
+      setPressed(true);
       stopHint();
-      stopSway();
-      place({ x: tipNow.x - at.tip.x, y: tipNow.y - at.tip.y });
-      size(HELD_SCALE, 220);
-      go("held");
-      setDoorIn(true);
+      buzz();
+    };
 
-      if (typeof navigator.vibrate === "function") {
-        try {
-          navigator.vibrate(10);
-        } catch {
-          /* Picked up without a tick. */
-        }
-      }
-    },
-    [go, measure, phase, place, ready, reducedMotion, size, stopHint, stopSway],
-  );
-
-  const onPointerMove = useCallback(
-    (event: PointerEvent<HTMLDivElement>): void => {
-      const held = press.current;
-
-      if (held === null || held.id !== event.pointerId || stageNow.current !== "held") {
+    const release = (): void => {
+      if (!claimed.current || spent.current) {
         return;
       }
 
-      if (
-        !held.moved &&
-        Math.hypot(event.clientX - held.start.x, event.clientY - held.start.y) > TAP_SLOP_PX
-      ) {
-        held.moved = true;
-      }
+      spent.current = true;
+      buzz();
+      openRef.current();
+    };
 
-      pending.current = {
-        x: event.clientX - held.offset.x,
-        y: event.clientY - held.offset.y,
-      };
+    const previousTouchAction = layer.style.touchAction;
+    layer.style.touchAction = "none";
+    layer.addEventListener("pointerdown", begin, { passive: false });
+    layer.addEventListener("touchstart", begin, { passive: false });
+    /* On the window, so a swipe that ends off the cover still opens it. */
+    window.addEventListener("pointerup", release);
+    window.addEventListener("touchend", release);
+    window.addEventListener("pointercancel", release);
+    window.addEventListener("touchcancel", release);
 
-      if (frame.current === null) {
-        frame.current = window.requestAnimationFrame(write);
-      }
-    },
-    [write],
-  );
-
-  const springBack = useCallback((): void => {
-    go("rest");
-    place({ x: 0, y: 0 }, 560, SPRING);
-    size(1, 420);
-    setDoorIn(false);
-    later(560, () => {
-      if (stageNow.current === "rest") {
-        startSway();
-        armHint();
-      }
-    });
-  }, [armHint, go, later, place, size, startSway]);
-
-  const onPointerUp = useCallback(
-    (event: PointerEvent<HTMLDivElement>): void => {
-      const held = press.current;
-
-      if (held === null || held.id !== event.pointerId) {
-        return;
-      }
-
-      press.current = null;
-      event.stopPropagation();
-
-      if (frame.current !== null) {
-        window.cancelAnimationFrame(frame.current);
-        frame.current = null;
-        write();
-      }
-
-      if (stageNow.current === "locked") {
-        /* Lifted in the lock: the open starts here, inside the gesture. */
-        open(DRAGGED);
-        return;
-      }
-
-      if (!held.moved && performance.now() - held.at < TAP_MS) {
-        /* A tap: the key flies to the lock by itself. */
-        open();
-        return;
-      }
-
-      springBack();
-    },
-    [open, springBack, write],
-  );
-
-  const onPointerCancel = useCallback(
-    (event: PointerEvent<HTMLDivElement>): void => {
-      const held = press.current;
-
-      if (held === null || held.id !== event.pointerId) {
-        return;
-      }
-
-      press.current = null;
-
-      if (stageNow.current === "locked") {
-        open(DRAGGED);
-      } else {
-        springBack();
-      }
-    },
-    [open, springBack],
-  );
+    return () => {
+      layer.style.touchAction = previousTouchAction;
+      layer.removeEventListener("pointerdown", begin);
+      layer.removeEventListener("touchstart", begin);
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("touchend", release);
+      window.removeEventListener("pointercancel", release);
+      window.removeEventListener("touchcancel", release);
+    };
+  }, [ready, reducedMotion, stopHint]);
 
   /* ───── Drawing. ───── */
 
@@ -695,7 +581,7 @@ export default function ShahiDarwazaCover({
       : title !== undefined
         ? initialsOf(title)
         : "";
-  const touched = stage !== "rest";
+  const touched = pressed || stage !== "rest";
   const inLock = stage === "turning" || stage === "film" || stage === "fallback";
   const fallingBack = stage === "fallback";
   /* The film and its poster, and the courtyard, are asked for once the cover is up, never under reduced motion. */
@@ -844,23 +730,6 @@ export default function ShahiDarwazaCover({
             </div>
           </div>
         </div>
-
-        {/*
-          What the finger takes: the key on its cord, and only while the cover
-          is closed and the key can move. Under reduced motion it takes nothing,
-          and a tap here reaches the shell's button under it.
-        */}
-        <div
-          className={styles.keyGrip}
-          style={{
-            pointerEvents: ready && !reducedMotion && phase === "closed" ? "auto" : "none",
-          }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-          onContextMenu={(event) => event.preventDefault()}
-        />
       </div>
 
       {/* Under the key, where a thumb already is. */}

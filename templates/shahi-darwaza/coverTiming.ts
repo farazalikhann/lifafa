@@ -5,14 +5,8 @@ import type { CoverFilmTiming } from "@/types/coverAnimation";
   without fetching the cover. Every time is in ms from the moment the opening
   starts. See Cover.tsx for what each part does.
 
-  The key is opened one of two ways:
-
-    DRAGGED to the lock: it is already in the keyhole when the guest lifts
-    their finger, which is the moment the opening starts.
-
-    TAPPED: it flies to the lock by itself first, over FLY_MS.
-
-  Then, from the moment it is in the lock:
+  A touch anywhere on the cover opens it: the key flies to the lock by itself
+  first, over FLY_MS (TAPPED). Then, from the moment it is in the lock:
 
     0 to 420        the click, and the key turns (squashed across and back);
                     a little gold light comes and goes on the lock
@@ -49,8 +43,5 @@ function timing(leadMs: number): CoverFilmTiming {
   };
 }
 
-/** A tap: the key flies to the lock first. The cover's own timing, for a tap anywhere on it. */
+/** A touch: the key flies to the lock first. The cover's own timing, for a touch anywhere on it. */
 export const TAPPED = timing(FLY_MS);
-
-/** The key dragged into the lock: it is there already. */
-export const DRAGGED = timing(0);

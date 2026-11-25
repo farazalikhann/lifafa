@@ -56,15 +56,15 @@ export function darwazaFonts(fontPairId: FontPairId): DarwazaFonts {
 }
 
 /* TODO(Faraz): verify these Hindi lines with a native reader before launch. */
-const PROMPTS: Readonly<Record<CardLanguage, { drag: string; tap: string }>> = {
-  en: { drag: "Drag the key to the lock", tap: "Tap to open" },
-  hi: { drag: "चाबी को ताले तक ले जाइए", tap: "खोलने के लिए छुइए" },
+const PROMPTS: Readonly<Record<CardLanguage, { key: string; tap: string }>> = {
+  en: { key: "Tap the key to unlock", tap: "Tap to open" },
+  hi: { key: "ताला खोलने के लिए चाबी को छुइए", tap: "खोलने के लिए छुइए" },
 };
 
-/** What the cover asks a guest to do: drag the key, or, with no motion, tap. */
-export const DRAG_PROMPT: Readonly<Record<CardLanguage, string>> = {
-  en: PROMPTS.en.drag,
-  hi: PROMPTS.hi.drag,
+/** What the cover asks a guest to do: tap the key (a touch anywhere opens it), or, with no motion, tap. */
+export const KEY_PROMPT: Readonly<Record<CardLanguage, string>> = {
+  en: PROMPTS.en.key,
+  hi: PROMPTS.hi.key,
 };
 
 export function tapPrompt(language: CardLanguage): string {
