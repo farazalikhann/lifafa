@@ -12,8 +12,8 @@ import type { InAppBrowser } from "@/lib/inAppBrowser";
  * their card, why to sign in, the ways in (SignInForm), two lines of
  * reassurance and a way to ask for help.
  *
- * Over the ways in, one line: the card is saved, and signing in keeps it and
- * shares it. Said only when the card is (as SavedCardPreview's heading is):
+ * Over the ways in, one line: signing in keeps the card and shares it (the
+ * heading above says it is saved). Said only when the card is, as that heading is:
  * from the start for a handed-over card, once it is found for one kept in
  * this browser. Its row is kept from the first paint, so the buttons under it
  * never move when it appears.
@@ -59,7 +59,7 @@ export default function CardLogin({
           saved ? "" : "invisible"
         }`}
       >
-        Your card is saved. Sign in to keep it and share it.
+        Sign in to keep it and share it.
       </p>
 
       <div className="mt-3">

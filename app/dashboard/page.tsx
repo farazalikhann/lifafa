@@ -170,6 +170,12 @@ export default async function DashboardIndexPage({
       </main>
 
       <LegalFooter />
+      {/*
+        On a phone, room under the footer for the round Help and WhatsApp
+        buttons stacked at the bottom right (their tops 144px up): the last of
+        its links scrolls clear of them rather than ending underneath.
+      */}
+      <div aria-hidden="true" className="h-[calc(7.5rem+env(safe-area-inset-bottom))] sm:hidden" />
       <HelpWidget page="dashboard" />
     </div>
   );

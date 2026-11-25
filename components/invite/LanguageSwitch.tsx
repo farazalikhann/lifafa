@@ -36,6 +36,49 @@ export const LANGUAGE_SWITCH_CLEARANCE =
 /** Scrolled less than this, the switch always shows: the top of the page is its place. */
 const ALWAYS_SHOWN_ABOVE_PX = 96;
 
+/** The card's headings, which the switch never sits over once the guest has scrolled. */
+const HEADINGS = "h1, h2, h3";
+
+/** Room kept round the switch's place, so a heading just touching it counts. */
+const HEADING_ROOM_PX = 6;
+
+/** After the last scroll event, when the page is taken to have stopped and is looked at again. */
+const SETTLED_MS = 180;
+
+/**
+ * Whether any heading's words would be under the switch where it shows. Its
+ * place from its offsets, which leave out the slide (a transform), so a
+ * switch tucked away or halfway there is measured where it would stand. The
+ * words, not the heading's box: a centred "Will you join us?" spans the
+ * screen but its letters stop short of the corner.
+ */
+function coversHeading(group: HTMLElement): boolean {
+  const top = group.offsetTop - HEADING_ROOM_PX;
+  const bottom = group.offsetTop + group.offsetHeight + HEADING_ROOM_PX;
+  const left = group.offsetLeft - HEADING_ROOM_PX;
+  const right = group.offsetLeft + group.offsetWidth + HEADING_ROOM_PX;
+
+  return [...document.querySelectorAll<HTMLElement>(HEADINGS)].some((heading) => {
+    if (group.contains(heading)) {
+      return false;
+    }
+
+    const outer = heading.getBoundingClientRect();
+
+    /* One for screen readers only (sr-only, a 1px box) is not on screen to cover. */
+    if (outer.width <= 1 || outer.height <= 1 || outer.bottom < top || outer.top > bottom) {
+      return false;
+    }
+
+    const range = document.createRange();
+    range.selectNodeContents(heading);
+
+    return [...range.getClientRects()].some(
+      (line) => line.width > 0 && line.left < right && line.right > left && line.top < bottom && line.bottom > top,
+    );
+  });
+}
+
 /** A palette hex with an alpha appended, or the colour as given if it is not #rrggbb. */
 function withAlpha(hex: string, alpha: string): string {
   return /^#[0-9a-f]{6}$/i.test(hex) ? `${hex}${alpha}` : hex;
@@ -53,6 +96,13 @@ function withAlpha(hex: string, alpha: string): string {
  * are near the top, or tab to it. A pill parked over the text for the whole
  * scroll would be covering the invitation it is there to translate. While the
  * cover is up the page cannot scroll (CoverShell locks it), so it stays put.
+ *
+ * NEVER OVER A HEADING. Scrolled past the top, it does not come back, and does
+ * not stay, while the words of a section's heading ("Will you join us?" over
+ * the reply form, and every other) are under its place: it waits up until the
+ * heading has gone by. Looked at as the guest scrolls, once a frame at most,
+ * and again when the page stops, since a section rises into place as it is
+ * revealed.
  *
  * "top" (a template's choice, `page.languageSwitch`): compact, and at the top
  * of the page rather than of the screen, so it scrolls away with the page and
@@ -78,6 +128,9 @@ export default function LanguageSwitch({
   const atTop = placement === "top";
   const [isTucked, setIsTucked] = useState(false);
   const groupRef = useRef<HTMLDivElement>(null);
+  /* The scroll handler's view of isTucked, which a tab to the switch also changes. */
+  const tuckedRef = useRef(false);
+  tuckedRef.current = isTucked;
 
   /*
     How much of the top right corner the switch is taking, for the card's
@@ -107,21 +160,57 @@ export default function LanguageSwitch({
     }
 
     let last = window.scrollY;
+    let frame = 0;
+    let settled = 0;
 
-    const handleScroll = (): void => {
+    const tuck = (next: boolean): void => {
+      tuckedRef.current = next;
+      setIsTucked(next);
+    };
+
+    /* Whether, wanting to show, it must stay up: a heading is under its place. */
+    const blocked = (): boolean => {
+      const group = groupRef.current;
+      return group !== null && coversHeading(group);
+    };
+
+    const update = (): void => {
+      frame = 0;
       const y = window.scrollY;
 
       if (y < ALWAYS_SHOWN_ABOVE_PX) {
-        setIsTucked(false);
+        tuck(false);
       } else if (Math.abs(y - last) > 4) {
-        setIsTucked(y > last);
+        tuck(y > last || blocked());
+      } else if (!tuckedRef.current && blocked()) {
+        tuck(true);
       }
 
       last = y;
     };
 
+    /* The page at rest: a heading may have risen into the switch's place as its section was revealed. */
+    const settle = (): void => {
+      if (window.scrollY >= ALWAYS_SHOWN_ABOVE_PX && !tuckedRef.current && blocked()) {
+        tuck(true);
+      }
+    };
+
+    const handleScroll = (): void => {
+      if (frame === 0) {
+        frame = window.requestAnimationFrame(update);
+      }
+
+      window.clearTimeout(settled);
+      settled = window.setTimeout(settle, SETTLED_MS);
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(settled);
+    };
   }, [atTop]);
 
   /*
