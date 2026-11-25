@@ -138,7 +138,7 @@ for (const id of ids) {
     for (const node of document.querySelectorAll("body *")) {
       if (getComputedStyle(node).position === "fixed" && /sample invitation/i.test(node.textContent ?? "") && node.getBoundingClientRect().height < 140) node.remove();
     }
-    /* Nor the price and "Create this card" bar at the foot, and the room the card left for it. */
+    /* Nor the bar at the foot (price, "Make this card", "Explore more designs"), and the room the card left for it. */
     document.querySelectorAll("[data-demo-create-bar]").forEach((node) => node.remove());
     /* Nor the round WhatsApp help button over the corner: the page's, for a visitor with a question. */
     document.querySelectorAll('[data-whatsapp-source="floating"]').forEach((node) => node.remove());

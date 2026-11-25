@@ -280,7 +280,15 @@ export type ClarityEventName =
     which: "floating" (the round button), "pay_page" (the button under Pay) or
     "link" (a "Chat on WhatsApp" in a line of text). components/legal/WhatsAppLink.tsx.
   */
-  | "whatsapp_click";
+  | "whatsapp_click"
+  /*
+    The bar at the foot of a template's live demo (/demo/<template>, on a
+    phone): "Make this card", which opens the wizard's details on that
+    design, and "Explore more designs", which opens the gallery
+    (components/invite/DemoCreateBar.tsx).
+  */
+  | "demo_make_click"
+  | "demo_explore_click";
 
 /** Set for a few minutes by a successful sign in; holds "1" and nothing else. */
 export const SIGNED_IN_COOKIE = "lifafa_signed_in";

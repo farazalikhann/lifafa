@@ -12,7 +12,7 @@ import {
   templateDemoPath,
 } from "@/lib/templateSamples";
 import { cardPalette } from "@/lib/textColors";
-import { CREATE_THIS_CARD, NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
+import { NEW_CARD_HREF, templateStartHref } from "@/lib/wizardSteps";
 import { TEMPLATES, findTemplate } from "@/templates/registry";
 
 /**
@@ -26,9 +26,10 @@ import { TEMPLATES, findTemplate } from "@/templates/registry";
  * Kept out of search results: they are one sample wedding in every look, not
  * pages of their own: the gallery is where a host meets them.
  *
- * On a phone a bar at the foot of the screen gives the price and "Create this
- * card" (DemoCreateBar). Clarity records it (lib/clarity.ts); the Meta pixel
- * never runs here (lib/metaPixel.ts).
+ * On a phone, once the card is open, a bar at the foot of the screen gives
+ * the price, "Make this card" and "Explore more designs" (DemoCreateBar).
+ * Clarity records it (lib/clarity.ts); the Meta pixel never runs here
+ * (lib/metaPixel.ts).
  */
 
 type DemoParams = { params: Promise<{ templateId: string }> };
@@ -98,8 +99,8 @@ export default async function TemplateDemoPage({
       {/* The page ends the bar's height lower on a phone, so the last of the card scrolls clear of it. */}
       <div aria-hidden="true" style={{ height: "var(--lifafa-foot-h, 0px)" }} />
       <DemoCreateBar
-        href={startHref}
-        label={template.listed ? CREATE_THIS_CARD : "Create yours"}
+        makeHref={template.listed ? startHref : null}
+        exploreHref={NEW_CARD_HREF}
         name={template.name}
         pricePaise={template.price}
         tone={tone}
