@@ -17,8 +17,9 @@ import WhatsAppLink, { WhatsAppIcon } from "@/components/legal/WhatsAppLink";
  * Their tops are measured while the page runs, and the button sits 12px over
  * the highest; with none on screen it sits 20px in. Drawn only once the page
  * runs, so it is never seen in the wrong place before that measure. Nor does
- * it cover a main button that scrolls with the page (AVOID): it fades out of
- * the way while one is under it.
+ * it cover a main button that scrolls with the page (AVOID), or a sample
+ * invitation's reply form and its "Send my reply" (RSVP_FIELD_ID): it fades
+ * out of the way while one is under it.
  *
  * WhatsApp's green taken a little darker (#1A9E4F), so the white mark on it
  * clears 3:1; #25D366 itself gives the mark 2:1.
@@ -41,6 +42,22 @@ const CLEAR_OF = "[data-lifafa-foot-bar], [data-demo-create-bar], [data-help-lau
  * it, and comes back once it has scrolled on.
  */
 const AVOID = '[data-pay-button], [data-whatsapp-source="pay_page"]';
+
+/**
+ * The reply form on a sample invitation (components/invite/RsvpPanel.tsx),
+ * found by its name field: the whole panel, so the button steps aside while
+ * any of it, "Send my reply" above all, is under the button. Looked up in
+ * script rather than with :has(), which an older Android WebView cannot parse.
+ */
+const RSVP_FIELD_ID = "rsvp-name";
+
+/** What the button steps aside for: AVOID, and the reply form where one is on the page. */
+function avoided(): HTMLElement[] {
+  const found = [...document.querySelectorAll<HTMLElement>(AVOID)];
+  const reply = document.getElementById(RSVP_FIELD_ID)?.closest<HTMLElement>("section");
+
+  return reply === null || reply === undefined ? found : [...found, reply];
+}
 
 /** The button's size, how far it stands off the screen's edge and off whatever it sits above, and the room it keeps round a main button. */
 const SIZE_PX = 56;
@@ -105,7 +122,7 @@ function usePlace(active: boolean): { reach: number; aside: boolean } | null {
       const left = right - SIZE_PX - 2 * AVOID_ROOM_PX;
       const bottom = viewport - (reach > 0 ? reach + GAP_PX : EDGE_PX) + AVOID_ROOM_PX;
       const top = bottom - SIZE_PX - 2 * AVOID_ROOM_PX;
-      const aside = [...document.querySelectorAll<HTMLElement>(AVOID)].some((element) => {
+      const aside = avoided().some((element) => {
         const box = element.getBoundingClientRect();
         return box.width > 0 && box.left < right && box.right > left && box.top < bottom && box.bottom > top;
       });

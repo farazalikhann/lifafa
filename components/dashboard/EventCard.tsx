@@ -31,7 +31,7 @@ import type { HostEvent } from "@/types/database";
  * rows all reading "Your names" would be useless — hence the isPlaceholder
  * check rather than trusting the string it returns.
  */
-function eventHeading(event: HostEvent): string {
+export function eventHeading(event: HostEvent): string {
   /* The title Lifafa set for this card's dashboard, where there is one. */
   const own = event.config.hostTitle?.trim() ?? "";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import SavedCardPreview, { type SavedCardStatus } from "@/components/auth/SavedCardPreview";
 import SignInForm from "@/components/auth/SignInForm";
 import WhatsAppLink from "@/components/legal/WhatsAppLink";
@@ -11,6 +11,12 @@ import type { InAppBrowser } from "@/lib/inAppBrowser";
  * The sign-in page for a visitor with a card waiting (app/login/page.tsx):
  * their card, why to sign in, the ways in (SignInForm), two lines of
  * reassurance and a way to ask for help.
+ *
+ * Over the ways in, one line: the card is saved, and signing in keeps it and
+ * shares it. Said only when the card is (as SavedCardPreview's heading is):
+ * from the start for a handed-over card, once it is found for one kept in
+ * this browser. Its row is kept from the first paint, so the buttons under it
+ * never move when it appears.
  */
 export default function CardLogin({
   status,
@@ -29,6 +35,8 @@ export default function CardLogin({
   initialError: string | null;
   inApp: InAppBrowser | null;
 }): ReactElement {
+  const [saved, setSaved] = useState(status === "handoff");
+
   return (
     <div className="flex flex-col">
       <SavedCardPreview
@@ -36,13 +44,25 @@ export default function CardLogin({
         handoff={handoff}
         placeholder={placeholder}
         onShown={(shown) => {
+          setSaved(shown !== "friendly");
+
           if (shown === "card") {
             clarityEvent("login_view_with_card");
           }
         }}
       />
 
-      <div className="mt-6">
+      <p
+        data-card-saved-line=""
+        aria-hidden={saved ? undefined : true}
+        className={`mt-5 min-h-[1.375rem] text-center text-[0.9375rem] leading-snug font-medium text-pretty text-[var(--lifafa-cream)] ${
+          saved ? "" : "invisible"
+        }`}
+      >
+        Your card is saved. Sign in to keep it and share it.
+      </p>
+
+      <div className="mt-3">
         <SignInForm redirectTo={redirectTo} initialError={initialError} inApp={inApp} />
       </div>
 

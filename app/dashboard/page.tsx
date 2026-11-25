@@ -1,7 +1,8 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import EventCard from "@/components/dashboard/EventCard";
+import EventCard, { eventHeading } from "@/components/dashboard/EventCard";
+import UnpaidBanner from "@/components/dashboard/UnpaidBanner";
 import HelpWidget from "@/components/help/HelpWidget";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import HelpLine from "@/components/legal/HelpLine";
@@ -71,6 +72,11 @@ export default async function DashboardIndexPage({
       : [],
   );
 
+  /* Not paid for, and not being checked: a banner each at the top, naming the card when there are several. */
+  const unpaid = result.ok
+    ? result.data.filter((event) => !event.isPaid && !underReview.has(event.id))
+    : [];
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/85 backdrop-blur">
@@ -86,6 +92,14 @@ export default async function DashboardIndexPage({
       </header>
 
       <main className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-8 sm:px-6 sm:py-10">
+        {unpaid.map((event) => (
+          <UnpaidBanner
+            key={event.id}
+            eventId={event.id}
+            name={unpaid.length > 1 ? eventHeading(event) : null}
+          />
+        ))}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--lifafa-cream)]">
