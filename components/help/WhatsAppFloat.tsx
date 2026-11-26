@@ -5,11 +5,12 @@ import { useEffect, useState, type ReactElement } from "react";
 import WhatsAppLink, { WhatsAppIcon } from "@/components/legal/WhatsAppLink";
 
 /**
- * The round WhatsApp button, bottom right, on every host page: the home page,
- * /create on every step and its payment page, the sample invitations under
- * /demo, /login and the dashboard (SHOWN_ON). Never on a guest's invitation
- * (/i), check-in, /admin or the policy pages: a guest's questions go to the
- * host, not to us.
+ * The round WhatsApp button, bottom right: the home page, the sample
+ * invitations under /demo and the dashboard (SHOWN_ON). Never on a guest's
+ * invitation (/i), check-in, /admin or the policy pages: a guest's questions
+ * go to the host, not to us. Nor anywhere on /create (every step, and the
+ * saved card's payment page, which has its own WhatsApp button under Pay) or
+ * on /login: there it sat over the form's fields and the step's buttons.
  *
  * ALWAYS ABOVE WHAT IS PINNED TO THE FOOT OF THE PAGE, never over it: the
  * wizard's bar of buttons, the gallery's, a demo's "Create this card" bar on a
@@ -30,7 +31,7 @@ import WhatsAppLink, { WhatsAppIcon } from "@/components/legal/WhatsAppLink";
  */
 
 /** Host pages, each with everything under it except "/", which is the home page alone. */
-const SHOWN_ON = ["/create", "/demo/", "/login", "/dashboard"];
+const SHOWN_ON = ["/demo/", "/dashboard"];
 
 /** Whatever is pinned to the foot of a page, which the button must sit above. */
 const CLEAR_OF = "[data-lifafa-foot-bar], [data-demo-create-bar], [data-help-launcher]";

@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -39,6 +40,7 @@ import type { CoverAnimationId } from "@/types/coverAnimation";
 import type { EventDraft } from "@/types/event";
 import type { EventWeather, WeatherThemeId } from "@/types/weather";
 import MadeWithLifafa from "@/components/invite/MadeWithLifafa";
+import BusyLabel from "@/components/network/BusyLabel";
 
 type DeviceId = "phone" | "desktop";
 
@@ -167,6 +169,9 @@ const CHIP_CLASS = [
   "lg:border-[var(--lifafa-hairline)] lg:bg-[var(--lifafa-ink)]/70 lg:text-[var(--lifafa-muted)] lg:group-hover:text-[var(--lifafa-cream)]",
 ].join(" ");
 
+/** The close button's chip: smaller than the others and part see-through until hovered or focused. */
+const CLOSE_CHIP_CLASS = `${CHIP_CLASS.replace("h-8 min-w-8", "h-6 min-w-6")} opacity-70 group-hover:opacity-100 group-focus-visible:opacity-100`;
+
 /**
  * The cover's reveal gate, reported back out of the cover.
  *
@@ -234,7 +239,22 @@ export default function FullScreenPreview({
   onClose,
   onPreviewLanguageChange,
   isPaid,
+  save,
 }: {
+  /**
+   * A new card on the wizard's last step: the big "Save my card, it's free"
+   * pinned to the foot of the preview. `onSave` is the wizard's own "Save and
+   * continue" (pressSave), the same save, sign in and duplicate guard;
+   * `error` is what went wrong with it, said over the button, since the
+   * wizard's bar where it is said otherwise is under this overlay. Left out,
+   * there is no bar.
+   */
+  save?: {
+    onSave: () => void;
+    saving: boolean;
+    saved: boolean;
+    error: string | null;
+  };
   /**
    * Whether this invitation has been paid for, as its event row says.
    *
@@ -272,6 +292,39 @@ export default function FullScreenPreview({
 }): ReactElement {
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const saveBarRef = useRef<HTMLDivElement>(null);
+  const hasSaveBar = save !== undefined;
+
+  /*
+    The save bar's height, as --lifafa-foot-h on the overlay, the way a demo's
+    bar publishes its own (DemoCreateBar): a card whose screens fill the phone
+    takes it off their height, and the watermark's pill and the scroll cue
+    stand above it. The bar is the column's last row, under the card's
+    scroller rather than over it, so nothing the card scrolls is ever under it.
+  */
+  useLayoutEffect(() => {
+    const overlay = overlayRef.current;
+    const bar = saveBarRef.current;
+
+    if (overlay === null || bar === null) {
+      return;
+    }
+
+    const publish = (): void => {
+      overlay.style.setProperty("--lifafa-foot-h", `${Math.ceil(bar.getBoundingClientRect().height)}px`);
+    };
+
+    publish();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(publish) : null;
+    observer?.observe(bar);
+    window.addEventListener("resize", publish);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", publish);
+      overlay.style.removeProperty("--lifafa-foot-h");
+    };
+  }, [hasSaveBar]);
   /* The box the card scrolls in here, which the scroll cue listens to in place of the window. */
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [deviceId, setDeviceId] = useState<DeviceId>("phone");
@@ -668,9 +721,11 @@ export default function FullScreenPreview({
         IN THE CARD'S COLOURS, AND SMALL. Below lg this sits on the invitation,
         so it is drawn from the card's palette rather than the editor's — a
         near-black pill on a cream card read as something dropped on top of it.
-        The chip is 32px; the button around it is still 44px, transparent, so
-        it stays as easy to hit as it was. At lg it sits in the header, which is
-        the editor's, and takes the editor's colours back.
+        The chip is 24px and part see-through, so the way on (the save bar at
+        the foot, on a new card) is the button that reads first; the button
+        around it is still 44px, transparent, so it stays as easy to hit. At lg
+        it sits in the header, which is the editor's, and takes the editor's
+        colours back.
 
         The overlay is `fixed` with a z-index of its own, so it opens a stacking
         context and every z-index below is scoped inside it. 60 clears the
@@ -686,11 +741,11 @@ export default function FullScreenPreview({
         onClick={handleClose}
         className="group absolute top-[calc(0.375rem+env(safe-area-inset-top))] right-[calc(0.375rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--chip-ink-strong)] lg:top-2 lg:right-2 lg:focus-visible:outline-[var(--lifafa-marigold)]"
       >
-        <span className={CHIP_CLASS}>
+        <span className={CLOSE_CHIP_CLASS}>
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
-            className="h-3.5 w-3.5"
+            className="h-3 w-3"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -879,6 +934,43 @@ export default function FullScreenPreview({
       <footer className="hidden shrink-0 border-t border-[var(--lifafa-hairline)] px-4 py-3 text-center text-xs text-[var(--lifafa-muted)] lg:block">
         This is exactly what your guests will see.
       </footer>
+
+      {/*
+        "Save my card, it's free": the one big button, pinned to the foot of
+        the preview where a thumb is, as the column's last row. Under the
+        cover (z-50) and out of the tab order while it is up, as the header
+        is; in its place from the start, so nothing moves when the cover
+        opens. Its foot leaves the iPhone's home indicator its safe-area inset.
+      */}
+      {save !== undefined ? (
+        <div
+          ref={saveBarRef}
+          inert={isCovered}
+          data-preview-save-bar=""
+          className="relative z-[45] shrink-0 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        >
+          {save.error !== null ? (
+            <p
+              role="alert"
+              className="mx-auto mb-2.5 max-w-md rounded-xl border border-[var(--lifafa-rose)]/40 bg-[var(--lifafa-rose)]/15 px-3 py-2 text-[0.8125rem] leading-relaxed text-[var(--lifafa-cream)]"
+            >
+              {save.error}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={save.onSave}
+            disabled={save.saving}
+            aria-busy={save.saving}
+            data-preview-save=""
+            className="mx-auto flex min-h-14 w-full max-w-md items-center justify-center rounded-full bg-[var(--lifafa-marigold)] px-6 text-base font-semibold text-[var(--lifafa-ink)] transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lifafa-marigold)] enabled:hover:-translate-y-px disabled:opacity-60"
+          >
+            <BusyLabel busy={save.saving} busyText={save.saved ? "Saved" : "Saving…"} done={save.saved}>
+              Save my card, it&apos;s free
+            </BusyLabel>
+          </button>
+        </div>
+      ) : null}
     </div>,
     document.body,
   );

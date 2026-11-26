@@ -38,7 +38,11 @@ const OVERSCAN = "160%";
  * with a line of its own down there, and a pill lying across it would take a
  * sentence the host is meant to read.
  */
-const PILL_OFFSET = "3.5rem";
+/*
+  Over a bar pinned to the foot of the screen, where one publishes its height
+  as --lifafa-foot-h (the full screen preview's save bar); 0 everywhere else.
+*/
+const PILL_OFFSET = "calc(3.5rem + var(--lifafa-foot-h, 0px))";
 
 /**
  * Room the card has to leave at its foot when the mark is shown.

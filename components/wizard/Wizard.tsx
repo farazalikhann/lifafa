@@ -1020,13 +1020,33 @@ function WizardSteps({
   const dashboardHref = editing ? `/dashboard/${edit.eventId}` : "/dashboard";
 
   /*
+    The step a move (goTo) has just asked for, drawn at once, in the tap's own
+    render, rather than when the router catches up with the address: Next's
+    router hears of history.pushState and updates useSearchParams in a
+    transition, which waits behind whatever else the page is doing. Held only
+    while the router still has the step the move started from: once the
+    address's step changes, it is the URL's again (and the browser's Back,
+    which changes it, is never overridden).
+  */
+  const stepParam = searchParams.get(WIZARD_STEP_PARAM);
+  const stepParamRef = useRef(stepParam);
+  stepParamRef.current = stepParam;
+  const [moved, setMoved] = useState<{ to: WizardStepId; from: string | null } | null>(null);
+  const movedTo = moved !== null && moved.from === stepParam ? moved.to : null;
+
+  useEffect(() => {
+    setMoved(null);
+  }, [stepParam]);
+
+  /*
     The URL's step, or the one the card was stashed on, or the first. The URL
     wins: a host back from signing in arrives on a link that names the step,
     and after that every move writes it there. A saved card opens on its
     details, the second step: its template was chosen long ago.
   */
   const requestedStep: WizardStepId =
-    wizardStepId(searchParams.get(WIZARD_STEP_PARAM)) ??
+    movedTo ??
+    wizardStepId(stepParam) ??
     stashedStep ??
     (editing ? "details" : WIZARD_STEPS[0].id);
   /* Whether a design has been chosen: until then, the gallery is the only step. */
@@ -1070,6 +1090,7 @@ function WizardSteps({
       }
 
       window.history.pushState(null, "", wizardStepPath(next, path));
+      setMoved({ to: next, from: stepParamRef.current });
       /* A second tap before the step has drawn goes nowhere new: no step is skipped, no history doubled. */
       stepRef.current = next;
       window.scrollTo({ top: 0 });
@@ -1450,11 +1471,23 @@ function WizardSteps({
     id: "card-preview",
   });
 
-  /* Next: its spinner first, then the step, drawn in the task after that paint. */
+  /*
+    Next: its spinner first, then the step, drawn in the task after that
+    paint, where the next step is a heavy one to draw (the editor's details or
+    its customize panels). From customize, the preview step is light: it is
+    drawn at once, in the tap's own render, with no spinner and no wait for a
+    frame. Nothing is saved on a step change: the card is the wizard's state,
+    kept in this browser as it changes (useCardAutosave), whichever step is on.
+  */
   const [moving, setMoving] = useState(false);
 
   const nextStep = (to: WizardStepId): void => {
     if (moving) {
+      return;
+    }
+
+    if (step === "customize") {
+      goTo(to);
       return;
     }
 
@@ -1979,7 +2012,7 @@ function WizardSteps({
         What went wrong with a save is said here, over the buttons, so it is
         seen from whichever step the save was pressed on.
       */}
-      {/* data-lifafa-foot-bar: the network notice and the WhatsApp button sit above it (NetworkNotice.tsx, WhatsAppFloat.tsx). */}
+      {/* data-lifafa-foot-bar: the network notice sits above it (NetworkNotice.tsx). */}
       <div data-lifafa-foot-bar="" className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--lifafa-hairline)] bg-[var(--lifafa-ink)]/92 backdrop-blur">
         {error !== null ? (
           <p
@@ -2162,6 +2195,12 @@ function WizardSteps({
             onClose={closePreview}
             onPreviewLanguageChange={setPreviewLanguage}
             isPaid={edit?.isPaid === true}
+            /* A new card's last step: the same save as its "Save and continue", pinned to the preview's foot. */
+            save={
+              saveMain
+                ? { onSave: pressSave, saving: isSaving, saved: savedCard, error }
+                : undefined
+            }
           />
         </PreviewBoundary>
       ) : null}
