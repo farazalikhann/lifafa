@@ -43,14 +43,17 @@ export default function MetaPixel(): ReactElement | null {
   }
 
   /*
-    On /create, the ad's landing page, fbevents.js waits for the page to have
-    loaded: its PageView and ViewContent do not wait for it (lib/metaPixel.ts),
-    and its 100 kB would otherwise be fetched beside the gallery's pictures.
+    On /create and a sample under /demo, the ads' landing pages, fbevents.js
+    waits for the page to have loaded: their PageView and ViewContent do not
+    wait for it (lib/metaPixel.ts), and its 100 kB would otherwise be fetched
+    beside the gallery's pictures or the card's.
     Everywhere else, as soon as the page has run, so an event that does wait
     for it, a Purchase among them, waits no longer than it did.
   */
   const strategy =
-    installedOn === "/create" || installedOn?.startsWith("/create/") === true
+    installedOn === "/create" ||
+    installedOn?.startsWith("/create/") === true ||
+    installedOn?.startsWith("/demo/") === true
       ? "lazyOnload"
       : "afterInteractive";
 

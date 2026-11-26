@@ -8,7 +8,7 @@
  * page's sample), the list in clarityAllowedOn below: a visitor there is
  * choosing a design, and the card is a made-up wedding. It never runs on a
  * guest's invitation (/i), check-in, the host's dashboard or /admin. Guests
- * have not agreed to be recorded. The Meta pixel stays off /demo all the same
+ * have not agreed to be recorded. The Meta pixel runs on the same samples
  * (lib/metaPixel.ts).
  *
  * PRODUCTION DOMAIN ONLY. Off unless NEXT_PUBLIC_CLARITY_ID is set, the build

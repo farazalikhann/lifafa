@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
+import DemoViewContent from "@/components/analytics/DemoViewContent";
 import DemoCreateBar, { DEMO_CREATE_BAR_SELECTOR } from "@/components/invite/DemoCreateBar";
 import InviteExperience from "@/components/invite/InviteExperience";
 import SampleBanner from "@/components/invite/SampleBanner";
@@ -28,8 +29,8 @@ import { TEMPLATES, findTemplate } from "@/templates/registry";
  *
  * On a phone, once the card is open, a bar at the foot of the screen gives
  * the price, "Make this card" and "Explore more designs" (DemoCreateBar).
- * Clarity records it (lib/clarity.ts); the Meta pixel never runs here
- * (lib/metaPixel.ts).
+ * Clarity records it (lib/clarity.ts), and the Meta pixel runs here: a
+ * PageView, and a ViewContent for the template (lib/metaPixel.ts).
  */
 
 type DemoParams = { params: Promise<{ templateId: string }> };
@@ -98,6 +99,11 @@ export default async function TemplateDemoPage({
       />
       {/* The page ends the bar's height lower on a phone, so the last of the card scrolls clear of it. */}
       <div aria-hidden="true" style={{ height: "var(--lifafa-foot-h, 0px)" }} />
+      <DemoViewContent
+        templateId={template.id}
+        tier={template.collection}
+        pricePaise={template.price}
+      />
       <DemoCreateBar
         makeHref={template.listed ? startHref : null}
         exploreHref={NEW_CARD_HREF}

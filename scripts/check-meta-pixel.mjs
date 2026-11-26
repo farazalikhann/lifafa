@@ -9,8 +9,8 @@
  * Node runs the TypeScript file as it is, so this is the code the site ships.
  *
  * Then, given a running server (`npm run build` with NEXT_PUBLIC_META_PIXEL_ID
- * set, then `npm start`), the HTML of a guest invitation and of a sample
- * invitation, which must not mention connect.facebook.net or fbevents.js. With
+ * set, then `npm start`), the HTML of a guest invitation, which must not
+ * mention connect.facebook.net or fbevents.js. With
  * no invite code given, an unknown one is used: the page is the same route and
  * the same layout, and whether the pixel runs is decided by route alone.
  */
@@ -31,6 +31,8 @@ const allowed = [
   "/dashboard/3f6c1d2e-0000-4000-8000-000000000000",
   "/dashboard/3f6c1d2e-0000-4000-8000-000000000000/edit",
   "/dashboard/3f6c1d2e-0000-4000-8000-000000000000/checkin",
+  "/demo/emerald-shahi",
+  "/demo/nikah",
   ...POLICY_PATHS,
 ];
 
@@ -39,10 +41,10 @@ const refused = [
   "/i/AB12CD/print",
   "/i/AB12CD/calendar.ics",
   "/i",
-  "/demo/emerald-shahi",
-  "/demo/nikah",
   "/demo",
+  "/demo/emerald-shahi/extra",
   "/checkin/some-token",
+  "/checkin",
   "/admin",
   "/admin/login",
   "/admin/events/123",
@@ -92,7 +94,7 @@ console.log(`Routes: ${allowed.length} allowed and ${refused.length} refused, as
 
 /*
   Clarity's own list (lib/clarity.ts): the samples under /demo are recorded,
-  where the pixel stays off (above), and a guest's pages never are.
+  as the pixel runs there (above), and a guest's pages never are.
 */
 {
   const { clarityAllowedOn } = await import("../lib/clarity.ts");
@@ -115,11 +117,7 @@ console.log(`Routes: ${allowed.length} allowed and ${refused.length} refused, as
     assert.equal(clarityAllowedOn(path), false, `Clarity must not run on ${path}`);
   }
 
-  for (const path of ["/demo/emerald-shahi", "/demo/nikah"]) {
-    assert.equal(pixelAllowedOn(path), false, `the pixel must stay off ${path}`);
-  }
-
-  console.log("Clarity: on the samples under /demo, never on a guest's pages; the pixel still off /demo.");
+  console.log("Clarity: on the samples under /demo, never on a guest's pages.");
 }
 console.log("Addresses: ids, queries and fragments are written out where they must be.");
 
@@ -244,11 +242,11 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
     assert.equal(param(sent("ViewContent")[1], "cd[content_category]"), "traditions");
 
     /* A page the pixel may not run on: nothing. */
-    window.location = at("/demo/gulab-mahal");
+    window.location = at("/i/AB12CD");
     assert.equal(pixel.viewContent(template("gulab-mahal")), false);
     pixel.metaPixelNavigated();
-    assert.equal(sent("ViewContent").length, 2, "ViewContent sent from /demo");
-    assert.equal(sent("PageView").length, 1, "PageView sent from /demo");
+    assert.equal(sent("ViewContent").length, 2, "ViewContent sent from /i");
+    assert.equal(sent("PageView").length, 1, "PageView sent from /i");
 
     /* The next page in the same tab, with no fbclid in it: one PageView, the same ids, still once per template. */
     window.location = at("/create?step=details&template=emerald-shahi");
@@ -262,6 +260,28 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
     assert.equal(next.viewContent(template("dak-ghar")), true);
     assert.equal(sent("ViewContent").length, 3);
 
+    /*
+      Landing on a live demo from the ad, a new page load: the demo's
+      ViewContent is asked for on its first render, before the pixel is
+      installed, waits for it, and goes after the page's PageView.
+    */
+    window.location = at("/demo/gulab-mahal?fbclid=TEST123&utm_source=meta");
+    const demo = await import("../lib/metaPixel.ts?demo-page");
+    const before = requests.length;
+    assert.equal(demo.viewContent(template("gulab-mahal")), true, "ViewContent refused on /demo");
+    assert.equal(requests.length, before, "ViewContent sent before the pixel was installed");
+    demo.installMetaPixel();
+    demo.metaPixelNavigated();
+    assert.deepEqual(
+      requests.slice(before).map(({ url }) => url.searchParams.get("ev")),
+      ["PageView", "ViewContent"],
+      "the demo's PageView and ViewContent were not sent once each, in order",
+    );
+    const demoView = requests.at(-1);
+    assert.equal(param(demoView, "cd[content_name]"), "gulab-mahal");
+    assert.equal(param(demoView, "dl"), `${site}/demo/gulab-mahal?fbclid=TEST123&utm_source=meta`);
+    assert.equal(param(demoView, "fbc"), param(view, "fbc"), "the demo has another click id");
+
     /* No cookie yet and no fbclid in the address: the one kept for the session. */
     jar.clear();
     session.set(AD_PARAMS_KEY, JSON.stringify({ fbclid: "STORED9", utm_source: "meta" }));
@@ -269,7 +289,7 @@ console.log("Addresses: ids, queries and fragments are written out where they mu
     const third = await import("../lib/metaPixel.ts?third-page");
     third.installMetaPixel();
     third.metaPixelNavigated();
-    assert.match(param(sent("PageView")[2], "fbc"), /^fb\.2\.\d{13}\.STORED9$/, "the stored fbclid was not used");
+    assert.match(param(sent("PageView").at(-1), "fbc"), /^fb\.2\.\d{13}\.STORED9$/, "the stored fbclid was not used");
 
     /*
       A test price (lib/checkoutPrice.ts) is never a sale: no InitiateCheckout
@@ -351,7 +371,7 @@ const base = process.argv[2];
 if (base !== undefined) {
   const code = process.argv[3] ?? "ZZZZZZZZ";
 
-  for (const path of [`/i/${code}`, "/demo/emerald-shahi", "/demo/nikah"]) {
+  for (const path of [`/i/${code}`]) {
     const response = await fetch(new URL(path, base));
     const html = await response.text();
 

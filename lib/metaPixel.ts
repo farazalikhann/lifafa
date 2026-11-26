@@ -1,12 +1,13 @@
 /**
  * The Meta Pixel, for measuring the ads that bring hosts here.
  *
- * HOSTS ONLY, NEVER GUESTS. It runs on the marketing pages and the host's own
- * pages, the list in pixelAllowedOn below, and nowhere else: not on an
- * invitation a guest opens (/i), not on a sample invitation (/demo), not on a
- * check-in link, the owner's /admin or an API route, and not while the
- * editor's full screen preview of a card is open (holdMetaPixel). This file
- * is the one place that decides it.
+ * HOSTS ONLY, NEVER GUESTS. It runs on the marketing pages, the host's own
+ * pages and the sample invitations (/demo/<template> and /demo/nikah, where
+ * the ads land: the card is a made-up wedding and the visitor is choosing a
+ * design), the list in pixelAllowedOn below, and nowhere else: not on an
+ * invitation a guest opens (/i), not on a check-in link, the owner's /admin
+ * or an API route, and not while the editor's full screen preview of a card
+ * is open (holdMetaPixel). This file is the one place that decides it.
  *
  * OFF UNLESS CONFIGURED. NEXT_PUBLIC_META_PIXEL_ID is inlined at build time;
  * next.config.ts gives a Vercel production build Lifafa's own id when it is
@@ -29,20 +30,22 @@
  *
  * SENT ONCE IT HAS LOADED. fbevents.js loads with next/script's
  * afterInteractive, once the page has hydrated, so a visitor who leaves an
- * ad's landing page quickly is still counted; on /create it waits for the
- * page to have loaded (lazyOnload, components/analytics/MetaPixel.tsx), as
- * nothing sent there waits for it. Events asked for before that
+ * ad's landing page quickly is still counted; on /create and a sample under
+ * /demo it waits for the page to have loaded (lazyOnload,
+ * components/analytics/MetaPixel.tsx), as nothing sent there waits for it. Events asked for before that
  * wait here, each with the address it was asked for on, and go once it has.
  *
  * EXCEPT PAGEVIEW AND VIEWCONTENT, WHICH GO AT ONCE. On a slow phone
  * fbevents.js can take seconds, and a visitor who leaves before it has loaded
- * (or taps "See live demo", which opens /demo, where the pixel may not run)
- * takes every event waiting here with them. So these two never wait for
+ * (or taps "See live demo", which opens /demo in a new page load) takes every
+ * event waiting here with them. So these two never wait for
  * fbevents.js and never go through it: each is one request to the image
  * endpoint, made as a keepalive fetch that the browser finishes after the
  * page has gone (an image where fetch cannot be used), and never both. fbq is
  * never asked for a PageView, so it cannot send a second one. Held, they wait
- * for the release instead of being dropped. PageView once per path, as
+ * for the release instead of being dropped; asked for before the pixel is
+ * installed on the page (a sample's ViewContent, from its first render), they
+ * wait for that, and go after the page's PageView. PageView once per path, as
  * before; ViewContent once per template per tab (sessionStorage).
  *
  * THE CLICK ID GOES WITH EVERY EVENT WE SEND OURSELVES. An event sent before
@@ -108,12 +111,19 @@ const ALLOWED_PREFIXES = [
 ];
 
 /**
+ * A sample invitation: /demo/<template>, or /demo/nikah. One segment, nothing
+ * under it: lib/clarity.ts's own rule.
+ */
+const SAMPLE_PATH = /^\/demo\/[a-z0-9-]+$/;
+
+/**
  * Whether the pixel may run on this path. An allow list, so a route added
  * later is left out until someone decides otherwise.
  */
 export function pixelAllowedOn(pathname: string): boolean {
   return (
     pathname === "/" ||
+    SAMPLE_PATH.test(pathname) ||
     ALLOWED_PREFIXES.some(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
     )
@@ -461,9 +471,12 @@ function deliver(event: Pending): void {
   event.onSent?.();
 }
 
-/** Whether a taken event may go now: this page may send, and fbevents.js has settled unless it is a keepalive one. */
+/**
+ * Whether a taken event may go now: this page may send, the pixel is
+ * installed on it, and fbevents.js has settled unless it is a keepalive one.
+ */
 function ready(event: Pending): boolean {
-  return mayRun() && (event.keepalive || state === "settled");
+  return mayRun() && state !== "off" && (event.keepalive || state === "settled");
 }
 
 /** Sends what has waited and may go now; the rest waits on. */
@@ -592,14 +605,16 @@ export function metaPixelNavigated(): void {
   }
 
   syncConsent();
-  flush();
 
   const path = window.location.pathname;
 
+  /* The page's PageView first, then anything that waited for it. */
   if (path !== lastPageViewPath) {
     lastPageViewPath = path;
     pageView();
   }
+
+  flush();
 
   if (!registrationQueued && readCookie(NEW_ACCOUNT_COOKIE) === "1") {
     registrationQueued = completeRegistration();
@@ -680,7 +695,8 @@ function viewedThisSession(): string[] {
 }
 
 /**
- * A template looked at in the gallery: chosen, or its live demo opened. Once
+ * A template looked at: chosen in the gallery, its live demo tapped there, or
+ * its live demo landed on (components/analytics/DemoViewContent.tsx). Once
  * per template per tab, and sent at once so a tap that leaves the page is
  * still counted (see the top of this file). `content_name` is the template's
  * id and `content_category` its tier, the collection it is sold in.
